@@ -11,7 +11,7 @@ This game is planned to have several of the features present in the original, wh
 Some baseline features include:
 - 3D engine powered by ray tracing via OpenCL
 - 3D sound with FMOD Ex
-- Random cities and dungeons
+- Random voxel cities and dungeons
 - Collision detection
 - City folk with simple conversations
 - RPG elements (classes, attributes, inventory, spell book, levels, experience)
@@ -48,11 +48,11 @@ The 3D graphics are done with a GPU ray tracer written with the OpenCL framework
 
 The original map data for Arena cities, dungeons, etc. are not currently in an accessible format, so their layout in-game will be limited to random generation for each new character (which may or may not have been a desired trait in the first place). Main quest relevant locations, like Fang Lair, should be recreated by hand if the original map data can't be salvaged, since they are not randomized.
 
-Maybe there could be a map editor for creating main quest dungeons and wilderness chunks, but that's asking a bit much at this point.
+Maybe there could be a map editor for creating main quest dungeons and city/wilderness chunks, but that's asking a bit much at this point.
 
 ## Data Files
 
-The original art and music may be included with project releases since the game was made freely available by Bethesda upon its 10th anniversary in March 2004. Those content files were extracted from the game data and eventually converted into common formats like PNG, MIDI, and WAV thanks to the WinArena project, and others Arena tools. They will be posted on here or a hosted website (i.e, Dropbox) at some point.
+The original art and music may be included with project releases since the game was made freely available by Bethesda upon its 10th anniversary in March 2004. Those content files were extracted from the game data and eventually converted into common formats like PNG, MIDI, and WAV thanks to the WinArena project, and others Arena tools. They will be posted on here or a hosted website (i.e., Dropbox) at some point.
 
 ## Resources
 
