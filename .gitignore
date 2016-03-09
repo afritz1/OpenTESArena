@@ -13,9 +13,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -26,3 +23,33 @@
 *.exe
 *.out
 *.app
+
+# Unnecessary Visual C++ files
+ipch/
+.vs/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.idb
+*.pdb
+*.suo
+*.user
+
+# Visual C++ Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Compressed files
+*.tar.gz
+*.zip
+*.7z
