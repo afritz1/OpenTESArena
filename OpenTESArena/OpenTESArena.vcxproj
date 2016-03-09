@@ -1,0 +1,332 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{52D8918B-A055-4115-B8B2-6761A7B35C18}</ProjectGuid>
+    <RootNamespace>OpenTESArena</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\FMOD;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;fmodex64_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)data\*" "$(TargetDir)data\" /E /Y
+xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
+xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
+xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\FMOD;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;fmodex64_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)data\*" "$(TargetDir)data\" /E /Y
+xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
+xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
+xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Items\MiscellaneousArtifactData.cpp" />
+    <ClCompile Include="src\Items\ShieldArtifactData.cpp" />
+    <ClCompile Include="src\Items\BodyArmorArtifactData.cpp" />
+    <ClCompile Include="src\Items\AccessoryArtifactData.cpp" />
+    <ClCompile Include="src\Items\MiscellaneousItem.cpp" />
+    <ClCompile Include="src\Items\Item.cpp" />
+    <ClCompile Include="src\Items\Food.cpp" />
+    <ClCompile Include="src\Items\Potion.cpp" />
+    <ClCompile Include="src\Items\Consumable.cpp" />
+    <ClCompile Include="src\Entities\AttributeModifier.cpp" />
+    <ClCompile Include="src\Game\Date.cpp" />
+    <ClCompile Include="src\Game\Holiday.cpp" />
+    <ClCompile Include="src\Game\Month.cpp" />
+    <ClCompile Include="src\World\Chunk.cpp" />
+    <ClCompile Include="src\World\Climate.cpp" />
+    <ClCompile Include="src\Media\SoundManager.cpp" />
+    <ClCompile Include="src\Entities\CharacterClassCategory.cpp" />
+    <ClCompile Include="src\Items\BodyArmor.cpp" />
+    <ClCompile Include="src\Items\HeavyArmorMaterial.cpp" />
+    <ClCompile Include="src\Items\MediumArmorMaterial.cpp" />
+    <ClCompile Include="src\Items\LightArmorMaterial.cpp" />
+    <ClCompile Include="src\Items\ArmorMaterial.cpp" />
+    <ClCompile Include="src\Entities\DerivedAttribute.cpp" />
+    <ClCompile Include="src\Entities\CharacterEquipment.cpp" />
+    <ClCompile Include="src\Items\Armor.cpp" />
+    <ClCompile Include="src\Items\Metallic.cpp" />
+    <ClCompile Include="src\Items\ItemCondition.cpp" />
+    <ClCompile Include="src\Items\Shield.cpp" />
+    <ClCompile Include="src\Items\Metal.cpp" />
+    <ClCompile Include="src\Items\Accessory.cpp" />
+    <ClCompile Include="src\Entities\BodyPart.cpp" />
+    <ClCompile Include="src\Entities\PrimaryAttributeSet.cpp" />
+    <ClCompile Include="src\Entities\CharacterGender.cpp" />
+    <ClCompile Include="src\Entities\CharacterRace.cpp" />
+    <ClCompile Include="src\Media\MusicManager.cpp" />
+    <ClCompile Include="src\Media\Font.cpp" />
+    <ClCompile Include="src\World\Province.cpp" />
+    <ClCompile Include="src\World\Location.cpp" />
+    <ClCompile Include="src\Entities\PrimaryAttribute.cpp" />
+    <ClCompile Include="src\Game\Guild.cpp" />
+    <ClCompile Include="src\Entities\CharacterClass.cpp" />
+    <ClCompile Include="src\Items\ArtifactData.cpp" />
+    <ClCompile Include="src\Rendering\Renderer.cpp" />
+    <ClCompile Include="src\Entities\Entity.cpp" />
+    <ClCompile Include="src\Game\CardinalDirection.cpp" />
+    <ClCompile Include="src\World\Encoding.cpp" />
+    <ClCompile Include="src\Interface\Panel.cpp" />
+    <ClCompile Include="src\Math\Random.cpp" />
+    <ClCompile Include="src\Media\Color.cpp" />
+    <ClCompile Include="src\Math\Point.cpp" />
+    <ClCompile Include="src\Math\Rectangle.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Math\Quaternion.cpp" />
+    <ClCompile Include="src\Math\Vector2.cpp" />
+    <ClCompile Include="src\Math\Vector3.cpp" />
+    <ClCompile Include="src\Math\Vector4.cpp" />
+    <ClCompile Include="src\Rendering\Texture.cpp" />
+    <ClCompile Include="src\Rendering\TextureReference.cpp" />
+    <ClCompile Include="src\Interface\Surface.cpp" />
+    <ClCompile Include="src\World\Voxel.cpp" />
+    <ClCompile Include="src\Interface\TextBox.cpp" />
+    <ClCompile Include="src\Media\TextureManager.cpp" />
+    <ClCompile Include="src\Items\Weapon.cpp" />
+    <ClCompile Include="src\Items\Trinket.cpp" />
+    <ClCompile Include="src\Game\Weekday.cpp" />
+    <ClCompile Include="src\Game\Year.cpp" />
+    <ClCompile Include="src\Math\Triangle.cpp" />
+    <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
+    <ClCompile Include="src\World\VoxelReference.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Items\MiscellaneousArtifactData.h" />
+    <ClInclude Include="src\Items\ShieldArtifactData.h" />
+    <ClInclude Include="src\Items\BodyArmorArtifactData.h" />
+    <ClInclude Include="src\Items\AccessoryArtifactData.h" />
+    <ClInclude Include="src\Items\AccessoryArtifactName.h" />
+    <ClInclude Include="src\Items\BodyArmorArtifactName.h" />
+    <ClInclude Include="src\Items\MiscellaneousItem.h" />
+    <ClInclude Include="src\Items\Item.h" />
+    <ClInclude Include="src\Items\Food.h" />
+    <ClInclude Include="src\Items\Potion.h" />
+    <ClInclude Include="src\Items\Consumable.h" />
+    <ClInclude Include="src\Entities\AttributeModifier.h" />
+    <ClInclude Include="src\Algorithms\BinaryTree.h" />
+    <ClInclude Include="src\Entities\AttributeModifierName.h" />
+    <ClInclude Include="src\Game\Date.h" />
+    <ClInclude Include="src\Game\Holiday.h" />
+    <ClInclude Include="src\Game\HolidayName.h" />
+    <ClInclude Include="src\Game\Month.h" />
+    <ClInclude Include="src\Game\MonthName.h" />
+    <ClInclude Include="src\Game\WeekdayName.h" />
+    <ClInclude Include="src\Items\ConsumableType.h" />
+    <ClInclude Include="src\Items\FoodType.h" />
+    <ClInclude Include="src\Items\MiscellaneousArtifactName.h" />
+    <ClInclude Include="src\Items\MiscellaneousItemType.h" />
+    <ClInclude Include="src\Items\ShieldArtifactName.h" />
+    <ClInclude Include="src\Items\WeaponArtifactName.h" />
+    <ClInclude Include="src\Items\WeaponRangeName.h" />
+    <ClInclude Include="src\World\Climate.h" />
+    <ClInclude Include="src\Media\SoundManager.h" />
+    <ClInclude Include="src\Entities\CharacterClassCategory.h" />
+    <ClInclude Include="src\Items\BodyArmor.h" />
+    <ClInclude Include="src\Items\HeavyArmorMaterial.h" />
+    <ClInclude Include="src\Items\MediumArmorMaterial.h" />
+    <ClInclude Include="src\Items\LightArmorMaterial.h" />
+    <ClInclude Include="src\Items\ArmorMaterial.h" />
+    <ClInclude Include="src\Entities\DerivedAttribute.h" />
+    <ClInclude Include="src\Entities\CharacterEquipment.h" />
+    <ClInclude Include="src\Entities\DerivedAttributeName.h" />
+    <ClInclude Include="src\Items\ArmorMaterialType.h" />
+    <ClInclude Include="src\Items\Armor.h" />
+    <ClInclude Include="src\Items\Metallic.h" />
+    <ClInclude Include="src\Items\ItemCondition.h" />
+    <ClInclude Include="src\Items\ItemConditionName.h" />
+    <ClInclude Include="src\Items\Shield.h" />
+    <ClInclude Include="src\Items\Metal.h" />
+    <ClInclude Include="src\Items\Accessory.h" />
+    <ClInclude Include="src\Entities\BodyPart.h" />
+    <ClInclude Include="src\Entities\BodyPartName.h" />
+    <ClInclude Include="src\Entities\PrimaryAttributeSet.h" />
+    <ClInclude Include="src\Entities\CharacterGender.h" />
+    <ClInclude Include="src\Entities\CharacterGenderName.h" />
+    <ClInclude Include="src\Entities\CharacterRace.h" />
+    <ClInclude Include="src\Items\TrinketName.h" />
+    <ClInclude Include="src\Media\MusicManager.h" />
+    <ClInclude Include="src\Media\Font.h" />
+    <ClInclude Include="src\Media\SoundFormat.h" />
+    <ClInclude Include="src\Media\SoundName.h" />
+    <ClInclude Include="src\World\Province.h" />
+    <ClInclude Include="src\World\Location.h" />
+    <ClInclude Include="src\Entities\PrimaryAttribute.h" />
+    <ClInclude Include="src\Game\Guild.h" />
+    <ClInclude Include="src\Entities\CharacterClass.h" />
+    <ClInclude Include="src\Game\CardinalDirectionName.h" />
+    <ClInclude Include="src\Entities\CharacterClassName.h" />
+    <ClInclude Include="src\Entities\CharacterClassCategoryName.h" />
+    <ClInclude Include="src\Entities\CharacterRaceName.h" />
+    <ClInclude Include="src\Entities\PrimaryAttributeName.h" />
+    <ClInclude Include="src\Items\ArtifactData.h" />
+    <ClInclude Include="src\Items\ArtifactName.h" />
+    <ClInclude Include="src\Items\MetalType.h" />
+    <ClInclude Include="src\Items\ShieldType.h" />
+    <ClInclude Include="src\Items\WeaponHandCount.h" />
+    <ClInclude Include="src\Rendering\Renderer.h" />
+    <ClInclude Include="src\Entities\Entity.h" />
+    <ClInclude Include="src\Items\AccessoryType.h" />
+    <ClInclude Include="src\Items\ArmorType.h" />
+    <ClInclude Include="src\Game\CardinalDirection.h" />
+    <ClInclude Include="src\Entities\EntityType.h" />
+    <ClInclude Include="src\Game\GuildName.h" />
+    <ClInclude Include="src\Items\ItemType.h" />
+    <ClInclude Include="src\Items\WeaponType.h" />
+    <ClInclude Include="src\Media\FontName.h" />
+    <ClInclude Include="src\Media\MusicFormat.h" />
+    <ClInclude Include="src\Media\TextureName.h" />
+    <ClInclude Include="src\World\BuildingType.h" />
+    <ClInclude Include="src\World\Chunk.h" />
+    <ClInclude Include="src\World\Encoding.h" />
+    <ClInclude Include="src\Interface\Panel.h" />
+    <ClInclude Include="src\Math\Random.h" />
+    <ClInclude Include="src\Media\Color.h" />
+    <ClInclude Include="src\Math\Constants.h" />
+    <ClInclude Include="src\Math\Point.h" />
+    <ClInclude Include="src\Math\Rectangle.h" />
+    <ClInclude Include="src\Math\Quaternion.h" />
+    <ClInclude Include="src\Math\Vector2.h" />
+    <ClInclude Include="src\Math\Vector4.h" />
+    <ClInclude Include="src\Math\Vector3.h" />
+    <ClInclude Include="src\Media\MusicName.h" />
+    <ClInclude Include="src\Media\MusicType.h" />
+    <ClInclude Include="src\Rendering\Texture.h" />
+    <ClInclude Include="src\Rendering\TextureReference.h" />
+    <ClInclude Include="src\Interface\Surface.h" />
+    <ClInclude Include="src\World\ClimateName.h" />
+    <ClInclude Include="src\World\LocationName.h" />
+    <ClInclude Include="src\World\LocationType.h" />
+    <ClInclude Include="src\World\ProvinceName.h" />
+    <ClInclude Include="src\World\Voxel.h" />
+    <ClInclude Include="src\Interface\TextBox.h" />
+    <ClInclude Include="src\Media\TextureManager.h" />
+    <ClInclude Include="src\Items\Weapon.h" />
+    <ClInclude Include="src\Items\Trinket.h" />
+    <ClInclude Include="src\Game\Weekday.h" />
+    <ClInclude Include="src\Game\Year.h" />
+    <ClInclude Include="src\World\VoxelMaterialType.h" />
+    <ClInclude Include="src\World\VoxelType.h" />
+    <ClInclude Include="src\Math\Triangle.h" />
+    <ClInclude Include="src\Items\WeaponArtifactData.h" />
+    <ClInclude Include="src\World\VoxelReference.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
