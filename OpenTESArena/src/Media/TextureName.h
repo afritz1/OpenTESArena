@@ -3,30 +3,31 @@
 
 // A unique identifier for every concrete image file.
 
-// Walls should be combined into the group format for better organization.
-
-// This enum isn't going to work well for thousands of textures. Hmm. What do people
-// normally do when they want to have a unique reference for thousands of things?
-// I'll probably store these in a text file somewhere anyway at some point.
+// Should walls be combined into the group format for better organization?
 
 enum class TextureName
 {
 	// Interface.
-	SwordCursor,
+	CharacterCreation, // starry night with house
+	Icon, // window icon
+	IntroTitle, // Arena copyright, etc.
+	IntroQuote, // "The best techniques..."
+	MainMenu,
+	ParchmentPopup, // for text boxes
 	QuillCursor,
-
+	SwordCursor,
+	WorldMap, // Tamriel map with helmet
+	
 	// Fonts.
-	FontA,
+	FontA, // big
 	FontArena,
 	FontB,
-	FontC,
+	FontC, // big
 	FontChar,
 	FontD,
 	FontFour,
 	FontS,
 	FontTeeny,
-
-
 };
 
 #endif

@@ -22,13 +22,15 @@ private:
 	std::vector<std::string> textLines;
 	FontName fontName;
 public:
-	TextBox(int x, int y, const Color &color, const std::string &text,
+	TextBox(int x, int y, const Color &textColor, const std::string &text,
 		FontName fontName, TextureManager &textureManager);
-	//TextBox(const Point &center, ...);
-	~TextBox();
 
-	// I think the "centered" text box would be very useful, but it might need to
-	// use a separate constructor that doesn't call the other one.
+	// The centered text box constructor is now a desired feature. Its Surface::point
+	// member will be based on the length and width of the final text box and the
+	// given "center" argument.
+	//TextBox(const Int2 &center, ...);
+
+	~TextBox();
 
 	// Alignment...? Maybe it should be a constructor argument, not a void function. 
 	// Things like game world on-screen text might be centered. Everything else is 

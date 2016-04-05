@@ -3,7 +3,8 @@
 
 #include <memory>
 
-class Point;
+class Int2;
+
 struct SDL_Rect;
 
 class Rectangle
@@ -25,11 +26,11 @@ public:
 	int getRight() const;
 	int getTop() const;
 	int getBottom() const;
-	class Point getTopLeft() const;
-	class Point getTopRight() const;
-	class Point getBottomLeft() const;
-	class Point getBottomRight() const;
-	class Point getCenter() const;
+	Int2 getTopLeft() const;
+	Int2 getTopRight() const;
+	Int2 getBottomLeft() const;
+	Int2 getBottomRight() const;
+	Int2 getCenter() const;
 	const SDL_Rect *getRect() const;
 
 	void setX(int x);
@@ -37,9 +38,9 @@ public:
 	void setWidth(int width);
 	void setHeight(int height);
 
-	bool contains(const Point &point);
-	bool contains(const Rectangle &rectangle);
-	bool intersects(const Rectangle &rectangle);
+	bool contains(const Int2 &point) const;
+	bool contains(const Rectangle &rectangle) const;
+	bool intersects(const Rectangle &rectangle) const;
 };
 
 #endif

@@ -4,8 +4,9 @@
 #include "SDL2\SDL.h"
 
 #include "Surface.h"
+
 #include "../Media/Color.h"
-#include "../Math/Point.h"
+#include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
 
 const int Surface::DEFAULT_BPP = 32;
@@ -16,7 +17,7 @@ Surface::Surface(int x, int y, int width, int height)
 	assert(height > 0);
 
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
-	this->point = std::unique_ptr<Point>(new Point(x, y));
+	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
 
 	assert(this->surface != nullptr);
@@ -27,18 +28,41 @@ Surface::Surface(int x, int y, int width, int height)
 Surface::Surface(int width, int height)
 	: Surface(0, 0, width, height) { }
 
-Surface::Surface(const SDL_Surface *surface)
+Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
 	this->surface = SDL_CreateRGBSurfaceFrom(surface->pixels, surface->w,
 		surface->h, Surface::DEFAULT_BPP, surface->pitch, surface->format->Rmask,
 		surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
-	this->point = std::unique_ptr<Point>(new Point());
+	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
 
 	assert(this->surface != nullptr);
 	assert(this->point.get() != nullptr);
 	assert(this->visible);
 }
+
+Surface::Surface(const SDL_Surface *surface, double scale)
+{
+	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
+	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
+		surface->format->Amask);
+	auto rect = SDL_Rect();
+	rect.w = width;
+	rect.h = height;
+	SDL_BlitScaled(const_cast<SDL_Surface*>(surface), nullptr, this->surface, &rect);
+
+	this->point = std::unique_ptr<Int2>(new Int2());
+	this->visible = true;
+
+	assert(this->surface != nullptr);
+	assert(this->point.get() != nullptr);
+	assert(this->visible);
+}
+
+Surface::Surface(const SDL_Surface *surface)
+	: Surface(0, 0, surface) { }
 
 Surface::Surface(const Surface &surface)
 	: Surface(surface.getSurface()) { }
@@ -93,7 +117,7 @@ SDL_Surface *Surface::getSurface() const
 	return this->surface;
 }
 
-const Point &Surface::getPoint() const
+const Int2 &Surface::getPoint() const
 {
 	return *this->point;
 }
@@ -101,6 +125,13 @@ const Point &Surface::getPoint() const
 bool Surface::isVisible() const
 {
 	return this->visible;
+}
+
+bool Surface::containsPoint(const Int2 &point)
+{
+	auto rect = Rectangle(this->point->getX(), this->point->getY(),
+		this->getWidth(), this->getHeight());
+	return rect.contains(point);
 }
 
 void Surface::setX(int x)
@@ -186,7 +217,7 @@ void Surface::outline(const Color &color)
 	}
 }
 
-void Surface::blit(Surface &dst, const Point &point, const Rectangle &clipRect) const
+void Surface::blit(Surface &dst, const Int2 &point, const Rectangle &clipRect) const
 {
 	auto rect = SDL_Rect();
 	rect.x = point.getX();
@@ -194,17 +225,17 @@ void Surface::blit(Surface &dst, const Point &point, const Rectangle &clipRect) 
 	SDL_BlitSurface(this->surface, clipRect.getRect(), dst.getSurface(), &rect);
 }
 
-void Surface::blit(Surface &dst, const Point &point) const
+void Surface::blit(Surface &dst, const Int2 &point) const
 {
 	this->blit(dst, point, Rectangle());
 }
 
 void Surface::blit(Surface &dst) const
 {
-	this->blit(dst, Point(), Rectangle());
+	this->blit(dst, Int2(), Rectangle());
 }
 
-void Surface::blitScaled(Surface &dst, double scale, const Point &point,
+void Surface::blitScaled(Surface &dst, double scale, const Int2 &point,
 	const Rectangle &clipRect) const
 {
 	auto scaleRect = SDL_Rect();
@@ -215,12 +246,12 @@ void Surface::blitScaled(Surface &dst, double scale, const Point &point,
 	SDL_BlitScaled(this->surface, clipRect.getRect(), dst.getSurface(), &scaleRect);
 }
 
-void Surface::blitScaled(Surface &dst, double scale, const Point &point) const
+void Surface::blitScaled(Surface &dst, double scale, const Int2 &point) const
 {
 	this->blitScaled(dst, scale, point, Rectangle());
 }
 
 void Surface::blitScaled(Surface &dst, double scale) const
 {
-	this->blitScaled(dst, scale, Point(), Rectangle());
+	this->blitScaled(dst, scale, Int2(), Rectangle());
 }

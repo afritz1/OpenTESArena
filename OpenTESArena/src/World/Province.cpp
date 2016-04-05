@@ -158,6 +158,32 @@ const auto ProvinceDisplayNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Valenwood, "Valenwood" }
 };
 
+const auto ProvinceSingularRaceNames = std::map<ProvinceName, std::string>
+{
+	{ ProvinceName::BlackMarsh, "Argonian" },
+	{ ProvinceName::Elsweyr, "Khajiit" },
+	{ ProvinceName::Hammerfell, "Redguard" },
+	{ ProvinceName::HighRock, "Breton" },
+	{ ProvinceName::ImperialProvince, "Imperial" },
+	{ ProvinceName::Morrowind, "Dark Elf" },
+	{ ProvinceName::Skyrim, "Nord" },
+	{ ProvinceName::SummersetIsle, "High Elf" },
+	{ ProvinceName::Valenwood, "Wood Elf" }
+};
+
+const auto ProvincePluralRaceNames = std::map<ProvinceName, std::string>
+{
+	{ ProvinceName::BlackMarsh, "Argonians" },
+	{ ProvinceName::Elsweyr, "Khajiit" },
+	{ ProvinceName::Hammerfell, "Redguards" },
+	{ ProvinceName::HighRock, "Bretons" },
+	{ ProvinceName::ImperialProvince, "Imperials" },
+	{ ProvinceName::Morrowind, "Dark Elves" },
+	{ ProvinceName::Skyrim, "Nords" },
+	{ ProvinceName::SummersetIsle, "High Elves" },
+	{ ProvinceName::Valenwood, "Wood Elves" }
+};
+
 Province::Province(ProvinceName provinceName)
 {
 	this->provinceName = provinceName;
@@ -190,6 +216,15 @@ std::string Province::toString() const
 	auto displayName = ProvinceDisplayNames.at(this->getProvinceName());
 	assert(displayName.size() > 0);
 	return displayName;
+}
+
+std::string Province::getRaceName(bool plural) const
+{
+	auto raceName = plural ?
+		ProvincePluralRaceNames.at(this->getProvinceName()) :
+		ProvinceSingularRaceNames.at(this->getProvinceName());
+	assert(raceName.size() > 0);
+	return raceName;
 }
 
 std::vector<LocationName> Province::getCivilizations() const

@@ -1,7 +1,10 @@
+#include <cmath>
+
 #include "Quaternion.h"
+
 #include "Constants.h"
-#include "Vector3.h"
-#include "Vector4.h"
+#include "Float3.h"
+#include "Float4.h"
 
 Quaternion::Quaternion(double x, double y, double z, double w)
 {
@@ -11,10 +14,10 @@ Quaternion::Quaternion(double x, double y, double z, double w)
 	this->w = w;
 }
 
-Quaternion::Quaternion(const Vector3<double> &v, double w)
+Quaternion::Quaternion(const Float3<double> &v, double w)
 	: Quaternion(v.getX(), v.getY(), v.getZ(), w) { }
 
-Quaternion::Quaternion(const Vector4<double> &v)
+Quaternion::Quaternion(const Float4<double> &v)
 	: Quaternion(v.getX(), v.getY(), v.getZ(), v.getW()) { }
 
 Quaternion::Quaternion()
@@ -30,7 +33,7 @@ Quaternion Quaternion::identity()
 	return Quaternion(0.0, 0.0, 0.0, 1.0);
 }
 
-Quaternion Quaternion::fromAxisAngle(const Vector3<double> &v, double w)
+Quaternion Quaternion::fromAxisAngle(const Float3<double> &v, double w)
 {
 	if (v.lengthSquared() < EPSILON)
 	{
@@ -43,20 +46,20 @@ Quaternion Quaternion::fromAxisAngle(const Vector3<double> &v, double w)
 	return q.normalized();
 }
 
-Quaternion Quaternion::fromAxisAngle(const Vector4<double> &v)
+Quaternion Quaternion::fromAxisAngle(const Float4<double> &v)
 {
 	return Quaternion::fromAxisAngle(v.getX(), v.getY(), v.getZ(), v.getW());
 }
 
 Quaternion Quaternion::fromAxisAngle(double x, double y, double z, double w)
 {
-	return Quaternion(Vector3<double>(x, y, z), w);
+	return Quaternion(Float3<double>(x, y, z), w);
 }
 
 Quaternion Quaternion::operator *(const Quaternion &q) const
 {
-	auto left = Vector3<double>(this->x, this->y, this->z);
-	auto right = Vector3<double>(q.x, q.y, q.z);
+	auto left = Float3<double>(this->x, this->y, this->z);
+	auto right = Float3<double>(q.x, q.y, q.z);
 	auto axis = left.scaledBy(q.w) + right.scaledBy(this->w) + left.cross(right);
 	double magnitude = (this->w * q.w) - left.dot(right);
 	return Quaternion(axis, magnitude);
@@ -82,14 +85,14 @@ const double &Quaternion::getW() const
 	return this->w;
 }
 
-Vector3<double> Quaternion::getXYZ() const
+Float3<double> Quaternion::getXYZ() const
 {
-	return Vector3<double>(this->x, this->y, this->z);
+	return Float3<double>(this->x, this->y, this->z);
 }
 
-Vector4<double> Quaternion::getXYZW() const
+Float4<double> Quaternion::getXYZW() const
 {
-	return Vector4<double>(this->x, this->y, this->z, this->w);
+	return Float4<double>(this->x, this->y, this->z, this->w);
 }
 
 std::string Quaternion::toString() const

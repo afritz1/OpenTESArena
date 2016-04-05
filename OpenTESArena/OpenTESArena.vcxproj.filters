@@ -1,12 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\Math\Vector2.cpp" />
-    <ClCompile Include="src\Math\Vector3.cpp" />
-    <ClCompile Include="src\Math\Vector4.cpp" />
     <ClCompile Include="src\Math\Quaternion.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\Math\Point.cpp" />
     <ClCompile Include="src\Math\Rectangle.cpp" />
     <ClCompile Include="src\Media\Color.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
@@ -70,15 +66,28 @@
     <ClCompile Include="src\Items\Food.cpp" />
     <ClCompile Include="src\Items\Potion.cpp" />
     <ClCompile Include="src\World\VoxelReference.cpp" />
+    <ClCompile Include="src\Game\Game.cpp" />
+    <ClCompile Include="src\Game\GameState.cpp" />
+    <ClCompile Include="src\Interface\MainMenuPanel.cpp" />
+    <ClCompile Include="src\Interface\Button.cpp" />
+    <ClCompile Include="src\Interface\CinematicPanel.cpp" />
+    <ClCompile Include="src\Interface\ImagePanel.cpp" />
+    <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseGenderPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseClassPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseNamePanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseRacePanel.cpp" />
+    <ClCompile Include="src\Rendering\PostProcessing.cpp" />
+    <ClCompile Include="src\Math\Float4.cpp" />
+    <ClCompile Include="src\Math\Float3.cpp" />
+    <ClCompile Include="src\Math\Float2.cpp" />
+    <ClCompile Include="src\Math\Int2.cpp" />
+    <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Math\Vector4.h" />
-    <ClInclude Include="src\Math\Vector3.h" />
-    <ClInclude Include="src\Math\Vector2.h" />
     <ClInclude Include="src\Math\Quaternion.h" />
     <ClInclude Include="src\Math\Constants.h" />
     <ClInclude Include="src\Math\Rectangle.h" />
-    <ClInclude Include="src\Math\Point.h" />
     <ClInclude Include="src\Media\Color.h" />
     <ClInclude Include="src\Math\Random.h" />
     <ClInclude Include="src\Rendering\TextureReference.h" />
@@ -190,5 +199,23 @@
     <ClInclude Include="src\Items\Food.h" />
     <ClInclude Include="src\Items\Potion.h" />
     <ClInclude Include="src\World\VoxelReference.h" />
+    <ClInclude Include="src\Game\Game.h" />
+    <ClInclude Include="src\Game\GameState.h" />
+    <ClInclude Include="src\Interface\MainMenuPanel.h" />
+    <ClInclude Include="src\Interface\Button.h" />
+    <ClInclude Include="src\Media\TextureSequenceName.h" />
+    <ClInclude Include="src\Interface\CinematicPanel.h" />
+    <ClInclude Include="src\Interface\ImagePanel.h" />
+    <ClInclude Include="src\Interface\TextCinematicPanel.h" />
+    <ClInclude Include="src\Interface\ChooseGenderPanel.h" />
+    <ClInclude Include="src\Interface\ChooseRacePanel.h" />
+    <ClInclude Include="src\Interface\ChooseClassPanel.h" />
+    <ClInclude Include="src\Interface\ChooseNamePanel.h" />
+    <ClInclude Include="src\Rendering\PostProcessing.h" />
+    <ClInclude Include="src\Math\Float4.h" />
+    <ClInclude Include="src\Math\Float3.h" />
+    <ClInclude Include="src\Math\Float2.h" />
+    <ClInclude Include="src\Math\Int2.h" />
+    <ClInclude Include="src\Interface\LoadGamePanel.h" />
   </ItemGroup>
 </Project>

@@ -3,7 +3,8 @@
 
 #include "FontName.h"
 
-class Point;
+class Int2;
+
 enum class TextureName;
 
 class Font
@@ -14,7 +15,7 @@ public:
 	Font(FontName fontName);
 	~Font();
 
-	static Point getCharacterCell(unsigned char c);
+	static Int2 getCharacterCell(unsigned char c);
 
 	const FontName &getFontName() const;
 	TextureName getFontTextureName() const;

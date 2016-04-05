@@ -11,7 +11,7 @@
 // palm tree.
 
 class Color;
-class Point;
+class Int2;
 class Rectangle;
 
 struct SDL_PixelFormat;
@@ -21,11 +21,13 @@ class Surface
 {
 protected:
 	SDL_Surface *surface;
-	std::unique_ptr<Point> point;
+	std::unique_ptr<Int2> point;
 	bool visible;
 public:
 	Surface(int x, int y, int width, int height);
 	Surface(int width, int height);
+	Surface(int x, int y, const SDL_Surface *surface);
+	Surface(const SDL_Surface *surface, double scale);
 	Surface(const SDL_Surface *surface);
 	Surface(const Surface &surface);
 	virtual ~Surface();
@@ -39,9 +41,10 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	SDL_Surface *getSurface() const;
-	const Point &getPoint() const;
+	const Int2 &getPoint() const;
 
 	bool isVisible() const;
+	bool containsPoint(const Int2 &point);
 
 	void setX(int x);
 	void setY(int y);
@@ -53,12 +56,12 @@ public:
 	void fill(const Color &color);
 	void fillRect(const Rectangle &rectangle, const Color &color);
 	void outline(const Color &color);
-	void blit(Surface &dst, const Point &point, const Rectangle &clipRect) const;
-	void blit(Surface &dst, const Point &point) const;
+	void blit(Surface &dst, const Int2 &point, const Rectangle &clipRect) const;
+	void blit(Surface &dst, const Int2 &point) const;
 	void blit(Surface &dst) const;
-	void blitScaled(Surface &dst, double scale, const Point &point,
+	void blitScaled(Surface &dst, double scale, const Int2 &point,
 		const Rectangle &clipRect) const;
-	void blitScaled(Surface &dst, double scale, const Point &point) const;
+	void blitScaled(Surface &dst, double scale, const Int2 &point) const;
 	void blitScaled(Surface &dst, double scale) const;
 };
 

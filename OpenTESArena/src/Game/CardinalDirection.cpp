@@ -17,15 +17,15 @@ const auto CardinalDirectionDisplayNames = std::map<CardinalDirectionName, std::
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-CardinalDirection::CardinalDirection(const Vector2d &direction)
+CardinalDirection::CardinalDirection(const Float2d &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	assert(direction.isNormalized());
 
-	const auto north = Vector2d(0.0, 1.0);
-	const auto south = Vector2d(0.0, -1.0);
-	const auto east = Vector2d(1.0, 0.0);
-	const auto west = Vector2d(-1.0, 0.0);
+	const auto north = Float2d(0.0, 1.0);
+	const auto south = Float2d(0.0, -1.0);
+	const auto east = Float2d(1.0, 0.0);
+	const auto west = Float2d(-1.0, 0.0);
 	const auto northEast = north.slerp(east, 0.5);
 	const auto southEast = south.slerp(east, 0.5);
 	const auto southWest = south.slerp(west, 0.5);
@@ -45,7 +45,7 @@ CardinalDirection::CardinalDirection(const Vector2d &direction)
 	// Each direction gets an eighth of the circle's area. In dot product terms, 
 	// that's an allowance of 0.25 deviation from the direction.
 	const auto deviation = 0.25;
-	auto isCloseEnoughTo = [deviation, &direction](const Vector2d &cardinalDirection)
+	auto isCloseEnoughTo = [deviation, &direction](const Float2d &cardinalDirection)
 	{
 		return direction.dot(cardinalDirection) >= (1.0 - deviation);
 	};

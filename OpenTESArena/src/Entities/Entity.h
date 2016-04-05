@@ -2,7 +2,7 @@
 #define ENTITY_H
 
 #include "EntityType.h"
-#include "../Math/Vector3.h"
+#include "../Math/Float3.h"
 
 // Entities are anything in the world that isn't part of the voxel grid. Every 
 // entity has a world position and a unique referencing ID (like an integer). 
@@ -27,7 +27,7 @@ public:
 	// std::unique_ptr<Entity> clone()...
 
 	// Hmm... an entity is abstract, but I want all entities to have a position and ID...
-	virtual const Vector3d &getPosition() const = 0;
+	virtual const Float3d &getPosition() const = 0;
 	virtual const EntityType &getEntityType() const = 0;
 	virtual const int &getID() const = 0;
 };

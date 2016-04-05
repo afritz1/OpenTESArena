@@ -5,12 +5,63 @@
 #include "SDL2\SDL_image.h"
 
 #include "TextureManager.h"
+
+#include "TextureName.h"
+#include "TextureSequenceName.h"
 #include "../Interface/Surface.h"
 
-// The filename of each TextureName. This should be private to the TextureManager.
+// The format extension for all textures will be PNG.
+const std::string TextureExtension = ".png";
+
+// The filename of each TextureName (with sub-folders). This should be known only 
+// to the TextureManager.
 const auto TextureFilenames = std::map<TextureName, std::string>
 {
+	// Interface
+	{ TextureName::CharacterCreation, "interface/character_creation" },
+	{ TextureName::Icon, "interface/icon" },
+	{ TextureName::IntroTitle, "interface/intro_title" },
+	{ TextureName::IntroQuote, "interface/intro_quote" },
+	{ TextureName::MainMenu, "interface/main_menu" },
+	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
+	{ TextureName::QuillCursor, "interface/pointer" },
+	{ TextureName::SwordCursor, "interface/arenarw" },
+	{ TextureName::WorldMap, "interface/world_map" },
 
+	// Fonts
+	{ TextureName::FontA, "interface/fonts/font_a" },
+	{ TextureName::FontArena, "interface/fonts/arena_font" },
+	{ TextureName::FontB, "interface/fonts/font_b" },
+	{ TextureName::FontC, "interface/fonts/font_c" },
+	{ TextureName::FontChar, "interface/fonts/char_font" },
+	{ TextureName::FontD, "interface/fonts/font_d" },
+	{ TextureName::FontFour, "interface/fonts/font_4" },
+	{ TextureName::FontS, "interface/fonts/font_s" },
+	{ TextureName::FontTeeny, "interface/fonts/teeny_font" },
+};
+
+// The filename prefix of each TextureSequenceName (with sub-folders). When looking
+// for files in the sequence, "-#" will be appended to the name for the number of
+// the file, with more numbers added as needed.
+const auto TextureSequenceFilenames = std::map<TextureSequenceName, std::string>
+{
+	// Interface
+	{ TextureSequenceName::IntroBook, "interface/intro/intro" },
+	{ TextureSequenceName::IntroStory, "interface/intro_story/intro_story" },
+	{ TextureSequenceName::OpeningScroll, "interface/scroll/scroll" },
+	{ TextureSequenceName::NewGameStory, "interface/new_game_story/new_game_story" },
+	{ TextureSequenceName::Silmane, "interface/silmane/silmane" },
+};
+
+// The number of images in each texture sequence.
+const auto TextureSequenceCounts = std::map<TextureSequenceName, int>
+{
+	// Interface
+	{ TextureSequenceName::IntroBook, 75 },
+	{ TextureSequenceName::IntroStory, 3 },
+	{ TextureSequenceName::OpeningScroll, 49 },
+	{ TextureSequenceName::NewGameStory, 9 },
+	{ TextureSequenceName::Silmane, 19 },
 };
 
 const std::string TextureManager::PATH = "data/textures/";
@@ -25,13 +76,16 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 	{
 		std::cerr << "Texture Manager error: couldn't initialize texture loader." << "\n";
 		std::cerr << IMG_GetError() << "\n";
-		getchar();
+		std::getchar();
 		exit(EXIT_FAILURE);
 	}
 
 	this->surfaces = std::map<TextureName, Surface>();
+	this->sequences = std::map<TextureSequenceName, std::vector<Surface>>();
 	this->format = format;
 
+	assert(this->surfaces.size() == 0);
+	assert(this->sequences.size() == 0);
 	assert(this->format == format);
 }
 
@@ -40,16 +94,16 @@ TextureManager::~TextureManager()
 	IMG_Quit();
 }
 
-SDL_Surface *TextureManager::loadFromFile(TextureName name)
+SDL_Surface *TextureManager::loadFromFile(const std::string &filename)
 {
 	// Path to the file.
-	auto fullPath = TextureManager::PATH + TextureFilenames.at(name);
+	auto fullPath = TextureManager::PATH + filename;
 
 	// Load the SDL_Surface from file.
 	auto unOptSurface = IMG_Load(fullPath.c_str());
 	if (unOptSurface == nullptr)
 	{
-		std::cerr << "Texture Manager error: could not open texture \"" << 
+		std::cerr << "Texture Manager error: could not open texture \"" <<
 			fullPath << "\"." << "\n";
 		std::getchar();
 		exit(EXIT_FAILURE);
@@ -61,7 +115,7 @@ SDL_Surface *TextureManager::loadFromFile(TextureName name)
 	if (optSurface == nullptr)
 	{
 		std::cerr << "Texture Manager error: could not optimize texture \"" <<
-			fullPath << "\". (Is SDL initialized?)" << "\n";
+			fullPath << "\"." << "\n" << "Is SDL initialized?" << "\n";
 		std::getchar();
 		exit(EXIT_FAILURE);
 	}
@@ -85,7 +139,8 @@ const Surface &TextureManager::getSurface(TextureName name)
 	else
 	{
 		// Load optimized SDL_Surface from file.
-		auto optSurface = this->loadFromFile(name);
+		const auto &filename = TextureFilenames.at(name) + TextureExtension;
+		auto optSurface = this->loadFromFile(filename);
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		auto surface = Surface(optSurface);
@@ -96,5 +151,43 @@ const Surface &TextureManager::getSurface(TextureName name)
 		// Try this method again.
 		assert(this->surfaces.find(name) != this->surfaces.end());
 		return this->getSurface(name);
+	}
+}
+
+const std::vector<Surface> &TextureManager::getSequence(TextureSequenceName name)
+{
+	if (this->sequences.find(name) != this->sequences.end())
+	{
+		// Get the existing sequence.
+		auto &sequence = this->sequences.at(name);
+		return sequence;
+	}
+	else
+	{
+		// Add the empty sequence first.
+		this->sequences.insert(std::pair<TextureSequenceName, std::vector<Surface>>(
+			name, std::vector<Surface>()));
+
+		const auto &prefix = TextureSequenceFilenames.at(name);
+		const int count = TextureSequenceCounts.at(name);
+
+		for (int i = 0; i < count; ++i)
+		{
+			// Load optimized SDL_Surface from file.		
+			auto countString = "-" + std::to_string(i + 1);
+			auto filename = prefix + countString + TextureExtension;
+			auto optSurface = this->loadFromFile(filename);
+
+			// Create surface from SDL_Surface. No need to optimize it again.
+			auto surface = Surface(optSurface);
+
+			// Push back the new texture.
+			this->sequences.at(name).push_back(surface);
+		}
+
+		// Try this method again.
+		assert(this->sequences.find(name) != this->sequences.end());
+		assert(this->sequences.at(name).size() == TextureSequenceCounts.at(name));
+		return this->getSequence(name);
 	}
 }

@@ -89,6 +89,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\FMOD;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;fmodex64_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)data\*" "$(TargetDir)data\" /E /Y
@@ -136,6 +137,17 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
+    <ClCompile Include="src\Rendering\PostProcessing.cpp" />
+    <ClCompile Include="src\Interface\ChooseClassPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseNamePanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseRacePanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseGenderPanel.cpp" />
+    <ClCompile Include="src\Interface\CinematicPanel.cpp" />
+    <ClCompile Include="src\Interface\Button.cpp" />
+    <ClCompile Include="src\Interface\MainMenuPanel.cpp" />
+    <ClCompile Include="src\Game\GameState.cpp" />
+    <ClCompile Include="src\Game\Game.cpp" />
     <ClCompile Include="src\Items\MiscellaneousArtifactData.cpp" />
     <ClCompile Include="src\Items\ShieldArtifactData.cpp" />
     <ClCompile Include="src\Items\BodyArmorArtifactData.cpp" />
@@ -185,13 +197,13 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\Panel.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Media\Color.cpp" />
-    <ClCompile Include="src\Math\Point.cpp" />
+    <ClCompile Include="src\Math\Int2.cpp" />
     <ClCompile Include="src\Math\Rectangle.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Math\Quaternion.cpp" />
-    <ClCompile Include="src\Math\Vector2.cpp" />
-    <ClCompile Include="src\Math\Vector3.cpp" />
-    <ClCompile Include="src\Math\Vector4.cpp" />
+    <ClCompile Include="src\Math\Float2.cpp" />
+    <ClCompile Include="src\Math\Float3.cpp" />
+    <ClCompile Include="src\Math\Float4.cpp" />
     <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\Interface\Surface.cpp" />
@@ -205,8 +217,21 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Math\Triangle.cpp" />
     <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
     <ClCompile Include="src\World\VoxelReference.cpp" />
+    <ClCompile Include="src\Interface\ImagePanel.cpp" />
+    <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\LoadGamePanel.h" />
+    <ClInclude Include="src\Rendering\PostProcessing.h" />
+    <ClInclude Include="src\Interface\ChooseClassPanel.h" />
+    <ClInclude Include="src\Interface\ChooseNamePanel.h" />
+    <ClInclude Include="src\Interface\ChooseRacePanel.h" />
+    <ClInclude Include="src\Interface\ChooseGenderPanel.h" />
+    <ClInclude Include="src\Interface\CinematicPanel.h" />
+    <ClInclude Include="src\Interface\Button.h" />
+    <ClInclude Include="src\Interface\MainMenuPanel.h" />
+    <ClInclude Include="src\Game\GameState.h" />
+    <ClInclude Include="src\Game\Game.h" />
     <ClInclude Include="src\Items\MiscellaneousArtifactData.h" />
     <ClInclude Include="src\Items\ShieldArtifactData.h" />
     <ClInclude Include="src\Items\BodyArmorArtifactData.h" />
@@ -234,6 +259,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Items\ShieldArtifactName.h" />
     <ClInclude Include="src\Items\WeaponArtifactName.h" />
     <ClInclude Include="src\Items\WeaponRangeName.h" />
+    <ClInclude Include="src\Media\TextureSequenceName.h" />
     <ClInclude Include="src\World\Climate.h" />
     <ClInclude Include="src\Media\SoundManager.h" />
     <ClInclude Include="src\Entities\CharacterClassCategory.h" />
@@ -298,12 +324,12 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Math\Random.h" />
     <ClInclude Include="src\Media\Color.h" />
     <ClInclude Include="src\Math\Constants.h" />
-    <ClInclude Include="src\Math\Point.h" />
+    <ClInclude Include="src\Math\Int2.h" />
     <ClInclude Include="src\Math\Rectangle.h" />
     <ClInclude Include="src\Math\Quaternion.h" />
-    <ClInclude Include="src\Math\Vector2.h" />
-    <ClInclude Include="src\Math\Vector4.h" />
-    <ClInclude Include="src\Math\Vector3.h" />
+    <ClInclude Include="src\Math\Float2.h" />
+    <ClInclude Include="src\Math\Float4.h" />
+    <ClInclude Include="src\Math\Float3.h" />
     <ClInclude Include="src\Media\MusicName.h" />
     <ClInclude Include="src\Media\MusicType.h" />
     <ClInclude Include="src\Rendering\Texture.h" />
@@ -325,6 +351,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Math\Triangle.h" />
     <ClInclude Include="src\Items\WeaponArtifactData.h" />
     <ClInclude Include="src\World\VoxelReference.h" />
+    <ClInclude Include="src\Interface\ImagePanel.h" />
+    <ClInclude Include="src\Interface\TextCinematicPanel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

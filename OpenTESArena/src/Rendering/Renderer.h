@@ -18,6 +18,10 @@
 // Interface surfaces should be scaled up by the UI scale and use panel methods for 
 // getting screen dimensions when checking for mouse clicks, etc..
 
+class TextureManager;
+
+enum class TextureName;
+
 struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;
@@ -43,9 +47,10 @@ public:
 
 	// This is for the "letterbox" part of the screen. It is scaled and maintains 
 	// the original 1.6:1 (320x200) aspect ratio for fullscreen interface items.
-	std::unique_ptr<SDL_Rect> getSubscreenDimensions() const;
+	std::unique_ptr<SDL_Rect> getLetterboxDimensions() const;
 
 	void resize(int width, int height);
+	void setWindowIcon(TextureName name, TextureManager &textureManager);
 	void present();
 };
 

@@ -1,0 +1,101 @@
+#include <cassert>
+#include <iostream>
+
+#include "SDL2\SDL.h"
+
+#include "ImagePanel.h"
+
+#include "Button.h"
+#include "../Game/GameState.h"
+#include "../Media/TextureManager.h"
+
+ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
+	double secondsToDisplay, const std::function<void()> &endingAction)
+	: Panel(gameState)
+{
+	this->skipButton = nullptr;
+
+	this->skipButton = [gameState, &endingAction]()
+	{
+		return std::unique_ptr<Button>(new Button(endingAction));
+	}();
+
+	this->textureName = textureName;
+	this->secondsToDisplay = secondsToDisplay;
+	this->currentSeconds = 0.0;
+
+	assert(this->skipButton.get() != nullptr);
+	assert(this->textureName == textureName);
+	assert(this->secondsToDisplay == secondsToDisplay);
+	assert(this->currentSeconds == 0.0);
+}
+
+ImagePanel::~ImagePanel()
+{
+
+}
+
+void ImagePanel::handleEvents(bool &running)
+{
+	SDL_Event e;
+	while (SDL_PollEvent(&e) != 0)
+	{
+		bool applicationExit = (e.type == SDL_QUIT);
+		bool resized = (e.type == SDL_WINDOWEVENT) &&
+			(e.window.event == SDL_WINDOWEVENT_RESIZED);
+
+		if (applicationExit)
+		{
+			running = false;
+		}
+		if (resized)
+		{
+			int width = e.window.data1;
+			int height = e.window.data2;
+			this->getGameState()->resizeWindow(width, height);
+		}
+
+		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+			(e.button.button == SDL_BUTTON_LEFT);
+		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			((e.key.keysym.sym == SDLK_SPACE) ||
+				(e.key.keysym.sym == SDLK_RETURN) ||
+				(e.key.keysym.sym == SDLK_ESCAPE));
+
+		if (leftClick || skipHotkeyPressed)
+		{
+			this->skipButton->click();
+		}
+	}
+}
+
+void ImagePanel::handleMouse(double dt)
+{
+	static_cast<void>(dt);
+}
+
+void ImagePanel::handleKeyboard(double dt)
+{
+	static_cast<void>(dt);
+}
+
+void ImagePanel::tick(double dt, bool &running)
+{
+	this->handleEvents(running);
+	this->currentSeconds += dt;
+	if (this->currentSeconds > this->secondsToDisplay)
+	{
+		this->skipButton->click();
+	}
+}
+
+void ImagePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+{
+	// Clear full screen.
+	this->clearScreen(dst);
+
+	// Draw image.
+	const auto &image = this->getGameState()->getTextureManager()
+		.getSurface(this->textureName);
+	this->drawLetterbox(image, dst, letterbox);
+}

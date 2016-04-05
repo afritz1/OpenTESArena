@@ -5,14 +5,14 @@
 #include <string>
 
 #include "CardinalDirectionName.h"
-#include "../Math/Vector2.h"
+#include "../Math/Float2.h"
 
 class CardinalDirection
 {
 private:
 	CardinalDirectionName directionName;
 public:
-	CardinalDirection(const Vector2d &direction);
+	CardinalDirection(const Float2d &direction);
 	~CardinalDirection();
 
 	const CardinalDirectionName &getDirectionName() const;

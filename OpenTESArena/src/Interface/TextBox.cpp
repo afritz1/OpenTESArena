@@ -4,13 +4,14 @@
 #include "SDL2\SDL.h"
 
 #include "TextBox.h"
-#include "../Math/Point.h"
+
+#include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Media/TextureManager.h"
 
-TextBox::TextBox(int x, int y, const Color &color, const std::string &text,
+TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	FontName fontName, TextureManager &textureManager)
 	: Surface(x, y, 1, 1)
 {
@@ -21,7 +22,7 @@ TextBox::TextBox(int x, int y, const Color &color, const std::string &text,
 	{
 		auto temp = std::vector<std::string>();
 
-		// Add one initial line to start.
+		// Add one empty string to start.
 		temp.push_back(std::string());
 
 		const char newLine = '\n';
@@ -90,7 +91,7 @@ TextBox::TextBox(int x, int y, const Color &color, const std::string &text,
 	this->fill(Color::Transparent);
 	
 	// Blit each character surface in at the right spot.
-	auto point = Point();
+	auto point = Int2();
 	auto fontSurface = textureManager.getSurface(font.getFontTextureName());
 	int upperCharOffsetWidth = font.getUpperCharacterOffsetWidth();
 	int upperCharOffsetHeight = font.getUpperCharacterOffsetHeight();
@@ -109,33 +110,33 @@ TextBox::TextBox(int x, int y, const Color &color, const std::string &text,
 				int offsetHeight = islower(c) ? lowerCharOffsetHeight : upperCharOffsetHeight;
 
 				// Make a copy surface of the font character.
-				auto pixelPosition = Point(
+				auto pixelPosition = Int2(
 					cellPosition.getX() * (width + offsetWidth),
 					cellPosition.getY() * (height + offsetHeight));
 				auto clipRect = Rectangle(pixelPosition.getX(), pixelPosition.getY(),
 					width, height);
 
 				auto surface = Surface(width, height);
-				fontSurface.blit(surface, Point(), clipRect);
+				fontSurface.blit(surface, Int2(), clipRect);
 
 				return surface;
 			}();
 
 			// Set the letter surface to have transparency.
-			letterSurface.setTransparentColor(Color::Transparent);
+			letterSurface.setTransparentColor(Color::Magenta);
 
 			// Set the letter colors to the desired color.
 			auto letterPixels = static_cast<unsigned int*>(letterSurface.getSurface()->pixels);
-			auto mappedColor = SDL_MapRGBA(letterSurface.getSurface()->format, color.getR(),
-				color.getG(), color.getB(), color.getA());
+			auto mappedColor = SDL_MapRGBA(letterSurface.getSurface()->format, 
+				textColor.getR(), textColor.getG(), textColor.getB(), textColor.getA());
 
 			int area = letterSurface.getWidth() * letterSurface.getHeight();
 			for (int i = 0; i < area; ++i)
 			{
 				auto pixel = &letterPixels[i];
-
-				// If not transparent, then color it.
-				if ((*pixel) != 0)
+				
+				// If transparent, then color it? I dunno, but it works.
+				if ((*pixel) == 0)
 				{
 					*pixel = mappedColor;
 				}

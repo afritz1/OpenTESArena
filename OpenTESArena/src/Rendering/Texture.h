@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "../Math/Vector4.h"
+#include "../Math/Float4.h"
 
 
 
@@ -37,7 +37,7 @@ class Texture
 {
 private:
 	// Vector4f is a fast format for the kernel to grab from, though hardly space-efficient.
-	std::vector<Vector4f> diffuse;
+	std::vector<Float4f> diffuse;
 	int width, height;
 public:
 	// Only one constructor; for loading from an SDL_Surface or Surface.
@@ -46,7 +46,7 @@ public:
 
 	const int &getWidth() const;
 	const int &getHeight() const;
-	const Vector4f *getPixels() const;
+	const Float4f *getPixels() const;
 };
 
 #endif

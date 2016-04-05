@@ -1,13 +1,13 @@
 #include <cassert>
+#include <memory>
 
 #include "CharacterEquipment.h"
+
 #include "../Items/Accessory.h"
 #include "../Items/BodyArmor.h"
 #include "../Items/Shield.h"
 #include "../Items/Trinket.h"
 #include "../Items/Weapon.h"
-
-#include <memory>
 
 // Leave this class for later until containers are programmed. Then, the pointer
 // type (either shared_ptr or weak_ptr) can be decided here.

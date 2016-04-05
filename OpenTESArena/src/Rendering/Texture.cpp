@@ -7,11 +7,11 @@ Texture::Texture(unsigned int *pixels, int width, int height)
 	assert(pixels != nullptr);
 
 	int area = width * height;
-	this->diffuse = std::vector<Vector4f>(area);
+	this->diffuse = std::vector<Float4f>(area);
 
 	for (int i = 0; i < area; ++i)
 	{
-		this->diffuse.at(i) = Vector4f::fromARGB(pixels[i]);
+		this->diffuse.at(i) = Float4f::fromARGB(pixels[i]);
 	}
 
 	this->width = width;
@@ -33,7 +33,7 @@ const int &Texture::getHeight() const
 	return this->height;
 }
 
-const Vector4f *Texture::getPixels() const
+const Float4f *Texture::getPixels() const
 {
 	return this->diffuse.data();
 }

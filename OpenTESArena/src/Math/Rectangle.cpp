@@ -2,8 +2,8 @@
 
 #include "SDL2\SDL.h"
 
+#include "Int2.h"
 #include "Rectangle.h"
-#include "Point.h"
 
 Rectangle::Rectangle(int x, int y, int width, int height)
 {
@@ -61,29 +61,29 @@ int Rectangle::getBottom() const
 	return this->getTop() + this->getHeight();
 }
 
-Point Rectangle::getTopLeft() const
+Int2 Rectangle::getTopLeft() const
 {
-	return Point(this->getLeft(), this->getTop());
+	return Int2(this->getLeft(), this->getTop());
 }
 
-Point Rectangle::getTopRight() const
+Int2 Rectangle::getTopRight() const
 {
-	return Point(this->getRight(), this->getTop());
+	return Int2(this->getRight(), this->getTop());
 }
 
-Point Rectangle::getBottomLeft() const
+Int2 Rectangle::getBottomLeft() const
 {
-	return Point(this->getLeft(), this->getBottom());
+	return Int2(this->getLeft(), this->getBottom());
 }
 
-Point Rectangle::getBottomRight() const
+Int2 Rectangle::getBottomRight() const
 {
-	return Point(this->getRight(), this->getBottom());
+	return Int2(this->getRight(), this->getBottom());
 }
 
-Point Rectangle::getCenter() const
+Int2 Rectangle::getCenter() const
 {
-	return Point(this->getLeft() + (this->getWidth() / 2),
+	return Int2(this->getLeft() + (this->getWidth() / 2),
 		(this->getTop() + (this->getHeight() / 2)));
 }
 
@@ -118,7 +118,7 @@ void Rectangle::setHeight(int height)
 	this->rect->h = height;
 }
 
-bool Rectangle::contains(const Point &point)
+bool Rectangle::contains(const Int2 &point) const
 {
 	return (point.getX() >= this->getLeft()) &&
 		(point.getY() >= this->getTop()) &&
@@ -126,7 +126,7 @@ bool Rectangle::contains(const Point &point)
 		(point.getY() <= this->getBottom());
 }
 
-bool Rectangle::contains(const Rectangle &rectangle)
+bool Rectangle::contains(const Rectangle &rectangle) const
 {
 	return (rectangle.getLeft() >= this->getLeft()) &&
 		(rectangle.getTop() >= this->getTop()) &&
@@ -134,7 +134,7 @@ bool Rectangle::contains(const Rectangle &rectangle)
 		(rectangle.getBottom() <= this->getBottom());
 }
 
-bool Rectangle::intersects(const Rectangle &rectangle)
+bool Rectangle::intersects(const Rectangle &rectangle) const
 {
 	return !((rectangle.getLeft() <= this->getRight()) &&
 		(rectangle.getRight() >= this->getLeft()) &&

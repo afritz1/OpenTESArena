@@ -26,6 +26,7 @@ public:
 
 	const ProvinceName &getProvinceName() const;
 	std::string toString() const;
+	std::string getRaceName(bool plural) const;
 	std::vector<LocationName> getCivilizations() const;
 	std::vector<LocationName> getMainQuestDungeons() const;
 	// vector<> getRandomDungeons()...?

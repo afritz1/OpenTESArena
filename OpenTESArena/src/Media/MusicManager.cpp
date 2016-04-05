@@ -102,14 +102,11 @@ MusicManager::MusicManager(MusicFormat format)
 	this->checkSuccess(result == FMOD_OK, "FMOD_System_Create");
 
 	// Now initialize the sound system.
-	result = FMOD_System_Init(this->system, 2, FMOD_INIT_NORMAL, 0);
+	result = FMOD_System_Init(this->system, 1, FMOD_INIT_NORMAL, 0);
 	this->checkSuccess(result == FMOD_OK, "FMOD_System_Init");
 
 	// Set initial volume to max.
 	this->setVolume(MusicManager::MAX_VOLUME);
-
-	// Set the music to loop.
-	FMOD_Channel_SetMode(this->channel, FMOD_LOOP_NORMAL);
 
 	// Load all musics.
 	for (const auto &item : MusicFilenames)
@@ -126,11 +123,11 @@ MusicManager::MusicManager(MusicFormat format)
 		// Use the blank mapping as the place to create the music at.
 		FMOD_RESULT result = FMOD_System_CreateStream(this->system, path.c_str(),
 			FMOD_SOFTWARE, nullptr, &this->musics.at(musicName));
-		this->checkSuccess(result == FMOD_OK, "FMOD_System_CreateStream");
+		this->checkSuccess(result == FMOD_OK, "FMOD_System_CreateStream " + path);
 	}
 
+	// The channel is null until used with "FMOD_System_PlaySound()".
 	assert(this->system != nullptr);
-	assert(this->channel != nullptr);
 }
 
 MusicManager::~MusicManager()
@@ -166,9 +163,7 @@ bool MusicManager::isPlaying() const
 	FMOD_BOOL playing;
 	FMOD_RESULT result = FMOD_Channel_IsPlaying(this->channel, &playing);
 	this->checkSuccess(result == FMOD_OK, "FMOD_Channel_IsPlaying");
-
-	// Using NULL because "playing" is not a bool.
-	return playing != NULL;
+	return playing > 0;
 }
 
 void MusicManager::checkSuccess(bool success, const std::string &message) const
@@ -197,16 +192,16 @@ void MusicManager::releaseMusic(FMOD_SOUND *music)
 
 void MusicManager::play(MusicName musicName)
 {
-	// Stop any currently playing music.
-	FMOD_RESULT result = FMOD_Channel_Stop(this->channel);
-	this->checkSuccess(result == FMOD_OK, "FMOD_Channel_Stop");
-
 	// All musics should already be loaded.
 	assert(this->musics.find(musicName) != this->musics.cend());
 
-	result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
+	// Override the currently playing music (if any).
+	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
 		this->musics.at(musicName), false, &this->channel);
 	this->checkSuccess(result == FMOD_OK, "FMOD_System_PlaySound");
+
+	// Set the music to loop.
+	FMOD_Channel_SetMode(this->channel, FMOD_LOOP_NORMAL);
 }
 
 void MusicManager::play(MusicType musicType)

@@ -4,7 +4,10 @@
 #include "SDL2\SDL.h"
 
 #include "Renderer.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
+#include "../Media/TextureManager.h"
+#include "../Media/TextureName.h"
 
 const int Renderer::DEFAULT_COLOR_BITS = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
@@ -86,12 +89,11 @@ SDL_Surface *Renderer::getWindowSurface() const
 	return SDL_GetWindowSurface(this->window);
 }
 
-std::unique_ptr<SDL_Rect> Renderer::getSubscreenDimensions() const
+std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 {
+	// Letterbox width and height always maintain the 1.6:1 aspect ratio.
 	const int originalWidth = 320;
 	const int originalHeight = 200;
-
-	// Letterbox width and height always maintain the 1.6:1 aspect ratio.
 	const auto originalAspect = static_cast<double>(originalWidth) /
 		static_cast<double>(originalHeight);
 
@@ -103,10 +105,10 @@ std::unique_ptr<SDL_Rect> Renderer::getSubscreenDimensions() const
 	assert(std::isfinite(originalAspect));
 	assert(std::isfinite(nativeAspect));
 
-	// Compare the two aspects to decide what the subscreen dimensions are.
+	// Compare the two aspects to decide what the letterbox dimensions are.
 	if (std::abs(nativeAspect - originalAspect) < EPSILON)
 	{
-		// Equal aspects.
+		// Equal aspects. The letterbox is equal to the screen size.
 		auto rect = SDL_Rect();
 		rect.x = 0;
 		rect.y = 0;
@@ -116,11 +118,27 @@ std::unique_ptr<SDL_Rect> Renderer::getSubscreenDimensions() const
 	}
 	else if (nativeAspect > originalAspect)
 	{
-		// Native window is wider -> empty left and right.
+		// Native window is wider = empty left and right.
+		int subWidth = static_cast<int>(std::ceil(
+			static_cast<double>(nativeSurface->h) * originalAspect));
+		auto rect = SDL_Rect();
+		rect.x = (nativeSurface->w - subWidth) / 2;
+		rect.y = 0;
+		rect.w = subWidth;
+		rect.h = nativeSurface->h;
+		return std::unique_ptr<SDL_Rect>(new SDL_Rect(rect));
 	}
 	else
 	{
-		// Native window is taller -> empty top and bottom.
+		// Native window is taller = empty top and bottom.
+		int subHeight = static_cast<int>(std::ceil(
+			static_cast<double>(nativeSurface->w) / originalAspect));
+		auto rect = SDL_Rect();
+		rect.x = 0;
+		rect.y = (nativeSurface->h - subHeight) / 2;
+		rect.w = nativeSurface->w;
+		rect.h = subHeight;
+		return std::unique_ptr<SDL_Rect>(new SDL_Rect(rect));
 	}
 }
 
@@ -129,8 +147,8 @@ void Renderer::resize(int width, int height)
 	// No need to set dimensions on a resize event; the window does that 
 	// automatically now. The arguments should be kept for when the options menu
 	// is implemented.
-	(void)width;
-	(void)height;
+	static_cast<void>(width);
+	static_cast<void>(height);
 
 	// Release old SDL things.
 	SDL_DestroyTexture(this->texture);
@@ -143,6 +161,13 @@ void Renderer::resize(int width, int height)
 	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
 	this->checkSuccess(this->texture != nullptr, "SDL_CreateTexture resize");
+}
+
+void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
+{
+	const auto &icon = textureManager.getSurface(name);
+	auto *iconSurface = icon.getSurface();
+	SDL_SetWindowIcon(this->window, iconSurface);
 }
 
 void Renderer::present()
