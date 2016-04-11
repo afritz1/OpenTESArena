@@ -4,12 +4,8 @@
 #include <string>
 #include <type_traits>
 
-#include "Random.h"
-
-// Consider changing the static Random to a random& parameter for all methods
-// that need it.
-
 class Color;
+class Random;
 
 template <typename T>
 class Float3
@@ -17,16 +13,15 @@ class Float3
 	static_assert(std::is_floating_point<T>::value, "Float3<T> must be floating point.");
 private:
 	T x, y, z;
-
-	static Random random;
 public:
 	Float3(T x, T y, T z);
 	Float3();
 	~Float3();
 
-	static Float3 randomDirection();
-	static Float3 randomPointInSphere(const Float3 &center, T radius);
-	static Float3 randomPointInCuboid(const Float3 &center, T width, T height, T depth);
+	static Float3 randomDirection(Random &random);
+	static Float3 randomPointInSphere(const Float3 &center, T radius, Random &random);
+	static Float3 randomPointInCuboid(const Float3 &center, T width, T height, T depth,
+		Random &random);
 	static Float3 fromRGB(unsigned int rgb);
 	static Float3 fromColor(const Color &c);
 

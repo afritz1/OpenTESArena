@@ -138,6 +138,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
+    <ClCompile Include="src\Math\Matrix4.cpp" />
     <ClCompile Include="src\Rendering\PostProcessing.cpp" />
     <ClCompile Include="src\Interface\ChooseClassPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseNamePanel.cpp" />
@@ -222,6 +223,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Interface\LoadGamePanel.h" />
+    <ClInclude Include="src\Math\Matrix4.h" />
     <ClInclude Include="src\Rendering\PostProcessing.h" />
     <ClInclude Include="src\Interface\ChooseClassPanel.h" />
     <ClInclude Include="src\Interface\ChooseNamePanel.h" />

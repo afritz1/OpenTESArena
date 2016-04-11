@@ -1,10 +1,8 @@
 #include "Float3.h"
 
 #include "Constants.h"
+#include "Random.h"
 #include "../Media/Color.h"
-
-template<typename T>
-Random Float3<T>::random = Random();
 
 template<typename T>
 Float3<T>::Float3(T x, T y, T z)
@@ -25,19 +23,19 @@ Float3<T>::~Float3()
 }
 
 template<typename T>
-Float3<T> Float3<T>::randomDirection()
+Float3<T> Float3<T>::randomDirection(Random &random)
 {
-	T x = static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0);
-	T y = static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0);
-	T z = static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0);
+	T x = static_cast<T>((2.0 * random.nextReal()) - 1.0);
+	T y = static_cast<T>((2.0 * random.nextReal()) - 1.0);
+	T z = static_cast<T>((2.0 * random.nextReal()) - 1.0);
 	return Float3(x, y, z).normalized();
 }
 
 template<typename T>
-Float3<T> Float3<T>::randomPointInSphere(const Float3 &center, T radius)
+Float3<T> Float3<T>::randomPointInSphere(const Float3 &center, T radius, Random &random)
 {
-	T scale = static_cast<T>(radius * Float3::random.nextReal());
-	auto randPoint = Float3::randomDirection().scaledBy(scale);
+	T scale = radius * static_cast<T>(random.nextReal());
+	auto randPoint = Float3::randomDirection(random).scaledBy(scale);
 	return Float3(
 		center.x + randPoint.x,
 		center.y + randPoint.y,
@@ -45,12 +43,13 @@ Float3<T> Float3<T>::randomPointInSphere(const Float3 &center, T radius)
 }
 
 template<typename T>
-Float3<T> Float3<T>::randomPointInCuboid(const Float3 &center, T width, T height, T depth)
+Float3<T> Float3<T>::randomPointInCuboid(const Float3 &center, T width, T height, T depth,
+	Random &random)
 {
 	auto randPoint = Float3(
-		static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0),
-		static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0),
-		static_cast<T>((2.0 * Float3::random.nextReal()) - 1.0));
+		static_cast<T>((2.0 * random.nextReal()) - 1.0),
+		static_cast<T>((2.0 * random.nextReal()) - 1.0),
+		static_cast<T>((2.0 * random.nextReal()) - 1.0));
 	return Float3(
 		center.x + (width * randPoint.x),
 		center.y + (height * randPoint.y),

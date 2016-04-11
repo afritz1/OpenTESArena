@@ -2,6 +2,7 @@
 #include <map>
 
 #include "CharacterRace.h"
+
 #include "../World/ProvinceName.h"
 
 const auto CharacterRaceDisplayNames = std::map<CharacterRaceName, std::string>

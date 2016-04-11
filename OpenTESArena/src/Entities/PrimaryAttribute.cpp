@@ -2,6 +2,7 @@
 #include <map>
 
 #include "PrimaryAttribute.h"
+
 #include "AttributeModifierName.h"
 
 const auto PrimaryAttributeDisplayNames = std::map<PrimaryAttributeName, std::string>

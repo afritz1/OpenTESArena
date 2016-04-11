@@ -23,7 +23,7 @@ public:
 	DerivedAttribute(DerivedAttributeName attributeName, int baseMaximum);
 	~DerivedAttribute();
 
-	const int &getCurrent() const;
+	int getCurrent() const;
 	const int &getMaximum() const; // Might be a calculated value instead of a member in the future.
 	const DerivedAttributeName &getAttributeName() const;
 	std::string toString() const;

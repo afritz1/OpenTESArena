@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Location.h"
+
 #include "ClimateName.h"
 #include "LocationType.h"
 #include "ProvinceName.h"

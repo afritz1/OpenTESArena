@@ -26,7 +26,7 @@ DerivedAttribute::~DerivedAttribute()
 
 }
 
-const int &DerivedAttribute::getCurrent() const
+int DerivedAttribute::getCurrent() const
 {
 	return std::min(this->current, this->getMaximum());
 }

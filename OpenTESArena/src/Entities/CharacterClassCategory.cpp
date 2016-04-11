@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "CharacterClassCategory.h"
+
 #include "CharacterClassName.h"
 
 const auto CharacterClassCategoryDisplayNames = std::map<CharacterClassCategoryName, std::string>

@@ -7,7 +7,9 @@
 
 
 
-// NEW: with the change to TextureReferences, this class might be obsolete.
+// NEW: with the change to TextureReferences, this class might be obsolete. Textures
+// are copied to the kernel buffers in the CLProgram, so there isn't really an
+// in-between or a use for this class on the host.
 
 
 

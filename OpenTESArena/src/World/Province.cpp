@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Province.h"
+
 #include "LocationName.h"
 
 // City-state/Town/Village map location names. Doesn't include dungeons.

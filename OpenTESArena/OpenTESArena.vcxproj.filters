@@ -83,6 +83,7 @@
     <ClCompile Include="src\Math\Float2.cpp" />
     <ClCompile Include="src\Math\Int2.cpp" />
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
+    <ClCompile Include="src\Math\Matrix4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -217,5 +218,6 @@
     <ClInclude Include="src\Math\Float2.h" />
     <ClInclude Include="src\Math\Int2.h" />
     <ClInclude Include="src\Interface\LoadGamePanel.h" />
+    <ClInclude Include="src\Math\Matrix4.h" />
   </ItemGroup>
 </Project>

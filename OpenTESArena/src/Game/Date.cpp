@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include "Date.h"
+
 #include "Month.h"
 #include "Weekday.h"
 #include "Year.h"
@@ -38,17 +39,17 @@ const int &Date::getDayNumber() const
 
 const Weekday &Date::getWeekday() const
 {
-	return *this->weekday;
+	return *this->weekday.get();
 }
 
 const Month &Date::getMonth() const
 {
-	return *this->month;
+	return *this->month.get();
 }
 
 const Year &Date::getYear() const
 {
-	return *this->year;
+	return *this->year.get();
 }
 
 std::string Date::getOrdinalDay() const

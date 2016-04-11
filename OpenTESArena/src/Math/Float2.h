@@ -4,7 +4,7 @@
 #include <string>
 #include <type_traits>
 
-#include "Random.h"
+class Random;
 
 template <typename T>
 class Float2
@@ -12,16 +12,15 @@ class Float2
 	static_assert(std::is_floating_point<T>::value, "Float2<T> must be floating point.");
 private:
 	T x, y;
-
-	static Random random;
 public:
 	Float2(T x, T y);
 	Float2();
 	~Float2();
 
-	static Float2 randomDirection();
-	static Float2 randomPointInCircle(const Float2 &center, T radius);
-	static Float2 randomPointInSquare(const Float2 &center, T width, T height);
+	static Float2 randomDirection(Random &random);
+	static Float2 randomPointInCircle(const Float2 &center, T radius, Random &random);
+	static Float2 randomPointInSquare(const Float2 &center, T width, T height,
+		Random &random);
 
 	Float2 operator +(const Float2 &v) const;
 	Float2 operator -(const Float2 &v) const;

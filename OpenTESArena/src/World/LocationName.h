@@ -4,6 +4,8 @@
 // A unique identifer for every static location (city-state, town, village, main quest) 
 // on the Tamriel map. 
 
+// These should all be loaded from a text file eventually.
+
 // Thanks to the UESPWiki/Arena:Places webpage for this existing list. Random dungeons 
 // should be kept track of in a dynamic container. Riverbridge and Glenpoint are the only 
 // two duplicates, and they both occur a total of two times each.

@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "PrimaryAttributeSet.h"
+
 #include "PrimaryAttribute.h"
 
 PrimaryAttributeSet::PrimaryAttributeSet()

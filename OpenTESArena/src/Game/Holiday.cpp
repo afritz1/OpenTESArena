@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Holiday.h"
+
 #include "MonthName.h"
 
 const auto HolidayDisplayNames = std::map<HolidayName, std::string>

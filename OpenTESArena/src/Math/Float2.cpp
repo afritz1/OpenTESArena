@@ -4,9 +4,6 @@
 #include "Random.h"
 
 template<typename T>
-Random Float2<T>::random = Random();
-
-template<typename T>
 Float2<T>::Float2(T x, T y)
 {
 	this->x = x;
@@ -24,25 +21,26 @@ Float2<T>::~Float2()
 }
 
 template<typename T>
-Float2<T> Float2<T>::randomDirection()
+Float2<T> Float2<T>::randomDirection(Random &random)
 {
-	T x = static_cast<T>((2.0 * Float2::random.nextReal()) - 1.0);
-	T y = static_cast<T>((2.0 * Float2::random.nextReal()) - 1.0);
+	T x = static_cast<T>((2.0 * random.nextReal()) - 1.0);
+	T y = static_cast<T>((2.0 * random.nextReal()) - 1.0);
 	return Float2(x, y).normalized();
 }
 
 template<typename T>
-Float2<T> Float2<T>::randomPointInCircle(const Float2 &center, T radius)
+Float2<T> Float2<T>::randomPointInCircle(const Float2 &center, T radius, Random &random)
 {
-	T scale = radius * static_cast<T>(Float2::random.nextReal());
-	auto randPoint = Float2::randomDirection().scaledBy(scale);
+	T scale = radius * static_cast<T>(random.nextReal());
+	auto randPoint = Float2::randomDirection(random).scaledBy(scale);
 	return Float2(center.x + randPoint.x, center.y + randPoint.y);
 }
 
 template<typename T>
-Float2<T> Float2<T>::randomPointInSquare(const Float2 &center, T width, T height)
+Float2<T> Float2<T>::randomPointInSquare(const Float2 &center, T width, T height, 
+	Random &random)
 {
-	auto randDirection = Float2::randomDirection();
+	auto randDirection = Float2::randomDirection(random);
 	return Float2(
 		center.x + (width * randDirection.x),
 		center.y + (height * randDirection.y));

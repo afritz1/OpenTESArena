@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Voxel.h"
+
 #include "VoxelMaterialType.h"
 #include "../Math/Triangle.h"
 
