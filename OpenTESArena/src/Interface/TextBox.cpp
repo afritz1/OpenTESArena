@@ -47,6 +47,10 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	// Calculate the proper dimensions of the text box.
 	// No need for a "FontSurface" type... just do the heavy lifting in this class.
 	auto font = Font(fontName);
+
+	// These values assume mono-space format, which several of the fonts are not.
+	// So when redoing the text box code, determine the character width for any
+	// character from its right-side-trimmed surface.
 	int upperCharWidth = font.getUpperCharacterWidth();
 	int upperCharHeight = font.getUpperCharacterHeight();
 	int lowerCharWidth = font.getLowerCharacterWidth();
@@ -154,6 +158,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 		point.setY(point.getY() + upperCharHeight);
 	}
 
+	// Can't have text with a surface smaller than 1x1.
 	assert(this->surface->w > 1);
 	assert(this->surface->h > 1);
 	assert(this->textLines.size() > 0);

@@ -43,9 +43,9 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->classTextBox = [gameState]()
 	{
-		auto origin = Int2(81, 35);
+		auto origin = Int2(85, 35);
 		auto color = Color(48, 12, 12);
-		std::string text = "Choose thine class";
+		std::string text = "Choose thy class";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			origin.getX(),
@@ -202,7 +202,8 @@ void ChooseClassPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 
-		// Eventually replace these "if's" with a std::map iteration.
+		// Eventually replace these "if's" with a std::map iteration once all the
+		// class buttons are listed (if that's the chosen design).
 		bool warriorClicked = leftClick &&
 			this->warriorButton->containsPoint(mouseOriginalPoint);
 		bool mageClicked = leftClick &&

@@ -7,6 +7,7 @@
 
 #include "../Media/Color.h"
 #include "../Math/Int2.h"
+#include "../Math/Random.h"
 #include "../Math/Rectangle.h"
 
 const int Surface::DEFAULT_BPP = 32;
@@ -74,14 +75,14 @@ Surface::~Surface()
 	SDL_FreeSurface(this->surface);
 }
 
-Surface Surface::randomNoise(int width, int height)
+Surface Surface::randomNoise(int width, int height, Random &random)
 {
 	auto surface = Surface(width, height);
 	auto pixels = static_cast<unsigned int*>(surface.getSurface()->pixels);
 	int area = surface.getWidth() * surface.getHeight();
 	for (int i = 0; i < area; ++i)
 	{
-		pixels[i] = Color::randomRGB().toRGB();
+		pixels[i] = Color::randomRGB(random).toRGB();
 	}
 
 	assert(surface.getWidth() == width);

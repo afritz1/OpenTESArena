@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-class MusicManager;
+class AudioManager;
 class Panel;
 class Renderer;
 class TextureManager;
@@ -19,7 +19,7 @@ private:
 	static const bool DEFAULT_IS_FULLSCREEN;
 	static const std::string DEFAULT_SCREEN_TITLE;
 
-	std::unique_ptr<MusicManager> musicManager;
+	std::unique_ptr<AudioManager> audioManager;
 	std::unique_ptr<MusicName> nextMusic;
 	std::unique_ptr<Panel> panel, nextPanel;
 	std::unique_ptr<Renderer> renderer;
@@ -32,16 +32,16 @@ public:
 	// Game state things should be public for panels to access them.
 
 	bool isRunning() const;	
-	MusicManager &getMusicManager() const;
+	AudioManager &getAudioManager() const;
 	TextureManager &getTextureManager() const;
 	std::unique_ptr<SDL_Rect> getLetterboxDimensions() const;
 
 	void resizeWindow(int width, int height);
 
-	// Set the next panel at the next tick().
+	// Set the next panel at the next tick.
 	void setPanel(std::unique_ptr<Panel> nextPanel);
 
-	// Set the next music at the next tick().
+	// Set the next music at the next tick.
 	void setMusic(MusicName name);
 
 	void tick(double dt);

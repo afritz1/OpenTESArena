@@ -1,6 +1,6 @@
 #include "Color.h"
 
-Random Color::random = Random();
+#include "../Math/Random.h"
 
 const Color Color::Red = Color(255, 0, 0);
 const Color Color::Green = Color(0, 255, 0);
@@ -32,20 +32,20 @@ Color::~Color()
 
 }
 
-Color Color::randomRGBA()
+Color Color::randomRGBA(Random &random)
 {
-	auto r = static_cast<unsigned char>(Color::random.next(256));
-	auto g = static_cast<unsigned char>(Color::random.next(256));
-	auto b = static_cast<unsigned char>(Color::random.next(256));
-	auto a = static_cast<unsigned char>(Color::random.next(256));
+	auto r = static_cast<unsigned char>(random.next(256));
+	auto g = static_cast<unsigned char>(random.next(256));
+	auto b = static_cast<unsigned char>(random.next(256));
+	auto a = static_cast<unsigned char>(random.next(256));
 	return Color(r, g, b, a);
 }
 
-Color Color::randomRGB()
+Color Color::randomRGB(Random &random)
 {
-	auto r = static_cast<unsigned char>(Color::random.next(256));
-	auto g = static_cast<unsigned char>(Color::random.next(256));
-	auto b = static_cast<unsigned char>(Color::random.next(256));
+	auto r = static_cast<unsigned char>(random.next(256));
+	auto g = static_cast<unsigned char>(random.next(256));
+	auto b = static_cast<unsigned char>(random.next(256));
 	return Color(r, g, b);
 }
 

@@ -53,9 +53,9 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 
 	this->initialTextBox = [gameState]()
 	{
-		auto origin = Int2(68, 90);
+		auto origin = Int2(72, 90);
 		auto color = Color(48, 12, 12);
-		std::string text = "Choose thine homeland";
+		std::string text = "Choose thy homeland";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			origin.getX(),
@@ -138,7 +138,8 @@ void ChooseRacePanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_RIGHT);
 
 		bool enterPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_RETURN);
+			((e.key.keysym.sym == SDLK_RETURN) ||
+				(e.key.keysym.sym == SDLK_KP_ENTER));
 		bool spacePressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_SPACE);
 

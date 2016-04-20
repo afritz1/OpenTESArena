@@ -6,9 +6,11 @@
 #include "GameState.h"
 
 #include "../Interface/Panel.h"
+#include "../Media/AudioManager.h"
 #include "../Media/MusicFormat.h"
 #include "../Media/MusicName.h"
-#include "../Media/MusicManager.h"
+#include "../Media/SoundFormat.h"
+#include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/PostProcessing.h"
@@ -21,7 +23,7 @@ const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 
 GameState::GameState()
 {
-	this->musicManager = nullptr;
+	this->audioManager = nullptr;
 	this->nextMusic = nullptr;
 	this->nextPanel = nullptr;
 	this->panel = nullptr;
@@ -36,8 +38,8 @@ GameState::GameState()
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
 
-	this->musicManager = std::unique_ptr<MusicManager>(new MusicManager(
-		MusicFormat::MIDI));
+	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
+		MusicFormat::MIDI, SoundFormat::Ogg, 64));
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		GameState::DEFAULT_SCREEN_WIDTH, GameState::DEFAULT_SCREEN_HEIGHT,
 		GameState::DEFAULT_IS_FULLSCREEN, GameState::DEFAULT_SCREEN_TITLE));
@@ -52,7 +54,7 @@ GameState::GameState()
 
 	SDL_ShowCursor(SDL_FALSE);
 
-	assert(this->musicManager.get() != nullptr);
+	assert(this->audioManager.get() != nullptr);
 	assert(this->nextMusic.get() != nullptr);
 	assert(this->panel.get() == nullptr);
 	assert(this->nextPanel.get() != nullptr);
@@ -71,9 +73,9 @@ bool GameState::isRunning() const
 	return this->running;
 }
 
-MusicManager &GameState::getMusicManager() const
+AudioManager &GameState::getAudioManager() const
 {
-	return *this->musicManager.get();
+	return *this->audioManager.get();
 }
 
 TextureManager &GameState::getTextureManager() const
@@ -113,7 +115,7 @@ void GameState::tick(double dt)
 	// Change the music if requested.
 	if (this->nextMusic.get() != nullptr)
 	{
-		this->musicManager->play(*this->nextMusic.get());
+		this->audioManager->playMusic(*this->nextMusic.get());
 		this->nextMusic = nullptr;
 	}
 

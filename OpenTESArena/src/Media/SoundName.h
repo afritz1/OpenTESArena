@@ -4,7 +4,8 @@
 // A unique identifier for each sound file, including speech.
 
 // Since there are only a couple characters with unique walking sounds, those
-// entities can use their sound, but all others will use the generic walking sounds.
+// entities can use their sound, but all others will use the generic walking sounds,
+// or none at all.
 
 enum class SoundName
 {

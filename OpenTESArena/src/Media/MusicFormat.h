@@ -6,7 +6,7 @@
 enum class MusicFormat
 {
 	MIDI,
-	Mp3,
+	MP3,
 	Ogg
 };
 

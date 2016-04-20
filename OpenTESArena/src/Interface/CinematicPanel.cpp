@@ -62,8 +62,10 @@ void CinematicPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) || (e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_ESCAPE));
+			((e.key.keysym.sym == SDLK_SPACE) || 
+				(e.key.keysym.sym == SDLK_RETURN) ||
+				(e.key.keysym.sym == SDLK_ESCAPE) ||
+				(e.key.keysym.sym == SDLK_KP_ENTER));
 
 		if (leftClick || skipHotkeyPressed)
 		{

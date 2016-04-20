@@ -8,6 +8,10 @@
 #include "../Media/FontName.h"
 #include "Surface.h"
 
+// 4/19/2016 - This class's constructor needs to be redone to account for variable 
+// spacing between characters. I think letters should be drawn with respect to the
+// bottom left corner of each text line, not the top left corner.
+
 // A scrollable text box could just have a text box surface, and then use a Rectangle
 // to use only the visible part of it. The scroll bar can be thought of as a kind of
 // "sliding window"; the size of the clickable scroll bar is the percentage of the lines 

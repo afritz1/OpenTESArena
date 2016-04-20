@@ -3,9 +3,10 @@
 
 // A unique identifier for each format of sound file.
 
-// Maybe sound formats won't matter as much as music formats because there won't
-// be an option for sound format in the options menu. That would require having
-// an Ogg copy and WAV copy of every sound.
+// I plan on having an option for which sound format to use because using wave 
+// format for each of the speech files adds up to several dozen, even hundreds,
+// of megabytes! Ogg sounds like a much better format to use as the default in
+// the final package.
 
 enum class SoundFormat
 {

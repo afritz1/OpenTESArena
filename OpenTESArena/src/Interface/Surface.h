@@ -12,6 +12,7 @@
 
 class Color;
 class Int2;
+class Random;
 class Rectangle;
 
 struct SDL_PixelFormat;
@@ -34,7 +35,7 @@ public:
 
 	static const int DEFAULT_BPP;
 
-	static Surface randomNoise(int width, int height);
+	static Surface randomNoise(int width, int height, Random &random);
 
 	int getX() const;
 	int getY() const;

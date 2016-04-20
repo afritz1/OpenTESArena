@@ -137,6 +137,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Media\AudioManager.cpp" />
+    <ClCompile Include="src\Utilities\Debug.cpp" />
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
     <ClCompile Include="src\Math\Matrix4.cpp" />
     <ClCompile Include="src\Rendering\PostProcessing.cpp" />
@@ -164,7 +166,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Game\Month.cpp" />
     <ClCompile Include="src\World\Chunk.cpp" />
     <ClCompile Include="src\World\Climate.cpp" />
-    <ClCompile Include="src\Media\SoundManager.cpp" />
     <ClCompile Include="src\Entities\CharacterClassCategory.cpp" />
     <ClCompile Include="src\Items\BodyArmor.cpp" />
     <ClCompile Include="src\Items\HeavyArmorMaterial.cpp" />
@@ -183,7 +184,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Entities\PrimaryAttributeSet.cpp" />
     <ClCompile Include="src\Entities\CharacterGender.cpp" />
     <ClCompile Include="src\Entities\CharacterRace.cpp" />
-    <ClCompile Include="src\Media\MusicManager.cpp" />
     <ClCompile Include="src\Media\Font.cpp" />
     <ClCompile Include="src\World\Province.cpp" />
     <ClCompile Include="src\World\Location.cpp" />
@@ -222,6 +222,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Media\AudioManager.h" />
+    <ClInclude Include="src\Utilities\Debug.h" />
     <ClInclude Include="src\Interface\LoadGamePanel.h" />
     <ClInclude Include="src\Math\Matrix4.h" />
     <ClInclude Include="src\Rendering\PostProcessing.h" />
@@ -263,7 +265,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Items\WeaponRangeName.h" />
     <ClInclude Include="src\Media\TextureSequenceName.h" />
     <ClInclude Include="src\World\Climate.h" />
-    <ClInclude Include="src\Media\SoundManager.h" />
     <ClInclude Include="src\Entities\CharacterClassCategory.h" />
     <ClInclude Include="src\Items\BodyArmor.h" />
     <ClInclude Include="src\Items\HeavyArmorMaterial.h" />
@@ -288,7 +289,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Entities\CharacterGenderName.h" />
     <ClInclude Include="src\Entities\CharacterRace.h" />
     <ClInclude Include="src\Items\TrinketName.h" />
-    <ClInclude Include="src\Media\MusicManager.h" />
     <ClInclude Include="src\Media\Font.h" />
     <ClInclude Include="src\Media\SoundFormat.h" />
     <ClInclude Include="src\Media\SoundName.h" />

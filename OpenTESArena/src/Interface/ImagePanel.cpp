@@ -60,7 +60,8 @@ void ImagePanel::handleEvents(bool &running)
 		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			((e.key.keysym.sym == SDLK_SPACE) ||
 				(e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_ESCAPE));
+				(e.key.keysym.sym == SDLK_ESCAPE) ||
+				(e.key.keysym.sym == SDLK_KP_ENTER));
 
 		if (leftClick || skipHotkeyPressed)
 		{

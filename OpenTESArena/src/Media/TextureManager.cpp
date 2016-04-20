@@ -9,6 +9,7 @@
 #include "TextureName.h"
 #include "TextureSequenceName.h"
 #include "../Interface/Surface.h"
+#include "../Utilities/Debug.h"
 
 // The format extension for all textures will be PNG.
 const std::string TextureExtension = ".png";
@@ -53,7 +54,9 @@ const auto TextureSequenceFilenames = std::map<TextureSequenceName, std::string>
 	{ TextureSequenceName::Silmane, "interface/silmane/silmane" },
 };
 
-// The number of images in each texture sequence.
+// The number of images in each texture sequence. I think these numbers are necessary
+// without doing some directory counting, and that sounds like a bad idea, with all
+// the possible mix-ups with note files and duplicates and such.
 const auto TextureSequenceCounts = std::map<TextureSequenceName, int>
 {
 	// Interface
@@ -72,14 +75,9 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 
 	// Intialize PNG file loading.
 	int imgFlags = IMG_INIT_PNG;
-	if ((IMG_Init(imgFlags) & imgFlags) == SDL_FALSE)
-	{
-		std::cerr << "Texture Manager error: couldn't initialize texture loader." << "\n";
-		std::cerr << IMG_GetError() << "\n";
-		std::getchar();
-		exit(EXIT_FAILURE);
-	}
-
+	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager", 
+		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
+	
 	this->surfaces = std::map<TextureName, Surface>();
 	this->sequences = std::map<TextureSequenceName, std::vector<Surface>>();
 	this->format = format;
@@ -101,24 +99,14 @@ SDL_Surface *TextureManager::loadFromFile(const std::string &filename)
 
 	// Load the SDL_Surface from file.
 	auto unOptSurface = IMG_Load(fullPath.c_str());
-	if (unOptSurface == nullptr)
-	{
-		std::cerr << "Texture Manager error: could not open texture \"" <<
-			fullPath << "\"." << "\n";
-		std::getchar();
-		exit(EXIT_FAILURE);
-	}
+	Debug::check(unOptSurface != nullptr, "Texture Manager",
+		"Could not open texture \"" + fullPath + "\".");
 
 	// Try to optimize the SDL_Surface.
 	auto optSurface = SDL_ConvertSurface(unOptSurface, this->format, 0);
 	SDL_FreeSurface(unOptSurface);
-	if (optSurface == nullptr)
-	{
-		std::cerr << "Texture Manager error: could not optimize texture \"" <<
-			fullPath << "\"." << "\n" << "Is SDL initialized?" << "\n";
-		std::getchar();
-		exit(EXIT_FAILURE);
-	}
+	Debug::check(optSurface != nullptr, "Texture Manager",
+		"Could not optimize texture \"" + fullPath + "\".");
 
 	return optSurface;
 }

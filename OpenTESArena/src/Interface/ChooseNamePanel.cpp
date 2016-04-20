@@ -114,7 +114,8 @@ void ChooseNamePanel::handleEvents(bool &running)
 		}
 
 		bool enterPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_RETURN);
+			((e.key.keysym.sym == SDLK_RETURN) ||
+				(e.key.keysym.sym == SDLK_KP_ENTER));
 
 		if (enterPressed)
 		{

@@ -41,7 +41,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 
 	this->genderTextBox = [gameState]()
 	{
-		auto origin = Int2(78, 50);
+		auto origin = Int2(82, 50);
 		auto color = Color(48, 12, 12);
 		std::string text = "Choose thy gender";
 		auto fontName = FontName::A;

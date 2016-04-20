@@ -22,7 +22,6 @@
     <ClCompile Include="src\World\Location.cpp" />
     <ClCompile Include="src\World\Province.cpp" />
     <ClCompile Include="src\Media\Font.cpp" />
-    <ClCompile Include="src\Media\MusicManager.cpp" />
     <ClCompile Include="src\Items\Accessory.cpp" />
     <ClCompile Include="src\Items\Metal.cpp" />
     <ClCompile Include="src\Items\Shield.cpp" />
@@ -45,7 +44,6 @@
     <ClCompile Include="src\Items\Armor.cpp" />
     <ClCompile Include="src\Items\BodyArmor.cpp" />
     <ClCompile Include="src\Entities\CharacterClassCategory.cpp" />
-    <ClCompile Include="src\Media\SoundManager.cpp" />
     <ClCompile Include="src\World\Climate.cpp" />
     <ClCompile Include="src\Game\Weekday.cpp" />
     <ClCompile Include="src\Game\Month.cpp" />
@@ -84,6 +82,8 @@
     <ClCompile Include="src\Math\Int2.cpp" />
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
     <ClCompile Include="src\Math\Matrix4.cpp" />
+    <ClCompile Include="src\Utilities\Debug.cpp" />
+    <ClCompile Include="src\Media\AudioManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -126,7 +126,6 @@
     <ClInclude Include="src\World\Location.h" />
     <ClInclude Include="src\World\Province.h" />
     <ClInclude Include="src\Media\Font.h" />
-    <ClInclude Include="src\Media\MusicManager.h" />
     <ClInclude Include="src\Items\Accessory.h" />
     <ClInclude Include="src\Items\Metal.h" />
     <ClInclude Include="src\Items\Shield.h" />
@@ -162,7 +161,6 @@
     <ClInclude Include="src\Entities\CharacterClassCategory.h" />
     <ClInclude Include="src\Media\SoundName.h" />
     <ClInclude Include="src\Media\SoundFormat.h" />
-    <ClInclude Include="src\Media\SoundManager.h" />
     <ClInclude Include="src\World\BuildingType.h" />
     <ClInclude Include="src\World\ClimateName.h" />
     <ClInclude Include="src\World\Climate.h" />
@@ -219,5 +217,7 @@
     <ClInclude Include="src\Math\Int2.h" />
     <ClInclude Include="src\Interface\LoadGamePanel.h" />
     <ClInclude Include="src\Math\Matrix4.h" />
+    <ClInclude Include="src\Utilities\Debug.h" />
+    <ClInclude Include="src\Media\AudioManager.h" />
   </ItemGroup>
 </Project>
