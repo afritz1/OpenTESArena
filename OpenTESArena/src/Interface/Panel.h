@@ -3,6 +3,9 @@
 
 #include <memory>
 
+// Each panel interprets user input and draws to the screen. There is only one panel 
+// active at a time, and it is owned by the GameState.
+
 // How might "continued" text boxes work? Arena has some pop-up text boxes that have
 // multiple screens based on the amount of text, and even some buttons like "yes/no" on
 // the last screen. I think I'll just replace them with scrolled text boxes. The buttons

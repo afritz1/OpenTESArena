@@ -3,6 +3,10 @@
 
 #include "Panel.h"
 
+// The current player/world state pointer in the GameState will tell the load game
+// panel where to return to. If it is null, that means no game is active, and it goes 
+// to the main menu. Otherwise, it goes to the pause menu.
+
 class Button;
 class Surface;
 class TextBox;

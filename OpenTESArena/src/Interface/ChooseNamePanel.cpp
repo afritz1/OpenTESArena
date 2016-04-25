@@ -55,7 +55,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 	}();
 
 	// Somehow pass the entered string to the next panel constructor. 
-	// Maybe "this->getNameString()"?
+	// Maybe "this->getNameString()"? Or give it to the game state player pointer?
 	this->acceptButton = [gameState, gender, className]()
 	{
 		auto function = [gameState, gender, className]()
@@ -128,9 +128,9 @@ void ChooseNamePanel::handleEvents(bool &running)
 		// Arrow keys too advanced for now! They're just convenience features.
 
 		// If (asciiCharacter or space is pressed) then push it onto the string.
-		// If (Backspace is pressed) then delete one off not at the start.
+		// If (Backspace is pressed) then delete one off if not at the start.
 
-		// If (enter is pressed) then try and accept the string.
+		// If (enter is pressed) then try and accept the string. Save it to a member.
 	}
 }
 

@@ -17,8 +17,13 @@ public:
 	Random();
 	~Random();
 
+	// Includes 0 to ~2.14 billion.
 	int next();
+
+	// Includes 0 to (exclusiveMax - 1).
 	int next(int exclusiveMax);
+
+	// Includes 0.0 to 1.0.
 	double nextReal();
 };
 

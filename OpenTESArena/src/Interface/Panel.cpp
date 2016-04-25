@@ -25,7 +25,7 @@ Panel::~Panel()
 
 std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 {
-	// Use this to skip the intro credits for easier debugging.
+	// Uncomment this return to skip the intro credits for easier debugging.
 	//return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 
 	// All of these lambdas are linked together like a stack by each panel's last 

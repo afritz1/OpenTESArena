@@ -9,6 +9,7 @@ enum class TextureName
 {
 	// Interface.
 	CharacterCreation, // starry night with house
+	CompassFrame,
 	Icon, // window icon
 	IntroTitle, // Arena copyright, etc.
 	IntroQuote, // "The best techniques..."

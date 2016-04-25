@@ -6,10 +6,12 @@
 #include "ChooseRacePanel.h"
 
 #include "Button.h"
+#include "ChooseAttributesPanel.h"
 #include "ChooseNamePanel.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClassName.h"
 #include "../Entities/CharacterGenderName.h"
+#include "../Entities/CharacterRaceName.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
@@ -31,6 +33,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	this->gender = nullptr;
 	this->className = nullptr;
 
+	// Clickable (x, y, width, height) areas for each province.
 	this->provinceAreas = std::map<ProvinceName, Rectangle>
 	{
 		{ ProvinceName::BlackMarsh, Rectangle(216, 144, 55, 12) },
@@ -77,6 +80,18 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
+	// How should the race name be given? "this->getChosenRaceName()"?
+	this->acceptButton = [gameState, gender, className, name]()
+	{
+		auto function = [gameState, gender, className, name]()
+		{
+			auto attributesPanel = std::unique_ptr<Panel>(new ChooseAttributesPanel(
+				gameState, gender, className, name, CharacterRaceName::Nord));
+			gameState->setPanel(std::move(attributesPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
+	}();
+
 	this->gender = std::unique_ptr<CharacterGenderName>(
 		new CharacterGenderName(gender));
 	this->className = std::unique_ptr<CharacterClassName>(
@@ -85,10 +100,10 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 
 	// Nine provinces.
 	assert(this->provinceAreas.size() == 9);
-
 	assert(this->parchment.get() != nullptr);
 	assert(this->initialTextBox.get() != nullptr);
 	assert(this->backToNameButton.get() != nullptr);
+	assert(this->acceptButton.get() != nullptr);
 	assert(this->gender.get() != nullptr);
 	assert(*this->gender.get() == gender);
 	assert(this->className.get() != nullptr);
@@ -112,8 +127,6 @@ void ChooseRacePanel::handleEvents(bool &running)
 		bool applicationExit = (e.type == SDL_QUIT);
 		bool resized = (e.type == SDL_WINDOWEVENT) &&
 			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
 
 		if (applicationExit)
 		{
@@ -126,32 +139,54 @@ void ChooseRacePanel::handleEvents(bool &running)
 			this->getGameState()->resizeWindow(width, height);
 		}
 
-		// Context-sensitive input.
-		if (escapePressed && (!this->initialTextBox->isVisible()))
-		{
-			this->backToNameButton->click();
-		}
-
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_RIGHT);
 
+		bool escapePressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_ESCAPE);
 		bool enterPressed = (e.type == SDL_KEYDOWN) &&
 			((e.key.keysym.sym == SDLK_RETURN) ||
 				(e.key.keysym.sym == SDLK_KP_ENTER));
 		bool spacePressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_SPACE);
 
-		bool hideInitialPopUp = this->initialTextBox->isVisible() &&
-			leftClick || rightClick || enterPressed || spacePressed || escapePressed;
-
-		if (hideInitialPopUp)
+		// Context-sensitive input depending on the visibility of the first text box.
+		if (this->initialTextBox->isVisible())
 		{
-			this->initialTextBox->setVisibility(false);
-		}
+			bool hideInitialPopUp = leftClick || rightClick || enterPressed || 
+				spacePressed || escapePressed;
 
-		// Listen for map clicks...
+			if (hideInitialPopUp)
+			{
+				// Hide the initial text box.
+				this->initialTextBox->setVisibility(false);
+			}
+		}
+		else
+		{
+			if (escapePressed)
+			{
+				// Go back to the name panel.
+				this->backToNameButton->click();
+			}
+			else if (leftClick)
+			{
+				// Listen for map clicks.
+				for (const auto &area : this->provinceAreas)
+				{
+					if (area.second.contains(mouseOriginalPoint))
+					{
+						// Save the clicked province name...?
+
+						// Go to the attributes panel.
+						this->acceptButton->click();
+						break;
+					}
+				}
+			}			
+		}
 	}
 }
 

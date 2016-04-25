@@ -6,13 +6,13 @@
 #include "Panel.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
-// list that says nothing about the classes (requiring the manual for information). 
-// I think it would be better to show them all at the same time as buttons, and 
-// have tooltips when hovered over.
+// list that says nothing about the classes (thus requiring the manual for 
+// information). I think it would be better to show them all at the same time as 
+// buttons, and have tooltips when hovered over.
 
 // Replace the current three buttons with three columns holding six mini-buttons 
 // each, like this:
-//           [Choose your class]
+//           [Choose thy class]
 //   [Warrior]      [Mage]       [Thief]
 //      w1            m1           t1
 //     ...           ...          ...

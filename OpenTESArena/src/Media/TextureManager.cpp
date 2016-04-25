@@ -20,6 +20,7 @@ const auto TextureFilenames = std::map<TextureName, std::string>
 {
 	// Interface
 	{ TextureName::CharacterCreation, "interface/character_creation" },
+	{ TextureName::CompassFrame, "interface/compass_frame" },
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "interface/intro_title" },
 	{ TextureName::IntroQuote, "interface/intro_quote" },

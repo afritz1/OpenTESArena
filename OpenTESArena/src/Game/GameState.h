@@ -4,6 +4,11 @@
 #include <memory>
 #include <string>
 
+// I think the game state will hold all the player and world data pointers. They
+// will be null if a game instance is not currently running (like when in the main
+// menu), and will not be null if a game instance is running (like when in the game
+// world, pause menu, journal, etc.).
+
 class AudioManager;
 class Panel;
 class Renderer;
