@@ -84,6 +84,10 @@
     <ClCompile Include="src\Math\Matrix4.cpp" />
     <ClCompile Include="src\Utilities\Debug.cpp" />
     <ClCompile Include="src\Media\AudioManager.cpp" />
+    <ClCompile Include="src\Interface\GameWorldPanel.cpp" />
+    <ClCompile Include="src\Interface\PauseMenuPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseAttributesPanel.cpp" />
+    <ClCompile Include="src\Interface\OptionsPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -219,5 +223,9 @@
     <ClInclude Include="src\Math\Matrix4.h" />
     <ClInclude Include="src\Utilities\Debug.h" />
     <ClInclude Include="src\Media\AudioManager.h" />
+    <ClInclude Include="src\Interface\PauseMenuPanel.h" />
+    <ClInclude Include="src\Interface\GameWorldPanel.h" />
+    <ClInclude Include="src\Interface\ChooseAttributesPanel.h" />
+    <ClInclude Include="src\Interface\OptionsPanel.h" />
   </ItemGroup>
 </Project>

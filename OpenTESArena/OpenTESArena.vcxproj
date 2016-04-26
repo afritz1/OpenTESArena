@@ -137,6 +137,10 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\OptionsPanel.cpp" />
+    <ClCompile Include="src\Interface\ChooseAttributesPanel.cpp" />
+    <ClCompile Include="src\Interface\GameWorldPanel.cpp" />
+    <ClCompile Include="src\Interface\PauseMenuPanel.cpp" />
     <ClCompile Include="src\Media\AudioManager.cpp" />
     <ClCompile Include="src\Utilities\Debug.cpp" />
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
@@ -222,6 +226,10 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\OptionsPanel.h" />
+    <ClInclude Include="src\Interface\ChooseAttributesPanel.h" />
+    <ClInclude Include="src\Interface\GameWorldPanel.h" />
+    <ClInclude Include="src\Interface\PauseMenuPanel.h" />
     <ClInclude Include="src\Media\AudioManager.h" />
     <ClInclude Include="src\Utilities\Debug.h" />
     <ClInclude Include="src\Interface\LoadGamePanel.h" />

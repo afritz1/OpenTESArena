@@ -9,6 +9,7 @@
 #include "GameWorldPanel.h"
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
+#include "OptionsPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
@@ -32,7 +33,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(130, 65);
+		auto origin = Int2(128, 65);
 		auto color = Color::White;
 		std::string text = "Paused";
 		auto fontName = FontName::A;
@@ -136,8 +137,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		auto function = [gameState]()
 		{
 			// Change to options panel once that class is programmed.
-			//auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
-			//gameState->setPanel(std::move(optionsPanel));
+			auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
+			gameState->setPanel(std::move(optionsPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 80, 20, function));
 	}();
