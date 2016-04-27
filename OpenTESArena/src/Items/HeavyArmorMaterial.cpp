@@ -1,7 +1,8 @@
 #include <cassert>
-#include <map>
 
 #include "HeavyArmorMaterial.h"
+
+#include "ArmorMaterialType.h"
 #include "Metal.h"
 
 HeavyArmorMaterial::HeavyArmorMaterial(MetalType metalType)

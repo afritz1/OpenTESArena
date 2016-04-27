@@ -1,31 +1,31 @@
 #ifndef WEAPON_ARTIFACT_DATA_H
 #define WEAPON_ARTIFACT_DATA_H
 
-#include <string>
+#include <memory>
 
 #include "ArtifactData.h"
-#include "WeaponArtifactName.h"
 
-// Look at AccessoryArtifact... and BodyArmorArtifact... 
-
+enum class ItemType;
 enum class MetalType;
 enum class WeaponType;
 
 class WeaponArtifactData : public ArtifactData
 {
 private:
-	WeaponArtifactName artifactName;
+	WeaponType weaponType;
+	MetalType metalType;
 public:
-	WeaponArtifactData(WeaponArtifactName artifactName);
+	WeaponArtifactData(const std::string &displayName,
+		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+		const WeaponType &weaponType, const MetalType &metalType);
 	virtual ~WeaponArtifactData();
 
-	const WeaponArtifactName &getArtifactName() const;
-	WeaponType getWeaponType() const;
-	MetalType getMetalType() const;
+	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	virtual ArtifactName getParentArtifactName() const override;
-	virtual std::string getDisplayName() const override;
-	virtual std::string getFlavorText() const override;
+	const WeaponType &getWeaponType() const;
+	const MetalType &getMetalType() const;
+
+	virtual ItemType getItemType() const override;
 };
 
 #endif

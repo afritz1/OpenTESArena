@@ -9,30 +9,27 @@
 
 class MiscellaneousArtifactData;
 
-enum class MiscellaneousArtifactName;
-
 class MiscellaneousItem : public Item
 {
 private:
-	std::unique_ptr<MiscellaneousArtifactData> artifactData;
 	MiscellaneousItemType miscItemType;
+
+	MiscellaneousItem(MiscellaneousItemType miscItemType,
+		const MiscellaneousArtifactData *artifactData);
 public:
 	// Miscellaneous item constructor for a miscellaneous type.
 	MiscellaneousItem(MiscellaneousItemType miscItemType);
 
 	// Miscellaneous item artifact constructor.
-	MiscellaneousItem(MiscellaneousArtifactName artifactName);
-
-	MiscellaneousItem(const MiscellaneousItem &miscItem);
-
+	MiscellaneousItem(const MiscellaneousArtifactData *artifactData);
 	virtual ~MiscellaneousItem();
+
+	virtual std::unique_ptr<Item> clone() const override;
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const override;
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
-
-	const MiscellaneousArtifactData *getArtifactData() const;
 
 	const MiscellaneousItemType &getMiscellaneousItemType() const;
 };

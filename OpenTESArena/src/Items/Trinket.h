@@ -8,13 +8,12 @@
 
 // Trinkets are non-metal accessories, so they don't inherit from Metallic.
 
-// Should a key be a trinket? They would have a max equip count of 0.
-
 class Trinket : public Item
 {
 private:
 	TrinketName trinketName;
 public:
+	// There are no artifact trinkets for now, so this constructor remains simple.
 	Trinket(TrinketName trinketName);
 	~Trinket();
 

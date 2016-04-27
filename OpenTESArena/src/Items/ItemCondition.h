@@ -11,6 +11,7 @@
 
 class ArmorMaterial;
 class Metal;
+class Random;
 
 enum class BodyPartName;
 enum class ItemConditionName;
@@ -43,7 +44,7 @@ public:
 
 	// Replenish a small amount of condition. This is exclusively for Knights (or 
 	// any class with active item repairing).
-	void repairSlightly();
+	void repairSlightly(Random &random);
 
 	// Call this whenever the item is being used in a way that degrades it, like 
 	// when a weapon hits something, or when armor is hit.

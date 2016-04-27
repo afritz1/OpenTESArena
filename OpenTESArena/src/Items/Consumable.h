@@ -5,7 +5,7 @@
 
 #include "Item.h"
 
-// A consumable is an abstract type because it can either be a food or a potion.
+// A consumable is an abstract class because it can either be a food or a potion.
 // While they don't have very different functionality, they do have slightly 
 // different rules. Food doesn't need identification, while potions do, for example.
 // This separation will keep foods from needing to implement any identification code.
@@ -15,6 +15,7 @@ enum class ConsumableType;
 class Consumable : public Item
 {
 public:
+	// There are no consumable artifacts yet, so this constructor remains simple.
 	Consumable();
 	virtual ~Consumable();
 
@@ -29,7 +30,8 @@ public:
 	// All consumables will have an "effect"; that effect could be changes to an 
 	// attribute, or even a world function like teleportation. When implementing 
 	// an "Effect" class, it won't be enough to only include the consumer as the 
-	// thing being changed.
+	// thing being changed. A pointer to the GameState might be required.
+	// const Effect &getEffect() const...
 };
 
 #endif

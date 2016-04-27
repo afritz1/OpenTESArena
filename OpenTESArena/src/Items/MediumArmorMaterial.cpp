@@ -2,6 +2,8 @@
 
 #include "MediumArmorMaterial.h"
 
+#include "ArmorMaterialType.h"
+
 MediumArmorMaterial::MediumArmorMaterial()
 {
 

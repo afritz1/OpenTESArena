@@ -2,10 +2,10 @@
 #include <map>
 
 #include "Weapon.h"
+
 #include "ItemType.h"
 #include "Metal.h"
 #include "WeaponArtifactData.h"
-#include "WeaponArtifactName.h"
 #include "WeaponHandCount.h"
 #include "WeaponRangeName.h"
 
@@ -157,40 +157,32 @@ const auto WeaponTypeRangeNames = std::map<WeaponType, WeaponRangeName>
 	{ WeaponType::Warhammer, WeaponRangeName::Melee }
 };
 
-Weapon::Weapon(WeaponType weaponType, MetalType metalType)
-	: Metallic(metalType)
+Weapon::Weapon(WeaponType weaponType, MetalType metalType,
+	const WeaponArtifactData *artifactData)
+	: Item(artifactData), Metallic(metalType)
 {
-	this->artifactData = nullptr;
 	this->weaponType = weaponType;
 
-	assert(this->artifactData.get() == nullptr);
+	assert(this->weaponType == weaponType);
 }
 
-Weapon::Weapon(WeaponArtifactName artifactName)
-	: Metallic(WeaponArtifactData(artifactName).getMetalType())
-{
-	this->artifactData = std::unique_ptr<WeaponArtifactData>(
-		new WeaponArtifactData(artifactName));
-	this->weaponType = this->artifactData->getWeaponType();
+Weapon::Weapon(WeaponType weaponType, MetalType metalType)
+	: Weapon(weaponType, metalType, nullptr) { }
 
-	assert(this->artifactData.get() != nullptr);
-}
-
-Weapon::Weapon(const Weapon &weapon)
-	: Metallic(weapon.getMetal().getMetalType())
-{
-	this->artifactData = (weapon.getArtifactData() == nullptr) ? nullptr :
-		std::unique_ptr<WeaponArtifactData>(new WeaponArtifactData(
-			weapon.getArtifactData()->getArtifactName()));
-	this->weaponType = weapon.getWeaponType();
-
-	// This assert makes sure they're logically equivalent.
-	assert((!(this->artifactData != nullptr)) ^ (weapon.artifactData != nullptr));
-}
+Weapon::Weapon(const WeaponArtifactData *artifactData)
+	: Weapon(artifactData->getWeaponType(), artifactData->getMetalType(), 
+		artifactData) { }
 
 Weapon::~Weapon()
 {
 
+}
+
+std::unique_ptr<Item> Weapon::clone() const
+{
+	return std::unique_ptr<Item>(new Weapon(
+		this->getWeaponType(), this->getMetal().getMetalType(),
+		dynamic_cast<const WeaponArtifactData*>(this->getArtifactData())));
 }
 
 ItemType Weapon::getItemType() const
@@ -221,11 +213,6 @@ int Weapon::getGoldValue() const
 std::string Weapon::getDisplayName() const
 {
 	return this->getMetal().toString() + " " + this->typeToString();
-}
-
-const WeaponArtifactData *Weapon::getArtifactData() const
-{
-	return this->artifactData.get();
 }
 
 const WeaponType &Weapon::getWeaponType() const

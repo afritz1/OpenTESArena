@@ -2,12 +2,12 @@
 #include <map>
 
 #include "Shield.h"
+
 #include "ArmorMaterial.h"
 #include "ArmorType.h"
 #include "HeavyArmorMaterial.h"
 #include "Metal.h"
 #include "ShieldArtifactData.h"
-#include "ShieldArtifactName.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
 
@@ -58,47 +58,35 @@ const auto ShieldProtectedBodyParts = std::map<ShieldType, std::vector<BodyPartN
 	BodyPartName::LeftShoulder, BodyPartName::Legs } }
 };
 
-Shield::Shield(ShieldType shieldType, MetalType metalType)
+Shield::Shield(ShieldType shieldType, MetalType metalType,
+	const ShieldArtifactData *artifactData)
+	: Armor(artifactData)
 {
-	this->artifactData = nullptr;
 	this->armorMaterial = std::unique_ptr<HeavyArmorMaterial>(
 		new HeavyArmorMaterial(metalType));
 	this->shieldType = shieldType;
 
-	assert(this->artifactData.get() == nullptr);
 	assert(this->armorMaterial.get() != nullptr);
+	assert(this->shieldType == shieldType);
 }
 
-Shield::Shield(ShieldArtifactName artifactName)
-{
-	this->artifactData = std::unique_ptr<ShieldArtifactData>(
-		new ShieldArtifactData(artifactName));
-	this->armorMaterial = std::unique_ptr<HeavyArmorMaterial>(
-		new HeavyArmorMaterial(this->artifactData->getMetalType()));
-	this->shieldType = this->artifactData->getShieldType();
+Shield::Shield(ShieldType shieldType, MetalType metalType)
+	: Shield(shieldType, metalType, nullptr) { }
 
-	assert(this->artifactData.get() != nullptr);
-	assert(this->armorMaterial.get() != nullptr);
-}
-
-Shield::Shield(const Shield &shield)
-{
-	this->artifactData = (shield.getArtifactData() == nullptr) ? nullptr :
-		std::unique_ptr<ShieldArtifactData>(new ShieldArtifactData(
-			shield.getArtifactData()->getArtifactName()));	
-	this->armorMaterial = std::unique_ptr<HeavyArmorMaterial>(
-		new HeavyArmorMaterial(shield.armorMaterial->getMetal().getMetalType()));
-	this->shieldType = shield.getShieldType();
-
-	// This assert makes sure they're logically equivalent.
-	assert((!(this->artifactData != nullptr)) ^ (shield.artifactData != nullptr));
-
-	assert(this->armorMaterial.get() != nullptr);
-}
+Shield::Shield(const ShieldArtifactData *artifactData)
+	: Shield(artifactData->getShieldType(), artifactData->getMetalType(),
+		artifactData) { }
 
 Shield::~Shield()
 {
 
+}
+
+std::unique_ptr<Item> Shield::clone() const
+{
+	return std::unique_ptr<Item>(new Shield(this->getShieldType(),
+		this->armorMaterial->getMetal().getMetalType(),
+		dynamic_cast<const ShieldArtifactData*>(this->getArtifactData())));
 }
 
 double Shield::getWeight() const
@@ -124,11 +112,6 @@ int Shield::getGoldValue() const
 std::string Shield::getDisplayName() const
 {
 	return this->getArmorMaterial()->toString() + " " + this->typeToString();
-}
-
-const ShieldArtifactData *Shield::getArtifactData() const
-{
-	return this->artifactData.get();
 }
 
 const ShieldType &Shield::getShieldType() const

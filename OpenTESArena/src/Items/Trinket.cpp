@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Trinket.h"
+
 #include "ItemType.h"
 
 const auto TrinketDisplayNames = std::map<TrinketName, std::string>
@@ -31,6 +32,7 @@ const auto TrinketMaxEquipCounts = std::map<TrinketName, int>
 };
 
 Trinket::Trinket(TrinketName trinketName)
+	: Item(nullptr)
 {
 	this->trinketName = trinketName;
 }

@@ -5,6 +5,8 @@
 
 #include "BodyPartName.h"
 
+enum class ArmorType;
+
 class BodyPart
 {
 private:
@@ -14,6 +16,7 @@ public:
 	~BodyPart();
 
 	const BodyPartName &getPartName() const;
+	ArmorType getArmorType() const;
 	std::string toString() const;
 };
 

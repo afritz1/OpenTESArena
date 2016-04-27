@@ -7,6 +7,8 @@
 // The old pause menu had the game world interface still drawn in it, which was 
 // pretty pointless.
 
+// The pause menu buttons are off center by a little bit.
+
 class Button;
 class TextBox;
 

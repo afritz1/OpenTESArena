@@ -16,34 +16,32 @@ class BodyArmorArtifactData;
 class BodyPart;
 
 enum class BodyPartName;
-enum class BodyArmorArtifactName;
 
 class BodyArmor : public Armor
 {
 private:
-	std::unique_ptr<BodyArmorArtifactData> artifactData;
 	std::unique_ptr<ArmorMaterial> armorMaterial;
-	std::unique_ptr<BodyPart> part;
+	BodyPartName partName;
+
+	BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial,
+		const BodyArmorArtifactData *artifactData);
 public:
-	// The body armor object takes ownership of the armor material. This was more neat
-	// than having multiple constructors for armor material type, metal type, etc..
-	BodyArmor(BodyPartName partName, std::unique_ptr<ArmorMaterial> armorMaterial);
+	// Body armor constructor.
+	BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial);
 
 	// Body armor artifact constructor.
-	BodyArmor(BodyArmorArtifactName artifactName);
-
-	BodyArmor(const BodyArmor &bodyArmor);
-
+	BodyArmor(const BodyArmorArtifactData *artifactData);
 	virtual ~BodyArmor();
+
+	virtual std::unique_ptr<Item> clone() const override;
 
 	virtual double getWeight() const override;
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const BodyArmorArtifactData *getArtifactData() const;
-
-	const BodyPart &getBodyPart() const;
+	const BodyPartName &getPartName() const;
 	std::string typeToString() const;
+
 	virtual ArmorType getArmorType() const override;
 	virtual const ArmorMaterial *getArmorMaterial() const override;
 	virtual std::vector<BodyPartName> getProtectedBodyParts() const override;

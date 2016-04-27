@@ -16,7 +16,6 @@
 
 class WeaponArtifactData;
 
-enum class WeaponArtifactName;
 enum class WeaponHandCount;
 enum class WeaponRangeName;
 
@@ -25,23 +24,23 @@ class Weapon : public Item, public Metallic
 private:
 	std::unique_ptr<WeaponArtifactData> artifactData;
 	WeaponType weaponType;
+
+	Weapon(WeaponType weaponType, MetalType metalType,
+		const WeaponArtifactData *artifactData);
 public:
 	// Weapon constructor for a weapon type and metal type.
 	Weapon(WeaponType weaponType, MetalType metalType);
 
 	// Weapon artifact constructor.
-	Weapon(WeaponArtifactName artifactName);
-
-	Weapon(const Weapon &weapon);
-
+	Weapon(const WeaponArtifactData *artifactData);
 	virtual ~Weapon();
+
+	virtual std::unique_ptr<Item> clone() const override;
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const override;
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
-
-	const WeaponArtifactData *getArtifactData() const;
 
 	const WeaponType &getWeaponType() const;
 	WeaponHandCount getHandCount() const;

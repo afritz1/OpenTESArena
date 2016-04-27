@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include "Metallic.h"
+
 #include "Metal.h"
 #include "MetalType.h"
 

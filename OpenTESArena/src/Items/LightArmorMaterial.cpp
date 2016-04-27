@@ -2,6 +2,8 @@
 
 #include "LightArmorMaterial.h"
 
+#include "ArmorMaterialType.h"
+
 LightArmorMaterial::LightArmorMaterial()
 {
 

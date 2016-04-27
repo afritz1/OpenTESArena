@@ -4,24 +4,25 @@
 #include <string>
 
 #include "ArtifactData.h"
-#include "MiscellaneousArtifactName.h"
 
+enum class ItemType;
 enum class MiscellaneousItemType;
 
 class MiscellaneousArtifactData : public ArtifactData
 {
 private:
-	MiscellaneousArtifactName artifactName;
+	MiscellaneousItemType miscItemType;
 public:
-	MiscellaneousArtifactData(MiscellaneousArtifactName artifactName);
+	MiscellaneousArtifactData(const std::string &displayName,
+		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+		const MiscellaneousItemType &miscItemType);
 	virtual ~MiscellaneousArtifactData();
 
-	const MiscellaneousArtifactName &getArtifactName() const;
-	MiscellaneousItemType getMiscellaneousItemType() const;
+	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	virtual ArtifactName getParentArtifactName() const override;
-	virtual std::string getDisplayName() const override;
-	virtual std::string getFlavorText() const override;
+	const MiscellaneousItemType &getMiscellaneousItemType() const;
+
+	virtual ItemType getItemType() const override;
 };
 
 #endif

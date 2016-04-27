@@ -1,7 +1,7 @@
 #ifndef MISCELLANEOUS_ITEM_TYPE_H
 #define MISCELLANEOUS_ITEM_TYPE_H
 
-// A unique identifier for each miscellaneous item.
+// A unique identifier for each kind of miscellaneous item.
 
 // Followers were treated as inventory items in the original game, but that seems
 // a bit strange. The remake should treat them as entities, not items.
@@ -13,16 +13,15 @@ enum class MiscellaneousItemType
 	Book,
 
 	// Keys (not equipable. The inventory should search to see if a key is contained).
-	BoneKey,
-	DiamondKey,
-	GoldKey,
-	RubyKey,
-	SteelKey,
+	Key,
 
 	// Empty potion flask? Where does it go when the potion is consumed?! *crunch*
 
 	// Main quest.
-	StaffPiece, // StaffHead, StaffTail...? Is that too much?
+	StaffPiece, // StaffHead, StaffTail...?
+
+	// Lights.
+	Torch,
 
 	// Unknown (just as a placeholder).
 	Unknown

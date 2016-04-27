@@ -3,12 +3,13 @@
 #include <map>
 
 #include "ItemCondition.h"
-#include "ItemConditionName.h"
+
 #include "ArmorMaterial.h"
-#include "../Entities/BodyPartName.h"
+#include "ItemConditionName.h"
 #include "Metal.h"
 #include "ShieldType.h"
 #include "WeaponType.h"
+#include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
 
 // It doesn't look like values for item conditions are visible anywhere, like in
@@ -227,10 +228,9 @@ void ItemCondition::repairFully()
 	this->currentCondition = this->maxCondition;
 }
 
-void ItemCondition::repairSlightly()
+void ItemCondition::repairSlightly(Random &random)
 {
 	// Randomly repair a little bit.
-	auto random = Random();
 	this->currentCondition += random.next(this->degradeRate + 1);
 
 	// Make sure the incremented condition is not greater than the max.

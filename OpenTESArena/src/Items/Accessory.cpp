@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Accessory.h"
+
 #include "AccessoryArtifactData.h"
 #include "ItemType.h"
 #include "Metal.h"
@@ -54,40 +55,32 @@ const auto AccessoryMaxEquipCounts = std::map<AccessoryType, int>
 	{ AccessoryType::Torc, 1 }
 };
 
-Accessory::Accessory(AccessoryType accessoryType, MetalType metalType)
-	: Metallic(metalType)
+Accessory::Accessory(AccessoryType accessoryType, MetalType metalType,
+	const AccessoryArtifactData *artifactData)
+	: Item(artifactData), Metallic(metalType)
 {
-	this->artifactData = nullptr;
 	this->accessoryType = accessoryType;
 
-	assert(this->artifactData.get() == nullptr);
+	assert(this->accessoryType == accessoryType);
 }
 
-Accessory::Accessory(AccessoryArtifactName artifactName)
-	: Metallic(AccessoryArtifactData(artifactName).getMetalType())
-{
-	this->artifactData = std::unique_ptr<AccessoryArtifactData>(
-		new AccessoryArtifactData(artifactName));
-	this->accessoryType = this->artifactData->getAccessoryType();
+Accessory::Accessory(AccessoryType accessoryType, MetalType metalType)
+	: Accessory(accessoryType, metalType, nullptr) { }
 
-	assert(this->artifactData.get() != nullptr);
-}
-
-Accessory::Accessory(const Accessory &accessory)
-	: Metallic(accessory.getMetal().getMetalType())
-{
-	this->artifactData = (accessory.artifactData == nullptr) ? nullptr :
-		std::unique_ptr<AccessoryArtifactData>(
-			new AccessoryArtifactData(*accessory.artifactData));
-	this->accessoryType = accessory.accessoryType;
-
-	// This assert makes sure they're logically equivalent.
-	assert((!(this->artifactData != nullptr)) ^ (accessory.artifactData != nullptr));
-}
+Accessory::Accessory(const AccessoryArtifactData *artifactData)
+	: Accessory(artifactData->getAccessoryType(), artifactData->getMetalType(),
+		artifactData) { }
 
 Accessory::~Accessory()
 {
 
+}
+
+std::unique_ptr<Item> Accessory::clone() const
+{
+	return std::unique_ptr<Item>(new Accessory(
+		this->getAccessoryType(), this->getMetal().getMetalType(),
+		dynamic_cast<const AccessoryArtifactData*>(this->getArtifactData())));
 }
 
 ItemType Accessory::getItemType() const
@@ -115,11 +108,6 @@ std::string Accessory::getDisplayName() const
 		AccessoryDisplayNames.at(this->getAccessoryType());
 	assert(displayName.size() > 0);
 	return displayName;
-}
-
-const AccessoryArtifactData *Accessory::getArtifactData() const
-{
-	return this->artifactData.get();
 }
 
 const AccessoryType &Accessory::getAccessoryType() const

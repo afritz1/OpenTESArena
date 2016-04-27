@@ -23,30 +23,28 @@ class ShieldArtifactData;
 
 enum class BodyPartName;
 enum class MetalType;
-enum class ShieldArtifactName;
 
 class Shield : public Armor // Metallic goes through HeavyArmorMaterial.
 {
 private:
-	std::unique_ptr<ShieldArtifactData> artifactData;
 	std::unique_ptr<HeavyArmorMaterial> armorMaterial;
 	ShieldType shieldType;
+
+	Shield(ShieldType shieldType, MetalType metalType,
+		const ShieldArtifactData *artifactData);
 public:
 	// Shield constructor for a shield type and metal type.
 	Shield(ShieldType shieldType, MetalType metalType);
 
 	// Shield artifact constructor.
-	Shield(ShieldArtifactName artifactName);
-
-	Shield(const Shield &shield);
-
+	Shield(const ShieldArtifactData *artifactData);
 	virtual ~Shield();
+
+	virtual std::unique_ptr<Item> clone() const override;
 
 	virtual double getWeight() const override;
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
-
-	const ShieldArtifactData *getArtifactData() const;
 
 	const ShieldType &getShieldType() const;
 	std::string typeToString() const;

@@ -1,8 +1,8 @@
 #include <cassert>
-#include <iostream>
 #include <map>
 
 #include "BodyArmor.h"
+
 #include "ArmorType.h"
 #include "ArmorMaterial.h"
 #include "BodyArmorArtifactData.h"
@@ -48,65 +48,39 @@ const auto BodyArmorGoldValues = std::map<BodyPartName, int>
 	{ BodyPartName::Feet, 20 }
 };
 
-// Since it's BodyPartName -> ArmorType, no Shield dummy value needs to exist.
-const auto BodyArmorPartProtections = std::map<BodyPartName, ArmorType>
+BodyArmor::BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial,
+	const BodyArmorArtifactData *artifactData)
+	: Armor(artifactData)
 {
-	{ BodyPartName::Head, ArmorType::Helm },
-	{ BodyPartName::LeftShoulder, ArmorType::LeftPauldron },
-	{ BodyPartName::RightShoulder, ArmorType::RightPauldron },
-	{ BodyPartName::Chest, ArmorType::Cuirass },
-	{ BodyPartName::Hands, ArmorType::Gauntlets },
-	{ BodyPartName::Legs, ArmorType::Greaves },
-	{ BodyPartName::Feet, ArmorType::Boots }
-};
-
-BodyArmor::BodyArmor(BodyPartName partName, std::unique_ptr<ArmorMaterial> armorMaterial)
-{
-	this->artifactData = nullptr;
-	this->armorMaterial = std::move(armorMaterial);
-	this->part = std::unique_ptr<BodyPart>(new BodyPart(partName));
-
-	assert(this->artifactData.get() == nullptr);
-	assert(this->armorMaterial.get() != nullptr);
-	assert(this->part.get() != nullptr);
-}
-
-BodyArmor::BodyArmor(BodyArmorArtifactName artifactName)
-{
-	this->artifactData = std::unique_ptr<BodyArmorArtifactData>(
-		new BodyArmorArtifactData(artifactName));
-	this->armorMaterial = this->artifactData->getArmorMaterial();
-	this->part = std::unique_ptr<BodyPart>(new BodyPart(
-		this->artifactData->getBodyPartName()));
-
-	assert(this->artifactData.get() != nullptr);
-	assert(this->armorMaterial.get() != nullptr);
-	assert(this->part.get() != nullptr);
-}
-
-BodyArmor::BodyArmor(const BodyArmor &bodyArmor)
-{
-	this->artifactData = (bodyArmor.artifactData == nullptr) ? nullptr :
-		std::unique_ptr<BodyArmorArtifactData>(
-			new BodyArmorArtifactData(*bodyArmor.artifactData));
-	this->armorMaterial = bodyArmor.armorMaterial->clone();
-	this->part = std::unique_ptr<BodyPart>(new BodyPart(bodyArmor.part->getPartName()));
-
-	// This assert makes sure they're logically equivalent.
-	assert((!(this->artifactData != nullptr)) ^ (bodyArmor.artifactData != nullptr));
+	this->armorMaterial = armorMaterial->clone();
+	this->partName = partName;
 
 	assert(this->armorMaterial.get() != nullptr);
-	assert(this->part.get() != nullptr);
+	assert(this->partName == partName);
 }
+
+BodyArmor::BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial)
+	: BodyArmor(partName, armorMaterial, nullptr) { }
+
+BodyArmor::BodyArmor(const BodyArmorArtifactData *artifactData)
+	: BodyArmor(artifactData->getBodyPartName(), artifactData->getArmorMaterial(),
+		artifactData) { }
 
 BodyArmor::~BodyArmor()
 {
 
 }
 
+std::unique_ptr<Item> BodyArmor::clone() const
+{
+	return std::unique_ptr<Item>(new BodyArmor(
+		this->getPartName(), this->getArmorMaterial(),
+		dynamic_cast<const BodyArmorArtifactData*>(this->getArtifactData())));
+}
+
 double BodyArmor::getWeight() const
 {
-	auto baseWeight = BodyArmorWeights.at(this->getBodyPart().getPartName());
+	auto baseWeight = BodyArmorWeights.at(this->getPartName());
 	auto materialMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	auto weight = baseWeight * materialMultiplier;
 	assert(weight >= 0.0);
@@ -116,7 +90,7 @@ double BodyArmor::getWeight() const
 int BodyArmor::getGoldValue() const
 {
 	// Refine this method.
-	int baseValue = BodyArmorGoldValues.at(this->getBodyPart().getPartName());
+	int baseValue = BodyArmorGoldValues.at(this->getPartName());
 	int ratingModifier = this->getArmorRating();
 	auto metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	int value = static_cast<int>(static_cast<double>(baseValue + ratingModifier) *
@@ -133,26 +107,21 @@ std::string BodyArmor::getDisplayName() const
 	return displayName;
 }
 
-const BodyArmorArtifactData *BodyArmor::getArtifactData() const
+const BodyPartName &BodyArmor::getPartName() const
 {
-	return this->artifactData.get();
-}
-
-const BodyPart &BodyArmor::getBodyPart() const
-{
-	return *this->part;
+	return this->partName;
 }
 
 std::string BodyArmor::typeToString() const
 {
-	auto displayName = BodyArmorDisplayNames.at(this->getBodyPart().getPartName());
+	auto displayName = BodyArmorDisplayNames.at(this->getPartName());
 	assert(displayName.size() > 0);
 	return displayName;
 }
 
 ArmorType BodyArmor::getArmorType() const
 {
-	auto armorType = BodyArmorPartProtections.at(this->getBodyPart().getPartName());
+	auto armorType = BodyPart(this->getPartName()).getArmorType();
 	return armorType;
 }
 
@@ -165,10 +134,11 @@ const ArmorMaterial *BodyArmor::getArmorMaterial() const
 
 std::vector<BodyPartName> BodyArmor::getProtectedBodyParts() const
 {
+	// Body armors only protect one body part, unlike shields. This returns a vector 
+	// to retain the same interface with armors.
 	auto partNames = std::vector<BodyPartName>();
-	partNames.push_back(this->getBodyPart().getPartName());
+	partNames.push_back(this->getPartName());
 
-	// Body armors only protect one body part, unlike shields.
 	assert(partNames.size() == 1);
 
 	return partNames;

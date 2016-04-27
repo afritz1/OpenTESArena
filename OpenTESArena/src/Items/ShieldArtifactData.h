@@ -3,27 +3,29 @@
 
 #include <string>
 
-#include "ArtifactData.h"
-#include "ShieldArtifactName.h"
+#include "ArmorArtifactData.h"
 
+enum class ArmorType;
 enum class MetalType;
 enum class ShieldType;
 
-class ShieldArtifactData : public ArtifactData
+class ShieldArtifactData : public ArmorArtifactData
 {
 private:
-	ShieldArtifactName artifactName;
+	ShieldType shieldType;
+	MetalType metalType;
 public:
-	ShieldArtifactData(ShieldArtifactName artifactName);
+	ShieldArtifactData(const std::string &displayName,
+		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+		const ShieldType &shieldType, const MetalType &metalType);
 	virtual ~ShieldArtifactData();
 
-	const ShieldArtifactName &getArtifactName() const;
-	ShieldType getShieldType() const;
-	MetalType getMetalType() const;
+	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	virtual ArtifactName getParentArtifactName() const override;
-	virtual std::string getDisplayName() const override;
-	virtual std::string getFlavorText() const override;
+	const ShieldType &getShieldType() const;
+	const MetalType &getMetalType() const;
+
+	virtual ArmorType getArmorType() const override;
 };
 
 #endif
