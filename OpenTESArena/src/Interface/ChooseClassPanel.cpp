@@ -9,7 +9,8 @@
 #include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClassName.h"
+#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
@@ -116,8 +117,18 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 		auto center = Int2(160, 90);
 		auto function = [gameState, gender]()
 		{
+			// Placeholder warrior variable.
+			auto warriorClass = CharacterClass(
+				"Warrior",
+				CharacterClassCategoryName::Warrior,
+				false,
+				25,
+				15,
+				std::vector<ArmorMaterialType>(),
+				std::vector<ShieldType>(),
+				std::vector<WeaponType>());
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, CharacterClassName::Warrior));
+				gameState, gender, warriorClass));
 			gameState->setPanel(std::move(namePanel));
 		};
 
@@ -129,8 +140,18 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 		auto center = Int2(160, 130);
 		auto function = [gameState, gender]()
 		{
+			// Placeholder mage variable.
+			auto mageClass = CharacterClass(
+				"Mage",
+				CharacterClassCategoryName::Mage,
+				true,
+				25,
+				6,
+				std::vector<ArmorMaterialType>(),
+				std::vector<ShieldType>(),
+				std::vector<WeaponType>());
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, CharacterClassName::Mage));
+				gameState, gender, mageClass));
 			gameState->setPanel(std::move(namePanel));
 		};
 
@@ -142,8 +163,18 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 		auto center = Int2(160, 170);
 		auto function = [gameState, gender]()
 		{
+			// Placeholder thief variable.
+			auto thiefClass = CharacterClass(
+				"Thief",
+				CharacterClassCategoryName::Thief,
+				true,
+				25,
+				14,
+				std::vector<ArmorMaterialType>(),
+				std::vector<ShieldType>(),
+				std::vector<WeaponType>());
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, CharacterClassName::Thief));
+				gameState, gender, thiefClass));
 			gameState->setPanel(std::move(namePanel));
 		};
 
@@ -283,7 +314,7 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		static_cast<int>(this->parchment->getWidth() * parchmentScale),
 		this->parchment->getHeight(),
 		dst);
-	
+
 	// Draw text: title, warrior, mage, and thief.
 	this->drawScaledToNative(*this->classTextBox.get(), dst);
 	this->drawScaledToNative(*this->warriorTextBox.get(), dst);

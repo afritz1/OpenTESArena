@@ -5,36 +5,36 @@
 
 #include "ItemType.h"
 
-const auto TrinketDisplayNames = std::map<TrinketName, std::string>
+const auto TrinketDisplayNames = std::map<TrinketType, std::string>
 {
-	{ TrinketName::Crystal, "Crystal" },
-	{ TrinketName::Mark, "Mark" }
+	{ TrinketType::Crystal, "Crystal" },
+	{ TrinketType::Mark, "Mark" }
 };
 
 // These values are made up and should be revised sometime.
-const auto TrinketWeights = std::map<TrinketName, double>
+const auto TrinketWeights = std::map<TrinketType, double>
 {
-	{ TrinketName::Crystal, 0.25 },
-	{ TrinketName::Mark, 0.20 }
+	{ TrinketType::Crystal, 0.25 },
+	{ TrinketType::Mark, 0.20 }
 };
 
 // These values are made up and should be revised sometime.
-const auto TrinketGoldValues = std::map<TrinketName, int>
+const auto TrinketGoldValues = std::map<TrinketType, int>
 {
-	{ TrinketName::Crystal, 100 },
-	{ TrinketName::Mark, 80 }
+	{ TrinketType::Crystal, 100 },
+	{ TrinketType::Mark, 80 }
 };
 
-const auto TrinketMaxEquipCounts = std::map<TrinketName, int>
+const auto TrinketMaxEquipCounts = std::map<TrinketType, int>
 {
-	{ TrinketName::Crystal, 1 },
-	{ TrinketName::Mark, 1 }
+	{ TrinketType::Crystal, 1 },
+	{ TrinketType::Mark, 1 }
 };
 
-Trinket::Trinket(TrinketName trinketName)
+Trinket::Trinket(TrinketType trinketType)
 	: Item(nullptr)
 {
-	this->trinketName = trinketName;
+	this->trinketType = trinketType;
 }
 
 Trinket::~Trinket()
@@ -49,31 +49,31 @@ ItemType Trinket::getItemType() const
 
 double Trinket::getWeight() const
 {
-	auto weight = TrinketWeights.at(this->getTrinketName());
+	auto weight = TrinketWeights.at(this->getTrinketType());
 	assert(weight >= 0.0);
 	return weight;
 }
 
 int Trinket::getGoldValue() const
 {
-	int baseValue = TrinketGoldValues.at(this->getTrinketName());
+	int baseValue = TrinketGoldValues.at(this->getTrinketType());
 	return baseValue;
 }
 
 std::string Trinket::getDisplayName() const
 {
-	auto displayName = TrinketDisplayNames.at(this->getTrinketName());
+	auto displayName = TrinketDisplayNames.at(this->getTrinketType());
 	assert(displayName.size() > 0);
 	return displayName;
 }
 
-const TrinketName &Trinket::getTrinketName() const
+const TrinketType &Trinket::getTrinketType() const
 {
-	return this->trinketName;
+	return this->trinketType;
 }
 
 int Trinket::getMaxEquipCount() const
 {
-	int maxCount = TrinketMaxEquipCounts.at(this->getTrinketName());
+	int maxCount = TrinketMaxEquipCounts.at(this->getTrinketType());
 	return maxCount;
 }

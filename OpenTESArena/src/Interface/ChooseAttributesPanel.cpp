@@ -9,6 +9,7 @@
 #include "ChooseRacePanel.h"
 #include "GameWorldPanel.h"
 #include "TextBox.h"
+#include "../Entities/CharacterClass.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -18,7 +19,7 @@
 #include "../Media/TextureName.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState, 
-	CharacterGenderName gender, CharacterClassName className, 
+	CharacterGenderName gender, const CharacterClass &charClass,
 	const std::string &name, CharacterRaceName raceName)
 	: Panel(gameState)
 {
@@ -26,7 +27,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->backToRaceButton = nullptr;
 	this->acceptButton = nullptr;
 	this->gender = nullptr;
-	this->className = nullptr;
+	this->charClass = nullptr;
 	this->raceName = nullptr;
 
 	this->titleTextBox = [gameState]()
@@ -44,12 +45,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->getTextureManager()));
 	}();
 
-	this->backToRaceButton = [gameState, gender, className, name]()
+	this->backToRaceButton = [gameState, gender, charClass, name]()
 	{
-		auto function = [gameState, gender, className, name]()
+		auto function = [gameState, gender, charClass, name]()
 		{
 			auto racePanel = std::unique_ptr<Panel>(new ChooseRacePanel(
-				gameState, gender, className, name));
+				gameState, gender, charClass, name));
 			gameState->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -71,8 +72,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->gender = std::unique_ptr<CharacterGenderName>(
 		new CharacterGenderName(gender));
-	this->className = std::unique_ptr<CharacterClassName>(
-		new CharacterClassName(className));
+	this->charClass = std::unique_ptr<CharacterClass>(
+		new CharacterClass(charClass));
 	this->raceName = std::unique_ptr<CharacterRaceName>(
 		new CharacterRaceName(raceName));
 	this->name = name;
@@ -81,7 +82,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	assert(this->backToRaceButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
 	assert(this->gender.get() != nullptr);
-	assert(this->className.get() != nullptr);
+	assert(this->charClass.get() != nullptr);
 	assert(this->raceName.get() != nullptr);
 	assert(this->name == name);
 }

@@ -1,11 +1,8 @@
 #ifndef CHARACTER_CLASS_H
 #define CHARACTER_CLASS_H
 
-#include <memory>
 #include <string>
 #include <vector>
-
-#include "CharacterClassName.h"
 
 enum class ArmorMaterialType;
 enum class CharacterClassCategoryName;
@@ -15,21 +12,30 @@ enum class WeaponType;
 class CharacterClass
 {
 private:
-	CharacterClassName className;	
+	std::string displayName;
+	CharacterClassCategoryName categoryName;
+	bool castsMagic;
+	int startingHealth, healthDice;
+	std::vector<ArmorMaterialType> allowedArmors;
+	std::vector<ShieldType> allowedShields;
+	std::vector<WeaponType> allowedWeapons;
 public:
-	CharacterClass(CharacterClassName className);
+	CharacterClass(const std::string &displayName, 
+		CharacterClassCategoryName categoryName, bool castsMagic, 
+		int startingHealth, int healthDice, 
+		const std::vector<ArmorMaterialType> &allowedArmors,
+		const std::vector<ShieldType> &allowedShields,
+		const std::vector<WeaponType> &allowedWeapons);
 	~CharacterClass();
 
-	const CharacterClassName &getClassName() const;
-	CharacterClassCategoryName getClassCategoryName() const;
-	std::string toString() const;
-
-	// startingBaseHealth()...
-	// startingHealthDice()...
-
-	std::vector<ArmorMaterialType> getAllowedArmors() const;
-	std::vector<ShieldType> getAllowedShields() const;
-	std::vector<WeaponType> getAllowedWeapons() const;
+	const std::string &getDisplayName() const;
+	const CharacterClassCategoryName &getClassCategoryName() const;
+	const bool &canCastMagic() const;
+	const int &getStartingHealth() const;
+	const int &getHealthDice() const;
+	const std::vector<ArmorMaterialType> &getAllowedArmors() const;
+	const std::vector<ShieldType> &getAllowedShields() const;
+	const std::vector<WeaponType> &getAllowedWeapons() const;
 };
 
 #endif

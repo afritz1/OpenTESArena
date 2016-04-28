@@ -9,11 +9,11 @@
 // for now. Just click on a province and go.
 
 class Button;
+class CharacterClass;
 class Rectangle;
 class Surface;
 class TextBox;
 
-enum class CharacterClassName;
 enum class CharacterGenderName;
 enum class ProvinceName;
 
@@ -24,7 +24,7 @@ private:
 	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToNameButton, acceptButton;
-	std::unique_ptr<CharacterClassName> className;
+	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::string name;
 
@@ -35,7 +35,7 @@ protected:
 	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseRacePanel(GameState *gameState, CharacterGenderName gender,
-		CharacterClassName className, const std::string &name);
+		const CharacterClass &charClass, const std::string &name);
 	virtual ~ChooseRacePanel();
 
 	virtual void tick(double dt, bool &running) override;

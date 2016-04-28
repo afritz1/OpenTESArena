@@ -8,15 +8,12 @@
 // This class is mostly for implementing the "toString()" method for class categories. 
 // Otherwise, the character class has two methods which fight over a similar name.
 
-enum class CharacterClassName;
-
 class CharacterClassCategory
 {
 private:
 	CharacterClassCategoryName categoryName;
 public:
 	CharacterClassCategory(CharacterClassCategoryName categoryName);
-	CharacterClassCategory(CharacterClassName className);
 	~CharacterClassCategory();
 
 	const CharacterClassCategoryName &getCategoryName() const;

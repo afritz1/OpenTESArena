@@ -9,7 +9,7 @@
 #include "ChooseAttributesPanel.h"
 #include "ChooseNamePanel.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClassName.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
 #include "../Game/GameState.h"
@@ -23,7 +23,7 @@
 #include "../World/ProvinceName.h"
 
 ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gender,
-	CharacterClassName className, const std::string &name)
+	const CharacterClass &charClass, const std::string &name)
 	: Panel(gameState)
 {
 	this->provinceAreas = std::map<ProvinceName, Rectangle>();
@@ -31,7 +31,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	this->initialTextBox = nullptr;
 	this->backToNameButton = nullptr;
 	this->gender = nullptr;
-	this->className = nullptr;
+	this->charClass = nullptr;
 
 	// Clickable (x, y, width, height) areas for each province.
 	this->provinceAreas = std::map<ProvinceName, Rectangle>
@@ -69,24 +69,24 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 			gameState->getTextureManager()));
 	}();
 
-	this->backToNameButton = [gameState, gender, className]()
+	this->backToNameButton = [gameState, gender, charClass]()
 	{
-		auto function = [gameState, gender, className]()
+		auto function = [gameState, gender, charClass]()
 		{
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, className));
+				gameState, gender, charClass));
 			gameState->setPanel(std::move(namePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	// How should the race name be given? "this->getChosenRaceName()"?
-	this->acceptButton = [gameState, gender, className, name]()
+	this->acceptButton = [gameState, gender, charClass, name]()
 	{
-		auto function = [gameState, gender, className, name]()
+		auto function = [gameState, gender, charClass, name]()
 		{
 			auto attributesPanel = std::unique_ptr<Panel>(new ChooseAttributesPanel(
-				gameState, gender, className, name, CharacterRaceName::Nord));
+				gameState, gender, charClass, name, CharacterRaceName::Nord));
 			gameState->setPanel(std::move(attributesPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -94,8 +94,8 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 
 	this->gender = std::unique_ptr<CharacterGenderName>(
 		new CharacterGenderName(gender));
-	this->className = std::unique_ptr<CharacterClassName>(
-		new CharacterClassName(className));
+	this->charClass = std::unique_ptr<CharacterClass>(
+		new CharacterClass(charClass));
 	this->name = name;
 
 	// Nine provinces.
@@ -106,8 +106,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	assert(this->acceptButton.get() != nullptr);
 	assert(this->gender.get() != nullptr);
 	assert(*this->gender.get() == gender);
-	assert(this->className.get() != nullptr);
-	assert(*this->className.get() == className);
+	assert(this->charClass.get() != nullptr);
 	assert(this->name.size() > 0);
 }
 

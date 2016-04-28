@@ -10,16 +10,9 @@
 // information). I think it would be better to show them all at the same time as 
 // buttons, and have tooltips when hovered over.
 
-// Replace the current three buttons with three columns holding six mini-buttons 
-// each, like this:
-//           [Choose thy class]
-//   [Warrior]      [Mage]       [Thief]
-//      w1            m1           t1
-//     ...           ...          ...
-//     ...           ...          ...
-//     ...           ...          ...
-//     ...           ...          ...
-//     ...           ...          ...
+// I think having a hardcoded number of classes isn't good design now that the
+// character classes are being put into a text file to be parsed at runtime.
+// Maybe a list would be best, but make sure to have tooltips!
 
 class Button;
 class Surface;

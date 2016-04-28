@@ -9,7 +9,7 @@
 #include "ChooseClassPanel.h"
 #include "ChooseRacePanel.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClassName.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
@@ -19,14 +19,14 @@
 #include "../Media/TextureName.h"
 
 ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gender, 
-	CharacterClassName className)
+	const CharacterClass &charClass)
 	: Panel(gameState)
 {
 	this->titleTextBox = nullptr;
 	this->backToClassButton = nullptr;
 	this->acceptButton = nullptr;
 	this->gender = nullptr;
-	this->className = nullptr;
+	this->charClass = nullptr;
 
 	this->titleTextBox = [gameState]()
 	{
@@ -56,12 +56,12 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 
 	// Somehow pass the entered string to the next panel constructor. 
 	// Maybe "this->getNameString()"? Or give it to the game state player pointer?
-	this->acceptButton = [gameState, gender, className]()
+	this->acceptButton = [gameState, gender, charClass]()
 	{
-		auto function = [gameState, gender, className]()
+		auto function = [gameState, gender, charClass]()
 		{
 			auto racePanel = std::unique_ptr<Panel>(new ChooseRacePanel(
-				gameState, gender, className, "Player"));
+				gameState, gender, charClass, "Player"));
 			gameState->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -69,16 +69,15 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 
 	this->gender = std::unique_ptr<CharacterGenderName>(
 		new CharacterGenderName(gender));
-	this->className = std::unique_ptr<CharacterClassName>(
-		new CharacterClassName(className));
+	this->charClass = std::unique_ptr<CharacterClass>(
+		new CharacterClass(charClass));
 
 	assert(this->titleTextBox.get() != nullptr);
 	assert(this->backToClassButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
 	assert(this->gender.get() != nullptr);
 	assert(*this->gender.get() == gender);
-	assert(this->className.get() != nullptr);
-	assert(*this->className.get() == className);
+	assert(this->charClass.get() != nullptr);
 }
 
 ChooseNamePanel::~ChooseNamePanel()

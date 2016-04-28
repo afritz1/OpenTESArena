@@ -88,6 +88,10 @@
     <ClCompile Include="src\Interface\ChooseAttributesPanel.cpp" />
     <ClCompile Include="src\Interface\OptionsPanel.cpp" />
     <ClCompile Include="src\Items\ArmorArtifactData.cpp" />
+    <ClCompile Include="src\Items\ArtifactParser.cpp" />
+    <ClCompile Include="src\Utilities\File.cpp" />
+    <ClCompile Include="src\World\LocationParser.cpp" />
+    <ClCompile Include="src\Items\ItemParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -133,13 +137,11 @@
     <ClInclude Include="src\Items\Weapon.h" />
     <ClInclude Include="src\Items\ItemConditionName.h" />
     <ClInclude Include="src\Items\ItemCondition.h" />
-    <ClInclude Include="src\Items\TrinketName.h" />
     <ClInclude Include="src\Items\Metallic.h" />
     <ClInclude Include="src\Items\Trinket.h" />
     <ClInclude Include="src\Entities\BodyPart.h" />
     <ClInclude Include="src\Entities\BodyPartName.h" />
     <ClInclude Include="src\Entities\CharacterClass.h" />
-    <ClInclude Include="src\Entities\CharacterClassName.h" />
     <ClInclude Include="src\Entities\CharacterEquipment.h" />
     <ClInclude Include="src\Entities\CharacterGender.h" />
     <ClInclude Include="src\Entities\CharacterGenderName.h" />
@@ -219,5 +221,10 @@
     <ClInclude Include="src\Interface\ChooseAttributesPanel.h" />
     <ClInclude Include="src\Interface\OptionsPanel.h" />
     <ClInclude Include="src\Items\ArmorArtifactData.h" />
+    <ClInclude Include="src\Items\ArtifactParser.h" />
+    <ClInclude Include="src\Utilities\File.h" />
+    <ClInclude Include="src\World\LocationParser.h" />
+    <ClInclude Include="src\Items\ItemParser.h" />
+    <ClInclude Include="src\Items\TrinketType.h" />
   </ItemGroup>
 </Project>

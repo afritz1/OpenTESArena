@@ -92,8 +92,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)data\*" "$(TargetDir)data\" /E /Y
-xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
+      <Command>xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
@@ -130,13 +129,16 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)data\*" "$(TargetDir)data\" /E /Y
-xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
+      <Command>xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Items\ItemParser.cpp" />
+    <ClCompile Include="src\World\LocationParser.cpp" />
+    <ClCompile Include="src\Utilities\File.cpp" />
+    <ClCompile Include="src\Items\ArtifactParser.cpp" />
     <ClCompile Include="src\Items\ArmorArtifactData.cpp" />
     <ClCompile Include="src\Interface\OptionsPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseAttributesPanel.cpp" />
@@ -226,6 +228,10 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Items\ItemParser.h" />
+    <ClInclude Include="src\World\LocationParser.h" />
+    <ClInclude Include="src\Utilities\File.h" />
+    <ClInclude Include="src\Items\ArtifactParser.h" />
     <ClInclude Include="src\Items\ArmorArtifactData.h" />
     <ClInclude Include="src\Interface\OptionsPanel.h" />
     <ClInclude Include="src\Interface\ChooseAttributesPanel.h" />
@@ -291,7 +297,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Entities\CharacterGender.h" />
     <ClInclude Include="src\Entities\CharacterGenderName.h" />
     <ClInclude Include="src\Entities\CharacterRace.h" />
-    <ClInclude Include="src\Items\TrinketName.h" />
+    <ClInclude Include="src\Items\TrinketType.h" />
     <ClInclude Include="src\Media\Font.h" />
     <ClInclude Include="src\Media\SoundFormat.h" />
     <ClInclude Include="src\Media\SoundName.h" />
@@ -301,7 +307,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Game\Guild.h" />
     <ClInclude Include="src\Entities\CharacterClass.h" />
     <ClInclude Include="src\Game\CardinalDirectionName.h" />
-    <ClInclude Include="src\Entities\CharacterClassName.h" />
     <ClInclude Include="src\Entities\CharacterClassCategoryName.h" />
     <ClInclude Include="src\Entities\CharacterRaceName.h" />
     <ClInclude Include="src\Entities\PrimaryAttributeName.h" />

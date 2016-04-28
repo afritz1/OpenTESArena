@@ -4,17 +4,17 @@
 #include <string>
 
 #include "Item.h"
-#include "TrinketName.h"
+#include "TrinketType.h"
 
 // Trinkets are non-metal accessories, so they don't inherit from Metallic.
 
 class Trinket : public Item
 {
 private:
-	TrinketName trinketName;
+	TrinketType trinketType;
 public:
 	// There are no artifact trinkets for now, so this constructor remains simple.
-	Trinket(TrinketName trinketName);
+	Trinket(TrinketType trinketType);
 	~Trinket();
 
 	virtual ItemType getItemType() const override;
@@ -22,7 +22,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const TrinketName &getTrinketName() const;
+	const TrinketType &getTrinketType() const;
 	int getMaxEquipCount() const;
 };
 

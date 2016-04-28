@@ -6,9 +6,9 @@
 #include "Panel.h"
 
 class Button;
+class CharacterClass;
 class TextBox;
 
-enum class CharacterClassName;
 enum class CharacterGenderName;
 enum class CharacterRaceName;
 
@@ -17,7 +17,7 @@ class ChooseAttributesPanel : public Panel
 private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<Button> backToRaceButton, acceptButton;
-	std::unique_ptr<CharacterClassName> className;
+	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
 	std::string name;
@@ -27,7 +27,7 @@ protected:
 	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseAttributesPanel(GameState *gameState, CharacterGenderName gender,
-		CharacterClassName className, const std::string &name,
+		const CharacterClass &charClass, const std::string &name,
 		CharacterRaceName raceName);
 	virtual ~ChooseAttributesPanel();
 
