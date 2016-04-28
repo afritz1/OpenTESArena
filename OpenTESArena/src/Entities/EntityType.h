@@ -3,7 +3,7 @@
 
 // Containers are: treasure chests, piles, corpses, etc..
 // Doodads are: furniture, trees, light posts, etc..
-// Doors are: swinging doors, portcullises, not voxels.
+// Doors are: swinging doors, raising portcullises, not voxels.
 // Non-players are: anything with an AI.
 // Players are: the player only.
 // Spells are: any spell projectiles flying through the air.

@@ -16,7 +16,6 @@
     <ClCompile Include="src\Entities\Entity.cpp" />
     <ClCompile Include="src\Interface\Panel.cpp" />
     <ClCompile Include="src\Rendering\Renderer.cpp" />
-    <ClCompile Include="src\World\Encoding.cpp" />
     <ClCompile Include="src\Items\ArtifactData.cpp" />
     <ClCompile Include="src\Game\Guild.cpp" />
     <ClCompile Include="src\World\Location.cpp" />
@@ -88,6 +87,7 @@
     <ClCompile Include="src\Interface\PauseMenuPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseAttributesPanel.cpp" />
     <ClCompile Include="src\Interface\OptionsPanel.cpp" />
+    <ClCompile Include="src\Items\ArmorArtifactData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -120,9 +120,6 @@
     <ClInclude Include="src\Items\WeaponHandCount.h" />
     <ClInclude Include="src\World\ProvinceName.h" />
     <ClInclude Include="src\World\LocationType.h" />
-    <ClInclude Include="src\World\LocationName.h" />
-    <ClInclude Include="src\World\Encoding.h" />
-    <ClInclude Include="src\Items\ArtifactName.h" />
     <ClInclude Include="src\Items\ArtifactData.h" />
     <ClInclude Include="src\Game\CardinalDirectionName.h" />
     <ClInclude Include="src\Game\GuildName.h" />
@@ -185,15 +182,9 @@
     <ClInclude Include="src\Entities\AttributeModifierName.h" />
     <ClInclude Include="src\Items\ConsumableType.h" />
     <ClInclude Include="src\Items\Consumable.h" />
-    <ClInclude Include="src\Items\FoodType.h" />
     <ClInclude Include="src\Items\Item.h" />
     <ClInclude Include="src\Items\MiscellaneousItemType.h" />
     <ClInclude Include="src\Items\MiscellaneousItem.h" />
-    <ClInclude Include="src\Items\WeaponArtifactName.h" />
-    <ClInclude Include="src\Items\BodyArmorArtifactName.h" />
-    <ClInclude Include="src\Items\AccessoryArtifactName.h" />
-    <ClInclude Include="src\Items\MiscellaneousArtifactName.h" />
-    <ClInclude Include="src\Items\ShieldArtifactName.h" />
     <ClInclude Include="src\Items\AccessoryArtifactData.h" />
     <ClInclude Include="src\Items\BodyArmorArtifactData.h" />
     <ClInclude Include="src\Items\WeaponArtifactData.h" />
@@ -227,5 +218,6 @@
     <ClInclude Include="src\Interface\GameWorldPanel.h" />
     <ClInclude Include="src\Interface\ChooseAttributesPanel.h" />
     <ClInclude Include="src\Interface\OptionsPanel.h" />
+    <ClInclude Include="src\Items\ArmorArtifactData.h" />
   </ItemGroup>
 </Project>

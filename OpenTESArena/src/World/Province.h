@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Location.h"
 #include "ProvinceName.h"
 
 // After checking through some climates, it feels like it would make sense to
@@ -11,25 +12,21 @@
 // even though several of Black Marsh's locations are deserts. Maybe the
 // developers intended it to be like wastelands, or barrens?
 
-enum class LocationName;
-
 class Province
 {
 private:
-	// dynamic vector of random dungeons...?
 	ProvinceName provinceName;
+	std::vector<Location> locations;
 public:
 	Province(ProvinceName provinceName);
 	~Province();
 
-	static std::vector<ProvinceName> getAllProvinceNames();
-
 	const ProvinceName &getProvinceName() const;
+	const std::vector<Location> &getLocations() const;
 	std::string toString() const;
 	std::string getRaceName(bool plural) const;
-	std::vector<LocationName> getCivilizations() const;
-	std::vector<LocationName> getMainQuestDungeons() const;
-	// vector<> getRandomDungeons()...?
+
+	void addLocation(const Location &location);
 };
 
 #endif

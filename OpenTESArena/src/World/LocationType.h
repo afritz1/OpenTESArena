@@ -18,9 +18,7 @@ enum class LocationType
 	// each pair is here, like "Stonekeep", which has the generic dungeon icon.
 	Dungeon,
 
-	// "Unique" main quest places. These ones all have distinct icons. When 
-	// checking what icon to get and the type is Unique, then look at the
-	// LocationName instead.
+	// "Unique" main quest places. These ones all have distinct icons.
 	Unique
 };
 
