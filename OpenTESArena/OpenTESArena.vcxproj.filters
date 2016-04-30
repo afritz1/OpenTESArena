@@ -92,6 +92,11 @@
     <ClCompile Include="src\Utilities\File.cpp" />
     <ClCompile Include="src\World\LocationParser.cpp" />
     <ClCompile Include="src\Items\ItemParser.cpp" />
+    <ClCompile Include="src\Game\GameData.cpp" />
+    <ClCompile Include="src\Entities\EntityManager.cpp" />
+    <ClCompile Include="src\Entities\Player.cpp" />
+    <ClCompile Include="src\Entities\Movable.cpp" />
+    <ClCompile Include="src\Entities\Directable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -226,5 +231,10 @@
     <ClInclude Include="src\World\LocationParser.h" />
     <ClInclude Include="src\Items\ItemParser.h" />
     <ClInclude Include="src\Items\TrinketType.h" />
+    <ClInclude Include="src\Game\GameData.h" />
+    <ClInclude Include="src\Entities\EntityManager.h" />
+    <ClInclude Include="src\Entities\Player.h" />
+    <ClInclude Include="src\Entities\Movable.h" />
+    <ClInclude Include="src\Entities\Directable.h" />
   </ItemGroup>
 </Project>

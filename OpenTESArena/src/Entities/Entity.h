@@ -1,35 +1,49 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <memory>
+
 #include "EntityType.h"
 #include "../Math/Float3.h"
 
 // Entities are anything in the world that isn't part of the voxel grid. Every 
-// entity has a world position and a unique referencing ID (like an integer). 
-// Not all entities have a sprite (such as the player or doors), and so they would 
-// be either treated differently or ignored altogether when rendering.
+// entity has a world position and a unique referencing ID. 
 
-// There shouldn't be a "Projectile" derived class. Too much shared functionality
-// with other physics-related things. It could be from something like "Moveable".
+// Not all entities have a sprite (such as the player), and not all sprites turn to 
+// face the camera (such as doors and portcullises), so those ones would need to be 
+// treated differently when updating the world every frame.
 
-// There should be a "Light" member somewhere in the Entity hierarchy. It would 
-// primarily be for static torches and things, but for people, if they have something 
-// equipped that emits light, like an enchanted ring, then make that part of the 
-// light list that they have. Unequipped items shouldn't emit light. They're "covered 
-// by the backpack".
+// --- Rendering ---
+// Since the position of a light held by a sprite would likely be near its middle, 
+// no shadow check between an intersection on the sprite and its light should be done, 
+// in order to avoid divide-by-zero distance errors in the ray tracer. The sprite 
+// would be fully lit by its own light at all points. The triangles would probably 
+// have a "hasLight" boolean that tells if it's a sprite-light, and an index into the 
+// lights array to tell which one to avoid. Essentially, sprites with lights cannot 
+// cast shadows from their own light, but can cast shadows from other lights, because 
+// there's no zero-distance issue.
+
+class EntityManager;
+class GameState;
 
 class Entity
 {
+private:
+	int id;
+	EntityType entityType;
+protected:
+	Float3d position;
 public:
-	Entity(); // Acquire ID from given EntityManager instance. No static manager classes!
+	Entity(EntityType entityType, const Float3d &position, EntityManager &entityManager);
 	virtual ~Entity();
 
-	// std::unique_ptr<Entity> clone()...
+	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
+	
+	const int &getID() const;
+	const EntityType &getEntityType() const;
+	const Float3d &getPosition() const;
 
-	// Hmm... an entity is abstract, but I want all entities to have a position and ID...
-	virtual const Float3d &getPosition() const = 0;
-	virtual const EntityType &getEntityType() const = 0;
-	virtual const int &getID() const = 0;
+	virtual void tick(GameState *gameState, double dt) = 0;
 };
 
 #endif

@@ -5,6 +5,7 @@
 
 #include "GameState.h"
 
+#include "GameData.h"
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/MusicFormat.h"
@@ -24,6 +25,7 @@ const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 GameState::GameState()
 {
 	this->audioManager = nullptr;
+	this->gameData = nullptr;
 	this->nextMusic = nullptr;
 	this->nextPanel = nullptr;
 	this->panel = nullptr;
@@ -39,7 +41,7 @@ GameState::GameState()
 		MusicName::PercIntro));
 
 	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
-		MusicFormat::MIDI, SoundFormat::Ogg, 64));
+		MusicFormat::MIDI, SoundFormat::Ogg, 32));
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		GameState::DEFAULT_SCREEN_WIDTH, GameState::DEFAULT_SCREEN_HEIGHT,
 		GameState::DEFAULT_IS_FULLSCREEN, GameState::DEFAULT_SCREEN_TITLE));
@@ -55,6 +57,7 @@ GameState::GameState()
 	SDL_ShowCursor(SDL_FALSE);
 
 	assert(this->audioManager.get() != nullptr);
+	assert(this->gameData.get() == nullptr);
 	assert(this->nextMusic.get() != nullptr);
 	assert(this->panel.get() == nullptr);
 	assert(this->nextPanel.get() != nullptr);
@@ -73,9 +76,19 @@ bool GameState::isRunning() const
 	return this->running;
 }
 
+bool GameState::gameDataIsActive() const
+{
+	return this->gameData.get() != nullptr;
+}
+
 AudioManager &GameState::getAudioManager() const
 {
 	return *this->audioManager.get();
+}
+
+GameData *GameState::getGameData() const
+{
+	return this->gameData.get();
 }
 
 TextureManager &GameState::getTextureManager() const
