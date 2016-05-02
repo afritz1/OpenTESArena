@@ -33,7 +33,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(128, 65);
+		auto origin = Int2(133, 65);
 		auto color = Color::White;
 		std::string text = "Paused";
 		auto fontName = FontName::A;
@@ -48,7 +48,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->loadTextBox = [gameState]()
 	{
-		auto origin = Int2(160, 95);
+		auto origin = Int2(164, 95);
 		auto color = Color::White;
 		std::string text = "Load Game";
 		auto fontName = FontName::A;
@@ -63,7 +63,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->mainMenuTextBox = [gameState]()
 	{
-		auto origin = Int2(160, 120);
+		auto origin = Int2(164, 120);
 		auto color = Color::White;
 		std::string text = "Main Menu";
 		auto fontName = FontName::A;
@@ -78,7 +78,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->optionsTextBox = [gameState]()
 	{
-		auto origin = Int2(80, 120);
+		auto origin = Int2(85, 120);
 		auto color = Color::White;
 		std::string text = "Options";
 		auto fontName = FontName::A;
@@ -93,7 +93,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->resumeTextBox = [gameState]()
 	{
-		auto origin = Int2(80, 95);
+		auto origin = Int2(86, 95);
 		auto color = Color::White;
 		std::string text = "Resume";
 		auto fontName = FontName::A;
@@ -110,7 +110,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	// that tells whether a game is active, and thus which panel to return to.
 	this->loadButton = [gameState]()
 	{
-		auto center = Int2(200, 100);
+		auto center = Int2(205, 100);
 		auto function = [gameState]()
 		{
 			//auto loadPanel = std::unique_ptr<Panel>(new LoadGamePanel(gameState));
@@ -121,7 +121,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->mainMenuButton = [gameState]()
 	{
-		auto center = Int2(200, 125);
+		auto center = Int2(205, 125);
 		auto function = [gameState]()
 		{
 			auto mainMenuPanel = std::unique_ptr<Panel>(new MainMenuPanel(gameState));
@@ -133,7 +133,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->optionsButton = [gameState]()
 	{
-		auto center = Int2(110, 125);
+		auto center = Int2(115, 125);
 		auto function = [gameState]()
 		{
 			// Change to options panel once that class is programmed.
@@ -145,7 +145,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->resumeButton = [gameState]()
 	{
-		auto center = Int2(110, 100);
+		auto center = Int2(115, 100);
 		auto function = [gameState]()
 		{
 			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
@@ -254,7 +254,7 @@ void PauseMenuPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->clearScreen(dst);
 
 	// Draw temporary background.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 48, 48, 48));
+	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 36, 48, 36));
 
 	// Draw buttons: load, main menu, options, resume.
 	this->drawScaledToNative(*this->loadButton.get(), dst);

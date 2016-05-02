@@ -21,6 +21,7 @@ enum class ClimateName
 	Cold,
 	Desert,
 	Grassy,
+	Interior,
 	Snowy
 };
 

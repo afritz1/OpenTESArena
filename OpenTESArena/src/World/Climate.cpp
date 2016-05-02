@@ -8,6 +8,7 @@ const auto ClimateDisplayNames = std::map<ClimateName, std::string>
 	{ ClimateName::Cold, "Cold" },
 	{ ClimateName::Desert, "Desert" },
 	{ ClimateName::Grassy, "Grassy" },
+	{ ClimateName::Interior, "Interior" },
 	{ ClimateName::Snowy, "Snowy" }
 };
 
