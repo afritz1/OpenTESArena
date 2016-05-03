@@ -3,6 +3,10 @@
 
 #include "FontName.h"
 
+// Made some changes to this class during the text box redesign. No more character
+// widths and heights for each font. All letters have their right side whitespace
+// trimmed until the number of whitespace columns for padding is reached.
+
 class Int2;
 
 enum class TextureName;
@@ -15,18 +19,20 @@ public:
 	Font(FontName fontName);
 	~Font();
 
-	static Int2 getCharacterCell(unsigned char c);
+	static Int2 getCellPosition(unsigned char c);
 
 	const FontName &getFontName() const;
 	TextureName getFontTextureName() const;
-	int getUpperCharacterWidth() const;
-	int getUpperCharacterHeight() const;
-	int getLowerCharacterWidth() const;
-	int getLowerCharacterHeight() const;
-	int getUpperCharacterOffsetWidth() const;
-	int getUpperCharacterOffsetHeight() const;
-	int getLowerCharacterOffsetWidth() const;
-	int getLowerCharacterOffsetHeight() const;
+
+	// Get the width and height of each of a font's cells in pixels. This tells how
+	// much to copy at each cell position.
+	Int2 getCellDimensions() const;
+
+	// The number of columns of whitespace to have on the right side of each letter.
+	int getRightPadding() const;
+
+	// The number of columns of whitespace a space is.
+	int getSpaceWidth() const;
 };
 
 #endif

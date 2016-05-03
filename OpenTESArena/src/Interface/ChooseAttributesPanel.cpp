@@ -32,13 +32,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(20, 80);
+		auto center = Int2(160, 100);
 		auto color = Color::White;
-		std::string text = "Thy attributes will soon be here. \nLeft click.";
+		std::string text = "Thy attributes will soon be here.\n\nLeft click.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -152,7 +151,7 @@ void ChooseAttributesPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		
 	// Draw temporary background. I don't have the marble background or character
 	// portraits programmed in yet, but they will be, eventually.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 32, 32, 64));
+	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 24));
 
 	// Draw text: title.
 	this->drawScaledToNative(*this->titleTextBox.get(), dst);

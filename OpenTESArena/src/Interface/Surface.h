@@ -8,7 +8,7 @@
 // Maybe sprites should have a "trimSide()" method for getting rid of unnecessary
 // transparency, like the villagers who float a couple inches off the gruund.
 // "addTransparencyOnSide()" would be good, too, for centering sprites like the
-// palm tree.
+// palm tree. These values should be in a text file that's read in.
 
 class Color;
 class Int2;
@@ -57,8 +57,8 @@ public:
 	void fill(const Color &color);
 	void fillRect(const Rectangle &rectangle, const Color &color);
 	void outline(const Color &color);
-	void blit(Surface &dst, const Int2 &point, const Rectangle &clipRect) const;
-	void blit(Surface &dst, const Int2 &point) const;
+	void blit(Surface &dst, const Int2 &dstPoint, const Rectangle &clipRect) const;
+	void blit(Surface &dst, const Int2 &dstPoint) const;
 	void blit(Surface &dst) const;
 	void blitScaled(Surface &dst, double scale, const Int2 &point,
 		const Rectangle &clipRect) const;

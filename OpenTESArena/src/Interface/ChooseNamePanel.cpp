@@ -30,13 +30,12 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(20, 80);
+		auto center = Int2(160, 100);
 		auto color = Color::White;
-		std::string text = "Thou shall be known as \"Player\".\n\nPress enter.";
+		std::string text = "Thou shall be known as\n\"Player\" for now.\n\nPress enter.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,

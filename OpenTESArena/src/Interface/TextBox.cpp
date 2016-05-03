@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -11,161 +12,312 @@
 #include "../Media/Font.h"
 #include "../Media/TextureManager.h"
 
+// The Surface constructor is given (1, 1) for width and height because the text box
+// dimensions are calculated in the TextBox constructor, and a surface cannot have
+// width and height of zero. They are placeholder values, essentially.
 TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	FontName fontName, TextureManager &textureManager)
 	: Surface(x, y, 1, 1)
 {
 	this->fontName = fontName;
 
-	// Split "text" into lines of text.
-	this->textLines = [&text]()
+	// Split "text" into separate lines of text.
+	auto textLines = this->textToLines(text);
+
+	// Get combined surfaces for each text line. That is, each line is one surface.
+	auto lineSurfaces = std::vector<std::unique_ptr<Surface>>();
+	for (const auto &textLine : textLines)
 	{
-		auto temp = std::vector<std::string>();
+		auto letterSurfaces = this->lineToSurfaces(textLine, textureManager);
 
-		// Add one empty string to start.
-		temp.push_back(std::string());
-
-		const char newLine = '\n';
-		int textLineIndex = 0;
-		for (auto &c : text)
+		// Don't try to combine empty lines.
+		if (letterSurfaces.size() > 0)
 		{
-			if (c != newLine)
-			{
-				// std::string has push_back! Yay! Intuition + 1.
-				temp.at(textLineIndex).push_back(c);
-			}
-			else
-			{
-				temp.push_back(std::string());
-				textLineIndex++;
-			}
+			lineSurfaces.push_back(this->combineSurfaces(letterSurfaces));
 		}
-
-		return temp;
-	}();
-
-	// Calculate the proper dimensions of the text box.
-	// No need for a "FontSurface" type... just do the heavy lifting in this class.
-	auto font = Font(fontName);
-
-	// These values assume mono-space format, which several of the fonts are not.
-	// So when redoing the text box code, determine the character width for any
-	// character from its right-side-trimmed surface.
-	int upperCharWidth = font.getUpperCharacterWidth();
-	int upperCharHeight = font.getUpperCharacterHeight();
-	int lowerCharWidth = font.getLowerCharacterWidth();
-	int lowerCharHeight = font.getLowerCharacterHeight();
-
-	const int newWidth = [](const std::vector<std::string> &lines,
-		int upperCharWidth, int lowerCharWidth)
-	{
-		// Find longest line (in pixels) out of all lines.
-		int longestLength = 0;
-		for (auto &line : lines)
-		{
-			// Sum of all character lengths in the current line.
-			int linePixels = 0;
-			for (auto &c : line)
-			{
-				linePixels += islower(c) ? lowerCharWidth : upperCharWidth;
-			}
-
-			// Check against the current longest line.
-			if (linePixels > longestLength)
-			{
-				longestLength = linePixels;
-			}
-		}
-
-		// In pixels.
-		return longestLength;
-	}(this->textLines, upperCharWidth, lowerCharWidth);
-
-	const int newHeight = static_cast<int>(this->textLines.size()) * upperCharHeight;
-
-	// Resize the surface with the proper dimensions for fitting all the text.
-	SDL_FreeSurface(this->surface);
-	this->surface = [](int width, int height, int colorBits)
-	{
-		return SDL_CreateRGBSurface(0, width, height, colorBits, 0, 0, 0, 0);
-	}(newWidth, newHeight, Surface::DEFAULT_BPP);
-
-	// Make this surface transparent.
-	this->setTransparentColor(Color::Transparent);
-	this->fill(Color::Transparent);
-	
-	// Blit each character surface in at the right spot.
-	auto point = Int2();
-	auto fontSurface = textureManager.getSurface(font.getFontTextureName());
-	int upperCharOffsetWidth = font.getUpperCharacterOffsetWidth();
-	int upperCharOffsetHeight = font.getUpperCharacterOffsetHeight();
-	int lowerCharOffsetWidth = font.getLowerCharacterOffsetWidth();
-	int lowerCharOffsetHeight = font.getLowerCharacterOffsetHeight();
-	for (auto &line : this->textLines)
-	{
-		for (auto &c : line)
-		{
-			int width = islower(c) ? lowerCharWidth : upperCharWidth;
-			int height = islower(c) ? lowerCharHeight : upperCharHeight;
-			auto letterSurface = [&]()
-			{
-				auto cellPosition = Font::getCharacterCell(c);
-				int offsetWidth = islower(c) ? lowerCharOffsetWidth : upperCharOffsetWidth;
-				int offsetHeight = islower(c) ? lowerCharOffsetHeight : upperCharOffsetHeight;
-
-				// Make a copy surface of the font character.
-				auto pixelPosition = Int2(
-					cellPosition.getX() * (width + offsetWidth),
-					cellPosition.getY() * (height + offsetHeight));
-				auto clipRect = Rectangle(pixelPosition.getX(), pixelPosition.getY(),
-					width, height);
-
-				auto surface = Surface(width, height);
-				fontSurface.blit(surface, Int2(), clipRect);
-
-				return surface;
-			}();
-
-			// Set the letter surface to have transparency.
-			letterSurface.setTransparentColor(Color::Magenta);
-
-			// Set the letter colors to the desired color.
-			auto letterPixels = static_cast<unsigned int*>(letterSurface.getSurface()->pixels);
-			auto mappedColor = SDL_MapRGBA(letterSurface.getSurface()->format, 
-				textColor.getR(), textColor.getG(), textColor.getB(), textColor.getA());
-
-			int area = letterSurface.getWidth() * letterSurface.getHeight();
-			for (int i = 0; i < area; ++i)
-			{
-				auto pixel = &letterPixels[i];
-				
-				// If transparent, then color it? I dunno, but it works.
-				if ((*pixel) == 0)
-				{
-					*pixel = mappedColor;
-				}
-			}
-
-			// Draw the letter onto this texture.
-			letterSurface.blit(*this, point);
-
-			// Move drawing position to the right of the current character.
-			point.setX(point.getX() + width);
-		}
-
-		// Move drawing point back to the left and down by one capital character size.
-		point.setX(0);
-		point.setY(point.getY() + upperCharHeight);
 	}
 
-	// Can't have text with a surface smaller than 1x1.
+	// Calculate the proper dimensions of the new text box surface.
+	int width = this->getMaxWidth(lineSurfaces);
+	int height = this->getNewLineHeight(textureManager) * 
+		static_cast<int>(lineSurfaces.size());
+
+	// Replace the old SDL surface. It was just a placeholder until now.
+	SDL_FreeSurface(this->surface);
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
+	this->optimize(textureManager.getFormat());
+
+	// Make the parent surface transparent.
+	this->fill(Color::Magenta);
+	this->setTransparentColor(Color::Magenta);
+
+	// Copy each line surface to the parent surface.
+	int yOffset = 0;
+	for (const auto &lineSurface : lineSurfaces)
+	{
+		lineSurface->blit(*this, Int2(0, yOffset));
+		yOffset += lineSurface->getHeight();
+	}
+
+	// Set the text to the text color.
+	auto *pixels = static_cast<unsigned int*>(this->surface->pixels);
+	for (int i = 0; i < (this->getWidth() * this->getHeight()); ++i)
+	{
+		auto pixelColor = Color::fromRGB(pixels[i]);
+		if (pixelColor != Color::Magenta)
+		{
+			pixels[i] = textColor.toRGB();
+		}
+	}
+
 	assert(this->surface->w > 1);
 	assert(this->surface->h > 1);
-	assert(this->textLines.size() > 0);
+	assert(this->fontName == fontName);
+}
+
+// This constructor is identical to the other one, except this one aligns the
+// text to center over the given point.
+TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text, 
+	FontName fontName, TextureManager &textureManager)
+	: Surface(0, 0, 1, 1)
+{
+	this->fontName = fontName;
+
+	// Split "text" into separate lines of text.
+	auto textLines = this->textToLines(text);
+
+	// Get combined surfaces for each text line. That is, each line is one surface.
+	auto lineSurfaces = std::vector<std::unique_ptr<Surface>>();
+	for (const auto &textLine : textLines)
+	{
+		auto letterSurfaces = this->lineToSurfaces(textLine, textureManager);
+
+		// Don't try to combine empty lines.
+		if (letterSurfaces.size() > 0)
+		{
+			lineSurfaces.push_back(this->combineSurfaces(letterSurfaces));
+		}
+	}
+
+	// Calculate the proper dimensions of the new text box surface.
+	int width = this->getMaxWidth(lineSurfaces);
+	int height = this->getNewLineHeight(textureManager) *
+		static_cast<int>(lineSurfaces.size());
+
+	// Replace the old SDL surface. It was just a placeholder until now.
+	SDL_FreeSurface(this->surface);
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
+	this->optimize(textureManager.getFormat());
+	this->setX(center.getX() - (width / 2));
+	this->setY(center.getY() - (height / 2));
+
+	// Make the parent surface transparent.
+	this->fill(Color::Magenta);
+	this->setTransparentColor(Color::Magenta);
+
+	// Copy each line surface to the parent surface.
+	int yOffset = 0;
+	for (const auto &lineSurface : lineSurfaces)
+	{
+		int xOffset = (width / 2) - (lineSurface->getWidth() / 2);
+		lineSurface->blit(*this, Int2(xOffset, yOffset));
+		yOffset += lineSurface->getHeight();
+	}
+
+	// Set the text to the text color.
+	auto *pixels = static_cast<unsigned int*>(this->surface->pixels);
+	for (int i = 0; i < (this->getWidth() * this->getHeight()); ++i)
+	{
+		auto pixelColor = Color::fromRGB(pixels[i]);
+		if (pixelColor != Color::Magenta)
+		{
+			pixels[i] = textColor.toRGB();
+		}
+	}
+
+	assert(this->surface->w > 1);
+	assert(this->surface->h > 1);
 	assert(this->fontName == fontName);
 }
 
 TextBox::~TextBox()
 {
 
+}
+
+int TextBox::getNewLineHeight(TextureManager &textureManager) const
+{
+	auto font = Font(this->getFontName());
+	const auto &surface = textureManager.getSurface(font.getFontTextureName());
+	int height = surface.getHeight() / 3;
+	return height;
+}
+
+int TextBox::getMaxWidth(const std::vector<std::unique_ptr<Surface>> &surfaces)
+{
+	int maxWidth = 0;
+	for (const auto &surface : surfaces)
+	{
+		maxWidth = std::max(maxWidth, surface->getWidth());
+	}
+
+	return maxWidth;
+}
+
+std::vector<std::string> TextBox::textToLines(const std::string &text) const
+{
+	auto lines = std::vector<std::string>();
+
+	// Add one empty string to start.
+	lines.push_back(std::string());
+
+	const char newLine = '\n';
+	int textLineIndex = 0;
+	for (const auto &c : text)
+	{
+		if (c == newLine)
+		{
+			// Add a new line.
+			lines.push_back(std::string());
+			textLineIndex++;
+		}
+		else
+		{
+			// Add the character onto the current line.
+			// std::string has push_back! Yay! Intuition + 1.
+			lines.at(textLineIndex).push_back(c);
+		}
+	}
+
+	return lines;
+}
+
+std::unique_ptr<Surface> TextBox::combineSurfaces(
+	const std::vector<std::unique_ptr<Surface>> &letterSurfaces)
+{
+	int totalWidth = 0;
+	for (const auto &surface : letterSurfaces)
+	{
+		totalWidth += surface->getWidth();
+	}
+
+	int totalHeight = letterSurfaces.at(0)->getHeight();
+
+	// Make the big surface.
+	auto combinedSurface = std::unique_ptr<Surface>(new Surface(totalWidth, totalHeight));
+
+	// Copy each little surface to the big one.
+	int offset = 0;
+	for (const auto &surface : letterSurfaces)
+	{
+		surface->blit(*combinedSurface.get(), Int2(offset, 0));
+		offset += surface->getWidth();
+	}
+
+	return combinedSurface;
+}
+
+std::vector<std::unique_ptr<Surface>> TextBox::lineToSurfaces(const std::string &line,
+	TextureManager &textureManager) const
+{
+	// This method gets each letter surface, trims it to the required right padding, 
+	// and puts it into a vector, thus representing a line of blit-able text.
+	auto surfaces = std::vector<std::unique_ptr<Surface>>();
+
+	// For empty strings (new lines), just put a single space character.
+	if (line.size() == 0)
+	{
+		surfaces.push_back(this->getTrimmedLetter(' ', textureManager));
+	}
+	else
+	{
+		for (const auto &c : line)
+		{
+			surfaces.push_back(this->getTrimmedLetter(c, textureManager));
+		}
+	}
+
+	return surfaces;
+}
+
+std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
+	TextureManager &textureManager) const
+{
+	// Get the font and its associated texture.
+	const auto font = Font(this->fontName);
+	const auto &fontTexture = textureManager.getSurface(font.getFontTextureName());
+	const auto *fontPixels = static_cast<unsigned int*>(fontTexture.getSurface()->pixels);
+
+	// Get the font properties. "Space" is a special case because it is completely 
+	// whitespace (i.e., can't be trimmed), so it needs an arbitrary width.
+	const int letterHeight = this->getNewLineHeight(textureManager);
+	const int rightPadding = font.getRightPadding();
+	const int spaceWidth = font.getSpaceWidth();
+	const auto cellDimensions = font.getCellDimensions();
+	const char space = ' ';
+
+	// If the character is not a space, figure out what its trimmed dimensions are.
+	if (c != space)
+	{
+		// Logical position of the character in the texture (like a 2D table).
+		const auto cell = Font::getCellPosition(c);
+
+		// The top left corner of the cell in pixels.
+		const auto corner = Int2(
+			cell.getX() * cellDimensions.getX(),
+			cell.getY() * cellDimensions.getY());
+
+		// Calculate the letter's trimmed width by walking columns from right to left 
+		// in the font texture until a text pixel is hit.
+		int letterWidth = cellDimensions.getX();
+		for (bool textPixelHit = false; (!textPixelHit) && (letterWidth > 0); --letterWidth)
+		{
+			for (int j = 0; j < letterHeight; ++j)
+			{
+				int x = corner.getX() + (letterWidth - 1);
+				int y = corner.getY() + j;
+				int pixelIndex = x + (y * fontTexture.getWidth());
+
+				auto pixelColor = Color::fromRGB(fontPixels[pixelIndex]);
+				if (pixelColor != Color::Magenta)
+				{
+					textPixelHit = true;
+					break;
+				}
+			}
+		}
+
+		// Now add the right padding onto the letter width, after hitting a text pixel.
+		// The "+ 1" is for recovering from the column with the text pixel hit.
+		letterWidth += rightPadding + 1;
+
+		// If the letter width (before padding) is zero, that means no text pixels were found, 
+		// so the character in the font texture must be empty. Use a space then.
+		if (letterWidth == rightPadding)
+		{
+			auto surface = std::unique_ptr<Surface>(new Surface(spaceWidth, letterHeight));
+			surface->fill(Color::Magenta);
+			return surface;
+		}
+		else
+		{
+			// Make the letter surface and copy the character into it from the font texture.
+			auto letterSurface = std::unique_ptr<Surface>(new Surface(letterWidth, letterHeight));
+			fontTexture.blit(*letterSurface.get(), Int2(),
+				Rectangle(corner.getX(), corner.getY(), letterWidth, letterHeight));
+			return letterSurface;
+		}
+	}
+	else
+	{
+		// The character is a space, so return the whitespace surface instead.
+		auto surface = std::unique_ptr<Surface>(new Surface(spaceWidth, letterHeight));
+		surface->fill(Color::Magenta);
+		return surface;
+	}
+}
+
+const FontName &TextBox::getFontName() const
+{
+	return this->fontName;
 }

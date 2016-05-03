@@ -22,13 +22,12 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(128, 30);
+		auto center = Int2(160, 30);
 		auto color = Color::White;
 		std::string text = "Options";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -112,7 +111,11 @@ void OptionsPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(dst);
 
+	// Draw temporary background.
+	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 48, 48, 36));
+
 	// Draw buttons, eventually...
+	
 
 	// Draw text: title.
 	this->drawScaledToNative(*this->titleTextBox.get(), dst);

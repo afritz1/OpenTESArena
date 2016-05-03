@@ -218,17 +218,17 @@ void Surface::outline(const Color &color)
 	}
 }
 
-void Surface::blit(Surface &dst, const Int2 &point, const Rectangle &clipRect) const
+void Surface::blit(Surface &dst, const Int2 &dstPoint, const Rectangle &clipRect) const
 {
-	auto rect = SDL_Rect();
-	rect.x = point.getX();
-	rect.y = point.getY();
-	SDL_BlitSurface(this->surface, clipRect.getRect(), dst.getSurface(), &rect);
+	auto dstRect = SDL_Rect();
+	dstRect.x = dstPoint.getX();
+	dstRect.y = dstPoint.getY();
+	SDL_BlitSurface(this->surface, clipRect.getRect(), dst.getSurface(), &dstRect);
 }
 
-void Surface::blit(Surface &dst, const Int2 &point) const
+void Surface::blit(Surface &dst, const Int2 &dstPoint) const
 {
-	this->blit(dst, point, Rectangle());
+	this->blit(dst, dstPoint, Rectangle());
 }
 
 void Surface::blit(Surface &dst) const

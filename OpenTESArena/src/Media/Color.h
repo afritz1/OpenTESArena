@@ -33,6 +33,8 @@ public:
 
 	Color operator +(const Color &c) const;
 	Color operator -(const Color &c) const;
+	bool operator ==(const Color &c) const;
+	bool operator !=(const Color &c) const;
 
 	const unsigned char &getR() const;
 	const unsigned char &getG() const;

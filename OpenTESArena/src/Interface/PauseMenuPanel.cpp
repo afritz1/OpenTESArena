@@ -33,13 +33,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto origin = Int2(133, 65);
+		auto center = Int2(160, 70);
 		auto color = Color::White;
 		std::string text = "Paused";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -48,13 +47,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->loadTextBox = [gameState]()
 	{
-		auto origin = Int2(164, 95);
+		auto center = Int2(215, 100);
 		auto color = Color::White;
 		std::string text = "Load Game";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -63,13 +61,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->mainMenuTextBox = [gameState]()
 	{
-		auto origin = Int2(164, 120);
+		auto center = Int2(215, 125);
 		auto color = Color::White;
 		std::string text = "Main Menu";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -78,13 +75,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->optionsTextBox = [gameState]()
 	{
-		auto origin = Int2(85, 120);
+		auto center = Int2(105, 125);
 		auto color = Color::White;
 		std::string text = "Options";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -93,13 +89,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->resumeTextBox = [gameState]()
 	{
-		auto origin = Int2(86, 95);
+		auto center = Int2(105, 100);
 		auto color = Color::White;
 		std::string text = "Resume";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -110,48 +105,48 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	// that tells whether a game is active, and thus which panel to return to.
 	this->loadButton = [gameState]()
 	{
-		auto center = Int2(205, 100);
+		auto center = Int2(215, 100);
 		auto function = [gameState]()
 		{
 			//auto loadPanel = std::unique_ptr<Panel>(new LoadGamePanel(gameState));
 			//gameState->setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 80, 20, function));
+		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
 	}();
 
 	this->mainMenuButton = [gameState]()
 	{
-		auto center = Int2(205, 125);
+		auto center = Int2(215, 125);
 		auto function = [gameState]()
 		{
 			auto mainMenuPanel = std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 			gameState->setMusic(MusicName::PercIntro);
 			gameState->setPanel(std::move(mainMenuPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 80, 20, function));
+		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
 	}();
 
 	this->optionsButton = [gameState]()
 	{
-		auto center = Int2(115, 125);
+		auto center = Int2(105, 125);
 		auto function = [gameState]()
 		{
 			// Change to options panel once that class is programmed.
 			auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
 			gameState->setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 80, 20, function));
+		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
 	}();
 
 	this->resumeButton = [gameState]()
 	{
-		auto center = Int2(115, 100);
+		auto center = Int2(105, 100);
 		auto function = [gameState]()
 		{
 			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 80, 20, function));
+		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
 	}();
 
 	// Temporary button backgrounds.

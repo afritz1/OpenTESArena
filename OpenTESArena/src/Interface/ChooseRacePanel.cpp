@@ -54,15 +54,15 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 		return std::unique_ptr<Surface>(new Surface(surface));
 	}();
 
-	this->initialTextBox = [gameState]()
+	this->initialTextBox = [gameState, charClass, name]()
 	{
-		auto origin = Int2(72, 90);
+		auto center = Int2(160, 100);
 		auto color = Color(48, 12, 12);
-		std::string text = "Choose thy homeland";
+		std::string text = "From where dost thou hail,\n" +
+			name + "\nthe\n" + charClass.getDisplayName() + "?";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -242,15 +242,18 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	if (this->initialTextBox->isVisible())
 	{
 		const int originalWidth = 320;
+		const int originalHeight = 200;
 		const int parchmentWidth = static_cast<int>(
-			static_cast<double>(this->parchment->getWidth()) * 1.25);
+			static_cast<double>(this->parchment->getWidth()) * 1.30);
+		const int parchmentHeight = static_cast<int>(
+			static_cast<double>(this->parchment->getHeight()) * 1.65);
 		const int parchmentX = (originalWidth / 2) - (parchmentWidth / 2);
-		const int parchmentY = 75;
+		const int parchmentY = (originalHeight / 2) - (parchmentHeight / 2);
 		this->drawScaledToNative(*this->parchment.get(),
 			parchmentX,
 			parchmentY,
 			parchmentWidth,
-			this->parchment->getHeight(),
+			parchmentHeight,
 			dst);
 		this->drawScaledToNative(*this->initialTextBox.get(), dst);
 	}

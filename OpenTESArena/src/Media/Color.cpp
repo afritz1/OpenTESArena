@@ -2,15 +2,15 @@
 
 #include "../Math/Random.h"
 
-const Color Color::Red = Color(255, 0, 0);
-const Color Color::Green = Color(0, 255, 0);
-const Color Color::Blue = Color(0, 0, 255);
-const Color Color::Cyan = Color(0, 255, 255);
-const Color Color::Magenta = Color(255, 0, 255);
-const Color Color::Yellow = Color(255, 255, 0);
-const Color Color::Black = Color(0, 0, 0);
-const Color Color::White = Color(255, 255, 255);
-const Color Color::Gray = Color(127, 127, 127);
+const Color Color::Red = Color(255, 0, 0, 255);
+const Color Color::Green = Color(0, 255, 0, 255);
+const Color Color::Blue = Color(0, 0, 255, 255);
+const Color Color::Cyan = Color(0, 255, 255, 255);
+const Color Color::Magenta = Color(255, 0, 255, 255);
+const Color Color::Yellow = Color(255, 255, 0, 255);
+const Color Color::Black = Color(0, 0, 0, 255);
+const Color Color::White = Color(255, 255, 255, 255);
+const Color Color::Gray = Color(127, 127, 127, 255);
 const Color Color::Transparent = Color(0, 0, 0, 0);
 
 Color::Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
@@ -115,6 +115,17 @@ Color Color::operator +(const Color &c) const
 Color Color::operator -(const Color &c) const
 {
 	return Color(this->r - c.r, this->g - c.g, this->b - c.b, this->a - c.a);
+}
+
+bool Color::operator ==(const Color &c) const
+{
+	return (this->a == c.a) && (this->r == c.r) && (this->g == c.g) &&
+		(this->b == c.b);
+}
+
+bool Color::operator !=(const Color &c) const
+{
+	return !((*this) == c);
 }
 
 Color Color::clamped(unsigned char low, unsigned char high) const

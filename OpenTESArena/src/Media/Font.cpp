@@ -2,6 +2,7 @@
 #include <map>
 
 #include "Font.h"
+
 #include "TextureName.h"
 #include "../Math/Int2.h"
 
@@ -105,73 +106,45 @@ const auto FontCharacterCells = std::map<unsigned char, Int2>
 	{ ' ', Int2(30, 2) }
 };
 
-// The upper and lower case letters are separated here, and use a simple "islower()"
-// or "isupper()" to differentiate which map they draw from. Symbols should be 
-// treated like upper case letters. I think.
-
-// Update 3/16/2016:
-// When trying to get character spacing right, do Robin Hood with the size and offset;
-// take from one and give it to the other.
-
-// 3/18/2016:
-// Well the Robin Hood thing assumes mono-space format, which some fonts are not, sadly.
-// The *best* solution would be to just have character sizes and offsets for every 
-// single character, but that would take a while to program.
-
-// As a better way, just have the letter trimmed of white-space to its right and a 
-// little added back to have "adaptive" spacing. This trimming could go in the TextBox
-// class.
-
-const auto FontUpperCharacterSizes = std::map<FontName, Int2>
+const auto FontCellDimensions = std::map<FontName, Int2>
 {
-	{ FontName::A, Int2(12, 10) },
-	{ FontName::Arena, Int2(8, 8) },
-	{ FontName::B, Int2(5, 6) },
-	{ FontName::C, Int2(14, 14) },
-	{ FontName::Char, Int2(6, 6) },
-	{ FontName::D, Int2(6, 8) },
-	{ FontName::Four, Int2(5, 7) },
-	{ FontName::S, Int2(5, 4) },
-	{ FontName::Teeny, Int2(5, 6) }
+	{ FontName::A, Int2(16, 11) },
+	{ FontName::Arena, Int2(16, 9) },
+	{ FontName::B, Int2(16, 6) },
+	{ FontName::C, Int2(16, 14) },
+	{ FontName::Char, Int2(16, 8) },
+	{ FontName::D, Int2(16, 7) },
+	{ FontName::Four, Int2(16, 7) },
+	{ FontName::S, Int2(16, 5) },
+	{ FontName::Teeny, Int2(16, 8) }
 };
 
-const auto FontLowerCharacterSizes = std::map<FontName, Int2>
+// Number of columns of whitespace on the right of each letter.
+const auto FontRightPaddings = std::map<FontName, int>
 {
-	{ FontName::A, Int2(8, 10) },
-	{ FontName::Arena, Int2(8, 8) },
-	{ FontName::B, Int2(5, 6) },
-	{ FontName::C, Int2(8, 14) },
-	{ FontName::Char, Int2(6, 6) },
-	{ FontName::D, Int2(6, 8) },
-	{ FontName::Four, Int2(5, 7) },
-	{ FontName::S, Int2(5, 4) },
-	{ FontName::Teeny, Int2(5, 6) }
+	{ FontName::A, 1 },
+	{ FontName::Arena, 1 },
+	{ FontName::B, 1 },
+	{ FontName::C, 1 },
+	{ FontName::Char, 1 },
+	{ FontName::D, 1 },
+	{ FontName::Four, 1 },
+	{ FontName::S, 1 },
+	{ FontName::Teeny, 1 }
 };
 
-const auto FontUpperCharacterOffsets = std::map<FontName, Int2>
+// Number of columns of whitespace a space is.
+const auto FontSpaceWidths = std::map<FontName, int>
 {
-	{ FontName::A, Int2(4, 0) },
-	{ FontName::Arena, Int2(8, 0) },
-	{ FontName::B, Int2(11, 0) },
-	{ FontName::C, Int2(2, 0) },
-	{ FontName::Char, Int2(10, 2) },
-	{ FontName::D, Int2(10, 0) },
-	{ FontName::Four, Int2(11, 0) },
-	{ FontName::S, Int2(11, 1) },
-	{ FontName::Teeny, Int2(11, 2) }
-};
-
-const auto FontLowerCharacterOffsets = std::map<FontName, Int2>
-{
-	{ FontName::A, Int2(8, 1) },
-	{ FontName::Arena, Int2(8, 0) },
-	{ FontName::B, Int2(11, 0) },
-	{ FontName::C, Int2(8, 0) },
-	{ FontName::Char, Int2(10, 2) },
-	{ FontName::D, Int2(10, 0) },
-	{ FontName::Four, Int2(11, 0) },
-	{ FontName::S, Int2(11, 1) },
-	{ FontName::Teeny, Int2(11, 2) }
+	{ FontName::A, 5 },
+	{ FontName::Arena, 3 },
+	{ FontName::B, 3 },
+	{ FontName::C, 5 },
+	{ FontName::Char, 3 },
+	{ FontName::D, 3 },
+	{ FontName::Four, 3 },
+	{ FontName::S, 3 },
+	{ FontName::Teeny, 2 }
 };
 
 const auto FontTextureNames = std::map<FontName, TextureName>
@@ -197,7 +170,7 @@ Font::~Font()
 
 }
 
-Int2 Font::getCharacterCell(unsigned char c)
+Int2 Font::getCellPosition(unsigned char c)
 {
 	auto cell = FontCharacterCells.at(c);
 	return cell;
@@ -214,58 +187,20 @@ TextureName Font::getFontTextureName() const
 	return textureName;
 }
 
-int Font::getUpperCharacterWidth() const
+Int2 Font::getCellDimensions() const
 {
-	int width = FontUpperCharacterSizes.at(this->getFontName()).getX();
-	assert(width >= 0);
+	auto dimensions = FontCellDimensions.at(this->getFontName());
+	return dimensions;
+}
+
+int Font::getRightPadding() const
+{
+	int padding = FontRightPaddings.at(this->getFontName());
+	return padding;
+}
+
+int Font::getSpaceWidth() const
+{
+	int width = FontSpaceWidths.at(this->getFontName());
 	return width;
-}
-
-int Font::getUpperCharacterHeight() const
-{
-	int height = FontUpperCharacterSizes.at(this->getFontName()).getY();
-	assert(height >= 0);
-	return height;
-}
-
-int Font::getLowerCharacterWidth() const
-{
-	int width = FontLowerCharacterSizes.at(this->getFontName()).getX();
-	assert(width >= 0);
-	return width;
-}
-
-int Font::getLowerCharacterHeight() const
-{
-	int height = FontLowerCharacterSizes.at(this->getFontName()).getY();
-	assert(height >= 0);
-	return height;
-}
-
-int Font::getUpperCharacterOffsetWidth() const
-{
-	int width = FontUpperCharacterOffsets.at(this->getFontName()).getX();
-	assert(width >= 0);
-	return width;
-}
-
-int Font::getUpperCharacterOffsetHeight() const
-{
-	int height = FontUpperCharacterOffsets.at(this->getFontName()).getY();
-	assert(height >= 0);
-	return height;
-}
-
-int Font::getLowerCharacterOffsetWidth() const
-{
-	int width = FontLowerCharacterOffsets.at(this->getFontName()).getX();
-	assert(width >= 0);
-	return width;
-}
-
-int Font::getLowerCharacterOffsetHeight() const
-{
-	int height = FontLowerCharacterOffsets.at(this->getFontName()).getY();
-	assert(height >= 0);
-	return height;
 }

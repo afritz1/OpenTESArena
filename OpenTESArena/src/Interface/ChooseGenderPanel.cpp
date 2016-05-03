@@ -41,13 +41,12 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 
 	this->genderTextBox = [gameState]()
 	{
-		auto origin = Int2(82, 50);
+		auto center = Int2(160, 56);
 		auto color = Color(48, 12, 12);
 		std::string text = "Choose thy gender";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -56,13 +55,12 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 
 	this->maleTextBox = [gameState]()
 	{
-		auto origin = Int2(140, 100);
+		auto center = Int2(160, 106);
 		auto color = Color(48, 12, 12);
 		std::string text = "Male";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -71,13 +69,12 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 
 	this->femaleTextBox = [gameState]()
 	{
-		auto origin = Int2(133, 140);
+		auto center = Int2(160, 146);
 		auto color = Color(48, 12, 12);
 		std::string text = "Female";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,

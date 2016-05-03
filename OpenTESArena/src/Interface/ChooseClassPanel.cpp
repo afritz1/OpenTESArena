@@ -44,13 +44,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->classTextBox = [gameState]()
 	{
-		auto origin = Int2(85, 35);
+		auto center = Int2(160, 40);
 		auto color = Color(48, 12, 12);
 		std::string text = "Choose thy class";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -59,13 +58,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->warriorTextBox = [gameState]()
 	{
-		auto origin = Int2(130, 85);
+		auto center = Int2(160, 90);
 		auto color = Color(48, 12, 12);
 		std::string text = "Warrior";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -74,13 +72,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->mageTextBox = [gameState]()
 	{
-		auto origin = Int2(140, 125);
+		auto center = Int2(160, 130);
 		auto color = Color(48, 12, 12);
 		std::string text = "Mage";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,
@@ -89,13 +86,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->thiefTextBox = [gameState]()
 	{
-		auto origin = Int2(136, 165);
+		auto center = Int2(160, 170);
 		auto color = Color(48, 12, 12);
 		std::string text = "Thief";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			center,
 			color,
 			text,
 			fontName,

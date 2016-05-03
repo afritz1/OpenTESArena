@@ -108,8 +108,9 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	const int originalWidth = 320;
 	const int originalHeight = 200;
 
-	// Temporary background.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 0, 0, 0));
+	// Temporary background. The game world doesn't use the letterbox for rendering;
+	// just interface objects.
+	SDL_FillRect(dst, nullptr, SDL_MapRGB(dst->format, 24, 24, 48));
 
 	// Draw game world (OpenCL rendering)...
 
