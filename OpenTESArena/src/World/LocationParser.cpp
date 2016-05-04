@@ -51,6 +51,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	// This parser is very simple right now. All text must have the exact amount
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
+
 	auto fullPath = LocationParser::PATH + LocationParser::FILENAME;
 
 	// Read the locations file into a string.

@@ -43,7 +43,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 	{
 		auto center = Int2(160, 56);
 		auto color = Color(48, 12, 12);
-		std::string text = "Choose thy gender";
+		std::string text = "Choose thy gender...";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,

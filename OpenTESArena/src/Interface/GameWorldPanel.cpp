@@ -114,6 +114,12 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw game world (OpenCL rendering)...
 
+	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
+	// screen, not just the letterbox, because right now, when the screen is tall, the 
+	// compass is near the middle of the screen (in the way), and the stat bars are much 
+	// higher than they should be. I haven't figured out yet what the equation is. I
+	// think it requires using the original height and the draw scale somehow.
+
 	// Draw stat bars.
 	auto statBarSurface = Surface(5, 35);
 	
@@ -145,7 +151,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	const auto &compassFrame = this->getGameState()->getTextureManager()
 		.getSurface(TextureName::CompassFrame);
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, this->getMagenta(dst->format));
-
+	
 	this->drawScaledToNative(compassFrame,
 		(originalWidth / 2) - (compassFrame.getWidth() / 2),
 		0,

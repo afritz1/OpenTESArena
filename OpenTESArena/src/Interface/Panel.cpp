@@ -3,6 +3,7 @@
 #include "Panel.h"
 
 #include "CinematicPanel.h"
+#include "GameWorldPanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
 #include "Surface.h"
@@ -25,8 +26,9 @@ Panel::~Panel()
 
 std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 {
-	// Uncomment this return to skip the intro credits for easier debugging.
+	// Uncomment one of these to skip to a panel for easier debugging.
 	//return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
+	//return std::unique_ptr<Panel>(new GameWorldPanel(gameState));
 
 	// All of these lambdas are linked together like a stack by each panel's last 
 	// argument.

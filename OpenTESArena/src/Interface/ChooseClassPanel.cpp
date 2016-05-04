@@ -46,7 +46,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 	{
 		auto center = Int2(160, 40);
 		auto color = Color(48, 12, 12);
-		std::string text = "Choose thy class";
+		std::string text = "Choose thy class...";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
