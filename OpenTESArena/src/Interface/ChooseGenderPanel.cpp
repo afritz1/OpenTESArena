@@ -15,6 +15,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
@@ -33,7 +34,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 	{
 		const int originalWidth = 320;
 		auto *surface = gameState->getTextureManager().getSurface(
-			TextureName::ParchmentPopup).getSurface();
+			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
 		auto origin = Int2((originalWidth / 2) - (surface->w / 2), 35);
 		return std::unique_ptr<Surface>(new Surface(
 			origin.getX(), origin.getY(), surface));
@@ -204,7 +205,7 @@ void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw background.
 	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::CharacterCreation);
+		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
 	this->drawLetterbox(background, dst, letterbox);
 
 	// Draw parchments: title, male, and female.
@@ -237,6 +238,6 @@ void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 }

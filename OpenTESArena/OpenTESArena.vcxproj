@@ -135,6 +135,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\CharacterPanel.cpp" />
     <ClCompile Include="src\Entities\CharacterClassParser.cpp" />
     <ClCompile Include="src\Entities\Directable.cpp" />
     <ClCompile Include="src\Entities\Movable.cpp" />
@@ -232,8 +233,10 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\World\VoxelReference.cpp" />
     <ClCompile Include="src\Interface\ImagePanel.cpp" />
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
+    <ClCompile Include="src\Media\TextureFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\CharacterPanel.h" />
     <ClInclude Include="src\Entities\CharacterClassParser.h" />
     <ClInclude Include="src\Entities\Directable.h" />
     <ClInclude Include="src\Entities\Movable.h" />
@@ -372,6 +375,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\World\VoxelReference.h" />
     <ClInclude Include="src\Interface\ImagePanel.h" />
     <ClInclude Include="src\Interface\TextCinematicPanel.h" />
+    <ClInclude Include="src\Media\TextureFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

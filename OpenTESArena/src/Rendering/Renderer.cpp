@@ -6,14 +6,18 @@
 #include "Renderer.h"
 #include "../Interface/Surface.h"
 #include "../Math/Constants.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Utilities/Debug.h"
 
 const int Renderer::DEFAULT_COLOR_BITS = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 
 Renderer::Renderer(int width, int height, bool fullscreen, const std::string &title)
 {
+	Debug::mention("Renderer", "Initializing.");
+
 	assert(width > 0);
 	assert(height > 0);
 
@@ -30,7 +34,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
 				SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
 	}();
-	this->checkSuccess(this->window != nullptr, "SDL_CreateWindow");
+	Debug::check(this->window != nullptr, "Renderer", "SDL_CreateWindow");
 
 	// Initialize renderer context.
 	this->renderer = [this]()
@@ -38,7 +42,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 		const int bestDriver = -1;
 		return SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_ACCELERATED);
 	}();
-	this->checkSuccess(this->renderer != nullptr, "SDL_CreateRenderer");
+	Debug::check(this->renderer != nullptr, "Renderer", "SDL_CreateRenderer");
 
 	// Set pixel interpolation hint.
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY.c_str());
@@ -54,7 +58,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	// Create SDL_Texture on the GPU. The surface updates this every frame.
 	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
-	this->checkSuccess(this->texture != nullptr, "SDL_CreateTexture");
+	Debug::check(this->texture != nullptr, "Renderer", "SDL_CreateTexture");
 
 	assert(this->window != nullptr);
 	assert(this->renderer != nullptr);
@@ -70,16 +74,6 @@ Renderer::~Renderer()
 	SDL_DestroyWindow(this->window);
 	SDL_DestroyRenderer(this->renderer);
 	SDL_DestroyTexture(this->texture);
-}
-
-void Renderer::checkSuccess(bool success, const std::string &name)
-{
-	if (!success)
-	{
-		std::cerr << "Renderer error: " << name << "\n";
-		std::getchar();
-		exit(EXIT_FAILURE);
-	}
 }
 
 SDL_Surface *Renderer::getWindowSurface() const
@@ -160,12 +154,12 @@ void Renderer::resize(int width, int height)
 	// Recreate SDL_Texture for the GPU.
 	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
-	this->checkSuccess(this->texture != nullptr, "SDL_CreateTexture resize");
+	Debug::check(this->texture != nullptr, "Renderer", "SDL_CreateTexture resize");
 }
 
 void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
 {
-	const auto &icon = textureManager.getSurface(name);
+	const auto &icon = textureManager.getSurface(TextureFile::fromName(name));
 	auto *iconSurface = icon.getSurface();
 	SDL_SetWindowIcon(this->window, iconSurface);
 }

@@ -4,10 +4,13 @@
 
 #include "../Entities/Player.h"
 #include "../Entities/EntityManager.h"
+#include "../Utilities/Debug.h"
 
 GameData::GameData(std::unique_ptr<Player> player, 
 	std::unique_ptr<EntityManager> entityManager)
 {
+	Debug::mention("GameData", "Initializing");
+
 	this->player = std::move(player);
 	this->entityManager = std::move(entityManager);
 
@@ -17,7 +20,7 @@ GameData::GameData(std::unique_ptr<Player> player,
 
 GameData::~GameData()
 {
-
+	Debug::mention("GameData", "Closing");
 }
 
 Player &GameData::getPlayer() const

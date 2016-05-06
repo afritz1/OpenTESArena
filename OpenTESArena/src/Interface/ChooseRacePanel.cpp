@@ -17,6 +17,7 @@
 #include "../Math/Rectangle.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../World/Province.h"
@@ -50,7 +51,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
-			TextureName::ParchmentPopup).getSurface();
+			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
 		return std::unique_ptr<Surface>(new Surface(surface));
 	}();
 
@@ -234,7 +235,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw background map.
 	const auto &worldMap = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::WorldMap);
+		.getSurface(TextureFile::fromName(TextureName::WorldMap));
 	this->drawLetterbox(worldMap, dst, letterbox);
 
 	// Draw visible parchments and text.
@@ -260,7 +261,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 
 	// Draw hovered province tooltip.

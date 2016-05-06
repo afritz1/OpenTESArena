@@ -16,6 +16,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
@@ -36,7 +37,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 	{
 		const int originalWidth = 320;
 		auto *surface = gameState->getTextureManager().getSurface(
-			TextureName::ParchmentPopup).getSurface();
+			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
 		auto origin = Int2((originalWidth / 2) - (surface->w / 2), 20);
 		return std::unique_ptr<Surface>(new Surface(
 			origin.getX(), origin.getY(), surface));
@@ -277,7 +278,7 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw background.
 	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::CharacterCreation);
+		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
 	this->drawLetterbox(background, dst, letterbox);
 
 	// Draw parchments: title, warrior, mage, and thief.
@@ -319,6 +320,6 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 }

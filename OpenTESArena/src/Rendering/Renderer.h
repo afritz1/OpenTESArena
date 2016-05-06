@@ -37,8 +37,6 @@ private:
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *texture;
-
-	void checkSuccess(bool success, const std::string &name);
 public:
 	Renderer(int width, int height, bool fullscreen, const std::string &title);
 	~Renderer();

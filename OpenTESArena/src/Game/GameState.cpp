@@ -16,6 +16,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/PostProcessing.h"
 #include "../Rendering/Renderer.h"
+#include "../Utilities/Debug.h"
 
 const int GameState::DEFAULT_SCREEN_WIDTH = 1280;
 const int GameState::DEFAULT_SCREEN_HEIGHT = 720;
@@ -24,6 +25,8 @@ const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 
 GameState::GameState()
 {
+	Debug::mention("GameState", "Initializing.");
+
 	this->audioManager = nullptr;
 	this->gameData = nullptr;
 	this->nextMusic = nullptr;
@@ -40,13 +43,22 @@ GameState::GameState()
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
 
+	// Initialize audio manager for MIDI music and Ogg sound with some channels.
 	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
 		MusicFormat::MIDI, SoundFormat::Ogg, 32));
+
+	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		GameState::DEFAULT_SCREEN_WIDTH, GameState::DEFAULT_SCREEN_HEIGHT,
 		GameState::DEFAULT_IS_FULLSCREEN, GameState::DEFAULT_SCREEN_TITLE));
+
+	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
 		this->renderer->getWindowSurface()->format));
+
+	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
+	// cinematics otherwise load their frames one at a time while playing.
+	this->textureManager->preloadSequences();
 
 	// Set window icon.
 	assert(this->textureManager.get() != nullptr);
@@ -54,6 +66,7 @@ GameState::GameState()
 
 	this->running = true;
 
+	// Use a blitted surface as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
 	assert(this->audioManager.get() != nullptr);
@@ -68,7 +81,7 @@ GameState::GameState()
 
 GameState::~GameState()
 {
-
+	
 }
 
 bool GameState::isRunning() const

@@ -5,6 +5,11 @@
 
 const std::string Debug::LOG_FILENAME = "log.txt";
 
+void Debug::mention(const std::string &className, const std::string &message)
+{
+	std::cout << className << ": " << message << "\n";
+}
+
 void Debug::check(bool condition, const std::string &message)
 {
 	if (!condition)
@@ -16,21 +21,12 @@ void Debug::check(bool condition, const std::string &message)
 }
 
 void Debug::check(bool condition, const std::string &className,
-	const std::string &message, bool crashOnFailure)
+	const std::string &message)
 {
 	if (!condition)
 	{
 		std::cerr << className << " error: " << message << "\n";
-		if (crashOnFailure)
-		{
-			std::getchar();
-			exit(EXIT_FAILURE);
-		}
+		std::getchar();
+		exit(EXIT_FAILURE);
 	}
-}
-
-void Debug::check(bool condition, const std::string &className,
-	const std::string &message)
-{
-	Debug::check(condition, className, message, true);
 }

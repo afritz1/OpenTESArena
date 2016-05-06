@@ -15,6 +15,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
@@ -266,6 +267,6 @@ void PauseMenuPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 }

@@ -7,6 +7,7 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 
 ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
@@ -97,6 +98,6 @@ void ImagePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw image.
 	const auto &image = this->getGameState()->getTextureManager()
-		.getSurface(this->textureName);
+		.getSurface(TextureFile::fromName(this->textureName));
 	this->drawLetterbox(image, dst, letterbox);
 }

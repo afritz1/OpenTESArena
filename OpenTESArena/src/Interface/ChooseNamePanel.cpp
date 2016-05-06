@@ -15,6 +15,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
@@ -158,7 +159,7 @@ void ChooseNamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw background.
 	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::CharacterCreation);
+		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
 	this->drawLetterbox(background, dst, letterbox);
 
 	// Draw text: title.
@@ -166,6 +167,6 @@ void ChooseNamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 }

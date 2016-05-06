@@ -7,6 +7,7 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
@@ -101,17 +102,18 @@ void CinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(dst);
 
-	const auto &images = this->getGameState()->getTextureManager()
-		.getSequence(this->sequenceName);
+	// Get all of the image filenames relevant to the sequence.
+	auto filenames = TextureFile::fromName(this->sequenceName);
 
 	// If at the end, then prepare for the next panel.
-	if (this->imageIndex >= images.size())
+	if (this->imageIndex >= filenames.size())
 	{
-		this->imageIndex = static_cast<int>(images.size() - 1);
+		this->imageIndex = static_cast<int>(filenames.size() - 1);
 		this->skipButton->click();
 	}
 
 	// Draw image.
-	const auto &image = images.at(this->imageIndex);
+	const auto &image = this->getGameState()->getTextureManager().getSurface(
+		filenames.at(this->imageIndex));
 	this->drawLetterbox(image, dst, letterbox);
 }

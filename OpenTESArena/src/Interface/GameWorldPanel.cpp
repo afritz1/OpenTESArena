@@ -6,18 +6,32 @@
 #include "GameWorldPanel.h"
 
 #include "Button.h"
+#include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
+#include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
 GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
 {
+	this->characterSheetButton = nullptr;
 	this->pauseButton = nullptr;
+
+	this->characterSheetButton = [gameState]()
+	{
+		auto function = [gameState]()
+		{
+			auto sheetPanel = std::unique_ptr<Panel>(new CharacterPanel(gameState));
+			gameState->setPanel(std::move(sheetPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
+	}();
 
 	this->pauseButton = [gameState]()
 	{
@@ -29,6 +43,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
+	assert(this->characterSheetButton.get() != nullptr);
 	assert(this->pauseButton.get() != nullptr);
 }
 
@@ -62,27 +77,33 @@ void GameWorldPanel::handleEvents(bool &running)
 		{
 			this->pauseButton->click();
 		}
-
-		// Listen for left click to attack...		
-		// Listen for "activate" key, probably E.
+	
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) && 
 			(e.key.keysym.sym == SDLK_e);
+		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_TAB);
 
 		if (leftClick)
 		{
-
+			// Attack...
 		}
 		if (activateHotkeyPressed) 
 		{
-
+			// "Activate" whatever is looked at.
+		}
+		if (sheetHotkeyPressed)
+		{
+			// Go to character screen.
+			this->characterSheetButton->click();
 		}
 	}
 }
 
 void GameWorldPanel::handleMouse(double dt)
 {
+	static_cast<void>(dt);
 	// Make camera look around.
 	// The code for this is already in another project. I just need to bring it over
 	// and make a couple changes for having the window grab the mouse.
@@ -90,11 +111,13 @@ void GameWorldPanel::handleMouse(double dt)
 
 void GameWorldPanel::handleKeyboard(double dt)
 {
+	static_cast<void>(dt);
 	// Listen for WASD, jump, crouch...
 }
 
 void GameWorldPanel::tick(double dt, bool &running)
 {
+	static_cast<void>(dt);
 	// Animate the game world by "dt" seconds...
 	
 	this->handleEvents(running);
@@ -112,7 +135,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// just interface objects.
 	SDL_FillRect(dst, nullptr, SDL_MapRGB(dst->format, 24, 24, 48));
 
-	// Draw game world (OpenCL rendering)...
+	// Draw game world (OpenCL rendering, kernel stored in GameData)...
 
 	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
 	// screen, not just the letterbox, because right now, when the screen is tall, the 
@@ -149,7 +172,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	
 	// Draw compass.
 	const auto &compassFrame = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::CompassFrame);
+		.getSurface(TextureFile::fromName(TextureName::CompassFrame));
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, this->getMagenta(dst->format));
 	
 	this->drawScaledToNative(compassFrame,
@@ -161,6 +184,6 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw cursor for now. It won't be drawn once the game world is developed enough.
 	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureName::SwordCursor);
+		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
 }

@@ -230,6 +230,8 @@ const double AudioManager::MAX_VOLUME = 1.0;
 AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
 	int maxChannels)
 {
+	Debug::mention("Audio Manager", "Initializing.");
+
 	this->system = nullptr;
 	this->musicChannel = nullptr;
 	this->soundChannel = nullptr;

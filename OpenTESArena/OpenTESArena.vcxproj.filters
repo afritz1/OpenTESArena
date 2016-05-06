@@ -98,6 +98,8 @@
     <ClCompile Include="src\Entities\Movable.cpp" />
     <ClCompile Include="src\Entities\Directable.cpp" />
     <ClCompile Include="src\Entities\CharacterClassParser.cpp" />
+    <ClCompile Include="src\Interface\CharacterPanel.cpp" />
+    <ClCompile Include="src\Media\TextureFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -238,5 +240,7 @@
     <ClInclude Include="src\Entities\Movable.h" />
     <ClInclude Include="src\Entities\Directable.h" />
     <ClInclude Include="src\Entities\CharacterClassParser.h" />
+    <ClInclude Include="src\Interface\CharacterPanel.h" />
+    <ClInclude Include="src\Media\TextureFile.h" />
   </ItemGroup>
 </Project>

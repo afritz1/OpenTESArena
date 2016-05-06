@@ -5,10 +5,12 @@
 #include <string>
 #include <vector>
 
-class Surface;
+// When loading wall and sprite textures from file, use a texture name parser or
+// something that produces a texture/index -> filename mapping. Each of those would 
+// get a unique integer ID either before or during parsing (perhaps depending on 
+// the order they were parsed).
 
-enum class TextureName;
-enum class TextureSequenceName;
+class Surface;
 
 struct SDL_PixelFormat;
 struct SDL_Surface;
@@ -16,20 +18,28 @@ struct SDL_Surface;
 class TextureManager
 {
 private:
-	std::map<TextureName, Surface> surfaces;
-	std::map<TextureSequenceName, std::vector<Surface>> sequences;
+	std::map<std::string, Surface> surfaces;
 	const SDL_PixelFormat *format;
 
 	static const std::string PATH;
 
-	SDL_Surface *loadFromFile(const std::string &filename);
+	// All textures loaded from file *must* be in PNG format. 
+	SDL_Surface *loadFromFile(const std::string &fullPath);
 public:
 	TextureManager(const SDL_PixelFormat *format);
 	~TextureManager();
 
 	const SDL_PixelFormat *getFormat() const;
-	const Surface &getSurface(TextureName name);
-	const std::vector<Surface> &getSequence(TextureSequenceName name);
+
+	// The filename given here is a partial path that excludes the "data/textures/" 
+	// path and the texture extension (.png); both known only to the texture manager. 
+	// A valid filename might be "interface/folder/some_image".
+	const Surface &getSurface(const std::string &filename);
+
+	// Since cinematics are now loaded image by image instead of all at the same time,
+	// there may be some stuttering that occurs. This method loads all of the sequences
+	// into memory at the same time to compensate.
+	void preloadSequences();
 };
 
 #endif

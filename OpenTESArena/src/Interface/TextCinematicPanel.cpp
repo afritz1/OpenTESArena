@@ -7,6 +7,7 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 
 // incomplete! Need text box stuff and how to blit it.
@@ -122,17 +123,19 @@ void TextCinematicPanel::tick(double dt, bool &running)
 
 void TextCinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 {
-	const auto &images =
-		this->getGameState()->getTextureManager().getSequence(this->sequenceName);
+	// Get all of the image filenames relevant to the sequence.
+	auto imageFilenames = TextureFile::fromName(this->sequenceName);
 
-	if (this->imageIndex >= images.size())
+	// If at the end of the sequence, prepare for the next panel.
+	if (this->imageIndex >= imageFilenames.size())
 	{
-		this->imageIndex = static_cast<int>(images.size() - 1);
+		this->imageIndex = static_cast<int>(imageFilenames.size() - 1);
 		this->skipButton->click();
 	}
 
 	// Draw animation.
-	const auto &image = images.at(this->imageIndex);
+	const auto &image = this->getGameState()->getTextureManager().getSurface(
+		imageFilenames.at(this->imageIndex));
 	auto *imageSurface = image.getSurface();
 	SDL_BlitScaled(imageSurface, nullptr, dst, const_cast<SDL_Rect*>(letterbox));
 

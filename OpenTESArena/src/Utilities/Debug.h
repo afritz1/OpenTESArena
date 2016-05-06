@@ -20,13 +20,11 @@ private:
 
 	static const std::string LOG_FILENAME;
 public:
+	// Optionally say something depending on whether a debug constant is defined.
+	static void mention(const std::string &className, const std::string &message);
+
 	// Crash the program with a message if the condition is false.
 	static void check(bool condition, const std::string &message);
-
-	// For use in a class context with an optional argument for crashing if the condition
-	// fails.
-	static void check(bool condition, const std::string &className,
-		const std::string &message, bool crashOnFailure);
 
 	// For use in a class context, the class name is what class the executing method is in.
 	static void check(bool condition, const std::string &className, 
