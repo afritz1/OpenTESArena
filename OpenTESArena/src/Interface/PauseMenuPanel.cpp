@@ -11,6 +11,7 @@
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
 #include "TextBox.h"
+#include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -120,6 +121,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		auto center = Int2(215, 125);
 		auto function = [gameState]()
 		{
+			gameState->setGameData(nullptr);
+
 			auto mainMenuPanel = std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 			gameState->setMusic(MusicName::PercIntro);
 			gameState->setPanel(std::move(mainMenuPanel));

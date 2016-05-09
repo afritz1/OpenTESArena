@@ -11,11 +11,15 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
+#include "../Math/Random.h"
+#include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/SoundName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/CLProgram.h"
 
 GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
@@ -43,6 +47,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
+	assert(gameState->gameDataIsActive());
 	assert(this->characterSheetButton.get() != nullptr);
 	assert(this->pauseButton.get() != nullptr);
 }
@@ -72,6 +77,10 @@ void GameWorldPanel::handleEvents(bool &running)
 			int width = e.window.data1;
 			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
+
+			// Rebuild OpenCL program with new dimensions.
+			this->getGameState()->getGameData()->getCLProgram() = 
+				CLProgram(width, height);
 		}
 		if (escapePressed)
 		{
@@ -88,10 +97,16 @@ void GameWorldPanel::handleEvents(bool &running)
 		if (leftClick)
 		{
 			// Attack...
+			// Just play a sound for now.
+			auto random = Random();
+			this->getGameState()->getAudioManager().playSound(random.next(2) == 0 ?
+				SoundName::Clank : SoundName::Swish);
 		}
 		if (activateHotkeyPressed) 
 		{
-			// "Activate" whatever is looked at.
+			// Activate whatever is looked at.
+			// Just play a sound for now.
+			this->getGameState()->getAudioManager().playSound(SoundName::OpenDoor);
 		}
 		if (sheetHotkeyPressed)
 		{
@@ -125,23 +140,18 @@ void GameWorldPanel::tick(double dt, bool &running)
 
 void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 {
-	// Clear full screen.
-	this->clearScreen(dst);
+	assert(this->getGameState()->gameDataIsActive());
 
-	const int originalWidth = 320;
-	const int originalHeight = 200;
-
-	// Temporary background. The game world doesn't use the letterbox for rendering;
-	// just interface objects.
-	SDL_FillRect(dst, nullptr, SDL_MapRGB(dst->format, 24, 24, 48));
-
-	// Draw game world (OpenCL rendering, kernel stored in GameData)...
+	// Draw game world (OpenCL rendering). No need to clear the screen beforehand.
+	this->getGameState()->getGameData()->getCLProgram().render(dst);
 
 	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
 	// screen, not just the letterbox, because right now, when the screen is tall, the 
 	// compass is near the middle of the screen (in the way), and the stat bars are much 
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
+
+	const int originalWidth = 320;
 
 	// Draw stat bars.
 	auto statBarSurface = Surface(5, 35);

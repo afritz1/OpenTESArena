@@ -13,6 +13,7 @@
 
 class AudioManager;
 class GameData;
+class Int2;
 class Panel;
 class Renderer;
 class TextureManager;
@@ -53,6 +54,8 @@ public:
 	GameData *getGameData() const;
 
 	TextureManager &getTextureManager() const;
+
+	Int2 getScreenDimensions() const;
 	std::unique_ptr<SDL_Rect> getLetterboxDimensions() const;
 
 	void resizeWindow(int width, int height);
@@ -62,6 +65,8 @@ public:
 
 	// Set the next music at the next tick.
 	void setMusic(MusicName name);
+
+	void setGameData(std::unique_ptr<GameData> gameData);
 
 	void tick(double dt);
 	void render();

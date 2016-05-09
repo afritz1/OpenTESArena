@@ -135,6 +135,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Rendering\CLProgram.cpp" />
     <ClCompile Include="src\Interface\CharacterPanel.cpp" />
     <ClCompile Include="src\Entities\CharacterClassParser.cpp" />
     <ClCompile Include="src\Entities\Directable.cpp" />
@@ -236,6 +237,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Media\TextureFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Rendering\CLProgram.h" />
     <ClInclude Include="src\Interface\CharacterPanel.h" />
     <ClInclude Include="src\Entities\CharacterClassParser.h" />
     <ClInclude Include="src\Entities\Directable.h" />

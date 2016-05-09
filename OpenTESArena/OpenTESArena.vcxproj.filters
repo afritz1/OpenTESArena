@@ -100,6 +100,7 @@
     <ClCompile Include="src\Entities\CharacterClassParser.cpp" />
     <ClCompile Include="src\Interface\CharacterPanel.cpp" />
     <ClCompile Include="src\Media\TextureFile.cpp" />
+    <ClCompile Include="src\Rendering\CLProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -242,5 +243,6 @@
     <ClInclude Include="src\Entities\CharacterClassParser.h" />
     <ClInclude Include="src\Interface\CharacterPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />
+    <ClInclude Include="src\Rendering\CLProgram.h" />
   </ItemGroup>
 </Project>

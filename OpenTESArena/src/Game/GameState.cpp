@@ -7,6 +7,7 @@
 
 #include "GameData.h"
 #include "../Interface/Panel.h"
+#include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/MusicFormat.h"
 #include "../Media/MusicName.h"
@@ -109,6 +110,12 @@ TextureManager &GameState::getTextureManager() const
 	return *this->textureManager.get();
 }
 
+Int2 GameState::getScreenDimensions() const
+{
+	return Int2(this->renderer->getWindowSurface()->w,
+		this->renderer->getWindowSurface()->h);
+}
+
 std::unique_ptr<SDL_Rect> GameState::getLetterboxDimensions() const
 {
 	return this->renderer->getLetterboxDimensions();
@@ -127,6 +134,11 @@ void GameState::setPanel(std::unique_ptr<Panel> nextPanel)
 void GameState::setMusic(MusicName name)
 {
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(name));
+}
+
+void GameState::setGameData(std::unique_ptr<GameData> gameData)
+{
+	this->gameData = std::move(gameData);
 }
 
 void GameState::tick(double dt)

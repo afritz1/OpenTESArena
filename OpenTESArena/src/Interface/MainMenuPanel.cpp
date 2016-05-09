@@ -96,6 +96,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 	this->newButton->fill(Color::Black);
 	this->exitButton->fill(Color::Black);
 
+	assert(!gameState->gameDataIsActive());
 	assert(this->loadButton.get() != nullptr);
 	assert(this->newButton.get() != nullptr);
 	assert(this->exitButton.get() != nullptr);

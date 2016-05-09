@@ -10,6 +10,9 @@
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
+#include "../Entities/EntityManager.h"
+#include "../Entities/Player.h"
+#include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -18,6 +21,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/CLProgram.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState, 
 	CharacterGenderName gender, const CharacterClass &charClass,
@@ -59,10 +63,25 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	// Set the game world's music to be some default for now.
 	// None of the gender, class name, etc. things are being sent to the game world
 	// panel because I'm planning on putting them in the GameState instead.
-	this->acceptButton = [gameState]()
+	this->acceptButton = [gameState, name]()
 	{
-		auto function = [gameState]()
+		auto function = [gameState, name]()
 		{
+			// Make placeholders here for the game data. They'll be more informed
+			// in the future once the player has a place in the world and the options
+			// menu has settings for the CLProgram.
+			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
+			auto player = std::unique_ptr<Player>(new Player(name, Float3d(),
+				Float3d(), Float3d(), *entityManager.get()));
+			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
+				gameState->getScreenDimensions().getX(),
+				gameState->getScreenDimensions().getY()));
+			auto gameData = std::unique_ptr<GameData>(new GameData(
+				std::move(player), std::move(entityManager), std::move(clProgram)));
+
+			// Set the game data before constructing the game world panel.
+			gameState->setGameData(std::move(gameData));
+
 			auto gameWorldPanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
 			gameState->setMusic(MusicName::Magic);
 			gameState->setPanel(std::move(gameWorldPanel));
