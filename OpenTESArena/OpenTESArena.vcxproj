@@ -237,6 +237,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Media\TextureFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\Rendering\CLProgram.h" />
     <ClInclude Include="src\Interface\CharacterPanel.h" />
     <ClInclude Include="src\Entities\CharacterClassParser.h" />
@@ -378,6 +379,12 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Interface\ImagePanel.h" />
     <ClInclude Include="src\Interface\TextCinematicPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenTESArena.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

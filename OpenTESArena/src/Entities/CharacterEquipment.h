@@ -2,19 +2,25 @@
 #define CHARACTER_EQUIPMENT_H
 
 #include <map>
-#include <memory>
 #include <vector>
 
-// A character equipment object is purely for humanoids with a head, chest, two
+// A character equipment object is designed for humanoids with a head, chest, two
 // shoulders, two arms, two legs, and two feet.
 
-// None of the members are unique_ptrs because they are references to items in the
-// inventory object. None of the members are const either, because equipped items 
-// can change based on usage.
+// All of the pointer members refer to inventory items. I didn't use "weak_ptr"
+// or something similar because raw pointers are behaving as intended here, and 
+// there is no memory management to worry about.
 
-// Container classes like an inventory should have shared_ptrs of everything, and 
-// users of those items, like the equipment class, get weak_ptrs to the items. Those 
-// weak_ptrs might also be returned for get methods.
+// Null is valid to return when nothing is equipped in a slot. Returning a vector
+// with a size of zero is also valid.
+
+// I'm not sure how indexing is going to work, because Arena's equipped items don't 
+// have a distinct spot in the interface like Daggerfall does (i.e., ring #1 and #2), 
+// but they do have an order that they are equipped (first in, first out). However, 
+// unequipping a particular item by clicking on it may not be straightforward to 
+// code. Display name matching in the "getAccessories()" or "getTrinkets()" vectors 
+// should be sufficient for solving that problem, and duplicates will simply get 
+// one of them unequipped.
 
 class Accessory;
 class BodyArmor;
@@ -25,38 +31,50 @@ class Weapon;
 enum class AccessoryType;
 enum class ArmorType;
 enum class BodyPartName;
-enum class TrinketName;
+enum class TrinketType;
 
 class CharacterEquipment
 {
 private:
-	// I don't think these should be shared_ptrs. The design of the inventory
-	// should guarantee that all items will outlive any weak references to them.
-	std::vector<std::weak_ptr<Accessory>> accessories;
-	std::map<BodyPartName, std::weak_ptr<BodyArmor>> bodyArmors;
-	std::weak_ptr<Shield> shield;
-	std::vector<std::weak_ptr<Trinket>> trinkets;
-	std::weak_ptr<Weapon> weapon;
+	std::vector<Accessory*> accessories;
+	std::map<BodyPartName, BodyArmor*> bodyArmors;
+	Shield *shield;
+	std::vector<Trinket*> trinkets;
+	Weapon *weapon;
 public:
 	// Initial "paper doll" with nothing.
 	CharacterEquipment();
 	~CharacterEquipment();
 
-	// Using pointers allows for returning null, since that is a valid value for
-	// when nothing is equipped in the slot. Also, returning vectors allows for
-	// checking if the size is zero, which is equivalent to "null". Vectors are
-	// used because there might be multiple items in the same type of slot, like
-	// with bracelets.
-	std::vector<std::weak_ptr<Accessory>> getAccessories(AccessoryType accessoryType) const;
-	std::weak_ptr<BodyArmor> getBodyArmor(BodyPartName partName) const;
-	std::weak_ptr<Shield> getShield() const;
-	std::vector<std::weak_ptr<Trinket>> getTrinkets(TrinketName trinketName) const;
-	std::weak_ptr<Weapon> getWeapon() const;
+	std::vector<Accessory*> getAccessories(AccessoryType accessoryType) const;
+	BodyArmor *getBodyArmor(BodyPartName partName) const;
+	Shield *getShield() const;
+	std::vector<Trinket*> getTrinkets(TrinketType trinketType) const;
+	Weapon *getWeapon() const;
 
-	// Add item... set this weak_ptr to the given shared_ptr (or weak_ptr?) only if
-	// there is room to equip the item.
+	// Count methods, for determining how many of a given type are already equipped.
+	// These are only required for accessories and trinkets, because they might be
+	// plural.
+	int getAccessoryCount(AccessoryType accessoryType) const;
+	int getTrinketCount(TrinketType trinketType) const;
 
-	// Remove item (with index for items in a vector)... it should set this weak_ptr to null.
+	// Equip methods. All of these assume that the character's class is allowed to 
+	// equip the item. Each method that returns a boolean is returning whether there
+	// was room to equip the item (i.e., multiple rings). The void methods simply 
+	// replace the old item.
+	bool equipAccessory(Accessory *accessory);
+	void equipBodyArmor(BodyArmor *bodyArmor);
+	void equipShield(Shield *shield);
+	bool equipTrinket(Trinket *trinket);
+	void equipWeapon(Weapon *weapon);
+
+	// Remove item. For methods using an index, this assumes that the caller knows 
+	// how to find the index of the item they wish to remove.
+	void removeAccessory(int index);
+	void removeBodyArmor(BodyPartName partName);
+	void removeShield();
+	void removeTrinket(int index);
+	void removeWeapon();
 };
 
 #endif

@@ -1,5 +1,4 @@
 #include <cassert>
-#include <memory>
 
 #include "CharacterEquipment.h"
 
@@ -9,44 +8,37 @@
 #include "../Items/Trinket.h"
 #include "../Items/Weapon.h"
 
-// Leave this class for later until containers are programmed. Then, the pointer
-// type (either shared_ptr or weak_ptr) can be decided here.
-
-/*
 CharacterEquipment::CharacterEquipment()
 {
 	// Initialize each list to empty.
-	this->accessories = std::vector<std::weak_ptr<Accessory>>();
-	this->bodyArmors = std::map<BodyPartName, std::weak_ptr<BodyArmor>>();
-	this->shield = std::weak_ptr<Shield>();
-	this->trinkets = std::vector<std::weak_ptr<Trinket>>();
-	this->weapon = std::weak_ptr<Weapon>();
+	this->accessories = std::vector<Accessory*>();
+	this->bodyArmors = std::map<BodyPartName, BodyArmor*>();
+	this->shield = nullptr;
+	this->trinkets = std::vector<Trinket*>();
+	this->weapon = nullptr;
 
 	assert(this->accessories.size() == 0);
 	assert(this->bodyArmors.size() == 0);
-	assert(this->shield != nullptr);
+	assert(this->shield == nullptr);
 	assert(this->trinkets.size() == 0);
-	assert(this->weapon != nullptr);
+	assert(this->weapon == nullptr);
 }
 
 CharacterEquipment::~CharacterEquipment()
 {
-
+	// All pointer members are owned by a separate inventory object, so they don't
+	// need to be freed here.
 }
 
 std::vector<Accessory*> CharacterEquipment::getAccessories(AccessoryType accessoryType) const
 {
 	auto accessories = std::vector<Accessory*>();
 
-	// It's okay to copy the pointers with unique_ptr::get() because the returned
-	// vector's lifetime is shorter than the CharacterEquipment object's lifetime,
-	// and all of the pointers are const-qualified, too. unique_ptrs shouldn't keep 
-	// data from being modified, they should just monitor the lifetime of the data.
-	for (auto &accessory : this->accessories)
+	for (const auto &accessory : this->accessories)
 	{
 		if (accessory->getAccessoryType() == accessoryType)
 		{
-			accessories.push_back(accessory.get());
+			accessories.push_back(accessory);
 		}
 	}
 
@@ -55,26 +47,24 @@ std::vector<Accessory*> CharacterEquipment::getAccessories(AccessoryType accesso
 
 BodyArmor *CharacterEquipment::getBodyArmor(BodyPartName partName) const
 {
-	return this->bodyArmors.at(partName).get();
+	return (this->bodyArmors.find(partName) != this->bodyArmors.end()) ?
+		this->bodyArmors.at(partName) : nullptr;
 }
 
 Shield *CharacterEquipment::getShield() const
 {
-	return this->shield.get();
+	return this->shield;
 }
 
-std::vector<Trinket*> CharacterEquipment::getTrinkets(TrinketName trinketName) const
+std::vector<Trinket*> CharacterEquipment::getTrinkets(TrinketType trinketType) const
 {
 	auto trinkets = std::vector<Trinket*>();
 
-	// It's okay to copy the pointers with unique_ptr::get() because the returned
-	// vector's lifetime is shorter than the CharacterEquipment object's lifetime,
-	// and all of the pointers are const-qualified, too.
-	for (auto &trinket : this->trinkets)
+	for (const auto &trinket : this->trinkets)
 	{
-		if (trinket->getTrinketName() == trinketName)
+		if (trinket->getTrinketType() == trinketType)
 		{
-			trinkets.push_back(trinket.get());
+			trinkets.push_back(trinket);
 		}
 	}
 
@@ -83,6 +73,131 @@ std::vector<Trinket*> CharacterEquipment::getTrinkets(TrinketName trinketName) c
 
 Weapon *CharacterEquipment::getWeapon() const
 {
-	return this->weapon.get();
+	return this->weapon;
 }
-*/
+
+int CharacterEquipment::getAccessoryCount(AccessoryType accessoryType) const
+{
+	int count = 0;
+	for (const auto &accessory : this->accessories)
+	{
+		if (accessory->getAccessoryType() == accessoryType)
+		{
+			++count;
+		}
+	}
+
+	return count;
+}
+
+int CharacterEquipment::getTrinketCount(TrinketType trinketType) const
+{
+	int count = 0;
+	for (const auto &trinket : this->trinkets)
+	{
+		if (trinket->getTrinketType() == trinketType)
+		{
+			++count;
+		}
+	}
+
+	return count;
+}
+
+bool CharacterEquipment::equipAccessory(Accessory *accessory)
+{
+	assert(accessory != nullptr);
+
+	// Count how many similar accessories (i.e., rings) are already equipped.
+	int similarCount = this->getAccessoryCount(accessory->getAccessoryType());
+	bool success = similarCount < accessory->getMaxEquipCount();
+
+	if (success)
+	{
+		this->accessories.push_back(accessory);
+	}
+
+	return success;
+}
+
+void CharacterEquipment::equipBodyArmor(BodyArmor *bodyArmor)
+{
+	assert(bodyArmor != nullptr);
+
+	if (this->bodyArmors.find(bodyArmor->getPartName()) == this->bodyArmors.end())
+	{
+		// Make a new BodyPartName -> BodyArmor mapping.
+		this->bodyArmors.insert(std::pair<BodyPartName, BodyArmor*>(
+			bodyArmor->getPartName(), bodyArmor));
+	}
+	else
+	{
+		// Replace the old body armor.
+		this->bodyArmors.at(bodyArmor->getPartName()) = bodyArmor;
+	}
+}
+
+void CharacterEquipment::equipShield(Shield *shield)
+{
+	assert(shield != nullptr);
+
+	this->shield = shield;
+}
+
+bool CharacterEquipment::equipTrinket(Trinket *trinket)
+{
+	assert(trinket != nullptr);
+
+	// Count how many similar trinkets (i.e., marks) are already equipped.
+	int similarCount = this->getTrinketCount(trinket->getTrinketType());
+	bool success = similarCount < trinket->getMaxEquipCount();
+
+	if (success)
+	{
+		this->trinkets.push_back(trinket);
+	}
+
+	return success;
+}
+
+void CharacterEquipment::equipWeapon(Weapon *weapon)
+{
+	assert(weapon != nullptr);
+
+	this->weapon = weapon;
+}
+
+void CharacterEquipment::removeAccessory(int index)
+{
+	assert(index >= 0);
+	assert(index < static_cast<int>(this->accessories.size()));
+
+	this->accessories.erase(this->accessories.begin() + index);
+}
+
+void CharacterEquipment::removeBodyArmor(BodyPartName partName)
+{
+	this->bodyArmors.at(partName) = nullptr;
+}
+
+void CharacterEquipment::removeShield()
+{
+	this->shield = nullptr;
+
+	assert(this->shield == nullptr);
+}
+
+void CharacterEquipment::removeTrinket(int index)
+{
+	assert(index >= 0);
+	assert(index < static_cast<int>(this->trinkets.size()));
+
+	this->trinkets.erase(this->trinkets.begin() + index);
+}
+
+void CharacterEquipment::removeWeapon()
+{
+	this->weapon = nullptr;
+
+	assert(this->weapon == nullptr);
+}

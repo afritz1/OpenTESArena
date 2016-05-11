@@ -244,5 +244,12 @@
     <ClInclude Include="src\Interface\CharacterPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />
     <ClInclude Include="src\Rendering\CLProgram.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenTESArena.rc" />
   </ItemGroup>
 </Project>

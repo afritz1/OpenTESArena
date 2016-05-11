@@ -1,5 +1,4 @@
 #include <cassert>
-#include <iostream>
 
 #include "SDL2\SDL.h"
 
@@ -22,10 +21,10 @@ CLProgram::CLProgram(int width, int height)
 	this->width = width;
 	this->height = height;
 
-	auto platforms = this->getPlatforms();
+	auto platforms = CLProgram::getPlatforms();
 	Debug::check(platforms.size() > 0, "CLProgram", "No OpenCL platform found.");
 
-	auto devices = this->getDevices(platforms.at(0), CL_DEVICE_TYPE_GPU);
+	auto devices = CLProgram::getDevices(platforms.at(0), CL_DEVICE_TYPE_GPU);
 	Debug::check(devices.size() > 0, "CLProgram", "No OpenCL device found.");
 
 	this->device = devices.at(0);
@@ -86,8 +85,8 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 	auto devices = std::vector<cl::Device>();
 
 	auto status = platform.getDevices(type, &devices);
-	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND), "CLProgram",
-		"CLProgram::getDevices().");
+	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND), 
+		"CLProgram", "CLProgram::getDevices().");
 
 	return devices;
 }
