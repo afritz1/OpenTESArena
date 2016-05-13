@@ -6,6 +6,7 @@
 #include "GameState.h"
 
 #include "GameData.h"
+#include "Options.h"
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
@@ -15,13 +16,11 @@
 #include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/CLProgram.h"
 #include "../Rendering/PostProcessing.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 
-const int GameState::DEFAULT_SCREEN_WIDTH = 1280;
-const int GameState::DEFAULT_SCREEN_HEIGHT = 720;
-const bool GameState::DEFAULT_IS_FULLSCREEN = false;
 const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 
 GameState::GameState()
@@ -32,9 +31,13 @@ GameState::GameState()
 	this->gameData = nullptr;
 	this->nextMusic = nullptr;
 	this->nextPanel = nullptr;
+	this->options = nullptr;
 	this->panel = nullptr;
 	this->renderer = nullptr;
 	this->textureManager = nullptr;
+
+	// Load options from file.
+	this->options = std::unique_ptr<Options>(new Options());
 
 	// Not constructing the panel until the first tick guarantees that all
 	// dependencies will be ready, but it doesn't matter anyway because there
@@ -45,13 +48,15 @@ GameState::GameState()
 		MusicName::PercIntro));
 
 	// Initialize audio manager for MIDI music and Ogg sound with some channels.
+	assert(this->options.get() != nullptr);
 	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
-		MusicFormat::MIDI, SoundFormat::Ogg, 32));
+		this->options->getMusicFormat(), this->options->getSoundFormat(), 
+		this->options->getSoundChannelCount()));
 
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
-		GameState::DEFAULT_SCREEN_WIDTH, GameState::DEFAULT_SCREEN_HEIGHT,
-		GameState::DEFAULT_IS_FULLSCREEN, GameState::DEFAULT_SCREEN_TITLE));
+		this->options->getScreenWidth(), this->options->getScreenHeight(),
+		this->options->isFullscreen(), GameState::DEFAULT_SCREEN_TITLE));
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
@@ -59,10 +64,10 @@ GameState::GameState()
 
 	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
 	// cinematics otherwise load their frames one at a time while playing.
+	assert(this->textureManager.get() != nullptr);
 	this->textureManager->preloadSequences();
 
 	// Set window icon.
-	assert(this->textureManager.get() != nullptr);
 	this->renderer->setWindowIcon(TextureName::Icon, *this->textureManager.get());
 
 	this->running = true;
@@ -73,6 +78,7 @@ GameState::GameState()
 	assert(this->audioManager.get() != nullptr);
 	assert(this->gameData.get() == nullptr);
 	assert(this->nextMusic.get() != nullptr);
+	assert(this->options.get() != nullptr);
 	assert(this->panel.get() == nullptr);
 	assert(this->nextPanel.get() != nullptr);
 	assert(this->renderer.get() != nullptr);
@@ -105,6 +111,11 @@ GameData *GameState::getGameData() const
 	return this->gameData.get();
 }
 
+Options &GameState::getOptions() const
+{
+	return *this->options.get();
+}
+
 TextureManager &GameState::getTextureManager() const
 {
 	return *this->textureManager.get();
@@ -124,6 +135,12 @@ std::unique_ptr<SDL_Rect> GameState::getLetterboxDimensions() const
 void GameState::resizeWindow(int width, int height)
 {
 	this->renderer->resize(width, height);
+
+	if (this->gameDataIsActive())
+	{
+		// Rebuild OpenCL program with new dimensions.
+		this->gameData->getCLProgram() = CLProgram(width, height);
+	}
 }
 
 void GameState::setPanel(std::unique_ptr<Panel> nextPanel)
@@ -166,8 +183,6 @@ void GameState::render()
 	auto letterbox = this->getLetterboxDimensions();
 
 	this->panel->render(surface, letterbox.get());
-
-	// Post processing optionally goes here.
 
 	this->renderer->present();
 }

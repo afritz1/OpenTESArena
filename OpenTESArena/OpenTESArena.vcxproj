@@ -135,6 +135,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\Options.cpp" />
+    <ClCompile Include="src\Entities\CoordinateFrame.cpp" />
     <ClCompile Include="src\Rendering\CLProgram.cpp" />
     <ClCompile Include="src\Interface\CharacterPanel.cpp" />
     <ClCompile Include="src\Entities\CharacterClassParser.cpp" />
@@ -237,6 +239,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Media\TextureFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\Options.h" />
+    <ClInclude Include="src\Entities\CoordinateFrame.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Rendering\CLProgram.h" />
     <ClInclude Include="src\Interface\CharacterPanel.h" />

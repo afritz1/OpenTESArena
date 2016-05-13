@@ -215,6 +215,9 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 		mouseOriginalPosition.getX(), mouseOriginalPosition.getY(),
 		Color::White, "Land of the " + raceName, FontName::A,
 		this->getGameState()->getTextureManager()));
+	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(), 
+		tooltip->getWidth(), tooltip->getHeight());
+	tooltipBackground.fill(Color(32, 32, 32));
 
 	const int originalWidth = 320;
 	const int originalHeight = 200;
@@ -225,6 +228,7 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 	const int y = ((tooltip->getY() + height) < originalHeight) ? tooltip->getY() :
 		(tooltip->getY() - height);
 
+	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, dst);
 	this->drawScaledToNative(*tooltip.get(), x, y, width, height, dst);
 }
 

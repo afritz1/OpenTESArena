@@ -1,6 +1,9 @@
 #ifndef TEXTURE_REFERENCE_H
 #define TEXTURE_REFERENCE_H
 
+// This class should be in the host so it can maintain the references. The kernel
+// will use it during rendering.
+
 // Instead of materials having to branch on a size type, they have a texture type
 // (enum) that indexes into the texture reference array, which then points to the
 // beginning of the relevant pixels in the giant float4 pixel array. Since all the 

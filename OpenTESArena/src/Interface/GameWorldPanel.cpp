@@ -8,8 +8,10 @@
 #include "Button.h"
 #include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
+#include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
+#include "../Game/Options.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Media/AudioManager.h"
@@ -77,10 +79,6 @@ void GameWorldPanel::handleEvents(bool &running)
 			int width = e.window.data1;
 			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
-
-			// Rebuild OpenCL program with new dimensions.
-			this->getGameState()->getGameData()->getCLProgram() = 
-				CLProgram(width, height);
 		}
 		if (escapePressed)
 		{
@@ -119,9 +117,28 @@ void GameWorldPanel::handleEvents(bool &running)
 void GameWorldPanel::handleMouse(double dt)
 {
 	static_cast<void>(dt);
-	// Make camera look around.
-	// The code for this is already in another project. I just need to bring it over
-	// and make a couple changes for having the window grab the mouse.
+
+	// Make the camera look around.
+	int dx, dy;
+	const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
+
+	// The program will eventually not require holding a mouse button to turn.
+	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+	bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+	bool turning = ((dx != 0) || (dy != 0)) && (leftClick || rightClick);
+
+	if (turning)
+	{
+		auto dimensions = this->getGameState()->getScreenDimensions();
+		auto dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
+		auto dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
+
+		// Pitch and/or yaw the camera.
+		const auto &options = this->getGameState()->getOptions();
+		this->getGameState()->getGameData()->getPlayer().rotate(dxx, -dyy,
+			options.getHorizontalSensitivity(), options.getVerticalSensitivity(),
+			options.getVerticalFOV());
+	}
 }
 
 void GameWorldPanel::handleKeyboard(double dt)
@@ -131,11 +148,15 @@ void GameWorldPanel::handleKeyboard(double dt)
 }
 
 void GameWorldPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-	// Animate the game world by "dt" seconds...
-	
+{	
 	this->handleEvents(running);
+	this->handleMouse(dt);
+	
+	// Animate the game world by "dt" seconds here.
+
+	// Update CLProgram members that are refreshed per frame.
+	auto *gameData = this->getGameState()->getGameData();
+	gameData->getCLProgram().updateDirection(gameData->getPlayer().getDirection());
 }
 
 void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)

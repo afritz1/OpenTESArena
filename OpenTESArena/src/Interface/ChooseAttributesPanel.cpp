@@ -72,7 +72,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// menu has settings for the CLProgram.
 			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
 			auto player = std::unique_ptr<Player>(new Player(name, Float3d(),
-				Float3d(), Float3d(), *entityManager.get()));
+				*entityManager.get()));
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY()));

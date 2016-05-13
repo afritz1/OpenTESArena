@@ -1,6 +1,8 @@
 #ifndef POST_PROCESSING_H
 #define POST_PROCESSING_H
 
+// Remove this class once there are some OpenCL post-processing kernels written.
+
 // These are slow on the CPU, but they're better than nothing because doing
 // OpenCL kernels for each of them is low priority right now!
 

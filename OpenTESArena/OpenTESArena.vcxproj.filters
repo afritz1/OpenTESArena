@@ -101,6 +101,8 @@
     <ClCompile Include="src\Interface\CharacterPanel.cpp" />
     <ClCompile Include="src\Media\TextureFile.cpp" />
     <ClCompile Include="src\Rendering\CLProgram.cpp" />
+    <ClCompile Include="src\Entities\CoordinateFrame.cpp" />
+    <ClCompile Include="src\Game\Options.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -245,6 +247,8 @@
     <ClInclude Include="src\Media\TextureFile.h" />
     <ClInclude Include="src\Rendering\CLProgram.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="src\Entities\CoordinateFrame.h" />
+    <ClInclude Include="src\Game\Options.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

@@ -14,6 +14,7 @@
 class AudioManager;
 class GameData;
 class Int2;
+class Options;
 class Panel;
 class Renderer;
 class TextureManager;
@@ -25,15 +26,12 @@ struct SDL_Rect;
 class GameState
 {
 private:
-	static const int DEFAULT_SCREEN_WIDTH;
-	static const int DEFAULT_SCREEN_HEIGHT;
-	static const bool DEFAULT_IS_FULLSCREEN;
 	static const std::string DEFAULT_SCREEN_TITLE;
 
 	std::unique_ptr<AudioManager> audioManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<MusicName> nextMusic;
-	// options object... to be coded at some point.
+	std::unique_ptr<Options> options;
 	std::unique_ptr<Panel> panel, nextPanel;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
@@ -52,6 +50,8 @@ public:
 
 	// This might be null, so it returns a pointer instead of a reference for safety.
 	GameData *getGameData() const;
+
+	Options &getOptions() const;
 
 	TextureManager &getTextureManager() const;
 

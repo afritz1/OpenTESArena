@@ -13,6 +13,9 @@ const std::string CLProgram::ENTRY_FUNCTION = "render";
 
 CLProgram::CLProgram(int width, int height)
 {
+	assert(width > 0);
+	assert(height > 0);
+
 	this->context = nullptr;
 	this->commandQueue = nullptr;
 	this->program = nullptr;
@@ -37,8 +40,13 @@ CLProgram::CLProgram(int width, int height)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue.");
 
 	auto source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
+	auto defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
+		std::string("\n") + std::string("#define SCREEN_HEIGHT ") + 
+		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
+		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
+		std::string("f\n"); // The "f" is for "float". OpenCL complains if it's a double.
 	auto options = std::string("-cl-fast-relaxed-math -cl-strict-aliasing");
-	this->program = cl::Program(this->context, source, false, &status);
+	this->program = cl::Program(this->context, defines + source, false, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Program.");
 
 	status = this->program.build(devices, options.c_str());
@@ -48,17 +56,23 @@ CLProgram::CLProgram(int width, int height)
 	this->kernel = cl::Kernel(this->program, CLProgram::ENTRY_FUNCTION.c_str(), &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel.");
 
+	this->directionBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		sizeof(cl_float3), nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer directionBuffer.");
+
 	this->colorBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY, 
 		sizeof(cl_uint) * width * height, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
 
-	this->kernel.setArg(0, this->colorBuffer);
+	this->kernel.setArg(0, this->directionBuffer);
+	this->kernel.setArg(1, this->colorBuffer);
 
 	assert(this->device.get() != nullptr);
 	assert(this->context.get() != nullptr);
 	assert(this->commandQueue.get() != nullptr);
 	assert(this->program.get() != nullptr);
 	assert(this->kernel.get() != nullptr);
+	assert(this->directionBuffer.get() != nullptr);
 	assert(this->colorBuffer.get() != nullptr);
 	assert(this->width == width);
 	assert(this->height == height);
@@ -74,7 +88,7 @@ std::vector<cl::Platform> CLProgram::getPlatforms()
 	auto platforms = std::vector<cl::Platform>();
 
 	auto status = cl::Platform::get(&platforms);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "CLProgram::getPlatforms().");
+	Debug::check(status == CL_SUCCESS, "CLProgram", "CLProgram::getPlatforms.");
 
 	return platforms;
 }
@@ -86,7 +100,7 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 
 	auto status = platform.getDevices(type, &devices);
 	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND), 
-		"CLProgram", "CLProgram::getDevices().");
+		"CLProgram", "CLProgram::getDevices.");
 
 	return devices;
 }
@@ -176,6 +190,29 @@ std::string CLProgram::getErrorString(cl_int error) const
 	case -1005: return "CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR";
 	default: return "Unknown OpenCL error \"" + std::to_string(error) + "\"";
 	}
+}
+
+void CLProgram::updateDirection(const Float3d &direction)
+{
+	// Write the direction into a local buffer. It's small enough that it can be 
+	// recreated each frame.
+	auto buffer = std::vector<char>(sizeof(cl_float3));
+	auto *bufPtr = reinterpret_cast<cl_float*>(buffer.data());
+	*(bufPtr + 0) = static_cast<cl_float>(direction.getX());
+	*(bufPtr + 1) = static_cast<cl_float>(direction.getY());
+	*(bufPtr + 2) = static_cast<cl_float>(direction.getZ());
+
+	// Write the buffer to kernel memory.
+	auto status = this->commandQueue.enqueueWriteBuffer(this->directionBuffer,
+		true, 0, buffer.size(), static_cast<const void*>(bufPtr), 
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", 
+		"cl::enqueueWriteBuffer updateDirection");
+
+	// Update the kernel argument (why is this necessary?).
+	status = this->kernel.setArg(0, this->directionBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", 
+		"cl::Kernel::setArg updateDirection.");
 }
 
 void CLProgram::render(SDL_Surface *dst)

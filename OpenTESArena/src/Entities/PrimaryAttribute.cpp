@@ -71,6 +71,7 @@ int PrimaryAttribute::getModifier() const
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
 
+	// I don't think this value is exactly right. Try some more experiments.
 	int modifierValue = (this->baseValue - 50) / 10;
 	return modifierValue;
 }
@@ -84,7 +85,9 @@ std::string PrimaryAttribute::toString() const
 
 void PrimaryAttribute::set(int value)
 {
-	// The caller shouldn't try to set the value to a bad value.
+	// The caller shouldn't try to set the value to a bad value. If only this was Ada!
+	// Ada has automatic bounds checking on numeric types, like "percent is 0.0...100.0"
+	// or something, so no assertions would be necessary.
 	assert(value >= PrimaryAttribute::MIN_VALUE);
 	assert(value <= PrimaryAttribute::MAX_VALUE);
 
