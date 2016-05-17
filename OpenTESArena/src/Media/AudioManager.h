@@ -41,10 +41,13 @@ private:
 
 	bool isLoaded(FMOD_SOUND *object) const;
 
+	void initializeMusicChannel();
+	void initializeSoundChannels();
 	void loadMusic(const std::string &filename);
 	void loadSound(const std::string &filename);
 public:
-	AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, int maxChannels);
+	AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
+		double musicVolume, double soundVolume, int maxChannels);
 	~AudioManager();
 
 	static const double MIN_VOLUME;

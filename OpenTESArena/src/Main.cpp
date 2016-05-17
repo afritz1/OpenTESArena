@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[])
 {
-	// It shouldn't be taking any command line arguments; it loads the same every time.
+	// It shouldn't be taking any command line arguments; it loads from text files.
 	static_cast<void>(argc);
 	static_cast<void>(argv);
 	

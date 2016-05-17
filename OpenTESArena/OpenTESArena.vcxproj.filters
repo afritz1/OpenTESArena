@@ -103,6 +103,9 @@
     <ClCompile Include="src\Rendering\CLProgram.cpp" />
     <ClCompile Include="src\Entities\CoordinateFrame.cpp" />
     <ClCompile Include="src\Game\Options.cpp" />
+    <ClCompile Include="src\Game\OptionsParser.cpp" />
+    <ClCompile Include="src\Utilities\Utility.cpp" />
+    <ClCompile Include="src\Interface\ToggleButton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -249,6 +252,9 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Entities\CoordinateFrame.h" />
     <ClInclude Include="src\Game\Options.h" />
+    <ClInclude Include="src\Game\OptionsParser.h" />
+    <ClInclude Include="src\Utilities\Utility.h" />
+    <ClInclude Include="src\Interface\ToggleButton.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

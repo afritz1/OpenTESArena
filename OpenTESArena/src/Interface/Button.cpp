@@ -3,7 +3,6 @@
 #include "Button.h"
 
 #include "../Math/Int2.h"
-#include "../Math/Rectangle.h"
 
 Button::Button(int x, int y, int width, int height, const std::function<void()> &function)
 	: Surface(x, y, width, height)

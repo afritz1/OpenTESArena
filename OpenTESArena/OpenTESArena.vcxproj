@@ -135,6 +135,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Game\OptionsParser.cpp" />
     <ClCompile Include="src\Game\Options.cpp" />
     <ClCompile Include="src\Entities\CoordinateFrame.cpp" />
     <ClCompile Include="src\Rendering\CLProgram.cpp" />
@@ -237,8 +238,11 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\ImagePanel.cpp" />
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
     <ClCompile Include="src\Media\TextureFile.cpp" />
+    <ClCompile Include="src\Utilities\Utility.cpp" />
+    <ClCompile Include="src\Interface\ToggleButton.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Game\Options.h" />
     <ClInclude Include="src\Entities\CoordinateFrame.h" />
     <ClInclude Include="resource.h" />
@@ -383,6 +387,8 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Interface\ImagePanel.h" />
     <ClInclude Include="src\Interface\TextCinematicPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />
+    <ClInclude Include="src\Utilities\Utility.h" />
+    <ClInclude Include="src\Interface\ToggleButton.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

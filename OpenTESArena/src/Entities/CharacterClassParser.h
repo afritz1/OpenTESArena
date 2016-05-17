@@ -15,9 +15,6 @@ private:
 	CharacterClassParser() = delete;
 	CharacterClassParser(const CharacterClassParser&) = delete;
 	~CharacterClassParser() = delete;
-
-	// Splits a string by spaces. Intended for whitespace separated lists.
-	static std::vector<std::string> split(const std::string &line);
 public:
 	static std::vector<std::unique_ptr<CharacterClass>> parse();
 };

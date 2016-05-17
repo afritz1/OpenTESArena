@@ -11,6 +11,7 @@
 #include "../Items/WeaponType.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
+#include "../Utilities/Utility.h"
 
 const auto CharacterClassParserCategories = std::map<std::string, CharacterClassCategoryName>
 {
@@ -64,32 +65,6 @@ const auto CharacterClassParserWeapons = std::map<std::string, WeaponType>
 
 const std::string CharacterClassParser::PATH = "data/text/";
 const std::string CharacterClassParser::FILENAME = "classes.txt";
-
-std::vector<std::string> CharacterClassParser::split(const std::string &line)
-{
-	auto strings = std::vector<std::string>();
-
-	// Add an empty string to start off.
-	strings.push_back(std::string());
-
-	const auto space = ' ';
-
-	for (const auto &c : line)
-	{
-		if (c == space)
-		{
-			// Add a new string.
-			strings.push_back(std::string());
-		}
-		else
-		{
-			// Put the character on the current string.
-			strings.at(strings.size() - 1).push_back(c);
-		}
-	}
-
-	return strings;
-}
 
 std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 {
@@ -180,7 +155,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto armors = line.substr(oldIndex, index - oldIndex);
-		auto armorTokens = CharacterClassParser::split(armors);
+		auto armorTokens = Utility::split(armors);
 
 		// Get the set of shields.
 		index += 2;
@@ -191,7 +166,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto shields = line.substr(oldIndex, index - oldIndex);
-		auto shieldTokens = CharacterClassParser::split(shields);
+		auto shieldTokens = Utility::split(shields);
 
 		// Get the set of weapons (read until the end of the line).
 		index += 2;
@@ -202,7 +177,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto weapons = line.substr(oldIndex, index - oldIndex);
-		auto weaponTokens = CharacterClassParser::split(weapons);
+		auto weaponTokens = Utility::split(weapons);
 
 		// Verify that the strings each have a mapping.
 		Debug::check(CharacterClassParserCategories.find(category) !=

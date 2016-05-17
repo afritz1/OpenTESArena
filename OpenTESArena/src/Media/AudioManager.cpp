@@ -228,7 +228,7 @@ const double AudioManager::MIN_VOLUME = 0.0;
 const double AudioManager::MAX_VOLUME = 1.0;
 
 AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
-	int maxChannels)
+	double musicVolume, double soundVolume, int maxChannels)
 {
 	Debug::mention("Audio Manager", "Initializing.");
 
@@ -249,10 +249,14 @@ AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	this->musicFormat = musicFormat;
 	this->soundFormat = soundFormat;
 
-	// The channels are null until used with "FMOD_System_PlaySound()". The volume 
-	// can't be set until that function is called, either.
+	// The channels are null and the volume can't be set until used with 
+	// "FMOD_System_PlaySound()", so these initialization methods are necessary.
+	this->initializeMusicChannel();
+	this->initializeSoundChannels();
+	this->setMusicVolume(musicVolume);
+	this->setSoundVolume(soundVolume);
+
 	assert(this->system != nullptr);
-	assert(this->objects.size() == 0);
 	assert(this->musicFormat == musicFormat);
 	assert(this->soundFormat == soundFormat);
 }
@@ -308,6 +312,32 @@ bool AudioManager::musicIsPlaying() const
 	return playing > 0;
 }
 
+void AudioManager::initializeMusicChannel()
+{
+	// Preload a music file to initialize the music channel with.
+	auto musicName = MusicName::PercIntro;
+	auto musicFilename = MusicFilenames.at(musicName);
+	this->loadMusic(musicFilename);
+
+	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
+		this->objects.at(musicFilename), true, &this->musicChannel);
+	Debug::check(result == FMOD_OK, "Audio Manager",
+		"playSound initializeMusicChannel " + musicFilename);
+}
+
+void AudioManager::initializeSoundChannels()
+{
+	// Preload a sound file to initialize the sound channel with.
+	auto soundName = SoundName::OpenDoor;
+	auto soundFilename = SoundFilenames.at(soundName);
+	this->loadSound(soundFilename);
+
+	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
+		this->objects.at(soundFilename), true, &this->soundChannel);
+	Debug::check(result == FMOD_OK, "Audio Manager",
+		"playSound initializeSoundChannels " + soundFilename);
+}
+
 void AudioManager::loadMusic(const std::string &filename)
 {
 	// Make a blank mapping to write into.
@@ -342,6 +372,8 @@ void AudioManager::playMusic(const std::string &filename)
 {
 	if (this->objects.find(filename) != this->objects.end())
 	{
+		auto volume = this->getMusicVolume();
+
 		// Stop any currently playing music.
 		this->stopMusic();
 
@@ -350,6 +382,9 @@ void AudioManager::playMusic(const std::string &filename)
 			this->objects.at(filename), false, &this->musicChannel);
 		Debug::check(result == FMOD_OK, "Audio Manager",
 			"playMusic FMOD_System_PlaySound " + filename);
+
+		// Make sure it plays at the current volume.
+		this->setMusicVolume(volume);
 
 		// Set the music to loop.
 		result = FMOD_Channel_SetMode(this->musicChannel, FMOD_LOOP_NORMAL);
@@ -373,10 +408,15 @@ void AudioManager::playSound(const std::string &filename)
 {
 	if (this->objects.find(filename) != this->objects.end())
 	{
+		auto volume = this->getSoundVolume();
+
 		FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
 			this->objects.at(filename), false, &this->soundChannel);
 		Debug::check(result == FMOD_OK, "Audio Manager",
 			"playSound FMOD_System_PlaySound" + filename);
+
+		// Make sure it plays at the current volume.
+		this->setSoundVolume(volume);
 	}
 	else
 	{

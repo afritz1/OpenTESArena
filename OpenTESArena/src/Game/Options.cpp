@@ -1,45 +1,62 @@
 #include <cassert>
-#include <map>
 
 #include "Options.h"
 
 #include "../Media/MusicFormat.h"
 #include "../Media/SoundFormat.h"
 
-const auto OptionsMusicFormats = std::map<std::string, MusicFormat>
+Options::Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV, 
+	double hSensitivity, double vSensitivity, double musicVolume, double soundVolume,
+	int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat)
 {
-	{ "MIDI", MusicFormat::MIDI },
-	{ "MP3", MusicFormat::MP3 },
-	{ "Ogg", MusicFormat::Ogg }
-};
+	this->screenWidth = screenWidth;
+	this->screenHeight = screenHeight;
+	this->fullscreen = fullscreen;
+	this->verticalFOV = verticalFOV;
+	this->hSensitivity = hSensitivity;
+	this->vSensitivity = vSensitivity;
+	this->musicVolume = musicVolume;
+	this->soundVolume = soundVolume;
+	this->soundChannels = soundChannels;
+	this->musicFormat = musicFormat;
+	this->soundFormat = soundFormat;
 
-// Technically, "WAV" is "wave", but oh well.
-const auto OptionsSoundFormats = std::map<std::string, SoundFormat>
-{
-	{ "Ogg", SoundFormat::Ogg },
-	{ "WAV", SoundFormat::WAV }
-};
-
-const std::string Options::PATH = "options/";
-const std::string Options::FILENAME = "options.txt";
-
-Options::Options()
-{
-	// These values will be loaded from an "options.txt" file eventually.
-	this->hSensitivity = 800.0;
-	this->vSensitivity = 800.0;
-	this->verticalFOV = 90.0;
-	this->screenWidth = 1280;
-	this->screenHeight = 720;
-	this->soundChannels = 32;
-	this->musicFormat = MusicFormat::MIDI;
-	this->soundFormat = SoundFormat::Ogg;
-	this->fullscreen = false;
+	assert(this->screenWidth > 0);
+	assert(this->screenHeight > 0);
+	assert(this->verticalFOV > 0.0);
+	assert(this->verticalFOV < 180.0);
+	assert(this->hSensitivity > 0.0);
+	assert(this->vSensitivity > 0.0);
+	assert(this->musicVolume >= 0.0);
+	assert(this->musicVolume <= 1.0);
+	assert(this->soundVolume >= 0.0);
+	assert(this->soundVolume <= 1.0);
+	assert(this->soundChannels >= 1);
 }
 
 Options::~Options()
 {
 
+}
+
+const int &Options::getScreenWidth() const
+{
+	return this->screenWidth;
+}
+
+const int &Options::getScreenHeight() const
+{
+	return this->screenHeight;
+}
+
+const bool &Options::isFullscreen() const
+{
+	return this->fullscreen;
+}
+
+const double &Options::getVerticalFOV() const
+{
+	return this->verticalFOV;
 }
 
 const double &Options::getHorizontalSensitivity() const
@@ -52,19 +69,14 @@ const double &Options::getVerticalSensitivity() const
 	return this->vSensitivity;
 }
 
-const double &Options::getVerticalFOV() const
+const double &Options::getMusicVolume() const
 {
-	return this->verticalFOV;
+	return this->musicVolume;
 }
 
-const int &Options::getScreenWidth() const
+const double &Options::getSoundVolume() const
 {
-	return this->screenWidth;
-}
-
-const int &Options::getScreenHeight() const
-{
-	return this->screenHeight;
+	return this->soundVolume;
 }
 
 const int &Options::getSoundChannelCount() const
@@ -82,29 +94,6 @@ const SoundFormat &Options::getSoundFormat() const
 	return this->soundFormat;
 }
 
-const bool &Options::isFullscreen() const
-{
-	return this->fullscreen;
-}
-
-void Options::setHorizontalSensitivity(double hSensitivity)
-{
-	this->hSensitivity = hSensitivity;
-}
-
-void Options::setVerticalSensitivity(double vSensitivity)
-{
-	this->vSensitivity = vSensitivity;
-}
-
-void Options::setVerticalFOV(double fov)
-{
-	assert(fov > 0.0);
-	assert(fov < 180.0);
-
-	this->verticalFOV = fov;
-}
-
 void Options::setScreenWidth(int width)
 {
 	assert(width > 0);
@@ -117,6 +106,45 @@ void Options::setScreenHeight(int height)
 	assert(height > 0);
 
 	this->screenHeight = height;
+}
+
+void Options::setFullscreen(bool fullscreen)
+{
+	this->fullscreen = fullscreen;
+}
+
+void Options::setVerticalFOV(double fov)
+{
+	assert(fov > 0.0);
+	assert(fov < 180.0);
+
+	this->verticalFOV = fov;
+}
+
+void Options::setHorizontalSensitivity(double hSensitivity)
+{
+	this->hSensitivity = hSensitivity;
+}
+
+void Options::setVerticalSensitivity(double vSensitivity)
+{
+	this->vSensitivity = vSensitivity;
+}
+
+void Options::setMusicVolume(double percent)
+{
+	assert(percent >= 0.0);
+	assert(percent <= 1.0);
+
+	this->musicVolume = percent;
+}
+
+void Options::setSoundVolume(double percent)
+{
+	assert(percent >= 0.0);
+	assert(percent <= 1.0);
+
+	this->soundVolume = percent;
 }
 
 void Options::setSoundChannelCount(int count)
@@ -132,17 +160,4 @@ void Options::setMusicFormat(MusicFormat musicFormat)
 void Options::setSoundFormat(SoundFormat soundFormat)
 {
 	this->soundFormat = soundFormat;
-}
-
-void Options::setFullscreen(bool fullscreen)
-{
-	this->fullscreen = fullscreen;
-}
-
-void Options::saveToFile()
-{
-	// The options menu should have an "Apply" button.
-	auto fullPath = Options::PATH + Options::FILENAME;
-
-	// ...not done!
 }

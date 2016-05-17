@@ -7,6 +7,7 @@
 
 #include "GameData.h"
 #include "Options.h"
+#include "OptionsParser.h"
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
@@ -37,7 +38,7 @@ GameState::GameState()
 	this->textureManager = nullptr;
 
 	// Load options from file.
-	this->options = std::unique_ptr<Options>(new Options());
+	this->options = OptionsParser::parse();
 
 	// Not constructing the panel until the first tick guarantees that all
 	// dependencies will be ready, but it doesn't matter anyway because there
@@ -51,6 +52,7 @@ GameState::GameState()
 	assert(this->options.get() != nullptr);
 	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
 		this->options->getMusicFormat(), this->options->getSoundFormat(), 
+		this->options->getMusicVolume(), this->options->getSoundVolume(),
 		this->options->getSoundChannelCount()));
 
 	// Initialize the SDL renderer and window with the given dimensions and title.

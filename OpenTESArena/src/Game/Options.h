@@ -12,41 +12,49 @@ enum class SoundFormat;
 class Options
 {
 private:
-	static const std::string PATH;
-	static const std::string FILENAME;
-
-	double hSensitivity, vSensitivity;
+	// Graphics.
+	int screenWidth, screenHeight;
+	bool fullscreen;
 	double verticalFOV; // In degrees.
-	int screenWidth, screenHeight, soundChannels;
+
+	// Input.
+	double hSensitivity, vSensitivity;
+
+	// Sound.
+	double musicVolume, soundVolume;
+	int soundChannels;
 	MusicFormat musicFormat;
 	SoundFormat soundFormat;
-	bool fullscreen;
 public:
-	// Initialize values from the options file.
-	Options();
+	Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV,
+		double hSensitivity, double vSensitivity, double musicVolume,
+		double soundVolume, int soundChannels, MusicFormat musicFormat, 
+		SoundFormat soundFormat);
 	~Options();
 
-	const double &getHorizontalSensitivity() const;
-	const double &getVerticalSensitivity() const;
-	const double &getVerticalFOV() const;
 	const int &getScreenWidth() const;
 	const int &getScreenHeight() const;
+	const bool &isFullscreen() const;
+	const double &getVerticalFOV() const;
+	const double &getHorizontalSensitivity() const;
+	const double &getVerticalSensitivity() const;
+	const double &getMusicVolume() const;
+	const double &getSoundVolume() const;
 	const int &getSoundChannelCount() const;
 	const MusicFormat &getMusicFormat() const;
 	const SoundFormat &getSoundFormat() const;
-	const bool &isFullscreen() const;
 
-	void setHorizontalSensitivity(double hSensitivity);
-	void setVerticalSensitivity(double vSensitivity);
-	void setVerticalFOV(double fov);
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
+	void setFullscreen(bool fullscreen);
+	void setVerticalFOV(double fov);
+	void setHorizontalSensitivity(double hSensitivity);
+	void setVerticalSensitivity(double vSensitivity);
+	void setMusicVolume(double percent);
+	void setSoundVolume(double percent);
 	void setSoundChannelCount(int count);
 	void setMusicFormat(MusicFormat musicFormat);
 	void setSoundFormat(SoundFormat soundFormat);
-	void setFullscreen(bool fullscreen);
-
-	void saveToFile();
 };
 
 #endif
