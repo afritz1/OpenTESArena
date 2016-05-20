@@ -13,6 +13,7 @@
 #include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
 #include "../Media/Color.h"
@@ -219,13 +220,11 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
-	const int originalWidth = 320;
-	const int originalHeight = 200;
 	const int width = tooltip->getWidth() / 2;
 	const int height = tooltip->getHeight() / 2;
-	const int x = ((tooltip->getX() + width) < originalWidth) ? tooltip->getX() :
+	const int x = ((tooltip->getX() + width) < ORIGINAL_WIDTH) ? tooltip->getX() :
 		(tooltip->getX() - width);
-	const int y = ((tooltip->getY() + height) < originalHeight) ? tooltip->getY() :
+	const int y = ((tooltip->getY() + height) < ORIGINAL_HEIGHT) ? tooltip->getY() :
 		(tooltip->getY() - height);
 
 	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, dst);
@@ -246,14 +245,12 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->parchment->setTransparentColor(Color::Magenta);
 	if (this->initialTextBox->isVisible())
 	{
-		const int originalWidth = 320;
-		const int originalHeight = 200;
 		const int parchmentWidth = static_cast<int>(
 			static_cast<double>(this->parchment->getWidth()) * 1.30);
 		const int parchmentHeight = static_cast<int>(
 			static_cast<double>(this->parchment->getHeight()) * 1.65);
-		const int parchmentX = (originalWidth / 2) - (parchmentWidth / 2);
-		const int parchmentY = (originalHeight / 2) - (parchmentHeight / 2);
+		const int parchmentX = (ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
+		const int parchmentY = (ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2);
 		this->drawScaledToNative(*this->parchment.get(),
 			parchmentX,
 			parchmentY,

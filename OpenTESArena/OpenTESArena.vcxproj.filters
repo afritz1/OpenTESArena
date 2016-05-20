@@ -190,7 +190,6 @@
     <ClInclude Include="src\Game\Year.h" />
     <ClInclude Include="src\Game\Date.h" />
     <ClInclude Include="src\Items\WeaponRangeName.h" />
-    <ClInclude Include="src\Algorithms\BinaryTree.h" />
     <ClInclude Include="src\World\VoxelType.h" />
     <ClInclude Include="src\World\VoxelMaterialType.h" />
     <ClInclude Include="src\Math\Triangle.h" />

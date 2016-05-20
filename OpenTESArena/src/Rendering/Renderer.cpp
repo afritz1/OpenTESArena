@@ -86,10 +86,8 @@ SDL_Surface *Renderer::getWindowSurface() const
 std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 {
 	// Letterbox width and height always maintain the 1.6:1 aspect ratio.
-	const int originalWidth = 320;
-	const int originalHeight = 200;
-	const auto originalAspect = static_cast<double>(originalWidth) /
-		static_cast<double>(originalHeight);
+	const auto originalAspect = static_cast<double>(ORIGINAL_WIDTH) /
+		static_cast<double>(ORIGINAL_HEIGHT);
 
 	// Native window aspect can be anything finite.
 	const auto *nativeSurface = this->getWindowSurface();

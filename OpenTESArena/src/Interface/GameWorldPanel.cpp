@@ -12,6 +12,7 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Media/AudioManager.h"
@@ -172,8 +173,6 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
 
-	const int originalWidth = 320;
-
 	// Draw stat bars.
 	auto statBarSurface = Surface(5, 35);
 	
@@ -207,7 +206,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, this->getMagenta(dst->format));
 	
 	this->drawScaledToNative(compassFrame,
-		(originalWidth / 2) - (compassFrame.getWidth() / 2),
+		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2),
 		0,
 		compassFrame.getWidth(),
 		compassFrame.getHeight(),

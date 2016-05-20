@@ -8,6 +8,7 @@
 #include "MainMenuPanel.h"
 #include "Surface.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
 #include "../Media/MusicName.h"
@@ -95,9 +96,8 @@ GameState *Panel::getGameState() const
 
 double Panel::getDrawScale() const
 {
-	const int originalWidth = 320;
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	return static_cast<double>(letterbox->w) / static_cast<double>(originalWidth);
+	return static_cast<double>(letterbox->w) / static_cast<double>(ORIGINAL_WIDTH);
 }
 
 Int2 Panel::getMousePosition() const

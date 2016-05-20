@@ -2,6 +2,7 @@
 #define COORDINATE_FRAME_H
 
 #include "../Math/Float3.h"
+#include "../Math/Matrix4.h"
 
 // A coordinate frame is a 3D axis to help with orienting entities in the world.
 
@@ -16,6 +17,9 @@ public:
 	const Float3d &getForward() const;
 	const Float3d &getRight() const;
 	const Float3d &getUp() const;
+
+	// The point argument is to compensate for the coordinate frame not having one.
+	Matrix4d toMatrix4(const Float3d &point) const;
 };
 
 #endif

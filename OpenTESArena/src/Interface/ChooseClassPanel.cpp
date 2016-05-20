@@ -13,6 +13,7 @@
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -35,10 +36,9 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 
 	this->parchment = [gameState]()
 	{
-		const int originalWidth = 320;
 		auto *surface = gameState->getTextureManager().getSurface(
 			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		auto origin = Int2((originalWidth / 2) - (surface->w / 2), 20);
+		auto origin = Int2((ORIGINAL_WIDTH / 2) - (surface->w / 2), 20);
 		return std::unique_ptr<Surface>(new Surface(
 			origin.getX(), origin.getY(), surface));
 	}();

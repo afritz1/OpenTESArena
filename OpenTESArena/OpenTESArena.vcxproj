@@ -287,7 +287,6 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Items\Potion.h" />
     <ClInclude Include="src\Items\Consumable.h" />
     <ClInclude Include="src\Entities\AttributeModifier.h" />
-    <ClInclude Include="src\Algorithms\BinaryTree.h" />
     <ClInclude Include="src\Entities\AttributeModifierName.h" />
     <ClInclude Include="src\Game\Date.h" />
     <ClInclude Include="src\Game\Holiday.h" />
