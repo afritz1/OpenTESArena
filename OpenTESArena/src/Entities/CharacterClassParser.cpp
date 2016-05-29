@@ -11,7 +11,7 @@
 #include "../Items/WeaponType.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
-#include "../Utilities/Utility.h"
+#include "../Utilities/String.h"
 
 const auto CharacterClassParserCategories = std::map<std::string, CharacterClassCategoryName>
 {
@@ -155,7 +155,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto armors = line.substr(oldIndex, index - oldIndex);
-		auto armorTokens = Utility::split(armors);
+		auto armorTokens = String::split(armors);
 
 		// Get the set of shields.
 		index += 2;
@@ -166,7 +166,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto shields = line.substr(oldIndex, index - oldIndex);
-		auto shieldTokens = Utility::split(shields);
+		auto shieldTokens = String::split(shields);
 
 		// Get the set of weapons (read until the end of the line).
 		index += 2;
@@ -177,7 +177,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		auto weapons = line.substr(oldIndex, index - oldIndex);
-		auto weaponTokens = Utility::split(weapons);
+		auto weaponTokens = String::split(weapons);
 
 		// Verify that the strings each have a mapping.
 		Debug::check(CharacterClassParserCategories.find(category) !=

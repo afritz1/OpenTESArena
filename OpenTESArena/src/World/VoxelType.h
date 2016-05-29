@@ -1,7 +1,12 @@
 #ifndef VOXEL_TYPE_H
 #define VOXEL_TYPE_H
 
-// A unique identifier for each type of voxel. 
+// A unique identifier for each type of voxel.
+
+// Voxel types, if they are still part of the design, are meant for host usage only,
+// and not for mapping textures to the OpenCL kernel.
+
+// -------------------------------
 
 // Voxel types are used instead of integer IDs, since it's easier to name specific 
 // kinds of voxels. Depending on the climate and season, a certain voxel type might 

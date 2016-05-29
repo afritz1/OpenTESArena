@@ -30,3 +30,13 @@ void Debug::check(bool condition, const std::string &className,
 		exit(EXIT_FAILURE);
 	}
 }
+
+void Debug::crash(const std::string &message)
+{
+	Debug::check(false, message);
+}
+
+void Debug::crash(const std::string &className, const std::string &message)
+{
+	Debug::check(false, className, message);
+}

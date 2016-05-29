@@ -1,10 +1,11 @@
-#include "Utility.h"
+#include "String.h"
 
-std::vector<std::string> Utility::split(const std::string &line, char separator)
+std::vector<std::string> String::split(const std::string &line, char separator)
 {
 	auto strings = std::vector<std::string>();
 
-	// Add an empty string to start off.
+	// Add an empty string to start off. If the given line is empty, then a
+	// vector with one empty string is returned.
 	strings.push_back(std::string());
 
 	for (const auto &c : line)
@@ -24,12 +25,12 @@ std::vector<std::string> Utility::split(const std::string &line, char separator)
 	return strings;
 }
 
-std::vector<std::string> Utility::split(const std::string &line)
+std::vector<std::string> String::split(const std::string &line)
 {
-	return Utility::split(line, ' ');
+	return String::split(line, ' ');
 }
 
-std::string Utility::trim(const std::string &line)
+std::string String::trim(const std::string &line)
 {
 	auto trimmed = std::string();
 
@@ -46,7 +47,7 @@ std::string Utility::trim(const std::string &line)
 	return trimmed;
 }
 
-std::string Utility::trimLines(const std::string &line)
+std::string String::trimLines(const std::string &line)
 {
 	auto trimmed = std::string();
 

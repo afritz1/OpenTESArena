@@ -26,9 +26,15 @@ public:
 	// Crash the program with a message if the condition is false.
 	static void check(bool condition, const std::string &message);
 
-	// For use in a class context, the class name is what class the executing method is in.
+	// Crash the program with a class name and message if the condition is false.
 	static void check(bool condition, const std::string &className, 
 		const std::string &message);
+
+	// Crash the program with a message.
+	static void crash(const std::string &message);
+
+	// Crash the program with a class name and message.
+	static void crash(const std::string &className, const std::string &message);
 };
 
 #endif

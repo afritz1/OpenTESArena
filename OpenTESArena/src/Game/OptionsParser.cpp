@@ -7,7 +7,7 @@
 #include "../Media/SoundFormat.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
-#include "../Utilities/Utility.h"
+#include "../Utilities/String.h"
 
 const auto OptionsParserMusicFormats = std::map<std::string, MusicFormat>
 {
@@ -62,12 +62,12 @@ std::map<std::string, std::string> OptionsParser::getPairs(const std::string &te
 			continue;
 		}
 		
-		auto tokens = Utility::split(line, '=');
+		auto tokens = String::split(line, '=');
 		Debug::check(tokens.size() == 2, "Options Parser", "Invalid entry \"" + line + "\".");
 
 		// The strings could be trimmed of whitespace also, but I want the parser to be strict.
 		auto key = tokens.at(0);
-		auto value = Utility::trimLines(tokens.at(1));
+		auto value = String::trimLines(tokens.at(1));
 
 		pairs.insert(std::pair<std::string, std::string>(key, value));
 	}

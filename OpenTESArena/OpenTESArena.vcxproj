@@ -238,7 +238,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\ImagePanel.cpp" />
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
     <ClCompile Include="src\Media\TextureFile.cpp" />
-    <ClCompile Include="src\Utilities\Utility.cpp" />
+    <ClCompile Include="src\Utilities\String.cpp" />
     <ClCompile Include="src\Interface\ToggleButton.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -386,7 +386,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Interface\ImagePanel.h" />
     <ClInclude Include="src\Interface\TextCinematicPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />
-    <ClInclude Include="src\Utilities\Utility.h" />
+    <ClInclude Include="src\Utilities\String.h" />
     <ClInclude Include="src\Interface\ToggleButton.h" />
   </ItemGroup>
   <ItemGroup>

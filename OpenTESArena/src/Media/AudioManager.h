@@ -11,14 +11,7 @@
 // Music is for looping background music (MIDI, MP3, or Ogg). Sound is for short 
 // to medium duration sounds and speech (Ogg or WAV).
 
-// The default format for both music and sound will be Ogg.
-
-// It appears that volumes can only be set after a sound starts playing, but
-// the sound can be muted first and then unmuted once the properties are set.
-
-// I think the audio manager shouldn't use random numbers itself to decide
-// which music name to pick from a music type. Let the program do that somewhere
-// else.
+// The default format for music will be MIDI, and sound will be Ogg.
 
 enum class MusicName;
 enum class SoundName;

@@ -1,14 +1,14 @@
-#ifndef UTILITY_H
-#define UTILITY_H
+#ifndef STRING_H
+#define STRING_H
 
 #include <vector>
 
-class Utility
+class String
 {
 private:
-	Utility() = delete;
-	Utility(const Utility&) = delete;
-	~Utility() = delete;
+	String() = delete;
+	String(const String&) = delete;
+	~String() = delete;
 public:
 	// Splits a string on the given character.
 	static std::vector<std::string> split(const std::string &line, char separator);
