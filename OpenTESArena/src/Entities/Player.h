@@ -1,6 +1,9 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <memory>
+
+#include "CharacterClass.h"
 #include "Directable.h"
 #include "Entity.h"
 #include "Movable.h"
@@ -11,10 +14,17 @@
 // Though the player is not rendered, they are still considered part of the
 // entity manager for purposes such as physics calculation and AI behavior.
 
+enum class CharacterGenderName;
+enum class CharacterRaceName;
+
 class Player : public Entity, public Directable, public Movable
 {
 private:
+	std::unique_ptr<CharacterClass> charClass;
+	CharacterGenderName gender;
+	CharacterRaceName raceName;
 	std::string displayName;
+	int portraitID;
 	// Attributes can be put in an inherited class.
 	// Other stats...
 
@@ -22,19 +32,22 @@ private:
 	void pitch(double radians);
 	void yaw(double radians);
 public:
-	// Full constructor.
-	Player(const std::string &displayName, const Float3d &position,
-		const Float3d &direction, const Float3d &velocity, 
+	// Default constructor.
+	Player(const std::string &displayName, CharacterGenderName gender,
+		CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
+		const Float3d &position, const Float3d &direction, const Float3d &velocity, 
 		EntityManager &entityManager);
 
-	// Constructor using the default direction and velocity values.
-	Player(const std::string &displayName, const Float3d &position,
-		EntityManager &entityManager);
 	virtual ~Player();
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const override;
+	virtual EntityType getEntityType() const override;
 
 	const std::string &getDisplayName() const;
+	const int &getPortraitID() const;
+	const CharacterGenderName &getGenderName() const;
+	const CharacterRaceName &getRaceName() const;
+	const CharacterClass &getCharacterClass() const;
 
 	// Camera turning.
 	void rotate(double dx, double dy, double hSensitivity, double vSensitivity,

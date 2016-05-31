@@ -3,21 +3,30 @@
 #include "Player.h"
 
 #include "CoordinateFrame.h"
+#include "CharacterGenderName.h"
+#include "CharacterRaceName.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 
-Player::Player(const std::string &displayName, const Float3d &position, 
-	const Float3d &direction, const Float3d &velocity, EntityManager &entityManager)
+Player::Player(const std::string &displayName, CharacterGenderName gender,
+	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
+	const Float3d &position, const Float3d &direction, const Float3d &velocity, 
+	EntityManager &entityManager)
 	: Entity(EntityType::Player, position, entityManager), Directable(direction), 
 	Movable(velocity)
 {
-	this->displayName = displayName;
-}
+	this->charClass = nullptr;
 
-Player::Player(const std::string &displayName, const Float3d &position,
-	EntityManager &entityManager)
-	: Player(displayName, position, Float3d(1.0, 0.0, 0.0), Float3d(), entityManager) { }
+	this->displayName = displayName;
+	this->gender = gender;
+	this->raceName = raceName;
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->portraitID = portraitID;
+
+	assert(this->portraitID >= 0);
+	assert(this->charClass.get() != nullptr);
+}
 
 Player::~Player()
 {
@@ -27,13 +36,39 @@ Player::~Player()
 std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
 {
 	return std::unique_ptr<Entity>(new Player(
-		this->getDisplayName(), this->getPosition(), this->getDirection(),
-		this->getVelocity(), entityManager));
+		this->getDisplayName(), this->getGenderName(), this->getRaceName(), 
+		this->getCharacterClass(), this->getPortraitID(), this->getPosition(), 
+		this->getDirection(), this->getVelocity(), entityManager));
+}
+
+EntityType Player::getEntityType() const
+{
+	return EntityType::Player;
 }
 
 const std::string &Player::getDisplayName() const
 {
 	return this->displayName;
+}
+
+const int &Player::getPortraitID() const
+{
+	return this->portraitID;
+}
+
+const CharacterGenderName &Player::getGenderName() const
+{
+	return this->gender;
+}
+
+const CharacterRaceName &Player::getRaceName() const
+{
+	return this->raceName;
+}
+
+const CharacterClass &Player::getCharacterClass() const
+{
+	return *this->charClass.get();
 }
 
 void Player::pitch(double radians)
@@ -89,11 +124,12 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
 		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
 
-	this->pitch(lookUpRads / zoom);
-	this->yaw(-lookRightRads / zoom);
+	// Only divide by zoom when sensitivity depends on field of view (which it doesn't here).
+	this->pitch(lookUpRads/* / zoom*/);
+	this->yaw(-lookRightRads/* / zoom*/);
 }
 
 void Player::tick(GameState *gameState, double dt)
 {
-
+	
 }

@@ -40,8 +40,8 @@ public:
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	
 	const int &getID() const;
-	const EntityType &getEntityType() const;
 	const Float3d &getPosition() const;
+	virtual EntityType getEntityType() const = 0;
 
 	virtual void tick(GameState *gameState, double dt) = 0;
 };

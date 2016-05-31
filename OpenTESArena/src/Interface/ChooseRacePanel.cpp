@@ -32,8 +32,9 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	this->parchment = nullptr;
 	this->initialTextBox = nullptr;
 	this->backToNameButton = nullptr;
-	this->gender = nullptr;
 	this->charClass = nullptr;
+	this->gender = nullptr;
+	this->raceName = nullptr;
 
 	// Clickable (x, y, width, height) areas for each province.
 	this->provinceAreas = std::map<ProvinceName, Rectangle>
@@ -82,13 +83,12 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	// How should the race name be given? "this->getChosenRaceName()"?
-	this->acceptButton = [gameState, gender, charClass, name]()
+	this->acceptButton = [this, gameState, gender, charClass, name]()
 	{
-		auto function = [gameState, gender, charClass, name]()
+		auto function = [this, gameState, gender, charClass, name]()
 		{
 			auto attributesPanel = std::unique_ptr<Panel>(new ChooseAttributesPanel(
-				gameState, gender, charClass, name, CharacterRaceName::Nord));
+				gameState, gender, charClass, name, *this->raceName.get()));
 			gameState->setPanel(std::move(attributesPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -106,9 +106,10 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	assert(this->initialTextBox.get() != nullptr);
 	assert(this->backToNameButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
+	assert(this->charClass.get() != nullptr);
 	assert(this->gender.get() != nullptr);
 	assert(*this->gender.get() == gender);
-	assert(this->charClass.get() != nullptr);
+	assert(this->raceName.get() == nullptr);
 	assert(this->name.size() > 0);
 }
 
@@ -177,9 +178,14 @@ void ChooseRacePanel::handleEvents(bool &running)
 				// Listen for map clicks.
 				for (const auto &area : this->provinceAreas)
 				{
-					if (area.second.contains(mouseOriginalPoint))
+					// Ignore the Imperial race because it is not implemented yet.
+					if (area.second.contains(mouseOriginalPoint) && 
+						(area.first != ProvinceName::ImperialProvince))
 					{
-						// Save the clicked province name...?
+						// Save the clicked province's race.
+						auto provinceRace = Province(area.first).getRaceName();
+						this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
+							provinceRace));
 
 						// Go to the attributes panel.
 						this->acceptButton->click();
@@ -211,10 +217,13 @@ void ChooseRacePanel::tick(double dt, bool &running)
 void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
-	const auto raceName = Province(provinceName).getRaceName(true);
+	const auto raceName = Province(provinceName).getRaceDisplayName(true);
 	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
-		mouseOriginalPosition.getX(), mouseOriginalPosition.getY(),
-		Color::White, "Land of the " + raceName, FontName::A,
+		mouseOriginalPosition.getX(), 
+		mouseOriginalPosition.getY(),
+		Color::White, 
+		"Land of the " + raceName, 
+		FontName::A,
 		this->getGameState()->getTextureManager()));
 	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(), 
 		tooltip->getWidth(), tooltip->getHeight());
@@ -274,7 +283,10 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		for (const auto &pair : this->provinceAreas)
 		{
 			// Draw tooltip if the mouse is in the province.
-			if (pair.second.contains(mouseOriginalPosition))
+
+			// Ignore the Imperial race for now as it is not implemented.
+			if (pair.second.contains(mouseOriginalPosition) && 
+				(pair.first != ProvinceName::ImperialProvince))
 			{
 				this->drawProvinceTooltip(pair.first, dst);
 			}

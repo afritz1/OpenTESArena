@@ -3,6 +3,8 @@
 
 #include "Province.h"
 
+#include "../Entities/CharacterRaceName.h"
+
 const auto ProvinceDisplayNames = std::map<ProvinceName, std::string>
 {
 	{ ProvinceName::BlackMarsh, "Black Marsh" },
@@ -16,7 +18,7 @@ const auto ProvinceDisplayNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Valenwood, "Valenwood" }
 };
 
-const auto ProvinceSingularRaceNames = std::map<ProvinceName, std::string>
+const auto ProvinceSingularRaceDisplayNames = std::map<ProvinceName, std::string>
 {
 	{ ProvinceName::BlackMarsh, "Argonian" },
 	{ ProvinceName::Elsweyr, "Khajiit" },
@@ -29,7 +31,7 @@ const auto ProvinceSingularRaceNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Valenwood, "Wood Elf" }
 };
 
-const auto ProvincePluralRaceNames = std::map<ProvinceName, std::string>
+const auto ProvincePluralRaceDisplayNames = std::map<ProvinceName, std::string>
 {
 	{ ProvinceName::BlackMarsh, "Argonians" },
 	{ ProvinceName::Elsweyr, "Khajiit" },
@@ -40,6 +42,19 @@ const auto ProvincePluralRaceNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Skyrim, "Nords" },
 	{ ProvinceName::SummersetIsle, "High Elves" },
 	{ ProvinceName::Valenwood, "Wood Elves" }
+};
+
+const auto ProvinceRaceNames = std::map<ProvinceName, CharacterRaceName>
+{
+	{ ProvinceName::BlackMarsh, CharacterRaceName::Argonian },
+	{ ProvinceName::Elsweyr, CharacterRaceName::Khajiit },
+	{ ProvinceName::Hammerfell, CharacterRaceName::Redguard },
+	{ ProvinceName::HighRock, CharacterRaceName::Breton },
+	{ ProvinceName::ImperialProvince, CharacterRaceName::Imperial },
+	{ ProvinceName::Morrowind, CharacterRaceName::DarkElf },
+	{ ProvinceName::Skyrim, CharacterRaceName::Nord },
+	{ ProvinceName::SummersetIsle, CharacterRaceName::HighElf },
+	{ ProvinceName::Valenwood, CharacterRaceName::WoodElf }
 };
 
 Province::Province(ProvinceName provinceName)
@@ -69,12 +84,18 @@ std::string Province::toString() const
 	return displayName;
 }
 
-std::string Province::getRaceName(bool plural) const
+std::string Province::getRaceDisplayName(bool plural) const
 {
-	auto raceName = plural ?
-		ProvincePluralRaceNames.at(this->getProvinceName()) :
-		ProvinceSingularRaceNames.at(this->getProvinceName());
-	assert(raceName.size() > 0);
+	auto raceDisplayName = plural ?
+		ProvincePluralRaceDisplayNames.at(this->getProvinceName()) :
+		ProvinceSingularRaceDisplayNames.at(this->getProvinceName());
+	assert(raceDisplayName.size() > 0);
+	return raceDisplayName;
+}
+
+CharacterRaceName Province::getRaceName() const
+{
+	auto raceName = ProvinceRaceNames.at(this->getProvinceName());
 	return raceName;
 }
 

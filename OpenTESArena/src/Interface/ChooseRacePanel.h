@@ -15,6 +15,7 @@ class Surface;
 class TextBox;
 
 enum class CharacterGenderName;
+enum class CharacterRaceName;
 enum class ProvinceName;
 
 class ChooseRacePanel : public Panel
@@ -26,6 +27,7 @@ private:
 	std::unique_ptr<Button> backToNameButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
+	std::unique_ptr<CharacterRaceName> raceName;
 	std::string name;
 
 	void drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst);

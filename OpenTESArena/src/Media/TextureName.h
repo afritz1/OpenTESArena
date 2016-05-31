@@ -13,6 +13,7 @@ enum class TextureName
 	// Interface.
 	CharacterCreation, // Starry night with house
 	CompassFrame,
+	CompassSlider,
 	Icon, // Window icon for the program
 	IntroTitle, // Arena copyright, etc.
 	IntroQuote, // "The best techniques..."

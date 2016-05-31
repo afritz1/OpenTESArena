@@ -15,6 +15,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
+#include "../Math/Rectangle.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
@@ -85,10 +86,10 @@ void GameWorldPanel::handleEvents(bool &running)
 		{
 			this->pauseButton->click();
 		}
-	
+
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
-		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) && 
+		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_e);
 		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_TAB);
@@ -101,7 +102,7 @@ void GameWorldPanel::handleEvents(bool &running)
 			this->getGameState()->getAudioManager().playSound(random.next(2) == 0 ?
 				SoundName::Clank : SoundName::Swish);
 		}
-		if (activateHotkeyPressed) 
+		if (activateHotkeyPressed)
 		{
 			// Activate whatever is looked at.
 			// Just play a sound for now.
@@ -149,15 +150,20 @@ void GameWorldPanel::handleKeyboard(double dt)
 }
 
 void GameWorldPanel::tick(double dt, bool &running)
-{	
+{
 	this->handleEvents(running);
 	this->handleMouse(dt);
-	
+
 	// Animate the game world by "dt" seconds here.
+
+	// Get zoom magnitude of the player's camera.
+	auto zoom = 1.0 / std::tan(this->getGameState()->getOptions()
+		.getVerticalFOV() * 0.5 * DEG_TO_RAD);
 
 	// Update CLProgram members that are refreshed per frame.
 	auto *gameData = this->getGameState()->getGameData();
-	gameData->getCLProgram().updateDirection(gameData->getPlayer().getDirection());
+	auto direction = gameData->getPlayer().getDirection();
+	gameData->getCLProgram().updateDirection(direction.scaledBy(zoom));
 }
 
 void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
@@ -175,21 +181,21 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw stat bars.
 	auto statBarSurface = Surface(5, 35);
-	
+
 	statBarSurface.fill(Color(0, 255, 0));
-	this->drawScaledToNative(statBarSurface, 
-		5, 
-		160, 
-		statBarSurface.getWidth(), 
+	this->drawScaledToNative(statBarSurface,
+		5,
+		160,
+		statBarSurface.getWidth(),
 		statBarSurface.getHeight(),
 		dst);
 
 	statBarSurface.fill(Color(255, 0, 0));
-	this->drawScaledToNative(statBarSurface, 
-		13, 
-		160, 
+	this->drawScaledToNative(statBarSurface,
+		13,
+		160,
 		statBarSurface.getWidth(),
-		statBarSurface.getHeight(), 
+		statBarSurface.getHeight(),
 		dst);
 
 	statBarSurface.fill(Color(0, 0, 255));
@@ -199,12 +205,41 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		statBarSurface.getWidth(),
 		statBarSurface.getHeight(),
 		dst);
-	
-	// Draw compass.
+
+	// Compass frame.
 	const auto &compassFrame = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::CompassFrame));
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, this->getMagenta(dst->format));
+
+	// Compass slider (the actual headings). +X is north, +Z is east.
+	const auto &compassSlider = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::CompassSlider));
+
+	auto compassSliderSegment = Surface(32, 7);
+	compassSlider.blit(compassSliderSegment, Int2(), Rectangle(60, 0, 
+		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
+
+	// Should do some sin() and cos() functions to get the segment location.
+	//int segmentX = ...;
+
+	// Fill in transparent edges behind compass slider (due to SDL blit truncation).
+	auto compassFiller = Surface(36, 11);
+	compassFiller.fill(Color(205, 186, 155));
+
+	this->drawScaledToNative(compassFiller,
+		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2) + 1,
+		5,
+		compassFiller.getWidth(),
+		compassFiller.getHeight(),
+		dst);
 	
+	this->drawScaledToNative(compassSliderSegment,
+		(ORIGINAL_WIDTH / 2) - 16,
+		7,
+		compassSliderSegment.getWidth(),
+		compassSliderSegment.getHeight(),
+		dst);
+
 	this->drawScaledToNative(compassFrame,
 		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2),
 		0,

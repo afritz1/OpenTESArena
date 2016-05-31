@@ -106,6 +106,7 @@
     <ClCompile Include="src\Game\OptionsParser.cpp" />
     <ClCompile Include="src\Interface\ToggleButton.cpp" />
     <ClCompile Include="src\Utilities\String.cpp" />
+    <ClCompile Include="src\Media\PortraitFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -254,6 +255,7 @@
     <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Interface\ToggleButton.h" />
     <ClInclude Include="src\Utilities\String.h" />
+    <ClInclude Include="src\Media\PortraitFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

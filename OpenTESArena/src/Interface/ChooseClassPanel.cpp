@@ -164,7 +164,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 			auto thiefClass = CharacterClass(
 				"Thief",
 				CharacterClassCategoryName::Thief,
-				true,
+				true, // Thieves are not actually magic-sensitive.
 				25,
 				14,
 				std::vector<ArmorMaterialType>(),

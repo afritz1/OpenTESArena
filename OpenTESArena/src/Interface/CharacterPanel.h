@@ -16,7 +16,9 @@ enum class CharacterRaceName;
 class CharacterPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> backToGameButton;
+	std::unique_ptr<TextBox> doneTextBox, playerNameTextBox, playerRaceTextBox,
+		playerClassTextBox;
+	std::unique_ptr<Button> doneButton;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

@@ -39,6 +39,9 @@ private:
 	static const std::string MUSIC_FORMAT_KEY;
 	static const std::string SOUND_FORMAT_KEY;
 
+	// Miscellaneous.
+	static const std::string SKIP_INTRO_KEY;
+
 	OptionsParser() = delete;
 	OptionsParser(const OptionsParser&) = delete;
 	~OptionsParser() = delete;

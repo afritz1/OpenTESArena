@@ -12,6 +12,7 @@ const auto TextureFilenames = std::map<TextureName, std::string>
 	// Interface.
 	{ TextureName::CharacterCreation, "interface/character_creation" },
 	{ TextureName::CompassFrame, "interface/compass_frame" },
+	{ TextureName::CompassSlider, "interface/compass_slider" },
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "interface/intro_title" },
 	{ TextureName::IntroQuote, "interface/intro_quote" },
@@ -22,15 +23,15 @@ const auto TextureFilenames = std::map<TextureName, std::string>
 	{ TextureName::WorldMap, "interface/world_map" },
 
 	// Fonts.
-	{ TextureName::FontA, "interface/fonts/font_a" },
-	{ TextureName::FontArena, "interface/fonts/arena_font" },
-	{ TextureName::FontB, "interface/fonts/font_b" },
-	{ TextureName::FontC, "interface/fonts/font_c" },
-	{ TextureName::FontChar, "interface/fonts/char_font" },
-	{ TextureName::FontD, "interface/fonts/font_d" },
-	{ TextureName::FontFour, "interface/fonts/font_4" },
-	{ TextureName::FontS, "interface/fonts/font_s" },
-	{ TextureName::FontTeeny, "interface/fonts/teeny_font" },
+	{ TextureName::FontA, "fonts/font_a" },
+	{ TextureName::FontArena, "fonts/arena_font" },
+	{ TextureName::FontB, "fonts/font_b" },
+	{ TextureName::FontC, "fonts/font_c" },
+	{ TextureName::FontChar, "fonts/char_font" },
+	{ TextureName::FontD, "fonts/font_d" },
+	{ TextureName::FontFour, "fonts/font_4" },
+	{ TextureName::FontS, "fonts/font_s" },
+	{ TextureName::FontTeeny, "fonts/teeny_font" },
 };
 
 // The filename prefix of each TextureSequenceName (with sub-folders). When looking
@@ -49,6 +50,7 @@ const auto TextureSequenceFilenames = std::map<TextureSequenceName, std::string>
 // The number of images in each texture sequence. I think these numbers are necessary
 // without doing some directory counting, and that sounds like a bad idea, with all
 // the possible mix-ups with text files lying around and duplicates and such.
+// These could be parsed in from a text file, but it's not necessary.
 const auto TextureSequenceCounts = std::map<TextureSequenceName, int>
 {
 	// Interface.

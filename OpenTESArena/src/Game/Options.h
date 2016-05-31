@@ -25,11 +25,14 @@ private:
 	int soundChannels;
 	MusicFormat musicFormat;
 	SoundFormat soundFormat;
+
+	// Miscellaneous.
+	bool skipIntro;
 public:
 	Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV,
 		double hSensitivity, double vSensitivity, double musicVolume,
 		double soundVolume, int soundChannels, MusicFormat musicFormat, 
-		SoundFormat soundFormat);
+		SoundFormat soundFormat, bool skipIntro);
 	~Options();
 
 	const int &getScreenWidth() const;
@@ -43,6 +46,7 @@ public:
 	const int &getSoundChannelCount() const;
 	const MusicFormat &getMusicFormat() const;
 	const SoundFormat &getSoundFormat() const;
+	const bool &introIsSkipped() const;
 
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
@@ -55,6 +59,7 @@ public:
 	void setSoundChannelCount(int count);
 	void setMusicFormat(MusicFormat musicFormat);
 	void setSoundFormat(SoundFormat soundFormat);
+	void setSkipIntro(bool skip);
 };
 
 #endif

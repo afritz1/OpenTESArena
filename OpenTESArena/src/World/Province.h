@@ -12,6 +12,8 @@
 // even though several of Black Marsh's locations are deserts. Maybe the
 // developers intended it to be like wastelands, or barrens?
 
+enum class CharacterRaceName;
+
 class Province
 {
 private:
@@ -24,7 +26,8 @@ public:
 	const ProvinceName &getProvinceName() const;
 	const std::vector<Location> &getLocations() const;
 	std::string toString() const;
-	std::string getRaceName(bool plural) const;
+	std::string getRaceDisplayName(bool plural) const;
+	CharacterRaceName getRaceName() const;
 
 	void addLocation(const Location &location);
 };

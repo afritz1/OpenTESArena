@@ -8,6 +8,7 @@ enum class CharacterRaceName
 	Breton,
 	DarkElf,
 	HighElf,
+	Imperial,
 	Khajiit,
 	Nord,
 	Redguard,

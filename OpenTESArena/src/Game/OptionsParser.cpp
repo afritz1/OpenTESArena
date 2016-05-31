@@ -43,6 +43,7 @@ const std::string OptionsParser::SOUND_VOLUME_KEY = "SoundVolume";
 const std::string OptionsParser::SOUND_CHANNELS_KEY = "SoundChannels";
 const std::string OptionsParser::MUSIC_FORMAT_KEY = "MusicFormat";
 const std::string OptionsParser::SOUND_FORMAT_KEY = "SoundFormat";
+const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 
 std::map<std::string, std::string> OptionsParser::getPairs(const std::string &text)
 {
@@ -154,9 +155,12 @@ std::unique_ptr<Options> OptionsParser::parse()
 	auto musicFormat = OptionsParser::getMusicFormat(pairs);
 	auto soundFormat = OptionsParser::getSoundFormat(pairs);
 
+	// Miscellaneous.
+	bool skipIntro = OptionsParser::getBoolean(pairs, OptionsParser::SKIP_INTRO_KEY);
+
 	auto options = std::unique_ptr<Options>(new Options(
 		screenWidth, screenHeight, fullscreen, verticalFOV, hSensitivity, vSensitivity,
-		musicVolume, soundVolume, soundChannels, musicFormat, soundFormat));
+		musicVolume, soundVolume, soundChannels, musicFormat, soundFormat, skipIntro));
 
 	return options;
 }

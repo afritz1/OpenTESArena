@@ -7,7 +7,7 @@
 
 Options::Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV, 
 	double hSensitivity, double vSensitivity, double musicVolume, double soundVolume,
-	int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat)
+	int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat, bool skipIntro)
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -20,6 +20,7 @@ Options::Options(int screenWidth, int screenHeight, bool fullscreen, double vert
 	this->soundChannels = soundChannels;
 	this->musicFormat = musicFormat;
 	this->soundFormat = soundFormat;
+	this->skipIntro = skipIntro;
 
 	assert(this->screenWidth > 0);
 	assert(this->screenHeight > 0);
@@ -94,6 +95,11 @@ const SoundFormat &Options::getSoundFormat() const
 	return this->soundFormat;
 }
 
+const bool &Options::introIsSkipped() const
+{
+	return this->skipIntro;
+}
+
 void Options::setScreenWidth(int width)
 {
 	assert(width > 0);
@@ -160,4 +166,9 @@ void Options::setMusicFormat(MusicFormat musicFormat)
 void Options::setSoundFormat(SoundFormat soundFormat)
 {
 	this->soundFormat = soundFormat;
+}
+
+void Options::setSkipIntro(bool skip)
+{
+	this->skipIntro = skip;
 }

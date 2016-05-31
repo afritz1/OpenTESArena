@@ -8,6 +8,7 @@
 #include "MainMenuPanel.h"
 #include "Surface.h"
 #include "../Game/GameState.h"
+#include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rectangle.h"
@@ -27,10 +28,12 @@ Panel::~Panel()
 
 std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 {
-	// Uncomment one of these to skip to a panel for easier debugging.
-	//return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
-	//return std::unique_ptr<Panel>(new GameWorldPanel(gameState));
-
+	// If the intro skip option is set, then jump to the main menu.
+	if (gameState->getOptions().introIsSkipped())
+	{
+		return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
+	}
+	
 	// All of these lambdas are linked together like a stack by each panel's last 
 	// argument.
 

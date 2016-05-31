@@ -14,16 +14,18 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
 #include "../Media/FontName.h"
+#include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
 
-ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState, 
+ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	CharacterGenderName gender, const CharacterClass &charClass,
 	const std::string &name, CharacterRaceName raceName)
 	: Panel(gameState)
@@ -34,12 +36,14 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->gender = nullptr;
 	this->charClass = nullptr;
 	this->raceName = nullptr;
+	this->portraitIndex = 0;
 
 	this->titleTextBox = [gameState]()
 	{
-		auto center = Int2(160, 100);
+		auto center = Int2((ORIGINAL_WIDTH / 4) + 5, 100);
 		auto color = Color::White;
-		std::string text = "Thy attributes will soon be here.\n\nLeft click.";
+		std::string text = std::string("Thy attributes will\nsoon be here.\n\nUse thine ") +
+			"A and D\nkeys to change\nthy portrait.\n\nLeft click when\nthou art finished.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -59,19 +63,22 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-
+	
 	// Set the game world's music to be some default for now.
-	// None of the gender, class name, etc. things are being sent to the game world
-	// panel because I'm planning on putting them in the GameState instead.
-	this->acceptButton = [gameState, name]()
+	this->acceptButton = [this, gameState, gender, raceName, charClass, name]()
 	{
-		auto function = [gameState, name]()
+		auto function = [this, gameState, gender, raceName, charClass, name]()
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
 			// menu has settings for the CLProgram.
 			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
-			auto player = std::unique_ptr<Player>(new Player(name, Float3d(),
+
+			auto position = Float3d();
+			auto direction = Float3d(1.0, 0.0, 0.0);
+			auto velocity = Float3d();
+			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
+				charClass, this->portraitIndex, position, direction, velocity, 
 				*entityManager.get()));
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
@@ -83,7 +90,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setGameData(std::move(gameData));
 
 			auto gameWorldPanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
-			gameState->setMusic(MusicName::Magic);
+			gameState->setMusic(MusicName::Snowing);
 			gameState->setPanel(std::move(gameWorldPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -96,7 +103,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->raceName = std::unique_ptr<CharacterRaceName>(
 		new CharacterRaceName(raceName));
 	this->name = name;
-	
+
 	assert(this->titleTextBox.get() != nullptr);
 	assert(this->backToRaceButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
@@ -104,6 +111,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	assert(this->charClass.get() != nullptr);
 	assert(this->raceName.get() != nullptr);
 	assert(this->name == name);
+	assert(this->portraitIndex == 0);
 }
 
 ChooseAttributesPanel::~ChooseAttributesPanel()
@@ -137,6 +145,22 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 			this->backToRaceButton->click();
 		}
 
+		bool leftArrow = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_a);
+		bool rightArrow = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_d);
+
+		// Update the portrait index for which portrait to show. Only ten portraits 
+		// are allowed for now.
+		if (leftArrow)
+		{
+			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
+		}
+		if (rightArrow)
+		{
+			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
+		}
+
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 
@@ -168,10 +192,25 @@ void ChooseAttributesPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
 	this->clearScreen(dst);
-		
-	// Draw temporary background. I don't have the marble background or character
-	// portraits programmed in yet, but they will be, eventually.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 24));
+
+	// Draw temporary background. I don't have the marble background programmed in
+	// yet, but the portraits are now!
+	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 36));
+
+	// Get the filenames for the portraits.
+	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(), 
+		*this->raceName.get(), this->charClass->canCastMagic());
+
+	// Get the current portrait.
+	const auto &portrait = this->getGameState()->getTextureManager()
+		.getSurface(portraitStrings.at(this->portraitIndex));
+	this->drawScaledToNative(
+		portrait,
+		ORIGINAL_WIDTH - portrait.getWidth(),
+		0,
+		portrait.getWidth(),
+		portrait.getHeight(),
+		dst);
 
 	// Draw text: title.
 	this->drawScaledToNative(*this->titleTextBox.get(), dst);

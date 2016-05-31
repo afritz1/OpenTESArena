@@ -22,11 +22,6 @@ const int &Entity::getID() const
 	return this->id;
 }
 
-const EntityType &Entity::getEntityType() const
-{
-	return this->entityType;
-}
-
 const Float3d &Entity::getPosition() const
 {
 	return this->position;
