@@ -9,7 +9,13 @@
 
 const std::string CLProgram::PATH = "data/kernels/";
 const std::string CLProgram::FILENAME = "kernel.cl";
-const std::string CLProgram::ENTRY_FUNCTION = "render";
+const std::string CLProgram::TEST_KERNEL = "test";
+const std::string CLProgram::INTERSECT_KERNEL = "intersect";
+const std::string CLProgram::AMBIENT_OCCLUSION_KERNEL = "ambientOcclusion";
+const std::string CLProgram::RAY_TRACE_KERNEL = "rayTrace";
+const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
+const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
+const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int width, int height)
 {
@@ -41,7 +47,7 @@ CLProgram::CLProgram(int width, int height)
 
 	auto source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
 	auto defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
-		std::string("\n") + std::string("#define SCREEN_HEIGHT ") + 
+		std::string("\n") + std::string("#define SCREEN_HEIGHT ") +
 		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
 		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
 		std::string("f\n"); // The "f" is for "float". OpenCL complains if it's a double.
@@ -53,15 +59,15 @@ CLProgram::CLProgram(int width, int height)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Program::build (" +
 		this->getErrorString(status) + ").");
 
-	this->kernel = cl::Kernel(this->program, CLProgram::ENTRY_FUNCTION.c_str(), &status);
+	this->kernel = cl::Kernel(this->program, CLProgram::TEST_KERNEL.c_str(), &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel.");
 
 	this->directionBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		sizeof(cl_float3), nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer directionBuffer.");
 
-	this->colorBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY, 
-		sizeof(cl_uint) * width * height, nullptr, &status);
+	this->colorBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
+		sizeof(cl_int) * width * height, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
 
 	this->kernel.setArg(0, this->directionBuffer);
@@ -80,7 +86,7 @@ CLProgram::CLProgram(int width, int height)
 
 CLProgram::~CLProgram()
 {
-	
+
 }
 
 std::vector<cl::Platform> CLProgram::getPlatforms()
@@ -99,7 +105,7 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 	auto devices = std::vector<cl::Device>();
 
 	auto status = platform.getDevices(type, &devices);
-	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND), 
+	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND),
 		"CLProgram", "CLProgram::getDevices.");
 
 	return devices;
@@ -204,14 +210,14 @@ void CLProgram::updateDirection(const Float3d &direction)
 
 	// Write the buffer to kernel memory.
 	auto status = this->commandQueue.enqueueWriteBuffer(this->directionBuffer,
-		true, 0, buffer.size(), static_cast<const void*>(bufPtr), 
+		true, 0, buffer.size(), static_cast<const void*>(bufPtr),
 		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", 
+	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::enqueueWriteBuffer updateDirection");
 
 	// Update the kernel argument (why is this necessary?).
 	status = this->kernel.setArg(0, this->directionBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", 
+	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg updateDirection.");
 }
 
@@ -221,7 +227,7 @@ void CLProgram::render(SDL_Surface *dst)
 	assert(this->width == dst->w);
 	assert(this->height == dst->h);
 
-	auto status = this->commandQueue.enqueueNDRangeKernel(this->kernel, 
+	auto status = this->commandQueue.enqueueNDRangeKernel(this->kernel,
 		cl::NullRange, cl::NDRange(this->width, this->height), cl::NullRange,
 		nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueNDRangeKernel.");
@@ -230,6 +236,6 @@ void CLProgram::render(SDL_Surface *dst)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::finish.");
 
 	status = this->commandQueue.enqueueReadBuffer(this->colorBuffer, true, 0,
-		sizeof(cl_uint) * this->width * this->height, dst->pixels, nullptr, nullptr);
+		sizeof(cl_int) * this->width * this->height, dst->pixels, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 }

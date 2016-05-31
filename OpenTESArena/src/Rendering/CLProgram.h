@@ -20,7 +20,13 @@ class CLProgram
 private:
 	static const std::string PATH;
 	static const std::string FILENAME;
-	static const std::string ENTRY_FUNCTION;
+	static const std::string TEST_KERNEL;
+	static const std::string INTERSECT_KERNEL;
+	static const std::string AMBIENT_OCCLUSION_KERNEL;
+	static const std::string RAY_TRACE_KERNEL;
+	static const std::string ANTI_ALIAS_KERNEL;
+	static const std::string POST_PROCESS_KERNEL;
+	static const std::string CONVERT_TO_RGB_KERNEL;
 
 	cl::Device device; // The device selected from the devices list.
 	cl::Context context;
