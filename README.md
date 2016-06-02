@@ -1,12 +1,30 @@
 # OpenTESArena
+#### An open-source project for "The Elder Scrolls I: Arena"
 
-This project aims to be an open-source remake of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It currently uses the MIT license (which may change) and is written in C++14/SDL2. This project is early in development, and there is currently only one programmer (myself) working on it.
+Update June 2nd, 2016. Currently implemented features:
+- Startup cinematic, main menu, new game cinematic
+- Partial character creation (male/female, all races, all portraits, some classes, placeholder name)
+- MIDI music and Ogg sound playback
+- Partial character sheet (name, race, class, portrait, done button)
+- 3D camera rotation (currently click and drag for ease of development)
+- In progress OpenCL ray tracer (no geometry yet)
+- Load from options file on startup (resolution, fullscreen, FOV, sensitivity, music/sound, skip intro)
+- Load artifacts, character classes, and locations from file into memory
+- Partial item type definitions (accessory, armor, consumable, miscellaneous, trinket, weapon)
 
-Plans were built up around the second half of 2015 and just recently has this project started progressing through the early stages. The concept began after seeing the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It is currently being developed on Windows + Visual Studio 2013, and thanks to the cross-platform nature of SDL and OpenCL, porting to Linux and other operating systems should be relatively easy. A mobile version is not planned at this point, and the graphics engine is one reason why.
+Check out the "samples" folder for some images of the intended ray tracer design. The pictures are actually from an experiment I did a few months ago, but I plan on making the graphics engine for this project heavily based on that one.
+
+## Introduction
+
+This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is written in C++14/SDL2 and currently uses the MIT license. This project is early in development, and there is currently only one programmer (myself) working on it.
+
+The vast majority of wall and sprite textures are available to use thanks to exporter programs like WinArena and [other utilities](http://www.uesp.net/wiki/Arena:Files#Misc_Utilities). They are all being converted to PNG for this project since it's a well-known lossless format and some textures may eventually have transparency.
+
+The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows and Visual Studio 2015 using the VS2013 compiler, and thanks to the cross-platform nature of SDL2 and OpenCL, porting to other operating systems like Linux should be relatively easy. A mobile version is not planned at this point, and the graphics engine is one reason why.
 
 ## Scope
 
-This game is planned to have several of the features present in the original while avoiding bugs at the same time. New features may be added and old ones left out wherever they make reasonable sense.
+This game is planned to have several of the features present in the original while avoiding bugs at the same time. New features may be added and old ones left out wherever they make reasonable sense. There might be a couple old features that get redesigned for obvious gameplay balancing reasons.
 
 Some baseline features include:
 - 3D engine powered by ray tracing via OpenCL
@@ -46,9 +64,15 @@ Some old features to ignore or replace:
 - Creatures spawning in ridiculous places (stone golems in an old rickety house??)
 - Inventory item limit (only restricted by weight then)
 
-The 3D graphics are done with a GPU ray tracer written in OpenCL, and its code will be added here once I finish other components first. It functions decently and runs smoothly on high-end computers, but there are still many optimizations that can be done. I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. A number of sample images showcasing the current state of the ray tracer are available in the "samples" folder.
+## Graphics
 
-The spell casting system will likely need some redesigning to balance it out with the non-magic classes, since spell casters can have a game-breaking advantage. Maybe all classes would have spell points? But then who gets to wear plate? Do spells have an individual cooldown time, a global cooldown time, or can everyone cast spells like a machine gun? I think the original system was designed to be played with a party of adventurers like with D&D, not for solo characters. More discussion should happen on this topic first.
+The 3D graphics are done with a GPU ray tracer written in OpenCL, and its code will be added here once I finish other components first. It functions decently and runs smoothly on high-end computers, but there are still many optimizations that can be done. I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+
+There are some neat effects like ambient occlusion and adaptive anti-aliasing I experimented with that I would like to implement here, but they'll probably only be viable for use on fast graphics cards.
+
+## Redesign
+
+The spell casting system will likely need some redesigning to balance it out with the non-magic classes, since spell casters can have a game-breaking advantage. Maybe all classes would have spell points? But then who gets to wear plate? Do spells have an individual cooldown time, a similar-type cooldown time, a global cooldown time, or can everyone cast spells like a machine gun? I think the original system was designed to be played with a party of adventurers like with D&D, not for solo characters. More discussion should happen on this topic first.
 
 ## Data Files
 
@@ -60,6 +84,6 @@ Some original files like the character backgrounds are still stored in an unknow
 
 The original map data for Arena cities, dungeons, etc. are not currently in an accessible format, so their layout in-game will be limited to one-time random generation for now (which may or may not have been a desired trait in the first place). Main quest relevant locations, like Fang Lair, should be recreated by hand if the original map data can't be salvaged, since they are not randomized. Maybe there could be a map editor for creating main quest dungeons and city/wilderness chunks, but that's asking a bit much at this point.
 
-## Resources
+## Other Resources
 
 Here is the [Unofficial Elder Scrolls website](http://www.uesp.net/wiki/Arena:Arena) for information regarding the original game. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a (humorous) overview of the game's history and gameplay.
