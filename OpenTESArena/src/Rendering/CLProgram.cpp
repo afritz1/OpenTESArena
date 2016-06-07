@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "CLProgram.h"
 
@@ -73,6 +73,7 @@ CLProgram::CLProgram(int width, int height)
 	this->kernel.setArg(0, this->directionBuffer);
 	this->kernel.setArg(1, this->colorBuffer);
 
+/*
 	assert(this->device.get() != nullptr);
 	assert(this->context.get() != nullptr);
 	assert(this->commandQueue.get() != nullptr);
@@ -82,6 +83,7 @@ CLProgram::CLProgram(int width, int height)
 	assert(this->colorBuffer.get() != nullptr);
 	assert(this->width == width);
 	assert(this->height == height);
+	*/
 }
 
 CLProgram::~CLProgram()
@@ -113,8 +115,10 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 
 std::string CLProgram::getBuildReport() const
 {
+	/*
 	assert(this->device.get() != nullptr);
 	assert(this->program.get() != nullptr);
+	*/
 
 	auto buildLog = this->program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(this->device);
 	return buildLog;
@@ -200,7 +204,7 @@ std::string CLProgram::getErrorString(cl_int error) const
 
 void CLProgram::updateDirection(const Float3d &direction)
 {
-	// Write the direction into a local buffer. It's small enough that it can be 
+	// Write the direction into a local buffer. It's small enough that it can be
 	// recreated each frame.
 	auto buffer = std::vector<char>(sizeof(cl_float3));
 	auto *bufPtr = reinterpret_cast<cl_float*>(buffer.data());

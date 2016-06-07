@@ -1,7 +1,8 @@
 #include <cassert>
 #include <iostream>
+#include <cstring>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "Surface.h"
 
@@ -33,10 +34,10 @@ Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
 	assert(surface != nullptr);
 
-	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h, 
-		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask, 
+	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
+		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
 		surface->format->Bmask, surface->format->Amask);
-	std::memcpy(this->surface->pixels, surface->pixels, 
+	std::memcpy(this->surface->pixels, surface->pixels,
 		surface->w * surface->h * (Surface::DEFAULT_BPP / 8));
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;

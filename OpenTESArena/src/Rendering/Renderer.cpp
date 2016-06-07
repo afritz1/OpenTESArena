@@ -1,7 +1,8 @@
 #include <cassert>
 #include <iostream>
+#include <cmath>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "Renderer.h"
 #include "../Interface/Surface.h"
@@ -47,7 +48,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	// Set pixel interpolation hint.
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY.c_str());
 
-	// Set the size of the render texture to be the size of the whole screen 
+	// Set the size of the render texture to be the size of the whole screen
 	// (it scales otherwise).
 	const auto *nativeSurface = this->getWindowSurface();
 	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
@@ -91,7 +92,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 
 	// Native window aspect can be anything finite.
 	const auto *nativeSurface = this->getWindowSurface();
-	auto nativeAspect = static_cast<double>(nativeSurface->w) / 
+	auto nativeAspect = static_cast<double>(nativeSurface->w) /
 		static_cast<double>(nativeSurface->h);
 
 	assert(std::isfinite(originalAspect));
@@ -136,7 +137,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 
 void Renderer::resize(int width, int height)
 {
-	// No need to set dimensions on a resize event; the window does that 
+	// No need to set dimensions on a resize event; the window does that
 	// automatically now. The arguments should be kept for when the options menu
 	// is implemented.
 	static_cast<void>(width);
@@ -148,7 +149,7 @@ void Renderer::resize(int width, int height)
 	// Reset the size of the render texture.
 	const auto *nativeSurface = this->getWindowSurface();
 	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
-	
+
 	// Recreate SDL_Texture for the GPU.
 	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
@@ -165,7 +166,7 @@ void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
 void Renderer::present()
 {
 	const auto *nativeSurface = this->getWindowSurface();
-	SDL_UpdateTexture(this->texture, nullptr, nativeSurface->pixels, 
+	SDL_UpdateTexture(this->texture, nullptr, nativeSurface->pixels,
 		nativeSurface->pitch);
 	SDL_RenderClear(this->renderer);
 	SDL_RenderCopy(this->renderer, this->texture, nullptr, nullptr);

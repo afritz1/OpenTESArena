@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "ChooseAttributesPanel.h"
 
@@ -63,7 +63,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-	
+
 	// Set the game world's music to be some default for now.
 	this->acceptButton = [this, gameState, gender, raceName, charClass, name]()
 	{
@@ -78,7 +78,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			auto direction = Float3d(1.0, 0.0, 0.0);
 			auto velocity = Float3d();
 			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
-				charClass, this->portraitIndex, position, direction, velocity, 
+				charClass, this->portraitIndex, position, direction, velocity,
 				*entityManager.get()));
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
@@ -150,7 +150,7 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 		bool rightArrow = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_d);
 
-		// Update the portrait index for which portrait to show. Only ten portraits 
+		// Update the portrait index for which portrait to show. Only ten portraits
 		// are allowed for now.
 		if (leftArrow)
 		{
@@ -198,7 +198,7 @@ void ChooseAttributesPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 36));
 
 	// Get the filenames for the portraits.
-	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(), 
+	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(),
 		*this->raceName.get(), this->charClass->canCastMagic());
 
 	// Get the current portrait.

@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "FMOD\fmod.h"
+#include <FMOD/fmod.h>
 
 #include "AudioManager.h"
 
@@ -227,7 +227,7 @@ const std::string AudioManager::SOUNDS_PATH = "data/sounds/";
 const double AudioManager::MIN_VOLUME = 0.0;
 const double AudioManager::MAX_VOLUME = 1.0;
 
-AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
+AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	double musicVolume, double soundVolume, int maxChannels)
 {
 	Debug::mention("Audio Manager", "Initializing.");
@@ -249,7 +249,7 @@ AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	this->musicFormat = musicFormat;
 	this->soundFormat = soundFormat;
 
-	// The channels are null and the volume can't be set until used with 
+	// The channels are null and the volume can't be set until used with
 	// "FMOD_System_PlaySound()", so these initialization methods are necessary.
 	this->initializeMusicChannel();
 	this->initializeSoundChannels();
@@ -314,6 +314,7 @@ bool AudioManager::musicIsPlaying() const
 
 void AudioManager::initializeMusicChannel()
 {
+	/*
 	// Preload a music file to initialize the music channel with.
 	auto musicName = MusicName::PercIntro;
 	auto musicFilename = MusicFilenames.at(musicName);
@@ -323,10 +324,12 @@ void AudioManager::initializeMusicChannel()
 		this->objects.at(musicFilename), true, &this->musicChannel);
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"playSound initializeMusicChannel " + musicFilename);
+		*/
 }
 
 void AudioManager::initializeSoundChannels()
 {
+	/*
 	// Preload a sound file to initialize the sound channel with.
 	auto soundName = SoundName::OpenDoor;
 	auto soundFilename = SoundFilenames.at(soundName);
@@ -336,10 +339,12 @@ void AudioManager::initializeSoundChannels()
 		this->objects.at(soundFilename), true, &this->soundChannel);
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"playSound initializeSoundChannels " + soundFilename);
+		*/
 }
 
 void AudioManager::loadMusic(const std::string &filename)
 {
+	/*
 	// Make a blank mapping to write into.
 	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
 
@@ -351,10 +356,12 @@ void AudioManager::loadMusic(const std::string &filename)
 		FMOD_SOFTWARE, nullptr, &this->objects.at(filename));
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"loadMusic FMOD_System_CreateStream " + filename);
+		*/
 }
 
 void AudioManager::loadSound(const std::string &filename)
 {
+	/*
 	// Make a blank mapping to write into.
 	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
 
@@ -366,10 +373,12 @@ void AudioManager::loadSound(const std::string &filename)
 		FMOD_SOFTWARE, nullptr, &this->objects.at(filename));
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"loadSound FMOD_System_CreateStream " + filename);
+		*/
 }
 
 void AudioManager::playMusic(const std::string &filename)
 {
+	/*
 	if (this->objects.find(filename) != this->objects.end())
 	{
 		auto volume = this->getMusicVolume();
@@ -397,6 +406,7 @@ void AudioManager::playMusic(const std::string &filename)
 		assert(this->objects.find(filename) != this->objects.end());
 		this->playMusic(filename);
 	}
+	*/
 }
 
 void AudioManager::playMusic(MusicName musicName)
@@ -406,6 +416,7 @@ void AudioManager::playMusic(MusicName musicName)
 
 void AudioManager::playSound(const std::string &filename)
 {
+	/*
 	if (this->objects.find(filename) != this->objects.end())
 	{
 		auto volume = this->getSoundVolume();
@@ -424,6 +435,7 @@ void AudioManager::playSound(const std::string &filename)
 		assert(this->objects.find(filename) != this->objects.end());
 		this->playSound(filename);
 	}
+	*/
 }
 
 void AudioManager::playSound(SoundName soundName)

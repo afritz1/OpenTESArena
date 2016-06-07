@@ -2,7 +2,7 @@
 #include <iostream>
 #include <map>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "ChooseNamePanel.h"
 
@@ -203,7 +203,7 @@ void ChooseNamePanel::handleEvents(bool &running)
 					const auto &pair = letters.at(keyCode);
 					this->name.push_back(shiftPressed ? pair.first : pair.second);
 				}
-			}	
+			}
 			else if (punctuation.find(keyCode) != punctuation.end())
 			{
 				// The pressed key is recognized punctuation. Add it.

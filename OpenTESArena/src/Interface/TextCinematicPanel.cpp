@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "TextCinematicPanel.h"
 
@@ -12,8 +12,8 @@
 
 // incomplete! Need text box stuff and how to blit it.
 
-TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName name, 
-	const std::string &text, const std::vector<double> &secondsPerText, 
+TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName name,
+	const std::string &text, const std::vector<double> &secondsPerText,
 	double secondsPerImage, const std::function<void()> &endingAction)
 	: Panel(gameState)
 {
@@ -72,7 +72,7 @@ void TextCinematicPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) || 
+			((e.key.keysym.sym == SDLK_SPACE) ||
 				(e.key.keysym.sym == SDLK_RETURN) ||
 				(e.key.keysym.sym == SDLK_ESCAPE) ||
 				(e.key.keysym.sym == SDLK_KP_ENTER));

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "PauseMenuPanel.h"
 
@@ -103,7 +103,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	// Disable the load button for now until functionality is added in the GameState 
+	// Disable the load button for now until functionality is added in the GameState
 	// that tells whether a game is active, and thus which panel to return to.
 	this->loadButton = [gameState]()
 	{

@@ -1,7 +1,8 @@
 #include <cassert>
 #include <iostream>
+#include <cmath>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "PostProcessing.h"
 
@@ -32,7 +33,7 @@ void PostProcessing::grayscale(const SDL_Surface *src, SDL_Surface *dst)
 	}
 }
 
-void PostProcessing::gammaCorrection(const SDL_Surface *src, SDL_Surface *dst, 
+void PostProcessing::gammaCorrection(const SDL_Surface *src, SDL_Surface *dst,
 	double gamma)
 {
 	assert(src->w == dst->w);
@@ -60,8 +61,8 @@ void PostProcessing::gammaCorrection(const SDL_Surface *src, SDL_Surface *dst,
 		gammaB = (gammaB > high) ? high : ((gammaB < low) ? low : gammaB);
 
 		auto gammaColor = static_cast<unsigned int>(
-			(static_cast<unsigned char>(gammaR) << 16) | 
-			(static_cast<unsigned char>(gammaG) << 8) | 
+			(static_cast<unsigned char>(gammaR) << 16) |
+			(static_cast<unsigned char>(gammaG) << 8) |
 			(static_cast<unsigned char>(gammaB)));
 		dstPixels[i] = gammaColor;
 	}

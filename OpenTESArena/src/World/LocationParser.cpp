@@ -48,6 +48,7 @@ const std::string LocationParser::FILENAME = "locations.txt";
 
 std::vector<std::unique_ptr<Location>> LocationParser::parse()
 {
+	/*
 	// This parser is very simple right now. All text must have the exact amount
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
@@ -112,7 +113,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 		}
 
 		auto climate = line.substr(oldIndex, index - oldIndex);
-		
+
 		// Verify that the strings each have a mapping.
 		Debug::check(LocationParserProvinces.find(province) != LocationParserProvinces.end(),
 			"Location Parser", "Invalid province \"" + province + "\".");
@@ -131,4 +132,5 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	}
 
 	return locations;
+	*/
 }

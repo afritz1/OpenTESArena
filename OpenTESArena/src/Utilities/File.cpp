@@ -7,6 +7,7 @@
 
 std::string File::toString(const std::string &filename)
 {
+	/*
 	auto ifs = std::ifstream(filename.c_str(), std::ios::in |
 		std::ios::binary | std::ios::ate);
 
@@ -20,4 +21,5 @@ std::string File::toString(const std::string &filename)
 	ifs.close();
 
 	return std::string(&bytes.at(0), fileSize);
+	*/
 }

@@ -47,6 +47,7 @@ const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 
 std::map<std::string, std::string> OptionsParser::getPairs(const std::string &text)
 {
+	/*
 	auto pairs = std::map<std::string, std::string>();
 	auto iss = std::istringstream(text);
 	auto line = std::string();
@@ -62,7 +63,7 @@ std::map<std::string, std::string> OptionsParser::getPairs(const std::string &te
 		{
 			continue;
 		}
-		
+
 		auto tokens = String::split(line, '=');
 		Debug::check(tokens.size() == 2, "Options Parser", "Invalid entry \"" + line + "\".");
 
@@ -74,9 +75,10 @@ std::map<std::string, std::string> OptionsParser::getPairs(const std::string &te
 	}
 
 	return pairs;
+	*/
 }
 
-std::string OptionsParser::getValue(const std::map<std::string, std::string> &pairs, 
+std::string OptionsParser::getValue(const std::map<std::string, std::string> &pairs,
 	const std::string &key)
 {
 	Debug::check(pairs.find(key) != pairs.end(), "Options Parser",
@@ -85,25 +87,25 @@ std::string OptionsParser::getValue(const std::map<std::string, std::string> &pa
 	return value;
 }
 
-int OptionsParser::getInteger(const std::map<std::string, std::string> &pairs, 
+int OptionsParser::getInteger(const std::map<std::string, std::string> &pairs,
 	const std::string &key)
 {
 	auto value = OptionsParser::getValue(pairs, key);
 	return std::stoi(value);
 }
 
-double OptionsParser::getDouble(const std::map<std::string, std::string> &pairs, 
+double OptionsParser::getDouble(const std::map<std::string, std::string> &pairs,
 	const std::string &key)
 {
 	auto value = OptionsParser::getValue(pairs, key);
 	return std::stod(value);
 }
 
-bool OptionsParser::getBoolean(const std::map<std::string, std::string> &pairs, 
+bool OptionsParser::getBoolean(const std::map<std::string, std::string> &pairs,
 	const std::string &key)
 {
 	auto value = OptionsParser::getValue(pairs, key);
-	Debug::check(OptionsParserBooleans.find(value) != OptionsParserBooleans.end(), 
+	Debug::check(OptionsParserBooleans.find(value) != OptionsParserBooleans.end(),
 		"Options Parser", "Invalid boolean value \"" + value + "\".");
 	return OptionsParserBooleans.at(value);
 }
@@ -137,7 +139,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 
 	// Obtain all the key value pairs from the text.
 	auto pairs = OptionsParser::getPairs(text);
-	
+
 	// Graphics.
 	int screenWidth = OptionsParser::getInteger(pairs, OptionsParser::SCREEN_WIDTH_KEY);
 	int screenHeight = OptionsParser::getInteger(pairs, OptionsParser::SCREEN_HEIGHT_KEY);

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "GameState.h"
 
@@ -51,7 +51,7 @@ GameState::GameState()
 	// Initialize audio manager for MIDI music and Ogg sound with some channels.
 	assert(this->options.get() != nullptr);
 	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
-		this->options->getMusicFormat(), this->options->getSoundFormat(), 
+		this->options->getMusicFormat(), this->options->getSoundFormat(),
 		this->options->getMusicVolume(), this->options->getSoundVolume(),
 		this->options->getSoundChannelCount()));
 
@@ -90,7 +90,7 @@ GameState::GameState()
 
 GameState::~GameState()
 {
-	
+
 }
 
 bool GameState::isRunning() const

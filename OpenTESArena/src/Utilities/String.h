@@ -2,6 +2,7 @@
 #define STRING_H
 
 #include <vector>
+#include <string>
 
 class String
 {

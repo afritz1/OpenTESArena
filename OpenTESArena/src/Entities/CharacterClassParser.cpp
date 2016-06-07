@@ -1,6 +1,5 @@
 #include <cassert>
 #include <map>
-#include <sstream>
 
 #include "CharacterClassParser.h"
 
@@ -84,7 +83,10 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	const auto none = std::string("None");
 
 	auto classes = std::vector<std::unique_ptr<CharacterClass>>();
+
+	/*
 	auto iss = std::istringstream(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -285,7 +287,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 
 				break;
 			}
-			else 
+			else
 			{
 				// Add the weapon to the allowed weapons list.
 				allowedWeapons.push_back(CharacterClassParserWeapons.at(weapon));
@@ -298,4 +300,5 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	}
 
 	return classes;
+	*/
 }

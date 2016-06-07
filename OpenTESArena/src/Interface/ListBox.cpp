@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "ListBox.h"
 
@@ -76,7 +76,7 @@ int ListBox::getClickedIndex(const Int2 &point)
 	// The point is given in original dimensions relative to the letterbox.
 	// The caller should not call this method if the point is outside the list box.
 	// Therefore, "Surface::containsPoint()" should be called before to make sure.
-	
+
 	// "Rectangle::contains()" is edge-inclusive, so the <= signs are necessary here.
 	assert(point.getX() >= this->getX());
 	assert(point.getX() <= (this->getX() + this->getWidth()));
@@ -87,9 +87,9 @@ int ListBox::getClickedIndex(const Int2 &point)
 
 	// Only the Y component really matters here.
 	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
-	
+
 	// Due to Rectangle::contains() being edge-inclusive, this method might return
-	// an out-of-bounds index when scrolled all the way to the bottom. Therefore, 
+	// an out-of-bounds index when scrolled all the way to the bottom. Therefore,
 	// the caller should always check the returned index before using it.
 
 	return index;
@@ -128,7 +128,7 @@ void ListBox::updateDisplayText()
 	for (int i = this->scrollIndex; i < indexEnd; ++i)
 	{
 		const auto &element = this->elements.at(i);
-		auto textBox = std::unique_ptr<TextBox>(new TextBox(0, 0, *this->textColor.get(), 
+		auto textBox = std::unique_ptr<TextBox>(new TextBox(0, 0, *this->textColor.get(),
 			element, this->fontName, this->textureManagerRef));
 
 		// Blit the text box onto the parent surface at the correct height offset.

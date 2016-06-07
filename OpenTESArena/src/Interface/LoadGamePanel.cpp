@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "LoadGamePanel.h"
 
@@ -21,7 +21,7 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 {
 	this->backToMainMenuButton = nullptr;
 	this->underConstructionTextBox = nullptr;
-	
+
 	this->backToMainMenuButton = [gameState]()
 	{
 		auto function = [gameState]()
