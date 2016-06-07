@@ -1,11 +1,11 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.6)
 PROJECT(OpenTESArena)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Configure for GNU Compiler
 IF (CMAKE_COMPILER_IS_GNUCC AND CMAKE_COMPILER_IS_GNUCXX)
-    SET (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++1y)
+    SET (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11)
 
     # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC
     IF (NOT WIN32)
