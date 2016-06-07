@@ -48,7 +48,6 @@ const std::string LocationParser::FILENAME = "locations.txt";
 
 std::vector<std::unique_ptr<Location>> LocationParser::parse()
 {
-	/*
 	// This parser is very simple right now. All text must have the exact amount
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
@@ -63,7 +62,9 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	const char comma = ',';
 
 	auto locations = std::vector<std::unique_ptr<Location>>();
-	auto iss = std::istringstream(text);
+	std::istringstream iss;
+	iss.str(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -132,5 +133,4 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	}
 
 	return locations;
-	*/
 }

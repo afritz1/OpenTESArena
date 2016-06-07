@@ -1,5 +1,6 @@
 #include <cassert>
 #include <map>
+#include <sstream>
 
 #include "CharacterClassParser.h"
 
@@ -84,8 +85,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 
 	auto classes = std::vector<std::unique_ptr<CharacterClass>>();
 
-	/*
-	auto iss = std::istringstream(text);
+	std::istringstream iss;
+	iss.str(text);
 
 	auto line = std::string();
 
@@ -300,5 +301,4 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	}
 
 	return classes;
-	*/
 }

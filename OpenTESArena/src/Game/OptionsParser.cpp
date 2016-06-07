@@ -47,9 +47,11 @@ const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 
 std::map<std::string, std::string> OptionsParser::getPairs(const std::string &text)
 {
-	/*
 	auto pairs = std::map<std::string, std::string>();
-	auto iss = std::istringstream(text);
+
+	std::istringstream iss;
+	iss.str(text);
+
 	auto line = std::string();
 
 	// Relevant parsing symbols.
@@ -75,7 +77,6 @@ std::map<std::string, std::string> OptionsParser::getPairs(const std::string &te
 	}
 
 	return pairs;
-	*/
 }
 
 std::string OptionsParser::getValue(const std::map<std::string, std::string> &pairs,

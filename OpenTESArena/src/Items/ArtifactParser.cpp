@@ -247,7 +247,6 @@ std::unique_ptr<ArtifactData> ArtifactParser::makeWeapon(const std::string &disp
 
 std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 {
-	/*
 	// This parser is very simple right now. All text must have the exact amount
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
@@ -262,7 +261,9 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 	const char comma = ',';
 
 	auto artifacts = std::vector<std::unique_ptr<ArtifactData>>();
-	auto iss = std::istringstream(text);
+	std::istringstream iss;
+	iss.str(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -385,5 +386,4 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 	}
 
 	return artifacts;
-	*/
 }
