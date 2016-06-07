@@ -3,7 +3,7 @@
 
 Update June 2nd, 2016. Currently implemented features:
 - Startup cinematic, main menu, new game cinematic
-- Partial character creation (male/female, all races, all portraits, some classes, placeholder name)
+- Character creation (male/female, all races, all portraits, all classes, player name)
 - MIDI music and Ogg sound playback
 - Partial character sheet (name, race, class, portrait, done button)
 - 3D camera rotation (currently click and drag for ease of development)
