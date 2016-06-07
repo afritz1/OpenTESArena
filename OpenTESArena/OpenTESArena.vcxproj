@@ -135,6 +135,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\ListBox.cpp" />
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Game\OptionsParser.cpp" />
     <ClCompile Include="src\Game\Options.cpp" />
@@ -243,6 +244,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Interface\ToggleButton.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\ListBox.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Game\Options.h" />

@@ -20,6 +20,7 @@ const auto TextureFilenames = std::map<TextureName, std::string>
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
 	{ TextureName::QuillCursor, "interface/pointer" },
 	{ TextureName::SwordCursor, "interface/arenarw" },
+	{ TextureName::UpDown, "interface/up_down" },
 	{ TextureName::WorldMap, "interface/world_map" },
 
 	// Fonts.

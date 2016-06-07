@@ -17,7 +17,7 @@ public:
 	// "Hidden" button for hotkeys. It is not intended to be drawn anywhere.
 	Button(const std::function<void()> &function);
 
-	~Button();
+	virtual ~Button();
 
 	void click();
 };

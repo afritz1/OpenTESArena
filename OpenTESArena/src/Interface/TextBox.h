@@ -46,7 +46,7 @@ public:
 		FontName fontName, TextureManager &textureManager);
 	TextBox(const Int2 &center, const Color &textColor, const std::string &text,
 		FontName fontName, TextureManager &textureManager);
-	~TextBox();
+	virtual ~TextBox();
 
 	const FontName &getFontName() const;
 };

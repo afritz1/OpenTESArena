@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -8,11 +9,18 @@
 #include "Button.h"
 #include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
+#include "ListBox.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
+#include "../Entities/CharacterClassParser.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
+#include "../Items/ArmorMaterial.h"
+#include "../Items/MetalType.h"
+#include "../Items/Shield.h"
+#include "../Items/Weapon.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -21,31 +29,49 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
+const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
+
 ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gender)
 	: Panel(gameState)
 {
+	this->parchment = nullptr;
+	this->upDownSurface = nullptr;
+	this->titleTextBox = nullptr;
+	this->classesListBox = nullptr;
 	this->backToGenderButton = nullptr;
-	this->classTextBox = nullptr;
-	this->warriorTextBox = nullptr;
-	this->mageTextBox = nullptr;
-	this->thiefTextBox = nullptr;
-	this->warriorButton = nullptr;
-	this->mageButton = nullptr;
-	this->thiefButton = nullptr;
+	this->upButton = nullptr;
+	this->downButton = nullptr;
+	this->acceptButton = nullptr;
 	this->gender = nullptr;
+	this->charClasses = CharacterClassParser::parse();
+	this->charClass = nullptr;
+
+	// Sort character classes alphabetically.
+	std::sort(this->charClasses.begin(), this->charClasses.end(), 
+		[](const std::unique_ptr<CharacterClass> &a, const std::unique_ptr<CharacterClass> &b)
+	{
+		return a->getDisplayName().compare(b->getDisplayName()) < 0;
+	});
 
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
 			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		auto origin = Int2((ORIGINAL_WIDTH / 2) - (surface->w / 2), 20);
-		return std::unique_ptr<Surface>(new Surface(
-			origin.getX(), origin.getY(), surface));
+		return std::unique_ptr<Surface>(new Surface(surface));
 	}();
 
-	this->classTextBox = [gameState]()
+	this->upDownSurface = [gameState]()
 	{
-		auto center = Int2(160, 40);
+		int x = (ORIGINAL_WIDTH / 2) - 62;
+		int y = (ORIGINAL_HEIGHT / 2);
+		auto *surface = gameState->getTextureManager().getSurface(
+			TextureFile::fromName(TextureName::UpDown)).getSurface();
+		return std::unique_ptr<Surface>(new Surface(x, y, surface));
+	}();
+	
+	this->titleTextBox = [gameState]()
+	{
+		auto center = Int2(160, 56);
 		auto color = Color(48, 12, 12);
 		std::string text = "Choose thy class...";
 		auto fontName = FontName::A;
@@ -57,45 +83,26 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 			gameState->getTextureManager()));
 	}();
 
-	this->warriorTextBox = [gameState]()
+	this->classesListBox = [this, gameState]()
 	{
-		auto center = Int2(160, 90);
-		auto color = Color(48, 12, 12);
-		std::string text = "Warrior";
+		// Intended to be left aligned against something like a scroll bar.
+		int x = (ORIGINAL_WIDTH / 2) - 50;
+		int y = (ORIGINAL_HEIGHT / 2);
 		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->mageTextBox = [gameState]()
-	{
-		auto center = Int2(160, 130);
 		auto color = Color(48, 12, 12);
-		std::string text = "Mage";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
+		int maxElements = 6;
+		auto elements = std::vector<std::string>();
+		for (const auto &item : this->charClasses)
+		{
+			elements.push_back(item->getDisplayName());
+		}
+		return std::unique_ptr<ListBox>(new ListBox(
+			x,
+			y,
 			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->thiefTextBox = [gameState]()
-	{
-		auto center = Int2(160, 170);
-		auto color = Color(48, 12, 12);
-		std::string text = "Thief";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
 			color,
-			text,
-			fontName,
+			maxElements,
+			elements,
 			gameState->getTextureManager()));
 	}();
 
@@ -109,88 +116,68 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->warriorButton = [gameState, gender]()
+	this->upButton = [this]
 	{
-		auto center = Int2(160, 90);
-		auto function = [gameState, gender]()
+		int x = (ORIGINAL_WIDTH / 2) - 62;
+		int y = (ORIGINAL_HEIGHT / 2);
+		int w = 8;
+		int h = 8;
+		auto function = [this]
 		{
-			// Placeholder warrior variable.
-			auto warriorClass = CharacterClass(
-				"Warrior",
-				CharacterClassCategoryName::Warrior,
-				false,
-				25,
-				15,
-				std::vector<ArmorMaterialType>(),
-				std::vector<ShieldType>(),
-				std::vector<WeaponType>());
-			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, warriorClass));
-			gameState->setPanel(std::move(namePanel));
+			// Scroll the list box up one if able.
+			if (this->classesListBox->getScrollIndex() > 0)
+			{
+				this->classesListBox->scrollUp();
+			}
 		};
-
-		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
+		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
 	}();
 
-	this->mageButton = [gameState, gender]()
+	this->downButton = [this]
 	{
-		auto center = Int2(160, 130);
-		auto function = [gameState, gender]()
+		int x = (ORIGINAL_WIDTH / 2) - 62;
+		int y = (ORIGINAL_HEIGHT / 2) + 8;
+		int w = 8;
+		int h = 8;
+		auto function = [this]
 		{
-			// Placeholder mage variable.
-			auto mageClass = CharacterClass(
-				"Mage",
-				CharacterClassCategoryName::Mage,
-				true,
-				25,
-				6,
-				std::vector<ArmorMaterialType>(),
-				std::vector<ShieldType>(),
-				std::vector<WeaponType>());
-			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, mageClass));
-			gameState->setPanel(std::move(namePanel));
+			// Scroll the list box down one if able.
+			if (this->classesListBox->getScrollIndex() <
+				(this->classesListBox->getElementCount() -
+					this->classesListBox->maxDisplayedElements()))
+			{
+				this->classesListBox->scrollDown();
+			}
 		};
-
-		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
+		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
 	}();
 
-	this->thiefButton = [gameState, gender]()
+	this->acceptButton = [this, gameState, gender]
 	{
-		auto center = Int2(160, 170);
-		auto function = [gameState, gender]()
+		auto function = [this, gameState, gender]
 		{
-			// Placeholder thief variable.
-			auto thiefClass = CharacterClass(
-				"Thief",
-				CharacterClassCategoryName::Thief,
-				true, // Thieves are not actually magic-sensitive.
-				25,
-				14,
-				std::vector<ArmorMaterialType>(),
-				std::vector<ShieldType>(),
-				std::vector<WeaponType>());
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, thiefClass));
+				gameState, gender, *this->charClass.get()));
 			gameState->setPanel(std::move(namePanel));
 		};
-
-		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
+		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->gender = std::unique_ptr<CharacterGenderName>(
 		new CharacterGenderName(gender));
 
+	assert(this->parchment.get() != nullptr);
+	assert(this->upDownSurface.get() != nullptr);
+	assert(this->titleTextBox.get() != nullptr);
+	assert(this->classesListBox.get() != nullptr);
 	assert(this->backToGenderButton.get() != nullptr);
-	assert(this->classTextBox.get() != nullptr);
-	assert(this->warriorTextBox.get() != nullptr);
-	assert(this->mageTextBox.get() != nullptr);
-	assert(this->thiefTextBox.get() != nullptr);
-	assert(this->warriorButton.get() != nullptr);
-	assert(this->mageButton.get() != nullptr);
-	assert(this->thiefButton.get() != nullptr);
+	assert(this->acceptButton.get() != nullptr);
+	assert(this->upButton.get() != nullptr);
+	assert(this->downButton.get() != nullptr);
 	assert(this->gender.get() != nullptr);
 	assert(*this->gender.get() == gender);
+	assert(this->charClasses.size() > 0);
+	assert(this->charClass.get() == nullptr);
 }
 
 ChooseClassPanel::~ChooseClassPanel()
@@ -230,26 +217,43 @@ void ChooseClassPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 
-		// Eventually replace these "if's" with a std::map iteration once all the
-		// class buttons are listed (if that's the chosen design).
-		bool warriorClicked = leftClick &&
-			this->warriorButton->containsPoint(mouseOriginalPoint);
-		bool mageClicked = leftClick &&
-			this->mageButton->containsPoint(mouseOriginalPoint);
-		bool thiefClicked = leftClick &&
-			this->thiefButton->containsPoint(mouseOriginalPoint);
+		bool mouseWheelUp = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
+		bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
 
-		if (warriorClicked)
+		bool scrollUpClick = leftClick && this->upButton->containsPoint(mouseOriginalPoint);
+		bool scrollDownClick = leftClick && this->downButton->containsPoint(mouseOriginalPoint);
+		
+		if (this->classesListBox->containsPoint(mouseOriginalPoint))
 		{
-			this->warriorButton->click();
+			if (leftClick)
+			{
+				// Verify that the clicked index is valid. If so, use that character class.
+				int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+				if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+				{
+					this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
+						*this->charClasses.at(index).get()));
+					this->acceptButton->click();
+				}
+			}
+			else if (mouseWheelUp)
+			{
+				this->upButton->click();
+			}
+			else if (mouseWheelDown)
+			{
+				this->downButton->click();
+			}
 		}
-		else if (mageClicked)
+
+		// Check scroll buttons (they are outside the list box).
+		if (scrollUpClick)
 		{
-			this->mageButton->click();
+			this->upButton->click();
 		}
-		else if (thiefClicked)
+		else if (scrollDownClick)
 		{
-			this->thiefButton->click();
+			this->downButton->click();
 		}
 	}
 }
@@ -271,6 +275,172 @@ void ChooseClassPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
+std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
+{
+	auto armorString = std::string();
+
+	int lengthCounter = 0;
+	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
+
+	// Decide what the armor string says.
+	if (armorCount == 0)
+	{
+		armorString = "None";
+	}
+	else
+	{
+		// Collect all allowed armor display names for the class.
+		for (int i = 0; i < armorCount; ++i)
+		{
+			const auto &materialType = characterClass.getAllowedArmors().at(i);
+			auto materialString = ArmorMaterial::typeToString(materialType);
+			lengthCounter += static_cast<int>(materialString.size());
+			armorString.append(materialString);
+
+			// If not the last element, add a comma.
+			if (i < (armorCount - 1))
+			{
+				armorString.append(", ");
+
+				// If too long, add a new line.
+				if (lengthCounter > ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH)
+				{
+					lengthCounter = 0;
+					armorString.append("\n   ");
+				}
+			}
+		}
+	}
+
+	armorString.append(".");
+
+	return armorString;
+}
+
+std::string ChooseClassPanel::getClassShields(const CharacterClass &characterClass) const
+{
+	auto shieldsString = std::string();
+
+	int lengthCounter = 0;
+	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
+
+	// Decide what the shield string says.
+	if (shieldCount == 0)
+	{
+		shieldsString = "None";
+	}
+	else
+	{
+		// Collect all allowed shield display names for the class.
+		for (int i = 0; i < shieldCount; ++i)
+		{
+			const auto &shieldType = characterClass.getAllowedShields().at(i);
+			auto dummyMetal = MetalType::Iron;
+			auto typeString = Shield(shieldType, dummyMetal).typeToString();
+			lengthCounter += static_cast<int>(typeString.size());
+			shieldsString.append(typeString);
+
+			// If not the last element, add a comma.
+			if (i < (shieldCount - 1))
+			{
+				shieldsString.append(", ");
+
+				// If too long, add a new line.
+				if (lengthCounter > ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH)
+				{
+					lengthCounter = 0;
+					shieldsString.append("\n   ");
+				}
+			}
+		}
+	}
+
+	shieldsString.append(".");
+	
+	return shieldsString;
+}
+
+std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
+{
+	auto weaponsString = std::string();
+
+	int lengthCounter = 0;
+	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
+
+	// Decide what the weapon string says.
+	if (weaponCount == 0)
+	{
+		// If the class is allowed zero weapons, it still doesn't exclude fists, I think.
+		weaponsString = "None";
+	}
+	else
+	{
+		// Collect all allowed weapon display names for the class.
+		for (int i = 0; i < weaponCount; ++i)
+		{
+			const auto &weaponType = characterClass.getAllowedWeapons().at(i);
+			auto dummyMetal = MetalType::Iron;
+			auto typeString = Weapon(weaponType, dummyMetal).typeToString();
+			lengthCounter += static_cast<int>(typeString.size());
+			weaponsString.append(typeString);
+
+			// If not the the last element, add a comma.
+			if (i < (weaponCount - 1))
+			{
+				weaponsString.append(", ");
+
+				// If too long, add a new line.
+				if (lengthCounter > ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH)
+				{
+					lengthCounter = 0;
+					weaponsString.append("\n   ");
+				}
+			}
+		}
+	}
+
+	weaponsString.append(".");
+
+	return weaponsString;
+}
+
+void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SDL_Surface *dst)
+{
+	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
+
+	auto tooltipText = characterClass.getDisplayName() + "\n\n" +
+		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" + 
+		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
+		"Health: " + std::to_string(characterClass.getStartingHealth()) +
+		" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +
+		"Armors: " + this->getClassArmors(characterClass) + "\n" +
+		"Shields: " + this->getClassShields(characterClass) + "\n" +
+		"Weapons: " + this->getClassWeapons(characterClass);
+	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
+		mouseOriginalPoint.getX(),
+		mouseOriginalPoint.getY(),
+		Color::White,
+		tooltipText,
+		FontName::A,
+		this->getGameState()->getTextureManager()));
+	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(),
+		tooltip->getWidth(), tooltip->getHeight());
+	tooltipBackground.fill(Color(32, 32, 32));
+
+	// Make the tooltip smaller.
+	const int width = tooltip->getWidth() / 2;
+	const int height = tooltip->getHeight() / 2;
+
+	// I tried clamping to the edge, but then it hides the cursor, which isn't good.
+	const int x = ((tooltip->getX() + width) < ORIGINAL_WIDTH) ? tooltip->getX() :
+		(tooltip->getX() - width);//(ORIGINAL_WIDTH - width);
+	const int y = ((tooltip->getY() + height) < ORIGINAL_HEIGHT) ? tooltip->getY() :
+		(tooltip->getY() - height);//(ORIGINAL_HEIGHT - height);
+
+	this->drawScaledToNative(tooltipBackground, x + 4, y - 1, width, height + 2, dst);
+	this->drawScaledToNative(*tooltip.get(), x + 4, y, width, height, dst);
+}
+
 void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
@@ -281,45 +451,62 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
 	this->drawLetterbox(background, dst, letterbox);
 
-	// Draw parchments: title, warrior, mage, and thief.
+	// Draw parchments: title, list.
 	this->parchment->setTransparentColor(Color::Magenta);
-	this->drawScaledToNative(*this->parchment.get(), dst);
 
-	const auto parchmentScale = 0.70;
-	int parchmentXOffset = 27;
-	int parchmentYStep = 40;
-	int parchmentYOffset = 10 + parchmentYStep;
-	this->drawScaledToNative(*this->parchment.get(),
-		this->parchment->getX() + parchmentXOffset,
-		this->parchment->getY() + parchmentYOffset,
-		static_cast<int>(this->parchment->getWidth() * parchmentScale),
-		this->parchment->getHeight(),
+	auto listParchmentXScale = 1.0;
+	auto listParchmentYScale = 1.0;
+	auto listParchmentWidth =
+		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
+	auto listParchmentHeight =
+		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
+
+	this->drawScaledToNative(
+		*this->parchment.get(),
+		(ORIGINAL_WIDTH / 2) - (listParchmentWidth / 2),
+		35,
+		listParchmentWidth,
+		listParchmentHeight,
 		dst);
 
-	parchmentYOffset = 10 + (parchmentYStep * 2);
-	this->drawScaledToNative(*this->parchment.get(),
-		this->parchment->getX() + parchmentXOffset,
-		this->parchment->getY() + parchmentYOffset,
-		static_cast<int>(this->parchment->getWidth() * parchmentScale),
-		this->parchment->getHeight(),
+	listParchmentXScale = 0.80;
+	listParchmentYScale = 2.20;
+	listParchmentWidth =
+		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
+	listParchmentHeight =
+		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
+
+	this->drawScaledToNative(
+		*this->parchment.get(),
+		(ORIGINAL_WIDTH / 2) - (listParchmentWidth / 2),
+		(ORIGINAL_HEIGHT / 2) - 11,
+		listParchmentWidth,
+		listParchmentHeight,
 		dst);
 
-	parchmentYOffset = 10 + (parchmentYStep * 3);
-	this->drawScaledToNative(*this->parchment.get(),
-		this->parchment->getX() + parchmentXOffset,
-		this->parchment->getY() + parchmentYOffset,
-		static_cast<int>(this->parchment->getWidth() * parchmentScale),
-		this->parchment->getHeight(),
-		dst);
+	// Draw scroll buttons.
+	this->upDownSurface->setTransparentColor(Color::Magenta);
+	this->drawScaledToNative(*this->upDownSurface.get(), dst);
 
-	// Draw text: title, warrior, mage, and thief.
-	this->drawScaledToNative(*this->classTextBox.get(), dst);
-	this->drawScaledToNative(*this->warriorTextBox.get(), dst);
-	this->drawScaledToNative(*this->mageTextBox.get(), dst);
-	this->drawScaledToNative(*this->thiefTextBox.get(), dst);
+	// Draw text: title, list.
+	this->drawScaledToNative(*this->titleTextBox.get(), dst);
+	this->drawScaledToNative(*this->classesListBox.get(), dst);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
+
+	// Draw tooltip if over a valid element in the list box.
+	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
+	if (this->classesListBox->containsPoint(mouseOriginalPoint))
+	{
+		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+		{
+			auto characterClass = std::unique_ptr<CharacterClass>(new CharacterClass(
+				*this->charClasses.at(index).get()));
+			this->drawClassTooltip(*characterClass.get(), dst);
+		}
+	}
 }

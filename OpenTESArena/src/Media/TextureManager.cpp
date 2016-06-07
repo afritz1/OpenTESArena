@@ -75,9 +75,10 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		auto surface = Surface(optSurface);
-
+		
 		// Add the new texture.
 		this->surfaces.insert(std::pair<std::string, Surface>(filename, surface));
+		SDL_FreeSurface(optSurface);
 
 		// Try this method again.
 		assert(this->surfaces.find(filename) != this->surfaces.end());

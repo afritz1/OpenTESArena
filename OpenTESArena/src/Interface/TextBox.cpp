@@ -144,14 +144,14 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 
 TextBox::~TextBox()
 {
-
+	
 }
 
 int TextBox::getNewLineHeight(TextureManager &textureManager) const
 {
 	auto font = Font(this->getFontName());
-	const auto &surface = textureManager.getSurface(TextureFile::fromName(
-		font.getFontTextureName()));
+	const auto &surface = textureManager.getSurface(
+		TextureFile::fromName(font.getFontTextureName()));
 	int height = surface.getHeight() / 3;
 	return height;
 }
@@ -209,7 +209,8 @@ std::unique_ptr<Surface> TextBox::combineSurfaces(
 	int totalHeight = letterSurfaces.at(0)->getHeight();
 
 	// Make the big surface.
-	auto combinedSurface = std::unique_ptr<Surface>(new Surface(totalWidth, totalHeight));
+	auto combinedSurface = std::unique_ptr<Surface>(new Surface(
+		totalWidth, totalHeight));
 
 	// Copy each little surface to the big one.
 	int offset = 0;
@@ -250,8 +251,8 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 {
 	// Get the font and its associated texture.
 	const auto font = Font(this->fontName);
-	const auto &fontTexture = textureManager.getSurface(TextureFile::fromName(
-		font.getFontTextureName()));
+	const auto &fontTexture = textureManager.getSurface(
+		TextureFile::fromName(font.getFontTextureName()));
 	const auto *fontPixels = static_cast<unsigned int*>(fontTexture.getSurface()->pixels);
 
 	// Get the font properties. "Space" is a special case because it is completely 

@@ -214,7 +214,7 @@ void ChooseRacePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst)
+void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst) 
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 	const auto raceName = Province(provinceName).getRaceDisplayName(true);
@@ -254,15 +254,11 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->parchment->setTransparentColor(Color::Magenta);
 	if (this->initialTextBox->isVisible())
 	{
-		const int parchmentWidth = static_cast<int>(
-			static_cast<double>(this->parchment->getWidth()) * 1.30);
-		const int parchmentHeight = static_cast<int>(
-			static_cast<double>(this->parchment->getHeight()) * 1.65);
-		const int parchmentX = (ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
-		const int parchmentY = (ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2);
+		const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * 1.35);
+		const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * 1.65);
 		this->drawScaledToNative(*this->parchment.get(),
-			parchmentX,
-			parchmentY,
+			(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
+			(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 			parchmentWidth,
 			parchmentHeight,
 			dst);

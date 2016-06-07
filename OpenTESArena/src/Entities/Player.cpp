@@ -112,7 +112,7 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 		lookUpRads = 0.0;
 	}
 
-	const double zoom = 1.0 / std::tan((verticalFOV * 0.5) * DEG_TO_RAD);
+	//const double zoom = 1.0 / std::tan((verticalFOV * 0.5) * DEG_TO_RAD);
 
 	const double currentDec = std::acos(this->getDirection().normalized().getY());
 	const double requestedDec = currentDec - lookUpRads;

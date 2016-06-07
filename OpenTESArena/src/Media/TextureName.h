@@ -21,6 +21,7 @@ enum class TextureName
 	ParchmentPopup, // For text boxes
 	QuillCursor,
 	SwordCursor,
+	UpDown, // Scroll arrows
 	WorldMap, // Tamriel map with helmet
 	
 	// Fonts. I don't think any of these are duplicates.

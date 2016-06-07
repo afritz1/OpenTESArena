@@ -1,7 +1,7 @@
 #ifndef CHOOSE_CLASS_PANEL_H
 #define CHOOSE_CLASS_PANEL_H
 
-#include <map>
+#include <vector>
 
 #include "Panel.h"
 
@@ -15,6 +15,8 @@
 // Maybe a list would be best, but make sure to have tooltips!
 
 class Button;
+class CharacterClass;
+class ListBox;
 class Surface;
 class TextBox;
 
@@ -23,15 +25,20 @@ enum class CharacterGenderName;
 class ChooseClassPanel : public Panel
 {
 private:
-	// Eventually a std::map<ClassName, Button> instead of individual class buttons, so 
-	// then "for each class name, if class name's button is clicked, do..." can be used.
-	// This helps avoid having 18 "if" branches.
-	// std::map<CharacterClassName, std::unique_ptr<Button>> classButtons;
+	static const int MAX_TOOLTIP_LINE_LENGTH;
 
-	std::unique_ptr<Surface> parchment;
-	std::unique_ptr<TextBox> classTextBox, warriorTextBox, mageTextBox, thiefTextBox;
-	std::unique_ptr<Button> backToGenderButton, warriorButton, mageButton, thiefButton;
+	std::unique_ptr<Surface> parchment, upDownSurface;
+	std::unique_ptr<TextBox> titleTextBox;
+	std::unique_ptr<ListBox> classesListBox;
+	std::unique_ptr<Button> backToGenderButton, upButton, downButton, acceptButton;
 	std::unique_ptr<CharacterGenderName> gender;
+	std::vector<std::unique_ptr<CharacterClass>> charClasses;
+	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
+
+	std::string getClassArmors(const CharacterClass &characterClass) const;
+	std::string getClassShields(const CharacterClass &characterClass) const;
+	std::string getClassWeapons(const CharacterClass &characterClass) const;
+	void drawClassTooltip(const CharacterClass &characterClass, SDL_Surface *dst);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

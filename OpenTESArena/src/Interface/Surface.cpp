@@ -31,9 +31,13 @@ Surface::Surface(int width, int height)
 
 Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
-	this->surface = SDL_CreateRGBSurfaceFrom(surface->pixels, surface->w,
-		surface->h, Surface::DEFAULT_BPP, surface->pitch, surface->format->Rmask,
-		surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
+	assert(surface != nullptr);
+
+	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h, 
+		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask, 
+		surface->format->Bmask, surface->format->Amask);
+	std::memcpy(this->surface->pixels, surface->pixels, 
+		surface->w * surface->h * (Surface::DEFAULT_BPP / 8));
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
 
@@ -44,6 +48,8 @@ Surface::Surface(int x, int y, const SDL_Surface *surface)
 
 Surface::Surface(const SDL_Surface *surface, double scale)
 {
+	assert(surface != nullptr);
+
 	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
 	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
@@ -161,6 +167,9 @@ void Surface::optimize(const SDL_PixelFormat *format)
 		std::getchar();
 		exit(EXIT_FAILURE);
 	}
+
+	// Get rid of the old surface (this was once a hard-to-find memory leak!).
+	SDL_FreeSurface(this->surface);
 
 	this->surface = optSurface;
 

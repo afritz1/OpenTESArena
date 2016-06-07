@@ -18,6 +18,11 @@ public:
 	ArmorMaterial();
 	virtual ~ArmorMaterial();
 
+	// I'm not sure how else to get a mapping from ArmorMaterialType to string
+	// because there isn't one for "Plate" when all heavy armors have their own
+	// specific name. Somehow homogenize all this "toString()" stuff sometime.
+	static std::string typeToString(ArmorMaterialType materialType);
+
 	virtual std::unique_ptr<ArmorMaterial> clone() const = 0;
 
 	virtual ArmorMaterialType getMaterialType() const = 0;
