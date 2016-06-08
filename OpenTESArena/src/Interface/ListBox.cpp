@@ -14,7 +14,7 @@
 
 ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
 	const std::vector<std::string> &elements, TextureManager &textureManager)
-	: Surface(x, y, 1, 1), textureManagerRef(textureManager)
+	: Surface(x, y, 1, 1), textureManagerRef(textureManager), scrollIndex(0)
 {
 	assert(maxDisplayed > 0);
 
