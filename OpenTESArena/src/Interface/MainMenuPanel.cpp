@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "MainMenuPanel.h"
 
@@ -38,7 +38,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
-	
+
 	this->newButton = [gameState]()
 	{
 		auto center = Int2(168, 112);
@@ -58,7 +58,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 			{
 				auto newGameStoryPanel = std::unique_ptr<Panel>(new CinematicPanel(
 					gameState,
-					TextureSequenceName::NewGameStory, 
+					TextureSequenceName::NewGameStory,
 					5.0,
 					changeToCharCreation));
 				gameState->setPanel(std::move(newGameStoryPanel));
@@ -86,7 +86,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
-	// Each of the buttons are a solid color already, so the transparency and the 
+	// Each of the buttons are a solid color already, so the transparency and the
 	// fill color can be anything as long as they match.
 	this->loadButton->setTransparentColor(Color::Black);
 	this->newButton->setTransparentColor(Color::Black);
@@ -110,14 +110,14 @@ MainMenuPanel::~MainMenuPanel()
 void MainMenuPanel::handleEvents(bool &running)
 {
 	// The mouse will have different behavior when clicking out of the letterbox
-	// depending on each panel's implementation. It might indicate to cancel 
-	// whatever is happening, or it might do nothing. Get the SDL mouse position 
-	// in the native window and see if it's within the letterbox area in order to 
-	// check which behavior to do.	
+	// depending on each panel's implementation. It might indicate to cancel
+	// whatever is happening, or it might do nothing. Get the SDL mouse position
+	// in the native window and see if it's within the letterbox area in order to
+	// check which behavior to do.
 
-	// If within the letterbox, subtract the letterbox origin from the mouse position 
-	// and downscale it by the draw scale because interface dimensions should be 
-	// constructed within the original sizes. Maybe there could be a 
+	// If within the letterbox, subtract the letterbox origin from the mouse position
+	// and downscale it by the draw scale because interface dimensions should be
+	// constructed within the original sizes. Maybe there could be a
 	// Panel::nativePointToOriginalInt2(nativePoint) method?
 
 	auto mousePosition = this->getMousePosition();

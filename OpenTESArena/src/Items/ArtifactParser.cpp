@@ -179,7 +179,7 @@ std::vector<ProvinceName> ArtifactParser::parseProvinces(
 	return provinces;
 }
 
-std::unique_ptr<ArtifactData> ArtifactParser::makeAccessory(const std::string &displayName, 
+std::unique_ptr<ArtifactData> ArtifactParser::makeAccessory(const std::string &displayName,
 	const std::string &description, const std::vector<ProvinceName> &provinces,
 	const std::string &accessoryTypeToken, const std::string &metalToken)
 {
@@ -189,7 +189,7 @@ std::unique_ptr<ArtifactData> ArtifactParser::makeAccessory(const std::string &d
 		displayName, description, provinces, accessoryType, metalType));
 }
 
-std::unique_ptr<ArtifactData> ArtifactParser::makeBodyArmor(const std::string &displayName, 
+std::unique_ptr<ArtifactData> ArtifactParser::makeBodyArmor(const std::string &displayName,
 	const std::string &description, const std::vector<ProvinceName> &provinces,
 	const std::string &partNameToken, const std::string &materialToken)
 {
@@ -216,17 +216,17 @@ std::unique_ptr<ArtifactData> ArtifactParser::makeBodyArmor(const std::string &d
 		displayName, description, provinces, armorMaterial.get(), partName));
 }
 
-std::unique_ptr<ArtifactData> ArtifactParser::makeMiscellaneous(const std::string &displayName, 
+std::unique_ptr<ArtifactData> ArtifactParser::makeMiscellaneous(const std::string &displayName,
 	const std::string &description, const std::vector<ProvinceName> &provinces,
 	const std::string &miscTypeToken)
 {
 	auto miscType = ArtifactParserMiscellaneousTypes.at(miscTypeToken);
-	return std::unique_ptr<ArtifactData>(new MiscellaneousArtifactData(displayName, 
+	return std::unique_ptr<ArtifactData>(new MiscellaneousArtifactData(displayName,
 		description, provinces, miscType));
 }
 
-std::unique_ptr<ArtifactData> ArtifactParser::makeShield(const std::string &displayName, 
-	const std::string &description, const std::vector<ProvinceName> &provinces, 
+std::unique_ptr<ArtifactData> ArtifactParser::makeShield(const std::string &displayName,
+	const std::string &description, const std::vector<ProvinceName> &provinces,
 	const std::string &shieldTypeToken, const std::string &metalToken)
 {
 	auto shieldType = ArtifactParserShieldTypes.at(shieldTypeToken);
@@ -235,8 +235,8 @@ std::unique_ptr<ArtifactData> ArtifactParser::makeShield(const std::string &disp
 		description, provinces, shieldType, metalType));
 }
 
-std::unique_ptr<ArtifactData> ArtifactParser::makeWeapon(const std::string &displayName, 
-	const std::string &description, const std::vector<ProvinceName> &provinces, 
+std::unique_ptr<ArtifactData> ArtifactParser::makeWeapon(const std::string &displayName,
+	const std::string &description, const std::vector<ProvinceName> &provinces,
 	const std::string &weaponTypeToken, const std::string &metalToken)
 {
 	auto weaponType = ArtifactParserWeaponTypes.at(weaponTypeToken);
@@ -261,7 +261,9 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 	const char comma = ',';
 
 	auto artifacts = std::vector<std::unique_ptr<ArtifactData>>();
-	auto iss = std::istringstream(text);
+	std::istringstream iss;
+	iss.str(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -317,13 +319,13 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		// Verify that the strings each have a mapping.
 		const auto &itemTypeToken = typeTokens.at(0);
 		Debug::check(ArtifactParserItemTypes.find(itemTypeToken) != ArtifactParserItemTypes.end(),
-			"Artifact Parser", "Invalid item type \"" + itemTypeToken + "\" for \"" + 
+			"Artifact Parser", "Invalid item type \"" + itemTypeToken + "\" for \"" +
 			displayName + "\".");
 
 		for (const auto &province : provinceTokens)
 		{
 			Debug::check(ArtifactParserProvinces.find(province) != ArtifactParserProvinces.end(),
-				"Artifact Parser", "Invalid province \"" + province + "\" for \"" + 
+				"Artifact Parser", "Invalid province \"" + province + "\" for \"" +
 				displayName + "\".");
 		}
 
@@ -336,9 +338,9 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		{
 		case ItemType::Accessory:
 			// Make accessory artifact data.
-			Debug::check(derivedTokens.size() == 2, "Artifact Parser", 
+			Debug::check(derivedTokens.size() == 2, "Artifact Parser",
 				"Invalid accessory token count for \"" + displayName + "\".");
-			artifactData = ArtifactParser::makeAccessory(displayName, description, provinces, 
+			artifactData = ArtifactParser::makeAccessory(displayName, description, provinces,
 				derivedTokens.at(0), derivedTokens.at(1));
 			break;
 		case ItemType::Armor:
@@ -364,7 +366,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 			// Make miscellaneous artifact data.
 			Debug::check(derivedTokens.size() == 1, "Artifact Parser",
 				"Invalid miscellaneous token count for \"" + displayName + "\".");
-			artifactData = ArtifactParser::makeMiscellaneous(displayName, description, provinces, 
+			artifactData = ArtifactParser::makeMiscellaneous(displayName, description, provinces,
 				derivedTokens.at(0));
 			break;
 		case ItemType::Weapon:

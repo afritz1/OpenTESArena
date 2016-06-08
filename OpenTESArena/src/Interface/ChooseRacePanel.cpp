@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "ChooseRacePanel.h"
 
@@ -157,7 +157,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 		// Context-sensitive input depending on the visibility of the first text box.
 		if (this->initialTextBox->isVisible())
 		{
-			bool hideInitialPopUp = leftClick || rightClick || enterPressed || 
+			bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
 				spacePressed || escapePressed;
 
 			if (hideInitialPopUp)
@@ -179,7 +179,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 				for (const auto &area : this->provinceAreas)
 				{
 					// Ignore the Imperial race because it is not implemented yet.
-					if (area.second.contains(mouseOriginalPoint) && 
+					if (area.second.contains(mouseOriginalPoint) &&
 						(area.first != ProvinceName::ImperialProvince))
 					{
 						// Save the clicked province's race.
@@ -192,7 +192,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 						break;
 					}
 				}
-			}			
+			}
 		}
 	}
 }
@@ -214,18 +214,18 @@ void ChooseRacePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst) 
+void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 	const auto raceName = Province(provinceName).getRaceDisplayName(true);
 	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
-		mouseOriginalPosition.getX(), 
+		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
-		Color::White, 
-		"Land of the " + raceName, 
+		Color::White,
+		"Land of the " + raceName,
 		FontName::A,
 		this->getGameState()->getTextureManager()));
-	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(), 
+	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(),
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
@@ -273,7 +273,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw hovered province tooltip.
 	if (!this->initialTextBox->isVisible())
 	{
-		auto mouseOriginalPosition = 
+		auto mouseOriginalPosition =
 			this->nativePointToOriginal(this->getMousePosition());
 
 		for (const auto &pair : this->provinceAreas)
@@ -281,7 +281,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 			// Draw tooltip if the mouse is in the province.
 
 			// Ignore the Imperial race for now as it is not implemented.
-			if (pair.second.contains(mouseOriginalPosition) && 
+			if (pair.second.contains(mouseOriginalPosition) &&
 				(pair.first != ProvinceName::ImperialProvince))
 			{
 				this->drawProvinceTooltip(pair.first, dst);

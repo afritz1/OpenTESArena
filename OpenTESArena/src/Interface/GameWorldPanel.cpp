@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "GameWorldPanel.h"
 
@@ -174,8 +174,8 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->getGameState()->getGameData()->getCLProgram().render(dst);
 
 	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
-	// screen, not just the letterbox, because right now, when the screen is tall, the 
-	// compass is near the middle of the screen (in the way), and the stat bars are much 
+	// screen, not just the letterbox, because right now, when the screen is tall, the
+	// compass is near the middle of the screen (in the way), and the stat bars are much
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
 
@@ -216,7 +216,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		.getSurface(TextureFile::fromName(TextureName::CompassSlider));
 
 	auto compassSliderSegment = Surface(32, 7);
-	compassSlider.blit(compassSliderSegment, Int2(), Rectangle(60, 0, 
+	compassSlider.blit(compassSliderSegment, Int2(), Rectangle(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
 
 	// Should do some sin() and cos() functions to get the segment location.
@@ -232,7 +232,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		compassFiller.getWidth(),
 		compassFiller.getHeight(),
 		dst);
-	
+
 	this->drawScaledToNative(compassSliderSegment,
 		(ORIGINAL_WIDTH / 2) - 16,
 		7,

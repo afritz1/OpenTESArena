@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "TextBox.h"
 
@@ -40,7 +40,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 
 	// Calculate the proper dimensions of the new text box surface.
 	int width = this->getMaxWidth(lineSurfaces);
-	int height = this->getNewLineHeight(textureManager) * 
+	int height = this->getNewLineHeight(textureManager) *
 		static_cast<int>(lineSurfaces.size());
 
 	// Replace the old SDL surface. It was just a placeholder until now.
@@ -79,12 +79,12 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 // This constructor is identical to the other one, except this one aligns the
 // text to center over the given point. (Maybe this can call the other constructor,
 // and just translate "this->point" by the center?)
-TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text, 
+TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text,
 	FontName fontName, TextureManager &textureManager)
 	: Surface(0, 0, 1, 1)
 {
 	this->fontName = fontName;
-	
+
 	// Split "text" into separate lines of text.
 	auto textLines = this->textToLines(text);
 
@@ -144,7 +144,7 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 
 TextBox::~TextBox()
 {
-	
+
 }
 
 int TextBox::getNewLineHeight(TextureManager &textureManager) const
@@ -226,7 +226,7 @@ std::unique_ptr<Surface> TextBox::combineSurfaces(
 std::vector<std::unique_ptr<Surface>> TextBox::lineToSurfaces(const std::string &line,
 	TextureManager &textureManager) const
 {
-	// This method gets each letter surface, trims it to the required right padding, 
+	// This method gets each letter surface, trims it to the required right padding,
 	// and puts it into a vector, thus representing a line of blit-able text.
 	auto surfaces = std::vector<std::unique_ptr<Surface>>();
 
@@ -255,7 +255,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 		TextureFile::fromName(font.getFontTextureName()));
 	const auto *fontPixels = static_cast<unsigned int*>(fontTexture.getSurface()->pixels);
 
-	// Get the font properties. "Space" is a special case because it is completely 
+	// Get the font properties. "Space" is a special case because it is completely
 	// whitespace (i.e., can't be trimmed), so it needs an arbitrary width.
 	const int letterHeight = this->getNewLineHeight(textureManager);
 	const int rightPadding = font.getRightPadding();
@@ -274,7 +274,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 			cell.getX() * cellDimensions.getX(),
 			cell.getY() * cellDimensions.getY());
 
-		// Calculate the letter's trimmed width by walking columns from right to left 
+		// Calculate the letter's trimmed width by walking columns from right to left
 		// in the font texture until a text pixel is hit.
 		int letterWidth = cellDimensions.getX();
 		for (bool textPixelHit = false; (!textPixelHit) && (letterWidth > 0); --letterWidth)
@@ -298,7 +298,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 		// The "+ 1" is for recovering from the column with the text pixel hit.
 		letterWidth += rightPadding + 1;
 
-		// If the letter width (before padding) is zero, that means no text pixels were found, 
+		// If the letter width (before padding) is zero, that means no text pixels were found,
 		// so the character in the font texture must be empty. Use a space then.
 		if (letterWidth == rightPadding)
 		{

@@ -1,4 +1,4 @@
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "Panel.h"
 
@@ -33,8 +33,8 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	{
 		return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 	}
-	
-	// All of these lambdas are linked together like a stack by each panel's last 
+
+	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
 
 	auto changeToMainMenu = [gameState]()
@@ -69,7 +69,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		auto secondsToDisplay = 5.0;
 		auto quotePanel = std::unique_ptr<Panel>(new ImagePanel(
 			gameState,
-			TextureName::IntroQuote, 
+			TextureName::IntroQuote,
 			secondsToDisplay,
 			changeToScrolling));
 		gameState->setPanel(std::move(quotePanel));
@@ -80,7 +80,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		auto secondsToDisplay = 5.0;
 		auto titlePanel = std::unique_ptr<Panel>(new ImagePanel(
 			gameState,
-			TextureName::IntroTitle, 
+			TextureName::IntroTitle,
 			secondsToDisplay,
 			changeToQuote));
 		gameState->setPanel(std::move(titlePanel));
@@ -113,7 +113,7 @@ Int2 Panel::getMousePosition() const
 bool Panel::letterboxContains(const Int2 &point) const
 {
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	auto rectangle = Rectangle(letterbox->x, letterbox->y, 
+	auto rectangle = Rectangle(letterbox->x, letterbox->y,
 		letterbox->w, letterbox->h);
 	return rectangle.contains(point);
 }
@@ -182,7 +182,7 @@ void Panel::drawScaledToNative(const Surface &surface, SDL_Surface *dst)
 		surface.getWidth(), surface.getHeight(), dst);
 }
 
-void Panel::drawLetterbox(const Surface &background, SDL_Surface *dst, 
+void Panel::drawLetterbox(const Surface &background, SDL_Surface *dst,
 	const SDL_Rect *letterbox)
 {
 	auto *baseSurface = background.getSurface();

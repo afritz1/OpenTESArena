@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 
 #include "Player.h"
 
@@ -11,9 +12,9 @@
 
 Player::Player(const std::string &displayName, CharacterGenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
-	const Float3d &position, const Float3d &direction, const Float3d &velocity, 
+	const Float3d &position, const Float3d &direction, const Float3d &velocity,
 	EntityManager &entityManager)
-	: Entity(EntityType::Player, position, entityManager), Directable(direction), 
+	: Entity(EntityType::Player, position, entityManager), Directable(direction),
 	Movable(velocity)
 {
 	this->charClass = nullptr;
@@ -36,8 +37,8 @@ Player::~Player()
 std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
 {
 	return std::unique_ptr<Entity>(new Player(
-		this->getDisplayName(), this->getGenderName(), this->getRaceName(), 
-		this->getCharacterClass(), this->getPortraitID(), this->getPosition(), 
+		this->getDisplayName(), this->getGenderName(), this->getRaceName(),
+		this->getCharacterClass(), this->getPortraitID(), this->getPosition(),
 		this->getDirection(), this->getVelocity(), entityManager));
 }
 
@@ -74,7 +75,7 @@ const CharacterClass &Player::getCharacterClass() const
 void Player::pitch(double radians)
 {
 	auto frame = this->getFrame();
-	auto q = Quaternion::fromAxisAngle(frame.getRight(), radians) * 
+	auto q = Quaternion::fromAxisAngle(frame.getRight(), radians) *
 		Quaternion(this->getDirection(), 0.0);
 
 	this->setDirection(q.getXYZ().normalized());
@@ -82,7 +83,7 @@ void Player::pitch(double radians)
 
 void Player::yaw(double radians)
 {
-	auto q = Quaternion::fromAxisAngle(Directable::getGlobalUp(), radians) * 
+	auto q = Quaternion::fromAxisAngle(Directable::getGlobalUp(), radians) *
 		Quaternion(this->getDirection(), 0.0);
 
 	this->setDirection(q.getXYZ().normalized());
@@ -131,5 +132,5 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 
 void Player::tick(GameState *gameState, double dt)
 {
-	
+
 }

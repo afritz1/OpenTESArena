@@ -7,7 +7,7 @@
 
 std::string File::toString(const std::string &filename)
 {
-	auto ifs = std::ifstream(filename.c_str(), std::ios::in |
+	std::ifstream ifs(filename.c_str(), std::ios::in |
 		std::ios::binary | std::ios::ate);
 
 	Debug::check(ifs.is_open(), "File", "Could not open file \"" + filename + "\".");

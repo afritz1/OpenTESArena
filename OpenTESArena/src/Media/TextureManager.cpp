@@ -1,8 +1,8 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
-#include "SDL2\SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 #include "TextureManager.h"
 
@@ -23,9 +23,9 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 
 	// Intialize PNG file loading.
 	int imgFlags = IMG_INIT_PNG;
-	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager", 
+	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager",
 		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
-	
+
 	this->surfaces = std::map<std::string, Surface>();
 	this->format = format;
 
@@ -75,7 +75,7 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		auto surface = Surface(optSurface);
-		
+
 		// Add the new texture.
 		this->surfaces.insert(std::pair<std::string, Surface>(filename, surface));
 		SDL_FreeSurface(optSurface);

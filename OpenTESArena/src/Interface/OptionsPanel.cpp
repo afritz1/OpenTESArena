@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "OptionsPanel.h"
 
@@ -116,7 +116,7 @@ void OptionsPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 48, 48, 36));
 
 	// Draw buttons, eventually...
-	
+
 
 	// Draw text: title.
 	this->drawScaledToNative(*this->titleTextBox.get(), dst);

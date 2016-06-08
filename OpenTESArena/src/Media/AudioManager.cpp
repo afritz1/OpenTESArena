@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "FMOD\fmod.h"
+#include <FMOD/fmod.h>
 
 #include "AudioManager.h"
 
@@ -227,7 +227,7 @@ const std::string AudioManager::SOUNDS_PATH = "data/sounds/";
 const double AudioManager::MIN_VOLUME = 0.0;
 const double AudioManager::MAX_VOLUME = 1.0;
 
-AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
+AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	double musicVolume, double soundVolume, int maxChannels)
 {
 	Debug::mention("Audio Manager", "Initializing.");
@@ -249,7 +249,7 @@ AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	this->musicFormat = musicFormat;
 	this->soundFormat = soundFormat;
 
-	// The channels are null and the volume can't be set until used with 
+	// The channels are null and the volume can't be set until used with
 	// "FMOD_System_PlaySound()", so these initialization methods are necessary.
 	this->initializeMusicChannel();
 	this->initializeSoundChannels();
@@ -333,7 +333,8 @@ void AudioManager::initializeSoundChannels()
 	this->loadSound(soundFilename);
 
 	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-		this->objects.at(soundFilename), true, &this->soundChannel);
+		this->objects.at(soundFilename), true, &this->musicChannel);
+
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"playSound initializeSoundChannels " + soundFilename);
 }
@@ -341,7 +342,7 @@ void AudioManager::initializeSoundChannels()
 void AudioManager::loadMusic(const std::string &filename)
 {
 	// Make a blank mapping to write into.
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
+	this->objects.insert(std::make_pair(filename, nullptr));
 
 	auto fullPath = AudioManager::MUSIC_PATH + filename +
 		MusicFormatExtensions.at(this->musicFormat);
@@ -356,7 +357,7 @@ void AudioManager::loadMusic(const std::string &filename)
 void AudioManager::loadSound(const std::string &filename)
 {
 	// Make a blank mapping to write into.
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
+	this->objects.insert(std::make_pair(filename, nullptr));
 
 	auto fullPath = AudioManager::SOUNDS_PATH + filename +
 		SoundFormatExtensions.at(this->soundFormat);

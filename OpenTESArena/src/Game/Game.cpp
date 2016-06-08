@@ -1,7 +1,8 @@
 #include <cassert>
 #include <iostream>
+#include <cmath>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "Game.h"
 
@@ -33,7 +34,7 @@ void Game::loop()
 
 	int startTime = SDL_GetTicks();
 	int endTime = SDL_GetTicks();
-	
+
 	while (this->gameState->isRunning())
 	{
 		startTime = SDL_GetTicks();
@@ -43,7 +44,7 @@ void Game::loop()
 
 		this->gameState->tick(dt);
 		this->gameState->render();
-		
+
 		endTime = SDL_GetTicks();
 
 		int frameTime = endTime - startTime;

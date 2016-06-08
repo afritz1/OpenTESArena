@@ -4,12 +4,12 @@
 #include <memory>
 #include <vector>
 
-#include "CL\cl2.hpp"
+#include <CL/cl.hpp>
 
 #include "../Math/Float3.h"
 
 // The OpenCL object should be kept alive while the game data object is alive.
-// Otherwise, it would reload the kernel whenever the game world panel was 
+// Otherwise, it would reload the kernel whenever the game world panel was
 // re-entered, which is unnecessary. Therefore, this object should be kept in
 // the game data object.
 
@@ -44,7 +44,7 @@ public:
 	CLProgram(int width, int height);
 	~CLProgram();
 
-	// These are public in case the options menu is going to need to list them. 
+	// These are public in case the options menu is going to need to list them.
 	// There should be a constructor that also takes a platform and device, then.
 	static std::vector<cl::Platform> getPlatforms();
 	static std::vector<cl::Device> getDevices(const cl::Platform &platform,

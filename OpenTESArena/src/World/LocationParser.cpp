@@ -62,7 +62,8 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	const char comma = ',';
 
 	auto locations = std::vector<std::unique_ptr<Location>>();
-	auto iss = std::istringstream(text);
+	std::istringstream iss(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -112,7 +113,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 		}
 
 		auto climate = line.substr(oldIndex, index - oldIndex);
-		
+
 		// Verify that the strings each have a mapping.
 		Debug::check(LocationParserProvinces.find(province) != LocationParserProvinces.end(),
 			"Location Parser", "Invalid province \"" + province + "\".");

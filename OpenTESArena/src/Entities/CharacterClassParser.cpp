@@ -84,7 +84,9 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	const auto none = std::string("None");
 
 	auto classes = std::vector<std::unique_ptr<CharacterClass>>();
-	auto iss = std::istringstream(text);
+
+	std::istringstream iss(text);
+
 	auto line = std::string();
 
 	// For each line, get the substrings between commas.
@@ -285,7 +287,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 
 				break;
 			}
-			else 
+			else
 			{
 				// Add the weapon to the allowed weapons list.
 				allowedWeapons.push_back(CharacterClassParserWeapons.at(weapon));

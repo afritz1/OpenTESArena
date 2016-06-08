@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include "SDL2\SDL.h"
+#include <SDL2/SDL.h>
 
 #include "ChooseClassPanel.h"
 
@@ -47,7 +47,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 	this->charClass = nullptr;
 
 	// Sort character classes alphabetically.
-	std::sort(this->charClasses.begin(), this->charClasses.end(), 
+	std::sort(this->charClasses.begin(), this->charClasses.end(),
 		[](const std::unique_ptr<CharacterClass> &a, const std::unique_ptr<CharacterClass> &b)
 	{
 		return a->getDisplayName().compare(b->getDisplayName()) < 0;
@@ -68,7 +68,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 			TextureFile::fromName(TextureName::UpDown)).getSurface();
 		return std::unique_ptr<Surface>(new Surface(x, y, surface));
 	}();
-	
+
 	this->titleTextBox = [gameState]()
 	{
 		auto center = Int2(160, 56);
@@ -222,7 +222,7 @@ void ChooseClassPanel::handleEvents(bool &running)
 
 		bool scrollUpClick = leftClick && this->upButton->containsPoint(mouseOriginalPoint);
 		bool scrollDownClick = leftClick && this->downButton->containsPoint(mouseOriginalPoint);
-		
+
 		if (this->classesListBox->containsPoint(mouseOriginalPoint))
 		{
 			if (leftClick)
@@ -356,7 +356,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 	}
 
 	shieldsString.append(".");
-	
+
 	return shieldsString;
 }
 
@@ -409,7 +409,7 @@ void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SD
 	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
 
 	auto tooltipText = characterClass.getDisplayName() + "\n\n" +
-		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" + 
+		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" +
 		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
 		"Health: " + std::to_string(characterClass.getStartingHealth()) +
 		" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +

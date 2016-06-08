@@ -1,4 +1,5 @@
 #include <cassert>
+#include <exception>
 
 #include "CardinalDirection.h"
 
@@ -43,14 +44,14 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 	assert(southWest.isNormalized());
 	assert(northWest.isNormalized());
 
-	// Each direction gets an eighth of the circle's area. In dot product terms, 
+	// Each direction gets an eighth of the circle's area. In dot product terms,
 	// that's an allowance of 0.25 deviation from the direction.
 	const auto deviation = 0.25;
 	auto isCloseEnoughTo = [deviation, &direction](const Float2d &cardinalDirection)
 	{
 		return direction.dot(cardinalDirection) >= (1.0 - deviation);
 	};
-	
+
 	// Find the cardinal direction closest to the given direction. Start with
 	// a default name and figure out the true one from there.
 	auto name = CardinalDirectionName::North;
@@ -88,7 +89,7 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 	}
 	else
 	{
-		throw std::exception("Invalid direction for CardinalDirection.");
+		throw std::runtime_error("Invalid direction for CardinalDirection.");
 	}
 
 	this->directionName = name;
