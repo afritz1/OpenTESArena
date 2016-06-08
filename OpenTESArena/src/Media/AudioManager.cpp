@@ -342,7 +342,7 @@ void AudioManager::initializeSoundChannels()
 void AudioManager::loadMusic(const std::string &filename)
 {
 	// Make a blank mapping to write into.
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
+	this->objects.insert(std::make_pair(filename, nullptr));
 
 	auto fullPath = AudioManager::MUSIC_PATH + filename +
 		MusicFormatExtensions.at(this->musicFormat);
@@ -357,7 +357,7 @@ void AudioManager::loadMusic(const std::string &filename)
 void AudioManager::loadSound(const std::string &filename)
 {
 	// Make a blank mapping to write into.
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
+	this->objects.insert(std::make_pair(filename, nullptr));
 
 	auto fullPath = AudioManager::SOUNDS_PATH + filename +
 		SoundFormatExtensions.at(this->soundFormat);
