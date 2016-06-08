@@ -49,8 +49,7 @@ std::map<std::string, std::string> OptionsParser::getPairs(const std::string &te
 {
 	auto pairs = std::map<std::string, std::string>();
 
-	std::istringstream iss;
-	iss.str(text);
+	std::istringstream iss(text);
 
 	auto line = std::string();
 

@@ -85,8 +85,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 
 	auto classes = std::vector<std::unique_ptr<CharacterClass>>();
 
-	std::istringstream iss;
-	iss.str(text);
+	std::istringstream iss(text);
 
 	auto line = std::string();
 

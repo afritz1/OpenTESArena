@@ -62,8 +62,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	const char comma = ',';
 
 	auto locations = std::vector<std::unique_ptr<Location>>();
-	std::istringstream iss;
-	iss.str(text);
+	std::istringstream iss(text);
 
 	auto line = std::string();
 
