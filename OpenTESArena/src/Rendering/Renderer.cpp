@@ -50,7 +50,20 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 
 	// Set the size of the render texture to be the size of the whole screen
 	// (it scales otherwise).
-	const auto *nativeSurface = this->getWindowSurface();
+    auto *nativeSurface = this->getWindowSurface();
+
+    // If this fails, we might not support hardware accelerated renderers for some reason, so we retry with software
+    if (!nativeSurface)
+    {
+        Debug::mention("Renderer", "Failed to initialize with hardware accelerated renderer, trying software.");
+
+        SDL_DestroyRenderer(this->renderer);
+        this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_SOFTWARE);
+        nativeSurface = this->getWindowSurface();
+    }
+
+	Debug::check(nativeSurface != nullptr, "Renderer", "SDL_GetWindowSurface");
+
 	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
 
 	// Set the clear color of the renderer.
