@@ -333,7 +333,7 @@ void AudioManager::initializeSoundChannels()
 	this->loadSound(soundFilename);
 
 	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-		this->objects.at(soundFilename), true, &this->musicChannel);
+		this->objects.at(soundFilename), true, &this->soundChannel);
 
 	Debug::check(result == FMOD_OK, "Audio Manager",
 		"playSound initializeSoundChannels " + soundFilename);

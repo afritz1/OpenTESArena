@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 
 #include "../Math/Float3.h"
 
