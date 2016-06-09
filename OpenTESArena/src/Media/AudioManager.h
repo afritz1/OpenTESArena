@@ -8,6 +8,13 @@
 #include "MusicFormat.h"
 #include "SoundFormat.h"
 
+// Making the switch from FMOD Ex to OpenAL Soft soon.
+
+// MIDI will come from WildMIDI and/or FluidSynth.
+// Ogg will come from libogg (or Ogg FLAC? Or libsndfile?).
+
+// ----------------------------------
+
 // Music is for looping background music (MIDI, MP3, or Ogg). Sound is for short 
 // to medium duration sounds and speech (Ogg or WAV).
 
@@ -16,9 +23,9 @@
 enum class MusicName;
 enum class SoundName;
 
-struct FMOD_SYSTEM;
-struct FMOD_SOUND;
-struct FMOD_CHANNEL;
+//struct FMOD_SYSTEM;
+//struct FMOD_SOUND;
+//struct FMOD_CHANNEL;
 
 class AudioManager
 {
@@ -26,13 +33,13 @@ private:
 	static const std::string MUSIC_PATH;
 	static const std::string SOUNDS_PATH;
 
-	FMOD_SYSTEM *system;
-	FMOD_CHANNEL *musicChannel, *soundChannel;
-	std::map<std::string, FMOD_SOUND*> objects;
+	//FMOD_SYSTEM *system;
+	//FMOD_CHANNEL *musicChannel, *soundChannel;
+	//std::map<std::string, FMOD_SOUND*> objects;
 	MusicFormat musicFormat;
 	SoundFormat soundFormat;
 
-	bool isLoaded(FMOD_SOUND *object) const;
+	//bool isLoaded(FMOD_SOUND *object) const;
 
 	void initializeMusicChannel();
 	void initializeSoundChannels();

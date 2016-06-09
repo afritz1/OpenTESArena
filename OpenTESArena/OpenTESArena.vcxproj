@@ -86,14 +86,13 @@
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\FMOD;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;fmodex64_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
-xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -124,13 +123,12 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\FMOD;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;fmodex64_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)lib\x64\CL\*.dll" "$(TargetDir)" /E /Y
-xcopy "$(ProjectDir)lib\x64\FMOD\*.dll" "$(TargetDir)" /E /Y
 xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

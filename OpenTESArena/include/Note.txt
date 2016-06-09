@@ -1,1 +1,1 @@
-Include directories (CL/, FMOD/, SDL2/) go in this directory!
+Include directories (CL/, SDL2/) go in this directory!
