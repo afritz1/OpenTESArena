@@ -22,6 +22,9 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 
+#include "components/vfs/manager.hpp"
+
+
 const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 
 GameState::GameState()
@@ -39,6 +42,8 @@ GameState::GameState()
 
 	// Load options from file.
 	this->options = OptionsParser::parse();
+
+    VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
 
 	// Not constructing the panel until the first tick guarantees that all
 	// dependencies will be ready, but it doesn't matter anyway because there

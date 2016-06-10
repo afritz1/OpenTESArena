@@ -5,9 +5,11 @@
 #include "../Media/MusicFormat.h"
 #include "../Media/SoundFormat.h"
 
-Options::Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV, 
-	double hSensitivity, double vSensitivity, double musicVolume, double soundVolume,
-	int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat, bool skipIntro)
+Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
+    double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
+    double soundVolume, int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat,
+    bool skipIntro)
+    : dataPath(std::move(dataPath))
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -98,6 +100,13 @@ const SoundFormat &Options::getSoundFormat() const
 const bool &Options::introIsSkipped() const
 {
 	return this->skipIntro;
+}
+
+void Options::setDataPath(const std::string &path)
+{
+    assert(!path.empty());
+
+    this->dataPath = path;
 }
 
 void Options::setScreenWidth(int width)
