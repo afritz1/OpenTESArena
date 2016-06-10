@@ -2,7 +2,8 @@
 #include <cassert>
 #include <iostream>
 
-//#include <FMOD/fmod.h>
+#include "alc.h"
+#include "al.h"
 
 #include "AudioManager.h"
 
@@ -230,63 +231,47 @@ const double AudioManager::MAX_VOLUME = 1.0;
 AudioManager::AudioManager(MusicFormat musicFormat, SoundFormat soundFormat,
 	double musicVolume, double soundVolume, int maxChannels)
 {
-	Debug::mention("Audio Manager", "Not implemented (I'm switching to OpenAL Soft).");
+    Debug::mention("Audio Manager", "Initializing.");
 
-	/*
-	Debug::mention("Audio Manager", "Initializing.");
-	
-	this->system = nullptr;
-	this->musicChannel = nullptr;
-	this->soundChannel = nullptr;
-	this->objects = std::map<std::string, FMOD_SOUND*>();
+    // Create the system.
+    ALCdevice *device = alcOpenDevice(NULL);
+    Debug::check(device, "Audio Manager", "alcOpenDevice");
 
-	// Create the system.
-	FMOD_RESULT result = FMOD_System_Create(&this->system);
-	Debug::check(result == FMOD_OK, "Audio Manager", "FMOD_System_Create");
+    // Initialize the system.
+    ALCcontext *context = alcCreateContext(device, NULL);
+    Debug::check(context, "Audio Manager", "alcCreateContext");
 
-	// Initialize the system.
-	result = FMOD_System_Init(this->system, maxChannels, FMOD_INIT_NORMAL, nullptr);
-	Debug::check(result == FMOD_OK, "Audio Manager", "FMOD_System_Init");
+    ALCboolean success = alcMakeContextCurrent(context);
+    Debug::check(success, "Audio Manager", "alcMakeContextCurrent");
 
-	// Set formats.
-	this->musicFormat = musicFormat;
-	this->soundFormat = soundFormat;
+    // Set formats.
+    this->musicFormat = musicFormat;
+    this->soundFormat = soundFormat;
 
-	// The channels are null and the volume can't be set until used with
-	// "FMOD_System_PlaySound()", so these initialization methods are necessary.
-	this->initializeMusicChannel();
-	this->initializeSoundChannels();
-	this->setMusicVolume(musicVolume);
-	this->setSoundVolume(soundVolume);
-
-	assert(this->system != nullptr);
-	assert(this->musicFormat == musicFormat);
-	assert(this->soundFormat == soundFormat);
-	*/
+    this->setMusicVolume(musicVolume);
+    this->setSoundVolume(soundVolume);
 }
 
 AudioManager::~AudioManager()
 {
-	// Release all stored objects.
-	/*
+    ALCcontext *context = alcGetCurrentContext();
+    if(!context) return;
+
+    // Release all stored objects.
+    /*
 	FMOD_RESULT result;
 	for (auto &pair : this->objects)
 	{
 		result = FMOD_Sound_Release(pair.second);
 		Debug::check(result == FMOD_OK, "Audio Manager", "FMOD_Sound_Release");
 	}
+    */
 
-	result = FMOD_System_Close(this->system);
-	Debug::check(result == FMOD_OK, "Audio Manager", "FMOD_System_Close");
-	*/
+    ALCdevice *device = alcGetContextsDevice(context);
+    alcMakeContextCurrent(NULL);
+    alcDestroyContext(context);
+    alcCloseDevice(device);
 }
-
-/*
-bool AudioManager::isLoaded(FMOD_SOUND *object) const
-{
-	return object != nullptr;
-}
-*/
 
 double AudioManager::getMusicVolume() const
 {
@@ -327,37 +312,6 @@ bool AudioManager::musicIsPlaying() const
 	return playing > 0;
 	*/
 	return false;
-}
-
-void AudioManager::initializeMusicChannel()
-{
-	// Preload a music file to initialize the music channel with.
-	/*
-	auto musicName = MusicName::PercIntro;
-	auto musicFilename = MusicFilenames.at(musicName);
-	this->loadMusic(musicFilename);
-
-	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-		this->objects.at(musicFilename), true, &this->musicChannel);
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"playSound initializeMusicChannel " + musicFilename);
-	*/
-}
-
-void AudioManager::initializeSoundChannels()
-{
-	// Preload a sound file to initialize the sound channel with.
-	/*
-	auto soundName = SoundName::OpenDoor;
-	auto soundFilename = SoundFilenames.at(soundName);
-	this->loadSound(soundFilename);
-
-	FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-		this->objects.at(soundFilename), true, &this->soundChannel);
-
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"playSound initializeSoundChannels " + soundFilename);
-	*/
 }
 
 void AudioManager::loadMusic(const std::string &filename)

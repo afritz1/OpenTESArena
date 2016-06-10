@@ -23,9 +23,6 @@
 enum class MusicName;
 enum class SoundName;
 
-//struct FMOD_SYSTEM;
-//struct FMOD_SOUND;
-//struct FMOD_CHANNEL;
 
 class AudioManager
 {
@@ -33,16 +30,10 @@ private:
 	static const std::string MUSIC_PATH;
 	static const std::string SOUNDS_PATH;
 
-	//FMOD_SYSTEM *system;
-	//FMOD_CHANNEL *musicChannel, *soundChannel;
-	//std::map<std::string, FMOD_SOUND*> objects;
+	std::map<std::string, std::uint32_t> objects;
 	MusicFormat musicFormat;
 	SoundFormat soundFormat;
 
-	//bool isLoaded(FMOD_SOUND *object) const;
-
-	void initializeMusicChannel();
-	void initializeSoundChannels();
 	void loadMusic(const std::string &filename);
 	void loadSound(const std::string &filename);
 public:
