@@ -32,6 +32,7 @@ const auto OptionsParserBooleans = std::map<std::string, bool>
 const std::string OptionsParser::PATH = "options/";
 const std::string OptionsParser::FILENAME = "options.txt";
 
+const std::string OptionsParser::DATA_PATH_KEY = "DataPath";
 const std::string OptionsParser::SCREEN_WIDTH_KEY = "ScreenWidth";
 const std::string OptionsParser::SCREEN_HEIGHT_KEY = "ScreenHeight";
 const std::string OptionsParser::FULLSCREEN_KEY = "Fullscreen";
@@ -140,6 +141,8 @@ std::unique_ptr<Options> OptionsParser::parse()
 	// Obtain all the key value pairs from the text.
 	auto pairs = OptionsParser::getPairs(text);
 
+    std::string dataPath = OptionsParser::getValue(pairs, OptionsParser::DATA_PATH_KEY);
+
 	// Graphics.
 	int screenWidth = OptionsParser::getInteger(pairs, OptionsParser::SCREEN_WIDTH_KEY);
 	int screenHeight = OptionsParser::getInteger(pairs, OptionsParser::SCREEN_HEIGHT_KEY);
@@ -160,7 +163,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 	// Miscellaneous.
 	bool skipIntro = OptionsParser::getBoolean(pairs, OptionsParser::SKIP_INTRO_KEY);
 
-	auto options = std::unique_ptr<Options>(new Options(
+	auto options = std::unique_ptr<Options>(new Options(std::move(dataPath),
 		screenWidth, screenHeight, fullscreen, verticalFOV, hSensitivity, vSensitivity,
 		musicVolume, soundVolume, soundChannels, musicFormat, soundFormat, skipIntro));
 

@@ -81,7 +81,10 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		int height = 20;
 		auto function = []()
 		{
-			exit(EXIT_SUCCESS);
+            SDL_Event evt;
+            evt.quit.type = SDL_QUIT;
+            evt.quit.timestamp = 0;
+            SDL_PushEvent(&evt);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();

@@ -17,6 +17,7 @@ class GameState;
 class Game
 {
 private:
+    static const int MIN_FPS;
 	static const int DEFAULT_FPS;
 
 	std::unique_ptr<GameState> gameState;

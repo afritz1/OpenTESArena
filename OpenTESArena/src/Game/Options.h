@@ -12,6 +12,9 @@ enum class SoundFormat;
 class Options
 {
 private:
+    // Root data path
+    std::string dataPath;
+
 	// Graphics.
 	int screenWidth, screenHeight;
 	bool fullscreen;
@@ -29,12 +32,13 @@ private:
 	// Miscellaneous.
 	bool skipIntro;
 public:
-	Options(int screenWidth, int screenHeight, bool fullscreen, double verticalFOV,
-		double hSensitivity, double vSensitivity, double musicVolume,
-		double soundVolume, int soundChannels, MusicFormat musicFormat, 
+	Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
+        double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
+		double soundVolume, int soundChannels, MusicFormat musicFormat,
 		SoundFormat soundFormat, bool skipIntro);
 	~Options();
 
+    const std::string &getDataPath() const { return dataPath; };
 	const int &getScreenWidth() const;
 	const int &getScreenHeight() const;
 	const bool &isFullscreen() const;
@@ -48,6 +52,7 @@ public:
 	const SoundFormat &getSoundFormat() const;
 	const bool &introIsSkipped() const;
 
+    void setDataPath(const std::string &path);
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
 	void setFullscreen(bool fullscreen);

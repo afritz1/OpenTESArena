@@ -22,6 +22,8 @@ private:
 	static const std::string PATH;
 	static const std::string FILENAME;
 
+    static const std::string DATA_PATH_KEY;
+
 	// Graphics.
 	static const std::string SCREEN_WIDTH_KEY;
 	static const std::string SCREEN_HEIGHT_KEY;

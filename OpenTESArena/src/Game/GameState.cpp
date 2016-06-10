@@ -22,13 +22,15 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 
+#include "components/vfs/manager.hpp"
+
+
 const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 
 GameState::GameState()
 {
 	Debug::mention("GameState", "Initializing.");
 
-	this->audioManager = nullptr;
 	this->gameData = nullptr;
 	this->nextMusic = nullptr;
 	this->nextPanel = nullptr;
@@ -40,6 +42,8 @@ GameState::GameState()
 	// Load options from file.
 	this->options = OptionsParser::parse();
 
+    VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
+
 	// Not constructing the panel until the first tick guarantees that all
 	// dependencies will be ready, but it doesn't matter anyway because there
 	// shouldn't be dependencies with this new ordering.
@@ -49,11 +53,12 @@ GameState::GameState()
 		MusicName::PercIntro));
 
 	// Initialize audio manager for MIDI music and Ogg sound with some channels.
-	assert(this->options.get() != nullptr);
-	this->audioManager = std::unique_ptr<AudioManager>(new AudioManager(
-		this->options->getMusicFormat(), this->options->getSoundFormat(),
-		this->options->getMusicVolume(), this->options->getSoundVolume(),
-		this->options->getSoundChannelCount()));
+    assert(this->options.get() != nullptr);
+    this->audioManager.init(
+        this->options->getMusicFormat(), this->options->getSoundFormat(),
+        this->options->getMusicVolume(), this->options->getSoundVolume(),
+        this->options->getSoundChannelCount()
+    );
 
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
@@ -77,7 +82,6 @@ GameState::GameState()
 	// Use a blitted surface as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
-	assert(this->audioManager.get() != nullptr);
 	assert(this->gameData.get() == nullptr);
 	assert(this->nextMusic.get() != nullptr);
 	assert(this->options.get() != nullptr);
@@ -101,11 +105,6 @@ bool GameState::isRunning() const
 bool GameState::gameDataIsActive() const
 {
 	return this->gameData.get() != nullptr;
-}
-
-AudioManager &GameState::getAudioManager() const
-{
-	return *this->audioManager.get();
 }
 
 GameData *GameState::getGameData() const
@@ -172,7 +171,7 @@ void GameState::tick(double dt)
 	// Change the music if requested.
 	if (this->nextMusic.get() != nullptr)
 	{
-		this->audioManager->playMusic(*this->nextMusic.get());
+		this->audioManager.playMusic(*this->nextMusic.get());
 		this->nextMusic = nullptr;
 	}
 

@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "../Media/AudioManager.h"
+
 // The game data object will hold all the player and world data. It will be null if 
 // a game instance is not currently running (like when in the main menu), and will 
 // not be null if a game instance is running (like when in the game world, pause menu, 
@@ -11,7 +13,6 @@
 
 // Game state members should be public (through a method) so panels can access them.
 
-class AudioManager;
 class GameData;
 class Int2;
 class Options;
@@ -28,7 +29,7 @@ class GameState
 private:
 	static const std::string DEFAULT_SCREEN_TITLE;
 
-	std::unique_ptr<AudioManager> audioManager;
+	AudioManager audioManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<MusicName> nextMusic;
 	std::unique_ptr<Options> options;
@@ -46,7 +47,7 @@ public:
 	// true when in the game world or in some form of pause menu or conversation.
 	bool gameDataIsActive() const;
 
-	AudioManager &getAudioManager() const;
+    AudioManager &getAudioManager() { return this->audioManager; }
 
 	// This might be null, so it returns a pointer instead of a reference for safety.
 	GameData *getGameData() const;

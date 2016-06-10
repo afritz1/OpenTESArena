@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "MusicFormat.h"
 #include "SoundFormat.h"
@@ -23,44 +24,26 @@
 enum class MusicName;
 enum class SoundName;
 
-//struct FMOD_SYSTEM;
-//struct FMOD_SOUND;
-//struct FMOD_CHANNEL;
 
-class AudioManager
-{
-private:
-	static const std::string MUSIC_PATH;
-	static const std::string SOUNDS_PATH;
+class AudioManagerImpl;
 
-	//FMOD_SYSTEM *system;
-	//FMOD_CHANNEL *musicChannel, *soundChannel;
-	//std::map<std::string, FMOD_SOUND*> objects;
-	MusicFormat musicFormat;
-	SoundFormat soundFormat;
+class AudioManager {
+    std::unique_ptr<AudioManagerImpl> pImpl;
 
-	//bool isLoaded(FMOD_SOUND *object) const;
-
-	void initializeMusicChannel();
-	void initializeSoundChannels();
-	void loadMusic(const std::string &filename);
-	void loadSound(const std::string &filename);
 public:
-	AudioManager(MusicFormat musicFormat, SoundFormat soundFormat, 
-		double musicVolume, double soundVolume, int maxChannels);
+	AudioManager();
 	~AudioManager();
+
+    void init(MusicFormat musicFormat, SoundFormat soundFormat,
+        double musicVolume, double soundVolume, int maxChannels);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
 
-	double getMusicVolume() const;
-	double getSoundVolume() const;
 	bool musicIsPlaying() const;
 
 	// All music will continue to loop until changed by an outside force.
-	void playMusic(const std::string &filename);
 	void playMusic(MusicName musicName);
-	void playSound(const std::string &filename);
 	void playSound(SoundName soundName);
 
 	void toggleMusic();
