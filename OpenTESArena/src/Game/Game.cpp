@@ -8,6 +8,7 @@
 
 #include "GameState.h"
 
+const int Game::MIN_FPS = 15;
 const int Game::DEFAULT_FPS = 60;
 
 Game::Game()
@@ -32,25 +33,27 @@ void Game::loop()
 	// This loop doesn't check for SDL events itself. The current panel does that,
 	// because most events like pressing "Esc" are context-sensitive.
 
-	int startTime = SDL_GetTicks();
-	int endTime = SDL_GetTicks();
+    const int maximumMS = 1000 / Game::MIN_FPS;
+    const int minimumMS = 1000 / this->targetFPS;
+    int thisTime = SDL_GetTicks();
+    int lastTime = thisTime;
 
 	while (this->gameState->isRunning())
 	{
-		startTime = SDL_GetTicks();
+        lastTime = thisTime;
+        thisTime = SDL_GetTicks();
 
-		int minimumMS = 1000 / this->targetFPS;
-		double dt = std::fmax(startTime - endTime, minimumMS) / 1000.0;
+        int frameTime = thisTime - lastTime;
+        if(frameTime < minimumMS)
+        {
+            this->delay(minimumMS - frameTime);
+            thisTime = SDL_GetTicks();
+            frameTime = thisTime - lastTime;
+        }
+
+        double dt = std::fmin(frameTime, maximumMS) / 1000.0;
 
 		this->gameState->tick(dt);
 		this->gameState->render();
-
-		endTime = SDL_GetTicks();
-
-		int frameTime = endTime - startTime;
-		if (frameTime < minimumMS)
-		{
-			this->delay(minimumMS - frameTime);
-		}
 	}
 }
