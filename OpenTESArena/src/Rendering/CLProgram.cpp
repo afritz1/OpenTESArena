@@ -39,7 +39,7 @@ CLProgram::CLProgram(int width, int height)
 	this->device = devices.at(0);
 
 	auto status = cl_int(CL_SUCCESS);
-	this->context = cl::Context(this->device, false, nullptr, nullptr, &status);
+	this->context = cl::Context(this->device, nullptr, nullptr, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Context.");
 
 	this->commandQueue = cl::CommandQueue(this->context, this->device, 0, &status);

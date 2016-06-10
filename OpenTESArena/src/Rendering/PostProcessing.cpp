@@ -54,11 +54,9 @@ void PostProcessing::gammaCorrection(const SDL_Surface *src, SDL_Surface *dst,
 		auto gammaG = static_cast<unsigned int>(std::pow(g, gamma));
 		auto gammaB = static_cast<unsigned int>(std::pow(b, gamma));
 
-		const int low = 0;
-		const int high = 255;
-		gammaR = (gammaR > high) ? high : ((gammaR < low) ? low : gammaR);
-		gammaG = (gammaG > high) ? high : ((gammaG < low) ? low : gammaG);
-		gammaB = (gammaB > high) ? high : ((gammaB < low) ? low : gammaB);
+		gammaR = std::max(gammaR, 255u);
+		gammaG = std::max(gammaG, 255u);
+		gammaB = std::max(gammaB, 255u);
 
 		auto gammaColor = static_cast<unsigned int>(
 			(static_cast<unsigned char>(gammaR) << 16) |
