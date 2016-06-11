@@ -3,11 +3,11 @@
 
 ### Current status
 
-June 9th, 2016:
+June 11th, 2016:
 
-Builds on Windows 7 with Visual Studio and Linux with GCC 4.8.4. I'll likely start using CMake sometime soon.
+Builds on Windows 7 with Visual Studio and Linux with GCC 4.8.4.
 
-FMOD has been removed, and I'm moving to OpenAL Soft soon. There is no audio for now.
+The basis for OpenAL Soft has been implemented, and MIDI music will be reimplemented soon.
 
 The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine using some random cities from a test project for demonstration purposes. It is in development and is not currently implemented here.
 
@@ -21,7 +21,7 @@ Options for resolution, field of view, look sensitivity, and sound are loaded fr
 
 ## Instructions
 
-The current subset of data files to use are from screen grabs in DOSBox and from extraction utilities, both for testing purposes. This project will eventually read the original Arena data files instead.
+The current subset of data files to use are from screen grabs in DOSBox and from extraction utilities, both for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) under "Download the Full Game".
 
 - Build the executable on your machine
 - Get the small subset of currently used data files from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0).
@@ -33,14 +33,16 @@ This is my first big project! I'm already learning a ton.
 
 This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++14 using the SDL2 and OpenCL 2.0 libraries, and currently uses the MIT license. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
 
-The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler, and thanks to the cross-platform nature of SDL2 and OpenCL, support for Linux is already in sight.
+The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler. Linux is now supported as well.
 
 ## Developer Libraries
 
-- OpenAL Soft (soon)
-- OpenCL 2.0 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use "cl2.hpp" instead of "cl.hpp"
+- [FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))
+- [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
+- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
 - [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/)
+- [WildMIDI 0.3.9](https://github.com/Mindwerks/wildmidi/releases) (Windows also needs MSVCR80.dll)
 
 ## Scope
 
