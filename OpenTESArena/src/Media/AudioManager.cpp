@@ -249,9 +249,7 @@ public:
     bool musicIsPlaying() const;
 
     // All music will continue to loop until changed by an outside force.
-    void playMusic(const std::string &filename);
     void playMusic(MusicName musicName);
-    void playSound(const std::string &filename);
     void playSound(SoundName soundName);
 
     void toggleMusic();
@@ -328,19 +326,9 @@ void AudioManagerImpl::loadSound(const std::string &filename)
 	static_cast<void>(filename);
 }
 
-void AudioManagerImpl::playMusic(const std::string &filename)
-{
-	static_cast<void>(filename);
-}
-
 void AudioManagerImpl::playMusic(MusicName musicName)
 {
 	static_cast<void>(musicName);
-}
-
-void AudioManagerImpl::playSound(const std::string &filename)
-{
-	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::playSound(SoundName soundName)
