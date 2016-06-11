@@ -10,7 +10,7 @@
 
 class Button;
 class CharacterClass;
-class Rectangle;
+class Rect;
 class Surface;
 class TextBox;
 
@@ -21,7 +21,7 @@ enum class ProvinceName;
 class ChooseRacePanel : public Panel
 {
 private:
-	std::map<ProvinceName, Rectangle> provinceAreas;
+	std::map<ProvinceName, Rect> provinceAreas;
 	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToNameButton, acceptButton;

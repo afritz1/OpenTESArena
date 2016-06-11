@@ -2,12 +2,12 @@
 #include <cassert>
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "TextBox.h"
 
 #include "../Math/Int2.h"
-#include "../Math/Rectangle.h"
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Media/TextureFile.h"
@@ -311,7 +311,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 			// Make the letter surface and copy the character into it from the font texture.
 			auto letterSurface = std::unique_ptr<Surface>(new Surface(letterWidth, letterHeight));
 			fontTexture.blit(*letterSurface.get(), Int2(),
-				Rectangle(corner.getX(), corner.getY(), letterWidth, letterHeight));
+				Rect(corner.getX(), corner.getY(), letterWidth, letterHeight));
 			return letterSurface;
 		}
 	}

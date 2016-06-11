@@ -2,40 +2,32 @@
 #define AUDIO_MANAGER_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "MusicFormat.h"
 #include "SoundFormat.h"
 
-// Making the switch from FMOD Ex to OpenAL Soft soon.
+// OpenAL Soft will be used with WildMIDI and/or FluidSynth.
 
-// MIDI will come from WildMIDI and/or FluidSynth.
-// Ogg will come from libogg (or Ogg FLAC? Or libsndfile?).
+// Music is for looping background music. Sound is for short to medium duration 
+// sounds and speech.
 
-// ----------------------------------
-
-// Music is for looping background music (MIDI, MP3, or Ogg). Sound is for short 
-// to medium duration sounds and speech (Ogg or WAV).
-
-// The default format for music will be MIDI, and sound will be Ogg.
+class AudioManagerImpl;
 
 enum class MusicName;
 enum class SoundName;
 
-
-class AudioManagerImpl;
-
-class AudioManager {
-    std::unique_ptr<AudioManagerImpl> pImpl;
-
+class AudioManager
+{
+	std::unique_ptr<AudioManagerImpl> pImpl;
 public:
 	AudioManager();
 	~AudioManager();
 
-    void init(MusicFormat musicFormat, SoundFormat soundFormat,
-        double musicVolume, double soundVolume, int maxChannels);
+	void init(MusicFormat musicFormat, SoundFormat soundFormat,
+		double musicVolume, double soundVolume, int maxChannels);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;

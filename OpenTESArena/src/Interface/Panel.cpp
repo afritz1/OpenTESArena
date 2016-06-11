@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "Panel.h"
 
@@ -11,7 +11,7 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
-#include "../Math/Rectangle.h"
+#include "../Math/Rect.h"
 #include "../Media/MusicName.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
@@ -113,7 +113,7 @@ Int2 Panel::getMousePosition() const
 bool Panel::letterboxContains(const Int2 &point) const
 {
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	auto rectangle = Rectangle(letterbox->x, letterbox->y,
+	auto rectangle = Rect(letterbox->x, letterbox->y,
 		letterbox->w, letterbox->h);
 	return rectangle.contains(point);
 }

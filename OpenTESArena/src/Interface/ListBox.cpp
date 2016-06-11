@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "ListBox.h"
 
@@ -77,7 +77,7 @@ int ListBox::getClickedIndex(const Int2 &point)
 	// The caller should not call this method if the point is outside the list box.
 	// Therefore, "Surface::containsPoint()" should be called before to make sure.
 
-	// "Rectangle::contains()" is edge-inclusive, so the <= signs are necessary here.
+	// "Rect::contains()" is edge-inclusive, so the <= signs are necessary here.
 	assert(point.getX() >= this->getX());
 	assert(point.getX() <= (this->getX() + this->getWidth()));
 	assert(point.getY() >= this->getY());
@@ -88,7 +88,7 @@ int ListBox::getClickedIndex(const Int2 &point)
 	// Only the Y component really matters here.
 	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
 
-	// Due to Rectangle::contains() being edge-inclusive, this method might return
+	// Due to Rect::contains() being edge-inclusive, this method might return
 	// an out-of-bounds index when scrolled all the way to the bottom. Therefore,
 	// the caller should always check the returned index before using it.
 

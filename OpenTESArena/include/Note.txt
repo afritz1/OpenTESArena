@@ -1,1 +1,0 @@
-Include directories (CL/, SDL2/) go in this directory!

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "GameState.h"
 
@@ -23,7 +23,6 @@
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"
-
 
 const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
 

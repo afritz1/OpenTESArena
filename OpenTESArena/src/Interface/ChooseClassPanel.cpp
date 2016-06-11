@@ -2,7 +2,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "ChooseClassPanel.h"
 

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "ChooseRacePanel.h"
 
@@ -15,7 +15,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
-#include "../Math/Rectangle.h"
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureFile.h"
@@ -28,7 +28,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	const CharacterClass &charClass, const std::string &name)
 	: Panel(gameState)
 {
-	this->provinceAreas = std::map<ProvinceName, Rectangle>();
+	this->provinceAreas = std::map<ProvinceName, Rect>();
 	this->parchment = nullptr;
 	this->initialTextBox = nullptr;
 	this->backToNameButton = nullptr;
@@ -37,17 +37,17 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, CharacterGenderName gende
 	this->raceName = nullptr;
 
 	// Clickable (x, y, width, height) areas for each province.
-	this->provinceAreas = std::map<ProvinceName, Rectangle>
+	this->provinceAreas = std::map<ProvinceName, Rect>
 	{
-		{ ProvinceName::BlackMarsh, Rectangle(216, 144, 55, 12) },
-		{ ProvinceName::Elsweyr, Rectangle(148, 127, 37, 11) },
-		{ ProvinceName::Hammerfell, Rectangle(72, 75, 50, 11) },
-		{ ProvinceName::HighRock, Rectangle(52, 51, 44, 11) },
-		{ ProvinceName::ImperialProvince, Rectangle(133, 105, 83, 11) },
-		{ ProvinceName::Morrowind, Rectangle(222, 84, 52, 11) },
-		{ ProvinceName::Skyrim, Rectangle(142, 44, 34, 11) },
-		{ ProvinceName::SummersetIsle, Rectangle(37, 149, 49, 19) },
-		{ ProvinceName::Valenwood, Rectangle(106, 147, 49, 10) }
+		{ ProvinceName::BlackMarsh, Rect(216, 144, 55, 12) },
+		{ ProvinceName::Elsweyr, Rect(148, 127, 37, 11) },
+		{ ProvinceName::Hammerfell, Rect(72, 75, 50, 11) },
+		{ ProvinceName::HighRock, Rect(52, 51, 44, 11) },
+		{ ProvinceName::ImperialProvince, Rect(133, 105, 83, 11) },
+		{ ProvinceName::Morrowind, Rect(222, 84, 52, 11) },
+		{ ProvinceName::Skyrim, Rect(142, 44, 34, 11) },
+		{ ProvinceName::SummersetIsle, Rect(37, 149, 49, 19) },
+		{ ProvinceName::Valenwood, Rect(106, 147, 49, 10) }
 	};
 
 	this->parchment = [gameState]()

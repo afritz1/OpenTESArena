@@ -1,13 +1,14 @@
 #include <cassert>
 #include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "GameWorldPanel.h"
 
 #include "Button.h"
 #include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
+
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -15,7 +16,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
-#include "../Math/Rectangle.h"
+#include "../Math/Rect.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
@@ -216,7 +217,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		.getSurface(TextureFile::fromName(TextureName::CompassSlider));
 
 	auto compassSliderSegment = Surface(32, 7);
-	compassSlider.blit(compassSliderSegment, Int2(), Rectangle(60, 0,
+	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
 
 	// Should do some sin() and cos() functions to get the segment location.

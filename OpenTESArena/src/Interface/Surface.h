@@ -13,7 +13,7 @@
 class Color;
 class Int2;
 class Random;
-class Rectangle;
+class Rect;
 
 struct SDL_PixelFormat;
 struct SDL_Surface;
@@ -55,13 +55,13 @@ public:
 
 	virtual void tick();
 	void fill(const Color &color);
-	void fillRect(const Rectangle &rectangle, const Color &color);
+	void fillRect(const Rect &rectangle, const Color &color);
 	void outline(const Color &color);
-	void blit(Surface &dst, const Int2 &dstPoint, const Rectangle &clipRect) const;
+	void blit(Surface &dst, const Int2 &dstPoint, const Rect &clipRect) const;
 	void blit(Surface &dst, const Int2 &dstPoint) const;
 	void blit(Surface &dst) const;
 	void blitScaled(Surface &dst, double scale, const Int2 &point,
-		const Rectangle &clipRect) const;
+		const Rect &clipRect) const;
 	void blitScaled(Surface &dst, double scale, const Int2 &point) const;
 	void blitScaled(Surface &dst, double scale) const;
 };

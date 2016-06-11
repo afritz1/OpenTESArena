@@ -1,9 +1,10 @@
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 
-#include "alc.h"
 #include "al.h"
+#include "alc.h"
 
 #include "AudioManager.h"
 
@@ -226,7 +227,8 @@ const auto SoundFormatExtensions = std::map<SoundFormat, std::string>
 };
 }
 
-class AudioManagerImpl {
+class AudioManagerImpl 
+{
 public:
     static const std::string MUSIC_PATH;
     static const std::string SOUNDS_PATH;
@@ -260,6 +262,7 @@ public:
     void setMusicVolume(double percent);
     void setSoundVolume(double percent);
 };
+
 const std::string AudioManagerImpl::MUSIC_PATH = "data/music/";
 const std::string AudioManagerImpl::SOUNDS_PATH = "data/sounds/";
 
@@ -268,25 +271,20 @@ const double AudioManager::MAX_VOLUME = 1.0;
 
 AudioManagerImpl::AudioManagerImpl()
 {
+
 }
 
 AudioManagerImpl::~AudioManagerImpl()
 {
     ALCcontext *context = alcGetCurrentContext();
-    if(!context) return;
 
-    // Release all stored objects.
-    /*
-	FMOD_RESULT result;
-	for (auto &pair : this->objects)
+	if (!context)
 	{
-		result = FMOD_Sound_Release(pair.second);
-		Debug::check(result == FMOD_OK, "Audio Manager", "FMOD_Sound_Release");
+		return;
 	}
-    */
 
     ALCdevice *device = alcGetContextsDevice(context);
-    alcMakeContextCurrent(NULL);
+    alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device);
 }
@@ -296,16 +294,16 @@ void AudioManagerImpl::init(MusicFormat musicFormat, SoundFormat soundFormat,
 {
     Debug::mention("Audio Manager", "Initializing.");
 
-    // Create the system.
-    ALCdevice *device = alcOpenDevice(NULL);
-    Debug::check(device, "Audio Manager", "alcOpenDevice");
+    // Start initializing the OpenAL device.
+    ALCdevice *device = alcOpenDevice(nullptr);
+    Debug::check(device != nullptr, "Audio Manager", "alcOpenDevice");
 
-    // Initialize the system.
-    ALCcontext *context = alcCreateContext(device, NULL);
-    Debug::check(context, "Audio Manager", "alcCreateContext");
+    // Create an OpenAL context.
+    ALCcontext *context = alcCreateContext(device, nullptr);
+    Debug::check(context != nullptr, "Audio Manager", "alcCreateContext");
 
     ALCboolean success = alcMakeContextCurrent(context);
-    Debug::check(success, "Audio Manager", "alcMakeContextCurrent");
+    Debug::check(success == AL_TRUE, "Audio Manager", "alcMakeContextCurrent");
 
     // Set formats.
     this->musicFormat = musicFormat;
@@ -317,184 +315,79 @@ void AudioManagerImpl::init(MusicFormat musicFormat, SoundFormat soundFormat,
 
 bool AudioManagerImpl::musicIsPlaying() const
 {
-	/*
-	FMOD_BOOL playing;
-	FMOD_RESULT result = FMOD_Channel_IsPlaying(this->musicChannel, &playing);
-	Debug::check(result == FMOD_OK, "Audio Manager", "musicIsPlaying");
-	return playing > 0;
-	*/
 	return false;
 }
 
 void AudioManagerImpl::loadMusic(const std::string &filename)
 {
-	// Make a blank mapping to write into.
-	/*
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
-
-	auto fullPath = AudioManager::MUSIC_PATH + filename +
-		MusicFormatExtensions.at(this->musicFormat);
-
-	// Load the music file into the blank mapping.
-	FMOD_RESULT result = FMOD_System_CreateStream(this->system, fullPath.c_str(),
-		FMOD_SOFTWARE, nullptr, &this->objects.at(filename));
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"loadMusic FMOD_System_CreateStream " + filename);
-	*/
+	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::loadSound(const std::string &filename)
 {
-	// Make a blank mapping to write into.
-	/*
-	this->objects.insert(std::pair<std::string, FMOD_SOUND*>(filename, nullptr));
-
-	auto fullPath = AudioManager::SOUNDS_PATH + filename +
-		SoundFormatExtensions.at(this->soundFormat);
-
-	// Load the sound file into the blank mapping.
-	FMOD_RESULT result = FMOD_System_CreateStream(this->system, fullPath.c_str(),
-		FMOD_SOFTWARE, nullptr, &this->objects.at(filename));
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"loadSound FMOD_System_CreateStream " + filename);
-	*/	
+	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename)
 {
-	/*
-	if (this->objects.find(filename) != this->objects.end())
-	{
-		auto volume = this->getMusicVolume();
-
-		// Stop any currently playing music.
-		this->stopMusic();
-
-		// Play the new music.
-		FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-			this->objects.at(filename), false, &this->musicChannel);
-		Debug::check(result == FMOD_OK, "Audio Manager",
-			"playMusic FMOD_System_PlaySound " + filename);
-
-		// Make sure it plays at the current volume.
-		this->setMusicVolume(volume);
-
-		// Set the music to loop.
-		result = FMOD_Channel_SetMode(this->musicChannel, FMOD_LOOP_NORMAL);
-		Debug::check(result == FMOD_OK, "Audio Manager",
-			"playMusic FMOD_Channel_SetMode " + filename);
-	}
-	else
-	{
-		this->loadMusic(filename);
-		assert(this->objects.find(filename) != this->objects.end());
-		this->playMusic(filename);
-	}
-	*/
+	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::playMusic(MusicName musicName)
 {
-	/*
-	this->playMusic(MusicFilenames.at(musicName));
-	*/
+	static_cast<void>(musicName);
 }
 
 void AudioManagerImpl::playSound(const std::string &filename)
 {
-	/*
-	if (this->objects.find(filename) != this->objects.end())
-	{
-		auto volume = this->getSoundVolume();
-
-		FMOD_RESULT result = FMOD_System_PlaySound(this->system, FMOD_CHANNEL_FREE,
-			this->objects.at(filename), false, &this->soundChannel);
-		Debug::check(result == FMOD_OK, "Audio Manager",
-			"playSound FMOD_System_PlaySound" + filename);
-
-		// Make sure it plays at the current volume.
-		this->setSoundVolume(volume);
-	}
-	else
-	{
-		this->loadSound(filename);
-		assert(this->objects.find(filename) != this->objects.end());
-		this->playSound(filename);
-	}
-	*/
+	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::playSound(SoundName soundName)
 {
-	/*
-	this->playSound(SoundFilenames.at(soundName));
-	*/
+	static_cast<void>(soundName);
 }
 
 void AudioManagerImpl::toggleMusic()
 {
-	/*
-	FMOD_BOOL p;
-	FMOD_Channel_GetPaused(this->musicChannel, &p);
-	FMOD_Channel_SetPaused(this->musicChannel, !p);
-	*/
+	
 }
 
 void AudioManagerImpl::stopMusic()
 {
-	/*
-	FMOD_Channel_Stop(this->musicChannel);
-	*/
+	
 }
 
 void AudioManagerImpl::stopSound()
 {
-	/*
-	FMOD_Channel_Stop(this->soundChannel);
-	*/
+	
 }
 
 void AudioManagerImpl::setMusicVolume(double percent)
 {
-	/*
-	float volume = static_cast<float>(std::max(AudioManager::MIN_VOLUME,
-		std::min(AudioManager::MAX_VOLUME, percent)));
-
-	assert(volume >= 0.0f);
-	assert(volume <= 1.0f);
-
-	FMOD_RESULT result = FMOD_Channel_SetVolume(this->musicChannel, volume);
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"setMusicVolume FMOD_Channel_SetVolume " + std::to_string(percent));
-	*/
+	static_cast<void>(percent);
 }
 
 void AudioManagerImpl::setSoundVolume(double percent)
 {
-	/*
-	float volume = static_cast<float>(std::max(AudioManager::MIN_VOLUME,
-		std::min(AudioManager::MAX_VOLUME, percent)));
-
-	assert(volume >= 0.0f);
-	assert(volume <= 1.0f);
-
-	FMOD_RESULT result = FMOD_Channel_SetVolume(this->soundChannel, volume);
-	Debug::check(result == FMOD_OK, "Audio Manager",
-		"setSoundVolume FMOD_Channel_SetVolume " + std::to_string(percent));
-	*/
+	static_cast<void>(percent);
 }
 
+// Audio Manager
 
 AudioManager::AudioManager()
     : pImpl(new AudioManagerImpl())
 {
+
 }
 
 AudioManager::~AudioManager()
 {
+
 }
 
-void AudioManager::init(MusicFormat musicFormat, SoundFormat soundFormat, double musicVolume, double soundVolume, int maxChannels)
+void AudioManager::init(MusicFormat musicFormat, SoundFormat soundFormat,
+	double musicVolume, double soundVolume, int maxChannels)
 {
     pImpl->init(musicFormat, soundFormat, musicVolume, soundVolume, maxChannels);
 }

@@ -1,3 +1,0 @@
-Libraries (x64/CL, x64/SDL2) go in this directory!
-
-This project is being developed in 64-bit, but 32-bit might also be done if necessary.

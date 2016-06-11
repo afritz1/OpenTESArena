@@ -1,8 +1,9 @@
+#include <algorithm>
 #include <cassert>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "PostProcessing.h"
 

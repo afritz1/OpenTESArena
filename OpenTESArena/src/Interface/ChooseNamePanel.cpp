@@ -2,7 +2,7 @@
 #include <iostream>
 #include <map>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "ChooseNamePanel.h"
 

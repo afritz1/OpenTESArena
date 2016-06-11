@@ -2,7 +2,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "Game.h"
 

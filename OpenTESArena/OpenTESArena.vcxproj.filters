@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClCompile Include="src\Math\Quaternion.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\Math\Rectangle.cpp" />
     <ClCompile Include="src\Media\Color.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
@@ -108,11 +107,11 @@
     <ClCompile Include="src\Utilities\String.cpp" />
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Interface\ListBox.cpp" />
+    <ClCompile Include="src\Math\Rect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
     <ClInclude Include="src\Math\Constants.h" />
-    <ClInclude Include="src\Math\Rectangle.h" />
     <ClInclude Include="src\Media\Color.h" />
     <ClInclude Include="src\Math\Random.h" />
     <ClInclude Include="src\Rendering\TextureReference.h" />
@@ -258,6 +257,7 @@
     <ClInclude Include="src\Utilities\String.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Interface\ListBox.h" />
+    <ClInclude Include="src\Math\Rect.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

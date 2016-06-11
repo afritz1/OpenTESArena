@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "CLProgram.h"
 
@@ -26,6 +26,7 @@ CLProgram::CLProgram(int width, int height)
 	this->commandQueue = nullptr;
 	this->program = nullptr;
 	this->kernel = nullptr;
+	this->directionBuffer = nullptr;
 	this->colorBuffer = nullptr;
 	this->width = width;
 	this->height = height;
@@ -33,12 +34,28 @@ CLProgram::CLProgram(int width, int height)
 	auto platforms = CLProgram::getPlatforms();
 	Debug::check(platforms.size() > 0, "CLProgram", "No OpenCL platform found.");
 
-	auto devices = CLProgram::getDevices(platforms.at(0), CL_DEVICE_TYPE_GPU);
-	Debug::check(devices.size() > 0, "CLProgram", "No OpenCL device found.");
+	// Look at the first platform. Most computers shouldn't have more than one.
+	// More robust code can check for multiple platforms in the future.
+	const auto &platform = platforms.at(0);
+	Debug::mention("CLProgram", "Platform \"" + platform.getInfo<CL_PLATFORM_NAME>() + "\".");
+
+	// Check for all possible devices on the platform, starting with GPUs.
+	auto devices = CLProgram::getDevices(platform, CL_DEVICE_TYPE_GPU);
+	if (devices.size() == 0)
+	{
+		Debug::mention("CLProgram", "No OpenCL GPU device found. Trying CPUs.");
+		devices = CLProgram::getDevices(platforms.at(0), CL_DEVICE_TYPE_CPU);
+		if (devices.size() == 0)
+		{
+			Debug::mention("CLProgram", "No OpenCL CPU device found. Trying accelerators.");
+			devices = CLProgram::getDevices(platforms.at(0), CL_DEVICE_TYPE_ACCELERATOR);
+			Debug::check(devices.size() > 0, "CLProgram", "No OpenCL devices found.");
+		}
+	}
 
 	this->device = devices.at(0);
 
-	auto status = cl_int(CL_SUCCESS);
+	cl_int status = CL_SUCCESS;
 	this->context = cl::Context(this->device, nullptr, nullptr, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Context.");
 
@@ -70,20 +87,14 @@ CLProgram::CLProgram(int width, int height)
 		sizeof(cl_int) * width * height, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
 
-	this->kernel.setArg(0, this->directionBuffer);
-	this->kernel.setArg(1, this->colorBuffer);
+	status = this->kernel.setArg(0, this->directionBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg directionBuffer.");
 
-/*
-	assert(this->device.get() != nullptr);
-	assert(this->context.get() != nullptr);
-	assert(this->commandQueue.get() != nullptr);
-	assert(this->program.get() != nullptr);
-	assert(this->kernel.get() != nullptr);
-	assert(this->directionBuffer.get() != nullptr);
-	assert(this->colorBuffer.get() != nullptr);
+	status = this->kernel.setArg(1, this->colorBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg colorBuffer.");
+	
 	assert(this->width == width);
 	assert(this->height == height);
-	*/
 }
 
 CLProgram::~CLProgram()

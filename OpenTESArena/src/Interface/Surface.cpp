@@ -2,14 +2,14 @@
 #include <iostream>
 #include <cstring>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "Surface.h"
 
 #include "../Media/Color.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
-#include "../Math/Rectangle.h"
+#include "../Math/Rect.h"
 
 const int Surface::DEFAULT_BPP = 32;
 
@@ -137,7 +137,7 @@ bool Surface::isVisible() const
 
 bool Surface::containsPoint(const Int2 &point)
 {
-	auto rect = Rectangle(this->point->getX(), this->point->getY(),
+	auto rect = Rect(this->point->getX(), this->point->getY(),
 		this->getWidth(), this->getHeight());
 	return rect.contains(point);
 }
@@ -197,7 +197,7 @@ void Surface::fill(const Color &color)
 	SDL_FillRect(this->surface, nullptr, mappedColor);
 }
 
-void Surface::fillRect(const Rectangle &rectangle, const Color &color)
+void Surface::fillRect(const Rect &rectangle, const Color &color)
 {
 	auto mappedColor = SDL_MapRGBA(this->surface->format, color.getR(), color.getG(),
 		color.getB(), color.getA());
@@ -228,7 +228,7 @@ void Surface::outline(const Color &color)
 	}
 }
 
-void Surface::blit(Surface &dst, const Int2 &dstPoint, const Rectangle &clipRect) const
+void Surface::blit(Surface &dst, const Int2 &dstPoint, const Rect &clipRect) const
 {
 	auto dstRect = SDL_Rect();
 	dstRect.x = dstPoint.getX();
@@ -238,16 +238,16 @@ void Surface::blit(Surface &dst, const Int2 &dstPoint, const Rectangle &clipRect
 
 void Surface::blit(Surface &dst, const Int2 &dstPoint) const
 {
-	this->blit(dst, dstPoint, Rectangle());
+	this->blit(dst, dstPoint, Rect());
 }
 
 void Surface::blit(Surface &dst) const
 {
-	this->blit(dst, Int2(), Rectangle());
+	this->blit(dst, Int2(), Rect());
 }
 
 void Surface::blitScaled(Surface &dst, double scale, const Int2 &point,
-	const Rectangle &clipRect) const
+	const Rect &clipRect) const
 {
 	auto scaleRect = SDL_Rect();
 	scaleRect.x = point.getX();
@@ -259,10 +259,10 @@ void Surface::blitScaled(Surface &dst, double scale, const Int2 &point,
 
 void Surface::blitScaled(Surface &dst, double scale, const Int2 &point) const
 {
-	this->blitScaled(dst, scale, point, Rectangle());
+	this->blitScaled(dst, scale, point, Rect());
 }
 
 void Surface::blitScaled(Surface &dst, double scale) const
 {
-	this->blitScaled(dst, scale, Int2(), Rectangle());
+	this->blitScaled(dst, scale, Int2(), Rect());
 }

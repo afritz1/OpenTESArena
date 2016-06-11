@@ -81,13 +81,13 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;OpenAL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
@@ -116,15 +116,15 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\x64\SDL2;$(ProjectDir)lib\x64\CL;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;OpenCL.lib;OpenAL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
@@ -216,7 +216,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Media\Color.cpp" />
     <ClCompile Include="src\Math\Int2.cpp" />
-    <ClCompile Include="src\Math\Rectangle.cpp" />
+    <ClCompile Include="src\Math\Rect.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Math\Quaternion.cpp" />
     <ClCompile Include="src\Math\Float2.cpp" />
@@ -360,7 +360,7 @@ xcopy "$(ProjectDir)lib\x64\SDL2\*.dll" "$(TargetDir)" /E /Y</Command>
     <ClInclude Include="src\Media\Color.h" />
     <ClInclude Include="src\Math\Constants.h" />
     <ClInclude Include="src\Math\Int2.h" />
-    <ClInclude Include="src\Math\Rectangle.h" />
+    <ClInclude Include="src\Math\Rect.h" />
     <ClInclude Include="src\Math\Quaternion.h" />
     <ClInclude Include="src\Math\Float2.h" />
     <ClInclude Include="src\Math\Float4.h" />

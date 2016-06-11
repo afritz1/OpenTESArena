@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include "LoadGamePanel.h"
 
