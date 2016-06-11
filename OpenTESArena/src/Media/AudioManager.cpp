@@ -13,6 +13,7 @@
 #include "MusicType.h"
 #include "SoundFormat.h"
 #include "SoundName.h"
+#include "WildMidi.hpp"
 #include "../Utilities/Debug.h"
 
 namespace
@@ -233,6 +234,8 @@ public:
     static const std::string MUSIC_PATH;
     static const std::string SOUNDS_PATH;
 
+    MidiSongPtr mCurrentSong;
+
     std::map<std::string, std::uint32_t> objects;
     MusicFormat musicFormat;
     SoundFormat soundFormat;
@@ -274,6 +277,8 @@ AudioManagerImpl::AudioManagerImpl()
 
 AudioManagerImpl::~AudioManagerImpl()
 {
+    mCurrentSong = nullptr;
+
     ALCcontext *context = alcGetCurrentContext();
 
 	if (!context)
@@ -328,7 +333,23 @@ void AudioManagerImpl::loadSound(const std::string &filename)
 
 void AudioManagerImpl::playMusic(MusicName musicName)
 {
-	static_cast<void>(musicName);
+    stopMusic();
+
+    auto music = MusicFilenames.find(musicName);
+    if(music == MusicFilenames.end())
+    {
+        Debug::mention("Audio Manager", "Failed to lookup music ID "+
+                                        std::to_string((int)musicName));
+        mCurrentSong = nullptr;
+    }
+    else
+    {
+#ifdef HAVE_WILDMIDI
+        mCurrentSong = WildMidiDevice::get().open(music->second);
+#endif
+        if(mCurrentSong)
+            Debug::mention("Audio Manager", "Opened music "+music->second);
+    }
 }
 
 void AudioManagerImpl::playSound(SoundName soundName)
@@ -343,7 +364,7 @@ void AudioManagerImpl::toggleMusic()
 
 void AudioManagerImpl::stopMusic()
 {
-	
+    mCurrentSong = nullptr;
 }
 
 void AudioManagerImpl::stopSound()
