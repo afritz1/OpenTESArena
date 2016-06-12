@@ -51,7 +51,11 @@ void WildMidiSong::getFormat(int *sampleRate)
 size_t WildMidiSong::read(char *buffer, size_t count)
 {
     /* WildMidi wants bytes, so convert from and to sample frames. */
+#if LIBWILDMIDI_VERSION >= ((0u<<16) | (4u<<8) | 0)
+    return WildMidi_GetOutput(mSong, reinterpret_cast<int8_t*>(buffer), count*4) / 4;
+#else
     return WildMidi_GetOutput(mSong, buffer, count*4) / 4;
+#endif
 }
 
 bool WildMidiSong::seek(size_t offset)
