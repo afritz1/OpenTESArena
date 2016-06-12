@@ -243,10 +243,7 @@ public:
 
 	void init(double musicVolume, double soundVolume, int maxChannels);
 
-	void loadMusic(const std::string &filename);
-	void loadSound(const std::string &filename);
-
-	bool musicIsPlaying() const;
+    bool musicIsPlaying() const;
 
 	// All music should loop until changed. Some, like when entering a city, are an 
 	// exception to this.
@@ -563,16 +560,6 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 bool AudioManagerImpl::musicIsPlaying() const
 {
 	return false;
-}
-
-void AudioManagerImpl::loadMusic(const std::string &filename)
-{
-	static_cast<void>(filename);
-}
-
-void AudioManagerImpl::loadSound(const std::string &filename)
-{
-	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::playMusic(MusicName musicName)
