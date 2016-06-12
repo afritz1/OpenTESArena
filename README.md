@@ -1,7 +1,7 @@
 # OpenTESArena
 #### An open-source project for "The Elder Scrolls I: Arena"
 
-### Current status
+## Current status
 
 June 11th, 2016:
 
@@ -11,17 +11,13 @@ The basis for OpenAL Soft has been implemented, and MIDI music will be reimpleme
 
 The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine using some random cities from a test project for demonstration purposes. It is in development and is not currently implemented here.
 
-Loading the original files from the Arena floppy disk version is now something in the project scope, instead of using extracted and converted ones for testing purposes.
+The game is not yet in a playable state. A couple of the menus work, including most of character creation, though it's only a rough draft. The game world uses an infinite space placeholder while the graphics engine is in development. Pressing Tab in the game world opens the current character sheet. Several other placeholders exist for now as well.
 
-Rough draft skeletons of the intro cinematic, main menu, and character creation are in. The player can choose their gender, class, name, race, and character portrait. Class questions and attribute selection are not implemented yet.
-
-The game world is a placeholder infinite space while the graphics engine is in development. No gameplay or scene data is available yet. The UI stat bars (health, stamina, etc.) are also placeholders. The pause menu also uses a placeholder.
-
-Options for resolution, field of view, look sensitivity, and sound are loaded from a text file on startup. The options menu in-game is currently not implemented.
+Loading the original files from the Arena floppy disk version is now in the project scope, instead of using extracted and converted files for testing purposes.
 
 ## Instructions
 
-The current subset of data files to use are from screen grabs in DOSBox and from extraction utilities, both for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) under "Download the Full Game".
+The current subset of data files to use are from screen grabs in DOSBox and from extraction utilities, both for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
 
 - Build the executable on your machine
 - Get the small subset of currently used data files from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0).
@@ -31,7 +27,7 @@ The current subset of data files to use are from screen grabs in DOSBox and from
 
 This is my first big project! I'm already learning a ton.
 
-This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++14 using the SDL2 and OpenCL 2.0 libraries, and currently uses the MIT license. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
+This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++14 and uses SDL2, OpenAL Soft, and OpenCL. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler. Linux is now supported as well.
 
@@ -48,11 +44,11 @@ The concept began after I saw the success of other open-source projects like [Op
 
 This project is early in development.
 
-Baseline features:
+Baseline features to do:
 - Character creation
 - Graphics engine using OpenCL
 - Free-look camera
-- Music and sound with OpenAL Soft
+- Music and sound using OpenAL Soft
 - Random test cities and dungeons
 - Sprites
 - Collision detection
