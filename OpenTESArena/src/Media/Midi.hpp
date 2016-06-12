@@ -28,10 +28,17 @@ typedef std::unique_ptr<MidiSong> MidiSongPtr;
  * as a factory singleton.
  */
 class MidiDevice {
+protected:
+    static std::unique_ptr<MidiDevice> sInstance;
+
 public:
     virtual ~MidiDevice() { }
 
     virtual MidiSongPtr open(const std::string &name) = 0;
+
+    static bool isInited() { return !!sInstance; }
+    static void shutdown() { sInstance = nullptr; }
+    static MidiDevice &get() { return *sInstance.get(); }
 };
 
 #endif /* MEDIA_MIDI_HPP */

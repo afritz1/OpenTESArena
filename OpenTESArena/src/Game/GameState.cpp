@@ -93,9 +93,7 @@ GameState::GameState()
 
 GameState::~GameState()
 {
-#ifdef HAVE_WILDMIDI
-    WildMidiDevice::shutdown();
-#endif
+    MidiDevice::shutdown();
 }
 
 bool GameState::isRunning() const

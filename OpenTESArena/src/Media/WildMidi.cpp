@@ -65,25 +65,10 @@ bool WildMidiSong::seek(size_t offset)
 }
 
 
-std::unique_ptr<WildMidiDevice> WildMidiDevice::sInstance;
-
-WildMidiDevice &WildMidiDevice::get()
-{
-    assert(sInstance);
-    return *sInstance.get();
-}
-
 void WildMidiDevice::init(const std::string &soundfont)
 {
-    assert(!sInstance);
     sInstance.reset(new WildMidiDevice(soundfont));
 }
-
-void WildMidiDevice::shutdown()
-{
-    sInstance = nullptr;
-}
-
 
 WildMidiDevice::WildMidiDevice(const std::string &soundfont)
 {

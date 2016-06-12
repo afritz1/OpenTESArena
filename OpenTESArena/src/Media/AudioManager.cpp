@@ -15,7 +15,7 @@
 #include "MusicName.h"
 #include "MusicType.h"
 #include "SoundName.h"
-#include "WildMidi.hpp"
+#include "Midi.hpp"
 #include "../Utilities/Debug.h"
 
 namespace
@@ -220,6 +220,9 @@ const auto SoundFilenames = std::map<SoundName, std::string>
 	{ SoundName::SlowBall, "spells/slow_ball" }
 };
 }
+
+
+std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
 
 class OpenALStream;
@@ -577,9 +580,8 @@ void AudioManagerImpl::playMusic(MusicName musicName)
     }
     else if(!mFreeSources.empty())
     {
-#ifdef HAVE_WILDMIDI
-        mCurrentSong = WildMidiDevice::get().open(music->second);
-#endif
+        if(MidiDevice::isInited())
+            mCurrentSong = MidiDevice::get().open(music->second);
         if(!mCurrentSong)
         {
             Debug::mention("Audio Manager", "Failed to play "+music->second);

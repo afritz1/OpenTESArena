@@ -7,8 +7,6 @@
 
 /* Implementation for opening supported MIDI-like files through WildMidi. */
 class WildMidiDevice : public MidiDevice {
-    static std::unique_ptr<WildMidiDevice> sInstance;
-
     WildMidiDevice(const std::string &soundfont);
 public:
     virtual ~WildMidiDevice();
@@ -16,8 +14,6 @@ public:
     virtual MidiSongPtr open(const std::string &name) override;
 
     static void init(const std::string &soundfont);
-    static void shutdown();
-    static WildMidiDevice &get();
 };
 
 #endif /* HAVE_WILDMIDI */
