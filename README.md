@@ -31,6 +31,8 @@ This project aims to be an open-source reimplementation of the original "The Eld
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler. Linux is now supported as well.
 
+It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
+
 ## Developer Libraries
 
 - [FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))
@@ -38,7 +40,7 @@ The concept began after I saw the success of other open-source projects like [Op
 - OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
 - [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/)
-- [WildMIDI 0.3.9](https://github.com/Mindwerks/wildmidi/releases) (Windows also needs MSVCR80.dll)
+- [WildMIDI 0.4](https://github.com/Mindwerks/wildmidi/releases) (Windows also needs MSVCR80.dll)
 
 ## Scope
 
