@@ -6,18 +6,16 @@
 #include <string>
 #include <vector>
 
-#include "MusicFormat.h"
-#include "SoundFormat.h"
 
 // OpenAL Soft will be used with WildMIDI and/or FluidSynth.
 
 // Music is for looping background music. Sound is for short to medium duration 
 // sounds and speech.
 
-class AudioManagerImpl;
-
 enum class MusicName;
 enum class SoundName;
+
+class AudioManagerImpl;
 
 class AudioManager
 {
@@ -26,8 +24,7 @@ public:
 	AudioManager();
 	~AudioManager();
 
-	void init(MusicFormat musicFormat, SoundFormat soundFormat,
-		double musicVolume, double soundVolume, int maxChannels);
+    void init(double musicVolume, double soundVolume, int maxChannels);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;

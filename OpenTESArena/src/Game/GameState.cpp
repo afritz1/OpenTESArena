@@ -11,9 +11,7 @@
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
-#include "../Media/MusicFormat.h"
 #include "../Media/MusicName.h"
-#include "../Media/SoundFormat.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -54,7 +52,6 @@ GameState::GameState()
 	// Initialize audio manager for MIDI music and Ogg sound with some channels.
     assert(this->options.get() != nullptr);
     this->audioManager.init(
-        this->options->getMusicFormat(), this->options->getSoundFormat(),
         this->options->getMusicVolume(), this->options->getSoundVolume(),
         this->options->getSoundChannelCount()
     );

@@ -38,8 +38,6 @@ private:
 	static const std::string MUSIC_VOLUME_KEY;
 	static const std::string SOUND_VOLUME_KEY;
 	static const std::string SOUND_CHANNELS_KEY;
-	static const std::string MUSIC_FORMAT_KEY;
-	static const std::string SOUND_FORMAT_KEY;
 
 	// Miscellaneous.
 	static const std::string SKIP_INTRO_KEY;
@@ -57,8 +55,6 @@ private:
 		const std::string &key);
 	static bool getBoolean(const std::map<std::string, std::string> &pairs,
 		const std::string &key);
-	static MusicFormat getMusicFormat(const std::map<std::string, std::string> &pairs);
-	static SoundFormat getSoundFormat(const std::map<std::string, std::string> &pairs);
 public:
 	static std::unique_ptr<Options> parse();
 

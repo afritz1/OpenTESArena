@@ -12,10 +12,8 @@
 #include "al.h"
 #include "alc.h"
 
-#include "MusicFormat.h"
 #include "MusicName.h"
 #include "MusicType.h"
-#include "SoundFormat.h"
 #include "SoundName.h"
 #include "WildMidi.hpp"
 #include "../Utilities/Debug.h"
@@ -217,19 +215,6 @@ const auto SoundFilenames = std::map<SoundName, std::string>
 	{ SoundName::Explode, "spells/explode" },
 	{ SoundName::SlowBall, "spells/slow_ball" }
 };
-
-const auto MusicFormatExtensions = std::map<MusicFormat, std::string>
-{
-	{ MusicFormat::MIDI, ".mid" },
-	{ MusicFormat::MP3, ".mp3" },
-	{ MusicFormat::Ogg, ".ogg" }
-};
-
-const auto SoundFormatExtensions = std::map<SoundFormat, std::string>
-{
-	{ SoundFormat::Ogg, ".ogg" },
-	{ SoundFormat::WAV, ".wav" }
-};
 }
 
 
@@ -237,9 +222,6 @@ class OpenALStream;
 
 class AudioManagerImpl {
 public:
-    static const std::string MUSIC_PATH;
-    static const std::string SOUNDS_PATH;
-
     /* Currently active song and playback stream. */
     MidiSongPtr mCurrentSong;
     std::unique_ptr<OpenALStream> mSongStream;
@@ -247,14 +229,10 @@ public:
     /* A deque of available sources to play sounds and streams with. */
     std::deque<ALuint> mFreeSources;
 
-    MusicFormat musicFormat;
-    SoundFormat soundFormat;
-
     AudioManagerImpl();
     ~AudioManagerImpl();
 
-    void init(MusicFormat musicFormat, SoundFormat soundFormat,
-        double musicVolume, double soundVolume, int maxChannels);
+    void init(double musicVolume, double soundVolume, int maxChannels);
 
     void loadMusic(const std::string &filename);
     void loadSound(const std::string &filename);
@@ -273,9 +251,6 @@ public:
     void setMusicVolume(double percent);
     void setSoundVolume(double percent);
 };
-
-const std::string AudioManagerImpl::MUSIC_PATH = "data/music/";
-const std::string AudioManagerImpl::SOUNDS_PATH = "data/sounds/";
 
 
 class OpenALStream {
@@ -546,8 +521,7 @@ AudioManagerImpl::~AudioManagerImpl()
 #endif
 }
 
-void AudioManagerImpl::init(MusicFormat musicFormat, SoundFormat soundFormat,
-    double musicVolume, double soundVolume, int maxChannels)
+void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels)
 {
     Debug::mention("Audio Manager", "Initializing.");
 
@@ -561,10 +535,6 @@ void AudioManagerImpl::init(MusicFormat musicFormat, SoundFormat soundFormat,
 
     ALCboolean success = alcMakeContextCurrent(context);
     Debug::check(success == AL_TRUE, "Audio Manager", "alcMakeContextCurrent");
-
-    // Set formats.
-    this->musicFormat = musicFormat;
-    this->soundFormat = soundFormat;
 
     this->setMusicVolume(musicVolume);
     this->setSoundVolume(soundVolume);
@@ -678,10 +648,9 @@ AudioManager::~AudioManager()
 
 }
 
-void AudioManager::init(MusicFormat musicFormat, SoundFormat soundFormat,
-	double musicVolume, double soundVolume, int maxChannels)
+void AudioManager::init(double musicVolume, double soundVolume, int maxChannels)
 {
-    pImpl->init(musicFormat, soundFormat, musicVolume, soundVolume, maxChannels);
+    pImpl->init(musicVolume, soundVolume, maxChannels);
 }
 
 bool AudioManager::musicIsPlaying() const
