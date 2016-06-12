@@ -42,62 +42,62 @@ Options::~Options()
 
 }
 
-const int &Options::getScreenWidth() const
+int Options::getScreenWidth() const
 {
 	return this->screenWidth;
 }
 
-const int &Options::getScreenHeight() const
+int Options::getScreenHeight() const
 {
 	return this->screenHeight;
 }
 
-const bool &Options::isFullscreen() const
+bool Options::isFullscreen() const
 {
 	return this->fullscreen;
 }
 
-const double &Options::getVerticalFOV() const
+double Options::getVerticalFOV() const
 {
 	return this->verticalFOV;
 }
 
-const double &Options::getHorizontalSensitivity() const
+double Options::getHorizontalSensitivity() const
 {
 	return this->hSensitivity;
 }
 
-const double &Options::getVerticalSensitivity() const
+double Options::getVerticalSensitivity() const
 {
 	return this->vSensitivity;
 }
 
-const double &Options::getMusicVolume() const
+double Options::getMusicVolume() const
 {
 	return this->musicVolume;
 }
 
-const double &Options::getSoundVolume() const
+double Options::getSoundVolume() const
 {
 	return this->soundVolume;
 }
 
-const int &Options::getSoundChannelCount() const
+int Options::getSoundChannelCount() const
 {
 	return this->soundChannels;
 }
 
-const MusicFormat &Options::getMusicFormat() const
+MusicFormat Options::getMusicFormat() const
 {
 	return this->musicFormat;
 }
 
-const SoundFormat &Options::getSoundFormat() const
+SoundFormat Options::getSoundFormat() const
 {
 	return this->soundFormat;
 }
 
-const bool &Options::introIsSkipped() const
+bool Options::introIsSkipped() const
 {
 	return this->skipIntro;
 }

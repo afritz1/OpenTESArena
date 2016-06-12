@@ -24,9 +24,9 @@ public:
 	TextureReference(int offset, int width, int height);
 	~TextureReference();
 
-	const int &getOffset() const;
-	const int &getWidth() const;
-	const int &getHeight() const;
+	int getOffset() const;
+	int getWidth() const;
+	int getHeight() const;
 };
 
 #endif

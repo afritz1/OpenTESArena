@@ -32,7 +32,7 @@ Date::~Date()
 
 }
 
-const int &Date::getDayNumber() const
+int Date::getDayNumber() const
 {
 	return this->day;
 }

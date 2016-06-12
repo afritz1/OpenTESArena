@@ -46,8 +46,8 @@ public:
 	Texture(unsigned int *pixels, int width, int height);
 	~Texture();
 
-	const int &getWidth() const;
-	const int &getHeight() const;
+	int getWidth() const;
+	int getHeight() const;
 	const Float4f *getPixels() const;
 };
 

@@ -31,8 +31,8 @@ public:
 	const std::string &getDisplayName() const;
 	const CharacterClassCategoryName &getClassCategoryName() const;
 	const bool &canCastMagic() const;
-	const int &getStartingHealth() const;
-	const int &getHealthDice() const;
+	int getStartingHealth() const;
+	int getHealthDice() const;
 	const std::vector<ArmorMaterialType> &getAllowedArmors() const;
 	const std::vector<ShieldType> &getAllowedShields() const;
 	const std::vector<WeaponType> &getAllowedWeapons() const;

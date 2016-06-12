@@ -39,18 +39,18 @@ public:
 	~Options();
 
     const std::string &getDataPath() const { return dataPath; };
-	const int &getScreenWidth() const;
-	const int &getScreenHeight() const;
-	const bool &isFullscreen() const;
-	const double &getVerticalFOV() const;
-	const double &getHorizontalSensitivity() const;
-	const double &getVerticalSensitivity() const;
-	const double &getMusicVolume() const;
-	const double &getSoundVolume() const;
-	const int &getSoundChannelCount() const;
-	const MusicFormat &getMusicFormat() const;
-	const SoundFormat &getSoundFormat() const;
-	const bool &introIsSkipped() const;
+	int getScreenWidth() const;
+	int getScreenHeight() const;
+	bool isFullscreen() const;
+	double getVerticalFOV() const;
+	double getHorizontalSensitivity() const;
+	double getVerticalSensitivity() const;
+	double getMusicVolume() const;
+	double getSoundVolume() const;
+	int getSoundChannelCount() const;
+	MusicFormat getMusicFormat() const;
+	SoundFormat getSoundFormat() const;
+	bool introIsSkipped() const;
 
     void setDataPath(const std::string &path);
 	void setScreenWidth(int width);

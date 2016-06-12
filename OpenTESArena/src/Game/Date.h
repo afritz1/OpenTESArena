@@ -30,7 +30,7 @@ public:
 	Date(const Date &date);
 	~Date();
 
-	const int &getDayNumber() const;
+	int getDayNumber() const;
 	const Weekday &getWeekday() const;
 	const Month &getMonth() const;
 	const Year &getYear() const;

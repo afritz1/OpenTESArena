@@ -56,22 +56,22 @@ ListBox::~ListBox()
 
 }
 
-const int &ListBox::getScrollIndex()
+int ListBox::getScrollIndex() const
 {
 	return this->scrollIndex;
 }
 
-int ListBox::getElementCount()
+int ListBox::getElementCount() const
 {
 	return static_cast<int>(this->elements.size());
 }
 
-int ListBox::maxDisplayedElements()
+int ListBox::maxDisplayedElements() const
 {
 	return this->maxDisplayed;
 }
 
-int ListBox::getClickedIndex(const Int2 &point)
+int ListBox::getClickedIndex(const Int2 &point) const
 {
 	// The point is given in original dimensions relative to the letterbox.
 	// The caller should not call this method if the point is outside the list box.
@@ -95,7 +95,7 @@ int ListBox::getClickedIndex(const Int2 &point)
 	return index;
 }
 
-int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes)
+int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const
 {
 	int maxWidth = 0;
 
@@ -110,7 +110,7 @@ int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes)
 	return maxWidth;
 }
 
-int ListBox::getTotalHeight()
+int ListBox::getTotalHeight() const
 {
 	int totalHeight = Font(this->fontName).getCellDimensions().getY() * this->maxDisplayed;
 	return totalHeight;

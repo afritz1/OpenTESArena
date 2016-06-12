@@ -53,12 +53,12 @@ const bool &CharacterClass::canCastMagic() const
 	return this->castsMagic;
 }
 
-const int &CharacterClass::getStartingHealth() const
+int CharacterClass::getStartingHealth() const
 {
 	return this->startingHealth;
 }
 
-const int &CharacterClass::getHealthDice() const
+int CharacterClass::getHealthDice() const
 {
 	return this->healthDice;
 }

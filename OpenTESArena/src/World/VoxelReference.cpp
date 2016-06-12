@@ -11,12 +11,12 @@ VoxelReference::~VoxelReference()
 
 }
 
-const int &VoxelReference::getOffset() const
+int VoxelReference::getOffset() const
 {
 	return this->offset;
 }
 
-const int &VoxelReference::getTriangleCount() const
+int VoxelReference::getTriangleCount() const
 {
 	return this->count;
 }

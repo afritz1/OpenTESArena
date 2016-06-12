@@ -44,9 +44,9 @@ public:
 	virtual EntityType getEntityType() const override;
 
 	const std::string &getDisplayName() const;
-	const int &getPortraitID() const;
-	const CharacterGenderName &getGenderName() const;
-	const CharacterRaceName &getRaceName() const;
+	int getPortraitID() const;
+	CharacterGenderName getGenderName() const;
+	CharacterRaceName getRaceName() const;
 	const CharacterClass &getCharacterClass() const;
 
 	// Camera turning.

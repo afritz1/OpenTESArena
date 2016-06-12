@@ -27,10 +27,10 @@ public:
 
 	Quaternion operator *(const Quaternion &q) const;
 
-	const double &getX() const;
-	const double &getY() const;
-	const double &getZ() const;
-	const double &getW() const;
+	double getX() const;
+	double getY() const;
+	double getZ() const;
+	double getW() const;
 	Float3<double> getXYZ() const;
 	Float4<double> getXYZW() const;
 

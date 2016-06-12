@@ -39,7 +39,7 @@ public:
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	
-	const int &getID() const;
+	int getID() const;
 	const Float3d &getPosition() const;
 	virtual EntityType getEntityType() const = 0;
 

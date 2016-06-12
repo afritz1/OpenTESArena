@@ -24,12 +24,12 @@ Year::~Year()
 
 }
 
-const int &Year::getEraNumber() const
+int Year::getEraNumber() const
 {
 	return this->eraNumber;
 }
 
-const int &Year::getYearNumber() const
+int Year::getYearNumber() const
 {
 	return this->yearNumber;
 }

@@ -25,8 +25,8 @@ public:
 	VoxelReference(int offset, int count);
 	~VoxelReference();
 
-	const int &getOffset() const;
-	const int &getTriangleCount() const;
+	int getOffset() const;
+	int getTriangleCount() const;
 };
 
 #endif

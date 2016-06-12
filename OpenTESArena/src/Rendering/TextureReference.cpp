@@ -12,17 +12,17 @@ TextureReference::~TextureReference()
 
 }
 
-const int &TextureReference::getOffset() const
+int TextureReference::getOffset() const
 {
 	return this->offset;
 }
 
-const int &TextureReference::getWidth() const
+int TextureReference::getWidth() const
 {
 	return this->width;
 }
 
-const int &TextureReference::getHeight() const
+int TextureReference::getHeight() const
 {
 	return this->height;
 }

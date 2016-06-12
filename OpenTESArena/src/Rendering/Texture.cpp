@@ -23,12 +23,12 @@ Texture::~Texture()
 
 }
 
-const int &Texture::getWidth() const
+int Texture::getWidth() const
 {
 	return this->width;
 }
 
-const int &Texture::getHeight() const
+int Texture::getHeight() const
 {
 	return this->height;
 }

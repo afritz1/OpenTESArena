@@ -47,7 +47,7 @@ PrimaryAttribute::~PrimaryAttribute()
 
 }
 
-const int &PrimaryAttribute::get() const
+int PrimaryAttribute::get() const
 {
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);

@@ -31,7 +31,7 @@ int DerivedAttribute::getCurrent() const
 	return std::min(this->current, this->getMaximum());
 }
 
-const int &DerivedAttribute::getMaximum() const
+int DerivedAttribute::getMaximum() const
 {
 	assert(this->maximum > 0);
 

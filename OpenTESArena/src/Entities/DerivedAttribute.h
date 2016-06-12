@@ -24,7 +24,7 @@ public:
 	~DerivedAttribute();
 
 	int getCurrent() const;
-	const int &getMaximum() const; // Might be a calculated value instead of a member in the future.
+	int getMaximum() const; // Might be a calculated value instead of a member in the future.
 	const DerivedAttributeName &getAttributeName() const;
 	std::string toString() const;
 

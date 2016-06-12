@@ -25,8 +25,8 @@ public:
 	// crisis says otherwise. Let's use the Arena format anyway.
 	static const int YEARS_PER_ERA;
 
-	const int &getEraNumber() const;
-	const int &getYearNumber() const;
+	int getEraNumber() const;
+	int getYearNumber() const;
 	std::string toString() const;
 
 	// Only the year can be incremented directly.

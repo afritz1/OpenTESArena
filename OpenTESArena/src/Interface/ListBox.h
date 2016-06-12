@@ -25,8 +25,8 @@ private:
 	FontName fontName;
 	int scrollIndex, maxDisplayed;
 
-	int getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes);
-	int getTotalHeight();
+	int getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const;
+	int getTotalHeight() const;
 	void updateDisplayText();
 public:
 	// No "center" constructor, because a list box is intended to be left-aligned.
@@ -35,16 +35,16 @@ public:
 	virtual ~ListBox();
 
 	// Index of the top-most displayed element.
-	const int &getScrollIndex();
+	int getScrollIndex() const;
 
 	// Number of elements in the list box (side note: can't return an int cast by reference).
-	int getElementCount();
+	int getElementCount() const;
 	
 	// Maximum number of visible lines (this determines the box size).
-	int maxDisplayedElements();
+	int maxDisplayedElements() const;
 
 	// Get the index of a clicked element.
-	int getClickedIndex(const Int2 &point);
+	int getClickedIndex(const Int2 &point) const;
 
 	// Decrement the scroll index by one. Without bounds checking on the caller's behalf,
 	// it will go out-of-bounds when the scroll index is -1.

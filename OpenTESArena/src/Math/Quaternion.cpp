@@ -65,22 +65,22 @@ Quaternion Quaternion::operator *(const Quaternion &q) const
 	return Quaternion(axis, magnitude);
 }
 
-const double &Quaternion::getX() const
+double Quaternion::getX() const
 {
 	return this->x;
 }
 
-const double &Quaternion::getY() const
+double Quaternion::getY() const
 {
 	return this->y;
 }
 
-const double &Quaternion::getZ() const
+double Quaternion::getZ() const
 {
 	return this->z;
 }
 
-const double &Quaternion::getW() const
+double Quaternion::getW() const
 {
 	return this->w;
 }

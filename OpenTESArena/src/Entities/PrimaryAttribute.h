@@ -26,7 +26,7 @@ public:
 	PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue);
 	~PrimaryAttribute();
 
-	const int &get() const;
+	int get() const;
 	const PrimaryAttributeName &getAttributeName() const;
 	std::vector<AttributeModifierName> getModifierNames() const;
 	int getModifier() const;

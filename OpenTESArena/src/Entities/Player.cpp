@@ -52,17 +52,17 @@ const std::string &Player::getDisplayName() const
 	return this->displayName;
 }
 
-const int &Player::getPortraitID() const
+int Player::getPortraitID() const
 {
 	return this->portraitID;
 }
 
-const CharacterGenderName &Player::getGenderName() const
+CharacterGenderName Player::getGenderName() const
 {
 	return this->gender;
 }
 
-const CharacterRaceName &Player::getRaceName() const
+CharacterRaceName Player::getRaceName() const
 {
 	return this->raceName;
 }
