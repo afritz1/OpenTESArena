@@ -54,40 +54,44 @@ const auto MusicTypeNames = std::map<MusicType, std::vector<MusicName>>
 	{ MusicType::WinGame, { MusicName::WinGame } }
 };
 
-// Each MusicName has a corresponding filename.
-const auto MusicFilenames = std::map<MusicName, std::string>
-{
-	{ MusicName::ArabCityEnter, "arab_city_enter" },
-	{ MusicName::ArabTownEnter, "arab_town_enter" },
-	{ MusicName::ArabVillageEnter, "arab_village_enter" },
-	{ MusicName::CityEnter, "city_enter" },
-	{ MusicName::Credits, "credits" },
-	{ MusicName::Dungeon1, "dungeon_1" },
-	{ MusicName::Dungeon2, "dungeon_2" },
-	{ MusicName::Dungeon3, "dungeon_3" },
-	{ MusicName::Dungeon4, "dungeon_4" },
-	{ MusicName::Equipment, "equipment" },
-	{ MusicName::Evil, "evil" },
-	{ MusicName::EvilIntro, "evil_intro" },
-	{ MusicName::Magic, "magic" },
-	{ MusicName::Night, "night" },
-	{ MusicName::Overcast, "overcast" },
-	{ MusicName::OverSnow, "oversnow" },
-	{ MusicName::Palace, "palace" },
-	{ MusicName::PercIntro, "perc_intro" },
-	{ MusicName::Raining, "raining" },
-	{ MusicName::Sheet, "sheet" },
-	{ MusicName::Sneaking, "sneaking" },
-	{ MusicName::Snowing, "snowing" },
-	{ MusicName::Square, "square" },
-	{ MusicName::SunnyDay, "sunny_day" },
-	{ MusicName::Swimming, "swimming" },
-	{ MusicName::Tavern, "tavern" },
-	{ MusicName::Temple, "temple" },
-	{ MusicName::TownEnter, "town_enter" },
-	{ MusicName::VillageEnter, "village_enter" },
-	{ MusicName::Vision, "vision" },
-	{ MusicName::WinGame, "win_game" }
+// Each MusicName has a corresponding filename. Interestingly, it seems Arena
+// has separate XFM files for FM synth output devices (OPL, as on Adlib and
+// Sound Blaster before the AWE32), while the corresponding XMI files are for
+// MT-32, MPU-401, and other General MIDI devices.
+const std::map<MusicName, std::string> MusicFilenames{
+    { MusicName::ArabCityEnter, "ARABCITY.XMI" },
+    { MusicName::ArabTownEnter, "ARABTOWN.XMI" },
+    { MusicName::ArabVillageEnter, "ARAB_VLG.XMI" },
+    { MusicName::CityEnter, "CITY.XMI" },
+    { MusicName::Combat, "COMBAT.XMI" },
+    { MusicName::Credits, "CREDITS.XMI" },
+    { MusicName::Dungeon1, "DUNGEON1.XMI" },
+    { MusicName::Dungeon2, "DUNGEON2.XMI" },
+    { MusicName::Dungeon3, "DUNGEON3.XMI" },
+    { MusicName::Dungeon4, "DUNGEON4.XMI" },
+    { MusicName::Dungeon5, "DUNGEON5.XMI" },
+    { MusicName::Equipment, "EQUIPMNT.XMI" },
+    { MusicName::Evil, "EVIL.XMI" },
+    { MusicName::EvilIntro, "EVILINTRO.XMI" },
+    { MusicName::Magic, "MAGIC_2.XMI" },
+    { MusicName::Night, "NIGHT.XMI" },
+    { MusicName::Overcast, "OVERCAST.XMI" },
+    { MusicName::OverSnow, "OVERSNOW.XMI" },
+    { MusicName::Palace, "PALACE.XMI" },
+    { MusicName::PercIntro, "PERCNTRO.XMI" },
+    { MusicName::Raining, "RAINING.XMI" },
+    { MusicName::Sheet, "SHEET.XMI" },
+    { MusicName::Sneaking, "SNEAKING.XMI" },
+    { MusicName::Snowing, "SNOWING.XMI" },
+    { MusicName::Square, "SQUARE.XMI" },
+    { MusicName::SunnyDay, "SUNNYDAY.XMI" },
+    { MusicName::Swimming, "SWIMMING.XMI" },
+    { MusicName::Tavern, "TAVERN.XMI" },
+    { MusicName::Temple, "TEMPLE.XMI" },
+    { MusicName::TownEnter, "TOWN.XMI" },
+    { MusicName::VillageEnter, "VILLAGE.XMI" },
+    { MusicName::Vision, "VISION.XMI" },
+    { MusicName::WinGame, "WINGAME.XMI" }
 };
 
 // Each SoundName has a corresponding filename.
