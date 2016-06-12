@@ -11,12 +11,11 @@
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
-#include "../Media/MusicFormat.h"
 #include "../Media/MusicName.h"
-#include "../Media/SoundFormat.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Media/WildMidi.hpp"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/PostProcessing.h"
 #include "../Rendering/Renderer.h"
@@ -38,8 +37,9 @@ GameState::GameState()
 	this->renderer = nullptr;
 	this->textureManager = nullptr;
 
-	// Load options from file.
-	this->options = OptionsParser::parse();
+    // Load options from file.
+    this->options = OptionsParser::parse();
+    assert(this->options.get() != nullptr);
 
     VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
 
@@ -51,10 +51,10 @@ GameState::GameState()
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
 
-	// Initialize audio manager for MIDI music and Ogg sound with some channels.
-    assert(this->options.get() != nullptr);
+#ifdef HAVE_WILDMIDI
+    WildMidiDevice::init(this->options->getSoundfont());
+#endif
     this->audioManager.init(
-        this->options->getMusicFormat(), this->options->getSoundFormat(),
         this->options->getMusicVolume(), this->options->getSoundVolume(),
         this->options->getSoundChannelCount()
     );
@@ -93,7 +93,7 @@ GameState::GameState()
 
 GameState::~GameState()
 {
-
+    MidiDevice::shutdown();
 }
 
 bool GameState::isRunning() const

@@ -10,17 +10,20 @@
 #include <fnmatch.h>
 #endif
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <set>
+
+#include "../archives/bsaarchive.hpp"
 
 
 namespace
 {
 
 std::vector<std::string> gRootPaths;
+Archives::BsaArchive gGlobalBsa;
 
 }
 
@@ -38,6 +41,8 @@ void Manager::initialize(std::string&& root_path)
         root_path += "./";
     else if(root_path.back() != '/' && root_path.back() != '\\')
         root_path += "/";
+
+    gGlobalBsa.load(root_path+"GLOBAL.BSA");
 
     gRootPaths.push_back(std::move(root_path));
 }
@@ -64,7 +69,7 @@ IStreamPtr Manager::open(const char *name)
         ++piter;
     }
 
-    return IStreamPtr();
+    return gGlobalBsa.open(name);
 }
 
 bool Manager::exists(const char *name)
@@ -76,11 +81,11 @@ bool Manager::exists(const char *name)
         if(file.is_open()) return true;
     }
 
-    return false;
+    return gGlobalBsa.exists(name);
 }
 
 
-void Manager::add_dir(const std::string &path, const std::string &pre, const char *pattern, std::set<std::string> &names)
+void Manager::add_dir(const std::string &path, const std::string &pre, const char *pattern, std::vector<std::string> &names)
 {
     DIR *dir = opendir(path.c_str());
     if(!dir) return;
@@ -95,7 +100,7 @@ void Manager::add_dir(const std::string &path, const std::string &pre, const cha
         {
             std::string fname = pre + ent->d_name;
             if(!pattern || fnmatch(pattern, fname.c_str(), 0) == 0)
-                names.insert(fname);
+                names.push_back(fname);
         }
         else
         {
@@ -108,15 +113,32 @@ void Manager::add_dir(const std::string &path, const std::string &pre, const cha
     closedir(dir);
 }
 
-std::set<std::string> Manager::list(const char *pattern) const
+std::vector<std::string> Manager::list(const char *pattern) const
 {
-    std::set<std::string> files;
+    std::vector<std::string> files;
 
     auto piter = gRootPaths.rbegin();
     while(piter != gRootPaths.rend())
     {
         add_dir(*piter+".", "", pattern, files);
         ++piter;
+    }
+
+    if(!pattern)
+    {
+        const auto &list = gGlobalBsa.list();
+        std::copy(list.begin(), list.end(), std::back_inserter(files));
+    }
+    else
+    {
+        const auto &list = gGlobalBsa.list();
+        std::copy_if(list.begin(), list.end(), std::back_inserter(files),
+            [pattern](const std::string &name) -> bool
+            {
+                const char *dirsep = strrchr(name.c_str(), '/');
+                return (fnmatch(pattern, dirsep?dirsep:name.c_str(), 0) == 0);
+            }
+        );
     }
 
     return files;

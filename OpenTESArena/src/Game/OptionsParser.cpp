@@ -3,25 +3,9 @@
 #include "OptionsParser.h"
 
 #include "Options.h"
-#include "../Media/MusicFormat.h"
-#include "../Media/SoundFormat.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
-
-const auto OptionsParserMusicFormats = std::map<std::string, MusicFormat>
-{
-	{ "MIDI", MusicFormat::MIDI },
-	{ "MP3", MusicFormat::MP3 },
-	{ "Ogg", MusicFormat::Ogg }
-};
-
-// Technically, "WAV" is "wave", but oh well.
-const auto OptionsParserSoundFormats = std::map<std::string, SoundFormat>
-{
-	{ "Ogg", SoundFormat::Ogg },
-	{ "WAV", SoundFormat::WAV }
-};
 
 const auto OptionsParserBooleans = std::map<std::string, bool>
 {
@@ -39,11 +23,10 @@ const std::string OptionsParser::FULLSCREEN_KEY = "Fullscreen";
 const std::string OptionsParser::VERTICAL_FOV_KEY = "VerticalFieldOfView";
 const std::string OptionsParser::H_SENSITIVITY_KEY = "HorizontalSensitivity";
 const std::string OptionsParser::V_SENSITIVITY_KEY = "VerticalSensitivity";
+const std::string OptionsParser::SOUNDFONT_KEY = "Soundfont";
 const std::string OptionsParser::MUSIC_VOLUME_KEY = "MusicVolume";
 const std::string OptionsParser::SOUND_VOLUME_KEY = "SoundVolume";
 const std::string OptionsParser::SOUND_CHANNELS_KEY = "SoundChannels";
-const std::string OptionsParser::MUSIC_FORMAT_KEY = "MusicFormat";
-const std::string OptionsParser::SOUND_FORMAT_KEY = "SoundFormat";
 const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 
 std::map<std::string, std::string> OptionsParser::getPairs(const std::string &text)
@@ -111,22 +94,6 @@ bool OptionsParser::getBoolean(const std::map<std::string, std::string> &pairs,
 	return OptionsParserBooleans.at(value);
 }
 
-MusicFormat OptionsParser::getMusicFormat(const std::map<std::string, std::string> &pairs)
-{
-	auto value = OptionsParser::getValue(pairs, OptionsParser::MUSIC_FORMAT_KEY);
-	Debug::check(OptionsParserMusicFormats.find(value) != OptionsParserMusicFormats.end(),
-		"Options Parser", "Invalid music format \"" + value + "\".");
-	return OptionsParserMusicFormats.at(value);
-}
-
-SoundFormat OptionsParser::getSoundFormat(const std::map<std::string, std::string> &pairs)
-{
-	auto value = OptionsParser::getValue(pairs, OptionsParser::SOUND_FORMAT_KEY);
-	Debug::check(OptionsParserSoundFormats.find(value) != OptionsParserSoundFormats.end(),
-		"Options Parser", "Invalid sound format \"" + value + "\".");
-	return OptionsParserSoundFormats.at(value);
-}
-
 std::unique_ptr<Options> OptionsParser::parse()
 {
 	// This parser is very simple right now. All text must have the exact amount
@@ -153,19 +120,18 @@ std::unique_ptr<Options> OptionsParser::parse()
 	double hSensitivity = OptionsParser::getDouble(pairs, OptionsParser::H_SENSITIVITY_KEY);
 	double vSensitivity = OptionsParser::getDouble(pairs, OptionsParser::V_SENSITIVITY_KEY);
 
-	// Sound.
-	auto musicVolume = OptionsParser::getDouble(pairs, OptionsParser::MUSIC_VOLUME_KEY);
-	auto soundVolume = OptionsParser::getDouble(pairs, OptionsParser::SOUND_VOLUME_KEY);
-	int soundChannels = OptionsParser::getInteger(pairs, OptionsParser::SOUND_CHANNELS_KEY);
-	auto musicFormat = OptionsParser::getMusicFormat(pairs);
-	auto soundFormat = OptionsParser::getSoundFormat(pairs);
+    // Sound.
+    std::string soundfont = OptionsParser::getValue(pairs, OptionsParser::SOUNDFONT_KEY);
+    auto musicVolume = OptionsParser::getDouble(pairs, OptionsParser::MUSIC_VOLUME_KEY);
+    auto soundVolume = OptionsParser::getDouble(pairs, OptionsParser::SOUND_VOLUME_KEY);
+    int soundChannels = OptionsParser::getInteger(pairs, OptionsParser::SOUND_CHANNELS_KEY);
 
 	// Miscellaneous.
 	bool skipIntro = OptionsParser::getBoolean(pairs, OptionsParser::SKIP_INTRO_KEY);
 
 	auto options = std::unique_ptr<Options>(new Options(std::move(dataPath),
 		screenWidth, screenHeight, fullscreen, verticalFOV, hSensitivity, vSensitivity,
-		musicVolume, soundVolume, soundChannels, musicFormat, soundFormat, skipIntro));
+		std::move(soundfont), musicVolume, soundVolume, soundChannels, skipIntro));
 
 	return options;
 }

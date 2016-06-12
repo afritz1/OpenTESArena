@@ -6,9 +6,6 @@
 // Settings found in the options menu are saved in this object, which should live in
 // the game state object since it persists for the lifetime of the program.
 
-enum class MusicFormat;
-enum class SoundFormat;
-
 class Options
 {
 private:
@@ -23,19 +20,18 @@ private:
 	// Input.
 	double hSensitivity, vSensitivity;
 
-	// Sound.
-	double musicVolume, soundVolume;
-	int soundChannels;
-	MusicFormat musicFormat;
-	SoundFormat soundFormat;
+    // Sound.
+    std::string soundfont;
+    double musicVolume, soundVolume;
+    int soundChannels;
 
 	// Miscellaneous.
 	bool skipIntro;
 public:
 	Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
-        double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
-		double soundVolume, int soundChannels, MusicFormat musicFormat,
-		SoundFormat soundFormat, bool skipIntro);
+        double verticalFOV, double hSensitivity, double vSensitivity,
+        std::string&& soundfont, double musicVolume, double soundVolume,
+        int soundChannels, bool skipIntro);
 	~Options();
 
     const std::string &getDataPath() const { return dataPath; };
@@ -45,11 +41,10 @@ public:
 	double getVerticalFOV() const;
 	double getHorizontalSensitivity() const;
 	double getVerticalSensitivity() const;
+    const std::string &getSoundfont() const { return soundfont; }
 	double getMusicVolume() const;
 	double getSoundVolume() const;
 	int getSoundChannelCount() const;
-	MusicFormat getMusicFormat() const;
-	SoundFormat getSoundFormat() const;
 	bool introIsSkipped() const;
 
     void setDataPath(const std::string &path);
@@ -59,11 +54,10 @@ public:
 	void setVerticalFOV(double fov);
 	void setHorizontalSensitivity(double hSensitivity);
 	void setVerticalSensitivity(double vSensitivity);
+    void setSoundfont(std::string sfont);
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setSoundChannelCount(int count);
-	void setMusicFormat(MusicFormat musicFormat);
-	void setSoundFormat(SoundFormat soundFormat);
 	void setSkipIntro(bool skip);
 };
 

@@ -2,14 +2,10 @@
 
 #include "Options.h"
 
-#include "../Media/MusicFormat.h"
-#include "../Media/SoundFormat.h"
-
 Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
-    double soundVolume, int soundChannels, MusicFormat musicFormat, SoundFormat soundFormat,
-    bool skipIntro)
-    : dataPath(std::move(dataPath))
+    double verticalFOV, double hSensitivity, double vSensitivity, std::string&& soundfont,
+    double musicVolume, double soundVolume, int soundChannels, bool skipIntro)
+    : dataPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -20,8 +16,6 @@ Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool
 	this->musicVolume = musicVolume;
 	this->soundVolume = soundVolume;
 	this->soundChannels = soundChannels;
-	this->musicFormat = musicFormat;
-	this->soundFormat = soundFormat;
 	this->skipIntro = skipIntro;
 
 	assert(this->screenWidth > 0);
@@ -87,16 +81,6 @@ int Options::getSoundChannelCount() const
 	return this->soundChannels;
 }
 
-MusicFormat Options::getMusicFormat() const
-{
-	return this->musicFormat;
-}
-
-SoundFormat Options::getSoundFormat() const
-{
-	return this->soundFormat;
-}
-
 bool Options::introIsSkipped() const
 {
 	return this->skipIntro;
@@ -146,6 +130,11 @@ void Options::setVerticalSensitivity(double vSensitivity)
 	this->vSensitivity = vSensitivity;
 }
 
+void Options::setSoundfont(std::string sfont)
+{
+    this->soundfont = std::move(sfont);
+}
+
 void Options::setMusicVolume(double percent)
 {
 	assert(percent >= 0.0);
@@ -165,16 +154,6 @@ void Options::setSoundVolume(double percent)
 void Options::setSoundChannelCount(int count)
 {
 	this->soundChannels = count;
-}
-
-void Options::setMusicFormat(MusicFormat musicFormat)
-{
-	this->musicFormat = musicFormat;
-}
-
-void Options::setSoundFormat(SoundFormat soundFormat)
-{
-	this->soundFormat = soundFormat;
 }
 
 void Options::setSkipIntro(bool skip)
