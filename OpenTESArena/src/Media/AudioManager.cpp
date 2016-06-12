@@ -231,9 +231,12 @@ class OpenALStream;
 
 class AudioManagerImpl {
 public:
-	/* Currently active song and playback stream. */
-	MidiSongPtr mCurrentSong;
-	std::unique_ptr<OpenALStream> mSongStream;
+    float mMusicVolume;
+    float mSfxVolume;
+
+    /* Currently active song and playback stream. */
+    MidiSongPtr mCurrentSong;
+    std::unique_ptr<OpenALStream> mSongStream;
 
 	/* A deque of available sources to play sounds and streams with. */
 	std::deque<ALuint> mFreeSources;
@@ -396,10 +399,9 @@ class OpenALStream {
 
 public:
 	OpenALStream(AudioManagerImpl *manager, MidiSong *song)
-		: mManager(manager), mSong(song), mQuit(false), mSource(0),
-		mBufferIdx(0), mSampleRate(0)
+		: mManager(manager), mSong(song), mQuit(false), mSource(0)
+		, mBuffers{0}, mBufferIdx(0), mSampleRate(0)
 	{
-		mBuffers = std::array<ALuint, 4Ui64>{ 0 };
 	}
 
 	~OpenALStream()
@@ -464,7 +466,7 @@ public:
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
-	bool init(ALuint source)
+	bool init(ALuint source, float volume)
 	{
 		assert(mSource != 0);
 
@@ -482,7 +484,7 @@ public:
 		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
-		alSourcef(source, AL_GAIN, 1.0f);
+		alSourcef(source, AL_GAIN, volume);
 		alSourcef(source, AL_PITCH, 1.0f);
 		alSourcef(source, AL_ROLLOFF_FACTOR, 0.0f);
 		alSourcef(source, AL_SEC_OFFSET, 0.0f);
@@ -507,6 +509,7 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
+    : mMusicVolume(1.0f), mSfxVolume(1.0f)
 {
 
 }
@@ -584,7 +587,7 @@ void AudioManagerImpl::playMusic(MusicName musicName)
 		}
 
 		mSongStream.reset(new OpenALStream(this, mCurrentSong.get()));
-		if (mSongStream->init(mFreeSources.front()))
+		if (mSongStream->init(mFreeSources.front(), mMusicVolume))
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
@@ -622,11 +625,12 @@ void AudioManagerImpl::setMusicVolume(double percent)
 {
 	if (mSongStream)
 		mSongStream->setVolume(static_cast<float>(percent));
+	mMusicVolume = percent;
 }
 
 void AudioManagerImpl::setSoundVolume(double percent)
 {
-	static_cast<void>(percent);
+    mSfxVolume = percent;
 }
 
 // Audio Manager
