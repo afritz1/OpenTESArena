@@ -25,7 +25,7 @@ public:
 
 	int getCurrent() const;
 	int getMaximum() const; // Might be a calculated value instead of a member in the future.
-	const DerivedAttributeName &getAttributeName() const;
+	DerivedAttributeName getAttributeName() const;
 	std::string toString() const;
 
 	// Perhaps there would be a "getCalculatedValue(EquippedItems..., StatusEffects...)", 

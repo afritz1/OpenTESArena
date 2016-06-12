@@ -324,7 +324,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 	}
 }
 
-const FontName &TextBox::getFontName() const
+FontName TextBox::getFontName() const
 {
 	return this->fontName;
 }

@@ -48,7 +48,7 @@ public:
 		FontName fontName, TextureManager &textureManager);
 	virtual ~TextBox();
 
-	const FontName &getFontName() const;
+	FontName getFontName() const;
 };
 
 #endif

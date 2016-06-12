@@ -65,13 +65,13 @@ Float2<T> Float2<T>::operator -() const
 }
 
 template<typename T>
-const T &Float2<T>::getX() const
+T Float2<T>::getX() const
 {
 	return this->x;
 }
 
 template<typename T>
-const T &Float2<T>::getY() const
+T Float2<T>::getY() const
 {
 	return this->y;
 }

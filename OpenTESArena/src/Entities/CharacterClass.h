@@ -29,8 +29,8 @@ public:
 	~CharacterClass();
 
 	const std::string &getDisplayName() const;
-	const CharacterClassCategoryName &getClassCategoryName() const;
-	const bool &canCastMagic() const;
+	CharacterClassCategoryName getClassCategoryName() const;
+	bool canCastMagic() const;
 	int getStartingHealth() const;
 	int getHealthDice() const;
 	const std::vector<ArmorMaterialType> &getAllowedArmors() const;

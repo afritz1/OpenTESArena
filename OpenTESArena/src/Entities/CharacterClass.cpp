@@ -43,12 +43,12 @@ const std::string &CharacterClass::getDisplayName() const
 	return this->displayName;
 }
 
-const CharacterClassCategoryName &CharacterClass::getClassCategoryName() const
+CharacterClassCategoryName CharacterClass::getClassCategoryName() const
 {
 	return this->categoryName;
 }
 
-const bool &CharacterClass::canCastMagic() const
+bool CharacterClass::canCastMagic() const
 {
 	return this->castsMagic;
 }

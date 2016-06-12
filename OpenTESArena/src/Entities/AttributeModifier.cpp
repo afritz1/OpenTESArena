@@ -24,7 +24,7 @@ AttributeModifier::~AttributeModifier()
 
 }
 
-const AttributeModifierName &AttributeModifier::getModifierName() const
+AttributeModifierName AttributeModifier::getModifierName() const
 {
 	return this->modifierName;
 }

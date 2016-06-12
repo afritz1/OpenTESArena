@@ -29,10 +29,10 @@ public:
 	Float4 operator -(const Float4 &v) const;
 	Float4 operator -() const;
 
-	const T &getX() const;
-	const T &getY() const;
-	const T &getZ() const;
-	const T &getW() const;
+	T getX() const;
+	T getY() const;
+	T getZ() const;
+	T getW() const;
 	Float3<T> getXYZ() const;
 
 	std::string toString() const;

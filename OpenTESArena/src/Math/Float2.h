@@ -26,8 +26,8 @@ public:
 	Float2 operator -(const Float2 &v) const;
 	Float2 operator -() const;
 
-	const T &getX() const;
-	const T &getY() const;
+	T getX() const;
+	T getY() const;
 
 	std::string toString() const;
 	T lengthSquared() const;

@@ -69,25 +69,25 @@ Float4<T> Float4<T>::operator -() const
 }
 
 template<typename T>
-const T &Float4<T>::getX() const
+T Float4<T>::getX() const
 {
 	return this->x;
 }
 
 template<typename T>
-const T &Float4<T>::getY() const
+T Float4<T>::getY() const
 {
 	return this->y;
 }
 
 template<typename T>
-const T &Float4<T>::getZ() const
+T Float4<T>::getZ() const
 {
 	return this->z;
 }
 
 template<typename T>
-const T &Float4<T>::getW() const
+T Float4<T>::getW() const
 {
 	return this->w;
 }

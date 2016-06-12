@@ -29,9 +29,9 @@ public:
 	Float3 operator -(const Float3 &v) const;
 	Float3 operator -() const;
 
-	const T &getX() const;
-	const T &getY() const;
-	const T &getZ() const;
+	T getX() const;
+	T getY() const;
+	T getZ() const;
 
 	std::string toString() const;
 	unsigned int toRGB() const;

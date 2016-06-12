@@ -19,7 +19,7 @@ public:
 	AttributeModifier(AttributeModifierName modifierName);
 	~AttributeModifier();
 
-	const AttributeModifierName &getModifierName() const;
+	AttributeModifierName getModifierName() const;
 	std::string toString() const;
 };
 

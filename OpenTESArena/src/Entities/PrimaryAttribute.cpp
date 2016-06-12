@@ -55,7 +55,7 @@ int PrimaryAttribute::get() const
 	return this->baseValue;
 }
 
-const PrimaryAttributeName &PrimaryAttribute::getAttributeName() const
+PrimaryAttributeName PrimaryAttribute::getAttributeName() const
 {
 	return this->attributeName;
 }

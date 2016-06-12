@@ -93,19 +93,19 @@ Float3<T> Float3<T>::operator -() const
 }
 
 template<typename T>
-const T &Float3<T>::getX() const
+T Float3<T>::getX() const
 {
 	return this->x;
 }
 
 template<typename T>
-const T &Float3<T>::getY() const
+T Float3<T>::getY() const
 {
 	return this->y;
 }
 
 template<typename T>
-const T &Float3<T>::getZ() const
+T Float3<T>::getZ() const
 {
 	return this->z;
 }

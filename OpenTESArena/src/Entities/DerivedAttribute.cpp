@@ -38,7 +38,7 @@ int DerivedAttribute::getMaximum() const
 	return this->maximum;
 }
 
-const DerivedAttributeName &DerivedAttribute::getAttributeName() const
+DerivedAttributeName DerivedAttribute::getAttributeName() const
 {
 	return this->attributeName;
 }
