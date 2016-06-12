@@ -8,6 +8,19 @@
 class MidiSong {
 public:
     virtual ~MidiSong() { }
+
+    /* TODO: give back channel configuration and sample type (should not just
+     * be channel count and bit depth; different channel configurations can
+     * have the same count, and different sample types can have the same number
+     * of bits).
+     */
+    virtual void getFormat(int *sampleRate) = 0;
+
+    /* Read and return size is in sample frames. */
+    virtual size_t read(char *buffer, size_t count) = 0;
+
+    /* Offset is in sample frames. */
+    virtual bool seek(size_t offset) = 0;
 };
 typedef std::unique_ptr<MidiSong> MidiSongPtr;
 
