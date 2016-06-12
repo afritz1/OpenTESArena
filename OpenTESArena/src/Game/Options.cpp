@@ -3,9 +3,9 @@
 #include "Options.h"
 
 Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
-    double soundVolume, int soundChannels, bool skipIntro)
-    : dataPath(std::move(dataPath))
+    double verticalFOV, double hSensitivity, double vSensitivity, std::string&& soundfont,
+    double musicVolume, double soundVolume, int soundChannels, bool skipIntro)
+    : dataPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -128,6 +128,11 @@ void Options::setHorizontalSensitivity(double hSensitivity)
 void Options::setVerticalSensitivity(double vSensitivity)
 {
 	this->vSensitivity = vSensitivity;
+}
+
+void Options::setSoundfont(std::string sfont)
+{
+    this->soundfont = std::move(sfont);
 }
 
 void Options::setMusicVolume(double percent)

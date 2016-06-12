@@ -23,6 +23,7 @@ const std::string OptionsParser::FULLSCREEN_KEY = "Fullscreen";
 const std::string OptionsParser::VERTICAL_FOV_KEY = "VerticalFieldOfView";
 const std::string OptionsParser::H_SENSITIVITY_KEY = "HorizontalSensitivity";
 const std::string OptionsParser::V_SENSITIVITY_KEY = "VerticalSensitivity";
+const std::string OptionsParser::SOUNDFONT_KEY = "Soundfont";
 const std::string OptionsParser::MUSIC_VOLUME_KEY = "MusicVolume";
 const std::string OptionsParser::SOUND_VOLUME_KEY = "SoundVolume";
 const std::string OptionsParser::SOUND_CHANNELS_KEY = "SoundChannels";
@@ -119,17 +120,18 @@ std::unique_ptr<Options> OptionsParser::parse()
 	double hSensitivity = OptionsParser::getDouble(pairs, OptionsParser::H_SENSITIVITY_KEY);
 	double vSensitivity = OptionsParser::getDouble(pairs, OptionsParser::V_SENSITIVITY_KEY);
 
-	// Sound.
-	auto musicVolume = OptionsParser::getDouble(pairs, OptionsParser::MUSIC_VOLUME_KEY);
-	auto soundVolume = OptionsParser::getDouble(pairs, OptionsParser::SOUND_VOLUME_KEY);
-	int soundChannels = OptionsParser::getInteger(pairs, OptionsParser::SOUND_CHANNELS_KEY);
+    // Sound.
+    std::string soundfont = OptionsParser::getValue(pairs, OptionsParser::SOUNDFONT_KEY);
+    auto musicVolume = OptionsParser::getDouble(pairs, OptionsParser::MUSIC_VOLUME_KEY);
+    auto soundVolume = OptionsParser::getDouble(pairs, OptionsParser::SOUND_VOLUME_KEY);
+    int soundChannels = OptionsParser::getInteger(pairs, OptionsParser::SOUND_CHANNELS_KEY);
 
 	// Miscellaneous.
 	bool skipIntro = OptionsParser::getBoolean(pairs, OptionsParser::SKIP_INTRO_KEY);
 
 	auto options = std::unique_ptr<Options>(new Options(std::move(dataPath),
 		screenWidth, screenHeight, fullscreen, verticalFOV, hSensitivity, vSensitivity,
-		musicVolume, soundVolume, soundChannels, skipIntro));
+		std::move(soundfont), musicVolume, soundVolume, soundChannels, skipIntro));
 
 	return options;
 }

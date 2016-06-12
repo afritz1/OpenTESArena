@@ -3,6 +3,8 @@
 
 #ifdef HAVE_WILDMIDI
 
+#include <cassert>
+
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"
@@ -67,9 +69,14 @@ std::unique_ptr<WildMidiDevice> WildMidiDevice::sInstance;
 
 WildMidiDevice &WildMidiDevice::get()
 {
-    if(!sInstance)
-        sInstance.reset(new WildMidiDevice());
+    assert(sInstance);
     return *sInstance.get();
+}
+
+void WildMidiDevice::init(const std::string &soundfont)
+{
+    assert(!sInstance);
+    sInstance.reset(new WildMidiDevice(soundfont));
 }
 
 void WildMidiDevice::shutdown()
@@ -78,12 +85,9 @@ void WildMidiDevice::shutdown()
 }
 
 
-WildMidiDevice::WildMidiDevice()
+WildMidiDevice::WildMidiDevice(const std::string &soundfont)
 {
-    /* TODO: Make this configurable. */
-    static const char patchCfg[] = "/etc/timidity/freepats.cfg";
-
-    sInitState = WildMidi_Init(patchCfg, 48000, WM_MO_ENHANCED_RESAMPLING);
+    sInitState = WildMidi_Init(soundfont.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
     if(sInitState < 0)
         Debug::mention("WildMidiDevice", "Failed to init WildMidi");
     else

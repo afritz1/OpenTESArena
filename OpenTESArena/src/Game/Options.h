@@ -20,16 +20,18 @@ private:
 	// Input.
 	double hSensitivity, vSensitivity;
 
-	// Sound.
-	double musicVolume, soundVolume;
-	int soundChannels;
+    // Sound.
+    std::string soundfont;
+    double musicVolume, soundVolume;
+    int soundChannels;
 
 	// Miscellaneous.
 	bool skipIntro;
 public:
 	Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
-        double verticalFOV, double hSensitivity, double vSensitivity, double musicVolume,
-		double soundVolume, int soundChannels, bool skipIntro);
+        double verticalFOV, double hSensitivity, double vSensitivity,
+        std::string&& soundfont, double musicVolume, double soundVolume,
+        int soundChannels, bool skipIntro);
 	~Options();
 
     const std::string &getDataPath() const { return dataPath; };
@@ -39,6 +41,7 @@ public:
 	double getVerticalFOV() const;
 	double getHorizontalSensitivity() const;
 	double getVerticalSensitivity() const;
+    const std::string &getSoundfont() const { return soundfont; }
 	double getMusicVolume() const;
 	double getSoundVolume() const;
 	int getSoundChannelCount() const;
@@ -51,6 +54,7 @@ public:
 	void setVerticalFOV(double fov);
 	void setHorizontalSensitivity(double hSensitivity);
 	void setVerticalSensitivity(double vSensitivity);
+    void setSoundfont(std::string sfont);
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setSoundChannelCount(int count);

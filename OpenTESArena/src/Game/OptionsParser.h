@@ -34,10 +34,11 @@ private:
 	static const std::string H_SENSITIVITY_KEY;
 	static const std::string V_SENSITIVITY_KEY;
 
-	// Sound.
-	static const std::string MUSIC_VOLUME_KEY;
-	static const std::string SOUND_VOLUME_KEY;
-	static const std::string SOUND_CHANNELS_KEY;
+    // Sound.
+    static const std::string SOUNDFONT_KEY;
+    static const std::string MUSIC_VOLUME_KEY;
+    static const std::string SOUND_VOLUME_KEY;
+    static const std::string SOUND_CHANNELS_KEY;
 
 	// Miscellaneous.
 	static const std::string SKIP_INTRO_KEY;

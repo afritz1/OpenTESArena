@@ -519,10 +519,6 @@ AudioManagerImpl::~AudioManagerImpl()
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(context);
     alcCloseDevice(device);
-
-#ifdef HAVE_WILDMIDI
-    WildMidiDevice::shutdown();
-#endif
 }
 
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels)
