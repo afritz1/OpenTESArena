@@ -73,7 +73,7 @@ namespace
 		{ MusicName::Dungeon5, "DUNGEON5.XMI" }, // duplicate of DUNGEON1?
 		{ MusicName::Equipment, "EQUIPMNT.XMI" },
 		{ MusicName::Evil, "EVIL.XMI" },
-		{ MusicName::EvilIntro, "EVILINTRO.XMI" },
+		{ MusicName::EvilIntro, "EVLINTRO.XMI" },
 		{ MusicName::Magic, "MAGIC_2.XMI" },
 		{ MusicName::Night, "NIGHT.XMI" },
 		{ MusicName::Overcast, "OVERCAST.XMI" },
