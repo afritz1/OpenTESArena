@@ -15,110 +15,110 @@
 namespace
 {
 
-int sInitState = -1;
+	int sInitState = -1;
 
 
-class WildMidiSong : public MidiSong {
-    midi *mSong;
+	class WildMidiSong : public MidiSong {
+		midi *mSong;
 
-public:
-    WildMidiSong(midi *song);
-    virtual ~WildMidiSong();
+	public:
+		WildMidiSong(midi *song);
+		virtual ~WildMidiSong();
 
-    virtual void getFormat(int *sampleRate) override;
+		virtual void getFormat(int *sampleRate) override;
 
-    virtual size_t read(char *buffer, size_t count) override;
+		virtual size_t read(char *buffer, size_t count) override;
 
-    virtual bool seek(size_t offset) override;
-};
+		virtual bool seek(size_t offset) override;
+	};
 
-WildMidiSong::WildMidiSong(midi *song)
-    : mSong(song)
-{
-}
+	WildMidiSong::WildMidiSong(midi *song)
+		: mSong(song)
+	{
+	}
 
-WildMidiSong::~WildMidiSong()
-{
-    WildMidi_Close(mSong);
-}
+	WildMidiSong::~WildMidiSong()
+	{
+		WildMidi_Close(mSong);
+	}
 
-void WildMidiSong::getFormat(int *sampleRate)
-{
-    /* Currently always outputs 16-bit stereo 48khz */
-    *sampleRate = 48000;
-}
+	void WildMidiSong::getFormat(int *sampleRate)
+	{
+		/* Currently always outputs 16-bit stereo 48khz */
+		*sampleRate = 48000;
+	}
 
-size_t WildMidiSong::read(char *buffer, size_t count)
-{
-    /* WildMidi wants bytes, so convert from and to sample frames. */
-#if LIBWILDMIDI_VERSION >= ((0u<<16) | (4u<<8) | 0)
-    return WildMidi_GetOutput(mSong, reinterpret_cast<int8_t*>(buffer), count*4) / 4;
+	size_t WildMidiSong::read(char *buffer, size_t count)
+	{
+		/* WildMidi wants bytes, so convert from and to sample frames. */
+#if LIBWILDMIDI_VERSION >= ((0u << 16) | (4u << 8) | 0)
+		return WildMidi_GetOutput(mSong, reinterpret_cast<int8_t*>(buffer), count * 4) / 4;
 #else
-    return WildMidi_GetOutput(mSong, buffer, count*4) / 4;
+		return WildMidi_GetOutput(mSong, buffer, static_cast<unsigned long>(count * 4)) / 4;
 #endif
-}
+	}
 
-bool WildMidiSong::seek(size_t offset)
-{
-    unsigned long pos = offset;
-    if(WildMidi_FastSeek(mSong, &pos) < 0)
-        return false;
-    return true;
-}
-
+	bool WildMidiSong::seek(size_t offset)
+	{
+		unsigned long pos = static_cast<unsigned long>(offset);
+		if (WildMidi_FastSeek(mSong, &pos) < 0)
+			return false;
+		return true;
+	}
 }
 
 
 void WildMidiDevice::init(const std::string &soundfont)
 {
-    sInstance.reset(new WildMidiDevice(soundfont));
+	sInstance.reset(new WildMidiDevice(soundfont));
 }
 
 WildMidiDevice::WildMidiDevice(const std::string &soundfont)
 {
-    sInitState = WildMidi_Init(soundfont.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
-    if(sInitState < 0)
-        Debug::mention("WildMidiDevice", "Failed to init WildMidi");
-    else
-        WildMidi_MasterVolume(100);
+	sInitState = WildMidi_Init(soundfont.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
+	if (sInitState < 0)
+		Debug::mention("WildMidiDevice", "Failed to init WildMidi.");
+	else
+		WildMidi_MasterVolume(100);
 }
 
 WildMidiDevice::~WildMidiDevice()
 {
-    if(sInitState >= 0)
-        WildMidi_Shutdown();
+	if (sInitState >= 0)
+		WildMidi_Shutdown();
 }
 
 MidiSongPtr WildMidiDevice::open(const std::string &name)
 {
-    if(sInitState < 0)
-        return MidiSongPtr(nullptr);
+	if (sInitState < 0)
+		return MidiSongPtr(nullptr);
 
-    VFS::IStreamPtr fstream = VFS::Manager::get().open(name.c_str());
-    if(!fstream)
-    {
-        std::cerr<< "Failed to open resource "<<name <<std::endl;
-        return MidiSongPtr(nullptr);
-    }
+	VFS::IStreamPtr fstream = VFS::Manager::get().open(name.c_str());
+	if (!fstream)
+	{
+		std::cerr << "Failed to open resource " << name << std::endl;
+		return MidiSongPtr(nullptr);
+	}
 
-    /* Read the file into a buffer through the VFS, as it may be in an archive
-     * that WildMidi can't read from.
-     */
-    std::vector<char> midibuf;
-    while(fstream->good())
-    {
-        char readbuf[1024];
-        fstream->read(readbuf, sizeof(readbuf));
-        midibuf.insert(midibuf.end(), readbuf, readbuf+fstream->gcount());
-    }
+	/* Read the file into a buffer through the VFS, as it may be in an archive
+	 * that WildMidi can't read from.
+	 */
+	std::vector<char> midibuf;
+	while (fstream->good())
+	{
+		char readbuf[1024];
+		fstream->read(readbuf, sizeof(readbuf));
+		midibuf.insert(midibuf.end(), readbuf, readbuf + fstream->gcount());
+	}
 
-    midi *song = WildMidi_OpenBuffer(
-        reinterpret_cast<unsigned char*>(midibuf.data()), midibuf.size()
-    );
-    if(song)
-        return MidiSongPtr(new WildMidiSong(song));
+	midi *song = WildMidi_OpenBuffer(
+		reinterpret_cast<unsigned char*>(midibuf.data()), 
+		static_cast<unsigned long>(midibuf.size()));
 
-    return MidiSongPtr(nullptr);
+	if (song)
+		return MidiSongPtr(new WildMidiSong(song));
+
+	return MidiSongPtr(nullptr);
 }
 
 #endif /* HAVE_WILDMIDI */

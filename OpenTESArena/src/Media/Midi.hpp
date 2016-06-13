@@ -2,7 +2,7 @@
 #define MEDIA_MIDI_HPP
 
 #include <memory>
-
+#include <string>
 
 /* Pure virtual interface for reading PCM samples from a MIDI-style song. */
 class MidiSong {
