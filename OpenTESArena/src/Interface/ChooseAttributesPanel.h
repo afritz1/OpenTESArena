@@ -5,6 +5,10 @@
 
 #include "Panel.h"
 
+// This panel is for choosing character creation attributes and the portrait.
+
+// I don't think it will be used for level-up purposes.
+
 class Button;
 class CharacterClass;
 class TextBox;

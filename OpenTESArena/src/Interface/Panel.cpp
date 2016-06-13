@@ -23,7 +23,7 @@ Panel::Panel(GameState *gameState)
 
 Panel::~Panel()
 {
-	// gameState is owned in the Game object.
+	// gameState is owned by the Game object.
 }
 
 std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
@@ -182,9 +182,8 @@ void Panel::drawScaledToNative(const Surface &surface, SDL_Surface *dst)
 		surface.getWidth(), surface.getHeight(), dst);
 }
 
-void Panel::drawLetterbox(const Surface &background, SDL_Surface *dst,
-	const SDL_Rect *letterbox)
+void Panel::drawLetterbox(const Surface &src, SDL_Surface *dst, const SDL_Rect *letterbox)
 {
-	auto *baseSurface = background.getSurface();
+	auto *baseSurface = src.getSurface();
 	SDL_BlitScaled(baseSurface, nullptr, dst, const_cast<SDL_Rect*>(letterbox));
 }

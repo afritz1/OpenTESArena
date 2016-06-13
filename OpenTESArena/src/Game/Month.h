@@ -15,7 +15,7 @@ public:
 
 	static const int DAYS_PER_MONTH;
 
-	const MonthName &getMonthName() const;
+	MonthName getMonthName() const;
 	std::string toString() const;
 
 	// For knowing when to increment the year.

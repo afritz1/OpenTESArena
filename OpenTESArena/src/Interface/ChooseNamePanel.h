@@ -1,7 +1,12 @@
 #ifndef CHOOSE_NAME_PANEL_H
 #define CHOOSE_NAME_PANEL_H
 
+#include <string>
+
 #include "Panel.h"
+
+// If Escape is pressed here, just go to the class list (even if the user went
+// the answer questions path instead).
 
 // I looked into SDL_StartTextInput(), but I don't quite get it yet. I'll just
 // listen for plain English characters for now, since international characters are
@@ -14,8 +19,6 @@ class CharacterClass;
 class Surface;
 class TextBox;
 
-enum class CharacterGenderName;
-
 class ChooseNamePanel : public Panel
 {
 private:
@@ -24,7 +27,6 @@ private:
 	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	std::unique_ptr<Button> backToClassButton, acceptButton;
-	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterClass> charClass;
 	std::string name;	
 protected:
@@ -32,8 +34,7 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	ChooseNamePanel(GameState *gameState, CharacterGenderName gender, 
-		const CharacterClass &charClass);
+	ChooseNamePanel(GameState *gameState, const CharacterClass &charClass);
 	virtual ~ChooseNamePanel();
 
 	virtual void tick(double dt, bool &running) override;

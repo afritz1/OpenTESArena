@@ -16,7 +16,7 @@ public:
 	CharacterClassCategory(CharacterClassCategoryName categoryName);
 	~CharacterClassCategory();
 
-	const CharacterClassCategoryName &getCategoryName() const;
+	CharacterClassCategoryName getCategoryName() const;
 	std::string toString() const;
 };
 

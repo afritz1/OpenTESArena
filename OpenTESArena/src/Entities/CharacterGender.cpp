@@ -19,7 +19,7 @@ CharacterGender::~CharacterGender()
 
 }
 
-const CharacterGenderName &CharacterGender::getGenderName() const
+CharacterGenderName CharacterGender::getGenderName() const
 {
 	return this->genderName;
 }

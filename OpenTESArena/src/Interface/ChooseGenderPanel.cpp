@@ -6,9 +6,10 @@
 #include "ChooseGenderPanel.h"
 
 #include "Button.h"
-#include "ChooseClassPanel.h"
-#include "MainMenuPanel.h"
+#include "ChooseNamePanel.h"
+#include "ChooseRacePanel.h"
 #include "TextBox.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
@@ -20,16 +21,19 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
-ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
+ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass &charClass,
+	const std::string &name)
 	: Panel(gameState)
 {
 	this->parchment = nullptr;
 	this->genderTextBox = nullptr;
 	this->maleTextBox = nullptr;
 	this->femaleTextBox = nullptr;
-	this->backToMainMenuButton = nullptr;
+	this->backToNameButton = nullptr;
 	this->maleButton = nullptr;
 	this->femaleButton = nullptr;
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->name = name;
 
 	this->parchment = [gameState]()
 	{
@@ -82,40 +86,38 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	this->backToMainMenuButton = [gameState]()
+	this->backToNameButton = [gameState, charClass]()
 	{
-		auto function = [gameState]()
+		auto function = [gameState, charClass]()
 		{
-			gameState->setPanel(std::unique_ptr<Panel>(new MainMenuPanel(gameState)));
+			gameState->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
+				gameState, charClass)));
 			gameState->setMusic(MusicName::PercIntro);
 		};
-
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->maleButton = [gameState]()
+	this->maleButton = [gameState, charClass, name]()
 	{
 		auto center = Int2(160, 105);
-		auto function = [gameState]()
+		auto function = [gameState, charClass, name]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(new ChooseClassPanel(
-				gameState, CharacterGenderName::Male));
+			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
+				gameState, charClass, name, CharacterGenderName::Male));
 			gameState->setPanel(std::move(classPanel));
 		};
-
 		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
 	}();
 
-	this->femaleButton = [gameState]()
+	this->femaleButton = [gameState, charClass, name]()
 	{
 		auto center = Int2(160, 145);
-		auto function = [gameState]()
+		auto function = [gameState, charClass, name]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(new ChooseClassPanel(
-				gameState, CharacterGenderName::Female));
+			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
+				gameState, charClass, name, CharacterGenderName::Female));
 			gameState->setPanel(std::move(classPanel));
 		};
-
 		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
 	}();
 
@@ -123,7 +125,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState)
 	assert(this->genderTextBox.get() != nullptr);
 	assert(this->maleTextBox.get() != nullptr);
 	assert(this->femaleTextBox.get() != nullptr);
-	assert(this->backToMainMenuButton.get() != nullptr);
+	assert(this->backToNameButton.get() != nullptr);
 	assert(this->maleButton.get() != nullptr);
 	assert(this->femaleButton.get() != nullptr);
 }
@@ -159,7 +161,7 @@ void ChooseGenderPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToMainMenuButton->click();
+			this->backToNameButton->click();
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&

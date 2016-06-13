@@ -13,7 +13,7 @@ public:
 	Guild(GuildName guildName);
 	~Guild();
 
-	const GuildName &getGuildName() const;
+	GuildName getGuildName() const;
 	std::string toString() const;
 };
 

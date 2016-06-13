@@ -8,9 +8,10 @@
 // This class has a concrete collection of the eight distinct primary attributes.
 
 // It's cleaner to use a mapping of an enumeration to an attribute than having eight
-// different private members. I don't think it's important at this point to have
-// custom attributes for modding because the original eight are essential to the
-// game mechanics.
+// different private members. 
+
+// I don't think it's important at this point to have custom attributes for modding 
+// because the original eight are essential to the game mechanics.
 
 class PrimaryAttribute;
 

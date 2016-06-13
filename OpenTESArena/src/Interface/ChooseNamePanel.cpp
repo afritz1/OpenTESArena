@@ -8,10 +8,9 @@
 
 #include "Button.h"
 #include "ChooseClassPanel.h"
-#include "ChooseRacePanel.h"
+#include "ChooseGenderPanel.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
-#include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
@@ -23,8 +22,7 @@
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
-ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gender,
-	const CharacterClass &charClass)
+ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &charClass)
 	: Panel(gameState)
 {
 	this->parchment = nullptr;
@@ -32,7 +30,6 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 	this->nameTextBox = nullptr;
 	this->backToClassButton = nullptr;
 	this->acceptButton = nullptr;
-	this->gender = nullptr;
 	this->charClass = nullptr;
 	this->name = std::string();
 
@@ -71,30 +68,28 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 			gameState->getTextureManager()));
 	}();
 
-	this->backToClassButton = [gameState, gender]()
+	this->backToClassButton = [gameState]()
 	{
-		auto function = [gameState, gender]()
+		auto function = [gameState]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(
-				new ChooseClassPanel(gameState, gender));
+				new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->acceptButton = [this, gameState, gender, charClass]()
+	this->acceptButton = [this, gameState, charClass]()
 	{
-		auto function = [this, gameState, gender, charClass]()
+		auto function = [this, gameState, charClass]()
 		{
-			auto racePanel = std::unique_ptr<Panel>(new ChooseRacePanel(
-				gameState, gender, charClass, this->name));
+			auto racePanel = std::unique_ptr<Panel>(new ChooseGenderPanel(
+				gameState, charClass, this->name));
 			gameState->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->gender = std::unique_ptr<CharacterGenderName>(
-		new CharacterGenderName(gender));
 	this->charClass = std::unique_ptr<CharacterClass>(
 		new CharacterClass(charClass));
 
@@ -103,8 +98,6 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, CharacterGenderName gende
 	assert(this->nameTextBox.get() != nullptr);
 	assert(this->backToClassButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
-	assert(this->gender.get() != nullptr);
-	assert(*this->gender.get() == gender);
 	assert(this->charClass.get() != nullptr);
 	assert(this->name.size() == 0);
 }

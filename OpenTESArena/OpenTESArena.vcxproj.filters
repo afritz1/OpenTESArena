@@ -109,6 +109,8 @@
     <ClCompile Include="src\Interface\ListBox.cpp" />
     <ClCompile Include="src\Math\Rect.cpp" />
     <ClCompile Include="src\Media\WildMidi.cpp" />
+    <ClCompile Include="src\Utilities\KvpTextMap.cpp" />
+    <ClCompile Include="src\Interface\ChooseClassCreationPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -261,6 +263,8 @@
     <ClInclude Include="src\Math\Rect.h" />
     <ClInclude Include="src\Media\WildMidi.hpp" />
     <ClInclude Include="src\Media\Midi.hpp" />
+    <ClInclude Include="src\Utilities\KvpTextMap.h" />
+    <ClInclude Include="src\Interface\ChooseClassCreationPanel.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

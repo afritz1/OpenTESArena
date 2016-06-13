@@ -15,7 +15,7 @@ public:
 	CardinalDirection(const Float2d &direction);
 	~CardinalDirection();
 
-	const CardinalDirectionName &getDirectionName() const;
+	CardinalDirectionName getDirectionName() const;
 	std::string toString() const;
 };
 

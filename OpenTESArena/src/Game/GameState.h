@@ -47,7 +47,7 @@ public:
 	// true when in the game world or in some form of pause menu or conversation.
 	bool gameDataIsActive() const;
 
-    AudioManager &getAudioManager() { return this->audioManager; }
+	AudioManager &getAudioManager();
 
 	// This might be null, so it returns a pointer instead of a reference for safety.
 	GameData *getGameData() const;

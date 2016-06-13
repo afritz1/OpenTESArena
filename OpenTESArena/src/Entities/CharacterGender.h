@@ -13,7 +13,7 @@ public:
 	CharacterGender(CharacterGenderName genderName);
 	~CharacterGender();
 
-	const CharacterGenderName &getGenderName() const;
+	CharacterGenderName getGenderName() const;
 	std::string toString() const;
 };
 

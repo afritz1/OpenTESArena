@@ -37,7 +37,7 @@ BodyPart::~BodyPart()
 
 }
 
-const BodyPartName &BodyPart::getPartName() const
+BodyPartName BodyPart::getPartName() const
 {
 	return this->partName;
 }

@@ -17,7 +17,7 @@ public:
 	// but it's in the manual, so it's here for completeness.
 	static const int DAYS_PER_WEEK;
 
-	const WeekdayName &getWeekdayName() const;
+	WeekdayName getWeekdayName() const;
 	std::string toString() const;
 
 	void incrementWeekday();

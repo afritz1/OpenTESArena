@@ -18,6 +18,7 @@ private:
 	std::unique_ptr<Month> month;
 	std::unique_ptr<Weekday> weekday;
 	int day;
+	// Seconds? Minutes? Maybe put that in a "TimeOfDay" class.
 
 	// These increment methods are private so that the user doesn't accidentally make
 	// the change twice.

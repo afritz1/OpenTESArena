@@ -33,8 +33,7 @@ protected:
 	void drawCursor(const Surface &cursor, SDL_Surface *dst);
 	void drawScaledToNative(const Surface &surface, int x, int y, int w, int h, SDL_Surface *dst);
 	void drawScaledToNative(const Surface &surface, SDL_Surface *dst);
-	void drawLetterbox(const Surface &background, SDL_Surface *dst,
-		const SDL_Rect *letterbox);
+	void drawLetterbox(const Surface &src, SDL_Surface *dst, const SDL_Rect *letterbox);
 public:
 	Panel(GameState *gameState);
 	virtual ~Panel();

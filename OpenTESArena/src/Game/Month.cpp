@@ -63,7 +63,7 @@ Month::~Month()
 
 }
 
-const MonthName &Month::getMonthName() const
+MonthName Month::getMonthName() const
 {
 	return this->monthName;
 }

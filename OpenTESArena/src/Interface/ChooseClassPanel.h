@@ -7,20 +7,13 @@
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
 // list that says nothing about the classes (thus requiring the manual for 
-// information). I think it would be better to show them all at the same time as 
-// buttons, and have tooltips when hovered over.
-
-// I think having a hardcoded number of classes isn't good design now that the
-// character classes are being put into a text file to be parsed at runtime.
-// Maybe a list would be best, but make sure to have tooltips!
+// information). I think it would be better to have tooltips.
 
 class Button;
 class CharacterClass;
 class ListBox;
 class Surface;
 class TextBox;
-
-enum class CharacterGenderName;
 
 class ChooseClassPanel : public Panel
 {
@@ -30,8 +23,7 @@ private:
 	std::unique_ptr<Surface> parchment, upDownSurface;
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
-	std::unique_ptr<Button> backToGenderButton, upButton, downButton, acceptButton;
-	std::unique_ptr<CharacterGenderName> gender;
+	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
 	std::vector<std::unique_ptr<CharacterClass>> charClasses;
 	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
 
@@ -44,7 +36,7 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	ChooseClassPanel(GameState *gameState, CharacterGenderName gender);
+	ChooseClassPanel(GameState *gameState);
 	virtual ~ChooseClassPanel();
 
 	virtual void tick(double dt, bool &running) override;

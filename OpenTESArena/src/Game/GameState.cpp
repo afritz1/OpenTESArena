@@ -106,6 +106,11 @@ bool GameState::gameDataIsActive() const
 	return this->gameData.get() != nullptr;
 }
 
+AudioManager &GameState::getAudioManager()
+{
+	return this->audioManager;
+}
+
 GameData *GameState::getGameData() const
 {
 	return this->gameData.get();

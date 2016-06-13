@@ -3,9 +3,14 @@
 
 #include "Panel.h"
 
-// There should be hotkeys only in the game world panel. There isn't going to be
-// a game world interface to click in this project. Just stat bars and compass.
-// Maybe some options will be available later on.
+// When the GameWorldPanel is active, the game world is ticking.
+
+// There are two desired kinds of interfaces:
+// - The original: compass, portrait, stat bars, and buttons.
+// - A modern version: only compass and stat bars.
+
+// The original interface needs the mouse cursor visible.
+// The modern interface does not need the mouse cursor visible.
 
 class Button;
 
@@ -18,6 +23,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
+	// Constructs the game world panel. The GameData object in GameState must be
+	// initialized.
 	GameWorldPanel(GameState *gameState);
 	virtual ~GameWorldPanel();
 

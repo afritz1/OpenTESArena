@@ -6,7 +6,7 @@
 #include "MainMenuPanel.h"
 
 #include "Button.h"
-#include "ChooseGenderPanel.h"
+#include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
 #include "LoadGamePanel.h"
 #include "Surface.h"
@@ -48,9 +48,9 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		{
 			auto changeToCharCreation = [gameState]()
 			{
-				auto charPanel = std::unique_ptr<Panel>(
-					new ChooseGenderPanel(gameState));
-				gameState->setPanel(std::move(charPanel));
+				auto creationPanel = std::unique_ptr<Panel>(
+					new ChooseClassCreationPanel(gameState));
+				gameState->setPanel(std::move(creationPanel));
 				gameState->setMusic(MusicName::Sheet);
 			};
 

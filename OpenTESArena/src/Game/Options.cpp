@@ -66,6 +66,11 @@ double Options::getVerticalSensitivity() const
 	return this->vSensitivity;
 }
 
+const std::string &Options::getSoundfont() const
+{
+	return this->soundfont;
+}
+
 double Options::getMusicVolume() const
 {
 	return this->musicVolume;
@@ -81,16 +86,14 @@ int Options::getSoundChannelCount() const
 	return this->soundChannels;
 }
 
+const std::string &Options::getDataPath() const
+{
+	return this->dataPath;
+}
+
 bool Options::introIsSkipped() const
 {
 	return this->skipIntro;
-}
-
-void Options::setDataPath(const std::string &path)
-{
-    assert(!path.empty());
-
-    this->dataPath = path;
 }
 
 void Options::setScreenWidth(int width)
@@ -154,6 +157,11 @@ void Options::setSoundVolume(double percent)
 void Options::setSoundChannelCount(int count)
 {
 	this->soundChannels = count;
+}
+
+void Options::setDataPath(std::string path)
+{
+	this->dataPath = std::move(path);
 }
 
 void Options::setSkipIntro(bool skip)

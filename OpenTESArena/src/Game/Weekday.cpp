@@ -38,7 +38,7 @@ Weekday::~Weekday()
 
 }
 
-const WeekdayName &Weekday::getWeekdayName() const
+WeekdayName Weekday::getWeekdayName() const
 {
 	return this->weekdayName;
 }

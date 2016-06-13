@@ -20,7 +20,7 @@ CharacterClassCategory::~CharacterClassCategory()
 
 }
 
-const CharacterClassCategoryName &CharacterClassCategory::getCategoryName() const
+CharacterClassCategoryName CharacterClassCategory::getCategoryName() const
 {
 	return this->categoryName;
 }

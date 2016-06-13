@@ -15,7 +15,7 @@ public:
 	CharacterRace(CharacterRaceName raceName);
 	~CharacterRace();
 
-	const CharacterRaceName &getRaceName() const;
+	CharacterRaceName getRaceName() const;
 	std::string toString() const;
 	ProvinceName getHomeProvinceName() const;
 };

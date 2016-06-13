@@ -1,13 +1,12 @@
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include "SDL.h"
 
 #include "ChooseClassPanel.h"
 
 #include "Button.h"
-#include "ChooseGenderPanel.h"
+#include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
 #include "ListBox.h"
 #include "TextBox.h"
@@ -15,7 +14,6 @@
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterClassParser.h"
-#include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/MetalType.h"
@@ -31,18 +29,17 @@
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
-ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gender)
+ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	: Panel(gameState)
 {
 	this->parchment = nullptr;
 	this->upDownSurface = nullptr;
 	this->titleTextBox = nullptr;
 	this->classesListBox = nullptr;
-	this->backToGenderButton = nullptr;
+	this->backToClassCreationButton = nullptr;
 	this->upButton = nullptr;
 	this->downButton = nullptr;
 	this->acceptButton = nullptr;
-	this->gender = nullptr;
 	this->charClasses = CharacterClassParser::parse();
 	this->charClass = nullptr;
 
@@ -106,12 +103,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 			gameState->getTextureManager()));
 	}();
 
-	this->backToGenderButton = [gameState]()
+	this->backToClassCreationButton = [gameState]()
 	{
 		auto function = [gameState]()
 		{
 			gameState->setPanel(std::unique_ptr<Panel>(
-				new ChooseGenderPanel(gameState)));
+				new ChooseClassCreationPanel(gameState)));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -152,30 +149,25 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState, CharacterGenderName gen
 		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
 	}();
 
-	this->acceptButton = [this, gameState, gender]
+	this->acceptButton = [this, gameState]
 	{
-		auto function = [this, gameState, gender]
+		auto function = [this, gameState]
 		{
 			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, gender, *this->charClass.get()));
+				gameState, *this->charClass.get()));
 			gameState->setPanel(std::move(namePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->gender = std::unique_ptr<CharacterGenderName>(
-		new CharacterGenderName(gender));
-
 	assert(this->parchment.get() != nullptr);
 	assert(this->upDownSurface.get() != nullptr);
 	assert(this->titleTextBox.get() != nullptr);
 	assert(this->classesListBox.get() != nullptr);
-	assert(this->backToGenderButton.get() != nullptr);
+	assert(this->backToClassCreationButton.get() != nullptr);
 	assert(this->acceptButton.get() != nullptr);
 	assert(this->upButton.get() != nullptr);
 	assert(this->downButton.get() != nullptr);
-	assert(this->gender.get() != nullptr);
-	assert(*this->gender.get() == gender);
 	assert(this->charClasses.size() > 0);
 	assert(this->charClass.get() == nullptr);
 }
@@ -211,7 +203,7 @@ void ChooseClassPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToGenderButton->click();
+			this->backToClassCreationButton->click();
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&

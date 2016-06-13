@@ -15,7 +15,7 @@ public:
 	BodyPart(BodyPartName partName);
 	~BodyPart();
 
-	const BodyPartName &getPartName() const;
+	BodyPartName getPartName() const;
 	ArmorType getArmorType() const;
 	std::string toString() const;
 };

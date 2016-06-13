@@ -9,9 +9,6 @@
 class Options
 {
 private:
-    // Root data path
-    std::string dataPath;
-
 	// Graphics.
 	int screenWidth, screenHeight;
 	bool fullscreen;
@@ -21,11 +18,12 @@ private:
 	double hSensitivity, vSensitivity;
 
     // Sound.
-    std::string soundfont;
+    std::string soundfont; // .cfg file.
     double musicVolume, soundVolume;
     int soundChannels;
 
 	// Miscellaneous.
+	std::string dataPath; // "ARENA" data path.
 	bool skipIntro;
 public:
 	Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
@@ -34,20 +32,19 @@ public:
         int soundChannels, bool skipIntro);
 	~Options();
 
-    const std::string &getDataPath() const { return dataPath; };
 	int getScreenWidth() const;
 	int getScreenHeight() const;
 	bool isFullscreen() const;
 	double getVerticalFOV() const;
 	double getHorizontalSensitivity() const;
 	double getVerticalSensitivity() const;
-    const std::string &getSoundfont() const { return soundfont; }
+	const std::string &getSoundfont() const;
 	double getMusicVolume() const;
 	double getSoundVolume() const;
 	int getSoundChannelCount() const;
+	const std::string &getDataPath() const;
 	bool introIsSkipped() const;
 
-    void setDataPath(const std::string &path);
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
 	void setFullscreen(bool fullscreen);
@@ -58,6 +55,7 @@ public:
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setSoundChannelCount(int count);
+	void setDataPath(std::string path);
 	void setSkipIntro(bool skip);
 };
 

@@ -15,8 +15,10 @@ public:
 	Holiday(HolidayName holidayName);
 	~Holiday();
 
-	const HolidayName &getHolidayName() const;
+	HolidayName getHolidayName() const;
 	std::string toString() const;
+
+	// These two methods together tell when a holiday is.
 	int getDayNumber() const;
 	MonthName getMonthName() const;
 };

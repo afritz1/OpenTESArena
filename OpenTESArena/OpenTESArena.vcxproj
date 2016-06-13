@@ -133,6 +133,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\ChooseClassCreationPanel.cpp" />
     <ClCompile Include="src\Interface\ListBox.cpp" />
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Game\OptionsParser.cpp" />
@@ -241,8 +242,10 @@
     <ClCompile Include="src\Media\TextureFile.cpp" />
     <ClCompile Include="src\Utilities\String.cpp" />
     <ClCompile Include="src\Interface\ToggleButton.cpp" />
+    <ClCompile Include="src\Utilities\KvpTextMap.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\ChooseClassCreationPanel.h" />
     <ClInclude Include="src\Interface\ListBox.h" />
     <ClInclude Include="src\Media\Midi.hpp" />
     <ClInclude Include="src\Media\PortraitFile.h" />
@@ -393,6 +396,7 @@
     <ClInclude Include="src\Media\TextureFile.h" />
     <ClInclude Include="src\Utilities\String.h" />
     <ClInclude Include="src\Interface\ToggleButton.h" />
+    <ClInclude Include="src\Utilities\KvpTextMap.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

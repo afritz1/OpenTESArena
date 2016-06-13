@@ -33,9 +33,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->titleTextBox = nullptr;
 	this->backToRaceButton = nullptr;
 	this->acceptButton = nullptr;
-	this->gender = nullptr;
-	this->charClass = nullptr;
-	this->raceName = nullptr;
+	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
+	this->name = name;
 	this->portraitIndex = 0;
 
 	this->titleTextBox = [gameState]()
@@ -53,21 +54,20 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->getTextureManager()));
 	}();
 
-	this->backToRaceButton = [gameState, gender, charClass, name]()
+	this->backToRaceButton = [gameState, charClass, name, gender]()
 	{
-		auto function = [gameState, gender, charClass, name]()
+		auto function = [gameState, charClass, name, gender]()
 		{
 			auto racePanel = std::unique_ptr<Panel>(new ChooseRacePanel(
-				gameState, gender, charClass, name));
+				gameState, charClass, name, gender));
 			gameState->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	// Set the game world's music to be some default for now.
-	this->acceptButton = [this, gameState, gender, raceName, charClass, name]()
+	this->acceptButton = [this, gameState, charClass, name, gender, raceName]()
 	{
-		auto function = [this, gameState, gender, raceName, charClass, name]()
+		auto function = [this, gameState, charClass, name, gender, raceName]()
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
@@ -90,19 +90,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setGameData(std::move(gameData));
 
 			auto gameWorldPanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
+
+			// Set the game world's music to be some placeholder for now.
 			gameState->setMusic(MusicName::Snowing);
 			gameState->setPanel(std::move(gameWorldPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-
-	this->gender = std::unique_ptr<CharacterGenderName>(
-		new CharacterGenderName(gender));
-	this->charClass = std::unique_ptr<CharacterClass>(
-		new CharacterClass(charClass));
-	this->raceName = std::unique_ptr<CharacterRaceName>(
-		new CharacterRaceName(raceName));
-	this->name = name;
 
 	assert(this->titleTextBox.get() != nullptr);
 	assert(this->backToRaceButton.get() != nullptr);

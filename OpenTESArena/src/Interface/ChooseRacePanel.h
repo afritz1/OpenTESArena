@@ -2,6 +2,7 @@
 #define CHOOSE_RACE_PANEL_H
 
 #include <map>
+#include <string>
 
 #include "Panel.h"
 
@@ -24,7 +25,7 @@ private:
 	std::map<ProvinceName, Rect> provinceAreas;
 	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
-	std::unique_ptr<Button> backToNameButton, acceptButton;
+	std::unique_ptr<Button> backToGenderButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
@@ -36,8 +37,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	ChooseRacePanel(GameState *gameState, CharacterGenderName gender,
-		const CharacterClass &charClass, const std::string &name);
+	ChooseRacePanel(GameState *gameState, const CharacterClass &charClass, 
+		const std::string &name, CharacterGenderName gender);
 	virtual ~ChooseRacePanel();
 
 	virtual void tick(double dt, bool &running) override;

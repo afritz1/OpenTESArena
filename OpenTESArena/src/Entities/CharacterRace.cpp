@@ -41,7 +41,7 @@ CharacterRace::~CharacterRace()
 
 }
 
-const CharacterRaceName &CharacterRace::getRaceName() const
+CharacterRaceName CharacterRace::getRaceName() const
 {
 	return this->raceName;
 }

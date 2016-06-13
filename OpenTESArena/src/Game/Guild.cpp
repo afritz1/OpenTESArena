@@ -24,7 +24,7 @@ Guild::~Guild()
 
 }
 
-const GuildName &Guild::getGuildName() const
+GuildName Guild::getGuildName() const
 {
 	return this->guildName;
 }

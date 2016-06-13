@@ -102,7 +102,7 @@ CardinalDirection::~CardinalDirection()
 
 }
 
-const CardinalDirectionName &CardinalDirection::getDirectionName() const
+CardinalDirectionName CardinalDirection::getDirectionName() const
 {
 	return this->directionName;
 }

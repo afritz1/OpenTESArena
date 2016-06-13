@@ -29,6 +29,8 @@
 GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
 {
+	assert(gameState->gameDataIsActive());
+
 	this->characterSheetButton = nullptr;
 	this->pauseButton = nullptr;
 
@@ -52,7 +54,6 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	assert(gameState->gameDataIsActive());
 	assert(this->characterSheetButton.get() != nullptr);
 	assert(this->pauseButton.get() != nullptr);
 }
@@ -99,15 +100,10 @@ void GameWorldPanel::handleEvents(bool &running)
 		{
 			// Attack...
 			// Just play a sound for now.
-			auto random = Random();
-			this->getGameState()->getAudioManager().playSound(random.next(2) == 0 ?
-				SoundName::Clank : SoundName::Swish);
 		}
 		if (activateHotkeyPressed)
 		{
 			// Activate whatever is looked at.
-			// Just play a sound for now.
-			this->getGameState()->getAudioManager().playSound(SoundName::OpenDoor);
 		}
 		if (sheetHotkeyPressed)
 		{
@@ -157,7 +153,7 @@ void GameWorldPanel::tick(double dt, bool &running)
 
 	// Animate the game world by "dt" seconds here.
 
-	// Get zoom magnitude of the player's camera.
+	// Get zoom of the player's camera. A zoom of 1.0 means FOV of 90.0.
 	auto zoom = 1.0 / std::tan(this->getGameState()->getOptions()
 		.getVerticalFOV() * 0.5 * DEG_TO_RAD);
 

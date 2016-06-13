@@ -54,7 +54,7 @@ Holiday::~Holiday()
 
 }
 
-const HolidayName &Holiday::getHolidayName() const
+HolidayName Holiday::getHolidayName() const
 {
 	return this->holidayName;
 }
