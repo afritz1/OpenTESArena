@@ -401,8 +401,9 @@ class OpenALStream {
 public:
 	OpenALStream(AudioManagerImpl *manager, MidiSong *song)
 		: mManager(manager), mSong(song), mQuit(false), mSource(0)
-		, mBuffers{0}, mBufferIdx(0), mSampleRate(0)
+		, mBufferIdx(0), mSampleRate(0)
 	{
+        std::fill(mBuffers.begin(), mBuffers.end(), 0);
 	}
 
 	~OpenALStream()
