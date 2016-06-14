@@ -16,6 +16,7 @@ enum class MusicName;
 enum class SoundName;
 
 class AudioManagerImpl;
+class Options;
 
 class AudioManager
 {
@@ -24,7 +25,7 @@ public:
 	AudioManager();
 	~AudioManager();
 
-    void init(double musicVolume, double soundVolume, int maxChannels);
+    void init(Options *options);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;

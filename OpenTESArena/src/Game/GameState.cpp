@@ -51,13 +51,7 @@ GameState::GameState()
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
 
-#ifdef HAVE_WILDMIDI
-    WildMidiDevice::init(this->options->getSoundfont());
-#endif
-    this->audioManager.init(
-        this->options->getMusicVolume(), this->options->getSoundVolume(),
-        this->options->getSoundChannelCount()
-    );
+    this->audioManager.init(this->options.get());
 
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
@@ -93,7 +87,6 @@ GameState::GameState()
 
 GameState::~GameState()
 {
-    MidiDevice::shutdown();
 }
 
 bool GameState::isRunning() const

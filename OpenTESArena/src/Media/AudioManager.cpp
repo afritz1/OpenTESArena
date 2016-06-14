@@ -12,11 +12,12 @@
 
 #include "AudioManager.h"
 
-#include "Midi.hpp"
+#include "WildMidi.hpp"
 #include "MusicName.h"
 #include "MusicType.h"
 #include "SoundName.h"
 #include "../Utilities/Debug.h"
+#include "../Game/Options.h"
 
 namespace
 {
@@ -73,7 +74,7 @@ namespace
 		{ MusicName::Dungeon5, "DUNGEON5.XMI" }, // duplicate of DUNGEON1?
 		{ MusicName::Equipment, "EQUIPMNT.XMI" },
 		{ MusicName::Evil, "EVIL.XMI" },
-		{ MusicName::EvilIntro, "EVILINTRO.XMI" },
+		{ MusicName::EvilIntro, "EVLINTRO.XMI" },
 		{ MusicName::Magic, "MAGIC_2.XMI" },
 		{ MusicName::Night, "NIGHT.XMI" },
 		{ MusicName::Overcast, "OVERCAST.XMI" },
@@ -231,9 +232,12 @@ class OpenALStream;
 
 class AudioManagerImpl {
 public:
-	/* Currently active song and playback stream. */
-	MidiSongPtr mCurrentSong;
-	std::unique_ptr<OpenALStream> mSongStream;
+    float mMusicVolume;
+    float mSfxVolume;
+
+    /* Currently active song and playback stream. */
+    MidiSongPtr mCurrentSong;
+    std::unique_ptr<OpenALStream> mSongStream;
 
 	/* A deque of available sources to play sounds and streams with. */
 	std::deque<ALuint> mFreeSources;
@@ -241,12 +245,9 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(double musicVolume, double soundVolume, int maxChannels);
+	void init(Options *options);
 
-	void loadMusic(const std::string &filename);
-	void loadSound(const std::string &filename);
-
-	bool musicIsPlaying() const;
+    bool musicIsPlaying() const;
 
 	// All music should loop until changed. Some, like when entering a city, are an 
 	// exception to this.
@@ -399,10 +400,10 @@ class OpenALStream {
 
 public:
 	OpenALStream(AudioManagerImpl *manager, MidiSong *song)
-		: mManager(manager), mSong(song), mQuit(false), mSource(0),
-		mBufferIdx(0), mSampleRate(0)
+		: mManager(manager), mSong(song), mQuit(false), mSource(0)
+		, mBufferIdx(0), mSampleRate(0)
 	{
-		mBuffers = std::array<ALuint, 4Ui64>{ 0 };
+        std::fill(mBuffers.begin(), mBuffers.end(), 0);
 	}
 
 	~OpenALStream()
@@ -467,7 +468,7 @@ public:
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
-	bool init(ALuint source)
+	bool init(ALuint source, float volume)
 	{
 		assert(mSource != 0);
 
@@ -485,7 +486,7 @@ public:
 		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
-		alSourcef(source, AL_GAIN, 1.0f);
+		alSourcef(source, AL_GAIN, volume);
 		alSourcef(source, AL_PITCH, 1.0f);
 		alSourcef(source, AL_ROLLOFF_FACTOR, 0.0f);
 		alSourcef(source, AL_SEC_OFFSET, 0.0f);
@@ -510,6 +511,7 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
+    : mMusicVolume(1.0f), mSfxVolume(1.0f)
 {
 
 }
@@ -517,6 +519,8 @@ AudioManagerImpl::AudioManagerImpl()
 AudioManagerImpl::~AudioManagerImpl()
 {
 	stopMusic();
+
+    MidiDevice::shutdown();
 
 	ALCcontext *context = alcGetCurrentContext();
 	if (!context) return;
@@ -532,9 +536,17 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels)
+void AudioManagerImpl::init(Options *options)
 {
 	Debug::mention("Audio Manager", "Initializing.");
+
+    double musicVolume = options->getMusicVolume();
+    double soundVolume = options->getSoundVolume();
+    int maxChannels = options->getSoundChannelCount();
+
+#ifdef HAVE_WILDMIDI
+    WildMidiDevice::init(options->getSoundfont());
+#endif
 
 	// Start initializing the OpenAL device.
 	ALCdevice *device = alcOpenDevice(nullptr);
@@ -565,16 +577,6 @@ bool AudioManagerImpl::musicIsPlaying() const
 	return false;
 }
 
-void AudioManagerImpl::loadMusic(const std::string &filename)
-{
-	static_cast<void>(filename);
-}
-
-void AudioManagerImpl::loadSound(const std::string &filename)
-{
-	static_cast<void>(filename);
-}
-
 void AudioManagerImpl::playMusic(MusicName musicName)
 {
 	stopMusic();
@@ -597,7 +599,7 @@ void AudioManagerImpl::playMusic(MusicName musicName)
 		}
 
 		mSongStream.reset(new OpenALStream(this, mCurrentSong.get()));
-		if (mSongStream->init(mFreeSources.front()))
+		if (mSongStream->init(mFreeSources.front(), mMusicVolume))
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
@@ -635,11 +637,12 @@ void AudioManagerImpl::setMusicVolume(double percent)
 {
 	if (mSongStream)
 		mSongStream->setVolume(static_cast<float>(percent));
+	mMusicVolume = percent;
 }
 
 void AudioManagerImpl::setSoundVolume(double percent)
 {
-	static_cast<void>(percent);
+    mSfxVolume = percent;
 }
 
 // Audio Manager
@@ -658,9 +661,9 @@ AudioManager::~AudioManager()
 
 }
 
-void AudioManager::init(double musicVolume, double soundVolume, int maxChannels)
+void AudioManager::init(Options *options)
 {
-	pImpl->init(musicVolume, soundVolume, maxChannels);
+	pImpl->init(options);
 }
 
 bool AudioManager::musicIsPlaying() const
