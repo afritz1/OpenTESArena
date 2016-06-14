@@ -12,11 +12,12 @@
 
 #include "AudioManager.h"
 
-#include "Midi.hpp"
+#include "WildMidi.hpp"
 #include "MusicName.h"
 #include "MusicType.h"
 #include "SoundName.h"
 #include "../Utilities/Debug.h"
+#include "../Game/Options.h"
 
 namespace
 {
@@ -244,7 +245,7 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(double musicVolume, double soundVolume, int maxChannels);
+	void init(Options *options);
 
     bool musicIsPlaying() const;
 
@@ -518,6 +519,8 @@ AudioManagerImpl::~AudioManagerImpl()
 {
 	stopMusic();
 
+    MidiDevice::shutdown();
+
 	ALCcontext *context = alcGetCurrentContext();
 	if (!context) return;
 
@@ -532,9 +535,17 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels)
+void AudioManagerImpl::init(Options *options)
 {
 	Debug::mention("Audio Manager", "Initializing.");
+
+    double musicVolume = options->getMusicVolume();
+    double soundVolume = options->getSoundVolume();
+    int maxChannels = options->getSoundChannelCount();
+
+#ifdef HAVE_WILDMIDI
+    WildMidiDevice::init(options->getSoundfont());
+#endif
 
 	// Start initializing the OpenAL device.
 	ALCdevice *device = alcOpenDevice(nullptr);
@@ -649,9 +660,9 @@ AudioManager::~AudioManager()
 
 }
 
-void AudioManager::init(double musicVolume, double soundVolume, int maxChannels)
+void AudioManager::init(Options *options)
 {
-	pImpl->init(musicVolume, soundVolume, maxChannels);
+	pImpl->init(options);
 }
 
 bool AudioManager::musicIsPlaying() const
