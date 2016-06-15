@@ -21,20 +21,25 @@ private:
 	std::unique_ptr<Player> player;
 	std::unique_ptr<EntityManager> entityManager;
 	std::unique_ptr<CLProgram> clProgram;
+	double gameTime;
 	// province... location... voxels... weather...
 	// sprites...
-	// date... time...
+	// date...
 public:
 	GameData(std::unique_ptr<Player> player,
 		std::unique_ptr<EntityManager> entityManager,
-		std::unique_ptr<CLProgram> clProgram);
+		std::unique_ptr<CLProgram> clProgram, double gameTime);
 	~GameData();
 
 	Player &getPlayer() const;
 	EntityManager &getEntityManager() const;
 	CLProgram &getCLProgram() const;
+	double getGameTime() const;
 
-	// No tick method; the current panel does what it wants using these methods.
+	void incrementGameTime(double dt);
+
+	// No tick method here.
+	// The current panel does what it wants using these methods.
 };
 
 #endif

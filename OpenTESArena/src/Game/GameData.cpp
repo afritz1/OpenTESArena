@@ -9,17 +9,14 @@
 
 GameData::GameData(std::unique_ptr<Player> player, 
 	std::unique_ptr<EntityManager> entityManager,
-	std::unique_ptr<CLProgram> clProgram)
+	std::unique_ptr<CLProgram> clProgram, double gameTime)
 {
 	Debug::mention("GameData", "Initializing.");
 
 	this->player = std::move(player);
 	this->entityManager = std::move(entityManager);
 	this->clProgram = std::move(clProgram);
-
-	assert(this->player.get() != nullptr);
-	assert(this->entityManager.get() != nullptr);
-	assert(this->clProgram.get() != nullptr);
+	this->gameTime = gameTime;
 }
 
 GameData::~GameData()
@@ -40,4 +37,16 @@ EntityManager &GameData::getEntityManager() const
 CLProgram &GameData::getCLProgram() const
 {
 	return *this->clProgram.get();
+}
+
+double GameData::getGameTime() const
+{
+	return this->gameTime;
+}
+
+void GameData::incrementGameTime(double dt)
+{
+	assert(dt >= 0.0);
+
+	this->gameTime += dt;
 }

@@ -75,7 +75,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
 
 			auto position = Float3d();
-			auto direction = Float3d(1.0, 0.0, 0.0);
+			auto direction = Float3d(0.0, 0.0, 1.0).normalized();
 			auto velocity = Float3d();
 			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
 				charClass, this->portraitIndex, position, direction, velocity,
@@ -83,8 +83,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY()));
+			double gameTime = 0.0; // In seconds. Also affects sun position.
 			auto gameData = std::unique_ptr<GameData>(new GameData(
-				std::move(player), std::move(entityManager), std::move(clProgram)));
+				std::move(player), std::move(entityManager), std::move(clProgram),
+				gameTime));
 
 			// Set the game data before constructing the game world panel.
 			gameState->setGameData(std::move(gameData));
@@ -92,7 +94,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			auto gameWorldPanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
 
 			// Set the game world's music to be some placeholder for now.
-			gameState->setMusic(MusicName::Snowing);
+			gameState->setMusic(MusicName::SunnyDay);
 			gameState->setPanel(std::move(gameWorldPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));

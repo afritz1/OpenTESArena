@@ -98,8 +98,7 @@ void GameWorldPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			// Attack...
-			// Just play a sound for now.
+
 		}
 		if (activateHotkeyPressed)
 		{
@@ -151,16 +150,16 @@ void GameWorldPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 	this->handleMouse(dt);
 
-	// Animate the game world by "dt" seconds here.
-
-	// Get zoom of the player's camera. A zoom of 1.0 means FOV of 90.0.
-	auto zoom = 1.0 / std::tan(this->getGameState()->getOptions()
-		.getVerticalFOV() * 0.5 * DEG_TO_RAD);
-
-	// Update CLProgram members that are refreshed per frame.
+	// Animate the game world by delta time.
 	auto *gameData = this->getGameState()->getGameData();
-	auto direction = gameData->getPlayer().getDirection();
-	gameData->getCLProgram().updateDirection(direction.scaledBy(zoom));
+	gameData->incrementGameTime(dt);	
+
+	// Update CLProgram members that are refreshed each frame.
+	const auto &player = gameData->getPlayer();
+	double verticalFOV = this->getGameState()->getOptions().getVerticalFOV();
+	auto &clProgram = gameData->getCLProgram();
+	clProgram.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
+	clProgram.updateGameTime(gameData->getGameTime());
 }
 
 void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
@@ -176,7 +175,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
 
-	// Draw stat bars.
+	// Draw placeholder stat bars.
 	auto statBarSurface = Surface(5, 35);
 
 	statBarSurface.fill(Color(0, 255, 0));

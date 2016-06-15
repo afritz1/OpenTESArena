@@ -12,12 +12,12 @@
 
 #include "AudioManager.h"
 
-#include "WildMidi.hpp"
 #include "MusicName.h"
 #include "MusicType.h"
 #include "SoundName.h"
-#include "../Utilities/Debug.h"
+#include "WildMidi.hpp"
 #include "../Game/Options.h"
+#include "../Utilities/Debug.h"
 
 namespace
 {
@@ -232,12 +232,12 @@ class OpenALStream;
 
 class AudioManagerImpl {
 public:
-    float mMusicVolume;
-    float mSfxVolume;
+	float mMusicVolume;
+	float mSfxVolume;
 
-    /* Currently active song and playback stream. */
-    MidiSongPtr mCurrentSong;
-    std::unique_ptr<OpenALStream> mSongStream;
+	/* Currently active song and playback stream. */
+	MidiSongPtr mCurrentSong;
+	std::unique_ptr<OpenALStream> mSongStream;
 
 	/* A deque of available sources to play sounds and streams with. */
 	std::deque<ALuint> mFreeSources;
@@ -247,7 +247,7 @@ public:
 
 	void init(Options *options);
 
-    bool musicIsPlaying() const;
+	bool musicIsPlaying() const;
 
 	// All music should loop until changed. Some, like when entering a city, are an 
 	// exception to this.
@@ -305,7 +305,7 @@ class OpenALStream {
 			return false;
 
 		std::fill(buffer.begin() + totalSize, buffer.end(), 0);
-		alBufferData(bufid, mFormat, buffer.data(), 
+		alBufferData(bufid, mFormat, buffer.data(),
 			static_cast<ALsizei>(buffer.size()), mSampleRate);
 		return true;
 	}
@@ -403,7 +403,8 @@ public:
 		: mManager(manager), mSong(song), mQuit(false), mSource(0)
 		, mBufferIdx(0), mSampleRate(0)
 	{
-        std::fill(mBuffers.begin(), mBuffers.end(), 0);
+		// Using std::fill for mBuffers since VS2013 doesn't support mBuffers{0}.
+		std::fill(mBuffers.begin(), mBuffers.end(), 0);
 	}
 
 	~OpenALStream()
@@ -511,7 +512,7 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
-    : mMusicVolume(1.0f), mSfxVolume(1.0f)
+	: mMusicVolume(1.0f), mSfxVolume(1.0f)
 {
 
 }
@@ -520,7 +521,7 @@ AudioManagerImpl::~AudioManagerImpl()
 {
 	stopMusic();
 
-    MidiDevice::shutdown();
+	MidiDevice::shutdown();
 
 	ALCcontext *context = alcGetCurrentContext();
 	if (!context) return;
@@ -540,12 +541,12 @@ void AudioManagerImpl::init(Options *options)
 {
 	Debug::mention("Audio Manager", "Initializing.");
 
-    double musicVolume = options->getMusicVolume();
-    double soundVolume = options->getSoundVolume();
-    int maxChannels = options->getSoundChannelCount();
+	double musicVolume = options->getMusicVolume();
+	double soundVolume = options->getSoundVolume();
+	int maxChannels = options->getSoundChannelCount();
 
 #ifdef HAVE_WILDMIDI
-    WildMidiDevice::init(options->getSoundfont());
+	WildMidiDevice::init(options->getSoundfont());
 #endif
 
 	// Start initializing the OpenAL device.
@@ -637,12 +638,12 @@ void AudioManagerImpl::setMusicVolume(double percent)
 {
 	if (mSongStream)
 		mSongStream->setVolume(static_cast<float>(percent));
-	mMusicVolume = percent;
+	mMusicVolume = static_cast<float>(percent);
 }
 
 void AudioManagerImpl::setSoundVolume(double percent)
 {
-    mSfxVolume = percent;
+	mSfxVolume = static_cast<float>(percent);
 }
 
 // Audio Manager

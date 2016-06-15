@@ -8,7 +8,7 @@
 
 Directable::Directable(const Float3d &direction)
 {
-	this->direction = direction;
+	this->setDirection(direction);
 }
 
 Directable::~Directable()
@@ -30,7 +30,7 @@ CoordinateFrame Directable::getFrame() const
 {
 	auto forward = this->direction;
 	auto right = forward.cross(this->getGlobalUp());
-	auto up = forward.cross(-right);
+	auto up = right.cross(forward);
 	return CoordinateFrame(forward, right, up);
 }
 

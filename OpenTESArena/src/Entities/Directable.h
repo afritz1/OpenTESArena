@@ -19,7 +19,8 @@ public:
 	Directable(const Float3d &direction);
 	~Directable();
 
-	// Get the direction normal to the ground.
+	// Get the direction normal to the ground. Maybe this method should be in a
+	// different class, like World or something.
 	static Float3d getGlobalUp();
 
 	const Float3d &getDirection() const;

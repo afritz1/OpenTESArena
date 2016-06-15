@@ -1,9 +1,12 @@
 #include <cassert>
+#include <cmath>
 
 #include "SDL.h"
 
 #include "CLProgram.h"
 
+#include "../Entities/Directable.h"
+#include "../Math/Constants.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 
@@ -17,6 +20,9 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
+// The camera struct resides in the kernel.
+const cl::size_type CLProgram::SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float);
+
 CLProgram::CLProgram(int width, int height)
 {
 	assert(width > 0);
@@ -26,18 +32,24 @@ CLProgram::CLProgram(int width, int height)
 	this->commandQueue = nullptr;
 	this->program = nullptr;
 	this->kernel = nullptr;
-	this->directionBuffer = nullptr;
-	this->colorBuffer = nullptr;
+	this->cameraBuffer = nullptr;
+	this->gameTimeBuffer = nullptr;
+	this->outputBuffer = nullptr;
 	this->width = width;
 	this->height = height;
 
+	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
 	Debug::check(platforms.size() > 0, "CLProgram", "No OpenCL platform found.");
 
 	// Look at the first platform. Most computers shouldn't have more than one.
 	// More robust code can check for multiple platforms in the future.
 	const auto &platform = platforms.at(0);
-	Debug::mention("CLProgram", "Platform \"" + platform.getInfo<CL_PLATFORM_NAME>() + "\".");
+
+	// Mention some version information about the platform (it should be okay if the 
+	// platform version is higher than the device version).
+	Debug::mention("CLProgram", "Platform version is \"" +
+		platform.getInfo<CL_PLATFORM_VERSION>() + "\".");
 
 	// Check for all possible devices on the platform, starting with GPUs.
 	auto devices = CLProgram::getDevices(platform, CL_DEVICE_TYPE_GPU);
@@ -53,46 +65,69 @@ CLProgram::CLProgram(int width, int height)
 		}
 	}
 
+	// Choose the first available device. Users with multiple GPUs might prefer an option.
 	this->device = devices.at(0);
 
+	// Create an OpenCL context.
 	cl_int status = CL_SUCCESS;
 	this->context = cl::Context(this->device, nullptr, nullptr, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Context.");
 
+	// Create an OpenCL command queue.
 	this->commandQueue = cl::CommandQueue(this->context, this->device, 0, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue.");
 
+	// Read the kernel source from file.
 	auto source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
+
+	// Make some #defines to add to the kernel source.
 	auto defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
 		std::string("\n") + std::string("#define SCREEN_HEIGHT ") +
 		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
 		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
 		std::string("f\n"); // The "f" is for "float". OpenCL complains if it's a double.
+
+	// Make some custom compile switches.
 	auto options = std::string("-cl-fast-relaxed-math -cl-strict-aliasing");
+
+	// Put the kernel source in a program object within the OpenCL context.
 	this->program = cl::Program(this->context, defines + source, false, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Program.");
 
+	// Build the program into something executable. If compilation fails, the program stops.
 	status = this->program.build(devices, options.c_str());
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Program::build (" +
 		this->getErrorString(status) + ").");
 
+	// Create the kernels and set their entry function to be a __kernel in the program.
 	this->kernel = cl::Kernel(this->program, CLProgram::TEST_KERNEL.c_str(), &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel.");
 
-	this->directionBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		sizeof(cl_float3), nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer directionBuffer.");
+	// Create some OpenCL buffers for reading and writing.
+	this->cameraBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		CLProgram::SIZEOF_CAMERA, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer cameraBuffer.");
 
-	this->colorBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
+	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		sizeof(cl_float), nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer gameTimeBuffer.");
+
+	this->outputBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
 		sizeof(cl_int) * width * height, nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer outputBuffer.");
 
-	status = this->kernel.setArg(0, this->directionBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg directionBuffer.");
+	// Tell the kernel arguments where their data lives.
+	// Maybe there should be methods which set kernel arguments for each kernel object.
+	// If only one kernel member is used, then update the targets for it on-the-fly.
+	status = this->kernel.setArg(0, this->cameraBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg cameraBuffer.");
 
-	status = this->kernel.setArg(1, this->colorBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg colorBuffer.");
-	
+	status = this->kernel.setArg(1, this->gameTimeBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg gameTimeBuffer.");
+
+	status = this->kernel.setArg(2, this->outputBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg outputBuffer.");
+
 	assert(this->width == width);
 	assert(this->height == height);
 }
@@ -104,9 +139,8 @@ CLProgram::~CLProgram()
 
 std::vector<cl::Platform> CLProgram::getPlatforms()
 {
-	auto platforms = std::vector<cl::Platform>();
-
-	auto status = cl::Platform::get(&platforms);
+	std::vector<cl::Platform> platforms;
+	cl_int status = cl::Platform::get(&platforms);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "CLProgram::getPlatforms.");
 
 	return platforms;
@@ -115,9 +149,8 @@ std::vector<cl::Platform> CLProgram::getPlatforms()
 std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 	cl_device_type type)
 {
-	auto devices = std::vector<cl::Device>();
-
-	auto status = platform.getDevices(type, &devices);
+	std::vector<cl::Device> devices;
+	cl_int status = platform.getDevices(type, &devices);
 	Debug::check((status == CL_SUCCESS) || (status == CL_DEVICE_NOT_FOUND),
 		"CLProgram", "CLProgram::getDevices.");
 
@@ -126,11 +159,6 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 
 std::string CLProgram::getBuildReport() const
 {
-	/*
-	assert(this->device.get() != nullptr);
-	assert(this->program.get() != nullptr);
-	*/
-
 	auto buildLog = this->program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(this->device);
 	return buildLog;
 }
@@ -213,27 +241,65 @@ std::string CLProgram::getErrorString(cl_int error) const
 	}
 }
 
-void CLProgram::updateDirection(const Float3d &direction)
+void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
-	// Write the direction into a local buffer. It's small enough that it can be
-	// recreated each frame.
-	auto buffer = std::vector<char>(sizeof(cl_float3));
-	auto *bufPtr = reinterpret_cast<cl_float*>(buffer.data());
-	*(bufPtr + 0) = static_cast<cl_float>(direction.getX());
-	*(bufPtr + 1) = static_cast<cl_float>(direction.getY());
-	*(bufPtr + 2) = static_cast<cl_float>(direction.getZ());
+	// Do not scale the direction beforehand.
+	assert(direction.isNormalized());
 
-	// Write the buffer to kernel memory.
-	auto status = this->commandQueue.enqueueWriteBuffer(this->directionBuffer,
-		true, 0, buffer.size(), static_cast<const void*>(bufPtr),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::enqueueWriteBuffer updateDirection");
+	std::vector<char> buffer(CLProgram::SIZEOF_CAMERA);
 
-	// Update the kernel argument (why is this necessary?).
-	status = this->kernel.setArg(0, this->directionBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::Kernel::setArg updateDirection.");
+	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+
+	// Write the components of the camera to the local buffer.
+	// Correct spacing is very important.
+	auto *eyePtr = reinterpret_cast<cl_float*>(bufPtr);
+	*(eyePtr + 0) = static_cast<cl_float>(eye.getX());
+	*(eyePtr + 1) = static_cast<cl_float>(eye.getY());
+	*(eyePtr + 2) = static_cast<cl_float>(eye.getZ());
+
+	auto *forwardPtr = reinterpret_cast<cl_float*>(bufPtr + sizeof(cl_float3));
+	*(forwardPtr + 0) = static_cast<cl_float>(direction.getX());
+	*(forwardPtr + 1) = static_cast<cl_float>(direction.getY());
+	*(forwardPtr + 2) = static_cast<cl_float>(direction.getZ());
+
+	auto right = direction.cross(Directable::getGlobalUp()).normalized();
+	auto *rightPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 2));
+	*(rightPtr + 0) = static_cast<cl_float>(right.getX());
+	*(rightPtr + 1) = static_cast<cl_float>(right.getY());
+	*(rightPtr + 2) = static_cast<cl_float>(right.getZ());
+
+	auto up = right.cross(direction).normalized();
+	auto *upPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 3));
+	*(upPtr + 0) = static_cast<cl_float>(up.getX());
+	*(upPtr + 1) = static_cast<cl_float>(up.getY());
+	*(upPtr + 2) = static_cast<cl_float>(up.getZ());
+
+	// Zoom is a function of field of view.
+	double zoom = 1.0 / std::tan(fovY * 0.5 * DEG_TO_RAD);
+	auto *zoomPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 4));
+	*zoomPtr = static_cast<cl_float>(zoom);
+
+	// Write the buffer to device memory.
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->cameraBuffer,
+		CL_TRUE, 0, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateCamera");
+}
+
+void CLProgram::updateGameTime(double gameTime)
+{
+	assert(gameTime > 0);
+
+	std::vector<char> buffer(sizeof(cl_float));
+
+	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+
+	auto *timePtr = reinterpret_cast<cl_float*>(bufPtr);
+	*timePtr = static_cast<cl_float>(gameTime);
+
+	// Write the buffer to device memory.
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->gameTimeBuffer,
+		CL_TRUE, 0, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateGameTime");
 }
 
 void CLProgram::render(SDL_Surface *dst)
@@ -247,10 +313,8 @@ void CLProgram::render(SDL_Surface *dst)
 		nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueNDRangeKernel.");
 
-	status = this->commandQueue.finish();
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::finish.");
-
-	status = this->commandQueue.enqueueReadBuffer(this->colorBuffer, true, 0,
-		sizeof(cl_int) * this->width * this->height, dst->pixels, nullptr, nullptr);
+	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
+		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height), 
+		dst->pixels, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 }
