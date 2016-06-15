@@ -8,14 +8,11 @@
 
 WeaponArtifactData::WeaponArtifactData(const std::string &displayName, 
 	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-	const WeaponType &weaponType, const MetalType &metalType)
+	WeaponType weaponType, MetalType metalType)
 	: ArtifactData(displayName, flavorText, provinces)
 {
 	this->weaponType = weaponType;
 	this->metalType = metalType;
-
-	assert(this->weaponType == weaponType);
-	assert(this->metalType == metalType);
 }
 
 WeaponArtifactData::~WeaponArtifactData()
@@ -30,12 +27,12 @@ std::unique_ptr<ArtifactData> WeaponArtifactData::clone() const
 		this->getWeaponType(), this->getMetalType()));
 }
 
-const WeaponType &WeaponArtifactData::getWeaponType() const
+WeaponType WeaponArtifactData::getWeaponType() const
 {
 	return this->weaponType;
 }
 
-const MetalType &WeaponArtifactData::getMetalType() const
+MetalType WeaponArtifactData::getMetalType() const
 {
 	return this->metalType;
 }

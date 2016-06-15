@@ -4,9 +4,10 @@
 #include <string>
 
 #include "Item.h"
-#include "TrinketType.h"
 
 // Trinkets are non-metal accessories, so they don't inherit from Metallic.
+
+enum class TrinketType;
 
 class Trinket : public Item
 {
@@ -22,7 +23,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const TrinketType &getTrinketType() const;
+	TrinketType getTrinketType() const;
 	int getMaxEquipCount() const;
 };
 

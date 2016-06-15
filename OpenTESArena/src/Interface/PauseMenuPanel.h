@@ -3,11 +3,9 @@
 
 #include "Panel.h"
 
-// The pause menu background will be redesigned to fit new options and things.
-// The old pause menu had the game world interface still drawn in it, which was 
-// pretty pointless.
-
-// The pause menu buttons are off center by a little bit.
+// The pause menu background might be redesigned to fit new options and things.
+// The old pause menu had the game world interface still drawn in it, which might
+// be considered pointless by some players.
 
 class Button;
 class TextBox;

@@ -4,8 +4,10 @@
 #include "Player.h"
 
 #include "CoordinateFrame.h"
+#include "CharacterClass.h"
 #include "CharacterGenderName.h"
 #include "CharacterRaceName.h"
+#include "EntityType.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
@@ -17,16 +19,13 @@ Player::Player(const std::string &displayName, CharacterGenderName gender,
 	: Entity(EntityType::Player, position, entityManager), Directable(direction),
 	Movable(velocity)
 {
-	this->charClass = nullptr;
+	assert(portraitID >= 0);
 
 	this->displayName = displayName;
 	this->gender = gender;
 	this->raceName = raceName;
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->portraitID = portraitID;
-
-	assert(this->portraitID >= 0);
-	assert(this->charClass.get() != nullptr);
 }
 
 Player::~Player()
@@ -113,8 +112,6 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 		lookUpRads = 0.0;
 	}
 
-	//const double zoom = 1.0 / std::tan((verticalFOV * 0.5) * DEG_TO_RAD);
-
 	const double currentDec = std::acos(this->getDirection().normalized().getY());
 	const double requestedDec = currentDec - lookUpRads;
 
@@ -126,11 +123,12 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
 
 	// Only divide by zoom when sensitivity depends on field of view (which it doesn't here).
+	//const double zoom = 1.0 / std::tan((verticalFOV * 0.5) * DEG_TO_RAD);
 	this->pitch(lookUpRads/* / zoom*/);
 	this->yaw(-lookRightRads/* / zoom*/);
 }
 
 void Player::tick(GameState *gameState, double dt)
 {
-
+	
 }

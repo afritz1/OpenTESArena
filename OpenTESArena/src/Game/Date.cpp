@@ -8,19 +8,15 @@
 
 Date::Date(int day, WeekdayName weekdayName, MonthName monthName, const Year &year)
 {
+	// Programmer error if the day is ever out of range.
+	assert(day >= 1);
+	assert(day <= 30);
+
 	this->day = day;
 
 	this->weekday = std::unique_ptr<Weekday>(new Weekday(weekdayName));
 	this->month = std::unique_ptr<Month>(new Month(monthName));
 	this->year = std::unique_ptr<Year>(new Year(year));
-
-	// Programmer error if the day is ever out of range.
-	assert(this->day >= 1);
-	assert(this->day <= 30);
-
-	assert(this->weekday.get() != nullptr);
-	assert(this->month.get() != nullptr);
-	assert(this->year.get() != nullptr);
 }
 
 Date::Date(const Date &date)
@@ -54,34 +50,37 @@ const Year &Date::getYear() const
 
 std::string Date::getOrdinalDay() const
 {
+	// Programmer error if the day is ever out of range.
 	assert(this->day >= 1);
 	assert(this->day <= 30);
 
 	int dayNumber = this->getDayNumber();
-	auto dayString = std::to_string(dayNumber);
-
 	int ordinalDay = dayNumber % 10;
 
+	auto dayString = std::to_string(dayNumber);
 	if (ordinalDay == 1)
 	{
-		return dayString + "st";
+		dayString += "st";
 	}
 	else if (ordinalDay == 2)
 	{
-		return dayString + "nd";
+		dayString += "nd";
 	}
 	else if (ordinalDay == 3)
 	{
-		return dayString + "rd";
+		dayString += "rd";
 	}
 	else
 	{
-		return dayString + "th";
+		dayString += "th";
 	}
+
+	return dayString;
 }
 
 void Date::incrementDay()
 {
+	// Programmer error if the day is ever out of range.
 	assert(this->day >= 1);
 	assert(this->day <= 30);
 

@@ -27,7 +27,7 @@ public:
 
 	virtual ~ToggleButton();
 
-	const bool &isOn() const;
+	bool isOn() const;
 
 	void toggle();
 };

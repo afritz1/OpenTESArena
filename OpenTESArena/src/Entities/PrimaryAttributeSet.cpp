@@ -4,14 +4,17 @@
 #include "PrimaryAttributeSet.h"
 
 #include "PrimaryAttribute.h"
+#include "PrimaryAttributeName.h"
 
 PrimaryAttributeSet::PrimaryAttributeSet()
 {
-	// Initialize to empty.
+	// Initialize to empty. This isn't immediately constructed here because the
+	// primary attributes each need the primary attribute name to go with them,
+	// and the loop below does that cleanly (perhaps this is a poor design).
 	this->primaryAttributes = std::map<PrimaryAttributeName, PrimaryAttribute>();
 
 	// List of attributes to generate.
-	const auto attributeNames = std::vector<PrimaryAttributeName>
+	const std::vector<PrimaryAttributeName> attributeNames =
 	{
 		PrimaryAttributeName::Strength,
 		PrimaryAttributeName::Intelligence,
@@ -26,7 +29,7 @@ PrimaryAttributeSet::PrimaryAttributeSet()
 	// Initialize each primary attribute to zero.
 	for (const auto &attributeName : attributeNames)
 	{
-		auto attribute = PrimaryAttribute(attributeName, 0);
+		PrimaryAttribute attribute(attributeName, 0);
 		this->primaryAttributes.insert(std::pair<PrimaryAttributeName, PrimaryAttribute>(
 			attributeName, attribute));
 	}
@@ -51,6 +54,4 @@ void PrimaryAttributeSet::set(PrimaryAttributeName attributeName, int value)
 
 	// This method checks that the value is valid before setting it.
 	attribute.set(value);
-
-	assert(attribute.get() == value);
 }

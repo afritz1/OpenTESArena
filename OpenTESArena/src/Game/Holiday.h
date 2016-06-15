@@ -3,8 +3,7 @@
 
 #include <string>
 
-#include "HolidayName.h"
-
+enum class HolidayName;
 enum class MonthName;
 
 class Holiday
@@ -16,11 +15,12 @@ public:
 	~Holiday();
 
 	HolidayName getHolidayName() const;
-	std::string toString() const;
 
 	// These two methods together tell when a holiday is.
 	int getDayNumber() const;
 	MonthName getMonthName() const;
+
+	std::string toString() const;
 };
 
 #endif

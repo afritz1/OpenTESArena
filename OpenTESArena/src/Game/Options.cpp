@@ -2,11 +2,23 @@
 
 #include "Options.h"
 
-Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double verticalFOV, double hSensitivity, double vSensitivity, std::string&& soundfont,
+Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
+    double verticalFOV, double hSensitivity, double vSensitivity, std::string &&soundfont,
     double musicVolume, double soundVolume, int soundChannels, bool skipIntro)
     : dataPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
+	assert(screenWidth > 0);
+	assert(screenHeight > 0);
+	assert(verticalFOV > 0.0);
+	assert(verticalFOV < 180.0);
+	assert(hSensitivity > 0.0);
+	assert(vSensitivity > 0.0);
+	assert(musicVolume >= 0.0);
+	assert(musicVolume <= 1.0);
+	assert(soundVolume >= 0.0);
+	assert(soundVolume <= 1.0);
+	assert(soundChannels >= 1);
+
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 	this->fullscreen = fullscreen;
@@ -17,18 +29,6 @@ Options::Options(std::string&& dataPath, int screenWidth, int screenHeight, bool
 	this->soundVolume = soundVolume;
 	this->soundChannels = soundChannels;
 	this->skipIntro = skipIntro;
-
-	assert(this->screenWidth > 0);
-	assert(this->screenHeight > 0);
-	assert(this->verticalFOV > 0.0);
-	assert(this->verticalFOV < 180.0);
-	assert(this->hSensitivity > 0.0);
-	assert(this->vSensitivity > 0.0);
-	assert(this->musicVolume >= 0.0);
-	assert(this->musicVolume <= 1.0);
-	assert(this->soundVolume >= 0.0);
-	assert(this->soundVolume <= 1.0);
-	assert(this->soundChannels >= 1);
 }
 
 Options::~Options()

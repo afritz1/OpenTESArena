@@ -3,7 +3,9 @@
 
 #include "Guild.h"
 
-const auto GuildDisplayNames = std::map<GuildName, std::string>
+#include "GuildName.h"
+
+const std::map<GuildName, std::string> GuildDisplayNames =
 {
 	{ GuildName::Blades, "Blades" },
 	{ GuildName::DarkBrotherhood, "Dark Brotherhood" },
@@ -32,6 +34,5 @@ GuildName Guild::getGuildName() const
 std::string Guild::toString() const
 {
 	auto displayName = GuildDisplayNames.at(this->getGuildName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

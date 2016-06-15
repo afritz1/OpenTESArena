@@ -1,11 +1,9 @@
 #ifndef TEXT_BOX_H
 #define TEXT_BOX_H
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "../Media/FontName.h"
 #include "Surface.h"
 
 // A scrollable text box could just have a text box surface, and then use a Rectangle
@@ -15,6 +13,8 @@
 
 class Color;
 class TextureManager;
+
+enum class FontName;
 
 class TextBox : public Surface
 {

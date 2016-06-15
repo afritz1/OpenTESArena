@@ -13,27 +13,27 @@
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
 
-const auto CharacterClassParserCategories = std::map<std::string, CharacterClassCategoryName>
+const std::map<std::string, CharacterClassCategoryName> CharacterClassParserCategories =
 {
 	{ "Mage", CharacterClassCategoryName::Mage },
 	{ "Thief", CharacterClassCategoryName::Thief },
 	{ "Warrior", CharacterClassCategoryName::Warrior }
 };
 
-const auto CharacterClassParserMagicBooleans = std::map<std::string, bool>
+const std::map<std::string, bool> CharacterClassParserMagicBooleans =
 {
 	{ "True", true },
 	{ "False", false }
 };
 
-const auto CharacterClassParserArmors = std::map<std::string, ArmorMaterialType>
+const std::map<std::string, ArmorMaterialType> CharacterClassParserArmors =
 {
 	{ "Leather", ArmorMaterialType::Leather },
 	{ "Chain", ArmorMaterialType::Chain },
 	{ "Plate", ArmorMaterialType::Plate }
 };
 
-const auto CharacterClassParserShields = std::map<std::string, ShieldType>
+const std::map<std::string, ShieldType> CharacterClassParserShields =
 {
 	{ "Buckler", ShieldType::Buckler },
 	{ "Round", ShieldType::Round },
@@ -41,7 +41,7 @@ const auto CharacterClassParserShields = std::map<std::string, ShieldType>
 	{ "Tower", ShieldType::Tower }
 };
 
-const auto CharacterClassParserWeapons = std::map<std::string, WeaponType>
+const std::map<std::string, WeaponType> CharacterClassParserWeapons =
 {
 	{ "BattleAxe", WeaponType::BattleAxe },
 	{ "Broadsword", WeaponType::Broadsword },
@@ -63,6 +63,7 @@ const auto CharacterClassParserWeapons = std::map<std::string, WeaponType>
 	{ "Warhammer", WeaponType::Warhammer }
 };
 
+// These paths might be obsolete soon.
 const std::string CharacterClassParser::PATH = "data/text/";
 const std::string CharacterClassParser::FILENAME = "classes.txt";
 
@@ -72,28 +73,30 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
 
-	auto fullPath = CharacterClassParser::PATH + CharacterClassParser::FILENAME;
+	std::string fullPath(CharacterClassParser::PATH + CharacterClassParser::FILENAME);
 
 	// Read the locations file into a string.
-	auto text = File::toString(fullPath);
+	std::string text = File::toString(fullPath);
 
 	// Relevant parsing symbols.
 	const char comment = '#';
 	const char comma = ',';
-	const auto any = std::string("Any");
-	const auto none = std::string("None");
+	const std::string any = "Any";
+	const std::string none = "None";
 
-	auto classes = std::vector<std::unique_ptr<CharacterClass>>();
-
+	std::vector<std::unique_ptr<CharacterClass>> classes;
 	std::istringstream iss(text);
-
-	auto line = std::string();
+	std::string line;
 
 	// For each line, get the substrings between commas.
 	while (std::getline(iss, line))
 	{
+		const char &firstColumn = line.at(0);
+
 		// Ignore comments and blank lines.
-		if ((line.at(0) == comment) || (line.at(0) == '\r') || (line.at(0) == '\n'))
+		if ((firstColumn == comment) ||
+			(firstColumn == '\r') ||
+			(firstColumn == '\n'))
 		{
 			continue;
 		}
@@ -105,8 +108,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto displayName = line.substr(0, index);
-
+		std::string displayName = line.substr(0, index);
 
 		// Get the category name.
 		index += 2;
@@ -116,7 +118,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto category = line.substr(oldIndex, index - oldIndex);
+		std::string category = line.substr(oldIndex, index - oldIndex);
 
 		// Get the magic boolean.
 		index += 2;
@@ -126,7 +128,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto magicBoolean = line.substr(oldIndex, index - oldIndex);
+		std::string magicBoolean = line.substr(oldIndex, index - oldIndex);
 
 		// Get the starting health.
 		index += 2;
@@ -136,7 +138,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto health = line.substr(oldIndex, index - oldIndex);
+		std::string health = line.substr(oldIndex, index - oldIndex);
 
 		// Get the health dice.
 		index += 2;
@@ -146,7 +148,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto dice = line.substr(oldIndex, index - oldIndex);
+		std::string dice = line.substr(oldIndex, index - oldIndex);
 
 		// Get the set of armors.
 		index += 2;
@@ -156,8 +158,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto armors = line.substr(oldIndex, index - oldIndex);
-		auto armorTokens = String::split(armors);
+		std::string armors = line.substr(oldIndex, index - oldIndex);
+		std::vector<std::string> armorTokens = String::split(armors);
 
 		// Get the set of shields.
 		index += 2;
@@ -167,8 +169,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto shields = line.substr(oldIndex, index - oldIndex);
-		auto shieldTokens = String::split(shields);
+		std::string shields = line.substr(oldIndex, index - oldIndex);
+		std::vector<std::string> shieldTokens = String::split(shields);
 
 		// Get the set of weapons (read until the end of the line).
 		index += 2;
@@ -178,8 +180,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			++index;
 		}
 
-		auto weapons = line.substr(oldIndex, index - oldIndex);
-		auto weaponTokens = String::split(weapons);
+		std::string weapons = line.substr(oldIndex, index - oldIndex);
+		std::vector<std::string> weaponTokens = String::split(weapons);
 
 		// Verify that the strings each have a mapping.
 		Debug::check(CharacterClassParserCategories.find(category) !=
@@ -219,7 +221,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		int startingHealth = std::stoi(health);
 		int healthDice = std::stoi(dice);
 
-		auto allowedArmors = std::vector<ArmorMaterialType>();
+		std::vector<ArmorMaterialType> allowedArmors;
 		for (const auto &armor : armorTokens)
 		{
 			if (armor == none)
@@ -244,7 +246,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			}
 		}
 
-		auto allowedShields = std::vector<ShieldType>();
+		std::vector<ShieldType> allowedShields;
 		for (const auto &shield : shieldTokens)
 		{
 			if (shield == none)
@@ -269,7 +271,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			}
 		}
 
-		auto allowedWeapons = std::vector<WeaponType>();
+		std::vector<WeaponType> allowedWeapons;
 		for (const auto &weapon : weaponTokens)
 		{
 			if (weapon == none)

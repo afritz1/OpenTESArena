@@ -10,18 +10,12 @@
 
 CharacterEquipment::CharacterEquipment()
 {
-	// Initialize each list to empty.
+	// Initialize everything to empty.
 	this->accessories = std::vector<Accessory*>();
 	this->bodyArmors = std::map<BodyPartName, BodyArmor*>();
 	this->shield = nullptr;
 	this->trinkets = std::vector<Trinket*>();
 	this->weapon = nullptr;
-
-	assert(this->accessories.size() == 0);
-	assert(this->bodyArmors.size() == 0);
-	assert(this->shield == nullptr);
-	assert(this->trinkets.size() == 0);
-	assert(this->weapon == nullptr);
 }
 
 CharacterEquipment::~CharacterEquipment()
@@ -32,8 +26,7 @@ CharacterEquipment::~CharacterEquipment()
 
 std::vector<Accessory*> CharacterEquipment::getAccessories(AccessoryType accessoryType) const
 {
-	auto accessories = std::vector<Accessory*>();
-
+	std::vector<Accessory*> accessories;
 	for (const auto &accessory : this->accessories)
 	{
 		if (accessory->getAccessoryType() == accessoryType)
@@ -58,8 +51,7 @@ Shield *CharacterEquipment::getShield() const
 
 std::vector<Trinket*> CharacterEquipment::getTrinkets(TrinketType trinketType) const
 {
-	auto trinkets = std::vector<Trinket*>();
-
+	std::vector<Trinket*> trinkets;
 	for (const auto &trinket : this->trinkets)
 	{
 		if (trinket->getTrinketType() == trinketType)

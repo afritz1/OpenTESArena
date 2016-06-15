@@ -73,7 +73,6 @@
     <ClCompile Include="src\Interface\ChooseClassPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseNamePanel.cpp" />
     <ClCompile Include="src\Interface\ChooseRacePanel.cpp" />
-    <ClCompile Include="src\Rendering\PostProcessing.cpp" />
     <ClCompile Include="src\Math\Float4.cpp" />
     <ClCompile Include="src\Math\Float3.cpp" />
     <ClCompile Include="src\Math\Float2.cpp" />
@@ -224,7 +223,6 @@
     <ClInclude Include="src\Interface\ChooseRacePanel.h" />
     <ClInclude Include="src\Interface\ChooseClassPanel.h" />
     <ClInclude Include="src\Interface\ChooseNamePanel.h" />
-    <ClInclude Include="src\Rendering\PostProcessing.h" />
     <ClInclude Include="src\Math\Float4.h" />
     <ClInclude Include="src\Math\Float3.h" />
     <ClInclude Include="src\Math\Float2.h" />

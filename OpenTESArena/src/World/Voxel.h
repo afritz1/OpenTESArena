@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "VoxelType.h"
-
 // Voxels in Arena are about twice as big as those in Minecraft, and are either
 // a 1x1x1 cube or a 1x1.5x1 cuboid. These "tall voxels" are found in the Mages'
 // Guild, temples, palaces, and certain dungeons.
@@ -21,6 +19,7 @@
 class Triangle;
 
 enum class VoxelMaterialType;
+enum class VoxelType;
 
 class Voxel
 {
@@ -31,7 +30,7 @@ public:
 	Voxel();
 	~Voxel();
 
-	const VoxelType &getVoxelType() const;
+	VoxelType getVoxelType() const;
 	VoxelMaterialType getVoxelMaterialType() const;
 	std::string typeToString() const;
 	std::string materialToString() const;

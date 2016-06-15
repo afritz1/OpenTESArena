@@ -25,16 +25,6 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 	const std::string &name)
 	: Panel(gameState)
 {
-	this->parchment = nullptr;
-	this->genderTextBox = nullptr;
-	this->maleTextBox = nullptr;
-	this->femaleTextBox = nullptr;
-	this->backToNameButton = nullptr;
-	this->maleButton = nullptr;
-	this->femaleButton = nullptr;
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->name = name;
-
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
@@ -121,13 +111,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
 	}();
 
-	assert(this->parchment.get() != nullptr);
-	assert(this->genderTextBox.get() != nullptr);
-	assert(this->maleTextBox.get() != nullptr);
-	assert(this->femaleTextBox.get() != nullptr);
-	assert(this->backToNameButton.get() != nullptr);
-	assert(this->maleButton.get() != nullptr);
-	assert(this->femaleButton.get() != nullptr);
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->name = name;
 }
 
 ChooseGenderPanel::~ChooseGenderPanel()
@@ -214,7 +199,7 @@ void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->parchment->setTransparentColor(Color::Magenta);
 	this->drawScaledToNative(*this->parchment.get(), dst);
 
-	const auto parchmentScale = 0.70;
+	const double parchmentScale = 0.70;
 	int parchmentXOffset = 27;
 	int parchmentYStep = 40;
 	int parchmentYOffset = 10 + parchmentYStep;

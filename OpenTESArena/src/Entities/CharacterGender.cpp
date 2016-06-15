@@ -3,7 +3,9 @@
 
 #include "CharacterGender.h"
 
-const auto CharacterGenderDisplayNames = std::map<CharacterGenderName, std::string>
+#include "CharacterGenderName.h"
+
+const std::map<CharacterGenderName, std::string> CharacterGenderDisplayNames =
 {
 	{ CharacterGenderName::Female, "Female" },
 	{ CharacterGenderName::Male, "Male" }
@@ -27,6 +29,5 @@ CharacterGenderName CharacterGender::getGenderName() const
 std::string CharacterGender::toString() const
 {
 	auto displayName = CharacterGenderDisplayNames.at(this->getGenderName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

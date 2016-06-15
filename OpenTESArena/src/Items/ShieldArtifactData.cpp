@@ -8,14 +8,11 @@
 
 ShieldArtifactData::ShieldArtifactData(const std::string &displayName, 
 	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-	const ShieldType &shieldType, const MetalType &metalType)
+	ShieldType shieldType, MetalType metalType)
 	: ArmorArtifactData(displayName, flavorText, provinces)
 {
 	this->shieldType = shieldType;
 	this->metalType = metalType;
-
-	assert(this->shieldType == shieldType);
-	assert(this->metalType == metalType);
 }
 
 ShieldArtifactData::~ShieldArtifactData()
@@ -30,12 +27,12 @@ std::unique_ptr<ArtifactData> ShieldArtifactData::clone() const
 		this->getShieldType(), this->getMetalType()));
 }
 
-const ShieldType &ShieldArtifactData::getShieldType() const
+ShieldType ShieldArtifactData::getShieldType() const
 {
 	return this->shieldType;
 }
 
-const MetalType &ShieldArtifactData::getMetalType() const
+MetalType ShieldArtifactData::getMetalType() const
 {
 	return this->metalType;
 }

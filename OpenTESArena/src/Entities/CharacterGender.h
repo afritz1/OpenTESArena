@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "CharacterGenderName.h"
+enum class CharacterGenderName;
 
 class CharacterGender
 {

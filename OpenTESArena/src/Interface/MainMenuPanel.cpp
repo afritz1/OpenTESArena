@@ -17,14 +17,11 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Media/TextureSequenceName.h"
 
 MainMenuPanel::MainMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->loadButton = nullptr;
-	this->newButton = nullptr;
-	this->exitButton = nullptr;
-
 	this->loadButton = [gameState]()
 	{
 		auto center = Int2(168, 58);
@@ -46,6 +43,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		int height = 20;
 		auto function = [gameState]()
 		{
+			// Link together the opening scroll, intro cinematic, and character creation.
 			auto changeToCharCreation = [gameState]()
 			{
 				auto creationPanel = std::unique_ptr<Panel>(
@@ -89,20 +87,8 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
-	// Each of the buttons are a solid color already, so the transparency and the
-	// fill color can be anything as long as they match.
-	this->loadButton->setTransparentColor(Color::Black);
-	this->newButton->setTransparentColor(Color::Black);
-	this->exitButton->setTransparentColor(Color::Black);
-
-	this->loadButton->fill(Color::Black);
-	this->newButton->fill(Color::Black);
-	this->exitButton->fill(Color::Black);
-
+	// The game data should not be active on the main menu.
 	assert(!gameState->gameDataIsActive());
-	assert(this->loadButton.get() != nullptr);
-	assert(this->newButton.get() != nullptr);
-	assert(this->exitButton.get() != nullptr);
 }
 
 MainMenuPanel::~MainMenuPanel()

@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "CharacterClass.h"
 #include "Directable.h"
 #include "Entity.h"
 #include "Movable.h"
@@ -13,6 +12,8 @@
 
 // Though the player is not rendered, they are still considered part of the
 // entity manager for purposes such as physics calculation and AI behavior.
+
+class CharacterClass;
 
 enum class CharacterGenderName;
 enum class CharacterRaceName;

@@ -3,7 +3,9 @@
 
 #include "CharacterClassCategory.h"
 
-const auto CharacterClassCategoryDisplayNames = std::map<CharacterClassCategoryName, std::string>
+#include "CharacterClassCategoryName.h"
+
+const std::map<CharacterClassCategoryName, std::string> CharacterClassCategoryDisplayNames =
 {
 	{ CharacterClassCategoryName::Mage, "Mage" },
 	{ CharacterClassCategoryName::Thief, "Thief" },
@@ -28,6 +30,5 @@ CharacterClassCategoryName CharacterClassCategory::getCategoryName() const
 std::string CharacterClassCategory::toString() const
 {
 	auto displayName = CharacterClassCategoryDisplayNames.at(this->getCategoryName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

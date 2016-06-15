@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "PrimaryAttributeName.h"
-
 // The AttributeModifier class is just for the modifier display names. The modifier 
 // value can be obtained in this class. AttributeModifiers are in PDF page 22 of the
 // manual.
@@ -13,6 +11,7 @@
 class AttributeModifier;
 
 enum class AttributeModifierName;
+enum class PrimaryAttributeName;
 
 class PrimaryAttribute
 {

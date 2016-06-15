@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Armor.h"
-#include "ShieldType.h"
 
 // Shields are distinct from BodyArmor because their only ArmorMaterialType is plate, 
 // since they are only designed to be metallic.
@@ -23,6 +22,7 @@ class ShieldArtifactData;
 
 enum class BodyPartName;
 enum class MetalType;
+enum class ShieldType;
 
 class Shield : public Armor // Metallic goes through HeavyArmorMaterial.
 {
@@ -46,7 +46,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const ShieldType &getShieldType() const;
+	ShieldType getShieldType() const;
 	std::string typeToString() const;
 	virtual ArmorType getArmorType() const override;
 	virtual const ArmorMaterial *getArmorMaterial() const override;

@@ -26,9 +26,9 @@ private:
 	std::string dataPath; // "ARENA" data path.
 	bool skipIntro;
 public:
-	Options(std::string&& dataPath, int screenWidth, int screenHeight, bool fullscreen,
+	Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
         double verticalFOV, double hSensitivity, double vSensitivity,
-        std::string&& soundfont, double musicVolume, double soundVolume,
+        std::string &&soundfont, double musicVolume, double soundVolume,
         int soundChannels, bool skipIntro);
 	~Options();
 

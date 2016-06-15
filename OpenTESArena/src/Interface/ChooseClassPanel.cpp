@@ -32,18 +32,10 @@ const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->parchment = nullptr;
-	this->upDownSurface = nullptr;
-	this->titleTextBox = nullptr;
-	this->classesListBox = nullptr;
-	this->backToClassCreationButton = nullptr;
-	this->upButton = nullptr;
-	this->downButton = nullptr;
-	this->acceptButton = nullptr;
 	this->charClasses = CharacterClassParser::parse();
-	this->charClass = nullptr;
+	assert(this->charClasses.size() > 0);
 
-	// Sort character classes alphabetically.
+	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
 		[](const std::unique_ptr<CharacterClass> &a, const std::unique_ptr<CharacterClass> &b)
 	{
@@ -89,6 +81,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		auto color = Color(48, 12, 12);
 		int maxElements = 6;
 		auto elements = std::vector<std::string>();
+
+		// This depends on the character classes being already sorted.
 		for (const auto &item : this->charClasses)
 		{
 			elements.push_back(item->getDisplayName());
@@ -160,15 +154,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	assert(this->parchment.get() != nullptr);
-	assert(this->upDownSurface.get() != nullptr);
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->classesListBox.get() != nullptr);
-	assert(this->backToClassCreationButton.get() != nullptr);
-	assert(this->acceptButton.get() != nullptr);
-	assert(this->upButton.get() != nullptr);
-	assert(this->downButton.get() != nullptr);
-	assert(this->charClasses.size() > 0);
+	// Don't initialize the character class until one is clicked.
 	assert(this->charClass.get() == nullptr);
 }
 
@@ -269,10 +255,10 @@ void ChooseClassPanel::tick(double dt, bool &running)
 
 std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
 {
-	auto armorString = std::string();
-
 	int lengthCounter = 0;
 	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
+
+	std::string armorString;
 
 	// Decide what the armor string says.
 	if (armorCount == 0)
@@ -311,10 +297,10 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 
 std::string ChooseClassPanel::getClassShields(const CharacterClass &characterClass) const
 {
-	auto shieldsString = std::string();
-
 	int lengthCounter = 0;
 	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
+
+	std::string shieldsString;
 
 	// Decide what the shield string says.
 	if (shieldCount == 0)
@@ -354,10 +340,10 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 
 std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
 {
-	auto weaponsString = std::string();
-
 	int lengthCounter = 0;
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
+
+	std::string weaponsString;
 
 	// Decide what the weapon string says.
 	if (weaponCount == 0)
@@ -400,7 +386,7 @@ void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SD
 {
 	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
 
-	auto tooltipText = characterClass.getDisplayName() + "\n\n" +
+	std::string tooltipText = characterClass.getDisplayName() + "\n\n" +
 		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" +
 		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
 		"Health: " + std::to_string(characterClass.getStartingHealth()) +
@@ -415,7 +401,7 @@ void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SD
 		tooltipText,
 		FontName::A,
 		this->getGameState()->getTextureManager()));
-	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(),
+	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
@@ -446,11 +432,14 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw parchments: title, list.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	auto listParchmentXScale = 1.0;
-	auto listParchmentYScale = 1.0;
-	auto listParchmentWidth =
+	// The parchment looks pretty bad when stretched. Better to get the original
+	// pattern and repeat it.
+
+	double listParchmentXScale = 1.0;
+	double listParchmentYScale = 1.0;
+	int listParchmentWidth =
 		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
-	auto listParchmentHeight =
+	int listParchmentHeight =
 		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
 
 	this->drawScaledToNative(

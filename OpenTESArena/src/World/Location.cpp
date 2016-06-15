@@ -9,7 +9,7 @@
 
 // Display names for each type of location. It's for things like the greeting 
 // message when entering a city.
-const auto LocationTypeDisplayNames = std::map<LocationType, std::string>
+const std::map<LocationType, std::string> LocationTypeDisplayNames =
 {
 	// Cities.
 	{ LocationType::CityState, "City-State" },
@@ -28,11 +28,6 @@ Location::Location(const std::string &name, ProvinceName provinceName,
 	this->provinceName = provinceName;
 	this->locationType = locationType;
 	this->climateName = climateName;
-
-	assert(this->name == name);
-	assert(this->provinceName == provinceName);
-	assert(this->locationType == locationType);
-	assert(this->climateName == climateName);
 }
 
 Location::~Location()
@@ -40,24 +35,24 @@ Location::~Location()
 
 }
 
-const std::string &Location::getDisplayName() const
-{
-	return this->name;
-}
-
-const ProvinceName &Location::getProvinceName() const
+ProvinceName Location::getProvinceName() const
 {
 	return this->provinceName;
 }
 
-const LocationType &Location::getLocationType() const
+LocationType Location::getLocationType() const
 {	
 	return this->locationType;
 }
 
-const ClimateName &Location::getClimateName() const
+ClimateName Location::getClimateName() const
 {
 	return this->climateName;
+}
+
+const std::string &Location::getDisplayName() const
+{
+	return this->name;
 }
 
 std::string Location::typeToString() const

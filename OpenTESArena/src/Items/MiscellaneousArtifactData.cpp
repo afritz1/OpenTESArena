@@ -7,12 +7,10 @@
 
 MiscellaneousArtifactData::MiscellaneousArtifactData(const std::string &displayName, 
 	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-	const MiscellaneousItemType &miscItemType)
+	MiscellaneousItemType miscItemType)
 	: ArtifactData(displayName, flavorText, provinces)
 {
 	this->miscItemType = miscItemType;
-
-	assert(this->miscItemType == miscItemType);
 }
 
 MiscellaneousArtifactData::~MiscellaneousArtifactData()
@@ -27,7 +25,7 @@ std::unique_ptr<ArtifactData> MiscellaneousArtifactData::clone() const
 		this->getMiscellaneousItemType()));
 }
 
-const MiscellaneousItemType &MiscellaneousArtifactData::getMiscellaneousItemType() const
+MiscellaneousItemType MiscellaneousArtifactData::getMiscellaneousItemType() const
 {
 	return this->miscItemType;
 }

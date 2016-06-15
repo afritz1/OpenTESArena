@@ -12,7 +12,7 @@
 #include "../Utilities/File.h"
 
 // Text file string mappings. These strings are not considered display names.
-const auto LocationParserProvinces = std::map<std::string, ProvinceName>
+const std::map<std::string, ProvinceName> LocationParserProvinces =
 {
 	{ "BlackMarsh", ProvinceName::BlackMarsh },
 	{ "Elsweyr", ProvinceName::Elsweyr },
@@ -25,7 +25,7 @@ const auto LocationParserProvinces = std::map<std::string, ProvinceName>
 	{ "Valenwood", ProvinceName::Valenwood }
 };
 
-const auto LocationParserTypes = std::map<std::string, LocationType>
+const std::map<std::string, LocationType> LocationParserTypes =
 {
 	{ "CityState", LocationType::CityState },
 	{ "Dungeon", LocationType::Dungeon },
@@ -34,7 +34,7 @@ const auto LocationParserTypes = std::map<std::string, LocationType>
 	{ "Village", LocationType::Village }
 };
 
-const auto LocationParserClimates = std::map<std::string, ClimateName>
+const std::map<std::string, ClimateName> LocationParserClimates =
 {
 	{ "Cold", ClimateName::Cold },
 	{ "Desert", ClimateName::Desert },
@@ -43,6 +43,7 @@ const auto LocationParserClimates = std::map<std::string, ClimateName>
 	{ "Snowy", ClimateName::Snowy }
 };
 
+// These paths might be obsolete soon.
 const std::string LocationParser::PATH = "data/text/";
 const std::string LocationParser::FILENAME = "locations.txt";
 
@@ -52,19 +53,18 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
 
-	auto fullPath = LocationParser::PATH + LocationParser::FILENAME;
+	std::string fullPath(LocationParser::PATH + LocationParser::FILENAME);
 
 	// Read the locations file into a string.
-	auto text = File::toString(fullPath);
+	std::string text = File::toString(fullPath);
 
 	// Relevant parsing symbols.
 	const char comment = '#';
 	const char comma = ',';
 
-	auto locations = std::vector<std::unique_ptr<Location>>();
+	std::vector<std::unique_ptr<Location>> locations;
 	std::istringstream iss(text);
-
-	auto line = std::string();
+	std::string line;
 
 	// For each line, get the substrings between commas.
 	while (std::getline(iss, line))
@@ -82,7 +82,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			++index;
 		}
 
-		auto displayName = line.substr(0, index);
+		std::string displayName = line.substr(0, index);
 
 		// Get the province name.
 		index += 2;
@@ -92,7 +92,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			++index;
 		}
 
-		auto province = line.substr(oldIndex, index - oldIndex);
+		std::string province = line.substr(oldIndex, index - oldIndex);
 
 		// Get the location type.
 		index += 2;
@@ -102,7 +102,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			++index;
 		}
 
-		auto type = line.substr(oldIndex, index - oldIndex);
+		std::string type = line.substr(oldIndex, index - oldIndex);
 
 		// Get the climate type (read until the end of the line).
 		index += 2;
@@ -112,7 +112,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			++index;
 		}
 
-		auto climate = line.substr(oldIndex, index - oldIndex);
+		std::string climate = line.substr(oldIndex, index - oldIndex);
 
 		// Verify that the strings each have a mapping.
 		Debug::check(LocationParserProvinces.find(province) != LocationParserProvinces.end(),
@@ -123,9 +123,9 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			"Location Parser", "Invalid climate \"" + climate + "\".");
 
 		// Convert the strings to recognized types.
-		auto provinceName = LocationParserProvinces.at(province);
-		auto locationType = LocationParserTypes.at(type);
-		auto climateName = LocationParserClimates.at(climate);
+		const auto &provinceName = LocationParserProvinces.at(province);
+		const auto &locationType = LocationParserTypes.at(type);
+		const auto &climateName = LocationParserClimates.at(climate);
 
 		locations.push_back(std::unique_ptr<Location>(new Location(
 			displayName, provinceName, locationType, climateName)));

@@ -1,6 +1,6 @@
 #include <cassert>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 #include "SDL.h"
 
@@ -52,18 +52,25 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	// (it scales otherwise).
     auto *nativeSurface = this->getWindowSurface();
 
-    // If this fails, we might not support hardware accelerated renderers for some reason, so we retry with software
+    // If this fails, we might not support hardware accelerated renderers for some reason
+	// (such as with Linux), so we retry with software.
     if (!nativeSurface)
     {
-        Debug::mention("Renderer", "Failed to initialize with hardware accelerated renderer, trying software.");
+        Debug::mention("Renderer", 
+			"Failed to initialize with hardware accelerated renderer, trying software.");
 
         SDL_DestroyRenderer(this->renderer);
-        this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_SOFTWARE);
+
+		const int bestDriver = -1;
+        this->renderer = SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_SOFTWARE);
+		Debug::check(this->renderer != nullptr, "Renderer", "SDL_CreateRenderer software");
+
         nativeSurface = this->getWindowSurface();
     }
 
 	Debug::check(nativeSurface != nullptr, "Renderer", "SDL_GetWindowSurface");
 
+	// Set the device-independent resolution for rendering.
 	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
 
 	// Set the clear color of the renderer.
@@ -73,10 +80,6 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
 	Debug::check(this->texture != nullptr, "Renderer", "SDL_CreateTexture");
-
-	assert(this->window != nullptr);
-	assert(this->renderer != nullptr);
-	assert(this->texture != nullptr);
 }
 
 Renderer::~Renderer()
@@ -100,12 +103,12 @@ SDL_Surface *Renderer::getWindowSurface() const
 std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 {
 	// Letterbox width and height always maintain the 1.6:1 aspect ratio.
-	const auto originalAspect = static_cast<double>(ORIGINAL_WIDTH) /
+	const double originalAspect = static_cast<double>(ORIGINAL_WIDTH) /
 		static_cast<double>(ORIGINAL_HEIGHT);
 
 	// Native window aspect can be anything finite.
 	const auto *nativeSurface = this->getWindowSurface();
-	auto nativeAspect = static_cast<double>(nativeSurface->w) /
+	double nativeAspect = static_cast<double>(nativeSurface->w) /
 		static_cast<double>(nativeSurface->h);
 
 	assert(std::isfinite(originalAspect));
@@ -115,7 +118,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 	if (std::abs(nativeAspect - originalAspect) < EPSILON)
 	{
 		// Equal aspects. The letterbox is equal to the screen size.
-		auto rect = SDL_Rect();
+		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = 0;
 		rect.w = nativeSurface->w;
@@ -127,7 +130,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 		// Native window is wider = empty left and right.
 		int subWidth = static_cast<int>(std::ceil(
 			static_cast<double>(nativeSurface->h) * originalAspect));
-		auto rect = SDL_Rect();
+		SDL_Rect rect;
 		rect.x = (nativeSurface->w - subWidth) / 2;
 		rect.y = 0;
 		rect.w = subWidth;
@@ -139,7 +142,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 		// Native window is taller = empty top and bottom.
 		int subHeight = static_cast<int>(std::ceil(
 			static_cast<double>(nativeSurface->w) / originalAspect));
-		auto rect = SDL_Rect();
+		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = (nativeSurface->h - subHeight) / 2;
 		rect.w = nativeSurface->w;

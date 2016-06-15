@@ -161,7 +161,6 @@
     <ClCompile Include="src\Utilities\Debug.cpp" />
     <ClCompile Include="src\Interface\LoadGamePanel.cpp" />
     <ClCompile Include="src\Math\Matrix4.cpp" />
-    <ClCompile Include="src\Rendering\PostProcessing.cpp" />
     <ClCompile Include="src\Interface\ChooseClassPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseNamePanel.cpp" />
     <ClCompile Include="src\Interface\ChooseRacePanel.cpp" />
@@ -275,7 +274,6 @@
     <ClInclude Include="src\Utilities\Debug.h" />
     <ClInclude Include="src\Interface\LoadGamePanel.h" />
     <ClInclude Include="src\Math\Matrix4.h" />
-    <ClInclude Include="src\Rendering\PostProcessing.h" />
     <ClInclude Include="src\Interface\ChooseClassPanel.h" />
     <ClInclude Include="src\Interface\ChooseNamePanel.h" />
     <ClInclude Include="src\Interface\ChooseRacePanel.h" />

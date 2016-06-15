@@ -3,7 +3,9 @@
 
 #include "Month.h"
 
-const auto MonthDisplayNames = std::map<MonthName, std::string>
+#include "MonthName.h"
+
+const std::map<MonthName, std::string> MonthDisplayNames =
 {
 	// Spring
 	{ MonthName::SunsDawn, "Sun's Dawn" },
@@ -28,7 +30,7 @@ const auto MonthDisplayNames = std::map<MonthName, std::string>
 
 // Each month's next month. I didn't feel like doing some kind of circular buffer
 // when this works just fine, even if it's a little bit more verbose.
-const auto MonthNexts = std::map<MonthName, MonthName>
+const std::map<MonthName, MonthName> MonthNexts =
 {
 	// Spring
 	{ MonthName::SunsDawn, MonthName::FirstSeed },
@@ -68,16 +70,15 @@ MonthName Month::getMonthName() const
 	return this->monthName;
 }
 
-std::string Month::toString() const
-{
-	auto displayName = MonthDisplayNames.at(this->getMonthName());
-	assert(displayName.size() > 0);
-	return displayName;
-}
-
 bool Month::isLastMonthInYear() const
 {
 	return this->monthName == MonthName::EveningStar;
+}
+
+std::string Month::toString() const
+{
+	auto displayName = MonthDisplayNames.at(this->getMonthName());
+	return displayName;
 }
 
 void Month::incrementMonth()

@@ -5,9 +5,10 @@
 #include <string>
 
 #include "Item.h"
-#include "MiscellaneousItemType.h"
 
 class MiscellaneousArtifactData;
+
+enum class MiscellaneousItemType;
 
 class MiscellaneousItem : public Item
 {
@@ -31,7 +32,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const MiscellaneousItemType &getMiscellaneousItemType() const;
+	MiscellaneousItemType getMiscellaneousItemType() const;
 };
 
 #endif

@@ -36,7 +36,6 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
-
 	auto changeToMainMenu = [gameState]()
 	{
 		gameState->setPanel(std::unique_ptr<Panel>(new MainMenuPanel(gameState)));
@@ -45,7 +44,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	auto changeToIntroStory = [gameState, changeToMainMenu]()
 	{
 		// Lots of text to read, so give each image extra time.
-		auto secondsPerImage = 14.0;
+		double secondsPerImage = 14.0;
 		auto introStoryPanel = std::unique_ptr<Panel>(new CinematicPanel(
 			gameState,
 			TextureSequenceName::IntroStory,
@@ -66,7 +65,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	auto changeToQuote = [gameState, changeToScrolling]()
 	{
-		auto secondsToDisplay = 5.0;
+		double secondsToDisplay = 5.0;
 		auto quotePanel = std::unique_ptr<Panel>(new ImagePanel(
 			gameState,
 			TextureName::IntroQuote,
@@ -77,7 +76,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	auto changeToTitle = [gameState, changeToQuote]()
 	{
-		auto secondsToDisplay = 5.0;
+		double secondsToDisplay = 5.0;
 		auto titlePanel = std::unique_ptr<Panel>(new ImagePanel(
 			gameState,
 			TextureName::IntroTitle,
@@ -113,14 +112,14 @@ Int2 Panel::getMousePosition() const
 bool Panel::letterboxContains(const Int2 &point) const
 {
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	auto rectangle = Rect(letterbox->x, letterbox->y,
+	Rect rectangle(letterbox->x, letterbox->y,
 		letterbox->w, letterbox->h);
 	return rectangle.contains(point);
 }
 
 Int2 Panel::nativePointToOriginal(const Int2 &point) const
 {
-	auto drawScale = this->getDrawScale();
+	const double drawScale = this->getDrawScale();
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
 	return Int2(
 		(point.getX() - letterbox->x) / drawScale,
@@ -129,7 +128,7 @@ Int2 Panel::nativePointToOriginal(const Int2 &point) const
 
 Int2 Panel::originalPointToNative(const Int2 &point) const
 {
-	auto drawScale = this->getDrawScale();
+	const double drawScale = this->getDrawScale();
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
 	return Int2(
 		(point.getX() * drawScale) + letterbox->x,
@@ -151,9 +150,9 @@ void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
 	auto *cursorSurface = cursor.getSurface();
 	SDL_SetColorKey(cursorSurface, SDL_TRUE, this->getMagenta(dst->format));
 
-	const auto cursorScale = 2.0;
+	const double cursorScale = 2.0;
 	auto mousePosition = this->getMousePosition();
-	auto cursorRect = SDL_Rect();
+	SDL_Rect cursorRect;
 	cursorRect.x = mousePosition.getX();
 	cursorRect.y = mousePosition.getY();
 	cursorRect.w = static_cast<int>(cursorSurface->w * cursorScale);
@@ -164,13 +163,14 @@ void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
 void Panel::drawScaledToNative(const Surface &surface, int x, int y, int w, int h,
 	SDL_Surface *dst)
 {
+	const double drawScale = this->getDrawScale();
 	auto nativePoint = this->originalPointToNative(Int2(x, y));
 
-	auto rect = SDL_Rect();
+	SDL_Rect rect;
 	rect.x = nativePoint.getX();
 	rect.y = nativePoint.getY();
-	rect.w = static_cast<int>(w * this->getDrawScale());
-	rect.h = static_cast<int>(h * this->getDrawScale());
+	rect.w = static_cast<int>(w * drawScale);
+	rect.h = static_cast<int>(h * drawScale);
 
 	auto *baseSurface = surface.getSurface();
 	SDL_BlitScaled(baseSurface, nullptr, dst, &rect);

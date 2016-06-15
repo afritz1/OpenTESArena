@@ -3,7 +3,9 @@
 
 #include "Weekday.h"
 
-const auto WeekdayDisplayNames = std::map<WeekdayName, std::string>
+#include "WeekdayName.h"
+
+const std::map<WeekdayName, std::string> WeekdayDisplayNames =
 {
 	{ WeekdayName::Morndas, "Morndas" },
 	{ WeekdayName::Tirdas, "Tirdas" },
@@ -15,7 +17,7 @@ const auto WeekdayDisplayNames = std::map<WeekdayName, std::string>
 };
 
 // Mappings of each weekday to the next weekday.
-const auto WeekdayNexts = std::map<WeekdayName, WeekdayName>
+const std::map<WeekdayName, WeekdayName> WeekdayNexts =
 {
 	{ WeekdayName::Morndas, WeekdayName::Tirdas },
 	{ WeekdayName::Tirdas, WeekdayName::Middas },
@@ -46,7 +48,6 @@ WeekdayName Weekday::getWeekdayName() const
 std::string Weekday::toString() const
 {
 	auto displayName = WeekdayDisplayNames.at(this->getWeekdayName());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 

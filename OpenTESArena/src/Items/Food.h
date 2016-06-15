@@ -5,8 +5,7 @@
 
 #include "Consumable.h"
 
-// I removed the FoodType enumeration because it wasn't necessary. Foods all have the 
-// same behavior; an effect upon consumption.
+// There aren't actually foods in Arena, but modding might change that.
 
 // The effect will be in the Consumable class.
 

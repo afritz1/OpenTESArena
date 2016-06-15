@@ -28,28 +28,6 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 	const std::string &name, CharacterGenderName gender)
 	: Panel(gameState)
 {
-	this->provinceAreas = std::map<ProvinceName, Rect>();
-	this->parchment = nullptr;
-	this->initialTextBox = nullptr;
-	this->backToGenderButton = nullptr;
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->name = name;
-	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
-
-	// Clickable (x, y, width, height) areas for each province.
-	this->provinceAreas = std::map<ProvinceName, Rect>
-	{
-		{ ProvinceName::BlackMarsh, Rect(216, 144, 55, 12) },
-		{ ProvinceName::Elsweyr, Rect(148, 127, 37, 11) },
-		{ ProvinceName::Hammerfell, Rect(72, 75, 50, 11) },
-		{ ProvinceName::HighRock, Rect(52, 51, 44, 11) },
-		{ ProvinceName::ImperialProvince, Rect(133, 105, 83, 11) },
-		{ ProvinceName::Morrowind, Rect(222, 84, 52, 11) },
-		{ ProvinceName::Skyrim, Rect(142, 44, 34, 11) },
-		{ ProvinceName::SummersetIsle, Rect(37, 149, 49, 19) },
-		{ ProvinceName::Valenwood, Rect(106, 147, 49, 10) }
-	};
-
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
@@ -94,17 +72,25 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	// Nine provinces.
-	assert(this->provinceAreas.size() == 9);
-	assert(this->parchment.get() != nullptr);
-	assert(this->initialTextBox.get() != nullptr);
-	assert(this->backToGenderButton.get() != nullptr);
-	assert(this->acceptButton.get() != nullptr);
-	assert(this->charClass.get() != nullptr);
-	assert(this->gender.get() != nullptr);
-	assert(*this->gender.get() == gender);
-	assert(this->raceName.get() == nullptr);
-	assert(this->name.size() > 0);
+	// Clickable (x, y, width, height) areas for each province. The original game actually
+	// uses a set of pixels, I think.
+	this->provinceAreas = std::map<ProvinceName, Rect>
+	{
+		{ ProvinceName::BlackMarsh, Rect(216, 144, 55, 12) },
+		{ ProvinceName::Elsweyr, Rect(148, 127, 37, 11) },
+		{ ProvinceName::Hammerfell, Rect(72, 75, 50, 11) },
+		{ ProvinceName::HighRock, Rect(52, 51, 44, 11) },
+		{ ProvinceName::ImperialProvince, Rect(133, 105, 83, 11) },
+		{ ProvinceName::Morrowind, Rect(222, 84, 52, 11) },
+		{ ProvinceName::Skyrim, Rect(142, 44, 34, 11) },
+		{ ProvinceName::SummersetIsle, Rect(37, 149, 49, 19) },
+		{ ProvinceName::Valenwood, Rect(106, 147, 49, 10) }
+	};
+
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->name = name;
+	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
+	this->raceName = nullptr;
 }
 
 ChooseRacePanel::~ChooseRacePanel()
@@ -210,7 +196,7 @@ void ChooseRacePanel::tick(double dt, bool &running)
 void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
-	const auto raceName = Province(provinceName).getRaceDisplayName(true);
+	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
 	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
 		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
@@ -218,7 +204,7 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 		"Land of the " + raceName,
 		FontName::A,
 		this->getGameState()->getTextureManager()));
-	auto tooltipBackground = Surface(tooltip->getX(), tooltip->getY(),
+	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 

@@ -9,12 +9,13 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
+#include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
 	const std::vector<std::string> &elements, TextureManager &textureManager)
-	: Surface(x, y, 1, 1), textureManagerRef(textureManager), scrollIndex(0)
+	: Surface(x, y, 1, 1), textureManagerRef(textureManager)
 {
 	assert(maxDisplayed > 0);
 
@@ -22,6 +23,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	this->fontName = fontName;
 	this->textColor = std::unique_ptr<Color>(new Color(textColor));
 	this->maxDisplayed = maxDisplayed;
+	this->scrollIndex = 0;
 
 	// Temporary text boxes for getting list box dimensions.
 	auto textBoxes = std::vector<std::unique_ptr<TextBox>>();
@@ -44,8 +46,6 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	this->optimize(textureManager.getFormat());
 
 	// It's okay for there to be zero elements. Just be blank, then!
-	assert(this->textColor.get() != nullptr);
-	assert(this->maxDisplayed == maxDisplayed);
 
 	// Draw the text boxes to the parent surface.
 	this->updateDisplayText();

@@ -12,10 +12,11 @@
 #include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
 
-// It doesn't look like values for item conditions are visible anywhere, like in
+// It doesn't look like item condition values are visible anywhere, like in
 // the manual for instance, so I'm remaking them anew with reasonable values.
+// They are of course placeholders.
 
-const auto ItemConditionDisplayNames = std::map<ItemConditionName, std::string>
+const std::map<ItemConditionName, std::string> ItemConditionDisplayNames =
 {
 	{ ItemConditionName::New, "New" },
 	{ ItemConditionName::AlmostNew, "Almost New" },
@@ -28,7 +29,7 @@ const auto ItemConditionDisplayNames = std::map<ItemConditionName, std::string>
 
 // Theoretically, a very poor piece of armor will break in only a couple hundred
 // hits, while a very nice piece of armor will last thousands of hits.
-const auto ItemConditionArmorMaxConditions = std::map<BodyPartName, int>
+const std::map<BodyPartName, int> ItemConditionArmorMaxConditions =
 {
 	{ BodyPartName::Head, 300 },
 	{ BodyPartName::RightShoulder, 320 },
@@ -39,7 +40,7 @@ const auto ItemConditionArmorMaxConditions = std::map<BodyPartName, int>
 	{ BodyPartName::Feet, 320 }
 };
 
-const auto ItemConditionShieldMaxConditions = std::map<ShieldType, int>
+const std::map<ShieldType, int> ItemConditionShieldMaxConditions =
 {
 	{ ShieldType::Buckler, 400 },
 	{ ShieldType::Round, 600 },
@@ -49,7 +50,7 @@ const auto ItemConditionShieldMaxConditions = std::map<ShieldType, int>
 
 // The relative number of strikes a weapon can make before breaking, before
 // any material multipliers.
-const auto ItemConditionWeaponMaxConditions = std::map<WeaponType, int>
+const std::map<WeaponType, int> ItemConditionWeaponMaxConditions =
 {
 	{ WeaponType::BattleAxe, 600 },
 	{ WeaponType::Broadsword, 500 },
@@ -75,7 +76,7 @@ const auto ItemConditionWeaponMaxConditions = std::map<WeaponType, int>
 // Rates for how quick each item receives degradation per "degrade". The majority
 // of these rates will be 1, since that's how the max conditions are designed,
 // though fists cannot degrade at all, so their rate is 0.
-const auto ItemConditionArmorDegradeRates = std::map<BodyPartName, int>
+const std::map<BodyPartName, int> ItemConditionArmorDegradeRates =
 {
 	{ BodyPartName::Head, 1 },
 	{ BodyPartName::RightShoulder, 1 },
@@ -86,7 +87,7 @@ const auto ItemConditionArmorDegradeRates = std::map<BodyPartName, int>
 	{ BodyPartName::Feet, 1 }
 };
 
-const auto ItemConditionShieldDegradeRates = std::map<ShieldType, int>
+const std::map<ShieldType, int> ItemConditionShieldDegradeRates =
 {
 	{ ShieldType::Buckler, 1 },
 	{ ShieldType::Round, 1 },
@@ -94,7 +95,7 @@ const auto ItemConditionShieldDegradeRates = std::map<ShieldType, int>
 	{ ShieldType::Tower, 1 }
 };
 
-const auto ItemConditionWeaponDegradeRates = std::map<WeaponType, int>
+const std::map<WeaponType, int> ItemConditionWeaponDegradeRates =
 {
 	{ WeaponType::BattleAxe, 1 },
 	{ WeaponType::Broadsword, 1 },
@@ -119,7 +120,7 @@ const auto ItemConditionWeaponDegradeRates = std::map<WeaponType, int>
 
 ItemCondition::ItemCondition(BodyPartName partName, const ArmorMaterial &material)
 {
-	int maxArmorCondition = ItemConditionArmorMaxConditions.at(partName);
+	const int &maxArmorCondition = ItemConditionArmorMaxConditions.at(partName);
 
 	// I rolled the material multiplier (leather, chain, plate) in with the metal 
 	// multiplier (iron, steel, etc.), so no special type data is needed.
@@ -130,13 +131,12 @@ ItemCondition::ItemCondition(BodyPartName partName, const ArmorMaterial &materia
 	this->degradeRate = ItemConditionArmorDegradeRates.at(partName);
 
 	assert(this->maxCondition > 0);
-	assert(this->currentCondition == this->maxCondition);
 	assert(this->degradeRate >= 0);
 }
 
 ItemCondition::ItemCondition(ShieldType shieldType, const Metal &metal)
 {
-	int maxShieldCondition = ItemConditionShieldMaxConditions.at(shieldType);
+	const int &maxShieldCondition = ItemConditionShieldMaxConditions.at(shieldType);
 	int metalMultiplier = metal.getConditionMultiplier();
 
 	this->maxCondition = maxShieldCondition * metalMultiplier;
@@ -144,13 +144,12 @@ ItemCondition::ItemCondition(ShieldType shieldType, const Metal &metal)
 	this->degradeRate = ItemConditionShieldDegradeRates.at(shieldType);
 
 	assert(this->maxCondition > 0);
-	assert(this->currentCondition == this->maxCondition);
 	assert(this->degradeRate >= 0);
 }
 
 ItemCondition::ItemCondition(WeaponType weaponType, const Metal &metal)
 {
-	int maxWeaponCondition = ItemConditionWeaponMaxConditions.at(weaponType);
+	const int &maxWeaponCondition = ItemConditionWeaponMaxConditions.at(weaponType);
 	int metalMultiplier = metal.getConditionMultiplier();
 
 	this->maxCondition = maxWeaponCondition * metalMultiplier;
@@ -158,7 +157,6 @@ ItemCondition::ItemCondition(WeaponType weaponType, const Metal &metal)
 	this->degradeRate = ItemConditionWeaponDegradeRates.at(weaponType);
 
 	assert(this->maxCondition > 0);
-	assert(this->currentCondition == this->maxCondition);
 	assert(this->degradeRate >= 0);
 }
 
@@ -170,7 +168,6 @@ ItemCondition::ItemCondition()
 	this->degradeRate = ItemConditionWeaponDegradeRates.at(weaponType);
 
 	assert(this->maxCondition > 0);
-	assert(this->currentCondition == this->maxCondition);
 	assert(this->degradeRate >= 0);
 }
 
@@ -186,6 +183,7 @@ ItemConditionName ItemCondition::getCurrentConditionName() const
 	double percent = static_cast<double>(this->currentCondition) /
 		static_cast<double>(this->maxCondition);
 
+	// Placeholder condition ranges:
 	// The condition ranges don't need to be uniformly distributed. We can give
 	// the player a bit more leeway when the item condition is critical.
 	if (percent > 0.90)
@@ -230,13 +228,14 @@ void ItemCondition::repairFully()
 
 void ItemCondition::repairSlightly(Random &random)
 {
+	// The calling function needs to make sure there's some delay between auto-
+	// repairs, so that higher frame rates don't cause faster repairs!
+
 	// Randomly repair a little bit.
 	this->currentCondition += random.next(this->degradeRate + 1);
 
 	// Make sure the incremented condition is not greater than the max.
 	this->currentCondition = std::min(this->currentCondition, this->maxCondition);
-
-	assert(this->currentCondition <= this->maxCondition);
 }
 
 void ItemCondition::degrade()

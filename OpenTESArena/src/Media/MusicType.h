@@ -3,8 +3,8 @@
 
 // A unique identifier for each type of music.
 
-// Prefer using a MusicType over a MusicName, because a MusicType translates to
-// a list of MusicNames for more randomization during gameplay.
+// Prefer using a MusicType over a MusicName, because a MusicType (i.e., dungeon)
+// translates to a list of MusicNames for more randomization during gameplay.
 
 enum class MusicType
 {

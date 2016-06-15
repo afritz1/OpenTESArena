@@ -10,9 +10,11 @@
 #include "../Interface/Surface.h"
 #include "../Utilities/Debug.h"
 
-// The format extension for all textures will be PNG.
+// The format extension for all textures will be PNG (this will soon no longer be
+// the case).
 const std::string TextureExtension = ".png";
 
+// This path might be obsolete soon.
 const std::string TextureManager::PATH = "data/textures/";
 
 TextureManager::TextureManager(const SDL_PixelFormat *format)
@@ -28,9 +30,6 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 
 	this->surfaces = std::map<std::string, Surface>();
 	this->format = format;
-
-	assert(this->surfaces.size() == 0);
-	assert(this->format == format);
 }
 
 TextureManager::~TextureManager()
@@ -41,12 +40,12 @@ TextureManager::~TextureManager()
 SDL_Surface *TextureManager::loadFromFile(const std::string &fullPath)
 {
 	// Load the SDL_Surface from file.
-	auto unOptSurface = IMG_Load(fullPath.c_str());
+	auto *unOptSurface = IMG_Load(fullPath.c_str());
 	Debug::check(unOptSurface != nullptr, "Texture Manager",
 		"Could not open texture \"" + fullPath + "\".");
 
 	// Try to optimize the SDL_Surface.
-	auto optSurface = SDL_ConvertSurface(unOptSurface, this->format, 0);
+	auto *optSurface = SDL_ConvertSurface(unOptSurface, this->format, 0);
 	SDL_FreeSurface(unOptSurface);
 	Debug::check(optSurface != nullptr, "Texture Manager",
 		"Could not optimize texture \"" + fullPath + "\".");
@@ -70,11 +69,11 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 	else
 	{
 		// Load optimized SDL_Surface from file.
-		auto fullPath = TextureManager::PATH + filename + TextureExtension;
-		auto optSurface = this->loadFromFile(fullPath);
+		std::string fullPath(TextureManager::PATH + filename + TextureExtension);
+		auto *optSurface = this->loadFromFile(fullPath);
 
 		// Create surface from SDL_Surface. No need to optimize it again.
-		auto surface = Surface(optSurface);
+		Surface surface(optSurface);
 
 		// Add the new texture.
 		this->surfaces.insert(std::pair<std::string, Surface>(filename, surface));
@@ -92,7 +91,7 @@ void TextureManager::preloadSequences()
 
 	for (const auto &name : TextureFile::getSequenceNames())
 	{
-		auto filenames = TextureFile::fromName(name);
+		std::vector<std::string> filenames = TextureFile::fromName(name);
 		for (const auto &filename : filenames)
 		{
 			this->getSurface(filename);

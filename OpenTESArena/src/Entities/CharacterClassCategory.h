@@ -3,10 +3,10 @@
 
 #include <string>
 
-#include "CharacterClassCategoryName.h"
-
 // This class is mostly for implementing the "toString()" method for class categories. 
 // Otherwise, the character class has two methods which fight over a similar name.
+
+enum class CharacterClassCategoryName;
 
 class CharacterClassCategory
 {

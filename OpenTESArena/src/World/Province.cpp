@@ -3,9 +3,10 @@
 
 #include "Province.h"
 
+#include "ProvinceName.h"
 #include "../Entities/CharacterRaceName.h"
 
-const auto ProvinceDisplayNames = std::map<ProvinceName, std::string>
+const std::map<ProvinceName, std::string> ProvinceDisplayNames =
 {
 	{ ProvinceName::BlackMarsh, "Black Marsh" },
 	{ ProvinceName::Elsweyr, "Elsweyr" },
@@ -18,7 +19,7 @@ const auto ProvinceDisplayNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Valenwood, "Valenwood" }
 };
 
-const auto ProvinceSingularRaceDisplayNames = std::map<ProvinceName, std::string>
+const std::map<ProvinceName, std::string> ProvinceSingularRaceDisplayNames =
 {
 	{ ProvinceName::BlackMarsh, "Argonian" },
 	{ ProvinceName::Elsweyr, "Khajiit" },
@@ -31,7 +32,7 @@ const auto ProvinceSingularRaceDisplayNames = std::map<ProvinceName, std::string
 	{ ProvinceName::Valenwood, "Wood Elf" }
 };
 
-const auto ProvincePluralRaceDisplayNames = std::map<ProvinceName, std::string>
+const std::map<ProvinceName, std::string> ProvincePluralRaceDisplayNames =
 {
 	{ ProvinceName::BlackMarsh, "Argonians" },
 	{ ProvinceName::Elsweyr, "Khajiit" },
@@ -44,7 +45,7 @@ const auto ProvincePluralRaceDisplayNames = std::map<ProvinceName, std::string>
 	{ ProvinceName::Valenwood, "Wood Elves" }
 };
 
-const auto ProvinceRaceNames = std::map<ProvinceName, CharacterRaceName>
+const std::map<ProvinceName, CharacterRaceName> ProvinceRaceNames =
 {
 	{ ProvinceName::BlackMarsh, CharacterRaceName::Argonian },
 	{ ProvinceName::Elsweyr, CharacterRaceName::Khajiit },
@@ -67,9 +68,15 @@ Province::~Province()
 
 }
 
-const ProvinceName &Province::getProvinceName() const
+ProvinceName Province::getProvinceName() const
 {
 	return this->provinceName;
+}
+
+CharacterRaceName Province::getRaceName() const
+{
+	auto raceName = ProvinceRaceNames.at(this->getProvinceName());
+	return raceName;
 }
 
 const std::vector<Location> &Province::getLocations() const
@@ -80,7 +87,6 @@ const std::vector<Location> &Province::getLocations() const
 std::string Province::toString() const
 {
 	auto displayName = ProvinceDisplayNames.at(this->getProvinceName());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
@@ -89,14 +95,7 @@ std::string Province::getRaceDisplayName(bool plural) const
 	auto raceDisplayName = plural ?
 		ProvincePluralRaceDisplayNames.at(this->getProvinceName()) :
 		ProvinceSingularRaceDisplayNames.at(this->getProvinceName());
-	assert(raceDisplayName.size() > 0);
 	return raceDisplayName;
-}
-
-CharacterRaceName Province::getRaceName() const
-{
-	auto raceName = ProvinceRaceNames.at(this->getProvinceName());
-	return raceName;
 }
 
 void Province::addLocation(const Location &location)

@@ -9,6 +9,7 @@
 #include "../Game/GameState.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
+#include "../Media/TextureSequenceName.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
@@ -16,8 +17,6 @@ CinematicPanel::CinematicPanel(GameState *gameState, TextureSequenceName name,
 	double secondsPerImage, const std::function<void()> &endingAction)
 	: Panel(gameState)
 {
-	this->skipButton = nullptr;
-
 	this->skipButton = [gameState, &endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
@@ -27,12 +26,6 @@ CinematicPanel::CinematicPanel(GameState *gameState, TextureSequenceName name,
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
-
-	assert(this->skipButton.get() != nullptr);
-	assert(this->sequenceName == name);
-	assert(this->secondsPerImage == secondsPerImage);
-	assert(this->currentSeconds == 0.0);
-	assert(this->imageIndex == 0);
 }
 
 CinematicPanel::~CinematicPanel()
@@ -103,7 +96,7 @@ void CinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	this->clearScreen(dst);
 
 	// Get all of the image filenames relevant to the sequence.
-	auto filenames = TextureFile::fromName(this->sequenceName);
+	std::vector<std::string> filenames = TextureFile::fromName(this->sequenceName);
 
 	// If at the end, then prepare for the next panel.
 	if (this->imageIndex >= filenames.size())

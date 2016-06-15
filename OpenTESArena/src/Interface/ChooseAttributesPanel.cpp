@@ -30,21 +30,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	const std::string &name, CharacterRaceName raceName)
 	: Panel(gameState)
 {
-	this->titleTextBox = nullptr;
-	this->backToRaceButton = nullptr;
-	this->acceptButton = nullptr;
-	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
-	this->name = name;
-	this->portraitIndex = 0;
-
 	this->titleTextBox = [gameState]()
 	{
 		auto center = Int2((ORIGINAL_WIDTH / 4) + 5, 100);
 		auto color = Color::White;
-		std::string text = std::string("Thy attributes will\nsoon be here.\n\nUse thine ") +
-			"A and D\nkeys to change\nthy portrait.\n\nLeft click when\nthou art finished.";
+		std::string text = std::string("Use thine A and D\nkeys to change\n") + 
+			"thy portrait.\n\nLeft click when\nthou art finished.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -100,14 +91,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->backToRaceButton.get() != nullptr);
-	assert(this->acceptButton.get() != nullptr);
-	assert(this->gender.get() != nullptr);
-	assert(this->charClass.get() != nullptr);
-	assert(this->raceName.get() != nullptr);
-	assert(this->name == name);
-	assert(this->portraitIndex == 0);
+	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
+	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
+	this->name = name;
+	this->portraitIndex = 0;
 }
 
 ChooseAttributesPanel::~ChooseAttributesPanel()

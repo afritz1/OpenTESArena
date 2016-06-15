@@ -2,7 +2,6 @@
 #define LOCATION_H
 
 #include <string>
-#include <vector>
 
 enum class ClimateName;
 enum class LocationType;
@@ -20,10 +19,10 @@ public:
 		LocationType locationType, ClimateName climateName);
 	~Location();
 
+	ProvinceName getProvinceName() const;
+	LocationType getLocationType() const;
+	ClimateName getClimateName() const;
 	const std::string &getDisplayName() const;
-	const ProvinceName &getProvinceName() const;
-	const LocationType &getLocationType() const;
-	const ClimateName &getClimateName() const;
 	std::string typeToString() const;
 };
 

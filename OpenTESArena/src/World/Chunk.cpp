@@ -2,6 +2,7 @@
 
 Chunk::Chunk(const Voxel &fillVoxel)
 {
+	// Set all of this chunk's voxels to the given voxel.
 	for (auto &voxel : this->voxels)
 	{
 		voxel = fillVoxel;

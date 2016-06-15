@@ -3,7 +3,9 @@
 
 #include "Metal.h"
 
-const auto MetalTypeDisplayNames = std::map<MetalType, std::string>
+#include "MetalType.h"
+
+const std::map<MetalType, std::string> MetalTypeDisplayNames =
 {
 	{ MetalType::Iron, "Iron" },
 	{ MetalType::Steel, "Steel" },
@@ -16,7 +18,7 @@ const auto MetalTypeDisplayNames = std::map<MetalType, std::string>
 };
 
 // Negate the modifiers for armor rating if the 2nd edition D&D rules are being used.
-const auto MetalRatingModifiers = std::map<MetalType, int>
+const std::map<MetalType, int> MetalRatingModifiers =
 {
 	{ MetalType::Iron, -1 },
 	{ MetalType::Steel, 0 },
@@ -30,7 +32,7 @@ const auto MetalRatingModifiers = std::map<MetalType, int>
 
 // Multiplier for extra metal strength. From this table, an ebony item lasts
 // three times longer than its equivalent iron, steel, or silver item.
-const auto MetalConditionMultipliers = std::map<MetalType, int>
+const std::map<MetalType, int> MetalConditionMultipliers =
 {
 	{ MetalType::Iron, 1 },
 	{ MetalType::Steel, 1 },
@@ -44,7 +46,7 @@ const auto MetalConditionMultipliers = std::map<MetalType, int>
 
 // Multipliers for changing weight based on the type of metal. These values are
 // made up and are subject to change.
-const auto MetalWeightMultipliers = std::map<MetalType, double>
+const std::map<MetalType, double> MetalWeightMultipliers =
 {
 	{ MetalType::Iron, 1.15 },
 	{ MetalType::Steel, 1.0 },
@@ -66,16 +68,9 @@ Metal::~Metal()
 
 }
 
-const MetalType &Metal::getMetalType() const
+MetalType Metal::getMetalType() const
 {
 	return this->metalType;
-}
-
-std::string Metal::toString() const
-{
-	auto displayName = MetalTypeDisplayNames.at(this->getMetalType());
-	assert(displayName.size() > 0);
-	return displayName;
 }
 
 int Metal::getRatingModifier() const
@@ -92,6 +87,12 @@ int Metal::getConditionMultiplier() const
 
 double Metal::getWeightMultiplier() const
 {
-	auto multiplier = MetalWeightMultipliers.at(this->getMetalType());
+	double multiplier = MetalWeightMultipliers.at(this->getMetalType());
 	return multiplier;
+}
+
+std::string Metal::toString() const
+{
+	auto displayName = MetalTypeDisplayNames.at(this->getMetalType());
+	return displayName;
 }

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "ClimateName.h"
+enum class ClimateName;
 
 class Climate
 {
@@ -13,7 +13,7 @@ public:
 	Climate(ClimateName climateName);
 	~Climate();
 
-	const ClimateName &getClimateName() const;
+	ClimateName getClimateName() const;
 	std::string toString() const;
 };
 

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "MetalType.h"
+enum class MetalType;
 
 class Metal
 {
@@ -13,8 +13,7 @@ public:
 	Metal(MetalType metalType);
 	~Metal();
 
-	const MetalType &getMetalType() const;
-	std::string toString() const;
+	MetalType getMetalType() const;
 
 	// The modifier is the same but with different signs for armor and damage.
 	// If higher (positive) armor rating was better, that would work out nicely.
@@ -25,6 +24,8 @@ public:
 
 	// Some metals are heavier than others.
 	double getWeightMultiplier() const;
+
+	std::string toString() const;
 };
 
 #endif

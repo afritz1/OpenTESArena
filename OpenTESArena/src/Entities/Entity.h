@@ -3,7 +3,6 @@
 
 #include <memory>
 
-#include "EntityType.h"
 #include "../Math/Float3.h"
 
 // Entities are anything in the world that isn't part of the voxel grid. Every 
@@ -25,6 +24,8 @@
 
 class EntityManager;
 class GameState;
+
+enum class EntityType;
 
 class Entity
 {

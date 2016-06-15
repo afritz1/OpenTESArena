@@ -15,7 +15,7 @@ std::string File::toString(const std::string &filename)
 	auto fileSize = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
 
-	auto bytes = std::vector<char>(fileSize);
+	std::vector<char> bytes(fileSize);
 	ifs.read(&bytes.at(0), fileSize);
 	ifs.close();
 

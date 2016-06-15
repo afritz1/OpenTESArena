@@ -9,13 +9,12 @@
 #include "../Game/GameState.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
+#include "../Media/TextureName.h"
 
 ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
 	double secondsToDisplay, const std::function<void()> &endingAction)
 	: Panel(gameState)
 {
-	this->skipButton = nullptr;
-
 	this->skipButton = [gameState, &endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
@@ -24,11 +23,6 @@ ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
 	this->textureName = textureName;
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
-
-	assert(this->skipButton.get() != nullptr);
-	assert(this->textureName == textureName);
-	assert(this->secondsToDisplay == secondsToDisplay);
-	assert(this->currentSeconds == 0.0);
 }
 
 ImagePanel::~ImagePanel()

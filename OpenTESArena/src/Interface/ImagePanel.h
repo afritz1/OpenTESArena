@@ -4,12 +4,13 @@
 #include <functional>
 
 #include "Panel.h"
-#include "../Media/TextureName.h"
 
 // For rendering still images in a similar fashion to a cinematic, only now
 // it's one image.
 
 class Button;
+
+enum class TextureName;
 
 class ImagePanel : public Panel
 {

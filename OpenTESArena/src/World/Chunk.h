@@ -5,9 +5,9 @@
 
 #include "Voxel.h"
 
-// A chunk is essentially a 3D array. Every chunk will be stored in the world's 2D 
-// array of chunks. No offset needed then, as the (x, z) offset is only needed when 
-// the world doesn't use a discrete storage container.
+// A chunk is essentially a 3D array, like in Minecraft. Every chunk will be stored 
+// in the world's 2D array of chunks. No offset needed then, as the (x, z) offset 
+// is only needed when the world doesn't use a discrete storage container.
 
 class Chunk
 {

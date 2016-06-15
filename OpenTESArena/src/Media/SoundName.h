@@ -1,7 +1,8 @@
 #ifndef SOUND_NAME_H
 #define SOUND_NAME_H
 
-// A unique identifier for each sound file, including speech.
+// A unique identifier for each sound file, including speech (which isn't in the
+// floppy disk version).
 
 // Since there are only a couple characters with unique walking sounds, those
 // entities can use their sound, but all others will use the generic walking sounds,

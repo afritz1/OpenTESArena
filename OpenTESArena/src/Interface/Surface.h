@@ -5,11 +5,6 @@
 
 // Acts as an SDL_Surface wrapper.
 
-// Maybe sprites should have a "trimSide()" method for getting rid of unnecessary
-// transparency, like the villagers who float a couple inches off the gruund.
-// "addTransparencyOnSide()" would be good, too, for centering sprites like the
-// palm tree. These values should be in a text file that's read in.
-
 class Color;
 class Int2;
 class Random;

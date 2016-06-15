@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "Location.h"
-#include "ProvinceName.h"
 
 // After checking through some climates, it feels like it would make sense to
 // give each province a "typical weather", like rain and fog for Black Marsh,
@@ -13,6 +12,7 @@
 // developers intended it to be like wastelands, or barrens?
 
 enum class CharacterRaceName;
+enum class ProvinceName;
 
 class Province
 {
@@ -23,11 +23,11 @@ public:
 	Province(ProvinceName provinceName);
 	~Province();
 
-	const ProvinceName &getProvinceName() const;
+	ProvinceName getProvinceName() const;
+	CharacterRaceName getRaceName() const;
 	const std::vector<Location> &getLocations() const;
 	std::string toString() const;
 	std::string getRaceDisplayName(bool plural) const;
-	CharacterRaceName getRaceName() const;
 
 	void addLocation(const Location &location);
 };

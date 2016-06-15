@@ -1,11 +1,9 @@
 #ifndef LIST_BOX_H
 #define LIST_BOX_H
 
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "../Media/FontName.h"
 #include "Surface.h"
 
 // The text color and texture manager need to be accessible so they can be remembered 
@@ -15,6 +13,8 @@ class Color;
 class Int2;
 class TextBox;
 class TextureManager;
+
+enum class FontName;
 
 class ListBox : public Surface
 {
@@ -39,7 +39,7 @@ public:
 
 	// Number of elements in the list box (side note: can't return an int cast by reference).
 	int getElementCount() const;
-	
+
 	// Maximum number of visible lines (this determines the box size).
 	int maxDisplayedElements() const;
 

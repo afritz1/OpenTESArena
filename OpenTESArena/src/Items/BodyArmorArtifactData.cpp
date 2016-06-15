@@ -9,14 +9,11 @@
 
 BodyArmorArtifactData::BodyArmorArtifactData(const std::string &displayName, 
 	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-	const ArmorMaterial *armorMaterial, const BodyPartName &partName)
+	const ArmorMaterial *armorMaterial, BodyPartName partName)
 	: ArmorArtifactData(displayName, flavorText, provinces)
 {
 	this->armorMaterial = armorMaterial->clone();
 	this->partName = partName;
-
-	assert(this->armorMaterial.get() != nullptr);
-	assert(this->partName == partName);
 }
 
 BodyArmorArtifactData::~BodyArmorArtifactData()
@@ -31,7 +28,7 @@ std::unique_ptr<ArtifactData> BodyArmorArtifactData::clone() const
 		this->getArmorMaterial(), this->getBodyPartName()));
 }
 
-const BodyPartName &BodyArmorArtifactData::getBodyPartName() const
+BodyPartName BodyArmorArtifactData::getBodyPartName() const
 {
 	return this->partName;
 }

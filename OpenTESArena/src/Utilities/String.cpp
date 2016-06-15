@@ -2,7 +2,7 @@
 
 std::vector<std::string> String::split(const std::string &line, char separator)
 {
-	auto strings = std::vector<std::string>();
+	std::vector<std::string> strings;
 
 	// Add an empty string to start off. If the given line is empty, then a
 	// vector with one empty string is returned.
@@ -32,9 +32,9 @@ std::vector<std::string> String::split(const std::string &line)
 
 std::string String::trim(const std::string &line)
 {
-	auto trimmed = std::string();
-
 	const auto space = ' ';
+
+	std::string trimmed;
 
 	for (const auto &c : line)
 	{
@@ -49,10 +49,10 @@ std::string String::trim(const std::string &line)
 
 std::string String::trimLines(const std::string &line)
 {
-	auto trimmed = std::string();
-
 	const auto carriageReturn = '\r';
 	const auto newLine = '\n';
+
+	std::string trimmed;
 
 	for (const auto &c : line)
 	{

@@ -5,7 +5,10 @@
 #include <cstdint>
 #include <deque>
 #include <iostream>
+#include <map>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include "al.h"
 #include "alc.h"
@@ -24,7 +27,7 @@ namespace
 	// Each MusicType corresponds to a list of MusicNames. These lists should be
 	// given to some other class in the project so that the audio manager doesn't
 	// need to use random numbers (remove the MusicType #include at that point).
-	const std::map<MusicType, std::vector<MusicName>> MusicTypeNames
+	const std::map<MusicType, std::vector<MusicName>> MusicTypeNames =
 	{
 		{ MusicType::ArabCityEnter, { MusicName::ArabCityEnter } },
 		{ MusicType::ArabTownEnter, { MusicName::ArabTownEnter } },
@@ -59,7 +62,7 @@ namespace
 	// has separate XFM files for FM synth output devices (OPL, as on Adlib and
 	// Sound Blaster before the AWE32), while the corresponding XMI files are for
 	// MT-32, MPU-401, and other General MIDI devices.
-	const std::map<MusicName, std::string> MusicFilenames
+	const std::map<MusicName, std::string> MusicFilenames =
 	{
 		{ MusicName::ArabCityEnter, "ARABCITY.XMI" },
 		{ MusicName::ArabTownEnter, "ARABTOWN.XMI" },
@@ -98,7 +101,7 @@ namespace
 
 	// To do: change these to match the original filenames like with music.
 	// Each SoundName has a corresponding filename.
-	const std::map<SoundName, std::string> SoundFilenames
+	const std::map<SoundName, std::string> SoundFilenames =
 	{
 		// Ambient
 		{ SoundName::Back1, "ambient/back1" },

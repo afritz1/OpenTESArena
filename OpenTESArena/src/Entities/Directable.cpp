@@ -36,7 +36,6 @@ CoordinateFrame Directable::getFrame() const
 
 void Directable::setDirection(const Float3d &direction)
 {
-	assert(std::isfinite(direction.length()));
 	assert(direction.isNormalized());
 
 	// Don't allow the direction to be set too close to the global up. Otherwise,

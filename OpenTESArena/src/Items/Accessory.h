@@ -4,13 +4,14 @@
 #include <memory>
 #include <string>
 
-#include "AccessoryType.h"
 #include "Item.h"
 #include "Metallic.h"
 
 // All accessories are metal, unlike trinkets which have no metal.
 
 class AccessoryArtifactData;
+
+enum class AccessoryType;
 
 class Accessory : public Item, public Metallic
 {
@@ -34,7 +35,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const AccessoryType &getAccessoryType() const;
+	AccessoryType getAccessoryType() const;
 	int getMaxEquipCount() const;
 };
 

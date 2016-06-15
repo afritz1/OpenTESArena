@@ -8,8 +8,6 @@
 EntityManager::EntityManager()
 {
 	this->entities = std::map<int, std::unique_ptr<Entity>>();
-	
-	assert(this->entities.size() == 0);
 }
 
 EntityManager::~EntityManager()
@@ -25,7 +23,7 @@ Entity *EntityManager::at(int id) const
 
 std::vector<Entity*> EntityManager::getEntities(EntityType entityType) const
 {
-	auto entityPtrs = std::vector<Entity*>();
+	std::vector<Entity*> entityPtrs;
 
 	// Gather up entities whose type matches the given type.
 	for (const auto &pair : this->entities)
@@ -62,10 +60,6 @@ void EntityManager::add(std::unique_ptr<Entity> entity)
 	int entityID = entity->getID();
 	this->entities.insert(std::pair<int, std::unique_ptr<Entity>>(
 		entityID, std::move(entity)));
-
-	// Verify that the entity was added correctly.
-	assert(this->entities.find(entityID) != this->entities.end());
-	assert(this->entities.find(entityID)->second.get() != nullptr);
 }
 
 void EntityManager::remove(int id)

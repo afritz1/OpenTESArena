@@ -24,7 +24,7 @@ const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 std::unique_ptr<Options> OptionsParser::parse()
 {
 	// Path to the options file.
-	std::string fullPath = OptionsParser::PATH + OptionsParser::FILENAME;
+	std::string fullPath(OptionsParser::PATH + OptionsParser::FILENAME);
 
 	// Read in all the key-value pairs from the options file.
 	KvpTextMap textMap(fullPath);

@@ -1,15 +1,15 @@
 #include <cassert>
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 #include "SDL.h"
 
 #include "Surface.h"
 
-#include "../Media/Color.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
+#include "../Media/Color.h"
 
 const int Surface::DEFAULT_BPP = 32;
 
@@ -23,8 +23,6 @@ Surface::Surface(int x, int y, int width, int height)
 	this->visible = true;
 
 	assert(this->surface != nullptr);
-	assert(this->point.get() != nullptr);
-	assert(this->visible);
 }
 
 Surface::Surface(int width, int height)
@@ -39,12 +37,11 @@ Surface::Surface(int x, int y, const SDL_Surface *surface)
 		surface->format->Bmask, surface->format->Amask);
 	std::memcpy(this->surface->pixels, surface->pixels,
 		surface->w * surface->h * (Surface::DEFAULT_BPP / 8));
+
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
 
 	assert(this->surface != nullptr);
-	assert(this->point.get() != nullptr);
-	assert(this->visible);
 }
 
 Surface::Surface(const SDL_Surface *surface, double scale)
@@ -56,7 +53,7 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
 		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
 		surface->format->Amask);
-	auto rect = SDL_Rect();
+	SDL_Rect rect;
 	rect.w = width;
 	rect.h = height;
 	SDL_BlitScaled(const_cast<SDL_Surface*>(surface), nullptr, this->surface, &rect);
@@ -65,8 +62,6 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 	this->visible = true;
 
 	assert(this->surface != nullptr);
-	assert(this->point.get() != nullptr);
-	assert(this->visible);
 }
 
 Surface::Surface(const SDL_Surface *surface)
@@ -84,16 +79,13 @@ Surface::~Surface()
 
 Surface Surface::randomNoise(int width, int height, Random &random)
 {
-	auto surface = Surface(width, height);
-	auto pixels = static_cast<unsigned int*>(surface.getSurface()->pixels);
+	Surface surface(width, height);
+	auto *pixels = static_cast<unsigned int*>(surface.getSurface()->pixels);
 	int area = surface.getWidth() * surface.getHeight();
 	for (int i = 0; i < area; ++i)
 	{
 		pixels[i] = Color::randomRGB(random).toRGB();
 	}
-
-	assert(surface.getWidth() == width);
-	assert(surface.getHeight() == height);
 
 	return surface;
 }
@@ -137,7 +129,7 @@ bool Surface::isVisible() const
 
 bool Surface::containsPoint(const Int2 &point)
 {
-	auto rect = Rect(this->point->getX(), this->point->getY(),
+	Rect rect(this->point->getX(), this->point->getY(),
 		this->getWidth(), this->getHeight());
 	return rect.contains(point);
 }
@@ -161,7 +153,7 @@ void Surface::optimize(const SDL_PixelFormat *format)
 {
 	assert(format != nullptr);
 
-	auto optSurface = SDL_ConvertSurface(this->surface, format, this->surface->flags);
+	auto *optSurface = SDL_ConvertSurface(this->surface, format, this->surface->flags);
 	if (optSurface == nullptr)
 	{
 		std::cerr << "Surface error: could not optimize surface." << "\n";
@@ -208,7 +200,7 @@ void Surface::outline(const Color &color)
 {
 	auto mappedColor = SDL_MapRGBA(this->surface->format, color.getR(), color.getG(),
 		color.getB(), color.getA());
-	auto surfacePixels = static_cast<unsigned int*>(this->surface->pixels);
+	auto *surfacePixels = static_cast<unsigned int*>(this->surface->pixels);
 
 	int width = this->surface->w;
 	int height = this->surface->h;
@@ -230,7 +222,7 @@ void Surface::outline(const Color &color)
 
 void Surface::blit(Surface &dst, const Int2 &dstPoint, const Rect &clipRect) const
 {
-	auto dstRect = SDL_Rect();
+	SDL_Rect dstRect;
 	dstRect.x = dstPoint.getX();
 	dstRect.y = dstPoint.getY();
 	SDL_BlitSurface(this->surface, clipRect.getRect(), dst.getSurface(), &dstRect);
@@ -249,7 +241,7 @@ void Surface::blit(Surface &dst) const
 void Surface::blitScaled(Surface &dst, double scale, const Int2 &point,
 	const Rect &clipRect) const
 {
-	auto scaleRect = SDL_Rect();
+	SDL_Rect scaleRect;
 	scaleRect.x = point.getX();
 	scaleRect.y = point.getY();
 	scaleRect.w = static_cast<int>(static_cast<double>(this->surface->w) * scale);

@@ -19,9 +19,6 @@
 LoadGamePanel::LoadGamePanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backToMainMenuButton = nullptr;
-	this->underConstructionTextBox = nullptr;
-
 	this->backToMainMenuButton = [gameState]()
 	{
 		auto function = [gameState]()
@@ -47,9 +44,6 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 			fontName,
 			gameState->getTextureManager()));
 	}();
-
-	assert(this->backToMainMenuButton.get() != nullptr);
-	assert(this->underConstructionTextBox.get() != nullptr);
 }
 
 LoadGamePanel::~LoadGamePanel()

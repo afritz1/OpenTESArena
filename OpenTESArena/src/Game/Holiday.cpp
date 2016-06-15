@@ -3,9 +3,10 @@
 
 #include "Holiday.h"
 
+#include "HolidayName.h"
 #include "MonthName.h"
 
-const auto HolidayDisplayNames = std::map<HolidayName, std::string>
+const std::map<HolidayName, std::string> HolidayDisplayNames =
 {
 	{ HolidayName::NewLifeFestival, "New Life Festival" },
 	{ HolidayName::SouthWindsPrayer, "South Winds Prayer" },
@@ -25,7 +26,7 @@ const auto HolidayDisplayNames = std::map<HolidayName, std::string>
 };
 
 // Every holiday has an associated day and month. No particular weekday association.
-const auto HolidayDates = std::map<HolidayName, std::pair<MonthName, int>>
+const std::map<HolidayName, std::pair<MonthName, int>> HolidayDates =
 {
 	{ HolidayName::NewLifeFestival, { MonthName::MorningStar, 1 } },
 	{ HolidayName::SouthWindsPrayer, { MonthName::MorningStar, 15 } },
@@ -59,18 +60,13 @@ HolidayName Holiday::getHolidayName() const
 	return this->holidayName;
 }
 
-std::string Holiday::toString() const
-{
-	auto displayName = HolidayDisplayNames.at(this->getHolidayName());
-	assert(displayName.size() > 0);
-	return displayName;
-}
-
 int Holiday::getDayNumber() const
 {
 	int dayNumber = HolidayDates.at(this->getHolidayName()).second;
+
 	assert(dayNumber >= 1);
 	assert(dayNumber <= 30);
+
 	return dayNumber;
 }
 
@@ -78,4 +74,10 @@ MonthName Holiday::getMonthName() const
 {
 	auto monthName = HolidayDates.at(this->getHolidayName()).first;
 	return monthName;
+}
+
+std::string Holiday::toString() const
+{
+	auto displayName = HolidayDisplayNames.at(this->getHolidayName());
+	return displayName;
 }

@@ -5,6 +5,9 @@
 
 // For now, the options menu will only be accessible from the pause menu.
 
+// Options are loaded from file now. They just can't be changed while the program
+// is running yet.
+
 class Button;
 class TextBox;
 

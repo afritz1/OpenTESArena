@@ -7,13 +7,13 @@
 #include "../Entities/CharacterRaceName.h"
 #include "../Utilities/Debug.h"
 
-const auto PortraitFileGenderNames = std::map<CharacterGenderName, std::string>
+const std::map<CharacterGenderName, std::string> PortraitFileGenderNames =
 {
 	{ CharacterGenderName::Female, "female" },
 	{ CharacterGenderName::Male, "male" }
 };
 
-const auto PortraitFileRaceNames = std::map<CharacterRaceName, std::string>
+const std::map<CharacterRaceName, std::string> PortraitFileRaceNames =
 {
 	{ CharacterRaceName::Argonian, "argonian" },
 	{ CharacterRaceName::Breton, "breton" },
@@ -26,12 +26,13 @@ const auto PortraitFileRaceNames = std::map<CharacterRaceName, std::string>
 	{ CharacterRaceName::WoodElf,  "wood_elf" }
 };
 
-const auto PortraitFileMagicNames = std::map<bool, std::string>
+const std::map<bool, std::string> PortraitFileMagicNames =
 {
 	{ false, "non_magic" },
 	{ true, "magic" }
 };
 
+// This path might be obsolete soon.
 const std::string PortraitFile::PATH = "interface/character_images/";
 
 std::vector<std::string> PortraitFile::getGroup(CharacterGenderName gender, 
@@ -41,13 +42,14 @@ std::vector<std::string> PortraitFile::getGroup(CharacterGenderName gender,
 	Debug::check(race != CharacterRaceName::Imperial, "Portrait File", 
 		"Imperial race portraits not implemented.");
 
-	auto genderString = PortraitFileGenderNames.at(gender);
-	auto raceString = PortraitFileRaceNames.at(race);
-	auto magicString = PortraitFileMagicNames.at(isMagic);
+	const auto &genderString = PortraitFileGenderNames.at(gender);
+	const auto &raceString = PortraitFileRaceNames.at(race);
+	const auto &magicString = PortraitFileMagicNames.at(isMagic);
 
-	auto fileString = PortraitFile::PATH + raceString + "/" + raceString + "_" + 
+	std::string fileString = PortraitFile::PATH + raceString + "/" + raceString + "_" + 
 		genderString + "_" + magicString + "_";
-	auto fileStrings = std::vector<std::string>();
+
+	std::vector<std::string> fileStrings;
 
 	// Currently only ten images can be used for each triplet of options.
 	for (int i = 0; i < 10; ++i)

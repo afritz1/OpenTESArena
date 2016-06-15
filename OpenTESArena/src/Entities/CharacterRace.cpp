@@ -3,9 +3,10 @@
 
 #include "CharacterRace.h"
 
+#include "CharacterRaceName.h"
 #include "../World/ProvinceName.h"
 
-const auto CharacterRaceDisplayNames = std::map<CharacterRaceName, std::string>
+const std::map<CharacterRaceName, std::string> CharacterRaceDisplayNames =
 {
 	{ CharacterRaceName::Argonian, "Argonian" },
 	{ CharacterRaceName::Breton, "Breton" },
@@ -18,7 +19,7 @@ const auto CharacterRaceDisplayNames = std::map<CharacterRaceName, std::string>
 	{ CharacterRaceName::WoodElf, "Wood Elf" }
 };
 
-const auto CharacterRaceHomeProvinces = std::map<CharacterRaceName, ProvinceName>
+const std::map<CharacterRaceName, ProvinceName> CharacterRaceHomeProvinces =
 {
 	{ CharacterRaceName::Argonian, ProvinceName::BlackMarsh },
 	{ CharacterRaceName::Breton, ProvinceName::HighRock },
@@ -46,15 +47,14 @@ CharacterRaceName CharacterRace::getRaceName() const
 	return this->raceName;
 }
 
-std::string CharacterRace::toString() const
-{
-	auto displayName = CharacterRaceDisplayNames.at(this->getRaceName());
-	assert(displayName.size() > 0);
-	return displayName;
-}
-
 ProvinceName CharacterRace::getHomeProvinceName() const
 {
 	auto homeProvince = CharacterRaceHomeProvinces.at(this->getRaceName());
 	return homeProvince;
+}
+
+std::string CharacterRace::toString() const
+{
+	auto displayName = CharacterRaceDisplayNames.at(this->getRaceName());
+	return displayName;
 }

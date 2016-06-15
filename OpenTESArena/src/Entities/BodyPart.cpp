@@ -3,9 +3,10 @@
 
 #include "BodyPart.h"
 
+#include "BodyPartName.h"
 #include "../Items/ArmorType.h"
 
-const auto BodyPartDisplayNames = std::map<BodyPartName, std::string>
+const std::map<BodyPartName, std::string> BodyPartDisplayNames =
 {
 	{ BodyPartName::Head, "Head" },
 	{ BodyPartName::LeftShoulder, "Left Shoulder" },
@@ -16,7 +17,7 @@ const auto BodyPartDisplayNames = std::map<BodyPartName, std::string>
 	{ BodyPartName::Feet, "Feet" }
 };
 
-const auto BodyPartArmors = std::map<BodyPartName, ArmorType>
+const std::map<BodyPartName, ArmorType> BodyPartArmors =
 {
 	{ BodyPartName::Head, ArmorType::Helm },
 	{ BodyPartName::LeftShoulder, ArmorType::LeftPauldron },
@@ -51,6 +52,5 @@ ArmorType BodyPart::getArmorType() const
 std::string BodyPart::toString() const
 {
 	auto displayName = BodyPartDisplayNames.at(this->getPartName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

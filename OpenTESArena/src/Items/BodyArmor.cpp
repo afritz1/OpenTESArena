@@ -11,7 +11,7 @@
 
 // This uses a body part name as the mapping instead of an armor type because the
 // "Shield" entry would never be used, since it's overridden by the Shield class.
-const auto BodyArmorDisplayNames = std::map<BodyPartName, std::string>
+const std::map<BodyPartName, std::string> BodyArmorDisplayNames =
 {
 	{ BodyPartName::Head, "Helm" },
 	{ BodyPartName::LeftShoulder, "Left Pauldron" },
@@ -24,7 +24,7 @@ const auto BodyArmorDisplayNames = std::map<BodyPartName, std::string>
 
 // These weights are based on iron. They are made up and will need to be revised 
 // to fit the game better.
-const auto BodyArmorWeights = std::map<BodyPartName, double>
+const std::map<BodyPartName, double> BodyArmorWeights =
 {
 	{ BodyPartName::Head, 5.0 },
 	{ BodyPartName::LeftShoulder, 6.0 },
@@ -37,7 +37,7 @@ const auto BodyArmorWeights = std::map<BodyPartName, double>
 
 // These values are based on iron. They are made up and will need to be revised 
 // to fit the game better.
-const auto BodyArmorGoldValues = std::map<BodyPartName, int>
+const std::map<BodyPartName, int> BodyArmorGoldValues =
 {
 	{ BodyPartName::Head, 25 },
 	{ BodyPartName::LeftShoulder, 20 },
@@ -54,9 +54,6 @@ BodyArmor::BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial,
 {
 	this->armorMaterial = armorMaterial->clone();
 	this->partName = partName;
-
-	assert(this->armorMaterial.get() != nullptr);
-	assert(this->partName == partName);
 }
 
 BodyArmor::BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial)
@@ -80,9 +77,9 @@ std::unique_ptr<Item> BodyArmor::clone() const
 
 double BodyArmor::getWeight() const
 {
-	auto baseWeight = BodyArmorWeights.at(this->getPartName());
-	auto materialMultiplier = this->getArmorMaterial()->getWeightMultiplier();
-	auto weight = baseWeight * materialMultiplier;
+	double baseWeight = BodyArmorWeights.at(this->getPartName());
+	double materialMultiplier = this->getArmorMaterial()->getWeightMultiplier();
+	double weight = baseWeight * materialMultiplier;
 	assert(weight >= 0.0);
 	return weight;
 }
@@ -92,7 +89,7 @@ int BodyArmor::getGoldValue() const
 	// Refine this method.
 	int baseValue = BodyArmorGoldValues.at(this->getPartName());
 	int ratingModifier = this->getArmorRating();
-	auto metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
+	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	int value = static_cast<int>(static_cast<double>(baseValue + ratingModifier) *
 		metalMultiplier);
 	return value;
@@ -103,11 +100,10 @@ std::string BodyArmor::getDisplayName() const
 	auto displayName = (this->getArtifactData() != nullptr) ? 
 		this->getArtifactData()->getDisplayName() :
 		this->getArmorMaterial()->toString() + " " + this->typeToString();
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
-const BodyPartName &BodyArmor::getPartName() const
+BodyPartName BodyArmor::getPartName() const
 {
 	return this->partName;
 }
@@ -115,7 +111,6 @@ const BodyPartName &BodyArmor::getPartName() const
 std::string BodyArmor::typeToString() const
 {
 	auto displayName = BodyArmorDisplayNames.at(this->getPartName());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
@@ -134,8 +129,8 @@ const ArmorMaterial *BodyArmor::getArmorMaterial() const
 
 std::vector<BodyPartName> BodyArmor::getProtectedBodyParts() const
 {
-	// Body armors only protect one body part, unlike shields. This returns a vector 
-	// to retain the same interface with armors.
+	// Body armors only protect one body part, unlike shields. 
+	// This returns a vector to retain the same interface with armors.
 	auto partNames = std::vector<BodyPartName>();
 	partNames.push_back(this->getPartName());
 

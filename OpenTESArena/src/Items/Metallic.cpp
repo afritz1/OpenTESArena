@@ -8,8 +8,6 @@
 Metallic::Metallic(MetalType metalType)
 {
 	this->metal = std::unique_ptr<Metal>(new Metal(metalType));
-
-	assert(this->metal.get() != nullptr);
 }
 
 Metallic::~Metallic()

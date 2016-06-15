@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "GuildName.h"
+enum class GuildName;
 
 class Guild
 {

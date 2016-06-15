@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "MonthName.h"
+enum class MonthName;
 
 class Month
 {
@@ -16,10 +16,11 @@ public:
 	static const int DAYS_PER_MONTH;
 
 	MonthName getMonthName() const;
-	std::string toString() const;
 
 	// For knowing when to increment the year.
 	bool isLastMonthInYear() const;
+
+	std::string toString() const;
 
 	void incrementMonth();
 };

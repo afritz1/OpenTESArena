@@ -1,6 +1,9 @@
 #ifndef CLIMATE_NAME_H
 #define CLIMATE_NAME_H
 
+// I made these climates on my own, given the behavior I saw in game for
+// many, many locations.
+
 // A climate is set for each individual location. It is not dependent on the 
 // province, and may or may not have a dependence on geographical location, since 
 // deserts seem to be scattered around; not just in Hammerfell.

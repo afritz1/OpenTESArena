@@ -5,13 +5,9 @@
 
 #include "../Math/Float4.h"
 
-
-
-// NEW: with the change to TextureReferences, this class might be obsolete. Textures
+// With the change to TextureReferences, this class might be obsolete. Textures
 // are copied to the kernel buffers in the CLProgram, so there isn't really an
 // in-between or a use for this class on the host.
-
-
 
 
 // They are "Texture" in the host, but upon copying to the client, they are put into the 

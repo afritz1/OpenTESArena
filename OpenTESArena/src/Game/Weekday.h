@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "WeekdayName.h"
+enum class WeekdayName;
 
 class Weekday
 {

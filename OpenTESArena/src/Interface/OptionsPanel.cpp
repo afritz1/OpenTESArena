@@ -11,6 +11,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -18,9 +19,6 @@
 OptionsPanel::OptionsPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->titleTextBox = nullptr;
-	this->backToPauseButton = nullptr;
-
 	this->titleTextBox = [gameState]()
 	{
 		auto center = Int2(160, 30);
@@ -44,9 +42,6 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->backToPauseButton.get() != nullptr);
 }
 
 OptionsPanel::~OptionsPanel()

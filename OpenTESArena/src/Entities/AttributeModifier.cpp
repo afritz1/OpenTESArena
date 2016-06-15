@@ -3,7 +3,9 @@
 
 #include "AttributeModifier.h"
 
-const auto AttributeModifierDisplayNames = std::map<AttributeModifierName, std::string>
+#include "AttributeModifierName.h"
+
+const std::map<AttributeModifierName, std::string> AttributeModifierDisplayNames =
 {
 	{ AttributeModifierName::MeleeDamage, "Melee Damage" },
 	{ AttributeModifierName::MagicDefense, "Magic Defense" },
@@ -32,6 +34,5 @@ AttributeModifierName AttributeModifier::getModifierName() const
 std::string AttributeModifier::toString() const
 {
 	auto displayName = AttributeModifierDisplayNames.at(this->getModifierName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

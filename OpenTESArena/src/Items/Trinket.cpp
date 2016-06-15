@@ -4,28 +4,29 @@
 #include "Trinket.h"
 
 #include "ItemType.h"
+#include "TrinketType.h"
 
-const auto TrinketDisplayNames = std::map<TrinketType, std::string>
+const std::map<TrinketType, std::string> TrinketDisplayNames =
 {
 	{ TrinketType::Crystal, "Crystal" },
 	{ TrinketType::Mark, "Mark" }
 };
 
 // These values are made up and should be revised sometime.
-const auto TrinketWeights = std::map<TrinketType, double>
+const std::map<TrinketType, double> TrinketWeights =
 {
 	{ TrinketType::Crystal, 0.25 },
 	{ TrinketType::Mark, 0.20 }
 };
 
 // These values are made up and should be revised sometime.
-const auto TrinketGoldValues = std::map<TrinketType, int>
+const std::map<TrinketType, int> TrinketGoldValues =
 {
 	{ TrinketType::Crystal, 100 },
 	{ TrinketType::Mark, 80 }
 };
 
-const auto TrinketMaxEquipCounts = std::map<TrinketType, int>
+const std::map<TrinketType, int> TrinketMaxEquipCounts =
 {
 	{ TrinketType::Crystal, 1 },
 	{ TrinketType::Mark, 1 }
@@ -63,11 +64,10 @@ int Trinket::getGoldValue() const
 std::string Trinket::getDisplayName() const
 {
 	auto displayName = TrinketDisplayNames.at(this->getTrinketType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
-const TrinketType &Trinket::getTrinketType() const
+TrinketType Trinket::getTrinketType() const
 {
 	return this->trinketType;
 }

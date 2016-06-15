@@ -10,6 +10,8 @@
 // different rules. Food doesn't need identification, while potions do, for example.
 // This separation will keep foods from needing to implement any identification code.
 
+// There aren't foods in Arena, but I'm open to modding in this regard :)
+
 enum class ConsumableType;
 
 class Consumable : public Item

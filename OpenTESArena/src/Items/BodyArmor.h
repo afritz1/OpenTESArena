@@ -39,7 +39,7 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const BodyPartName &getPartName() const;
+	BodyPartName getPartName() const;
 	std::string typeToString() const;
 
 	virtual ArmorType getArmorType() const override;

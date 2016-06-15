@@ -8,10 +8,11 @@
 #include "HeavyArmorMaterial.h"
 #include "Metal.h"
 #include "ShieldArtifactData.h"
+#include "ShieldType.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
 
-const auto ShieldTypeDisplayNames = std::map<ShieldType, std::string>
+const std::map<ShieldType, std::string> ShieldTypeDisplayNames =
 {
 	{ ShieldType::Buckler, "Buckler" },
 	{ ShieldType::Round, "Round Shield" },
@@ -20,7 +21,7 @@ const auto ShieldTypeDisplayNames = std::map<ShieldType, std::string>
 };
 
 // Using positive armor ratings here. Negate them for 2nd edition rules.
-const auto ShieldRatings = std::map<ShieldType, int>
+const std::map<ShieldType, int> ShieldRatings =
 {
 	{ ShieldType::Buckler, 1 },
 	{ ShieldType::Round, 2 },
@@ -30,7 +31,7 @@ const auto ShieldRatings = std::map<ShieldType, int>
 
 // These numbers are based on iron. They are made up and will probably be revised 
 // at some point.
-const auto ShieldWeights = std::map<ShieldType, double>
+const std::map<ShieldType, double> ShieldWeights =
 {
 	{ ShieldType::Buckler, 5.0 },
 	{ ShieldType::Round, 6.0 },
@@ -40,7 +41,7 @@ const auto ShieldWeights = std::map<ShieldType, double>
 
 // These numbers are based on iron. They are made up and will probably be revised 
 // at some point.
-const auto ShieldGoldValues = std::map<ShieldType, int>
+const std::map<ShieldType, int> ShieldGoldValues =
 {
 	{ ShieldType::Buckler, 20 },
 	{ ShieldType::Round, 30 },
@@ -49,7 +50,7 @@ const auto ShieldGoldValues = std::map<ShieldType, int>
 };
 
 // Shields protect multiple body parts, unlike regular body armor pieces.
-const auto ShieldProtectedBodyParts = std::map<ShieldType, std::vector<BodyPartName>>
+const std::map<ShieldType, std::vector<BodyPartName>> ShieldProtectedBodyParts =
 {
 	{ ShieldType::Buckler, { BodyPartName::Hands, BodyPartName::LeftShoulder } },
 	{ ShieldType::Round, { BodyPartName::Hands, BodyPartName::LeftShoulder } },
@@ -65,9 +66,6 @@ Shield::Shield(ShieldType shieldType, MetalType metalType,
 	this->armorMaterial = std::unique_ptr<HeavyArmorMaterial>(
 		new HeavyArmorMaterial(metalType));
 	this->shieldType = shieldType;
-
-	assert(this->armorMaterial.get() != nullptr);
-	assert(this->shieldType == shieldType);
 }
 
 Shield::Shield(ShieldType shieldType, MetalType metalType)
@@ -91,9 +89,9 @@ std::unique_ptr<Item> Shield::clone() const
 
 double Shield::getWeight() const
 {
-	auto baseWeight = ShieldWeights.at(this->getShieldType());
-	auto metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
-	auto weight = baseWeight * metalMultiplier;
+	double baseWeight = ShieldWeights.at(this->getShieldType());
+	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
+	double weight = baseWeight * metalMultiplier;
 	assert(weight >= 0.0);
 	return weight;
 }
@@ -103,7 +101,7 @@ int Shield::getGoldValue() const
 	// Refine this method sometime.
 	int baseValue = ShieldGoldValues.at(this->getShieldType());
 	int ratingModifier = this->getArmorRating();
-	auto metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
+	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	int value = static_cast<int>(static_cast<double>(baseValue + ratingModifier) * 
 		metalMultiplier);
 	return value;
@@ -114,7 +112,7 @@ std::string Shield::getDisplayName() const
 	return this->getArmorMaterial()->toString() + " " + this->typeToString();
 }
 
-const ShieldType &Shield::getShieldType() const
+ShieldType Shield::getShieldType() const
 {
 	return this->shieldType;
 }
@@ -122,7 +120,6 @@ const ShieldType &Shield::getShieldType() const
 std::string Shield::typeToString() const
 {
 	auto displayName = ShieldTypeDisplayNames.at(this->getShieldType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 

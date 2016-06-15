@@ -10,6 +10,7 @@
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
+#include "../Media/FontName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 
@@ -26,7 +27,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	auto textLines = this->textToLines(text);
 
 	// Get combined surfaces for each text line. That is, each line is one surface.
-	auto lineSurfaces = std::vector<std::unique_ptr<Surface>>();
+	std::vector<std::unique_ptr<Surface>> lineSurfaces;
 	for (const auto &textLine : textLines)
 	{
 		auto letterSurfaces = this->lineToSurfaces(textLine, textureManager);
@@ -70,10 +71,6 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 			pixels[i] = textColor.toRGB();
 		}
 	}
-
-	assert(this->surface->w > 1);
-	assert(this->surface->h > 1);
-	assert(this->fontName == fontName);
 }
 
 // This constructor is identical to the other one, except this one aligns the
@@ -89,7 +86,7 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 	auto textLines = this->textToLines(text);
 
 	// Get combined surfaces for each text line. That is, each line is one surface.
-	auto lineSurfaces = std::vector<std::unique_ptr<Surface>>();
+	std::vector<std::unique_ptr<Surface>> lineSurfaces;
 	for (const auto &textLine : textLines)
 	{
 		auto letterSurfaces = this->lineToSurfaces(textLine, textureManager);
@@ -136,10 +133,6 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 			pixels[i] = textColor.toRGB();
 		}
 	}
-
-	assert(this->surface->w > 1);
-	assert(this->surface->h > 1);
-	assert(this->fontName == fontName);
 }
 
 TextBox::~TextBox()
@@ -149,7 +142,7 @@ TextBox::~TextBox()
 
 int TextBox::getNewLineHeight(TextureManager &textureManager) const
 {
-	auto font = Font(this->getFontName());
+	Font font(this->getFontName());
 	const auto &surface = textureManager.getSurface(
 		TextureFile::fromName(font.getFontTextureName()));
 	int height = surface.getHeight() / 3;
@@ -169,7 +162,7 @@ int TextBox::getMaxWidth(const std::vector<std::unique_ptr<Surface>> &surfaces)
 
 std::vector<std::string> TextBox::textToLines(const std::string &text) const
 {
-	auto lines = std::vector<std::string>();
+	std::vector<std::string> lines;
 
 	// Add one empty string to start.
 	lines.push_back(std::string());
@@ -228,7 +221,7 @@ std::vector<std::unique_ptr<Surface>> TextBox::lineToSurfaces(const std::string 
 {
 	// This method gets each letter surface, trims it to the required right padding,
 	// and puts it into a vector, thus representing a line of blit-able text.
-	auto surfaces = std::vector<std::unique_ptr<Surface>>();
+	std::vector<std::unique_ptr<Surface>> surfaces;
 
 	// For empty strings (new lines), just put a single space character.
 	if (line.size() == 0)
@@ -250,7 +243,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 	TextureManager &textureManager) const
 {
 	// Get the font and its associated texture.
-	const auto font = Font(this->fontName);
+	const Font font(this->fontName);
 	const auto &fontTexture = textureManager.getSurface(
 		TextureFile::fromName(font.getFontTextureName()));
 	const auto *fontPixels = static_cast<unsigned int*>(fontTexture.getSurface()->pixels);
@@ -270,8 +263,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 		const auto cell = Font::getCellPosition(c);
 
 		// The top left corner of the cell in pixels.
-		const auto corner = Int2(
-			cell.getX() * cellDimensions.getX(),
+		const Int2 corner(cell.getX() * cellDimensions.getX(),
 			cell.getY() * cellDimensions.getY());
 
 		// Calculate the letter's trimmed width by walking columns from right to left

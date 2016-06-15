@@ -3,6 +3,8 @@
 
 // A unique identifier for each kind of miscellaneous item.
 
+// This enumeration might need some refining.
+
 // Followers were treated as inventory items in the original game, but that seems
 // a bit strange. The remake should treat them as entities, not items.
 

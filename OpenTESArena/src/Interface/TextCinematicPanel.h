@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "Panel.h"
-#include "../Media/TextureSequenceName.h"
 
 // Very similar to a cinematic panel, only now it's designed for cinematics with
 // subtitles at the bottom (a.k.a., "text").
@@ -19,6 +18,8 @@
 // newlines built in as usual.
 
 class Button;
+
+enum class TextureSequenceName;
 
 class TextCinematicPanel : public Panel
 {

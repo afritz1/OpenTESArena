@@ -25,14 +25,6 @@ const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &charClass)
 	: Panel(gameState)
 {
-	this->parchment = nullptr;
-	this->titleTextBox = nullptr;
-	this->nameTextBox = nullptr;
-	this->backToClassButton = nullptr;
-	this->acceptButton = nullptr;
-	this->charClass = nullptr;
-	this->name = std::string();
-
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
@@ -92,14 +84,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->charClass = std::unique_ptr<CharacterClass>(
 		new CharacterClass(charClass));
-
-	assert(this->parchment.get() != nullptr);
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->nameTextBox.get() != nullptr);
-	assert(this->backToClassButton.get() != nullptr);
-	assert(this->acceptButton.get() != nullptr);
-	assert(this->charClass.get() != nullptr);
-	assert(this->name.size() == 0);
+	this->name = std::string();
 }
 
 ChooseNamePanel::~ChooseNamePanel()
@@ -272,8 +257,8 @@ void ChooseNamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw parchment: title.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	const auto parchmentXScale = 1.5;
-	const auto parchmentYScale = 1.65;
+	const double parchmentXScale = 1.5;
+	const double parchmentYScale = 1.65;
 	const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
 	const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
 	this->drawScaledToNative(*this->parchment.get(),

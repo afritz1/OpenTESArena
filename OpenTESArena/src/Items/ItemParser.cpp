@@ -25,15 +25,16 @@
 #include "WeaponType.h"
 #include "../Utilities/File.h"
 
+// These paths might be obsolete soon.
 const std::string ItemParser::PATH = "data/text/";
 const std::string ItemParser::FILENAME = "items.txt";
 
 std::vector<std::unique_ptr<Item>> ItemParser::parse()
 {
-	auto fullPath = ItemParser::PATH + ItemParser::FILENAME;
+	std::string fullPath(ItemParser::PATH + ItemParser::FILENAME);
 
 	// Read the artifacts file into a string.
-	auto text = File::toString(fullPath);
+	std::string text = File::toString(fullPath);
 
 	// Parsing code here... pushing items into the vector.
 	// ...

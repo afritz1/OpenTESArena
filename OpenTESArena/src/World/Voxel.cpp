@@ -4,21 +4,25 @@
 #include "Voxel.h"
 
 #include "VoxelMaterialType.h"
+#include "VoxelType.h"
 #include "../Math/Triangle.h"
 
-const auto VoxelTypeDisplayNames = std::map<VoxelType, std::string>
+// These voxel type things are still experimental. I'm not sure if I'll use them in
+// this exact form.
+
+const std::map<VoxelType, std::string> VoxelTypeDisplayNames =
 {
 
 };
 
-const auto VoxelMaterialDisplayNames = std::map<VoxelMaterialType, std::string>
+const std::map<VoxelMaterialType, std::string> VoxelMaterialDisplayNames =
 {
 	{ VoxelMaterialType::Air, "Air" },
 	{ VoxelMaterialType::Liquid, "Liquid" },
 	{ VoxelMaterialType::Solid, "Solid" }
 };
 
-const auto VoxelTypeMaterials = std::map<VoxelType, VoxelMaterialType>
+const std::map<VoxelType, VoxelMaterialType> VoxelTypeMaterials =
 {
 	// Air -> Air...
 	// Ground1 -> Solid...
@@ -28,7 +32,7 @@ const auto VoxelTypeMaterials = std::map<VoxelType, VoxelMaterialType>
 // Each voxel type has a set of triangles (with texture coordinates) that define
 // its contents. These essentially replace "voxel templates", and are intended for 
 // rendering, but could really be used anywhere.
-const auto VoxelTypeGeometries = std::map<VoxelType, std::vector<Triangle>>
+const std::map<VoxelType, std::vector<Triangle>> VoxelTypeGeometries =
 {
 
 };
@@ -46,7 +50,7 @@ Voxel::~Voxel()
 
 }
 
-const VoxelType &Voxel::getVoxelType() const
+VoxelType Voxel::getVoxelType() const
 {
 	return this->voxelType;
 }
@@ -60,14 +64,12 @@ VoxelMaterialType Voxel::getVoxelMaterialType() const
 std::string Voxel::typeToString() const
 {
 	auto displayName = VoxelTypeDisplayNames.at(this->getVoxelType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
 std::string Voxel::materialToString() const
 {
 	auto displayName = VoxelMaterialDisplayNames.at(this->getVoxelMaterialType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 

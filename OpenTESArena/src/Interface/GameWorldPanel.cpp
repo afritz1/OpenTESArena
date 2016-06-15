@@ -8,7 +8,6 @@
 #include "Button.h"
 #include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
-
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -31,9 +30,6 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 {
 	assert(gameState->gameDataIsActive());
 
-	this->characterSheetButton = nullptr;
-	this->pauseButton = nullptr;
-
 	this->characterSheetButton = [gameState]()
 	{
 		auto function = [gameState]()
@@ -53,9 +49,6 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-
-	assert(this->characterSheetButton.get() != nullptr);
-	assert(this->pauseButton.get() != nullptr);
 }
 
 GameWorldPanel::~GameWorldPanel()
@@ -176,7 +169,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// think it requires using the original height and the draw scale somehow.
 
 	// Draw placeholder stat bars.
-	auto statBarSurface = Surface(5, 35);
+	Surface statBarSurface(5, 35);
 
 	statBarSurface.fill(Color(0, 255, 0));
 	this->drawScaledToNative(statBarSurface,
@@ -211,7 +204,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	const auto &compassSlider = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::CompassSlider));
 
-	auto compassSliderSegment = Surface(32, 7);
+	Surface compassSliderSegment(32, 7);
 	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
 
@@ -219,7 +212,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	//int segmentX = ...;
 
 	// Fill in transparent edges behind compass slider (due to SDL blit truncation).
-	auto compassFiller = Surface(36, 11);
+	Surface compassFiller(36, 11);
 	compassFiller.fill(Color(205, 186, 155));
 
 	this->drawScaledToNative(compassFiller,

@@ -6,6 +6,8 @@
 // Voxel types, if they are still part of the design, are meant for host usage only,
 // and not for mapping textures to the OpenCL kernel.
 
+// This type is still experimental and might be removed.
+
 // -------------------------------
 
 // Voxel types are used instead of integer IDs, since it's easier to name specific 

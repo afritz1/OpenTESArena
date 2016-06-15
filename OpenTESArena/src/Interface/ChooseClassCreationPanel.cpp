@@ -21,14 +21,6 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->parchment = nullptr;
-	this->titleTextBox = nullptr;
-	this->generateTextBox = nullptr;
-	this->selectTextBox = nullptr;
-	this->backToMainMenuButton = nullptr;
-	this->generateButton = nullptr;
-	this->selectButton = nullptr;
-
 	this->parchment = [gameState]()
 	{
 		auto *surface = gameState->getTextureManager().getSurface(
@@ -110,13 +102,6 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
-
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->generateTextBox.get() != nullptr);
-	assert(this->selectTextBox.get() != nullptr);
-	assert(this->backToMainMenuButton.get() != nullptr);
-	assert(this->generateButton.get() != nullptr);
-	assert(this->selectButton.get() != nullptr);
 }
 
 ChooseClassCreationPanel::~ChooseClassCreationPanel()

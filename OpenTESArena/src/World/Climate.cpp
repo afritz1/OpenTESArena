@@ -3,7 +3,9 @@
 
 #include "Climate.h"
 
-const auto ClimateDisplayNames = std::map<ClimateName, std::string>
+#include "ClimateName.h"
+
+const std::map<ClimateName, std::string> ClimateDisplayNames =
 {
 	{ ClimateName::Cold, "Cold" },
 	{ ClimateName::Desert, "Desert" },
@@ -22,7 +24,7 @@ Climate::~Climate()
 
 }
 
-const ClimateName &Climate::getClimateName() const
+ClimateName Climate::getClimateName() const
 {
 	return this->climateName;
 }
@@ -30,6 +32,5 @@ const ClimateName &Climate::getClimateName() const
 std::string Climate::toString() const
 {
 	auto displayName = ClimateDisplayNames.at(this->getClimateName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

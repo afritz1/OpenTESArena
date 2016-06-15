@@ -3,6 +3,7 @@
 #include "Entity.h"
 
 #include "EntityManager.h"
+#include "EntityType.h"
 
 Entity::Entity(EntityType entityType, const Float3d &position, 
 	EntityManager &entityManager)

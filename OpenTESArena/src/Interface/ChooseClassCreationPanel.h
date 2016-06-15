@@ -1,8 +1,6 @@
 #ifndef CHOOSE_CLASS_CREATION_PANEL_H
 #define CHOOSE_CLASS_CREATION_PANEL_H
 
-#include <memory>
-
 #include "Panel.h"
 
 // This panel is for the "How do you wish to select your class?" screen.
@@ -10,7 +8,8 @@
 // There is a rough draft version of the "Select" option already.
 // The questions are not implemented yet for the "Generate" option.
 
-// There could be new tooltips for each option. I always found it confusing.
+// There could be new tooltips for each option. I always found it confusing what 
+// the buttons meant.
 // - "Answer questions" for "Generate".
 // - "Choose from a list" for "Select".
 

@@ -19,12 +19,12 @@ private:
 public:
 	BodyArmorArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<ProvinceName> &provinces,
-		const ArmorMaterial *armorMaterial, const BodyPartName &partName);
+		const ArmorMaterial *armorMaterial, BodyPartName partName);
 	virtual ~BodyArmorArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	const BodyPartName &getBodyPartName() const;
+	BodyPartName getBodyPartName() const;
 	const ArmorMaterial *getArmorMaterial() const;
 
 	// The armor type is found by using the body part name.

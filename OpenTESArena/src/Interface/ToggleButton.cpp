@@ -25,7 +25,7 @@ ToggleButton::~ToggleButton()
 
 }
 
-const bool &ToggleButton::isOn() const
+bool ToggleButton::isOn() const
 {
 	return this->on;
 }

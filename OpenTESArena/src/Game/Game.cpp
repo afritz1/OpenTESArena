@@ -1,6 +1,6 @@
 #include <cassert>
-#include <iostream>
 #include <cmath>
+#include <iostream>
 
 #include "SDL.h"
 

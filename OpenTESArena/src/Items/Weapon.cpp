@@ -8,12 +8,13 @@
 #include "WeaponArtifactData.h"
 #include "WeaponHandCount.h"
 #include "WeaponRangeName.h"
+#include "WeaponType.h"
 
 // The manual mentions chain and plate gauntlets, but I don't think those are really
 // in the game. It says they have weights too, but that doesn't make sense because
 // stats like that depend on the armor pieces themselves. I'll just roll both of them
 // into "fists". Maybe I'll add a damage modifier to gauntlets, but don't count on it.
-const auto WeaponTypeDisplayNames = std::map<WeaponType, std::string>
+const std::map<WeaponType, std::string> WeaponTypeDisplayNames =
 {
 	{ WeaponType::BattleAxe, "Battle Axe" },
 	{ WeaponType::Broadsword, "Broadsword" },
@@ -36,7 +37,7 @@ const auto WeaponTypeDisplayNames = std::map<WeaponType, std::string>
 	{ WeaponType::Warhammer, "Warhammer" }
 };
 
-const auto WeaponTypeHandCounts = std::map<WeaponType, WeaponHandCount>
+const std::map<WeaponType, WeaponHandCount> WeaponTypeHandCounts =
 {
 	{ WeaponType::BattleAxe, WeaponHandCount::Two },
 	{ WeaponType::Broadsword, WeaponHandCount::One },
@@ -59,7 +60,7 @@ const auto WeaponTypeHandCounts = std::map<WeaponType, WeaponHandCount>
 	{ WeaponType::Warhammer, WeaponHandCount::Two }
 };
 
-const auto WeaponTypeBaseDamages = std::map<WeaponType, std::pair<int, int>>
+const std::map<WeaponType, std::pair<int, int>> WeaponTypeBaseDamages =
 {
 	{ WeaponType::BattleAxe, std::pair<int, int>(2, 16) },
 	{ WeaponType::Broadsword, std::pair<int, int>(1, 12) },
@@ -86,7 +87,7 @@ const auto WeaponTypeBaseDamages = std::map<WeaponType, std::pair<int, int>>
 // a weight of 1 kilogram. Are they implying the weight of flesh...? Are fists a 
 // hidden inventory item...? Anyway, I decided to make its weight zero since that 
 // makes more sense.
-const auto WeaponTypeWeights = std::map<WeaponType, double>
+const std::map<WeaponType, double> WeaponTypeWeights =
 {
 	{ WeaponType::BattleAxe, 12.0 },
 	{ WeaponType::Broadsword, 6.0 },
@@ -111,7 +112,7 @@ const auto WeaponTypeWeights = std::map<WeaponType, double>
 
 // These values are based on iron. They are made up, and should be revised at
 // some point.
-const auto WeaponTypeGoldValues = std::map<WeaponType, int>
+const std::map<WeaponType, int> WeaponTypeGoldValues =
 {
 	{ WeaponType::BattleAxe, 35 },
 	{ WeaponType::Broadsword, 20 },
@@ -134,7 +135,7 @@ const auto WeaponTypeGoldValues = std::map<WeaponType, int>
 	{ WeaponType::Warhammer, 35 }
 };
 
-const auto WeaponTypeRangeNames = std::map<WeaponType, WeaponRangeName>
+const std::map<WeaponType, WeaponRangeName> WeaponTypeRangeNames =
 {
 	{ WeaponType::BattleAxe, WeaponRangeName::Melee },
 	{ WeaponType::Broadsword, WeaponRangeName::Melee },
@@ -162,8 +163,6 @@ Weapon::Weapon(WeaponType weaponType, MetalType metalType,
 	: Item(artifactData), Metallic(metalType)
 {
 	this->weaponType = weaponType;
-
-	assert(this->weaponType == weaponType);
 }
 
 Weapon::Weapon(WeaponType weaponType, MetalType metalType)
@@ -192,9 +191,9 @@ ItemType Weapon::getItemType() const
 
 double Weapon::getWeight() const
 {
-	auto baseWeight = WeaponTypeWeights.at(this->getWeaponType());
-	auto metalMultiplier = this->getMetal().getWeightMultiplier();
-	auto weight = baseWeight * metalMultiplier;
+	double baseWeight = WeaponTypeWeights.at(this->getWeaponType());
+	double metalMultiplier = this->getMetal().getWeightMultiplier();
+	double weight = baseWeight * metalMultiplier;
 	assert(weight >= 0.0);
 	return weight;
 }
@@ -204,8 +203,8 @@ int Weapon::getGoldValue() const
 	// Refine this method.
 	int baseValue = WeaponTypeGoldValues.at(this->getWeaponType());
 	int ratingMultiplier = this->getMetal().getRatingModifier();
-	auto weightMultiplier = this->getMetal().getWeightMultiplier();
-	auto goldValue = static_cast<int>(static_cast<double>(baseValue + ratingMultiplier) * 
+	double weightMultiplier = this->getMetal().getWeightMultiplier();
+	int goldValue = static_cast<int>(static_cast<double>(baseValue + ratingMultiplier) * 
 		weightMultiplier);
 	return goldValue;
 }
@@ -215,7 +214,7 @@ std::string Weapon::getDisplayName() const
 	return this->getMetal().toString() + " " + this->typeToString();
 }
 
-const WeaponType &Weapon::getWeaponType() const
+WeaponType Weapon::getWeaponType() const
 {
 	return this->weaponType;
 }
@@ -224,6 +223,12 @@ WeaponHandCount Weapon::getHandCount() const
 {
 	auto handCount = WeaponTypeHandCounts.at(this->getWeaponType());
 	return handCount;
+}
+
+WeaponRangeName Weapon::getWeaponRangeName() const
+{
+	auto rangeName = WeaponTypeRangeNames.at(this->getWeaponType());
+	return rangeName;
 }
 
 int Weapon::getBaseMinDamage() const
@@ -238,15 +243,8 @@ int Weapon::getBaseMaxDamage() const
 	return maxDamage;
 }
 
-WeaponRangeName Weapon::getWeaponRangeName() const
-{
-	auto rangeName = WeaponTypeRangeNames.at(this->getWeaponType());
-	return rangeName;
-}
-
 std::string Weapon::typeToString() const
 {
 	auto displayName = WeaponTypeDisplayNames.at(this->getWeaponType());
-	assert(displayName.size() > 0);
 	return displayName;
 }

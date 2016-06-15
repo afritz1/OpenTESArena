@@ -6,7 +6,6 @@
 
 #include "Item.h"
 #include "Metallic.h"
-#include "WeaponType.h"
 
 // It seems common place in the original game to have weapons with no material.
 // What is a plain old "dagger", then? Where does its base damage come from? 
@@ -18,6 +17,7 @@ class WeaponArtifactData;
 
 enum class WeaponHandCount;
 enum class WeaponRangeName;
+enum class WeaponType;
 
 class Weapon : public Item, public Metallic
 {
@@ -42,11 +42,11 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	const WeaponType &getWeaponType() const;
+	WeaponType getWeaponType() const;
 	WeaponHandCount getHandCount() const;
+	WeaponRangeName getWeaponRangeName() const;
 	int getBaseMinDamage() const;
 	int getBaseMaxDamage() const;
-	WeaponRangeName getWeaponRangeName() const;
 	std::string typeToString() const;
 };
 

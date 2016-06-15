@@ -4,7 +4,9 @@
 
 #include "DerivedAttribute.h"
 
-const auto DerivedAttributeDisplayNames = std::map<DerivedAttributeName, std::string>
+#include "DerivedAttributeName.h"
+
+const std::map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 {
 	{ DerivedAttributeName::Health, "Health" },
 	{ DerivedAttributeName::SpellPoints, "Spell Points" },
@@ -13,12 +15,11 @@ const auto DerivedAttributeDisplayNames = std::map<DerivedAttributeName, std::st
 
 DerivedAttribute::DerivedAttribute(DerivedAttributeName attributeName, int baseMaximum)
 {
+	assert(baseMaximum > 0);
+
 	this->attributeName = attributeName;
 	this->maximum = baseMaximum;
 	this->current = this->maximum;
-
-	assert(this->maximum > 0);
-	assert(this->current == this->maximum);
 }
 
 DerivedAttribute::~DerivedAttribute()
@@ -46,7 +47,6 @@ DerivedAttributeName DerivedAttribute::getAttributeName() const
 std::string DerivedAttribute::toString() const
 {
 	auto displayName = DerivedAttributeDisplayNames.at(this->getAttributeName());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 

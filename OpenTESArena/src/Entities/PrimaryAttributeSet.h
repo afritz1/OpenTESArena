@@ -3,8 +3,6 @@
 
 #include <map>
 
-#include "PrimaryAttributeName.h"
-
 // This class has a concrete collection of the eight distinct primary attributes.
 
 // It's cleaner to use a mapping of an enumeration to an attribute than having eight
@@ -14,6 +12,8 @@
 // because the original eight are essential to the game mechanics.
 
 class PrimaryAttribute;
+
+enum class PrimaryAttributeName;
 
 class PrimaryAttributeSet
 {

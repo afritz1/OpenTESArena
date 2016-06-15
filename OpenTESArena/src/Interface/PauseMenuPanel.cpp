@@ -15,6 +15,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -23,16 +24,6 @@
 PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->titleTextBox = nullptr;
-	this->loadTextBox = nullptr;
-	this->mainMenuTextBox = nullptr;
-	this->optionsTextBox = nullptr;
-	this->resumeTextBox = nullptr;
-	this->loadButton = nullptr;
-	this->mainMenuButton = nullptr;
-	this->optionsButton = nullptr;
-	this->resumeButton = nullptr;
-
 	this->titleTextBox = [gameState]()
 	{
 		auto center = Int2(160, 70);
@@ -153,21 +144,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
 	}();
 
-	// Temporary button backgrounds.
+	// Button backgrounds (placeholders).
 	this->loadButton->fill(Color::Black);
 	this->mainMenuButton->fill(Color::Black);
 	this->optionsButton->fill(Color::Black);
 	this->resumeButton->fill(Color::Black);
-
-	assert(this->titleTextBox.get() != nullptr);
-	assert(this->loadTextBox.get() != nullptr);
-	assert(this->mainMenuTextBox.get() != nullptr);
-	assert(this->resumeTextBox.get() != nullptr);
-	assert(this->optionsTextBox.get() != nullptr);
-	assert(this->loadButton.get() != nullptr);
-	assert(this->mainMenuButton.get() != nullptr);
-	assert(this->resumeButton.get() != nullptr);
-	assert(this->optionsButton.get() != nullptr);
 }
 
 PauseMenuPanel::~PauseMenuPanel()

@@ -3,13 +3,14 @@
 
 #include "Font.h"
 
+#include "FontName.h"
 #include "TextureName.h"
 #include "../Math/Int2.h"
 
 // This gives the logical location of each character, independent of font resolution.
 // Multiplication by character width and height will be needed afterwards to get the
 // size and location of the actual letter in the font surface.
-const auto FontCharacterCells = std::map<unsigned char, Int2>
+const std::map<unsigned char, Int2> FontCharacterCells =
 {
 	{ '!', Int2(0, 0) },
 	{ '\"', Int2(1, 0) },
@@ -106,7 +107,7 @@ const auto FontCharacterCells = std::map<unsigned char, Int2>
 	{ ' ', Int2(30, 2) }
 };
 
-const auto FontCellDimensions = std::map<FontName, Int2>
+const std::map<FontName, Int2> FontCellDimensions =
 {
 	{ FontName::A, Int2(16, 11) },
 	{ FontName::Arena, Int2(16, 9) },
@@ -120,7 +121,7 @@ const auto FontCellDimensions = std::map<FontName, Int2>
 };
 
 // Number of columns of whitespace on the right of each letter.
-const auto FontRightPaddings = std::map<FontName, int>
+const std::map<FontName, int> FontRightPaddings =
 {
 	{ FontName::A, 1 },
 	{ FontName::Arena, 1 },
@@ -134,7 +135,7 @@ const auto FontRightPaddings = std::map<FontName, int>
 };
 
 // Number of columns of whitespace a space is.
-const auto FontSpaceWidths = std::map<FontName, int>
+const std::map<FontName, int> FontSpaceWidths =
 {
 	{ FontName::A, 5 },
 	{ FontName::Arena, 3 },
@@ -147,7 +148,7 @@ const auto FontSpaceWidths = std::map<FontName, int>
 	{ FontName::Teeny, 2 }
 };
 
-const auto FontTextureNames = std::map<FontName, TextureName>
+const std::map<FontName, TextureName> FontTextureNames =
 {
 	{ FontName::A, TextureName::FontA },
 	{ FontName::Arena, TextureName::FontArena },
@@ -176,7 +177,7 @@ Int2 Font::getCellPosition(unsigned char c)
 	return cell;
 }
 
-const FontName &Font::getFontName() const
+FontName Font::getFontName() const
 {
 	return this->fontName;
 }

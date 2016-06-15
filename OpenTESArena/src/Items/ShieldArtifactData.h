@@ -17,13 +17,13 @@ private:
 public:
 	ShieldArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-		const ShieldType &shieldType, const MetalType &metalType);
+		ShieldType shieldType, MetalType metalType);
 	virtual ~ShieldArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	const ShieldType &getShieldType() const;
-	const MetalType &getMetalType() const;
+	ShieldType getShieldType() const;
+	MetalType getMetalType() const;
 
 	virtual ArmorType getArmorType() const override;
 };

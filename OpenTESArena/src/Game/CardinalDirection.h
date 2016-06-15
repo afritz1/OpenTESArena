@@ -1,11 +1,13 @@
 #ifndef CARDINAL_DIRECTION_H
 #define CARDINAL_DIRECTION_H
 
-#include <map>
 #include <string>
 
-#include "CardinalDirectionName.h"
 #include "../Math/Float2.h"
+
+// North, northeast, southwest, etc..
+
+enum class CardinalDirectionName;
 
 class CardinalDirection
 {

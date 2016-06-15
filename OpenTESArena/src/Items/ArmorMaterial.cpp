@@ -5,7 +5,7 @@
 
 #include "ArmorMaterialType.h"
 
-const auto ArmorMaterialDisplayNames = std::map<ArmorMaterialType, std::string>
+const std::map<ArmorMaterialType, std::string> ArmorMaterialDisplayNames =
 {
 	{ ArmorMaterialType::Chain, "Chain" },
 	{ ArmorMaterialType::Leather, "Leather" },

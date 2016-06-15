@@ -8,10 +8,6 @@ ArtifactData::ArtifactData(const std::string &displayName, const std::string &fl
 	this->displayName = displayName;
 	this->flavorText = flavorText;
 	this->provinces = provinces;
-
-	assert(this->displayName == displayName);
-	assert(this->flavorText == flavorText);
-	assert(this->provinces == provinces);
 }
 
 ArtifactData::~ArtifactData()

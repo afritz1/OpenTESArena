@@ -5,12 +5,7 @@
 
 // This class manages the primary game loop and updates the game state each frame.
 // The actual game properties, current panel, and things relevant to the game are 
-// in the "GameState" object.
-
-// Should options be in here or in the game state? I'm putting screen dimensions
-// in the game state.
-
-// Options should eventually be read from and written to an options.txt file.
+// in the "GameState" object and its "GameData" object.
 
 class GameState;
 

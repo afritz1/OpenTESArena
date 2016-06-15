@@ -4,11 +4,12 @@
 #include "Accessory.h"
 
 #include "AccessoryArtifactData.h"
+#include "AccessoryType.h"
 #include "ItemType.h"
 #include "Metal.h"
 #include "MetalType.h"
 
-const auto AccessoryDisplayNames = std::map<AccessoryType, std::string>
+const std::map<AccessoryType, std::string> AccessoryDisplayNames =
 {
 	{ AccessoryType::Amulet, "Amulet" },
 	{ AccessoryType::Belt, "Belt" },
@@ -21,7 +22,7 @@ const auto AccessoryDisplayNames = std::map<AccessoryType, std::string>
 // These values are made up. I don't know if accessories have a weight. For a moment,
 // I was confused as to why bracers are an accessory. I guess they aren't an armor
 // because they don't have a particular body part (arms?). Just let it be "anonymous".
-const auto AccessoryWeights = std::map<AccessoryType, double>
+const std::map<AccessoryType, double> AccessoryWeights =
 {
 	{ AccessoryType::Amulet, 0.20 },
 	{ AccessoryType::Belt, 0.50 },
@@ -32,7 +33,7 @@ const auto AccessoryWeights = std::map<AccessoryType, double>
 };
 
 // These values are made up, and are based on iron.
-const auto AccessoryGoldValues = std::map<AccessoryType, int>
+const std::map<AccessoryType, int> AccessoryGoldValues =
 {
 	{ AccessoryType::Amulet, 150 },
 	{ AccessoryType::Belt, 30 },
@@ -45,7 +46,7 @@ const auto AccessoryGoldValues = std::map<AccessoryType, int>
 // Max allowed number of accessories per slot. The original game says only one
 // bracelet and one ring, but I think it would make sense to have a bracelet
 // "on each arm", and at least two rings realistically.
-const auto AccessoryMaxEquipCounts = std::map<AccessoryType, int>
+const std::map<AccessoryType, int> AccessoryMaxEquipCounts =
 {
 	{ AccessoryType::Amulet, 1 },
 	{ AccessoryType::Belt, 1 },
@@ -60,8 +61,6 @@ Accessory::Accessory(AccessoryType accessoryType, MetalType metalType,
 	: Item(artifactData), Metallic(metalType)
 {
 	this->accessoryType = accessoryType;
-
-	assert(this->accessoryType == accessoryType);
 }
 
 Accessory::Accessory(AccessoryType accessoryType, MetalType metalType)
@@ -103,14 +102,13 @@ int Accessory::getGoldValue() const
 
 std::string Accessory::getDisplayName() const
 {
-	auto displayName = (this->getArtifactData() != nullptr) ? 
+	auto displayName = (this->getArtifactData() != nullptr) ?
 		this->getArtifactData()->getDisplayName() :
 		AccessoryDisplayNames.at(this->getAccessoryType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
-const AccessoryType &Accessory::getAccessoryType() const
+AccessoryType Accessory::getAccessoryType() const
 {
 	return this->accessoryType;
 }

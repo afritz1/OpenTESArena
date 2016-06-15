@@ -308,11 +308,14 @@ void CLProgram::render(SDL_Surface *dst)
 	assert(this->width == dst->w);
 	assert(this->height == dst->h);
 
-	auto status = this->commandQueue.enqueueNDRangeKernel(this->kernel,
+	// Run the kernel with the given dimensions.
+	cl_int status = this->commandQueue.enqueueNDRangeKernel(this->kernel,
 		cl::NullRange, cl::NDRange(this->width, this->height), cl::NullRange,
 		nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueNDRangeKernel.");
 
+	// Copy the output buffer into the destination pixel buffer.
+	// The CL_TRUE means this is a blocking command.
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
 		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height), 
 		dst->pixels, nullptr, nullptr);

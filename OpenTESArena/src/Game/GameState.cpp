@@ -17,7 +17,6 @@
 #include "../Media/TextureName.h"
 #include "../Media/WildMidi.hpp"
 #include "../Rendering/CLProgram.h"
-#include "../Rendering/PostProcessing.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 
@@ -29,29 +28,19 @@ GameState::GameState()
 {
 	Debug::mention("GameState", "Initializing.");
 
-	this->gameData = nullptr;
-	this->nextMusic = nullptr;
-	this->nextPanel = nullptr;
-	this->options = nullptr;
-	this->panel = nullptr;
-	this->renderer = nullptr;
-	this->textureManager = nullptr;
+	// Load options from file.
+	this->options = OptionsParser::parse();
 
-    // Load options from file.
-    this->options = OptionsParser::parse();
-    assert(this->options.get() != nullptr);
+	// Initialize virtual file system using the data path in the options file.
+	VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
 
-    VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
-
-	// Not constructing the panel until the first tick guarantees that all
-	// dependencies will be ready, but it doesn't matter anyway because there
-	// shouldn't be dependencies with this new ordering.
-	this->panel = nullptr;
+	// Set the panel and music for the next tick. Don't use "panel" yet.
 	this->nextPanel = Panel::defaultPanel(this);
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
 
-    this->audioManager.init(this->options.get());
+	// Initialize the OpenAL Soft audio manager.
+	this->audioManager.init(this->options.get());
 
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
@@ -64,29 +53,30 @@ GameState::GameState()
 
 	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
 	// cinematics otherwise load their frames one at a time while playing.
-	assert(this->textureManager.get() != nullptr);
+	// (Remove this functionality if actual videos will be used instead.)
 	this->textureManager->preloadSequences();
 
 	// Set window icon.
 	this->renderer->setWindowIcon(TextureName::Icon, *this->textureManager.get());
+
+	// Leave some things null for now. 
+	this->gameData = nullptr;
+	this->panel = nullptr;
 
 	this->running = true;
 
 	// Use a blitted surface as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
+	// GameData is initialized when a player enters the game world. 
+	// The panel is set at the beginning of a frame if one is waiting.
 	assert(this->gameData.get() == nullptr);
-	assert(this->nextMusic.get() != nullptr);
-	assert(this->options.get() != nullptr);
 	assert(this->panel.get() == nullptr);
-	assert(this->nextPanel.get() != nullptr);
-	assert(this->renderer.get() != nullptr);
-	assert(this->textureManager.get() != nullptr);
-	assert(this->running == true);
 }
 
 GameState::~GameState()
 {
+
 }
 
 bool GameState::isRunning() const
@@ -162,7 +152,7 @@ void GameState::tick(double dt)
 	if (this->nextPanel.get() != nullptr)
 	{
 		this->panel = std::move(this->nextPanel);
-		this->nextPanel = nullptr;
+		assert(this->nextPanel.get() == nullptr);
 	}
 
 	// Change the music if requested.
@@ -172,6 +162,7 @@ void GameState::tick(double dt)
 		this->nextMusic = nullptr;
 	}
 
+	// Tick the current panel by delta time (does nothing if not required).
 	this->panel->tick(dt, this->running);
 }
 

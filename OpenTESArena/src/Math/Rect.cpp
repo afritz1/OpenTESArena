@@ -2,8 +2,9 @@
 
 #include "SDL.h"
 
-#include "Int2.h"
 #include "Rect.h"
+
+#include "Int2.h"
 
 Rect::Rect(int x, int y, int width, int height)
 {

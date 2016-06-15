@@ -6,12 +6,10 @@
 
 Food::Food(const std::string &displayName, double weight)
 {
+	assert(weight >= 0.0);
+
 	this->displayName = displayName;
 	this->weight = weight;
-
-	assert(this->displayName == displayName);
-	assert(this->weight == weight);
-	assert(this->weight >= 0.0);
 }
 
 Food::~Food()

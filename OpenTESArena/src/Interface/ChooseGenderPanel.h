@@ -3,9 +3,6 @@
 
 #include "Panel.h"
 
-// Splitting up character creation panels would be better for being able to go 
-// back and change something. Let's do that.
-
 class Button;
 class CharacterClass;
 class Surface;

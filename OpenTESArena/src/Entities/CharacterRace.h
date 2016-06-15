@@ -3,8 +3,7 @@
 
 #include <string>
 
-#include "CharacterRaceName.h"
-
+enum class CharacterRaceName;
 enum class ProvinceName;
 
 class CharacterRace
@@ -16,8 +15,8 @@ public:
 	~CharacterRace();
 
 	CharacterRaceName getRaceName() const;
-	std::string toString() const;
 	ProvinceName getHomeProvinceName() const;
+	std::string toString() const;
 };
 
 #endif

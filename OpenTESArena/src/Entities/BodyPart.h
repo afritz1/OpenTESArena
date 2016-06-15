@@ -3,9 +3,8 @@
 
 #include <string>
 
-#include "BodyPartName.h"
-
 enum class ArmorType;
+enum class BodyPartName;
 
 class BodyPart
 {

@@ -34,18 +34,18 @@ Color::~Color()
 
 Color Color::randomRGBA(Random &random)
 {
-	auto r = static_cast<unsigned char>(random.next(256));
-	auto g = static_cast<unsigned char>(random.next(256));
-	auto b = static_cast<unsigned char>(random.next(256));
-	auto a = static_cast<unsigned char>(random.next(256));
+	unsigned char r = static_cast<unsigned char>(random.next(256));
+	unsigned char g = static_cast<unsigned char>(random.next(256));
+	unsigned char b = static_cast<unsigned char>(random.next(256));
+	unsigned char a = static_cast<unsigned char>(random.next(256));
 	return Color(r, g, b, a);
 }
 
 Color Color::randomRGB(Random &random)
 {
-	auto r = static_cast<unsigned char>(random.next(256));
-	auto g = static_cast<unsigned char>(random.next(256));
-	auto b = static_cast<unsigned char>(random.next(256));
+	unsigned char r = static_cast<unsigned char>(random.next(256));
+	unsigned char g = static_cast<unsigned char>(random.next(256));
+	unsigned char b = static_cast<unsigned char>(random.next(256));
 	return Color(r, g, b);
 }
 
@@ -66,22 +66,22 @@ Color Color::fromRGB(unsigned int rgb)
 		static_cast<unsigned char>(rgb));
 }
 
-const unsigned char &Color::getR() const
+unsigned char Color::getR() const
 {
 	return this->r;
 }
 
-const unsigned char &Color::getG() const
+unsigned char Color::getG() const
 {
 	return this->g;
 }
 
-const unsigned char &Color::getB() const
+unsigned char Color::getB() const
 {
 	return this->b;
 }
 
-const unsigned char &Color::getA() const
+unsigned char Color::getA() const
 {
 	return this->a;
 }

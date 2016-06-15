@@ -7,7 +7,7 @@
 #include "MiscellaneousItemType.h"
 #include "MiscellaneousArtifactData.h"
 
-const auto MiscellaneousItemDisplayNames = std::map<MiscellaneousItemType, std::string>
+const std::map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames =
 {
 	{ MiscellaneousItemType::Book, "Book" },
 	{ MiscellaneousItemType::Key, "Key" },
@@ -16,7 +16,7 @@ const auto MiscellaneousItemDisplayNames = std::map<MiscellaneousItemType, std::
 };
 
 // These values are made up.
-const auto MiscellaneousItemWeights = std::map<MiscellaneousItemType, double>
+const std::map<MiscellaneousItemType, double> MiscellaneousItemWeights =
 {
 	{ MiscellaneousItemType::Book, 0.50 },
 	{ MiscellaneousItemType::Key, 0.10 },
@@ -25,7 +25,7 @@ const auto MiscellaneousItemWeights = std::map<MiscellaneousItemType, double>
 };
 
 // These values are made up.
-const auto MiscellaneousItemGoldValues = std::map<MiscellaneousItemType, int>
+const std::map<MiscellaneousItemType, int> MiscellaneousItemGoldValues =
 {
 	{ MiscellaneousItemType::Book, 0 },
 	{ MiscellaneousItemType::Key, 0 },
@@ -38,8 +38,6 @@ MiscellaneousItem::MiscellaneousItem(MiscellaneousItemType miscItemType,
 	: Item(artifactData)
 {
 	this->miscItemType = miscItemType;
-
-	assert(this->miscItemType == miscItemType);
 }
 
 MiscellaneousItem::MiscellaneousItem(MiscellaneousItemType miscItemType)
@@ -80,11 +78,10 @@ int MiscellaneousItem::getGoldValue() const
 std::string MiscellaneousItem::getDisplayName() const
 {
 	auto displayName = MiscellaneousItemDisplayNames.at(this->getMiscellaneousItemType());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 
-const MiscellaneousItemType &MiscellaneousItem::getMiscellaneousItemType() const
+MiscellaneousItemType MiscellaneousItem::getMiscellaneousItemType() const
 {
 	return this->miscItemType;
 }

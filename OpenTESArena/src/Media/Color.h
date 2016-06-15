@@ -36,10 +36,10 @@ public:
 	bool operator ==(const Color &c) const;
 	bool operator !=(const Color &c) const;
 
-	const unsigned char &getR() const;
-	const unsigned char &getG() const;
-	const unsigned char &getB() const;
-	const unsigned char &getA() const;
+	unsigned char getR() const;
+	unsigned char getG() const;
+	unsigned char getB() const;
+	unsigned char getA() const;
 
 	std::string toString() const;
 	unsigned int toARGB() const;

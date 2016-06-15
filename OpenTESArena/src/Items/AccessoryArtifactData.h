@@ -15,13 +15,13 @@ private:
 public:
 	AccessoryArtifactData(const std::string &displayName, 
 		const std::string &flavorText, const std::vector<ProvinceName> &provinces,
-		const AccessoryType &accessoryType, const MetalType &metalType);
+		AccessoryType accessoryType, MetalType metalType);
 	virtual ~AccessoryArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 		
-	const AccessoryType &getAccessoryType() const;
-	const MetalType &getMetalType() const;
+	AccessoryType getAccessoryType() const;
+	MetalType getMetalType() const;
 
 	virtual ItemType getItemType() const override;
 };

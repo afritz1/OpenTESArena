@@ -22,15 +22,6 @@ CharacterClass::CharacterClass(const std::string &displayName,
 	this->allowedArmors = allowedArmors;
 	this->allowedShields = allowedShields;
 	this->allowedWeapons = allowedWeapons;
-
-	assert(this->displayName == displayName);
-	assert(this->categoryName == categoryName);
-	assert(this->castsMagic == castsMagic);
-	assert(this->startingHealth == startingHealth);
-	assert(this->healthDice == healthDice);
-	assert(this->allowedArmors == allowedArmors);
-	assert(this->allowedShields == allowedShields);
-	assert(this->allowedWeapons == allowedWeapons);
 }
 
 CharacterClass::~CharacterClass()

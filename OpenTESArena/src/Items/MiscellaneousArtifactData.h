@@ -15,12 +15,12 @@ private:
 public:
 	MiscellaneousArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
-		const MiscellaneousItemType &miscItemType);
+		MiscellaneousItemType miscItemType);
 	virtual ~MiscellaneousArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 
-	const MiscellaneousItemType &getMiscellaneousItemType() const;
+	MiscellaneousItemType getMiscellaneousItemType() const;
 
 	virtual ItemType getItemType() const override;
 };

@@ -7,7 +7,7 @@
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
 
-const std::map<std::string, bool> KvpTextMapBooleans
+const std::map<std::string, bool> KvpTextMapBooleans =
 {
 	{ "True", true },
 	{ "False", false }

@@ -2,8 +2,8 @@
 
 #include "GameData.h"
 
-#include "../Entities/Player.h"
 #include "../Entities/EntityManager.h"
+#include "../Entities/Player.h"
 #include "../Rendering/CLProgram.h"
 #include "../Utilities/Debug.h"
 

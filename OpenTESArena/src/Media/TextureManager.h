@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+// The behavior of this class might be changing to work with BSA parsing and
+// associated files.
+
 // When loading wall and sprite textures from file, use a texture name parser or
 // something that produces a texture/index -> filename mapping. Each of those would 
 // get a unique integer ID either before or during parsing (perhaps depending on 
@@ -18,12 +21,11 @@ struct SDL_Surface;
 class TextureManager
 {
 private:
+	static const std::string PATH;
+
 	std::map<std::string, Surface> surfaces;
 	const SDL_PixelFormat *format;
 
-	static const std::string PATH;
-
-	// All textures loaded from file *must* be in PNG format. 
 	SDL_Surface *loadFromFile(const std::string &fullPath);
 public:
 	TextureManager(const SDL_PixelFormat *format);

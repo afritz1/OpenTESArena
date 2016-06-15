@@ -9,6 +9,7 @@
 #include "../Game/GameState.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
+#include "../Media/TextureSequenceName.h"
 
 // incomplete! Need text box stuff and how to blit it.
 
@@ -17,7 +18,9 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 	double secondsPerImage, const std::function<void()> &endingAction)
 	: Panel(gameState)
 {
-	this->skipButton = nullptr;
+	// There must be at least one text duration, and text to show must be non-empty.
+	assert(secondsPerText.size() > 0);
+	assert(text.size() > 0);
 
 	this->skipButton = [gameState, &endingAction]()
 	{
@@ -32,16 +35,6 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 	this->currentTextSeconds = 0.0;
 	this->imageIndex = 0;
 	this->textIndex = 0;
-
-	assert(this->skipButton.get() != nullptr);
-	assert(this->secondsPerText.size() > 0);
-	assert(this->text.size() > 0);
-	assert(this->sequenceName == name);
-	assert(this->secondsPerImage == secondsPerImage);
-	assert(this->currentImageSeconds == 0.0);
-	assert(this->currentTextSeconds == 0.0);
-	assert(this->imageIndex == 0);
-	assert(this->textIndex == 0);
 }
 
 TextCinematicPanel::~TextCinematicPanel()
@@ -100,6 +93,9 @@ void TextCinematicPanel::tick(double dt, bool &running)
 
 	this->currentImageSeconds += dt;
 	this->currentTextSeconds += dt;
+
+	// I think there's a bug in here about using secondsPerImage instead of
+	// secondsPerText, or vice versa. Not sure.
 
 	while (this->currentImageSeconds > this->secondsPerImage)
 	{

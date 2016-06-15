@@ -4,8 +4,9 @@
 #include "PrimaryAttribute.h"
 
 #include "AttributeModifierName.h"
+#include "PrimaryAttributeName.h"
 
-const auto PrimaryAttributeDisplayNames = std::map<PrimaryAttributeName, std::string>
+const std::map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
 {
 	{ PrimaryAttributeName::Strength, "Strength" },
 	{ PrimaryAttributeName::Intelligence, "Intelligence" },
@@ -17,7 +18,7 @@ const auto PrimaryAttributeDisplayNames = std::map<PrimaryAttributeName, std::st
 	{ PrimaryAttributeName::Luck, "Luck" }
 };
 
-const auto PrimaryAttributeModifierNames = std::map<PrimaryAttributeName, std::vector<AttributeModifierName>>
+const std::map<PrimaryAttributeName, std::vector<AttributeModifierName>> PrimaryAttributeModifierNames =
 {
 	{ PrimaryAttributeName::Strength, { AttributeModifierName::MeleeDamage } },
 	{ PrimaryAttributeName::Intelligence, { } },
@@ -35,11 +36,11 @@ const int PrimaryAttribute::MAX_VALUE = 100;
 
 PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue)
 {
+	assert(baseValue >= PrimaryAttribute::MIN_VALUE);
+	assert(baseValue <= PrimaryAttribute::MAX_VALUE);
+
 	this->attributeName = attributeName;
 	this->baseValue = baseValue;
-
-	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
-	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
 }
 
 PrimaryAttribute::~PrimaryAttribute()
@@ -71,7 +72,7 @@ int PrimaryAttribute::getModifier() const
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
 
-	// I don't think this value is exactly right. Try some more experiments.
+	// This value is exactly right. Try some more experiments.
 	int modifierValue = (this->baseValue - 50) / 10;
 	return modifierValue;
 }
@@ -79,7 +80,6 @@ int PrimaryAttribute::getModifier() const
 std::string PrimaryAttribute::toString() const
 {
 	auto displayName = PrimaryAttributeDisplayNames.at(this->getAttributeName());
-	assert(displayName.size() > 0);
 	return displayName;
 }
 

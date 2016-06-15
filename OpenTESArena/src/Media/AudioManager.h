@@ -1,22 +1,18 @@
 #ifndef AUDIO_MANAGER_H
 #define AUDIO_MANAGER_H
 
-#include <map>
 #include <memory>
-#include <string>
-#include <vector>
-
 
 // OpenAL Soft will be used with WildMIDI and/or FluidSynth.
 
 // Music is for looping background music. Sound is for short to medium duration 
 // sounds and speech.
 
-enum class MusicName;
-enum class SoundName;
-
 class AudioManagerImpl;
 class Options;
+
+enum class MusicName;
+enum class SoundName;
 
 class AudioManager
 {

@@ -24,12 +24,6 @@
 CharacterPanel::CharacterPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->doneTextBox = nullptr;
-	this->playerClassTextBox = nullptr;
-	this->playerNameTextBox = nullptr;
-	this->playerRaceTextBox = nullptr;
-	this->doneButton = nullptr;
-
 	this->doneTextBox = [gameState]()
 	{
 		auto center = Int2(26, ORIGINAL_HEIGHT - 14);
@@ -103,12 +97,6 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
-
-	assert(this->doneTextBox.get() != nullptr);
-	assert(this->playerClassTextBox.get() != nullptr);
-	assert(this->playerNameTextBox.get() != nullptr);
-	assert(this->playerRaceTextBox.get() != nullptr);
-	assert(this->doneButton.get() != nullptr);
 }
 
 CharacterPanel::~CharacterPanel()

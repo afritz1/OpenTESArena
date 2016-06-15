@@ -1,6 +1,7 @@
 #ifndef MONTH_NAME_H
 #define MONTH_NAME_H
 
+// A unique identifier for each month of the year.
 enum class MonthName
 {
 	// Winter

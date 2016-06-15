@@ -20,6 +20,7 @@
 
 enum class VoxelMaterialType
 {
+	// Maybe it should be Air, Water, Lava, Solid instead?
 	Air,
 	Liquid,
 	Solid

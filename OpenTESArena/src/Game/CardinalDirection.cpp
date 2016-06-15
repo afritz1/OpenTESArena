@@ -1,5 +1,6 @@
 #include <cassert>
 #include <exception>
+#include <map>
 
 #include "CardinalDirection.h"
 
@@ -7,7 +8,7 @@
 
 // Wikipedia says the intermediate directions don't have a space, so that's the
 // convention I'll use here.
-const auto CardinalDirectionDisplayNames = std::map<CardinalDirectionName, std::string>
+const std::map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames =
 {
 	{ CardinalDirectionName::North, "North" },
 	{ CardinalDirectionName::NorthEast, "Northeast" },
@@ -24,14 +25,14 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	assert(direction.isNormalized());
 
-	const auto north = Float2d(0.0, 1.0);
-	const auto south = Float2d(0.0, -1.0);
-	const auto east = Float2d(1.0, 0.0);
-	const auto west = Float2d(-1.0, 0.0);
-	const auto northEast = north.slerp(east, 0.5);
-	const auto southEast = south.slerp(east, 0.5);
-	const auto southWest = south.slerp(west, 0.5);
-	const auto northWest = north.slerp(west, 0.5);
+	const Float2d north(0.0, 1.0);
+	const Float2d south(0.0, -1.0);
+	const Float2d east(1.0, 0.0);
+	const Float2d west(-1.0, 0.0);
+	const Float2d northEast = north.slerp(east, 0.5);
+	const Float2d southEast = south.slerp(east, 0.5);
+	const Float2d southWest = south.slerp(west, 0.5);
+	const Float2d northWest = north.slerp(west, 0.5);
 
 	// The spherical interpolations should already be normalized if their parent vectors
 	// are normalized.
@@ -46,7 +47,7 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 
 	// Each direction gets an eighth of the circle's area. In dot product terms,
 	// that's an allowance of 0.25 deviation from the direction.
-	const auto deviation = 0.25;
+	const double deviation = 0.25;
 	auto isCloseEnoughTo = [deviation, &direction](const Float2d &cardinalDirection)
 	{
 		return direction.dot(cardinalDirection) >= (1.0 - deviation);
@@ -93,8 +94,6 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 	}
 
 	this->directionName = name;
-
-	assert(this->directionName == name);
 }
 
 CardinalDirection::~CardinalDirection()
@@ -110,6 +109,5 @@ CardinalDirectionName CardinalDirection::getDirectionName() const
 std::string CardinalDirection::toString() const
 {
 	auto displayName = CardinalDirectionDisplayNames.at(this->getDirectionName());
-	assert(displayName.size() > 0);
 	return displayName;
 }

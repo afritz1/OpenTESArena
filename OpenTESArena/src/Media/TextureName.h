@@ -1,6 +1,8 @@
 #ifndef TEXTURE_NAME_H
 #define TEXTURE_NAME_H
 
+// These files will soon point to filenames from the original Arena files.
+
 // A unique identifier for every non-bulk image file; non-bulk meaning not wall 
 // or sprite textures. There are hundreds of bulk textures and using an enum for 
 // each would be prohibitive, and also wouldn't allow for new walls or sprites.
