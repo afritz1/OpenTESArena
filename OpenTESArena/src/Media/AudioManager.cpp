@@ -248,7 +248,7 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(Options *options);
+	void init(const Options *options);
 
 	bool musicIsPlaying() const;
 
@@ -540,13 +540,9 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-void AudioManagerImpl::init(Options *options)
+void AudioManagerImpl::init(const Options *options)
 {
 	Debug::mention("Audio Manager", "Initializing.");
-
-	double musicVolume = options->getMusicVolume();
-	double soundVolume = options->getSoundVolume();
-	int maxChannels = options->getSoundChannelCount();
 
 #ifdef HAVE_WILDMIDI
 	WildMidiDevice::init(options->getSoundfont());
@@ -562,6 +558,10 @@ void AudioManagerImpl::init(Options *options)
 
 	ALCboolean success = alcMakeContextCurrent(context);
 	Debug::check(success == AL_TRUE, "Audio Manager", "alcMakeContextCurrent");
+
+	double musicVolume = options->getMusicVolume();
+	double soundVolume = options->getSoundVolume();
+	int maxChannels = options->getSoundChannelCount();
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);

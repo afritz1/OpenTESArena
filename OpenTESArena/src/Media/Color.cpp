@@ -58,6 +58,15 @@ Color Color::fromARGB(unsigned int argb)
 		static_cast<unsigned char>(argb >> 24));
 }
 
+Color Color::fromRGBA(unsigned int rgba)
+{
+	return Color(
+		static_cast<unsigned char>(rgba >> 24),
+		static_cast<unsigned char>(rgba >> 16),
+		static_cast<unsigned char>(rgba >> 8),
+		static_cast<unsigned char>(rgba));
+}
+
 Color Color::fromRGB(unsigned int rgb)
 {
 	return Color(
@@ -99,6 +108,12 @@ unsigned int Color::toARGB() const
 {
 	return static_cast<unsigned int>(
 		(this->r << 16) | (this->g << 8) | (this->b) | (this->a << 24));
+}
+
+unsigned int Color::toRGBA() const
+{
+	return static_cast<unsigned int>(
+		(this->r << 24) | (this->g << 16) | (this->b << 8) | (this->a));
 }
 
 unsigned int Color::toRGB() const

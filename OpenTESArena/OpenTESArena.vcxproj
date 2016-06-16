@@ -84,7 +84,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)include\FluidSynth;$(SolutionDir)include\WildMIDI;$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <CompileAs>CompileAsCpp</CompileAs>
-      <PreprocessorDefinitions>HAVE_WILDMIDI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -119,7 +119,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)include\FluidSynth;$(SolutionDir)include\WildMIDI;$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
       <CompileAs>CompileAsCpp</CompileAs>
-      <PreprocessorDefinitions>HAVE_WILDMIDI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

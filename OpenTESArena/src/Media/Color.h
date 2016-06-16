@@ -29,6 +29,7 @@ public:
 	static Color randomRGBA(Random &random);
 	static Color randomRGB(Random &random);
 	static Color fromARGB(unsigned int argb);
+	static Color fromRGBA(unsigned int rgba);
 	static Color fromRGB(unsigned int rgb);
 
 	Color operator +(const Color &c) const;
@@ -43,6 +44,7 @@ public:
 
 	std::string toString() const;
 	unsigned int toARGB() const;
+	unsigned int toRGBA() const;
 	unsigned int toRGB() const;
 	Color clamped(unsigned char low, unsigned char high) const;
 	Color clamped() const;

@@ -52,7 +52,8 @@ namespace
 	{
 		/* WildMidi wants bytes, so convert from and to sample frames. */
 #if LIBWILDMIDI_VERSION >= ((0u << 16) | (4u << 8) | 0)
-		return WildMidi_GetOutput(mSong, reinterpret_cast<int8_t*>(buffer), count * 4) / 4;
+		return WildMidi_GetOutput(mSong, reinterpret_cast<int8_t*>(buffer), 
+			static_cast<uint32_t>(count * 4)) / 4;
 #else
 		return WildMidi_GetOutput(mSong, buffer, static_cast<unsigned long>(count * 4)) / 4;
 #endif
