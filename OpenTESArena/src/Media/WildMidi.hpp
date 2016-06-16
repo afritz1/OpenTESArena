@@ -1,9 +1,9 @@
 #ifndef MEDIA_WILDMIDI_HPP
 #define MEDIA_WILDMIDI_HPP
 
-#ifdef HAVE_WILDMIDI
-
 #include "Midi.hpp"
+
+#ifdef HAVE_WILDMIDI
 
 /* Implementation for opening supported MIDI-like files through WildMidi. */
 class WildMidiDevice : public MidiDevice {
