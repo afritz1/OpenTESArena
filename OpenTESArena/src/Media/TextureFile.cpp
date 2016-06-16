@@ -14,7 +14,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::CompassFrame, "interface/compass_frame" },
 	{ TextureName::CompassSlider, "interface/compass_slider" },
 	{ TextureName::Icon, "interface/icon" },
-	{ TextureName::IntroTitle, "interface/intro_title" },
+	{ TextureName::IntroTitle, "TITLE.IMG" },
 	{ TextureName::IntroQuote, "interface/intro_quote" },
 	{ TextureName::MainMenu, "interface/main_menu" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },

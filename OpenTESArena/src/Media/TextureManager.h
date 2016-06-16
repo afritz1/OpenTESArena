@@ -26,7 +26,8 @@ private:
 	std::map<std::string, Surface> surfaces;
 	const SDL_PixelFormat *format;
 
-	SDL_Surface *loadFromFile(const std::string &fullPath);
+    SDL_Surface *loadFromFile(const std::string &fullPath);
+	SDL_Surface *loadImgFile(const std::string &fullPath);
 public:
 	TextureManager(const SDL_PixelFormat *format);
 	~TextureManager();
