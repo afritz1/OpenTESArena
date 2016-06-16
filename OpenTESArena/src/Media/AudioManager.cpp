@@ -474,7 +474,7 @@ public:
 
 	bool init(ALuint source, float volume)
 	{
-		assert(mSource != 0);
+		assert(mSource == 0);
 
 		/* Clear existing errors */
 		alGetError();
