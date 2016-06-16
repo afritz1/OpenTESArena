@@ -9,6 +9,7 @@
 
 #include "TextureManager.h"
 
+#include "Color.h"
 #include "TextureFile.h"
 #include "../Interface/Surface.h"
 #include "../Utilities/Debug.h"
@@ -22,8 +23,7 @@ namespace
 // the case).
 const std::string TextureExtension = ".png";
 
-typedef std::array<uint8_t,4> PalColor;
-typedef std::array<PalColor,256> Palette;
+typedef std::array<Color,256> Palette;
 
 Palette DefaultPalette;
 
@@ -102,13 +102,13 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
         auto iter = rawpal.begin() + 8;
         /* First palette entry is transparent in 8-bit modes, so give it 0
          * alpha. */
-        DefaultPalette[0][0] = *(iter++);
-        DefaultPalette[0][1] = *(iter++);
-        DefaultPalette[0][2] = *(iter++);
-        DefaultPalette[0][3] = 0;
+        uint8_t r = *(iter++);
+        uint8_t g = *(iter++);
+        uint8_t b = *(iter++);
+        DefaultPalette[0] = Color(r, g, b, 0);
         /* Remaining are solid, so give them 255 alpha. */
         std::generate(DefaultPalette.begin()+1, DefaultPalette.end(),
-            [&iter]() -> PalColor
+            [&iter]() -> Color
             {
                 uint8_t r = *(iter++);
                 uint8_t g = *(iter++);
@@ -119,11 +119,10 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
     }
     if(failed)
     {
-        // Generate a monochrome palette
-        std::fill(DefaultPalette[0].begin(), DefaultPalette[0].end(), 0);
+        // Generate a monochrome palette. Entry 0 is filled with 0 already, so skip it.
         uint8_t count = 0;
         std::generate(DefaultPalette.begin()+1, DefaultPalette.end(),
-            [&count]() -> PalColor
+            [&count]() -> Color
             {
                 uint8_t c = ++count;
                 return {c, c, c, 255};
