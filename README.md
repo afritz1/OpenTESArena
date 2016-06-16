@@ -27,7 +27,7 @@ The current subset of data files to use are from screen grabs in DOSBox and from
 
 This is my first big project! I'm already learning a ton.
 
-This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++14 and uses SDL2, OpenAL Soft, and OpenCL. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
+This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++11 and uses SDL2, OpenAL Soft, and OpenCL. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler. Linux is now supported as well.
 
