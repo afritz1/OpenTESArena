@@ -256,11 +256,11 @@ const SDL_PixelFormat *TextureManager::getFormat() const
 
 const Surface &TextureManager::getSurface(const std::string &filename)
 {
-	if (this->surfaces.find(filename) != this->surfaces.end())
+    auto iter = this->surfaces.find(filename);
+	if (iter != this->surfaces.end())
 	{
 		// Get the existing surface.
-		const auto &surface = this->surfaces.at(filename);
-		return surface;
+		return iter->second;
 	}
 
 	size_t dot = filename.rfind('.');
@@ -272,7 +272,7 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		Surface surface(optSurface);
 
 		// Add the new texture.
-		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
+		iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
 		SDL_FreeSurface(optSurface);
 		return iter->second;
 	}
@@ -282,8 +282,8 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		std::string fullPath(TextureManager::PATH + filename + TextureExtension);
 		auto *optSurface = this->loadPNG(fullPath);
 
-		// Create surface from SDL_Surface. No need to optimize it again.
-		Surface surface(optSurface);
+        // Create surface from SDL_Surface. No need to optimize it again.
+        Surface surface(optSurface);
 
 		// Add the new texture.
 		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
