@@ -123,16 +123,16 @@ bool Rect::contains(const Int2 &point) const
 {
 	return (point.getX() >= this->getLeft()) &&
 		(point.getY() >= this->getTop()) &&
-		(point.getX() <= this->getRight()) &&
-		(point.getY() <= this->getBottom());
+		(point.getX() < this->getRight()) &&
+		(point.getY() < this->getBottom());
 }
 
 bool Rect::contains(const Rect &rectangle) const
 {
 	return (rectangle.getLeft() >= this->getLeft()) &&
 		(rectangle.getTop() >= this->getTop()) &&
-		(rectangle.getRight() <= this->getRight()) &&
-		(rectangle.getBottom() <= this->getBottom());
+		(rectangle.getRight() < this->getRight()) &&
+		(rectangle.getBottom() < this->getBottom());
 }
 
 bool Rect::intersects(const Rect &rectangle) const

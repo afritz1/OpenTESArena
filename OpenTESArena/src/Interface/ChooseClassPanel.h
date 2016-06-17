@@ -20,7 +20,7 @@ class ChooseClassPanel : public Panel
 private:
 	static const int MAX_TOOLTIP_LINE_LENGTH;
 
-	std::unique_ptr<Surface> parchment, upDownSurface;
+	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
 	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;

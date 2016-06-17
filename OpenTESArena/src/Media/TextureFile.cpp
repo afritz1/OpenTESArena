@@ -11,15 +11,16 @@ const std::map<TextureName, std::string> TextureFilenames =
 {
 	// Interface.
 	{ TextureName::CharacterCreation, "interface/character_creation" },
-	{ TextureName::CompassFrame, "interface/compass_frame" },
-	{ TextureName::CompassSlider, "interface/compass_slider" },
+	{ TextureName::CompassFrame, "COMPASS.IMG" },
+	{ TextureName::CompassSlider, "interface/compass_slider" }, // SLIDER.IMG
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "TITLE.IMG" },
-	{ TextureName::IntroQuote, "interface/intro_quote" },
+	{ TextureName::IntroQuote, "interface/intro_quote" }, // QUOTE.IMG?
 	{ TextureName::MainMenu, "interface/main_menu" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
-	{ TextureName::QuillCursor, "interface/pointer" },
-	{ TextureName::SwordCursor, "interface/arenarw" },
+	{ TextureName::PopUp11, "POPUP11.IMG" }, // POPUP2 or POPUP8 should be what ChooseClassPanel uses.
+	{ TextureName::QuillCursor, "interface/pointer" }, // POINTER.IMG
+	{ TextureName::SwordCursor, "interface/arenarw" }, // ARENARW.IMG
 	{ TextureName::UpDown, "interface/up_down" },
 	{ TextureName::WorldMap, "interface/world_map" },
 

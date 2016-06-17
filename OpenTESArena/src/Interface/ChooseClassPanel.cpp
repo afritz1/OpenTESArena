@@ -49,15 +49,6 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<Surface>(new Surface(surface));
 	}();
 
-	this->upDownSurface = [gameState]()
-	{
-		int x = (ORIGINAL_WIDTH / 2) - 62;
-		int y = (ORIGINAL_HEIGHT / 2);
-		auto *surface = gameState->getTextureManager().getSurface(
-			TextureFile::fromName(TextureName::UpDown)).getSurface();
-		return std::unique_ptr<Surface>(new Surface(x, y, surface));
-	}();
-
 	this->titleTextBox = [gameState]()
 	{
 		auto center = Int2(160, 56);
@@ -75,10 +66,10 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	this->classesListBox = [this, gameState]()
 	{
 		// Intended to be left aligned against something like a scroll bar.
-		int x = (ORIGINAL_WIDTH / 2) - 50;
+		int x = (ORIGINAL_WIDTH / 2) - 58;
 		int y = (ORIGINAL_HEIGHT / 2);
 		auto fontName = FontName::A;
-		auto color = Color(48, 12, 12);
+		auto color = Color(190, 113, 0);
 		int maxElements = 6;
 		auto elements = std::vector<std::string>();
 
@@ -109,8 +100,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->upButton = [this]
 	{
-		int x = (ORIGINAL_WIDTH / 2) - 62;
-		int y = (ORIGINAL_HEIGHT / 2);
+		int x = (ORIGINAL_WIDTH / 2) - 71;
+		int y = (ORIGINAL_HEIGHT / 2) - 7;
 		int w = 8;
 		int h = 8;
 		auto function = [this]
@@ -126,8 +117,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->downButton = [this]
 	{
-		int x = (ORIGINAL_WIDTH / 2) - 62;
-		int y = (ORIGINAL_HEIGHT / 2) + 8;
+		int x = (ORIGINAL_WIDTH / 2) - 71;
+		int y = (ORIGINAL_HEIGHT / 2) + 62;
 		int w = 8;
 		int h = 8;
 		auto function = [this]
@@ -258,6 +249,10 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 	int lengthCounter = 0;
 	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
 
+	// Sort as they are listed in the CharacterClassParser.
+	auto allowedArmors = characterClass.getAllowedArmors();
+	std::sort(allowedArmors.begin(), allowedArmors.end());
+
 	std::string armorString;
 
 	// Decide what the armor string says.
@@ -270,7 +265,7 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 		// Collect all allowed armor display names for the class.
 		for (int i = 0; i < armorCount; ++i)
 		{
-			const auto &materialType = characterClass.getAllowedArmors().at(i);
+			const auto &materialType = allowedArmors.at(i);
 			auto materialString = ArmorMaterial::typeToString(materialType);
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
@@ -300,6 +295,10 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 	int lengthCounter = 0;
 	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
 
+	// Sort as they are listed in the CharacterClassParser.
+	auto allowedShields = characterClass.getAllowedShields();
+	std::sort(allowedShields.begin(), allowedShields.end());
+
 	std::string shieldsString;
 
 	// Decide what the shield string says.
@@ -312,7 +311,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 		// Collect all allowed shield display names for the class.
 		for (int i = 0; i < shieldCount; ++i)
 		{
-			const auto &shieldType = characterClass.getAllowedShields().at(i);
+			const auto &shieldType = allowedShields.at(i);
 			auto dummyMetal = MetalType::Iron;
 			auto typeString = Shield(shieldType, dummyMetal).typeToString();
 			lengthCounter += static_cast<int>(typeString.size());
@@ -343,6 +342,10 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	int lengthCounter = 0;
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
 
+	// Sort as they are listed in the CharacterClassParser.
+	auto allowedWeapons = characterClass.getAllowedWeapons();
+	std::sort(allowedWeapons.begin(), allowedWeapons.end());
+
 	std::string weaponsString;
 
 	// Decide what the weapon string says.
@@ -356,7 +359,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 		// Collect all allowed weapon display names for the class.
 		for (int i = 0; i < weaponCount; ++i)
 		{
-			const auto &weaponType = characterClass.getAllowedWeapons().at(i);
+			const auto &weaponType = allowedWeapons.at(i);
 			auto dummyMetal = MetalType::Iron;
 			auto typeString = Weapon(weaponType, dummyMetal).typeToString();
 			lengthCounter += static_cast<int>(typeString.size());
@@ -450,7 +453,10 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		listParchmentHeight,
 		dst);
 
-	listParchmentXScale = 0.80;
+	const auto &popUp = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::PopUp11));
+
+	listParchmentXScale = 0.85;
 	listParchmentYScale = 2.20;
 	listParchmentWidth =
 		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
@@ -458,16 +464,12 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
 
 	this->drawScaledToNative(
-		*this->parchment.get(),
+		popUp,
 		(ORIGINAL_WIDTH / 2) - (listParchmentWidth / 2),
-		(ORIGINAL_HEIGHT / 2) - 11,
+		(ORIGINAL_HEIGHT / 2) - 12,
 		listParchmentWidth,
 		listParchmentHeight,
 		dst);
-
-	// Draw scroll buttons.
-	this->upDownSurface->setTransparentColor(Color::Magenta);
-	this->drawScaledToNative(*this->upDownSurface.get(), dst);
 
 	// Draw text: title, list.
 	this->drawScaledToNative(*this->titleTextBox.get(), dst);

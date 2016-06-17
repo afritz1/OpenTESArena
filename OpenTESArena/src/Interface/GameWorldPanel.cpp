@@ -198,7 +198,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Compass frame.
 	const auto &compassFrame = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::CompassFrame));
-	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, this->getMagenta(dst->format));
+	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, Color::Black.toRGB());
 
 	// Compass slider (the actual headings). +X is north, +Z is east.
 	const auto &compassSlider = this->getGameState()->getTextureManager()

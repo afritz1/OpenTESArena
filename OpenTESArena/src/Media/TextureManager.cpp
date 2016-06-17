@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <array>
 #include <cassert>
 #include <iomanip>
 #include <iostream>
@@ -14,19 +13,16 @@
 #include "TextureFile.h"
 #include "../Interface/Surface.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
 
 namespace
 {
 
-	// The format extension for all textures will be PNG (this will soon no longer be
-	// the case).
+	// The format extension for all tool-extracted textures is PNG. Remove this
+	// once the program is able to load original Arena assets exclusively.
 	const std::string TextureExtension = ".png";
-
-	typedef std::array<Color, 256> Palette;
-
-	Palette DefaultPalette;
 
 	template<typename T>
 	void decode04Type(T src, T srcend, std::vector<uint8_t> &out)
@@ -87,7 +83,7 @@ namespace
 		std::fill(dst, out.end(), 0);
 	}
 
-	// These might be useful as public misc utility functions
+	// These might be useful as public misc utility functions.
 
 	uint16_t getLE16(const uint8_t *buf)
 	{
@@ -97,15 +93,6 @@ namespace
 	uint32_t getLE32(const uint8_t *buf)
 	{
 		return buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
-	}
-
-	template<typename T>
-	std::string to_hexstring(T val)
-	{
-		static_assert(std::is_integral<T>::value, "to_hexstring given non-integral type.");
-		std::stringstream sstr;
-		sstr << std::hex << val;
-		return sstr.str();
 	}
 
 }
@@ -122,79 +109,13 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 	this->surfaces = std::map<std::string, Surface>();
 	this->format = format;
 
+	// Load default palette.
+	this->setPalette("PAL.COL");
+
 	// Intialize PNG file loading.
 	int imgFlags = IMG_INIT_PNG;
 	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager",
 		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
-
-	// Load default palette "PAL.COL".
-	bool failed = false;
-	std::array<uint8_t, 776> rawpal;
-	VFS::IStreamPtr stream = VFS::Manager::get().open("PAL.COL");
-	if (!stream)
-	{
-		Debug::mention("Texture Manager", "PAL.COL: Failed to open palette.");
-		failed = true;
-	}
-	else
-	{
-		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
-		if (stream->gcount() != static_cast<std::streamsize>(rawpal.size()))
-		{
-			Debug::mention("Texture Manager", "PAL.COL: Failed to read palette, got " +
-				std::to_string(stream->gcount()) + " bytes.");
-			failed = true;
-		}
-	}
-	if (!failed)
-	{
-		uint32_t len = getLE32(rawpal.data());
-		uint32_t ver = getLE32(rawpal.data() + 4);
-		if (len != 776)
-		{
-			Debug::mention("Texture Manager", "PAL.COL: Invalid palette length, " +
-				std::to_string(len) + " bytes.");
-			failed = true;
-		}
-		else if (ver != 0xb123)
-		{
-			Debug::mention("Texture Manager", "PAL.COL: Invalid palette version, 0x" +
-				to_hexstring(ver) + ".");
-			failed = true;
-		}
-	}
-	if (!failed)
-	{
-		auto iter = rawpal.begin() + 8;
-		/* First palette entry is transparent in 8-bit modes, so give it 0
-		 * alpha. */
-		uint8_t r = *(iter++);
-		uint8_t g = *(iter++);
-		uint8_t b = *(iter++);
-		DefaultPalette[0] = Color(r, g, b, 0);
-		/* Remaining are solid, so give them 255 alpha. */
-		std::generate(DefaultPalette.begin() + 1, DefaultPalette.end(),
-			[&iter]() -> Color
-		{
-			uint8_t r = *(iter++);
-			uint8_t g = *(iter++);
-			uint8_t b = *(iter++);
-			return Color(r, g, b, 255);
-		}
-		);
-	}
-	if (failed)
-	{
-		// Generate a monochrome palette. Entry 0 is filled with 0 already, so skip it.
-		uint8_t count = 0;
-		std::generate(DefaultPalette.begin() + 1, DefaultPalette.end(),
-			[&count]() -> Color
-		{
-			uint8_t c = ++count;
-			return Color(c, c, c, 255);
-		}
-		);
-	}
 }
 
 TextureManager::~TextureManager()
@@ -202,7 +123,7 @@ TextureManager::~TextureManager()
 	IMG_Quit();
 }
 
-SDL_Surface *TextureManager::loadFromFile(const std::string &fullPath)
+SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
 {
 	// Load the SDL_Surface from file.
 	auto *unOptSurface = IMG_Load(fullPath.c_str());
@@ -218,7 +139,7 @@ SDL_Surface *TextureManager::loadFromFile(const std::string &fullPath)
 	return optSurface;
 }
 
-SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
+SDL_Surface *TextureManager::loadIMG(const std::string &fullPath)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(fullPath.c_str());
 	Debug::check(stream != nullptr, "Texture Manager",
@@ -226,7 +147,7 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 
 	std::array<uint8_t, 12> imghdr;
 	stream->read(reinterpret_cast<char*>(imghdr.data()), imghdr.size());
-	Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()), 
+	Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()),
 		"Texture Manager", "Could not read texture \"" + fullPath + "\" header.");
 
 	uint16_t xoff = getLE16(imghdr.data());
@@ -238,7 +159,7 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 
 	std::vector<uint8_t> srcdata(srclen);
 	stream->read(reinterpret_cast<char*>(srcdata.data()), srcdata.size());
-	Debug::check(stream->gcount() == static_cast<std::streamsize>(srcdata.size()), 
+	Debug::check(stream->gcount() == static_cast<std::streamsize>(srcdata.size()),
 		"Texture Manager", "Could not read texture \"" + fullPath + "\" data.");
 
 	Palette custompal;
@@ -247,10 +168,11 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 		std::array<uint8_t, 768> rawpal;
 
 		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
-		Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()), 
+		Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
 			"Texture Manager", "Could not read texture \"" + fullPath + "\" palette.");
 
 		auto iter = rawpal.begin();
+
 		/* Unlike COL files, embedded palettes are stored with components in
 		 * the range of 0...63 rather than 0...255 (this was because old VGA
 		 * hardware only had 6-bit DACs, giving a maximum intensity value of
@@ -260,6 +182,7 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 		uint8_t g = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 		uint8_t b = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 		custompal[0] = Color(r, g, b, 0);
+
 		/* Remaining are solid, so give them 255 alpha. */
 		std::generate(custompal.begin() + 1, custompal.end(),
 			[&iter]() -> Color
@@ -268,29 +191,26 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 			uint8_t g = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 			uint8_t b = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 			return Color(r, g, b, 255);
-		}
-		);
+		});
 	}
 
-	const Palette &palette = (flags & 0x0100) ? custompal : DefaultPalette;
+	const Palette &paletteRef = (flags & 0x0100) ? custompal : this->palette;
 	if ((flags & 0x00ff) == 0x0000)
 	{
 		// Uncompressed IMG.
 		assert(srcdata.size() == width * height);
 
 		// Create temporary ARGB surface.
-		SDL_Surface *surface = SDL_CreateRGBSurface(
-			0, width, height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000
-		);
+		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, 
+			Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
 		if (SDL_LockSurface(surface) == 0)
 		{
 			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
 			std::transform(srcdata.begin(), srcdata.end(), pixels,
-				[&palette](uint8_t col) -> uint32_t
+				[&paletteRef](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
-			}
-			);
+				return paletteRef[col].toARGB();
+			});
 			SDL_UnlockSurface(surface);
 		}
 
@@ -306,18 +226,16 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 		decode04Type(srcdata.begin(), srcdata.end(), decomp);
 
 		// Create temporary ARGB surface
-		SDL_Surface *surface = SDL_CreateRGBSurface(
-			0, width, height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000
-		);
+		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height, 
+			Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
 		if (SDL_LockSurface(surface) == 0)
 		{
 			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
 			std::transform(decomp.begin(), decomp.end(), pixels,
-				[&palette](uint8_t col) -> uint32_t
+				[&paletteRef](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
-			}
-			);
+				return paletteRef[col].toARGB();
+			});
 			SDL_UnlockSurface(surface);
 		}
 
@@ -327,7 +245,7 @@ SDL_Surface* TextureManager::loadImgFile(const std::string& fullPath)
 		return optSurface;
 	}
 
-	Debug::crash("Texture Manager", "Unhandled IMG flags, 0x" + to_hexstring(flags) + ".");
+	Debug::crash("Texture Manager", "Unhandled IMG flags, 0x" + String::toHexString(flags) + ".");
 	return nullptr;
 }
 
@@ -345,10 +263,10 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		return surface;
 	}
 
-	auto dot = filename.rfind('.');
+	size_t dot = filename.rfind('.');
 	if (dot != std::string::npos && filename.compare(dot, filename.length() - dot, ".IMG") == 0)
 	{
-		auto *optSurface = this->loadImgFile(filename);
+		auto *optSurface = this->loadIMG(filename);
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		Surface surface(optSurface);
@@ -362,18 +280,86 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 	{
 		// Load optimized SDL_Surface from file.
 		std::string fullPath(TextureManager::PATH + filename + TextureExtension);
-		auto *optSurface = this->loadFromFile(fullPath);
+		auto *optSurface = this->loadPNG(fullPath);
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		Surface surface(optSurface);
 
 		// Add the new texture.
-		this->surfaces.insert(std::pair<std::string, Surface>(filename, surface));
+		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
 		SDL_FreeSurface(optSurface);
+		return iter->second;
+	}
+}
 
-		// Try this method again.
-		assert(this->surfaces.find(filename) != this->surfaces.end());
-		return this->getSurface(filename);
+void TextureManager::setPalette(const std::string &paletteName)
+{
+	bool failed = false;
+	std::array<uint8_t, 776> rawpal;
+	VFS::IStreamPtr stream = VFS::Manager::get().open(paletteName.c_str());
+	if (!stream)
+	{
+		Debug::mention("Texture Manager", "Failed to open palette \"" + paletteName + "\".");
+		failed = true;
+	}
+	else
+	{
+		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
+		if (stream->gcount() != static_cast<std::streamsize>(rawpal.size()))
+		{
+			Debug::mention("Texture Manager", "Failed to read palette \"" + paletteName + 
+				"\", got " + std::to_string(stream->gcount()) + " bytes.");
+			failed = true;
+		}
+	}
+	if (!failed)
+	{
+		uint32_t len = getLE32(rawpal.data());
+		uint32_t ver = getLE32(rawpal.data() + 4);
+		if (len != 776)
+		{
+			Debug::mention("Texture Manager", "Invalid length for palette \"" + paletteName +
+				"\" (" + std::to_string(len) + " bytes).");
+			failed = true;
+		}
+		else if (ver != 0xb123)
+		{
+			Debug::mention("Texture Manager", "Invalid version for palette \"" + paletteName +
+				"\", 0x" + String::toHexString(ver) + ".");
+			failed = true;
+		}
+	}
+	if (!failed)
+	{
+		auto iter = rawpal.begin() + 8;
+
+		/* First palette entry is transparent in 8-bit modes, so give it 0
+		* alpha. */
+		uint8_t r = *(iter++);
+		uint8_t g = *(iter++);
+		uint8_t b = *(iter++);
+		this->palette[0] = Color(r, g, b, 0);
+
+		/* Remaining are solid, so give them 255 alpha. */
+		std::generate(this->palette.begin() + 1, this->palette.end(),
+			[&iter]() -> Color
+		{
+			uint8_t r = *(iter++);
+			uint8_t g = *(iter++);
+			uint8_t b = *(iter++);
+			return Color(r, g, b, 255);
+		});
+	}
+	if (failed)
+	{
+		// Generate a monochrome palette. Entry 0 is filled with 0 already, so skip it.
+		uint8_t count = 0;
+		std::generate(this->palette.begin() + 1, this->palette.end(),
+			[&count]() -> Color
+		{
+			uint8_t c = ++count;
+			return Color(c, c, c, 255);
+		});
 	}
 }
 

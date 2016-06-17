@@ -21,6 +21,7 @@ enum class TextureName
 	IntroQuote, // "The best techniques..."
 	MainMenu, // Load, New, Exit
 	ParchmentPopup, // For text boxes
+	PopUp11, // For items, etc.
 	QuillCursor,
 	SwordCursor,
 	UpDown, // Scroll arrows

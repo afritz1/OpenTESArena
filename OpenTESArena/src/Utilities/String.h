@@ -2,7 +2,10 @@
 #define STRING_H
 
 #include <vector>
+#include <sstream>
 #include <string>
+
+// This static class offers various string operations and conversions.
 
 class String
 {
@@ -22,6 +25,16 @@ public:
 
 	// Removes new line characters from a string.
 	static std::string trimLines(const std::string &line);
+
+	// Turns an integral value into a hex string.
+	template <typename T>
+	static std::string toHexString(T val)
+	{
+		static_assert(std::is_integral<T>::value, "String::toHexString given non-integral type.");
+		std::stringstream sstr;
+		sstr << std::hex << val;
+		return sstr.str();
+	}
 };
 
 #endif

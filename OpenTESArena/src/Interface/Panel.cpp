@@ -12,6 +12,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Media/Color.h"
 #include "../Media/MusicName.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
@@ -148,7 +149,7 @@ void Panel::clearScreen(SDL_Surface *dst)
 void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
 {
 	auto *cursorSurface = cursor.getSurface();
-	SDL_SetColorKey(cursorSurface, SDL_TRUE, this->getMagenta(dst->format));
+	SDL_SetColorKey(cursorSurface, SDL_TRUE, Color::Magenta.toRGB());
 
 	const double cursorScale = 2.0;
 	auto mousePosition = this->getMousePosition();
