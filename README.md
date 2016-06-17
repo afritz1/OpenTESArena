@@ -3,50 +3,48 @@
 
 ## Current status
 
-June 11th, 2016:
+June 17th, 2016:
 
-Builds on Windows 7 with Visual Studio and Linux with GCC 4.8.4.
+OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [freepats](http://freepats.zenvoid.org/) project provides some good patches.
 
-The basis for OpenAL Soft has been implemented, and MIDI music will be reimplemented soon.
+The game is not yet in a playable state. A couple of the menus work, including most of character creation, though it's only a rough draft. The game world currently uses an infinite sky placeholder with a moving sun while the graphics engine is in development. Pressing Tab in the game world opens the current character sheet. Several other placeholders exist for now as well.
 
-The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine using some random cities from a test project for demonstration purposes. It is in development and is not currently implemented here.
-
-The game is not yet in a playable state. A couple of the menus work, including most of character creation, though it's only a rough draft. The game world uses an infinite space placeholder while the graphics engine is in development. Pressing Tab in the game world opens the current character sheet. Several other placeholders exist for now as well.
-
-Loading the original files from the Arena floppy disk version is now in the project scope, instead of using extracted and converted files for testing purposes.
+The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine from a test project using some random cities for demonstration purposes. It is in development and is not currently implemented here.
 
 ## Instructions
 
-The current subset of data files to use are from screen grabs in DOSBox and from extraction utilities, both for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
+The current subset of data files are from screen grabs in DOSBox and from extraction utilities for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
 
-- Build the executable on your machine
-- Get the small subset of currently used data files from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0).
+- Build the executable on your machine.
+- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0).
 - Put the data files in the executable directory.
+- Make sure your options.txt points to a valid soundfont file and Arena data path.
 
 ## Introduction
 
 This is my first big project! I'm already learning a ton.
 
-This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++11 and uses SDL2, OpenAL Soft, and OpenCL. It really started out more as an experiment than a remake, but it is steadily inching closer to something akin to the original now.
+This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++11 and uses SDL2, OpenAL Soft, and OpenCL. There is currently support for Windows and Linux.
 
-The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). This project is being developed on Windows 7 and Visual Studio 2015 using the VS2013 compiler. Linux is now supported as well.
+The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
 It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
 
 ## Developer Libraries
 
-- [FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))
+- (Not yet ->) [FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
 - OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
 - [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/)
-- [WildMIDI 0.4](https://github.com/Mindwerks/wildmidi/releases) (Windows also needs MSVCR80.dll)
+- [WildMIDI 0.4](https://github.com/Mindwerks/wildmidi/releases)
 
 ## Scope
 
 This project is early in development.
 
 Baseline features to do:
+- Load original assets
 - Character creation
 - Graphics engine using OpenCL
 - Free-look camera
@@ -74,7 +72,9 @@ Later features:
 Some of these features are being left until later either because the original data is not accessible, they're simply too complex to mess with at this stage, or they're new ideas to consider.
 
 Original features:
-- Original map data
+- Character faces
+- Weapon and armor overlays
+- City and dungeon data
 - Quests
 - Wilderness
 
