@@ -16,7 +16,6 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -82,7 +81,6 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		{
 			gameState->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
 				gameState, charClass)));
-			gameState->setMusic(MusicName::PercIntro);
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
