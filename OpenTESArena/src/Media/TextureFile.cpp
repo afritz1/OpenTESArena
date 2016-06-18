@@ -12,17 +12,17 @@ const std::map<TextureName, std::string> TextureFilenames =
 	// Interface.
 	{ TextureName::CharacterCreation, "interface/character_creation" },
 	{ TextureName::CompassFrame, "COMPASS.IMG" },
-	{ TextureName::CompassSlider, "interface/compass_slider" }, // SLIDER.IMG
+	{ TextureName::CompassSlider, "SLIDER.IMG" },
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "TITLE.IMG" },
-	{ TextureName::IntroQuote, "interface/intro_quote" }, // QUOTE.IMG?
-	{ TextureName::MainMenu, "interface/main_menu" },
+	{ TextureName::IntroQuote, "QUOTE.IMG" },
+	{ TextureName::MainMenu, "MENU.IMG" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
 	{ TextureName::PopUp11, "POPUP11.IMG" }, // POPUP2 or POPUP8 should be what ChooseClassPanel uses.
-	{ TextureName::QuillCursor, "interface/pointer" }, // POINTER.IMG
-	{ TextureName::SwordCursor, "interface/arenarw" }, // ARENARW.IMG
-	{ TextureName::UpDown, "interface/up_down" },
-	{ TextureName::WorldMap, "interface/world_map" },
+	{ TextureName::QuillCursor, "POINTER.IMG" },
+	{ TextureName::SwordCursor, "ARENARW.IMG" },
+	{ TextureName::UpDown, "UPDOWN.IMG" },
+	{ TextureName::WorldMap, "TAMRIEL.IMG" },
 
 	// Fonts.
 	{ TextureName::FontA, "fonts/font_a" },
