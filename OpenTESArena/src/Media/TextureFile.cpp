@@ -6,23 +6,20 @@
 #include "TextureName.h"
 #include "TextureSequenceName.h"
 
-// The filename of each TextureName (with sub-folders).
+// The filename of each TextureName, by type.
 const std::map<TextureName, std::string> TextureFilenames =
 {
-	// Interface.
-	{ TextureName::CharacterCreation, "interface/character_creation" },
-	{ TextureName::CompassFrame, "COMPASS.IMG" },
-	{ TextureName::CompassSlider, "SLIDER.IMG" },
-	{ TextureName::Icon, "interface/icon" },
-	{ TextureName::IntroTitle, "TITLE.IMG" },
-	{ TextureName::IntroQuote, "QUOTE.IMG" },
-	{ TextureName::MainMenu, "MENU.IMG" },
-	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
-	{ TextureName::PopUp11, "POPUP11.IMG" }, // POPUP2 or POPUP8 should be what ChooseClassPanel uses.
+	// Cursors.
 	{ TextureName::QuillCursor, "POINTER.IMG" },
 	{ TextureName::SwordCursor, "ARENARW.IMG" },
-	{ TextureName::UpDown, "UPDOWN.IMG" },
-	{ TextureName::WorldMap, "TAMRIEL.IMG" },
+
+	// Equipment overlays.
+	{ TextureName::FemaleNonMagicShirt, "FSSHIRT.IMG" },
+	{ TextureName::FemaleMagicShirt, "FRSHIRT.IMG" },
+	{ TextureName::FemalePants, "FPANTS.IMG" },
+	{ TextureName::MaleNonMagicShirt, "MSSHIRT.IMG" },
+	{ TextureName::MaleMagicShirt, "MRSHIRT.IMG" },
+	{ TextureName::MalePants, "MPANTS.IMG" },
 
 	// Fonts.
 	{ TextureName::FontA, "fonts/font_a" },
@@ -34,6 +31,47 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::FontFour, "fonts/font_4" },
 	{ TextureName::FontS, "fonts/font_s" },
 	{ TextureName::FontTeeny, "fonts/teeny_font" },
+
+	// Interface.
+	{ TextureName::CharacterCreation, "interface/character_creation" },
+	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
+	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
+	{ TextureName::CompassFrame, "COMPASS.IMG" },
+	{ TextureName::CompassSlider, "SLIDER.IMG" },	
+	{ TextureName::GameWorldInterface, "P1.IMG" },
+	{ TextureName::Icon, "interface/icon" },
+	{ TextureName::IntroTitle, "TITLE.IMG" },
+	{ TextureName::IntroQuote, "QUOTE.IMG" },
+	{ TextureName::MainMenu, "MENU.IMG" },
+	{ TextureName::ParchmentBig, "PARCH.IMG" },
+	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
+	{ TextureName::PauseBackground, "OP.IMG" },
+	{ TextureName::PopUp, "POPUP.IMG" }, // I think this is what ChooseClassPanel should use.
+	{ TextureName::PopUp11, "POPUP11.IMG" },
+	{ TextureName::UpDown, "UPDOWN.IMG" },
+	{ TextureName::YesNoCancel, "YESNO.IMG" },
+
+	// Main quest dungeon splash screens.
+	{ TextureName::CryptOfHeartsSplash, "CRYPT.IMG" },
+	{ TextureName::CrystalTowerSplash, "TOWER.IMG" },
+	{ TextureName::DagothUrSplash, "DAGOTHUR.IMG" },
+	{ TextureName::EldenGroveSplash, "GROVE.IMG" },
+	{ TextureName::FangLairSplash, "FANGLAIR.IMG" },
+	{ TextureName::HallsOfColossusSplash, "COLOSSUS.IMG" },
+	{ TextureName::LabyrinthianSplash, "LABRINTH.IMG" },
+	{ TextureName::MurkwoodSplash, "MIRKWOOD.IMG" },
+
+	// Maps.
+	{ TextureName::BlackMarshMap, "BLAKMRSH.IMG" },
+	{ TextureName::ElsweyrMap, "ELSWEYR.IMG" },
+	{ TextureName::HammerfellMap, "HAMERFEL.IMG" },
+	{ TextureName::HighRockMap, "HIGHROCK.IMG" },
+	{ TextureName::ImperialProvinceMap, "IMPERIAL.IMG" },
+	{ TextureName::MorrowindMap, "MOROWIND.IMG" },
+	{ TextureName::SkyrimMap, "SKYRIM.IMG" },
+	{ TextureName::SummersetIsleMap, "SUMERSET.IMG" },
+	{ TextureName::ValenwoodMap, "VALNWOOD.IMG" },
+	{ TextureName::WorldMap, "TAMRIEL.IMG" },
 };
 
 // The filename prefix of each TextureSequenceName (with sub-folders). When looking

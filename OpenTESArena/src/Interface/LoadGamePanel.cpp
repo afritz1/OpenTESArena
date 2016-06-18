@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "MainMenuPanel.h"
+#include "PauseMenuPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
@@ -19,13 +20,15 @@
 LoadGamePanel::LoadGamePanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backToMainMenuButton = [gameState]()
+	this->backButton = [gameState]()
 	{
 		auto function = [gameState]()
 		{
-			auto mainMenuPanel = std::unique_ptr<Panel>(
-				new MainMenuPanel(gameState));
-			gameState->setPanel(std::move(mainMenuPanel));
+			// Back button behavior depends on if game data is active.
+			auto backPanel = gameState->gameDataIsActive() ?
+				std::unique_ptr<Panel>(new PauseMenuPanel(gameState)) :
+				std::unique_ptr<Panel>(new MainMenuPanel(gameState));
+			gameState->setPanel(std::move(backPanel));
 		};
 
 		return std::unique_ptr<Button>(new Button(function));
@@ -77,7 +80,7 @@ void LoadGamePanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToMainMenuButton->click();
+			this->backButton->click();
 		}
 
 		/*bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&

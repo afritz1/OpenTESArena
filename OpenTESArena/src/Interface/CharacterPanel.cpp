@@ -24,20 +24,6 @@
 CharacterPanel::CharacterPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->doneTextBox = [gameState]()
-	{
-		auto center = Int2(26, ORIGINAL_HEIGHT - 14);
-		auto color = Color(190, 113, 0);
-		std::string text = "Done";
-		auto fontName = FontName::Char;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
 	this->playerNameTextBox = [gameState]()
 	{
 		auto origin = Int2(10, 8);
@@ -180,8 +166,10 @@ void CharacterPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(dst);
 
-	// Draw temporary background.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 36));
+	// Draw character stats background.
+	const auto &statsBackground = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::CharacterStats));
+	this->drawScaledToNative(statsBackground, dst);
 
 	// Get a reference to the active player data.
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -201,14 +189,10 @@ void CharacterPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		portrait.getHeight(),
 		dst);
 
-	// Draw buttons: done.
-	this->drawScaledToNative(*this->doneButton.get(), dst);
-
-	// Draw text boxes: player name, race, class, done.
+	// Draw text boxes: player name, race, class.
 	this->drawScaledToNative(*this->playerClassTextBox.get(), dst);
 	this->drawScaledToNative(*this->playerNameTextBox.get(), dst);
 	this->drawScaledToNative(*this->playerRaceTextBox.get(), dst);
-	this->drawScaledToNative(*this->doneTextBox.get(), dst);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()

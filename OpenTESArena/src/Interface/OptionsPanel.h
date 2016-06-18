@@ -3,10 +3,9 @@
 
 #include "Panel.h"
 
-// For now, the options menu will only be accessible from the pause menu.
-
-// Options are loaded from file now. They just can't be changed while the program
-// is running yet.
+// The options menu currently isn't accessible by the program (because the original
+// assets don't have an "Options" button anywhere!), so options are currently only
+// modifiable on start-up.
 
 class Button;
 class TextBox;

@@ -13,6 +13,7 @@
 #include "TextBox.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -24,92 +25,36 @@
 PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->titleTextBox = [gameState]()
-	{
-		auto center = Int2(160, 70);
-		auto color = Color::White;
-		std::string text = "Paused";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->loadTextBox = [gameState]()
-	{
-		auto center = Int2(215, 100);
-		auto color = Color::White;
-		std::string text = "Load Game";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->mainMenuTextBox = [gameState]()
-	{
-		auto center = Int2(215, 125);
-		auto color = Color::White;
-		std::string text = "Main Menu";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->optionsTextBox = [gameState]()
-	{
-		auto center = Int2(105, 125);
-		auto color = Color::White;
-		std::string text = "Options";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	this->resumeTextBox = [gameState]()
-	{
-		auto center = Int2(105, 100);
-		auto color = Color::White;
-		std::string text = "Resume";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
-	// Disable the load button for now until functionality is added in the GameState
-	// that tells whether a game is active, and thus which panel to return to.
 	this->loadButton = [gameState]()
 	{
-		auto center = Int2(215, 100);
+		int x = 65;
+		int y = 118;
 		auto function = [gameState]()
 		{
-			//auto loadPanel = std::unique_ptr<Panel>(new LoadGamePanel(gameState));
-			//gameState->setPanel(std::move(loadPanel));
+			auto loadPanel = std::unique_ptr<Panel>(new LoadGamePanel(gameState));
+			gameState->setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
+		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
 
-	this->mainMenuButton = [gameState]()
+	this->exitButton = [gameState]()
 	{
-		auto center = Int2(215, 125);
+		int x = 193;
+		int y = 118;
+		auto function = [gameState]()
+		{
+			SDL_Event evt;
+			evt.quit.type = SDL_QUIT;
+			evt.quit.timestamp = 0;
+			SDL_PushEvent(&evt);
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
+	}();
+
+	this->newButton = [gameState]()
+	{
+		int x = 0;
+		int y = 118;
 		auto function = [gameState]()
 		{
 			gameState->setGameData(nullptr);
@@ -118,37 +63,33 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 			gameState->setMusic(MusicName::PercIntro);
 			gameState->setPanel(std::move(mainMenuPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
+		return std::unique_ptr<Button>(new Button(x, y, 65, 29, function));
 	}();
 
-	this->optionsButton = [gameState]()
+	this->saveButton = [gameState]()
 	{
-		auto center = Int2(105, 125);
+		int x = 129;
+		int y = 118;
 		auto function = [gameState]()
 		{
-			// Change to options panel once that class is programmed.
-			auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
-			gameState->setPanel(std::move(optionsPanel));
+			// SaveGamePanel...
+			//auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
+			//gameState->setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
+		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
 
 	this->resumeButton = [gameState]()
 	{
-		auto center = Int2(105, 100);
+		int x = 257;
+		int y = 118;
 		auto function = [gameState]()
 		{
 			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 100, 20, function));
+		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
-
-	// Button backgrounds (placeholders).
-	this->loadButton->fill(Color::Black);
-	this->mainMenuButton->fill(Color::Black);
-	this->optionsButton->fill(Color::Black);
-	this->resumeButton->fill(Color::Black);
 }
 
 PauseMenuPanel::~PauseMenuPanel()
@@ -195,13 +136,17 @@ void PauseMenuPanel::handleEvents(bool &running)
 			{
 				this->loadButton->click();
 			}
-			else if (this->mainMenuButton->containsPoint(mouseOriginalPoint))
+			else if (this->exitButton->containsPoint(mouseOriginalPoint))
 			{
-				this->mainMenuButton->click();
+				this->exitButton->click();
 			}
-			else if (this->optionsButton->containsPoint(mouseOriginalPoint))
+			else if (this->newButton->containsPoint(mouseOriginalPoint))
 			{
-				this->optionsButton->click();
+				this->newButton->click();
+			}
+			else if (this->saveButton->containsPoint(mouseOriginalPoint))
+			{
+				this->saveButton->click();
 			}
 			else if (this->resumeButton->containsPoint(mouseOriginalPoint))
 			{
@@ -233,21 +178,20 @@ void PauseMenuPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(dst);
 
-	// Draw temporary background.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 36, 48, 36));
+	// Draw pause background.
+	const auto &pauseBackground = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::PauseBackground));
+	this->drawScaledToNative(pauseBackground, dst);
 
-	// Draw buttons: load, main menu, options, resume.
-	this->drawScaledToNative(*this->loadButton.get(), dst);
-	this->drawScaledToNative(*this->mainMenuButton.get(), dst);
-	this->drawScaledToNative(*this->optionsButton.get(), dst);
-	this->drawScaledToNative(*this->resumeButton.get(), dst);
-
-	// Draw text: title, load, main menu, options, resume.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
-	this->drawScaledToNative(*this->loadTextBox.get(), dst);
-	this->drawScaledToNative(*this->mainMenuTextBox.get(), dst);
-	this->drawScaledToNative(*this->optionsTextBox.get(), dst);
-	this->drawScaledToNative(*this->resumeTextBox.get(), dst);
+	// Draw game world interface below the pause menu.
+	const auto &gameInterface = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::GameWorldInterface));
+	this->drawScaledToNative(gameInterface,
+		(ORIGINAL_WIDTH / 2) - (gameInterface.getWidth() / 2),
+		ORIGINAL_HEIGHT - gameInterface.getHeight(),
+		gameInterface.getWidth(),
+		gameInterface.getHeight(),
+		dst);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()

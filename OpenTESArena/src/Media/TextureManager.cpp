@@ -1,9 +1,10 @@
-#include <unordered_map>
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <sstream>
+#include <unordered_map>
 
 #include "SDL.h"
 #include "SDL_image.h"
@@ -28,7 +29,8 @@ namespace
 
     // These IMG files are actually headerless/raw files, with hardcoded
     // dimensions.
-    static const std::unordered_map<std::string,Int2> RawImgOverride{
+    static const std::unordered_map<std::string, Int2> RawImgOverride =
+	{
         { "ARENARW.IMG", { 16, 16} },
         { "CITY.IMG",    { 16, 11} },
         { "DITHER.IMG",  { 16, 50} },

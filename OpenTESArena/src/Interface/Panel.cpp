@@ -149,7 +149,7 @@ void Panel::clearScreen(SDL_Surface *dst)
 void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
 {
 	auto *cursorSurface = cursor.getSurface();
-	SDL_SetColorKey(cursorSurface, SDL_TRUE, Color::Magenta.toRGB());
+	SDL_SetColorKey(cursorSurface, SDL_TRUE, Color::Black.toRGB());
 
 	const double cursorScale = 2.0;
 	auto mousePosition = this->getMousePosition();

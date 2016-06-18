@@ -134,7 +134,7 @@ void MainMenuPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 
-		bool loadHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_a);
+		bool loadHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_l);
 		bool newHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_s);
 		bool exitHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_e);
 

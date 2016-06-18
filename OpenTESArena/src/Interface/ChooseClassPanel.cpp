@@ -435,40 +435,37 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw parchments: title, list.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	// The parchment looks pretty bad when stretched. Better to get the original
-	// pattern and repeat it.
-
-	double listParchmentXScale = 1.0;
-	double listParchmentYScale = 1.0;
-	int listParchmentWidth =
-		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
-	int listParchmentHeight =
-		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
+	double parchmentXScale = 1.0;
+	double parchmentYScale = 1.0;
+	int parchmentWidth =
+		static_cast<int>(this->parchment->getWidth() * parchmentXScale);
+	int parchmentHeight =
+		static_cast<int>(this->parchment->getHeight() * parchmentYScale);
 
 	this->drawScaledToNative(
 		*this->parchment.get(),
-		(ORIGINAL_WIDTH / 2) - (listParchmentWidth / 2),
+		(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
 		35,
-		listParchmentWidth,
-		listParchmentHeight,
+		parchmentWidth,
+		parchmentHeight,
 		dst);
 
-	const auto &popUp = this->getGameState()->getTextureManager()
+	const auto &listPopUp = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::PopUp11));
 
-	listParchmentXScale = 0.85;
-	listParchmentYScale = 2.20;
-	listParchmentWidth =
-		static_cast<int>(this->parchment->getWidth() * listParchmentXScale);
-	listParchmentHeight =
-		static_cast<int>(this->parchment->getHeight() * listParchmentYScale);
+	double listXScale = 0.85;
+	double listYScale = 2.20;
+	int listWidth =
+		static_cast<int>(this->parchment->getWidth() * listXScale);
+	int listHeight =
+		static_cast<int>(this->parchment->getHeight() * listYScale);
 
 	this->drawScaledToNative(
-		popUp,
-		(ORIGINAL_WIDTH / 2) - (listParchmentWidth / 2),
+		listPopUp,
+		(ORIGINAL_WIDTH / 2) - (listWidth / 2),
 		(ORIGINAL_HEIGHT / 2) - 12,
-		listParchmentWidth,
-		listParchmentHeight,
+		listWidth,
+		listHeight,
 		dst);
 
 	// Draw text: title, list.

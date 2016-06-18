@@ -13,9 +13,7 @@ class TextBox;
 class PauseMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> titleTextBox, loadTextBox, mainMenuTextBox, 
-		optionsTextBox, resumeTextBox;
-	std::unique_ptr<Button> loadButton, mainMenuButton, optionsButton, resumeButton;
+	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

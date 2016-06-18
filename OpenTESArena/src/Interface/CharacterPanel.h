@@ -3,6 +3,8 @@
 
 #include "Panel.h"
 
+// Maybe rename this to "CharacterStatsPanel"?
+
 // This is the character portrait panel that shows the player's attributes and
 // derived stats.
 
@@ -16,7 +18,7 @@ enum class CharacterRaceName;
 class CharacterPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> doneTextBox, playerNameTextBox, playerRaceTextBox,
+	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
 	std::unique_ptr<Button> doneButton;
 protected:

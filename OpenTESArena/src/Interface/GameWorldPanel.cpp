@@ -24,6 +24,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
+#include "../Utilities/Debug.h"
 
 GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
@@ -140,6 +141,8 @@ void GameWorldPanel::handleKeyboard(double dt)
 
 void GameWorldPanel::tick(double dt, bool &running)
 {
+	assert(this->getGameState()->gameDataIsActive());
+
 	this->handleEvents(running);
 	this->handleMouse(dt);
 
@@ -168,31 +171,14 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
 
-	// Draw placeholder stat bars.
-	Surface statBarSurface(5, 35);
-
-	statBarSurface.fill(Color(0, 255, 0));
-	this->drawScaledToNative(statBarSurface,
-		5,
-		160,
-		statBarSurface.getWidth(),
-		statBarSurface.getHeight(),
-		dst);
-
-	statBarSurface.fill(Color(255, 0, 0));
-	this->drawScaledToNative(statBarSurface,
-		13,
-		160,
-		statBarSurface.getWidth(),
-		statBarSurface.getHeight(),
-		dst);
-
-	statBarSurface.fill(Color(0, 0, 255));
-	this->drawScaledToNative(statBarSurface,
-		21,
-		160,
-		statBarSurface.getWidth(),
-		statBarSurface.getHeight(),
+	// Draw game world interface.
+	const auto &gameInterface = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::GameWorldInterface));
+	this->drawScaledToNative(gameInterface,
+		(ORIGINAL_WIDTH / 2) - (gameInterface.getWidth() / 2),
+		ORIGINAL_HEIGHT - gameInterface.getHeight(),
+		gameInterface.getWidth(),
+		gameInterface.getHeight(),
 		dst);
 
 	// Compass frame.
@@ -236,7 +222,7 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		compassFrame.getHeight(),
 		dst);
 
-	// Draw cursor for now. It won't be drawn once the game world is developed enough.
+	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, dst);
