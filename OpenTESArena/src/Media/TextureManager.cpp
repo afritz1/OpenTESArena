@@ -83,6 +83,190 @@ namespace
 		std::fill(dst, out.end(), 0);
 	}
 
+    template<typename T>
+    void decode08Type(T src, T srcend, std::vector<uint8_t> &out)
+    {
+        static const std::array<uint8_t,256> highOffsetBits{
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+            0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+            0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+            0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
+            0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09,
+            0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0A, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B, 0x0B,
+            0x0C, 0x0C, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D, 0x0D, 0x0E, 0x0E, 0x0E, 0x0E, 0x0F, 0x0F, 0x0F, 0x0F,
+            0x10, 0x10, 0x10, 0x10, 0x11, 0x11, 0x11, 0x11, 0x12, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13,
+            0x14, 0x14, 0x14, 0x14, 0x15, 0x15, 0x15, 0x15, 0x16, 0x16, 0x16, 0x16, 0x17, 0x17, 0x17, 0x17,
+            0x18, 0x18, 0x19, 0x19, 0x1A, 0x1A, 0x1B, 0x1B, 0x1C, 0x1C, 0x1D, 0x1D, 0x1E, 0x1E, 0x1F, 0x1F,
+            0x20, 0x20, 0x21, 0x21, 0x22, 0x22, 0x23, 0x23, 0x24, 0x24, 0x25, 0x25, 0x26, 0x26, 0x27, 0x27,
+            0x28, 0x28, 0x29, 0x29, 0x2A, 0x2A, 0x2B, 0x2B, 0x2C, 0x2C, 0x2D, 0x2D, 0x2E, 0x2E, 0x2F, 0x2F,
+            0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
+        };
+        static const std::array<uint8_t,256> lowOffsetBitCount{
+            0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+            0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+            0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+            0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+            0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+            0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
+            0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
+            0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
+            0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06,
+            0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
+            0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
+            0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07,
+            0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08
+        };
+
+        std::array<uint8_t, 4096> history;
+        std::fill(history.begin(), history.end(), 0);
+        int historypos = 0;
+
+        std::array<uint16_t,941> NodeIdxMap;
+        std::iota(NodeIdxMap.begin(), NodeIdxMap.begin()+626, 0);
+        std::for_each(NodeIdxMap.begin(), NodeIdxMap.begin()+626,
+            [](uint16_t &val) { val = (val>>1) + 314; }
+        );
+        NodeIdxMap[626] = 0;
+        std::iota(NodeIdxMap.begin()+627, NodeIdxMap.end(), 0);
+
+        std::array<uint16_t,627> NodeTree;
+        std::iota(NodeTree.begin(), NodeTree.begin()+314, 627);
+        std::iota(NodeTree.begin()+314, NodeTree.end(), 0);
+        std::for_each(NodeTree.begin()+314, NodeTree.end(),
+            [](uint16_t &val) { val *= 2; }
+        );
+
+        std::array<uint16_t,627> NodeFreq;
+        std::fill(NodeFreq.begin(), NodeFreq.begin()+314, 1);
+        {
+            auto iter = NodeFreq.begin();
+            std::for_each(NodeFreq.begin()+314, NodeFreq.begin()+627,
+                [&iter](uint16_t &val)
+                {
+                    val  = *(iter++);
+                    val += *(iter++);
+                }
+            );
+        }
+
+        uint16_t bitmask = 0;
+        uint8_t validbits = 0;
+
+        // This feels like some form of adaptive Huffman coding, with a form of LZ
+        // compression. DEFLATE?
+        auto dst = out.begin();
+        while(dst != out.end())
+        {
+            // Starting with the root, append bits from the input while traversing
+            // the tree until a leaf node is found (indicated by being >=627)
+            uint16_t node = NodeTree[626];
+            while(node < 627)
+            {
+                while(validbits < 9)
+                {
+                    if(src != srcend)
+                        bitmask |= *(src++) << (8-validbits);
+                    validbits += 8;
+                }
+                node = NodeTree.at(node + ((bitmask>>15)&1));
+                bitmask <<= 1;
+                --validbits;
+            }
+
+            // Increment the use count (frequency) of this node, and ensure the
+            // tree remains sorted
+            uint16_t freqidx = NodeIdxMap.at(node);
+            do {
+                NodeFreq.at(freqidx) += 1;
+                uint16_t freq = NodeFreq[freqidx];
+                uint16_t nextidx = freqidx + 1;
+                if(nextidx < NodeFreq.size() && NodeFreq[nextidx] < freq)
+                {
+                    // Find the next frequency count that's not greater than the new frequency
+                    do {
+                        ++nextidx;
+                    } while(nextidx < NodeFreq.size() && NodeFreq[nextidx] < freq);
+                    --nextidx;
+
+                    // Swap 'em, placing the new frequency just before the next
+                    // greater one. Since the freq only incremented by 1, this
+                    // won't put it out of order.
+                    NodeFreq[freqidx] = NodeFreq[nextidx];
+                    NodeFreq[nextidx] = freq;
+
+                    std::iter_swap(NodeTree.begin()+freqidx, NodeTree.begin()+nextidx);
+
+                    // Update the index mappings
+                    uint16_t mapidx = NodeTree[nextidx];
+                    NodeIdxMap.at(mapidx) = nextidx;
+                    if(mapidx < 627)
+                        NodeIdxMap[mapidx + 1] = nextidx;
+
+                    mapidx = NodeTree[freqidx];
+                    NodeIdxMap.at(mapidx) = freqidx;
+                    if(mapidx < 627)
+                        NodeIdxMap[mapidx + 1] = freqidx;
+                    freqidx = nextidx;
+                }
+                // Recurse up the tree
+                freqidx = NodeIdxMap[freqidx];
+            } while(freqidx != 0);
+
+            // Get the value from the node. If it's less than 256, it's a direct pixel value.
+            uint16_t codeword = node - 627;
+            if(codeword < 256)
+            {
+                history[historypos++ & 0x0FFF] = codeword;
+                *(dst++) = codeword;
+            }
+            else
+            {
+                // Otherwise, get the next 8 bits from input to construct the
+                // offset to previous pixels to repeat, with the count being
+                // derived from the node's value.
+                while(validbits < 9)
+                {
+                    if(src != srcend)
+                        bitmask |= *(src++) << (8-validbits);
+                    validbits += 8;
+                }
+                uint8_t tableidx = bitmask >> 8;
+                bitmask <<= 8;
+                validbits -= 8;
+
+                uint16_t offsetHigh = highOffsetBits[tableidx] << 6;
+                uint16_t bitcount = lowOffsetBitCount[tableidx] - 2;
+                uint16_t offsetLow = tableidx;
+                for(uint16_t i = 0;i < bitcount;++i)
+                {
+                    while(validbits < 9)
+                    {
+                        if(src != srcend)
+                            bitmask |= *(src++) << (8-validbits);
+                        validbits += 8;
+                    }
+                    offsetLow = (offsetLow<<1) | ((bitmask>>15)&1);
+                    bitmask <<= 1;
+                    --validbits;
+                }
+
+                uint16_t copypos = historypos - (offsetHigh | (offsetLow&0x003F)) - 1;
+                uint16_t tocopy = codeword-256 + 3;
+                for(uint16_t i = 0;i < tocopy;++i)
+                {
+                    *dst = history[copypos++ & 0x0FFF];
+                    history[historypos++ & 0x0FFF] = *(dst++);
+                }
+            }
+        }
+    }
+
 	// These might be useful as public misc utility functions.
 
 	uint16_t getLE16(const uint8_t *buf)
@@ -244,6 +428,35 @@ SDL_Surface *TextureManager::loadIMG(const std::string &fullPath)
 
 		return optSurface;
 	}
+    if ((flags & 0x00ff) == 0x0008)
+    {
+        uint16_t decomplen = getLE16(srcdata.data());
+        assert(decomplen == width*height);
+
+        // Type 8 compression.
+        std::vector<uint8_t> decomp(width * height);
+        decode08Type(srcdata.begin()+2, srcdata.end(), decomp);
+
+        // Create temporary ARGB surface
+        SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height,
+            Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+        if (SDL_LockSurface(surface) == 0)
+        {
+            uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+            std::transform(decomp.begin(), decomp.end(), pixels,
+                [&paletteRef](uint8_t col) -> uint32_t
+            {
+                return paletteRef[col].toARGB();
+            }
+            );
+            SDL_UnlockSurface(surface);
+        }
+
+        auto *optSurface = SDL_ConvertSurface(surface, this->format, 0);
+        SDL_FreeSurface(surface);
+
+        return optSurface;
+    }
 
 	Debug::crash("Texture Manager", "Unhandled IMG flags, 0x" + String::toHexString(flags) + ".");
 	return nullptr;
@@ -256,11 +469,11 @@ const SDL_PixelFormat *TextureManager::getFormat() const
 
 const Surface &TextureManager::getSurface(const std::string &filename)
 {
-	if (this->surfaces.find(filename) != this->surfaces.end())
+    auto iter = this->surfaces.find(filename);
+	if (iter != this->surfaces.end())
 	{
 		// Get the existing surface.
-		const auto &surface = this->surfaces.at(filename);
-		return surface;
+		return iter->second;
 	}
 
 	size_t dot = filename.rfind('.');
@@ -272,7 +485,7 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		Surface surface(optSurface);
 
 		// Add the new texture.
-		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
+		iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
 		SDL_FreeSurface(optSurface);
 		return iter->second;
 	}
@@ -282,8 +495,8 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		std::string fullPath(TextureManager::PATH + filename + TextureExtension);
 		auto *optSurface = this->loadPNG(fullPath);
 
-		// Create surface from SDL_Surface. No need to optimize it again.
-		Surface surface(optSurface);
+        // Create surface from SDL_Surface. No need to optimize it again.
+        Surface surface(optSurface);
 
 		// Add the new texture.
 		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
