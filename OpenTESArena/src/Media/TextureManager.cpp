@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
@@ -14,6 +15,7 @@
 #include "../Interface/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../Math/Int2.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -23,6 +25,26 @@ namespace
 	// The format extension for all tool-extracted textures is PNG. Remove this
 	// once the program is able to load original Arena assets exclusively.
 	const std::string TextureExtension = ".png";
+
+    // These IMG files are actually headerless/raw files, with hardcoded
+    // dimensions.
+    static const std::unordered_map<std::string,Int2> RawImgOverride{
+        { "ARENARW.IMG", { 16, 16} },
+        { "CITY.IMG",    { 16, 11} },
+        { "DITHER.IMG",  { 16, 50} },
+        { "DITHER2.IMG", { 16, 50} },
+        { "DUNGEON.IMG", { 14,  8} },
+        { "DZTTAV.IMG",  { 32, 34} },
+        { "NOCAMP.IMG",  { 25, 19} },
+        { "NOSPELL.IMG", { 25, 19} },
+        { "P1.IMG",      {320, 53} },
+        { "POPTALK.IMG", {320, 77} },
+        { "S2.IMG",      {320, 36} },
+        { "SLIDER.IMG",  {289,  7} },
+        { "TOWN.IMG",    {  9, 10} },
+        { "UPDOWN.IMG",  {  8, 16} },
+        { "VILLAGE.IMG", {  8,  8} }
+    };
 
 	template<typename T>
 	void decode04Type(T src, T srcend, std::vector<uint8_t> &out)
@@ -329,17 +351,32 @@ SDL_Surface *TextureManager::loadIMG(const std::string &fullPath)
 	Debug::check(stream != nullptr, "Texture Manager",
 		"Could not open texture \"" + fullPath + "\".");
 
-	std::array<uint8_t, 12> imghdr;
-	stream->read(reinterpret_cast<char*>(imghdr.data()), imghdr.size());
-	Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()),
-		"Texture Manager", "Could not read texture \"" + fullPath + "\" header.");
+    uint16_t xoff, yoff, width, height, flags, srclen;
 
-	uint16_t xoff = getLE16(imghdr.data());
-	uint16_t yoff = getLE16(imghdr.data() + 2);
-	uint16_t width = getLE16(imghdr.data() + 4);
-	uint16_t height = getLE16(imghdr.data() + 6);
-	uint16_t flags = getLE16(imghdr.data() + 8);
-	uint16_t srclen = getLE16(imghdr.data() + 10);
+    auto rawoverride = RawImgOverride.find(fullPath);
+    if(rawoverride != RawImgOverride.end())
+    {
+        xoff = 0;
+        yoff = 0;
+        width = rawoverride->second.getX();
+        height = rawoverride->second.getY();
+        flags = 0;
+        srclen = width * height;
+    }
+    else
+    {
+        std::array<uint8_t, 12> imghdr;
+        stream->read(reinterpret_cast<char*>(imghdr.data()), imghdr.size());
+        Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()),
+            "Texture Manager", "Could not read texture \"" + fullPath + "\" header.");
+
+        xoff = getLE16(imghdr.data());
+        yoff = getLE16(imghdr.data() + 2);
+        width = getLE16(imghdr.data() + 4);
+        height = getLE16(imghdr.data() + 6);
+        flags = getLE16(imghdr.data() + 8);
+        srclen = getLE16(imghdr.data() + 10);
+    }
 
 	std::vector<uint8_t> srcdata(srclen);
 	stream->read(reinterpret_cast<char*>(srcdata.data()), srcdata.size());
