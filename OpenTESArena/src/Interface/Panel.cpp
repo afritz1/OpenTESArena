@@ -87,8 +87,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	};
 
 	return std::unique_ptr<Panel>(new CinematicPanel(gameState,
-		TextureSequenceName::IntroBook,
-		CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
+		TextureSequenceName::IntroBook, 0.142 /* roughly 7fps */,
 		changeToTitle));
 }
 
