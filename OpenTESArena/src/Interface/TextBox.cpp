@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include "SDL.h"
 

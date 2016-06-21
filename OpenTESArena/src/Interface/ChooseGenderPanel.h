@@ -1,6 +1,8 @@
 #ifndef CHOOSE_GENDER_PANEL_H
 #define CHOOSE_GENDER_PANEL_H
 
+#include <string>
+
 #include "Panel.h"
 
 class Button;

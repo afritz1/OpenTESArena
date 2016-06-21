@@ -110,6 +110,8 @@
     <ClCompile Include="src\Media\WildMidi.cpp" />
     <ClCompile Include="src\Utilities\KvpTextMap.cpp" />
     <ClCompile Include="src\Interface\ChooseClassCreationPanel.cpp" />
+    <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
+    <ClCompile Include="src\Interface\ProvinceMapPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -263,6 +265,9 @@
     <ClInclude Include="src\Media\Midi.hpp" />
     <ClInclude Include="src\Utilities\KvpTextMap.h" />
     <ClInclude Include="src\Interface\ChooseClassCreationPanel.h" />
+    <ClInclude Include="src\Interface\WorldMapPanel.h" />
+    <ClInclude Include="src\Interface\ProvinceMapPanel.h" />
+    <ClInclude Include="src\Interface\ProvinceButtonName.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

@@ -1,6 +1,5 @@
 #include <cassert>
 #include <cstring>
-#include <iostream>
 
 #include "SDL.h"
 
@@ -10,6 +9,7 @@
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Utilities/Debug.h"
 
 const int Surface::DEFAULT_BPP = 32;
 
@@ -154,19 +154,12 @@ void Surface::optimize(const SDL_PixelFormat *format)
 	assert(format != nullptr);
 
 	auto *optSurface = SDL_ConvertSurface(this->surface, format, this->surface->flags);
-	if (optSurface == nullptr)
-	{
-		std::cerr << "Surface error: could not optimize surface." << "\n";
-		std::getchar();
-		exit(EXIT_FAILURE);
-	}
+	Debug::check(optSurface != nullptr, "Surface", "Could not optimize surface.");
 
 	// Get rid of the old surface (this was once a hard-to-find memory leak!).
 	SDL_FreeSurface(this->surface);
 
 	this->surface = optSurface;
-
-	assert(this->surface == optSurface);
 }
 
 void Surface::setTransparentColor(const Color &color)

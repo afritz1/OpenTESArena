@@ -23,7 +23,7 @@
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
-ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &charClass, 
+ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &charClass,
 	const std::string &name, CharacterGenderName gender)
 	: Panel(gameState)
 {
@@ -71,21 +71,6 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	// Clickable (x, y, width, height) areas for each province. The original game actually
-	// uses a set of pixels, I think.
-	this->provinceAreas = std::map<ProvinceName, Rect>
-	{
-		{ ProvinceName::BlackMarsh, Rect(216, 144, 55, 12) },
-		{ ProvinceName::Elsweyr, Rect(148, 127, 37, 11) },
-		{ ProvinceName::Hammerfell, Rect(72, 75, 50, 11) },
-		{ ProvinceName::HighRock, Rect(52, 51, 44, 11) },
-		{ ProvinceName::ImperialProvince, Rect(133, 105, 83, 11) },
-		{ ProvinceName::Morrowind, Rect(222, 84, 52, 11) },
-		{ ProvinceName::Skyrim, Rect(142, 44, 34, 11) },
-		{ ProvinceName::SummersetIsle, Rect(37, 149, 49, 19) },
-		{ ProvinceName::Valenwood, Rect(106, 147, 49, 10) }
-	};
-
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->name = name;
 	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
@@ -129,11 +114,11 @@ void ChooseRacePanel::handleEvents(bool &running)
 			(e.key.keysym.sym == SDLK_ESCAPE);
 		bool enterPressed = (e.type == SDL_KEYDOWN) &&
 			((e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_KP_ENTER));
+			(e.key.keysym.sym == SDLK_KP_ENTER));
 		bool spacePressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_SPACE);
 
-		// Context-sensitive input depending on the visibility of the first text box.
+		// Interact with the pop-up text box if visible.
 		if (this->initialTextBox->isVisible())
 		{
 			bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
@@ -144,31 +129,34 @@ void ChooseRacePanel::handleEvents(bool &running)
 				// Hide the initial text box.
 				this->initialTextBox->setVisibility(false);
 			}
-		}
-		else
-		{
-			if (escapePressed)
-			{
-				this->backToGenderButton->click();
-			}
-			else if (leftClick)
-			{
-				// Listen for map clicks.
-				for (const auto &area : this->provinceAreas)
-				{
-					// Ignore the Imperial race because it is not implemented yet.
-					if (area.second.contains(mouseOriginalPoint) &&
-						(area.first != ProvinceName::ImperialProvince))
-					{
-						// Save the clicked province's race.
-						auto provinceRace = Province(area.first).getRaceName();
-						this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
-							provinceRace));
 
-						// Go to the attributes panel.
-						this->acceptButton->click();
-						break;
-					}
+			continue;
+		}
+
+		// Interact with the map screen instead.
+		if (escapePressed)
+		{
+			this->backToGenderButton->click();
+		}
+		else if (leftClick)
+		{
+			// Listen for map clicks.
+			for (const auto &provinceName : Province::getAllProvinceNames())
+			{
+				Province province(provinceName);
+				const Rect &clickArea = province.getWorldMapClickArea();
+
+				// Ignore the Imperial race because it is not implemented yet.
+				if (clickArea.contains(mouseOriginalPoint) &&
+					(provinceName != ProvinceName::ImperialProvince))
+				{
+					// Save the clicked province's race.
+					this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
+						province.getRaceName()));
+
+					// Go to the attributes panel.
+					this->acceptButton->click();
+					break;
 				}
 			}
 		}
@@ -207,12 +195,12 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
+	const int tooltipX = tooltip->getX();
+	const int tooltipY = tooltip->getY();
 	const int width = tooltip->getWidth() / 2;
 	const int height = tooltip->getHeight() / 2;
-	const int x = ((tooltip->getX() + width) < ORIGINAL_WIDTH) ? tooltip->getX() :
-		(tooltip->getX() - width);
-	const int y = ((tooltip->getY() + height) < ORIGINAL_HEIGHT) ? tooltip->getY() :
-		(tooltip->getY() - height);
+	const int x = ((tooltipX + width) < ORIGINAL_WIDTH) ? tooltipX : (tooltipX - width);
+	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? tooltipY : (tooltipY - height);
 
 	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, dst);
 	this->drawScaledToNative(*tooltip.get(), x, y, width, height, dst);
@@ -251,18 +239,18 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw hovered province tooltip.
 	if (!this->initialTextBox->isVisible())
 	{
-		auto mouseOriginalPosition =
-			this->nativePointToOriginal(this->getMousePosition());
-
-		for (const auto &pair : this->provinceAreas)
+		// Draw tooltip if the mouse is in a province.
+		auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
+		for (const auto &provinceName : Province::getAllProvinceNames())
 		{
-			// Draw tooltip if the mouse is in the province.
+			Province province(provinceName);
+			const Rect &clickArea = province.getWorldMapClickArea();
 
 			// Ignore the Imperial race for now as it is not implemented.
-			if (pair.second.contains(mouseOriginalPosition) &&
-				(pair.first != ProvinceName::ImperialProvince))
+			if (clickArea.contains(mouseOriginalPosition) &&
+				(provinceName != ProvinceName::ImperialProvince))
 			{
-				this->drawProvinceTooltip(pair.first, dst);
+				this->drawProvinceTooltip(provinceName, dst);
 			}
 		}
 	}

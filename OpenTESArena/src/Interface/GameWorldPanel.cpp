@@ -1,5 +1,4 @@
 #include <cassert>
-#include <iostream>
 
 #include "SDL.h"
 
@@ -8,6 +7,7 @@
 #include "Button.h"
 #include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
+#include "WorldMapPanel.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -50,6 +50,16 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
+
+	this->worldMapButton = [gameState]()
+	{
+		auto function = [gameState]()
+		{
+			auto mapPanel = std::unique_ptr<Panel>(new WorldMapPanel(gameState));
+			gameState->setPanel(std::move(mapPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
+	}();
 }
 
 GameWorldPanel::~GameWorldPanel()
@@ -89,6 +99,8 @@ void GameWorldPanel::handleEvents(bool &running)
 			(e.key.keysym.sym == SDLK_e);
 		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_TAB);
+		bool mapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_m);
 
 		if (leftClick)
 		{
@@ -98,10 +110,15 @@ void GameWorldPanel::handleEvents(bool &running)
 		{
 			// Activate whatever is looked at.
 		}
-		if (sheetHotkeyPressed)
+		else if (sheetHotkeyPressed)
 		{
 			// Go to character screen.
 			this->characterSheetButton->click();
+		}
+		else if (mapHotkeyPressed)
+		{
+			// Go to world map.
+			this->worldMapButton->click();
 		}
 	}
 }

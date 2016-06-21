@@ -11,20 +11,28 @@
 // even though several of Black Marsh's locations are deserts. Maybe the
 // developers intended it to be like wastelands, or barrens?
 
+class Rect;
+
 enum class CharacterRaceName;
 enum class ProvinceName;
 
 class Province
 {
 private:
-	ProvinceName provinceName;
 	std::vector<Location> locations;
+	ProvinceName provinceName;
 public:
 	Province(ProvinceName provinceName);
 	~Province();
 
+	static std::vector<ProvinceName> getAllProvinceNames();
+
 	ProvinceName getProvinceName() const;
 	CharacterRaceName getRaceName() const;
+
+	// The clickable area in the world map. Also used for tooltips.
+	const Rect &getWorldMapClickArea() const;
+
 	const std::vector<Location> &getLocations() const;
 	std::string toString() const;
 	std::string getRaceDisplayName(bool plural) const;
