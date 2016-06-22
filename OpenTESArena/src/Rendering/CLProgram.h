@@ -33,18 +33,20 @@ private:
 	static const std::string POST_PROCESS_KERNEL;
 	static const std::string CONVERT_TO_RGB_KERNEL;
 
-	static const cl::size_type SIZEOF_CAMERA;
-
 	cl::Device device; // The device selected from the devices list.
 	cl::Context context;
 	cl::CommandQueue commandQueue;
 	cl::Program program;
 	cl::Kernel kernel;
-	cl::Buffer cameraBuffer, gameTimeBuffer, outputBuffer;
+	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer, 
+		textureRefBuffer, triangleBuffer, textureBuffer, gameTimeBuffer, outputBuffer;
 	int width, height;
 
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
+
+	// For testing purposes before using actual world data.
+	void makeTestWorld();
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int width, int height);
@@ -60,7 +62,7 @@ public:
 
 	// Give this method total ticks instead of delta time so the constructor doesn't
 	// need a "start time". Also, this prevents any additive "double -> float" error.
-	void updateGameTime(double gameTime);
+	void updateGameTime(double gameTime);	
 
 	void render(SDL_Surface *dst);
 };

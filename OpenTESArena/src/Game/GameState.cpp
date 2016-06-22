@@ -1,5 +1,4 @@
 #include <cassert>
-#include <iostream>
 
 #include "SDL.h"
 
@@ -34,7 +33,7 @@ GameState::GameState()
 	// Initialize virtual file system using the data path in the options file.
 	VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
 
-	// Set the panel and music for the next tick. Don't use "panel" yet.
+	// Set the panel and music for the next tick. Don't use "this->panel" yet.
 	this->nextPanel = Panel::defaultPanel(this);
 	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
 		MusicName::PercIntro));
@@ -115,7 +114,7 @@ Int2 GameState::getScreenDimensions() const
 		this->renderer->getWindowSurface()->h);
 }
 
-std::unique_ptr<SDL_Rect> GameState::getLetterboxDimensions() const
+SDL_Rect GameState::getLetterboxDimensions() const
 {
 	return this->renderer->getLetterboxDimensions();
 }
@@ -171,7 +170,7 @@ void GameState::render()
 	auto *surface = this->renderer->getWindowSurface();
 	auto letterbox = this->getLetterboxDimensions();
 
-	this->panel->render(surface, letterbox.get());
+	this->panel->render(surface, &letterbox);
 
 	this->renderer->present();
 }

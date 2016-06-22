@@ -57,7 +57,7 @@ public:
 	TextureManager &getTextureManager() const;
 
 	Int2 getScreenDimensions() const;
-	std::unique_ptr<SDL_Rect> getLetterboxDimensions() const;
+	SDL_Rect getLetterboxDimensions() const;
 
 	void resizeWindow(int width, int height);
 

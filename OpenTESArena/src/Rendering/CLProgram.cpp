@@ -7,8 +7,27 @@
 
 #include "../Entities/Directable.h"
 #include "../Math/Constants.h"
+#include "../Math/Float2.h"
+#include "../Math/Float3.h"
+#include "../Math/Float4.h"
+#include "../Math/Triangle.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
+
+namespace
+{
+	// These sizes are intended to match those of the .cl file structs. OpenCL 
+	// aligns structs to multiples of 8 bytes. Additional padding is sometimes 
+	// necessary to match struct alignment.
+	const cl::size_type SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float) + 12;
+	const cl::size_type SIZEOF_LIGHT = (sizeof(cl_float3) * 2);
+	const cl::size_type SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
+	const cl::size_type SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
+	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
+	const cl::size_type SIZEOF_TRIANGLE = (sizeof(cl_float3) * 4) +
+		(sizeof(cl_float2) * 3) + SIZEOF_TEXTURE_REF;
+	const cl::size_type SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
+}
 
 const std::string CLProgram::PATH = "data/kernels/";
 const std::string CLProgram::FILENAME = "kernel.cl";
@@ -20,21 +39,11 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-// The camera struct resides in the kernel.
-const cl::size_type CLProgram::SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float);
-
 CLProgram::CLProgram(int width, int height)
 {
 	assert(width > 0);
 	assert(height > 0);
 
-	this->context = nullptr;
-	this->commandQueue = nullptr;
-	this->program = nullptr;
-	this->kernel = nullptr;
-	this->cameraBuffer = nullptr;
-	this->gameTimeBuffer = nullptr;
-	this->outputBuffer = nullptr;
 	this->width = width;
 	this->height = height;
 
@@ -85,10 +94,14 @@ CLProgram::CLProgram(int width, int height)
 		std::string("\n") + std::string("#define SCREEN_HEIGHT ") +
 		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
 		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
-		std::string("f\n"); // The "f" is for "float". OpenCL complains if it's a double.
+		std::string("f\n") + // The "f" is for "float". OpenCL complains if it's a double.
+		// The world dimensions will be placeholders for now.
+		std::string("#define WORLD_WIDTH ") + std::to_string(1) + std::string("\n") +
+		std::string("#define WORLD_HEIGHT ") + std::to_string(1) + std::string("\n") +
+		std::string("#define WORLD_DEPTH ") + std::to_string(1) + std::string("\n");
 
-	// Make some custom compile switches.
-	auto options = std::string("-cl-fast-relaxed-math -cl-strict-aliasing");
+	// Add some kernel compilation switches.
+	std::string options("-cl-fast-relaxed-math -cl-strict-aliasing");
 
 	// Put the kernel source in a program object within the OpenCL context.
 	this->program = cl::Program(this->context, defines + source, false, &status);
@@ -103,10 +116,34 @@ CLProgram::CLProgram(int width, int height)
 	this->kernel = cl::Kernel(this->program, CLProgram::TEST_KERNEL.c_str(), &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel.");
 
-	// Create some OpenCL buffers for reading and writing.
+	// Create the OpenCL buffers for reading and writing.
 	this->cameraBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		CLProgram::SIZEOF_CAMERA, nullptr, &status);
+		SIZEOF_CAMERA, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer cameraBuffer.");
+
+	this->voxelRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_VOXEL_REF /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer voxelRefBuffer.");
+
+	this->spriteRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_SPRITE_REF /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer spriteRefBuffer.");
+
+	this->lightRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_LIGHT_REF /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
+
+	this->textureRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_TEXTURE_REF /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureRefBuffer.");
+
+	this->triangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_TRIANGLE /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleBuffer.");
+
+	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		sizeof(cl_float4) * 3 /* Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		sizeof(cl_float), nullptr, &status);
@@ -122,14 +159,36 @@ CLProgram::CLProgram(int width, int height)
 	status = this->kernel.setArg(0, this->cameraBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg cameraBuffer.");
 
-	status = this->kernel.setArg(1, this->gameTimeBuffer);
+	status = this->kernel.setArg(1, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg voxelRefBuffer.");
+
+	status = this->kernel.setArg(2, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg spriteRefBuffer.");
+
+	status = this->kernel.setArg(3, this->lightRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg lightRefBuffer.");
+
+	status = this->kernel.setArg(4, this->textureRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg textureRefBuffer.");
+
+	status = this->kernel.setArg(5, this->triangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg triangleBuffer.");
+
+	status = this->kernel.setArg(6, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg textureBuffer.");
+
+	status = this->kernel.setArg(7, this->gameTimeBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg gameTimeBuffer.");
 
-	status = this->kernel.setArg(2, this->outputBuffer);
+	status = this->kernel.setArg(8, this->outputBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg outputBuffer.");
 
-	assert(this->width == width);
-	assert(this->height == height);
+	// --- TESTING PURPOSES ---
+	// The following code is for some tests.
+
+	this->makeTestWorld();
+
+	// --- END TESTING ---
 }
 
 CLProgram::~CLProgram()
@@ -241,12 +300,120 @@ std::string CLProgram::getErrorString(cl_int error) const
 	}
 }
 
+void CLProgram::makeTestWorld()
+{
+	Debug::mention("CLProgram", "Making test world.");
+
+	// This code is not using an acceleration structure yet. It will be very slow if 
+	// too many triangles are used!
+
+	// Fill the triangle buffer with some test values. Remove these once actual data 
+	// are used. Do nothing with voxel, sprite, light, and texture references yet.
+
+	// Some test dimensions.
+	const int width = 4;
+	const int depth = 4;
+
+	// Overwrite the existing triangle buffer.
+	cl_int status = CL_SUCCESS;
+	cl::size_type bufferSize = SIZEOF_TRIANGLE * width * depth * 2;
+	this->triangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		bufferSize, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleBuffer.");
+
+	// Remind the kernel where to look for the new triangle buffer.
+	status = this->kernel.setArg(5, this->triangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg test triangleBuffer.");
+
+	std::vector<char> buffer(bufferSize);
+	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+
+	// Lambda for writing triangle data to the local buffer.
+	int trianglesWritten = 0;
+	auto writeTriangle = [bufPtr, &trianglesWritten](const Triangle &triangle)
+	{
+		// Offset in the local buffer.
+		cl_char *ptr = bufPtr + (trianglesWritten * SIZEOF_TRIANGLE);
+
+		cl_float *p1Ptr = reinterpret_cast<cl_float*>(ptr);
+		*(p1Ptr + 0) = static_cast<cl_float>(triangle.getP1().getX());
+		*(p1Ptr + 1) = static_cast<cl_float>(triangle.getP1().getY());
+		*(p1Ptr + 2) = static_cast<cl_float>(triangle.getP1().getZ());
+
+		cl_float *p2Ptr = reinterpret_cast<cl_float*>(ptr + sizeof(cl_float3));
+		*(p2Ptr + 0) = static_cast<cl_float>(triangle.getP2().getX());
+		*(p2Ptr + 1) = static_cast<cl_float>(triangle.getP2().getY());
+		*(p2Ptr + 2) = static_cast<cl_float>(triangle.getP2().getZ());
+
+		cl_float *p3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 2));
+		*(p3Ptr + 0) = static_cast<cl_float>(triangle.getP3().getX());
+		*(p3Ptr + 1) = static_cast<cl_float>(triangle.getP3().getY());
+		*(p3Ptr + 2) = static_cast<cl_float>(triangle.getP3().getZ());
+
+		cl_float *normalPtr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 3));
+		*(normalPtr + 0) = static_cast<cl_float>(triangle.getNormal().getX());
+		*(normalPtr + 1) = static_cast<cl_float>(triangle.getNormal().getY());
+		*(normalPtr + 2) = static_cast<cl_float>(triangle.getNormal().getZ());
+
+		cl_float *uv1Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4));
+		*(uv1Ptr + 0) = static_cast<cl_float>(triangle.getUV1().getX());
+		*(uv1Ptr + 1) = static_cast<cl_float>(triangle.getUV1().getY());
+
+		cl_float *uv2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) + 
+			sizeof(cl_float2));
+		*(uv2Ptr + 0) = static_cast<cl_float>(triangle.getUV2().getX());
+		*(uv2Ptr + 1) = static_cast<cl_float>(triangle.getUV2().getY());
+
+		cl_float *uv3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) + 
+			(sizeof(cl_float2) * 2));
+		*(uv3Ptr + 0) = static_cast<cl_float>(triangle.getUV3().getX());
+		*(uv3Ptr + 1) = static_cast<cl_float>(triangle.getUV3().getY());
+
+		trianglesWritten++;
+	};
+
+	// Write some ground triangles to the buffer.
+	for (int k = 0; k < depth; ++k)
+	{
+		for (int i = 0; i < width; ++i)
+		{
+			double x = (static_cast<double>(width) * 0.5) - static_cast<double>(i);
+			double y = -1.0;
+			double z = (static_cast<double>(depth) * 0.5) - static_cast<double>(k);
+
+			Triangle t1(
+				Float3d(x, y, z),
+				Float3d(x, y, z - 1.0),
+				Float3d(x - 1.0, y, z - 1.0),
+				Float2d(0.0, 0.0),
+				Float2d(0.0, 1.0),
+				Float2d(1.0, 1.0));
+
+			Triangle t2(
+				Float3d(x - 1.0, y, z - 1.0),
+				Float3d(x - 1.0, y, z),
+				Float3d(x, y, z),
+				Float2d(1.0, 1.0),
+				Float2d(1.0, 0.0),
+				Float2d(0.0, 0.0));
+
+			writeTriangle(t1);
+			writeTriangle(t2);
+		}
+	}
+
+	// Write the buffer to device memory.
+	status = this->commandQueue.enqueueWriteBuffer(this->triangleBuffer,
+		CL_TRUE, 0, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test");
+}
+
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
 	// Do not scale the direction beforehand.
 	assert(direction.isNormalized());
 
-	std::vector<char> buffer(CLProgram::SIZEOF_CAMERA);
+	std::vector<char> buffer(SIZEOF_CAMERA);
 
 	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
 
@@ -287,7 +454,7 @@ void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, doubl
 
 void CLProgram::updateGameTime(double gameTime)
 {
-	assert(gameTime > 0);
+	assert(gameTime >= 0.0);
 
 	std::vector<char> buffer(sizeof(cl_float));
 
@@ -317,7 +484,7 @@ void CLProgram::render(SDL_Surface *dst)
 	// Copy the output buffer into the destination pixel buffer.
 	// The CL_TRUE means this is a blocking command.
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
-		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height), 
+		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height),
 		dst->pixels, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 }

@@ -1,7 +1,6 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <memory>
 #include <string>
 
 // The renderer is for sending the SDL_Surface to the GPU as an SDL_Texture. It isn't
@@ -43,9 +42,9 @@ public:
 
 	SDL_Surface *getWindowSurface() const;
 
-	// This is for the "letterbox" part of the screen. It is scaled and maintains 
-	// the original 1.6:1 (320x200) aspect ratio for fullscreen interface items.
-	std::unique_ptr<SDL_Rect> getLetterboxDimensions() const;
+	// This is for the "letterbox" part of the screen, scaled to fit while using
+	// a constant aspect ratio.
+	SDL_Rect getLetterboxDimensions() const;
 
 	void resize(int width, int height);
 	void setWindowIcon(TextureName name, TextureManager &textureManager);

@@ -99,7 +99,7 @@ GameState *Panel::getGameState() const
 double Panel::getDrawScale() const
 {
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	return static_cast<double>(letterbox->w) / static_cast<double>(ORIGINAL_WIDTH);
+	return static_cast<double>(letterbox.w) / static_cast<double>(ORIGINAL_WIDTH);
 }
 
 Int2 Panel::getMousePosition() const
@@ -112,8 +112,8 @@ Int2 Panel::getMousePosition() const
 bool Panel::letterboxContains(const Int2 &point) const
 {
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
-	Rect rectangle(letterbox->x, letterbox->y,
-		letterbox->w, letterbox->h);
+	Rect rectangle(letterbox.x, letterbox.y,
+		letterbox.w, letterbox.h);
 	return rectangle.contains(point);
 }
 
@@ -122,8 +122,8 @@ Int2 Panel::nativePointToOriginal(const Int2 &point) const
 	const double drawScale = this->getDrawScale();
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
 	return Int2(
-		(point.getX() - letterbox->x) / drawScale,
-		(point.getY() - letterbox->y) / drawScale);
+		(point.getX() - letterbox.x) / drawScale,
+		(point.getY() - letterbox.y) / drawScale);
 }
 
 Int2 Panel::originalPointToNative(const Int2 &point) const
@@ -131,8 +131,8 @@ Int2 Panel::originalPointToNative(const Int2 &point) const
 	const double drawScale = this->getDrawScale();
 	auto letterbox = this->getGameState()->getLetterboxDimensions();
 	return Int2(
-		(point.getX() * drawScale) + letterbox->x,
-		(point.getY() * drawScale) + letterbox->y);
+		(point.getX() * drawScale) + letterbox.x,
+		(point.getY() * drawScale) + letterbox.y);
 }
 
 unsigned int Panel::getMagenta(SDL_PixelFormat *format)

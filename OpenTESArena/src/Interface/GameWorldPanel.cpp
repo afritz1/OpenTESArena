@@ -165,7 +165,9 @@ void GameWorldPanel::tick(double dt, bool &running)
 
 	// Animate the game world by delta time.
 	auto *gameData = this->getGameState()->getGameData();
-	gameData->incrementGameTime(dt);	
+	gameData->incrementGameTime(dt);
+
+	// Tick player...
 
 	// Update CLProgram members that are refreshed each frame.
 	const auto &player = gameData->getPlayer();

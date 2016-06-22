@@ -1,6 +1,5 @@
 #include <cassert>
 #include <cmath>
-#include <iostream>
 
 #include "SDL.h"
 
@@ -100,9 +99,10 @@ SDL_Surface *Renderer::getWindowSurface() const
 	return SDL_GetWindowSurface(this->window);
 }
 
-std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
+SDL_Rect Renderer::getLetterboxDimensions() const
 {
-	// Letterbox width and height always maintain the 1.6:1 aspect ratio.
+	// Letterbox width and height always maintain the original aspect ratio.
+	// Now using corrected 4:3 aspect ratio.
 	const double originalAspect = static_cast<double>(ORIGINAL_WIDTH) /
 		static_cast<double>(ORIGINAL_HEIGHT);
 
@@ -123,7 +123,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 		rect.y = 0;
 		rect.w = nativeSurface->w;
 		rect.h = nativeSurface->h;
-		return std::unique_ptr<SDL_Rect>(new SDL_Rect(rect));
+		return rect;
 	}
 	else if (nativeAspect > originalAspect)
 	{
@@ -135,7 +135,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 		rect.y = 0;
 		rect.w = subWidth;
 		rect.h = nativeSurface->h;
-		return std::unique_ptr<SDL_Rect>(new SDL_Rect(rect));
+		return rect;
 	}
 	else
 	{
@@ -147,7 +147,7 @@ std::unique_ptr<SDL_Rect> Renderer::getLetterboxDimensions() const
 		rect.y = (nativeSurface->h - subHeight) / 2;
 		rect.w = nativeSurface->w;
 		rect.h = subHeight;
-		return std::unique_ptr<SDL_Rect>(new SDL_Rect(rect));
+		return rect;
 	}
 }
 

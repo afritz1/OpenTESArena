@@ -135,8 +135,16 @@ void ProvinceMapPanel::handleEvents(bool &running)
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
+		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+			(e.button.button == SDL_BUTTON_RIGHT);
 
-		if (leftClick)
+		// Input will eventually depend on if the location pop-up is displayed, or
+		// if a location is selected.
+		if (rightClick)
+		{
+			this->backToWorldMapButton->click();
+		}
+		else if (leftClick)
 		{
 			if (this->searchButton->containsPoint(mouseOriginalPoint))
 			{
