@@ -10,8 +10,6 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
 # Configure for GNU Compiler
 IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    SET (CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -std=c++11)
-
     # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC
     IF (NOT WIN32)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
@@ -64,3 +62,9 @@ FILE(GLOB_RECURSE TES_SOURCES "OpenTESArena/src/*.cpp")
 
 ADD_EXECUTABLE (TESArena ${TES_INCLUDES} ${TES_SOURCES})
 TARGET_LINK_LIBRARIES(TESArena components ${EXTERNAL_LIBS})
+
+SET_TARGET_PROPERTIES(components TESArena PROPERTIES
+	CXX_STANDARD 11
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS ON
+	)
