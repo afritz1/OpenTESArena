@@ -36,6 +36,7 @@ ipch/
 *.idb
 *.pdb
 *.suo
+*.VC.db
 *.user
 
 # Visual C++ Build results
@@ -46,6 +47,7 @@ ipch/
 x64/
 x86/
 bld/
+build/
 [Bb]in/
 [Oo]bj/
 
