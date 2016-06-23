@@ -23,9 +23,9 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 {
 	this->backToGameButton = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH - 20, ORIGINAL_HEIGHT - 8);
-		int width = 28;
-		int height = 12;
+		auto center = Int2(ORIGINAL_WIDTH - 22, ORIGINAL_HEIGHT - 7);
+		int width = 36;
+		int height = 9;
 		auto function = [gameState]()
 		{
 			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
@@ -46,10 +46,6 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 	}();
 
 	this->provinceName = nullptr;
-
-	this->backToGameButton->setTransparentColor(Color::Black);
-	this->backToGameButton->fill(Color::Black);
-	this->backToGameButton->outline(Color::Red);
 }
 
 WorldMapPanel::~WorldMapPanel()
@@ -145,11 +141,8 @@ void WorldMapPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// Draw world map background.
 	// It should have "Exit" at the bottom right eventually.
 	const auto &mapBackground = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::WorldMap));
+		.getSurface(TextureFile::fromName(TextureName::CharacterRaceSelect));
 	this->drawScaledToNative(mapBackground, dst);
-
-	// Temporarily draw exit button placeholder.
-	this->drawScaledToNative(*this->backToGameButton.get(), dst);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
