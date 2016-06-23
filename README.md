@@ -3,7 +3,7 @@
 
 ## Current status
 
-June 17th, 2016:
+June 22nd, 2016:
 
 OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [freepats](http://freepats.zenvoid.org/) project provides some good patches.
 
@@ -20,6 +20,15 @@ The current subset of data files are from screen grabs in DOSBox and from extrac
 - Put the data files in the executable directory.
 - Make sure your options.txt points to a valid soundfont file and Arena data path.
 
+## Developer Libraries
+
+- ~~[FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))~~
+- [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
+- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
+- [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
+- [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/)
+- [WildMIDI 0.4](https://github.com/Mindwerks/wildmidi/releases)
+
 ## Introduction
 
 This is my first big project! I'm already learning a ton.
@@ -29,15 +38,6 @@ This project aims to be an open-source reimplementation of the original "The Eld
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
 It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
-
-## Developer Libraries
-
-- (Not yet ->) [FluidSynth](https://sourceforge.net/projects/fluidsynth/files/) (Windows pre-compiled version 1.1.3 [here](http://slade.mancubus.net/index.php?page=wiki&wikipage=Windows-Compilation))
-- [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
-- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
-- [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
-- [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/)
-- [WildMIDI 0.4](https://github.com/Mindwerks/wildmidi/releases)
 
 ## Scope
 
@@ -60,6 +60,7 @@ Later features:
 - Game world interface and buttons
 - Enemies
 - Inventory
+- Weapon and armor overlays
 - Levels and experience
 - Loading/saving
 - Map
@@ -73,7 +74,6 @@ Some of these features are being left until later either because the original da
 
 Original features:
 - Character faces
-- Weapon and armor overlays
 - City and dungeon data
 - Quests
 - Wilderness
