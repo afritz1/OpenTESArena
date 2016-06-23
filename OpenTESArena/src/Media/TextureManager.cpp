@@ -516,7 +516,8 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 	}
 
 	size_t dot = filename.rfind('.');
-	if (dot != std::string::npos && filename.compare(dot, filename.length() - dot, ".IMG") == 0)
+	if (dot != std::string::npos && (filename.compare(dot, filename.length() - dot, ".IMG") == 0 ||
+                                     filename.compare(dot, filename.length() - dot, ".MNU") == 0))
 	{
 		auto *optSurface = this->loadIMG(filename);
 

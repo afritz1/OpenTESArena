@@ -213,7 +213,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 	// Draw background map.
 	const auto &worldMap = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::WorldMap));
+		.getSurface(TextureFile::fromName(TextureName::CharacterRaceSelect));
 	this->drawLetterbox(worldMap, dst, letterbox);
 
 	// Draw visible parchments and text.
