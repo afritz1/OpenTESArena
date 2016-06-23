@@ -51,6 +51,10 @@ build/
 [Bb]in/
 [Oo]bj/
 
+# OpenTESArena data folders
+data/
+options/
+
 # Compressed files
 *.tar.gz
 *.zip

@@ -78,22 +78,22 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\FluidSynth;$(SolutionDir)include\WildMIDI;$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fluidsynth.lib;OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;vfs.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2\lib64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;components.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)lib64\*.dll" "$(TargetDir)" /E /Y</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -111,25 +111,25 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
+      <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)include\FluidSynth;$(SolutionDir)include\WildMIDI;$(SolutionDir)include\SDL2;$(SolutionDir)include\AL;$(SolutionDir)include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fluidsynth.lib;OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;vfs.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2\lib64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;components.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)lib64\*.dll" "$(TargetDir)" /E /Y</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
