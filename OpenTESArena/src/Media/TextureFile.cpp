@@ -33,7 +33,8 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::FontTeeny, "fonts/teeny_font" },
 
 	// Interface.
-	{ TextureName::CharacterCreation, "interface/character_creation" },
+	{ TextureName::CharacterCreation, "STARTGAM.MNU" },
+    { TextureName::CharacterRaceSelect, "TAMRIEL.MNU" },
 	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
 	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 	{ TextureName::CompassFrame, "COMPASS.IMG" },

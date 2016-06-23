@@ -35,6 +35,7 @@ enum class TextureName
 
 	// Interface.
 	CharacterCreation, // Starry night with house.
+    CharacterRaceSelect, // World map without location dots.
 	CharacterEquipment, // Character sheet equipment.
 	CharacterStats, // Character sheet attributes, stats, etc..
 	CompassFrame, // Compass border with "gargoyle-like" object.
