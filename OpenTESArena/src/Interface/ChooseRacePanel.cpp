@@ -216,6 +216,23 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		.getSurface(TextureFile::fromName(TextureName::CharacterRaceSelect));
 	this->drawLetterbox(worldMap, dst, letterbox);
 
+	// Cover up the bottom-right "Exit" text.
+	Surface cornerCoverUp(40, 12);
+	const auto &worldMap2 = this->getGameState()->getTextureManager()
+		.getSurface(TextureFile::fromName(TextureName::WorldMap));
+	Rect mapClipRect(
+		worldMap2.getWidth() - cornerCoverUp.getWidth(),
+		worldMap2.getHeight() - cornerCoverUp.getHeight(),
+		cornerCoverUp.getWidth(),
+		cornerCoverUp.getHeight());
+	worldMap2.blit(cornerCoverUp, Int2(), mapClipRect);
+	this->drawScaledToNative(cornerCoverUp,
+		ORIGINAL_WIDTH - cornerCoverUp.getWidth(),
+		ORIGINAL_HEIGHT - cornerCoverUp.getHeight(),
+		cornerCoverUp.getWidth(),
+		cornerCoverUp.getHeight(),
+		dst);
+
 	// Draw visible parchments and text.
 	this->parchment->setTransparentColor(Color::Magenta);
 	if (this->initialTextBox->isVisible())
