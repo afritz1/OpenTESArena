@@ -212,12 +212,15 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->clearScreen(renderer);
 
 	// Draw background map.
-	const auto *worldMap = this->getGameState()->getTextureManager()
+	const auto *raceSelectMap = this->getGameState()->getTextureManager()
 		.getTexture(TextureFile::fromName(TextureName::CharacterRaceSelect));
-	this->drawLetterbox(worldMap, renderer, letterbox);
+	this->drawLetterbox(raceSelectMap, renderer, letterbox);
+
+	// Don't worry about the yellow dots for now. Whatever the original game is doing
+	// to cover them up should be figured out sometime.
 
 	// Cover up the bottom-right "Exit" text.
-	Surface cornerCoverUp(40, 12);
+	/*Surface cornerCoverUp(40, 12);
 	const auto &worldMap2 = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::WorldMap));
 	Rect mapClipRect(
@@ -231,7 +234,7 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		ORIGINAL_HEIGHT - cornerCoverUp.getHeight(),
 		cornerCoverUp.getWidth(),
 		cornerCoverUp.getHeight(),
-		renderer);
+		renderer);*/
 
 	// Draw visible parchments and text.
 	this->parchment->setTransparentColor(Color::Magenta);

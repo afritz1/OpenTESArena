@@ -19,10 +19,11 @@ Surface::Surface(int x, int y, int width, int height)
 	assert(height > 0);
 
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
+	Debug::check(this->surface != nullptr, "Surface",
+		"Insufficient memory in Surface(int, int, int, int).");
+
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
-
-	assert(this->surface != nullptr);
 }
 
 Surface::Surface(int width, int height)
@@ -30,29 +31,29 @@ Surface::Surface(int width, int height)
 
 Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
-	assert(surface != nullptr);
-
 	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
 		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
 		surface->format->Bmask, surface->format->Amask);
+	Debug::check(this->surface != nullptr, "Surface",
+		"Insufficient memory in Surface(int, int, const SDL_Surface*).");
+
 	std::memcpy(this->surface->pixels, surface->pixels,
 		surface->w * surface->h * (Surface::DEFAULT_BPP / 8));
 
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
-
-	assert(this->surface != nullptr);
 }
 
 Surface::Surface(const SDL_Surface *surface, double scale)
 {
-	assert(surface != nullptr);
-
 	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
 	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
 		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
 		surface->format->Amask);
+	Debug::check(this->surface != nullptr, "Surface",
+		"Insufficient memory in Surface(const SDL_Surface*, double).");
+
 	SDL_Rect rect;
 	rect.w = width;
 	rect.h = height;
@@ -60,8 +61,6 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 
 	this->point = std::unique_ptr<Int2>(new Int2());
 	this->visible = true;
-
-	assert(this->surface != nullptr);
 }
 
 Surface::Surface(const SDL_Surface *surface)
@@ -72,8 +71,6 @@ Surface::Surface(const Surface &surface)
 
 Surface::~Surface()
 {
-	assert(this->surface != nullptr);
-
 	SDL_FreeSurface(this->surface);
 }
 
@@ -112,8 +109,6 @@ int Surface::getHeight() const
 
 SDL_Surface *Surface::getSurface() const
 {
-	assert(this->surface != nullptr);
-
 	return this->surface;
 }
 
@@ -151,8 +146,6 @@ void Surface::setVisibility(bool visible)
 
 void Surface::optimize(const SDL_PixelFormat *format)
 {
-	assert(format != nullptr);
-
 	auto *optSurface = SDL_ConvertSurface(this->surface, format, this->surface->flags);
 	Debug::check(optSurface != nullptr, "Surface", "Could not optimize surface.");
 

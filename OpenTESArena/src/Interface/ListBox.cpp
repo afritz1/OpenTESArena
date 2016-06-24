@@ -26,7 +26,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	this->scrollIndex = 0;
 
 	// Temporary text boxes for getting list box dimensions.
-	auto textBoxes = std::vector<std::unique_ptr<TextBox>>();
+	std::vector<std::unique_ptr<TextBox>> textBoxes;
 	for (const auto &element : elements)
 	{
 		// Remove any new lines.
@@ -77,21 +77,18 @@ int ListBox::getClickedIndex(const Int2 &point) const
 	// The caller should not call this method if the point is outside the list box.
 	// Therefore, "Surface::containsPoint()" should be called before to make sure.
 
-	// "Rect::contains()" is edge-inclusive, so the <= signs are necessary here.
 	assert(point.getX() >= this->getX());
-	assert(point.getX() <= (this->getX() + this->getWidth()));
+	assert(point.getX() < (this->getX() + this->getWidth()));
 	assert(point.getY() >= this->getY());
-	assert(point.getY() <= (this->getY() + this->getHeight()));
+	assert(point.getY() < (this->getY() + this->getHeight()));
 
 	const int lineHeight = Font(this->fontName).getCellDimensions().getY();
 
 	// Only the Y component really matters here.
 	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
 
-	// Due to Rect::contains() being edge-inclusive, this method might return
-	// an out-of-bounds index when scrolled all the way to the bottom. Therefore,
-	// the caller should always check the returned index before using it.
-
+	// The caller should always check the returned index before using it (just in
+	// case it's out of bounds).
 	return index;
 }
 

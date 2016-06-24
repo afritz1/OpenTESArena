@@ -138,10 +138,9 @@ void WorldMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw world map background.
-	// It should have "Exit" at the bottom right eventually.
+	// Draw world map background. This one has "Exit" at the bottom right.
 	const auto *mapBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterRaceSelect));
+		.getTexture(TextureFile::fromName(TextureName::WorldMap));
 	this->drawScaledToNative(mapBackground, renderer);
 
 	// Draw cursor.

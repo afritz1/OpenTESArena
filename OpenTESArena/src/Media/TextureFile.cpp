@@ -34,7 +34,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 
 	// Interface.
 	{ TextureName::CharacterCreation, "STARTGAM.MNU" },
-    { TextureName::CharacterRaceSelect, "TAMRIEL.MNU" },
+    { TextureName::CharacterRaceSelect, "TAMRIEL.IMG" },
 	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
 	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 	{ TextureName::CompassFrame, "COMPASS.IMG" },
@@ -72,7 +72,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::SkyrimMap, "SKYRIM.IMG" },
 	{ TextureName::SummersetIsleMap, "SUMERSET.IMG" },
 	{ TextureName::ValenwoodMap, "VALNWOOD.IMG" },
-	{ TextureName::WorldMap, "TAMRIEL.IMG" },
+	{ TextureName::WorldMap, "TAMRIEL.MNU" },
 };
 
 // The filename prefix of each TextureSequenceName (with sub-folders). When looking
