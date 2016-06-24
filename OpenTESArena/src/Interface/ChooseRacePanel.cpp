@@ -180,7 +180,7 @@ void ChooseRacePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst)
+void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Renderer *renderer)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
@@ -202,19 +202,19 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Surface
 	const int x = ((tooltipX + width) < ORIGINAL_WIDTH) ? tooltipX : (tooltipX - width);
 	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? tooltipY : (tooltipY - height);
 
-	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, dst);
-	this->drawScaledToNative(*tooltip.get(), x, y, width, height, dst);
+	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, renderer);
+	this->drawScaledToNative(*tooltip.get(), x, y, width, height, renderer);
 }
 
-void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw background map.
-	const auto &worldMap = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterRaceSelect));
-	this->drawLetterbox(worldMap, dst, letterbox);
+	const auto *worldMap = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterRaceSelect));
+	this->drawLetterbox(worldMap, renderer, letterbox);
 
 	// Cover up the bottom-right "Exit" text.
 	Surface cornerCoverUp(40, 12);
@@ -231,7 +231,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		ORIGINAL_HEIGHT - cornerCoverUp.getHeight(),
 		cornerCoverUp.getWidth(),
 		cornerCoverUp.getHeight(),
-		dst);
+		renderer);
 
 	// Draw visible parchments and text.
 	this->parchment->setTransparentColor(Color::Magenta);
@@ -244,14 +244,14 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 			(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 			parchmentWidth,
 			parchmentHeight,
-			dst);
-		this->drawScaledToNative(*this->initialTextBox.get(), dst);
+			renderer);
+		this->drawScaledToNative(*this->initialTextBox.get(), renderer);
 	}
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 
 	// Draw hovered province tooltip.
 	if (!this->initialTextBox->isVisible())
@@ -267,7 +267,7 @@ void ChooseRacePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 			if (clickArea.contains(mouseOriginalPosition) &&
 				(provinceName != ProvinceName::ImperialProvince))
 			{
-				this->drawProvinceTooltip(provinceName, dst);
+				this->drawProvinceTooltip(provinceName, renderer);
 			}
 		}
 	}

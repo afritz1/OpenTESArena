@@ -17,13 +17,14 @@
 // Interface surfaces should be scaled up by the UI scale and use panel methods for 
 // getting screen dimensions when checking for mouse clicks, etc..
 
+class Int2;
 class TextureManager;
 
 enum class TextureName;
 
+struct SDL_PixelFormat;
 struct SDL_Rect;
 struct SDL_Renderer;
-struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
@@ -35,12 +36,25 @@ private:
 
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	SDL_Texture *texture;
+
+	// This is private now, for use with window dimensions, etc.. Not for rendering.
+	SDL_Surface *getWindowSurface() const;
+
+	// Helper method for making a renderer context.
+	SDL_Renderer *createRenderer();
 public:
 	Renderer(int width, int height, bool fullscreen, const std::string &title);
 	~Renderer();
+	
+	// Get the dimensions of the render texture. This should always match the window
+	// dimensions.
+	Int2 getRenderDimensions() const;
 
-	SDL_Surface *getWindowSurface() const;
+	// For converting surfaces to the correct ARGB format.
+	SDL_PixelFormat *getPixelFormat() const;
+
+	// For hardware-accelerated rendering using SDL_Textures.
+	SDL_Renderer *getRenderer() const;
 
 	// This is for the "letterbox" part of the screen, scaled to fit while using
 	// a constant aspect ratio.

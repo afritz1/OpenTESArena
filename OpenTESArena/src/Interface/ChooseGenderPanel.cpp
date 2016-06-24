@@ -182,19 +182,19 @@ void ChooseGenderPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseGenderPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw background.
-	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
-	this->drawLetterbox(background, dst, letterbox);
+	const auto *background = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterCreation));
+	this->drawLetterbox(background, renderer, letterbox);
 
 	// Draw parchments: title, male, and female.
 	this->parchment->setTransparentColor(Color::Magenta);
-	this->drawScaledToNative(*this->parchment.get(), dst);
+	this->drawScaledToNative(*this->parchment.get(), renderer);
 
 	const double parchmentScale = 0.70;
 	int parchmentXOffset = 27;
@@ -205,7 +205,7 @@ void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		this->parchment->getY() + parchmentYOffset,
 		static_cast<int>(this->parchment->getWidth() * parchmentScale),
 		this->parchment->getHeight(),
-		dst);
+		renderer);
 
 	parchmentYOffset = 10 + (parchmentYStep * 2);
 	this->drawScaledToNative(*this->parchment.get(),
@@ -213,15 +213,15 @@ void ChooseGenderPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		this->parchment->getY() + parchmentYOffset,
 		static_cast<int>(this->parchment->getWidth() * parchmentScale),
 		this->parchment->getHeight(),
-		dst);
+		renderer);
 
 	// Draw text: title, male, and female.
-	this->drawScaledToNative(*this->genderTextBox.get(), dst);
-	this->drawScaledToNative(*this->maleTextBox.get(), dst);
-	this->drawScaledToNative(*this->femaleTextBox.get(), dst);
+	this->drawScaledToNative(*this->genderTextBox.get(), renderer);
+	this->drawScaledToNative(*this->maleTextBox.get(), renderer);
+	this->drawScaledToNative(*this->femaleTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

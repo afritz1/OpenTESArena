@@ -101,22 +101,24 @@ void OptionsPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void OptionsPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void OptionsPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw temporary background.
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 48, 48, 36));
+	SDL_SetRenderDrawColor(renderer, 48, 48, 36, 255);
+	SDL_RenderDrawRect(renderer, letterbox);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 	// Draw buttons, eventually...
 
 
 	// Draw text: title.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
+	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

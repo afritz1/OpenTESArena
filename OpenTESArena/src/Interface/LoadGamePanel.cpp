@@ -107,17 +107,17 @@ void LoadGamePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void LoadGamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void LoadGamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw temp text. The load game design is unclear at this point, but it should
 	// have up/down arrows and buttons.
-	this->drawScaledToNative(*this->underConstructionTextBox.get(), dst);
+	this->drawScaledToNative(*this->underConstructionTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

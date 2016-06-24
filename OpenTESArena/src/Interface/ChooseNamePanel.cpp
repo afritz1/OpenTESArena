@@ -243,15 +243,15 @@ void ChooseNamePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseNamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseNamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw background.
-	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
-	this->drawLetterbox(background, dst, letterbox);
+	const auto *background = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterCreation));
+	this->drawLetterbox(background, renderer, letterbox);
 
 	// Draw parchment: title.
 	this->parchment->setTransparentColor(Color::Magenta);
@@ -265,14 +265,14 @@ void ChooseNamePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 		parchmentWidth,
 		parchmentHeight,
-		dst);
+		renderer);
 
 	// Draw text: title, name.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
-	this->drawScaledToNative(*this->nameTextBox.get(), dst);
+	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
+	this->drawScaledToNative(*this->nameTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

@@ -159,17 +159,17 @@ void CharacterPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void CharacterPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw character stats background.
-	const auto &statsBackground = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterStats));
-	this->drawScaledToNative(statsBackground, dst);
+	const auto *statsBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
+	this->drawScaledToNative(statsBackground, renderer);
 
 	// Get a reference to the active player data.
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -179,23 +179,26 @@ void CharacterPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		player.getRaceName(), player.getCharacterClass().canCastMagic());
 
 	// Draw the player's portrait.
-	const auto &portrait = this->getGameState()->getTextureManager()
-		.getSurface(portraitStrings.at(player.getPortraitID()));
+	const auto *portrait = this->getGameState()->getTextureManager()
+		.getTexture(portraitStrings.at(player.getPortraitID()));
+	int portraitWidth, portraitHeight;
+	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr, 
+		&portraitWidth, &portraitHeight);
 
 	this->drawScaledToNative(portrait,
-		ORIGINAL_WIDTH - portrait.getWidth(),
+		ORIGINAL_WIDTH - portraitWidth,
 		0,
-		portrait.getWidth(),
-		portrait.getHeight(),
-		dst);
+		portraitWidth,
+		portraitHeight,
+		renderer);
 
 	// Draw text boxes: player name, race, class.
-	this->drawScaledToNative(*this->playerClassTextBox.get(), dst);
-	this->drawScaledToNative(*this->playerNameTextBox.get(), dst);
-	this->drawScaledToNative(*this->playerRaceTextBox.get(), dst);
+	this->drawScaledToNative(*this->playerClassTextBox.get(), renderer);
+	this->drawScaledToNative(*this->playerNameTextBox.get(), renderer);
+	this->drawScaledToNative(*this->playerRaceTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

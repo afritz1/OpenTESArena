@@ -131,21 +131,21 @@ void WorldMapPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void WorldMapPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void WorldMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw world map background.
 	// It should have "Exit" at the bottom right eventually.
-	const auto &mapBackground = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterRaceSelect));
-	this->drawScaledToNative(mapBackground, dst);
+	const auto *mapBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterRaceSelect));
+	this->drawScaledToNative(mapBackground, renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

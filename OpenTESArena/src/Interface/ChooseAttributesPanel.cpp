@@ -23,6 +23,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
+#include "../Rendering/Renderer.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	CharacterGenderName gender, const CharacterClass &charClass,
@@ -72,7 +73,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				*entityManager.get()));
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
-				gameState->getScreenDimensions().getY()));
+				gameState->getScreenDimensions().getY(),
+				gameState->getRenderer().getRenderer()));
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			auto gameData = std::unique_ptr<GameData>(new GameData(
 				std::move(player), std::move(entityManager), std::move(clProgram),
@@ -171,35 +173,39 @@ void ChooseAttributesPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseAttributesPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
-	// Draw temporary background. I don't have the marble background programmed in
-	// yet, but the portraits are now!
-	SDL_FillRect(dst, letterbox, SDL_MapRGB(dst->format, 24, 36, 36));
+	// Draw temporary background.
+	SDL_SetRenderDrawColor(renderer, 24, 36, 36, 255);
+	SDL_RenderFillRect(renderer, letterbox);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 	// Get the filenames for the portraits.
 	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(),
 		*this->raceName.get(), this->charClass->canCastMagic());
 
 	// Get the current portrait.
-	const auto &portrait = this->getGameState()->getTextureManager()
-		.getSurface(portraitStrings.at(this->portraitIndex));
-	this->drawScaledToNative(
-		portrait,
-		ORIGINAL_WIDTH - portrait.getWidth(),
+	const auto *portrait = this->getGameState()->getTextureManager()
+		.getTexture(portraitStrings.at(this->portraitIndex));
+	int portraitWidth, portraitHeight;
+	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr, 
+		&portraitWidth, &portraitHeight);
+
+	this->drawScaledToNative(portrait,
+		ORIGINAL_WIDTH - portraitWidth,
 		0,
-		portrait.getWidth(),
-		portrait.getHeight(),
-		dst);
+		portraitWidth,
+		portraitHeight,
+		renderer);
 
 	// Draw text: title.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
+	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

@@ -14,7 +14,7 @@ private:
 	std::unique_ptr<Button> searchButton, travelButton, backToWorldMapButton;
 	std::unique_ptr<Province> province;
 
-	void drawButtonTooltip(ProvinceButtonName buttonName, SDL_Surface *dst);
+	void drawButtonTooltip(ProvinceButtonName buttonName, SDL_Renderer *renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
@@ -24,7 +24,7 @@ public:
 	virtual ~ProvinceMapPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Surface *dst, const SDL_Rect *letterbox) override;
+	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
 };
 
 #endif

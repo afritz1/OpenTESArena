@@ -18,7 +18,8 @@
 // It is important to remember that cl_float3 and cl_float4 are structurally
 // equivalent.
 
-struct SDL_Surface;
+struct SDL_Renderer;
+struct SDL_Texture;
 
 class CLProgram
 {
@@ -40,6 +41,8 @@ private:
 	cl::Kernel kernel;
 	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer, 
 		textureRefBuffer, triangleBuffer, textureBuffer, gameTimeBuffer, outputBuffer;
+	std::vector<char> outputData; // For receiving pixels from the device's output buffer.
+	SDL_Texture *texture; // Streaming render texture for outputData to update.
 	int width, height;
 
 	std::string getBuildReport() const;
@@ -49,8 +52,10 @@ private:
 	void makeTestWorld();
 public:
 	// Constructor for the OpenCL render program.
-	CLProgram(int width, int height);
+	CLProgram(int width, int height, SDL_Renderer *renderer);
 	~CLProgram();
+
+	CLProgram &operator=(CLProgram &&clProgram);
 
 	// These are public in case the options menu is going to need to list them.
 	// There should be a constructor that also takes a platform and device, then.
@@ -64,7 +69,7 @@ public:
 	// need a "start time". Also, this prevents any additive "double -> float" error.
 	void updateGameTime(double gameTime);	
 
-	void render(SDL_Surface *dst);
+	void render(SDL_Renderer *renderer);
 };
 
 #endif

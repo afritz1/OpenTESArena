@@ -11,12 +11,16 @@
 // the last screen. I think I'll just replace them with scrolled text boxes. The buttons
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
+class Color;
 class GameState;
 class Int2;
 class Surface;
 
+struct SDL_PixelFormat;
 struct SDL_Rect;
+struct SDL_Renderer;
 struct SDL_Surface;
+struct SDL_Texture;
 
 class Panel
 {
@@ -27,13 +31,24 @@ protected:
 	virtual void handleMouse(double dt) = 0;
 	virtual void handleKeyboard(double dt) = 0;
 
-	unsigned int getMagenta(SDL_PixelFormat *format);
+	unsigned int getFormattedRGB(const Color &color, SDL_PixelFormat *format) const;
 
-	void clearScreen(SDL_Surface *dst);
-	void drawCursor(const Surface &cursor, SDL_Surface *dst);
-	void drawScaledToNative(const Surface &surface, int x, int y, int w, int h, SDL_Surface *dst);
-	void drawScaledToNative(const Surface &surface, SDL_Surface *dst);
-	void drawLetterbox(const Surface &src, SDL_Surface *dst, const SDL_Rect *letterbox);
+	void clearScreen(SDL_Renderer *renderer);
+	void drawCursor(const Surface &cursor, SDL_Renderer *renderer);
+	void drawScaledToNative(const SDL_Texture *texture, int x, int y, int w, int h, 
+		SDL_Renderer *renderer);
+	void drawScaledToNative(const SDL_Texture *texture, int x, int y, SDL_Renderer *renderer);
+	void drawScaledToNative(const SDL_Texture *texture, SDL_Renderer *renderer);
+
+	// Compatibility with software rendering. These methods are sloooow. Remove these
+	// once all panels are using SDL_Textures for rendering.
+	void drawScaledToNative(const Surface &surface, int x, int y, int w, int h, 
+		SDL_Renderer *renderer);
+	void drawScaledToNative(const Surface &surface, int x, int y, SDL_Renderer *renderer);
+	void drawScaledToNative(const Surface &surface, SDL_Renderer *renderer);
+
+	void drawLetterbox(const SDL_Texture *texture, SDL_Renderer *renderer,
+		const SDL_Rect *letterbox);
 public:
 	Panel(GameState *gameState);
 	virtual ~Panel();
@@ -54,7 +69,7 @@ public:
 	Int2 originalPointToNative(const Int2 &point) const;
 
 	virtual void tick(double dt, bool &running) = 0;
-	virtual void render(SDL_Surface *dst, const SDL_Rect *letterbox) = 0;
+	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) = 0;
 };
 
 #endif

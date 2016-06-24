@@ -385,7 +385,8 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
-void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SDL_Surface *dst)
+void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, 
+	SDL_Renderer *renderer)
 {
 	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
 
@@ -418,19 +419,19 @@ void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, SD
 	const int y = ((tooltip->getY() + height) < ORIGINAL_HEIGHT) ? tooltip->getY() :
 		(tooltip->getY() - height);//(ORIGINAL_HEIGHT - height);
 
-	this->drawScaledToNative(tooltipBackground, x + 4, y - 1, width, height + 2, dst);
-	this->drawScaledToNative(*tooltip.get(), x + 4, y, width, height, dst);
+	this->drawScaledToNative(tooltipBackground, x + 4, y - 1, width, height + 2, renderer);
+	this->drawScaledToNative(*tooltip.get(), x + 4, y, width, height, renderer);
 }
 
-void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw background.
-	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
-	this->drawLetterbox(background, dst, letterbox);
+	const auto *background = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterCreation));
+	this->drawLetterbox(background, renderer, letterbox);
 
 	// Draw parchments: title, list.
 	this->parchment->setTransparentColor(Color::Magenta);
@@ -448,7 +449,7 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		35,
 		parchmentWidth,
 		parchmentHeight,
-		dst);
+		renderer);
 
 	const auto &listPopUp = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::PopUp11));
@@ -466,16 +467,16 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		(ORIGINAL_HEIGHT / 2) - 12,
 		listWidth,
 		listHeight,
-		dst);
+		renderer);
 
 	// Draw text: title, list.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
-	this->drawScaledToNative(*this->classesListBox.get(), dst);
+	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
+	this->drawScaledToNative(*this->classesListBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 
 	// Draw tooltip if over a valid element in the list box.
 	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
@@ -486,7 +487,7 @@ void ChooseClassPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		{
 			auto characterClass = std::unique_ptr<CharacterClass>(new CharacterClass(
 				*this->charClasses.at(index).get()));
-			this->drawClassTooltip(*characterClass.get(), dst);
+			this->drawClassTooltip(*characterClass.get(), renderer);
 		}
 	}
 }

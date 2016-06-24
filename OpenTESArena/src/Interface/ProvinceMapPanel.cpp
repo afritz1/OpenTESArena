@@ -183,7 +183,8 @@ void ProvinceMapPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, SDL_Surface *dst)
+void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, 
+	SDL_Renderer *renderer)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
@@ -204,30 +205,30 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, SDL_Surf
 	const int x = ((tooltipX + width) < ORIGINAL_WIDTH) ? tooltipX : (tooltipX - width);
 	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? tooltipY : (tooltipY - height);
 
-	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, dst);
-	this->drawScaledToNative(*tooltip.get(), x, y, width, height, dst);
+	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, renderer);
+	this->drawScaledToNative(*tooltip.get(), x, y, width, height, renderer);
 }
 
-void ProvinceMapPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ProvinceMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Get the texture name for this province.
 	auto provinceTextureName = ProvinceMapTextureNames.at(
 		this->province->getProvinceName());
 
 	// Draw province map background.
-	const auto &mapBackground = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(provinceTextureName));
-	this->drawScaledToNative(mapBackground, dst);
+	const auto *mapBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(provinceTextureName));
+	this->drawScaledToNative(mapBackground, renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 
 	// Draw tooltip if the mouse is over a button.
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
@@ -237,7 +238,7 @@ void ProvinceMapPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 
 		if (clickArea.contains(mouseOriginalPosition))
 		{
-			this->drawButtonTooltip(pair.first, dst);
+			this->drawButtonTooltip(pair.first, renderer);
 		}
 	}
 }

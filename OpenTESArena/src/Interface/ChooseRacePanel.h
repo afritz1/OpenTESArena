@@ -29,7 +29,7 @@ private:
 	std::unique_ptr<CharacterRaceName> raceName; // Null until a province is clicked.
 	std::string name;
 
-	void drawProvinceTooltip(ProvinceName provinceName, SDL_Surface *dst);
+	void drawProvinceTooltip(ProvinceName provinceName, SDL_Renderer *renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
@@ -40,7 +40,7 @@ public:
 	virtual ~ChooseRacePanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Surface *dst, const SDL_Rect *letterbox) override;
+	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
 };
 
 #endif

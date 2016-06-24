@@ -135,20 +135,27 @@ Int2 Panel::originalPointToNative(const Int2 &point) const
 		(point.getY() * drawScale) + letterbox.y);
 }
 
-unsigned int Panel::getMagenta(SDL_PixelFormat *format)
+unsigned int Panel::getFormattedRGB(const Color &color,
+	SDL_PixelFormat *format) const
 {
-	return SDL_MapRGB(format, 255, 0, 255);
+	return SDL_MapRGB(format, color.getR(), color.getG(), color.getB());
 }
 
-void Panel::clearScreen(SDL_Surface *dst)
+void Panel::clearScreen(SDL_Renderer *renderer)
 {
-	SDL_FillRect(dst, nullptr, SDL_MapRGB(dst->format, 0, 0, 0));
+	SDL_RenderClear(renderer);
 }
 
-void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
+void Panel::drawCursor(const Surface &cursor, SDL_Renderer *renderer)
 {
 	auto *cursorSurface = cursor.getSurface();
+
+	// This color key should still carry over to the SDL_Texture. Otherwise,
+	// implement transparency and blending.
 	SDL_SetColorKey(cursorSurface, SDL_TRUE, Color::Black.toRGB());
+
+	SDL_Texture *cursorTexture = SDL_CreateTextureFromSurface(
+		renderer, cursorSurface);
 
 	const double cursorScale = 2.0;
 	auto mousePosition = this->getMousePosition();
@@ -157,11 +164,13 @@ void Panel::drawCursor(const Surface &cursor, SDL_Surface *dst)
 	cursorRect.y = mousePosition.getY();
 	cursorRect.w = static_cast<int>(cursorSurface->w * cursorScale);
 	cursorRect.h = static_cast<int>(cursorSurface->h * cursorScale);
-	SDL_BlitScaled(cursorSurface, nullptr, dst, &cursorRect);
+
+	SDL_RenderCopy(renderer, cursorTexture, nullptr, &cursorRect);
+	SDL_DestroyTexture(cursorTexture);
 }
 
-void Panel::drawScaledToNative(const Surface &surface, int x, int y, int w, int h,
-	SDL_Surface *dst)
+void Panel::drawScaledToNative(const SDL_Texture *texture, int x, int y,
+	int w, int h, SDL_Renderer *renderer)
 {
 	const double drawScale = this->getDrawScale();
 	auto nativePoint = this->originalPointToNative(Int2(x, y));
@@ -172,18 +181,50 @@ void Panel::drawScaledToNative(const Surface &surface, int x, int y, int w, int 
 	rect.w = static_cast<int>(w * drawScale);
 	rect.h = static_cast<int>(h * drawScale);
 
-	auto *baseSurface = surface.getSurface();
-	SDL_BlitScaled(baseSurface, nullptr, dst, &rect);
+	SDL_RenderCopy(renderer, const_cast<SDL_Texture*>(texture), nullptr, &rect);
 }
 
-void Panel::drawScaledToNative(const Surface &surface, SDL_Surface *dst)
+void Panel::drawScaledToNative(const SDL_Texture *texture, int x, int y,
+	SDL_Renderer *renderer)
 {
-	this->drawScaledToNative(surface, surface.getX(), surface.getY(),
-		surface.getWidth(), surface.getHeight(), dst);
+	int w, h;
+	SDL_QueryTexture(const_cast<SDL_Texture*>(texture), nullptr, nullptr, &w, &h);
+
+	this->drawScaledToNative(texture, x, y, w, h, renderer);
 }
 
-void Panel::drawLetterbox(const Surface &src, SDL_Surface *dst, const SDL_Rect *letterbox)
+void Panel::drawScaledToNative(const SDL_Texture *texture, SDL_Renderer *renderer)
 {
-	auto *baseSurface = src.getSurface();
-	SDL_BlitScaled(baseSurface, nullptr, dst, const_cast<SDL_Rect*>(letterbox));
+	// Draw at the upper left corner of the letterbox.
+	int x = 0;
+	int y = 0;
+	this->drawScaledToNative(texture, x, y, renderer);
+}
+
+void Panel::drawScaledToNative(const Surface &surface, int x, int y,
+	int w, int h, SDL_Renderer *renderer)
+{
+	// This is very slow as it is creating a new texture for the surface every call.
+	// Only use this for compatibility until all panels use SDL_Textures for rendering.
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface.getSurface());
+	this->drawScaledToNative(texture, x, y, w, h, renderer);
+	SDL_DestroyTexture(texture);
+}
+
+void Panel::drawScaledToNative(const Surface &surface, int x, int y,
+	SDL_Renderer *renderer)
+{
+	this->drawScaledToNative(surface, x, y, surface.getWidth(),
+		surface.getHeight(), renderer);
+}
+
+void Panel::drawScaledToNative(const Surface &surface, SDL_Renderer *renderer)
+{
+	this->drawScaledToNative(surface, surface.getX(), surface.getY(), renderer);
+}
+
+void Panel::drawLetterbox(const SDL_Texture *texture, SDL_Renderer *renderer,
+	const SDL_Rect *letterbox)
+{
+	SDL_RenderCopy(renderer, const_cast<SDL_Texture*>(texture), nullptr, letterbox);
 }

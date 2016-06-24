@@ -172,28 +172,32 @@ void PauseMenuPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void PauseMenuPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void PauseMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw pause background.
-	const auto &pauseBackground = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::PauseBackground));
-	this->drawScaledToNative(pauseBackground, dst);
+	const auto *pauseBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::PauseBackground));
+	this->drawScaledToNative(pauseBackground, renderer);
 
 	// Draw game world interface below the pause menu.
-	const auto &gameInterface = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::GameWorldInterface));
+	const auto *gameInterface = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::GameWorldInterface));
+	int gameInterfaceWidth, gameInterfaceHeight;
+	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr,
+		&gameInterfaceWidth, &gameInterfaceHeight);
+
 	this->drawScaledToNative(gameInterface,
-		(ORIGINAL_WIDTH / 2) - (gameInterface.getWidth() / 2),
-		ORIGINAL_HEIGHT - gameInterface.getHeight(),
-		gameInterface.getWidth(),
-		gameInterface.getHeight(),
-		dst);
+		(ORIGINAL_WIDTH / 2) - (gameInterfaceWidth / 2),
+		ORIGINAL_HEIGHT - gameInterfaceHeight,
+		gameInterfaceWidth,
+		gameInterfaceHeight,
+		renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

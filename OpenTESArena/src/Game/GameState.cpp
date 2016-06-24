@@ -48,7 +48,7 @@ GameState::GameState()
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
-		this->renderer->getWindowSurface()->format));
+		this->renderer->getRenderer(), this->renderer->getPixelFormat()));
 
 	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
 	// cinematics otherwise load their frames one at a time while playing.
@@ -103,6 +103,11 @@ Options &GameState::getOptions() const
 	return *this->options.get();
 }
 
+Renderer &GameState::getRenderer() const
+{
+	return *this->renderer.get();
+}
+
 TextureManager &GameState::getTextureManager() const
 {
 	return *this->textureManager.get();
@@ -110,8 +115,7 @@ TextureManager &GameState::getTextureManager() const
 
 Int2 GameState::getScreenDimensions() const
 {
-	return Int2(this->renderer->getWindowSurface()->w,
-		this->renderer->getWindowSurface()->h);
+	return this->renderer->getRenderDimensions();
 }
 
 SDL_Rect GameState::getLetterboxDimensions() const
@@ -122,11 +126,12 @@ SDL_Rect GameState::getLetterboxDimensions() const
 void GameState::resizeWindow(int width, int height)
 {
 	this->renderer->resize(width, height);
-
+	
 	if (this->gameDataIsActive())
 	{
-		// Rebuild OpenCL program with new dimensions.
-		this->gameData->getCLProgram() = CLProgram(width, height);
+		// Rebuild OpenCL program with new dimensions.		
+		this->gameData->getCLProgram() = std::move(CLProgram(
+			width, height, this->renderer->getRenderer()));
 	}
 }
 
@@ -167,10 +172,11 @@ void GameState::tick(double dt)
 
 void GameState::render()
 {
-	auto *surface = this->renderer->getWindowSurface();
+	// Now using GPU-accelerated renderer instead of SDL_Surface.
+	auto *renderer = this->renderer->getRenderer();
 	auto letterbox = this->getLetterboxDimensions();
 
-	this->panel->render(surface, &letterbox);
+	this->panel->render(renderer, &letterbox);
 
 	this->renderer->present();
 }

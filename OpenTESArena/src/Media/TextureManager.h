@@ -18,7 +18,9 @@
 class Surface;
 
 struct SDL_PixelFormat;
+struct SDL_Renderer;
 struct SDL_Surface;
+struct SDL_Texture;
 
 class TextureManager
 {
@@ -29,20 +31,24 @@ private:
 
 	Palette palette;
 	std::map<std::string, Surface> surfaces;
+	std::map<std::string, SDL_Texture*> textures;
+	const SDL_Renderer *renderer;
 	const SDL_PixelFormat *format;
 
     SDL_Surface *loadPNG(const std::string &fullPath);
 	SDL_Surface *loadIMG(const std::string &fullPath);
 public:
-	TextureManager(const SDL_PixelFormat *format);
+	TextureManager(const SDL_Renderer *renderer, const SDL_PixelFormat *format);
 	~TextureManager();
 
 	const SDL_PixelFormat *getFormat() const;
-
-	// The filename given here is a partial path that excludes the "data/textures/" 
-	// path and the texture extension (.png); both known only to the texture manager. 
-	// A valid filename might be "interface/folder/some_image".
+		
+	// Gets a surface from the texture manager. It will be loaded from file if not
+	// already stored. A valid filename might be something like "TAMRIEL.IMG".
 	const Surface &getSurface(const std::string &filename);
+
+	// Similar to getSurface(), only for hardware-accelerated textures.
+	const SDL_Texture *getTexture(const std::string &filename);
 
 	// Set the currently used palette (default is PAL.COL).
 	void setPalette(const std::string &paletteName);
@@ -51,6 +57,10 @@ public:
 	// there may be some stuttering that occurs. This method loads all of the sequences
 	// into memory at the same time to compensate.
 	void preloadSequences();
+
+	// This method might be necessary when resizing the window, if SDL causes all of
+	// the textures to become black.
+	void reloadTextures(SDL_Renderer *renderer);
 };
 
 #endif

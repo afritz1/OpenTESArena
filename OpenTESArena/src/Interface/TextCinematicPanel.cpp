@@ -92,10 +92,7 @@ void TextCinematicPanel::tick(double dt, bool &running)
 
 	this->currentImageSeconds += dt;
 	this->currentTextSeconds += dt;
-
-	// I think there's a bug in here about using secondsPerImage instead of
-	// secondsPerText, or vice versa. Not sure.
-
+	
 	while (this->currentImageSeconds > this->secondsPerImage)
 	{
 		this->currentImageSeconds -= this->secondsPerImage;
@@ -116,24 +113,23 @@ void TextCinematicPanel::tick(double dt, bool &running)
 	}
 }
 
-void TextCinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Get all of the image filenames relevant to the sequence.
 	auto imageFilenames = TextureFile::fromName(this->sequenceName);
 
-	// If at the end of the sequence, prepare for the next panel.
+	// If at the end of the sequence, go back to the first image. The cinematic 
+	// ends when speech is done.
 	if (this->imageIndex >= imageFilenames.size())
 	{
-		this->imageIndex = static_cast<int>(imageFilenames.size() - 1);
+		this->imageIndex = 0;
 		this->skipButton->click();
 	}
 
 	// Draw animation.
-	const auto &image = this->getGameState()->getTextureManager().getSurface(
-		imageFilenames.at(this->imageIndex));
-	auto *imageSurface = image.getSurface();
-	SDL_BlitScaled(imageSurface, nullptr, dst, const_cast<SDL_Rect*>(letterbox));
+	const auto *image = this->getGameState()->getTextureManager()
+		.getTexture(imageFilenames.at(this->imageIndex));
+	this->drawScaledToNative(image, renderer);
 
-	// Draw text (make text box..., transform point...).
-	// ...
+	// Draw text...
 }

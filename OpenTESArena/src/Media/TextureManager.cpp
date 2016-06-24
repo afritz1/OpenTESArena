@@ -4,7 +4,6 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
-#include <unordered_map>
 
 #include "SDL.h"
 #include "SDL_image.h"
@@ -14,22 +13,20 @@
 #include "Color.h"
 #include "TextureFile.h"
 #include "../Interface/Surface.h"
+#include "../Math/Int2.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
-#include "../Math/Int2.h"
 
 #include "components/vfs/manager.hpp"
 
 namespace
 {
-
 	// The format extension for all tool-extracted textures is PNG. Remove this
 	// once the program is able to load original Arena assets exclusively.
 	const std::string TextureExtension = ".png";
 
-    // These IMG files are actually headerless/raw files, with hardcoded
-    // dimensions.
-    static const std::unordered_map<std::string, Int2> RawImgOverride =
+    // These IMG files are actually headerless/raw files with hardcoded dimensions.
+    const std::map<std::string, Int2> RawImgOverride =
 	{
         { "ARENARW.IMG", { 16, 16} },
         { "CITY.IMG",    { 16, 11} },
@@ -308,13 +305,15 @@ namespace
 // This path might be obsolete soon.
 const std::string TextureManager::PATH = "data/textures/";
 
-TextureManager::TextureManager(const SDL_PixelFormat *format)
+TextureManager::TextureManager(const SDL_Renderer *renderer, const SDL_PixelFormat *format)
 {
 	Debug::mention("Texture Manager", "Initializing.");
 
 	assert(format != nullptr);
 
 	this->surfaces = std::map<std::string, Surface>();
+	this->textures = std::map<std::string, SDL_Texture*>();
+	this->renderer = renderer;
 	this->format = format;
 
 	// Load default palette.
@@ -328,6 +327,13 @@ TextureManager::TextureManager(const SDL_PixelFormat *format)
 
 TextureManager::~TextureManager()
 {
+	// Release the SDL_Textures.
+	// The SDL_Renderer destroys these itself with SDL_DestroyRenderer(), too.
+	for (auto &pair : this->textures)
+	{
+		SDL_DestroyTexture(pair.second);
+	}
+
 	IMG_Quit();
 }
 
@@ -516,15 +522,18 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 	}
 
 	size_t dot = filename.rfind('.');
-	if (dot != std::string::npos && (filename.compare(dot, filename.length() - dot, ".IMG") == 0 ||
-                                     filename.compare(dot, filename.length() - dot, ".MNU") == 0))
+	bool isIMG = (dot < filename.length()) && 
+		filename.compare(dot, filename.length() - dot, ".IMG") == 0;
+	bool isMNU = (dot < filename.length()) && 
+		filename.compare(dot, filename.length() - dot, ".MNU") == 0;
+	if ((dot != std::string::npos) && (isIMG || isMNU))
 	{
 		auto *optSurface = this->loadIMG(filename);
 
 		// Create surface from SDL_Surface. No need to optimize it again.
 		Surface surface(optSurface);
-
-		// Add the new texture.
+		
+		// Add the new surface and return it.
 		iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
 		SDL_FreeSurface(optSurface);
 		return iter->second;
@@ -538,11 +547,32 @@ const Surface &TextureManager::getSurface(const std::string &filename)
         // Create surface from SDL_Surface. No need to optimize it again.
         Surface surface(optSurface);
 
-		// Add the new texture.
+		// Add the new surface and return it.
 		auto iter = this->surfaces.insert(std::make_pair(filename, surface)).first;
 		SDL_FreeSurface(optSurface);
 		return iter->second;
 	}
+}
+
+const SDL_Texture *TextureManager::getTexture(const std::string &filename)
+{
+	if (this->textures.find(filename) != this->textures.end())
+	{
+		const SDL_Texture *texture = this->textures.at(filename);
+		return texture;
+	}
+	else
+	{
+		// Make a texture from the surface. It's okay if the surface isn't used except
+		// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
+		const Surface &surface = this->getSurface(filename);
+		SDL_Texture *texture = SDL_CreateTextureFromSurface(
+			const_cast<SDL_Renderer*>(this->renderer), surface.getSurface());
+
+		// Add the new texture and return it.
+		auto iter = this->textures.insert(std::make_pair(filename, texture)).first;
+		return iter->second;
+	}	
 }
 
 void TextureManager::setPalette(const std::string &paletteName)
@@ -627,5 +657,20 @@ void TextureManager::preloadSequences()
 		{
 			this->getSurface(filename);
 		}
+	}
+}
+
+void TextureManager::reloadTextures(SDL_Renderer *renderer)
+{
+	// This assignment isn't completely necessary. The renderer shouldn't need to 
+	// be destroyed and reinitialized on window resize events.
+	this->renderer = renderer;
+
+	for (auto &pair : this->textures)
+	{
+		SDL_DestroyTexture(pair.second);
+		const Surface &surface = this->getSurface(pair.first);
+		this->textures.at(pair.first) = SDL_CreateTextureFromSurface(
+			renderer, surface.getSurface());
 	}
 }

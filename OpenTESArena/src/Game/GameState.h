@@ -54,6 +54,8 @@ public:
 
 	Options &getOptions() const;
 
+	Renderer &getRenderer() const;
+
 	TextureManager &getTextureManager() const;
 
 	Int2 getScreenDimensions() const;

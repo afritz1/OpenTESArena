@@ -39,25 +39,35 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int width, int height)
+CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer)
 {
 	assert(width > 0);
 	assert(height > 0);
 
+	Debug::mention("CLProgram", "Initializing.");
+
 	this->width = width;
 	this->height = height;
+
+	// Create the local output pixel buffer.
+	this->outputData = std::vector<char>(sizeof(cl_int) * width * height);
+
+	// Create streaming texture to be used as the game world frame buffer.
+	this->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STREAMING, width, height);
+	Debug::check(this->texture != nullptr, "CLProgram", "SDL_CreateTexture");
 
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
 	Debug::check(platforms.size() > 0, "CLProgram", "No OpenCL platform found.");
-
+	
 	// Look at the first platform. Most computers shouldn't have more than one.
 	// More robust code can check for multiple platforms in the future.
 	const auto &platform = platforms.at(0);
 
 	// Mention some version information about the platform (it should be okay if the 
 	// platform version is higher than the device version).
-	Debug::mention("CLProgram", "Platform version is \"" +
+	Debug::mention("CLProgram", "Platform version \"" +
 		platform.getInfo<CL_PLATFORM_VERSION>() + "\".");
 
 	// Check for all possible devices on the platform, starting with GPUs.
@@ -193,7 +203,37 @@ CLProgram::CLProgram(int width, int height)
 
 CLProgram::~CLProgram()
 {
+	// Destroy the game world frame buffer.
+	// The SDL_Renderer destroys this itself with SDL_DestroyRenderer(), too.
+	SDL_DestroyTexture(this->texture);
+}
 
+CLProgram &CLProgram::operator=(CLProgram &&clProgram)
+{
+	// Is there a better way to do this?
+	this->device = clProgram.device;
+	this->context = clProgram.context;
+	this->commandQueue = clProgram.commandQueue;
+	this->program = clProgram.program;
+	this->kernel = clProgram.kernel;
+	this->cameraBuffer = clProgram.cameraBuffer;
+	this->voxelRefBuffer = clProgram.voxelRefBuffer;
+	this->spriteRefBuffer = clProgram.spriteRefBuffer;
+	this->lightRefBuffer = clProgram.lightRefBuffer;
+	this->textureRefBuffer = clProgram.textureRefBuffer;
+	this->triangleBuffer = clProgram.triangleBuffer;
+	this->textureBuffer = clProgram.textureBuffer;
+	this->gameTimeBuffer = clProgram.gameTimeBuffer;
+	this->outputBuffer = clProgram.outputBuffer;
+	this->outputData = clProgram.outputData;
+	this->width = clProgram.width;
+	this->height = clProgram.height;
+
+	SDL_DestroyTexture(this->texture);
+	this->texture = clProgram.texture;
+	clProgram.texture = nullptr;
+
+	return *this;
 }
 
 std::vector<cl::Platform> CLProgram::getPlatforms()
@@ -359,12 +399,12 @@ void CLProgram::makeTestWorld()
 		*(uv1Ptr + 0) = static_cast<cl_float>(triangle.getUV1().getX());
 		*(uv1Ptr + 1) = static_cast<cl_float>(triangle.getUV1().getY());
 
-		cl_float *uv2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) + 
+		cl_float *uv2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) +
 			sizeof(cl_float2));
 		*(uv2Ptr + 0) = static_cast<cl_float>(triangle.getUV2().getX());
 		*(uv2Ptr + 1) = static_cast<cl_float>(triangle.getUV2().getY());
 
-		cl_float *uv3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) + 
+		cl_float *uv3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) +
 			(sizeof(cl_float2) * 2));
 		*(uv3Ptr + 0) = static_cast<cl_float>(triangle.getUV3().getX());
 		*(uv3Ptr + 1) = static_cast<cl_float>(triangle.getUV3().getY());
@@ -469,12 +509,8 @@ void CLProgram::updateGameTime(double gameTime)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateGameTime");
 }
 
-void CLProgram::render(SDL_Surface *dst)
+void CLProgram::render(SDL_Renderer *renderer)
 {
-	assert(dst != nullptr);
-	assert(this->width == dst->w);
-	assert(this->height == dst->h);
-
 	// Run the kernel with the given dimensions.
 	cl_int status = this->commandQueue.enqueueNDRangeKernel(this->kernel,
 		cl::NullRange, cl::NDRange(this->width, this->height), cl::NullRange,
@@ -482,9 +518,13 @@ void CLProgram::render(SDL_Surface *dst)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueNDRangeKernel.");
 
 	// Copy the output buffer into the destination pixel buffer.
-	// The CL_TRUE means this is a blocking command.
+	void *outputDataPtr = static_cast<void*>(this->outputData.data());
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
 		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height),
-		dst->pixels, nullptr, nullptr);
+		outputDataPtr, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
+
+	// Update the frame buffer texture and draw to the renderer.
+	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, this->width * sizeof(cl_int));
+	SDL_RenderCopy(renderer, this->texture, nullptr, nullptr);
 }

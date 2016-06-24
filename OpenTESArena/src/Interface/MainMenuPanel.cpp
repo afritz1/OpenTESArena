@@ -173,18 +173,18 @@ void MainMenuPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void MainMenuPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void MainMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw main menu.
-	const auto &mainMenu = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::MainMenu));
-	this->drawLetterbox(mainMenu, dst, letterbox);
+	const auto *mainMenu = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::MainMenu));
+	this->drawLetterbox(mainMenu, renderer, letterbox);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

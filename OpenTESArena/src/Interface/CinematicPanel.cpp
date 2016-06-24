@@ -89,10 +89,10 @@ void CinematicPanel::tick(double dt, bool &running)
 	}
 }
 
-void CinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void CinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Get all of the image filenames relevant to the sequence.
 	std::vector<std::string> filenames = TextureFile::fromName(this->sequenceName);
@@ -105,7 +105,7 @@ void CinematicPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	}
 
 	// Draw image.
-	const auto &image = this->getGameState()->getTextureManager().getSurface(
-		filenames.at(this->imageIndex));
-	this->drawLetterbox(image, dst, letterbox);
+	const auto *image = this->getGameState()->getTextureManager()
+		.getTexture(filenames.at(this->imageIndex));
+	this->drawLetterbox(image, renderer, letterbox);
 }

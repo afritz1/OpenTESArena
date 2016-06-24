@@ -30,7 +30,7 @@ private:
 	std::string getClassArmors(const CharacterClass &characterClass) const;
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
-	void drawClassTooltip(const CharacterClass &characterClass, SDL_Surface *dst);
+	void drawClassTooltip(const CharacterClass &characterClass, SDL_Renderer *renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
@@ -40,7 +40,7 @@ public:
 	virtual ~ChooseClassPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Surface *dst, const SDL_Rect *letterbox) override;
+	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
 };
 
 #endif

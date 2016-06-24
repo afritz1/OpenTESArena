@@ -84,13 +84,13 @@ void ImagePanel::tick(double dt, bool &running)
 	}
 }
 
-void ImagePanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ImagePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw image.
-	const auto &image = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(this->textureName));
-	this->drawLetterbox(image, dst, letterbox);
+	const auto *image = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(this->textureName));
+	this->drawLetterbox(image, renderer, letterbox);
 }

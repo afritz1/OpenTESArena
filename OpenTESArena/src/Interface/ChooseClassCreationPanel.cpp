@@ -174,15 +174,15 @@ void ChooseClassCreationPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseClassCreationPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void ChooseClassCreationPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
-	this->clearScreen(dst);
+	this->clearScreen(renderer);
 
 	// Draw background.
-	const auto &background = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CharacterCreation));
-	this->drawLetterbox(background, dst, letterbox);
+	const auto *background = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterCreation));
+	this->drawLetterbox(background, renderer, letterbox);
 
 	// Draw parchments: title, generate, select.
 	this->parchment->setTransparentColor(Color::Magenta);
@@ -198,7 +198,7 @@ void ChooseClassCreationPanel::render(SDL_Surface *dst, const SDL_Rect *letterbo
 		parchmentY,
 		parchmentWidth,
 		parchmentHeight,
-		dst);
+		renderer);
 
 	parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
 	parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
@@ -209,7 +209,7 @@ void ChooseClassCreationPanel::render(SDL_Surface *dst, const SDL_Rect *letterbo
 		parchmentY,
 		parchmentWidth,
 		parchmentHeight,
-		dst);
+		renderer);
 	
 	parchmentY += 40;
 	this->drawScaledToNative(*this->parchment.get(),
@@ -217,15 +217,15 @@ void ChooseClassCreationPanel::render(SDL_Surface *dst, const SDL_Rect *letterbo
 		parchmentY,
 		parchmentWidth,
 		parchmentHeight,
-		dst);
+		renderer);
 
 	// Draw text: title, generate, select.
-	this->drawScaledToNative(*this->titleTextBox.get(), dst);
-	this->drawScaledToNative(*this->generateTextBox.get(), dst);
-	this->drawScaledToNative(*this->selectTextBox.get(), dst);
+	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
+	this->drawScaledToNative(*this->generateTextBox.get(), renderer);
+	this->drawScaledToNative(*this->selectTextBox.get(), renderer);
 	
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

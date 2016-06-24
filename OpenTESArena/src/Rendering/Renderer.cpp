@@ -6,6 +6,7 @@
 #include "Renderer.h"
 #include "../Interface/Surface.h"
 #include "../Math/Constants.h"
+#include "../Math/Int2.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -21,10 +22,6 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	assert(width > 0);
 	assert(height > 0);
 
-	this->window = nullptr;
-	this->renderer = nullptr;
-	this->texture = nullptr;
-
 	// Initialize window. The SDL_Surface is obtained from this window.
 	this->window = [width, height, fullscreen, &title]()
 	{
@@ -37,66 +34,84 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	Debug::check(this->window != nullptr, "Renderer", "SDL_CreateWindow");
 
 	// Initialize renderer context.
-	this->renderer = [this]()
-	{
-		const int bestDriver = -1;
-		return SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_ACCELERATED);
-	}();
-	Debug::check(this->renderer != nullptr, "Renderer", "SDL_CreateRenderer");
-
-	// Set pixel interpolation hint.
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY.c_str());
-
-	// Set the size of the render texture to be the size of the whole screen
-	// (it scales otherwise).
-    auto *nativeSurface = this->getWindowSurface();
-
-    // If this fails, we might not support hardware accelerated renderers for some reason
-	// (such as with Linux), so we retry with software.
-    if (!nativeSurface)
-    {
-        Debug::mention("Renderer", 
-			"Failed to initialize with hardware accelerated renderer, trying software.");
-
-        SDL_DestroyRenderer(this->renderer);
-
-		const int bestDriver = -1;
-        this->renderer = SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_SOFTWARE);
-		Debug::check(this->renderer != nullptr, "Renderer", "SDL_CreateRenderer software");
-
-        nativeSurface = this->getWindowSurface();
-    }
-
-	Debug::check(nativeSurface != nullptr, "Renderer", "SDL_GetWindowSurface");
-
-	// Set the device-independent resolution for rendering.
-	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
-
-	// Set the clear color of the renderer.
-	SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
-
-	// Create SDL_Texture on the GPU. The surface updates this every frame.
-	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
-	Debug::check(this->texture != nullptr, "Renderer", "SDL_CreateTexture");
+	this->renderer = this->createRenderer();
 }
 
 Renderer::~Renderer()
 {
-	assert(this->window != nullptr);
-	assert(this->renderer != nullptr);
-	assert(this->texture != nullptr);
+	Debug::mention("Renderer", "Closing.");
 
 	SDL_DestroyWindow(this->window);
 	SDL_DestroyRenderer(this->renderer);
-	SDL_DestroyTexture(this->texture);
+}
+
+SDL_Renderer *Renderer::createRenderer()
+{
+	// Automatically choose the best driver.
+	const int bestDriver = -1;
+
+	SDL_Renderer *rendererContext = SDL_CreateRenderer(
+		this->window, bestDriver, SDL_RENDERER_ACCELERATED);
+	Debug::check(rendererContext != nullptr, "Renderer", "SDL_CreateRenderer");
+
+	// Set pixel interpolation hint.
+	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
+		Renderer::DEFAULT_RENDER_SCALE_QUALITY.c_str());
+	if (status != SDL_TRUE)
+	{
+		Debug::mention("Renderer", "Could not set interpolation hint.");
+	}
+
+	// Set the size of the render texture to be the size of the whole screen
+	// (it automatically scales otherwise).
+	auto *nativeSurface = this->getWindowSurface();
+
+	// If this fails, we might not support hardware accelerated renderers for some reason
+	// (such as with Linux), so we retry with software.
+	if (!nativeSurface)
+	{
+		Debug::mention("Renderer",
+			"Failed to initialize with hardware accelerated renderer, trying software.");
+
+		SDL_DestroyRenderer(rendererContext);
+
+		rendererContext = SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_SOFTWARE);
+		Debug::check(rendererContext != nullptr, "Renderer", "SDL_CreateRenderer software");
+
+		nativeSurface = this->getWindowSurface();
+	}
+
+	Debug::check(nativeSurface != nullptr, "Renderer", "SDL_GetWindowSurface");
+
+	// Set the device-independent resolution for rendering.
+	SDL_RenderSetLogicalSize(rendererContext, nativeSurface->w, nativeSurface->h);
+
+	// Set the clear color of the renderer.
+	SDL_SetRenderDrawColor(rendererContext, 0, 0, 0, 255);
+
+	return rendererContext;
 }
 
 SDL_Surface *Renderer::getWindowSurface() const
 {
-	assert(this->window != nullptr);
-
 	return SDL_GetWindowSurface(this->window);
+}
+
+Int2 Renderer::getRenderDimensions() const
+{
+	int width, height;
+	SDL_GetRendererOutputSize(this->renderer, &width, &height);
+	return Int2(width, height);
+}
+
+SDL_PixelFormat *Renderer::getPixelFormat() const
+{
+	return SDL_GetWindowSurface(this->window)->format;
+}
+
+SDL_Renderer *Renderer::getRenderer() const
+{
+	return this->renderer;
 }
 
 SDL_Rect Renderer::getLetterboxDimensions() const
@@ -159,32 +174,18 @@ void Renderer::resize(int width, int height)
 	static_cast<void>(width);
 	static_cast<void>(height);
 
-	// Release old SDL things.
-	SDL_DestroyTexture(this->texture);
-
 	// Reset the size of the render texture.
 	const auto *nativeSurface = this->getWindowSurface();
 	SDL_RenderSetLogicalSize(this->renderer, nativeSurface->w, nativeSurface->h);
-
-	// Recreate SDL_Texture for the GPU.
-	this->texture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING, nativeSurface->w, nativeSurface->h);
-	Debug::check(this->texture != nullptr, "Renderer", "SDL_CreateTexture resize");
 }
 
 void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
 {
 	const auto &icon = textureManager.getSurface(TextureFile::fromName(name));
-	auto *iconSurface = icon.getSurface();
-	SDL_SetWindowIcon(this->window, iconSurface);
+	SDL_SetWindowIcon(this->window, icon.getSurface());
 }
 
 void Renderer::present()
 {
-	const auto *nativeSurface = this->getWindowSurface();
-	SDL_UpdateTexture(this->texture, nullptr, nativeSurface->pixels,
-		nativeSurface->pitch);
-	SDL_RenderClear(this->renderer);
-	SDL_RenderCopy(this->renderer, this->texture, nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
 }

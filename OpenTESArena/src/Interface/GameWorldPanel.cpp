@@ -24,6 +24,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 
 GameWorldPanel::GameWorldPanel(GameState *gameState)
@@ -177,12 +178,12 @@ void GameWorldPanel::tick(double dt, bool &running)
 	clProgram.updateGameTime(gameData->getGameTime());
 }
 
-void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
+void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
-	// Draw game world (OpenCL rendering). No need to clear the screen beforehand.
-	this->getGameState()->getGameData()->getCLProgram().render(dst);
+	// Draw game world using OpenCL rendering.
+	this->getGameState()->getGameData()->getCLProgram().render(renderer);
 
 	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
 	// screen, not just the letterbox, because right now, when the screen is tall, the
@@ -191,14 +192,18 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 	// think it requires using the original height and the draw scale somehow.
 
 	// Draw game world interface.
-	const auto &gameInterface = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::GameWorldInterface));
+	const auto *gameInterface = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::GameWorldInterface));
+	int gameInterfaceWidth, gameInterfaceHeight;
+	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr, 
+		&gameInterfaceWidth, &gameInterfaceHeight);
+
 	this->drawScaledToNative(gameInterface,
-		(ORIGINAL_WIDTH / 2) - (gameInterface.getWidth() / 2),
-		ORIGINAL_HEIGHT - gameInterface.getHeight(),
-		gameInterface.getWidth(),
-		gameInterface.getHeight(),
-		dst);
+		(ORIGINAL_WIDTH / 2) - (gameInterfaceWidth / 2),
+		ORIGINAL_HEIGHT - gameInterfaceHeight,
+		gameInterfaceWidth,
+		gameInterfaceHeight,
+		renderer);
 
 	// Compass frame.
 	const auto &compassFrame = this->getGameState()->getTextureManager()
@@ -225,24 +230,24 @@ void GameWorldPanel::render(SDL_Surface *dst, const SDL_Rect *letterbox)
 		5,
 		compassFiller.getWidth(),
 		compassFiller.getHeight(),
-		dst);
+		renderer);
 
 	this->drawScaledToNative(compassSliderSegment,
 		(ORIGINAL_WIDTH / 2) - 16,
 		7,
 		compassSliderSegment.getWidth(),
 		compassSliderSegment.getHeight(),
-		dst);
+		renderer);
 
 	this->drawScaledToNative(compassFrame,
 		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2),
 		0,
 		compassFrame.getWidth(),
 		compassFrame.getHeight(),
-		dst);
+		renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, dst);
+	this->drawCursor(cursor, renderer);
 }

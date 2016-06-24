@@ -28,7 +28,7 @@ public:
 	virtual ~ChooseGenderPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Surface *dst, const SDL_Rect *letterbox) override;
+	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
 };
 
 #endif
