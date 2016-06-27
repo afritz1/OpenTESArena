@@ -25,16 +25,15 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 {
 	this->parchment = [gameState]()
 	{
-		auto *surface = gameState->getTextureManager().getSurface(
+		const auto *surface = gameState->getTextureManager().getSurface(
 			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
 		auto origin = Int2((ORIGINAL_WIDTH / 2) - (surface->w / 2), 35);
-		return std::unique_ptr<Surface>(new Surface(
-			origin.getX(), origin.getY(), surface));
+		return std::unique_ptr<Surface>(new Surface(origin.getX(), origin.getY(), surface));
 	}();
 
 	this->genderTextBox = [gameState]()
 	{
-		auto center = Int2(160, 56);
+		auto center = Int2((ORIGINAL_WIDTH / 2), 80);
 		auto color = Color(48, 12, 12);
 		std::string text = "Choose thy gender...";
 		auto fontName = FontName::A;
@@ -48,7 +47,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleTextBox = [gameState]()
 	{
-		auto center = Int2(160, 106);
+		auto center = Int2((ORIGINAL_WIDTH / 2), 120);
 		auto color = Color(48, 12, 12);
 		std::string text = "Male";
 		auto fontName = FontName::A;
@@ -62,7 +61,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->femaleTextBox = [gameState]()
 	{
-		auto center = Int2(160, 146);
+		auto center = Int2((ORIGINAL_WIDTH / 2), 160);
 		auto color = Color(48, 12, 12);
 		std::string text = "Female";
 		auto fontName = FontName::A;
@@ -86,26 +85,26 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleButton = [gameState, charClass, name]()
 	{
-		auto center = Int2(160, 105);
+		auto center = Int2((ORIGINAL_WIDTH / 2), 120);
 		auto function = [gameState, charClass, name]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Male));
 			gameState->setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
+		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
 
 	this->femaleButton = [gameState, charClass, name]()
 	{
-		auto center = Int2(160, 145);
+		auto center = Int2((ORIGINAL_WIDTH / 2), 160);
 		auto function = [gameState, charClass, name]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Female));
 			gameState->setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 120, 30, function));
+		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
 
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
@@ -194,25 +193,34 @@ void ChooseGenderPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox
 
 	// Draw parchments: title, male, and female.
 	this->parchment->setTransparentColor(Color::Magenta);
-	this->drawScaledToNative(*this->parchment.get(), renderer);
 
-	const double parchmentScale = 0.70;
-	int parchmentXOffset = 27;
-	int parchmentYStep = 40;
-	int parchmentYOffset = 10 + parchmentYStep;
+	double parchmentXScale = 1.0;
+	double parchmentYScale = 1.0;
+	int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
+	int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
+	int parchmentX = (ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
+	int parchmentY = (ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2) - 20;
 	this->drawScaledToNative(*this->parchment.get(),
-		this->parchment->getX() + parchmentXOffset,
-		this->parchment->getY() + parchmentYOffset,
-		static_cast<int>(this->parchment->getWidth() * parchmentScale),
-		this->parchment->getHeight(),
+		parchmentX,
+		parchmentY,
+		parchmentWidth,
+		parchmentHeight,
 		renderer);
 
-	parchmentYOffset = 10 + (parchmentYStep * 2);
+	parchmentY += 40;
 	this->drawScaledToNative(*this->parchment.get(),
-		this->parchment->getX() + parchmentXOffset,
-		this->parchment->getY() + parchmentYOffset,
-		static_cast<int>(this->parchment->getWidth() * parchmentScale),
-		this->parchment->getHeight(),
+		parchmentX,
+		parchmentY,
+		parchmentWidth,
+		parchmentHeight,
+		renderer);
+
+	parchmentY += 40;
+	this->drawScaledToNative(*this->parchment.get(),
+		parchmentX,
+		parchmentY,
+		parchmentWidth,
+		parchmentHeight,
 		renderer);
 
 	// Draw text: title, male, and female.
