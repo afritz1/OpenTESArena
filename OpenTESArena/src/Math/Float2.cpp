@@ -32,12 +32,12 @@ template<typename T>
 Float2<T> Float2<T>::randomPointInCircle(const Float2 &center, T radius, Random &random)
 {
 	T scale = radius * static_cast<T>(random.nextReal());
-	auto randPoint = Float2::randomDirection(random).scaledBy(scale);
+	auto randPoint = Float2::randomDirection(random) * scale;
 	return Float2(center.x + randPoint.x, center.y + randPoint.y);
 }
 
 template<typename T>
-Float2<T> Float2<T>::randomPointInSquare(const Float2 &center, T width, T height, 
+Float2<T> Float2<T>::randomPointInSquare(const Float2 &center, T width, T height,
 	Random &random)
 {
 	auto randDirection = Float2::randomDirection(random);
@@ -62,6 +62,18 @@ template<typename T>
 Float2<T> Float2<T>::operator -() const
 {
 	return Float2(-this->x, -this->y);
+}
+
+template<typename T>
+Float2<T> Float2<T>::operator *(T m) const
+{
+	return Float2(this->x * m, this->y * m);
+}
+
+template<typename T>
+Float2<T> Float2<T>::operator *(const Float2 &v) const
+{
+	return Float2(this->x * v.x, this->y * v.y);
 }
 
 template<typename T>
@@ -122,18 +134,6 @@ T Float2<T>::dot(const Float2 &v) const
 }
 
 template<typename T>
-Float2<T> Float2<T>::scaledBy(T m) const
-{
-	return Float2(this->x * m, this->y * m);
-}
-
-template<typename T>
-Float2<T> Float2<T>::scaledBy(const Float2 &v) const
-{
-	return Float2(this->x * v.x, this->y * v.y);
-}
-
-template<typename T>
 Float2<T> Float2<T>::lerp(const Float2 &end, T percent) const
 {
 	return Float2(
@@ -148,7 +148,7 @@ Float2<T> Float2<T>::slerp(const Float2 &end, T percent) const
 	T sinThetaRecip = static_cast<T>(1.0 / std::sin(theta));
 	T beginScale = static_cast<T>(std::sin((1.0 - percent) * theta) * sinThetaRecip);
 	T endScale = std::sin(percent * theta) * sinThetaRecip;
-	return this->scaledBy(beginScale) + end.scaledBy(endScale);
+	return ((*this) * beginScale) + (end * endScale);
 }
 
 template<typename T>

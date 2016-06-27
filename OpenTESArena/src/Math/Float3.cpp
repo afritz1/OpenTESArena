@@ -35,7 +35,7 @@ template<typename T>
 Float3<T> Float3<T>::randomPointInSphere(const Float3 &center, T radius, Random &random)
 {
 	T scale = radius * static_cast<T>(random.nextReal());
-	auto randPoint = Float3::randomDirection(random).scaledBy(scale);
+	auto randPoint = Float3::randomDirection(random) * scale;
 	return Float3(
 		center.x + randPoint.x,
 		center.y + randPoint.y,
@@ -93,6 +93,18 @@ Float3<T> Float3<T>::operator -() const
 }
 
 template<typename T>
+Float3<T> Float3<T>::operator *(T m) const
+{
+	return Float3(this->x * m, this->y * m, this->z * m);
+}
+
+template<typename T>
+Float3<T> Float3<T>::operator *(const Float3 &v) const
+{
+	return Float3(this->x * v.x, this->y * v.y, this->z * v.z);
+}
+
+template<typename T>
 T Float3<T>::getX() const
 {
 	return this->x;
@@ -131,9 +143,9 @@ unsigned int Float3<T>::toRGB() const
 template<typename T>
 Color Float3<T>::toColor() const
 {
-	auto r = static_cast<unsigned char>(this->x * 255.0);
-	auto g = static_cast<unsigned char>(this->y * 255.0);
-	auto b = static_cast<unsigned char>(this->z * 255.0);
+	unsigned char r = static_cast<unsigned char>(this->x * 255.0);
+	unsigned char g = static_cast<unsigned char>(this->y * 255.0);
+	unsigned char b = static_cast<unsigned char>(this->z * 255.0);
 	return Color(r, g, b);
 }
 
@@ -199,18 +211,6 @@ Float3<T> Float3<T>::reflect(const Float3 &normal) const
 }
 
 template<typename T>
-Float3<T> Float3<T>::scaledBy(T m) const
-{
-	return Float3(this->x * m, this->y * m, this->z * m);
-}
-
-template<typename T>
-Float3<T> Float3<T>::scaledBy(const Float3 &v) const
-{
-	return Float3(this->x * v.x, this->y * v.y, this->z * v.z);
-}
-
-template<typename T>
 Float3<T> Float3<T>::lerp(const Float3 &end, T percent) const
 {
 	return Float3<T>(
@@ -226,7 +226,7 @@ Float3<T> Float3<T>::slerp(const Float3 &end, T percent) const
 	T sinThetaRecip = static_cast<T>(1.0 / std::sin(theta));
 	T beginScale = static_cast<T>(std::sin((1.0 - percent) * theta) * sinThetaRecip);
 	T endScale = static_cast<T>(std::sin(percent * theta) * sinThetaRecip);
-	return this->scaledBy(beginScale) + end.scaledBy(endScale);
+	return ((*this) * beginScale) + (end * endScale);
 }
 
 template<typename T>

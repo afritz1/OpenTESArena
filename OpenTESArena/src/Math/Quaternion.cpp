@@ -41,9 +41,8 @@ Quaternion Quaternion::fromAxisAngle(const Float3<double> &v, double w)
 	}
 
 	double halfW = w * 0.5;
-	auto axis = v.normalized().scaledBy(std::sin(halfW));
-	auto q = Quaternion(axis, std::cos(halfW));
-	return q.normalized();
+	Float3d axis = v.normalized() * std::sin(halfW);
+	return Quaternion(axis, std::cos(halfW)).normalized();
 }
 
 Quaternion Quaternion::fromAxisAngle(const Float4<double> &v)
@@ -58,9 +57,9 @@ Quaternion Quaternion::fromAxisAngle(double x, double y, double z, double w)
 
 Quaternion Quaternion::operator *(const Quaternion &q) const
 {
-	auto left = Float3<double>(this->x, this->y, this->z);
-	auto right = Float3<double>(q.x, q.y, q.z);
-	auto axis = left.scaledBy(q.w) + right.scaledBy(this->w) + left.cross(right);
+	Float3<double> left(this->x, this->y, this->z);
+	Float3<double> right(q.x, q.y, q.z);
+	Float3<double> axis = (left * q.w) + (right * this->w) + left.cross(right);
 	double magnitude = (this->w * q.w) - left.dot(right);
 	return Quaternion(axis, magnitude);
 }

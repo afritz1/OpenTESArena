@@ -37,7 +37,7 @@ public:
 	Player(const std::string &displayName, CharacterGenderName gender,
 		CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 		const Float3d &position, const Float3d &direction, const Float3d &velocity, 
-		EntityManager &entityManager);
+		double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager);
 
 	virtual ~Player();
 

@@ -26,11 +26,16 @@ const Float3d &Directable::getDirection() const
 	return this->direction;
 }
 
+Float2d Directable::getGroundDirection() const
+{
+	return Float2d(this->direction.getX(), this->direction.getZ()).normalized();
+}
+
 CoordinateFrame Directable::getFrame() const
 {
-	auto forward = this->direction;
-	auto right = forward.cross(this->getGlobalUp());
-	auto up = right.cross(forward);
+	Float3d forward = this->direction;
+	Float3d right = forward.cross(this->getGlobalUp());
+	Float3d up = right.cross(forward);
 	return CoordinateFrame(forward, right, up);
 }
 
@@ -39,8 +44,9 @@ void Directable::setDirection(const Float3d &direction)
 	assert(direction.isNormalized());
 
 	// Don't allow the direction to be set too close to the global up. Otherwise,
-	// it would break the coordinate frame calculation.
-	if (std::fabs(direction.dot(this->getGlobalUp())) < (1.0 - EPSILON))
+	// it would break the coordinate frame calculation and ground direction.
+	double dirGlobalUpDot = direction.dot(this->getGlobalUp());
+	if (std::fabs(dirGlobalUpDot) < (1.0 - EPSILON))
 	{
 		this->direction = direction;
 	}

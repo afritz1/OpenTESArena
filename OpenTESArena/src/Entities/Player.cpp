@@ -15,9 +15,9 @@
 Player::Player(const std::string &displayName, CharacterGenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 	const Float3d &position, const Float3d &direction, const Float3d &velocity,
-	EntityManager &entityManager)
+	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
 	: Entity(EntityType::Player, position, entityManager), Directable(direction),
-	Movable(velocity)
+	Movable(velocity, maxWalkSpeed, maxRunSpeed)
 {
 	assert(portraitID >= 0);
 
@@ -38,7 +38,8 @@ std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
 	return std::unique_ptr<Entity>(new Player(
 		this->getDisplayName(), this->getGenderName(), this->getRaceName(),
 		this->getCharacterClass(), this->getPortraitID(), this->getPosition(),
-		this->getDirection(), this->getVelocity(), entityManager));
+		this->getDirection(), this->getVelocity(), this->getMaxWalkSpeed(),
+		this->getMaxRunSpeed(), entityManager));
 }
 
 EntityType Player::getEntityType() const
@@ -130,5 +131,27 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 
 void Player::tick(GameState *gameState, double dt)
 {
+	assert(dt >= 0.0);
 	
+	// Simple Euler integration for updating the player's position.
+	Float3d newPosition = this->position + (this->getVelocity() * dt);
+
+	// Update the position if valid.
+	if (std::isfinite(newPosition.length()))
+	{
+		this->position = newPosition;
+	}
+
+	// Slow down the player with some imaginary friction (as a force). Once jumping 
+	// is implemented, change this to affect the ground direction and Y directions 
+	// separately.
+	double friction = 8.0;
+	Float3d frictionDirection = -this->getVelocity().normalized();
+	double frictionMagnitude = (this->getVelocity().length() * 0.5) * friction;
+
+	// Change the velocity if friction is valid.
+	if (std::isfinite(frictionDirection.length()))
+	{
+		this->accelerate(frictionDirection, frictionMagnitude, true, dt);
+	}
 }

@@ -25,6 +25,8 @@ public:
 	Float2 operator +(const Float2 &v) const;
 	Float2 operator -(const Float2 &v) const;
 	Float2 operator -() const;
+	Float2 operator *(T m) const;
+	Float2 operator *(const Float2 &v) const;
 
 	T getX() const;
 	T getY() const;
@@ -36,8 +38,6 @@ public:
 	bool isNormalized() const;
 	T dot(T m) const;
 	T dot(const Float2 &v) const;
-	Float2 scaledBy(T m) const;
-	Float2 scaledBy(const Float2 &v) const;
 	Float2 lerp(const Float2 &end, T percent) const;
 	Float2 slerp(const Float2 &end, T percent) const;
 	Float2 leftPerp() const;

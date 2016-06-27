@@ -114,12 +114,17 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// menu has settings for the CLProgram.
 			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
 
-			auto position = Float3d();
-			auto direction = Float3d(0.0, 0.0, 1.0).normalized();
-			auto velocity = Float3d();
+			Float3d position = Float3d(0.0, 0.0, 0.0);
+			Float3d direction = Float3d(0.0, 0.0, 1.0).normalized();
+			Float3d velocity = Float3d(0.0, 0.0, 0.0);
+			
+			// Some arbitrary max speeds.
+			double maxWalkSpeed = 2.0;
+			double maxRunSpeed = 8.0;
+
 			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
 				charClass, this->portraitIndex, position, direction, velocity,
-				*entityManager.get()));
+				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY(),

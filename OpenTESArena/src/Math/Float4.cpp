@@ -121,10 +121,10 @@ unsigned int Float4<T>::toARGB() const
 template<typename T>
 Color Float4<T>::toColor() const
 {
-	auto r = static_cast<unsigned char>(this->x * 255.0);
-	auto g = static_cast<unsigned char>(this->y * 255.0);
-	auto b = static_cast<unsigned char>(this->z * 255.0);
-	auto a = static_cast<unsigned char>(this->w * 255.0);
+	unsigned char r = static_cast<unsigned char>(this->x * 255.0);
+	unsigned char g = static_cast<unsigned char>(this->y * 255.0);
+	unsigned char b = static_cast<unsigned char>(this->z * 255.0);
+	unsigned char a = static_cast<unsigned char>(this->w * 255.0);
 	return Color(r, g, b, a);
 }
 

@@ -28,6 +28,8 @@ public:
 	Float3 operator +(const Float3 &v) const;
 	Float3 operator -(const Float3 &v) const;
 	Float3 operator -() const;
+	Float3 operator *(T m) const;
+	Float3 operator *(const Float3 &v) const;
 
 	T getX() const;
 	T getY() const;
@@ -44,8 +46,6 @@ public:
 	T dot(const Float3 &v) const;
 	Float3 cross(const Float3 &v) const;
 	Float3 reflect(const Float3 &normal) const;
-	Float3 scaledBy(T m) const;
-	Float3 scaledBy(const Float3 &v) const;
 	Float3 lerp(const Float3 &end, T percent) const;
 	Float3 slerp(const Float3 &end, T percent) const;
 	Float3 clamped(T low, T high) const;

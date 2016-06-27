@@ -8,6 +8,7 @@
 #include "CharacterPanel.h"
 #include "PauseMenuPanel.h"
 #include "WorldMapPanel.h"
+#include "../Entities/CoordinateFrame.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -140,8 +141,8 @@ void GameWorldPanel::handleMouse(double dt)
 	if (turning)
 	{
 		auto dimensions = this->getGameState()->getScreenDimensions();
-		auto dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
-		auto dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
+		double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
+		double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
 
 		// Pitch and/or yaw the camera.
 		const auto &options = this->getGameState()->getOptions();
@@ -153,8 +154,63 @@ void GameWorldPanel::handleMouse(double dt)
 
 void GameWorldPanel::handleKeyboard(double dt)
 {
-	static_cast<void>(dt);
-	// Listen for WASD, jump, crouch...
+	// Listen for WASD, jump...
+	const auto keys = SDL_GetKeyboardState(nullptr);
+
+	bool forward = keys[SDL_SCANCODE_W] != 0;
+	bool backward = keys[SDL_SCANCODE_S] != 0;
+	bool left = keys[SDL_SCANCODE_A] != 0;
+	bool right = keys[SDL_SCANCODE_D] != 0;
+	bool jump = keys[SDL_SCANCODE_SPACE] != 0;
+
+	bool any = forward || backward || left || right || jump;
+
+	if (any)
+	{
+		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
+		auto &player = this->getGameState()->getGameData()->getPlayer();
+
+		// Get some relevant player direction data.
+		Float2d groundDirection = player.getGroundDirection();
+		Float3d groundDirection3D = Float3d(groundDirection.getX(), 0.0,
+			groundDirection.getY()).normalized();
+		Float3d rightDirection = player.getFrame().getRight().normalized();
+
+		// Calculate the acceleration direction based on input.
+		Float3d accelDirection = Float3d(0.0, 0.0, 0.0);
+		if (forward)
+		{
+			accelDirection = accelDirection + groundDirection3D;
+		}
+		if (backward)
+		{
+			accelDirection = accelDirection - groundDirection3D;
+		}
+		if (right)
+		{
+			accelDirection = accelDirection + rightDirection;
+		}
+		if (left)
+		{
+			accelDirection = accelDirection - rightDirection;
+		}
+
+		// To do: check jump eventually once gravity and ground collision are implemented.
+
+		// Use a normalized direction.
+		accelDirection = accelDirection.normalized();
+
+		// Set the magnitude of the acceleration to some arbitrary numbers. These values 
+		// are independent of max speed. The original game didn't have sprinting, but it 
+		// seems like something relevant to do anyway (at least in testing).
+		double accelMagnitude = isRunning ? 35.0 : 10.0;
+
+		// Change the player's velocity if valid.
+		if (std::isfinite(accelDirection.length()))
+		{
+			player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+		}
+	}
 }
 
 void GameWorldPanel::tick(double dt, bool &running)
@@ -163,15 +219,17 @@ void GameWorldPanel::tick(double dt, bool &running)
 
 	this->handleEvents(running);
 	this->handleMouse(dt);
+	this->handleKeyboard(dt);
 
-	// Animate the game world by delta time.
+	// Animate the game world.
 	auto *gameData = this->getGameState()->getGameData();
 	gameData->incrementGameTime(dt);
 
-	// Tick player...
+	// Tick the player.
+	auto &player = gameData->getPlayer();
+	player.tick(this->getGameState(), dt);
 
 	// Update CLProgram members that are refreshed each frame.
-	const auto &player = gameData->getPlayer();
 	double verticalFOV = this->getGameState()->getOptions().getVerticalFOV();
 	auto &clProgram = gameData->getCLProgram();
 	clProgram.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
@@ -195,7 +253,7 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	const auto *gameInterface = this->getGameState()->getTextureManager()
 		.getTexture(TextureFile::fromName(TextureName::GameWorldInterface));
 	int gameInterfaceWidth, gameInterfaceHeight;
-	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr, 
+	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr,
 		&gameInterfaceWidth, &gameInterfaceHeight);
 
 	this->drawScaledToNative(gameInterface,
