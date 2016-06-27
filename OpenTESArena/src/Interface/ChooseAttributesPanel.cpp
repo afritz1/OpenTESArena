@@ -9,6 +9,7 @@
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterRace.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
@@ -16,8 +17,8 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
-#include "../Media/MusicName.h"
 #include "../Media/FontName.h"
+#include "../Media/MusicName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -26,19 +27,64 @@
 #include "../Rendering/Renderer.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
-	CharacterGenderName gender, const CharacterClass &charClass,
-	const std::string &name, CharacterRaceName raceName)
+	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender, 
+	CharacterRaceName raceName)
 	: Panel(gameState)
 {
-	this->titleTextBox = [gameState]()
+	this->instructionsTextBox = [gameState]()
 	{
 		auto center = Int2((ORIGINAL_WIDTH / 4) + 5, 100);
 		auto color = Color::White;
 		std::string text = std::string("Use thine A and D\nkeys to change\n") + 
-			"thy portrait.\n\nLeft click when\nthou art finished.";
+			"thy portrait.\n\nClick \"Done\" when\nthou art finished.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager()));
+	}();
+
+	this->nameTextBox = [gameState, name]()
+	{
+		auto origin = Int2(10, 8);
+		auto color = Color(199, 199, 199);
+		std::string text = name;
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			origin.getX(),
+			origin.getY(),
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager()));
+	}();
+
+	this->raceTextBox = [gameState, raceName]()
+	{
+		auto origin = Int2(10, 17);
+		auto color = Color(199, 199, 199);
+		std::string text = CharacterRace(raceName).toString();
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			origin.getX(),
+			origin.getY(),
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager()));
+	}();
+
+	this->classTextBox = [gameState, charClass]()
+	{
+		auto origin = Int2(10, 26);
+		auto color = Color(199, 199, 199);
+		std::string text = charClass.getDisplayName();
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			origin.getX(),
+			origin.getY(),
 			color,
 			text,
 			fontName,
@@ -56,8 +102,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->acceptButton = [this, gameState, charClass, name, gender, raceName]()
+	this->doneButton = [this, gameState, charClass, name, gender, raceName]()
 	{
+		auto center = Int2(25, ORIGINAL_HEIGHT - 15);
+		int width = 21;
+		int height = 12;
 		auto function = [this, gameState, charClass, name, gender, raceName]()
 		{
 			// Make placeholders here for the game data. They'll be more informed
@@ -89,7 +138,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setMusic(MusicName::SunnyDay);
 			gameState->setPanel(std::move(gameWorldPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
 	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
@@ -106,6 +155,9 @@ ChooseAttributesPanel::~ChooseAttributesPanel()
 
 void ChooseAttributesPanel::handleEvents(bool &running)
 {
+	auto mousePosition = this->getMousePosition();
+	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
 	{
@@ -130,28 +182,28 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 			this->backToRaceButton->click();
 		}
 
-		bool leftArrow = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_a);
-		bool rightArrow = (e.type == SDL_KEYDOWN) &&
+		bool incrementIndex = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_d);
+		bool decrementIndex = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_a);
 
 		// Update the portrait index for which portrait to show. Only ten portraits
 		// are allowed for now.
-		if (leftArrow)
-		{
-			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
-		}
-		if (rightArrow)
+		if (incrementIndex)
 		{
 			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
+		}
+		if (decrementIndex)
+		{
+			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 
-		if (leftClick)
+		if (leftClick && this->doneButton->containsPoint(mouseOriginalPoint))
 		{
-			this->acceptButton->click();
+			this->doneButton->click();
 		}
 	}
 }
@@ -178,16 +230,16 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw temporary background.
-	SDL_SetRenderDrawColor(renderer, 24, 36, 36, 255);
-	SDL_RenderFillRect(renderer, letterbox);
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	// Draw attributes texture.
+	const auto *attributesBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
+	this->drawScaledToNative(attributesBackground, renderer);
 
 	// Get the filenames for the portraits.
 	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(),
 		*this->raceName.get(), this->charClass->canCastMagic());
 
-	// Get the current portrait.
+	// Draw the current portrait.
 	const auto *portrait = this->getGameState()->getTextureManager()
 		.getTexture(portraitStrings.at(this->portraitIndex));
 	int portraitWidth, portraitHeight;
@@ -201,8 +253,11 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 		portraitHeight,
 		renderer);
 
-	// Draw text: title.
-	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
+	// Draw text: instructions, name, race, class.
+	this->drawScaledToNative(*this->instructionsTextBox.get(), renderer);
+	this->drawScaledToNative(*this->nameTextBox.get(), renderer);
+	this->drawScaledToNative(*this->raceTextBox.get(), renderer);
+	this->drawScaledToNative(*this->classTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = this->getGameState()->getTextureManager()

@@ -36,7 +36,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 
 	this->initialTextBox = [gameState, charClass, name]()
 	{
-		auto center = Int2(160, 100);
+		auto center = Int2(ORIGINAL_WIDTH / 2, 100);
 		auto color = Color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
@@ -65,7 +65,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		auto function = [this, gameState, gender, charClass, name]()
 		{
 			auto attributesPanel = std::unique_ptr<Panel>(new ChooseAttributesPanel(
-				gameState, gender, charClass, name, *this->raceName.get()));
+				gameState, charClass, name, gender, *this->raceName.get()));
 			gameState->setPanel(std::move(attributesPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));

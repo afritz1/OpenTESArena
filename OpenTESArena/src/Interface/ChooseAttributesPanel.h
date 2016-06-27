@@ -19,8 +19,8 @@ enum class CharacterRaceName;
 class ChooseAttributesPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> titleTextBox;
-	std::unique_ptr<Button> backToRaceButton, acceptButton;
+	std::unique_ptr<TextBox> instructionsTextBox, nameTextBox, raceTextBox, classTextBox;
+	std::unique_ptr<Button> backToRaceButton, doneButton;
 	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
@@ -31,9 +31,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	ChooseAttributesPanel(GameState *gameState, CharacterGenderName gender,
-		const CharacterClass &charClass, const std::string &name,
-		CharacterRaceName raceName);
+	ChooseAttributesPanel(GameState *gameState, const CharacterClass &charClass, 
+		const std::string &name, CharacterGenderName gender, CharacterRaceName raceName);
 	virtual ~ChooseAttributesPanel();
 
 	virtual void tick(double dt, bool &running) override;
