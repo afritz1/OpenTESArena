@@ -26,6 +26,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
@@ -145,13 +146,20 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
+	// Leave the tooltip textures empty for now. Let them be created on demand. 
+	// Generating them all at once here is too slow in debug mode.
+	assert(this->tooltipTextures.size() == 0);
+
 	// Don't initialize the character class until one is clicked.
 	assert(this->charClass.get() == nullptr);
 }
 
 ChooseClassPanel::~ChooseClassPanel()
 {
-
+	for (auto &pair : this->tooltipTextures)
+	{
+		SDL_DestroyTexture(pair.second);
+	}
 }
 
 void ChooseClassPanel::handleEvents(bool &running)
@@ -242,6 +250,42 @@ void ChooseClassPanel::tick(double dt, bool &running)
 	static_cast<void>(dt);
 
 	this->handleEvents(running);
+}
+
+void ChooseClassPanel::createTooltip(int tooltipIndex, SDL_Renderer *renderer)
+{
+	const auto &characterClass = *this->charClasses.at(tooltipIndex).get();
+
+	std::string tooltipText = characterClass.getDisplayName() + "\n\n" +
+		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" +
+		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
+		"Health: " + std::to_string(characterClass.getStartingHealth()) +
+		" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +
+		"Armors: " + this->getClassArmors(characterClass) + "\n" +
+		"Shields: " + this->getClassShields(characterClass) + "\n" +
+		"Weapons: " + this->getClassWeapons(characterClass);
+
+	std::unique_ptr<TextBox> tooltipTextBox(new TextBox(
+		0, 0,
+		Color::White,
+		tooltipText,
+		FontName::A,
+		this->getGameState()->getTextureManager()));
+
+	const int width = tooltipTextBox->getWidth();
+	const int height = tooltipTextBox->getHeight();
+	const int padding = 3;
+
+	Surface tooltip(width, height + padding);
+	tooltip.fill(Color(32, 32, 32));
+	tooltipTextBox->blit(tooltip, Int2(0, 1));
+
+	SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STATIC, tooltip.getWidth(), tooltip.getHeight());
+	SDL_UpdateTexture(texture, nullptr, tooltip.getSurface()->pixels,
+		tooltip.getWidth() * (Surface::DEFAULT_BPP / 8));
+
+	this->tooltipTextures.insert(std::make_pair(tooltipIndex, texture));
 }
 
 std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
@@ -385,42 +429,39 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
-void ChooseClassPanel::drawClassTooltip(const CharacterClass &characterClass, 
-	SDL_Renderer *renderer)
+void ChooseClassPanel::drawClassTooltip(int tooltipIndex, SDL_Renderer *renderer)
 {
 	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
 
-	std::string tooltipText = characterClass.getDisplayName() + "\n\n" +
-		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" +
-		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
-		"Health: " + std::to_string(characterClass.getStartingHealth()) +
-		" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +
-		"Armors: " + this->getClassArmors(characterClass) + "\n" +
-		"Shields: " + this->getClassShields(characterClass) + "\n" +
-		"Weapons: " + this->getClassWeapons(characterClass);
-	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
-		mouseOriginalPoint.getX(),
-		mouseOriginalPoint.getY(),
-		Color::White,
-		tooltipText,
-		FontName::A,
-		this->getGameState()->getTextureManager()));
-	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
-		tooltip->getWidth(), tooltip->getHeight());
-	tooltipBackground.fill(Color(32, 32, 32));
+	// Make the tooltip if it does not exist already.
+	if (this->tooltipTextures.find(tooltipIndex) == this->tooltipTextures.end())
+	{
+		this->createTooltip(tooltipIndex, renderer);
+	}
 
-	// Make the tooltip smaller.
-	const int width = tooltip->getWidth() / 2;
-	const int height = tooltip->getHeight() / 2;
+	SDL_Texture *tooltipTexture = this->tooltipTextures.at(tooltipIndex);
+	int tooltipWidth, tooltipHeight;
+	SDL_QueryTexture(tooltipTexture, nullptr, nullptr, &tooltipWidth, &tooltipHeight);
 
-	// I tried clamping to the edge, but then it hides the cursor, which isn't good.
-	const int x = ((tooltip->getX() + width) < ORIGINAL_WIDTH) ? tooltip->getX() :
-		(tooltip->getX() - width);//(ORIGINAL_WIDTH - width);
-	const int y = ((tooltip->getY() + height) < ORIGINAL_HEIGHT) ? tooltip->getY() :
-		(tooltip->getY() - height);//(ORIGINAL_HEIGHT - height);
+	// Draw the tooltip smaller.
+	tooltipWidth /= 2;
+	tooltipHeight /= 2;
 
-	this->drawScaledToNative(tooltipBackground, x + 4, y - 1, width, height + 2, renderer);
-	this->drawScaledToNative(*tooltip.get(), x + 4, y, width, height, renderer);
+	// Calculate the top left corner, given the mouse position.
+	const int mouseX = mouseOriginalPoint.getX();
+	const int mouseY = mouseOriginalPoint.getY();
+	const int x = ((mouseX + tooltipWidth) < ORIGINAL_WIDTH) ? (mouseX + 4) :
+		(mouseX + 4 - tooltipWidth);
+	const int y = ((mouseY + tooltipHeight) < ORIGINAL_HEIGHT) ? (mouseY - 1) :
+		(mouseY - tooltipHeight);
+
+	this->drawScaledToNative(
+		tooltipTexture,
+		x,
+		y,
+		tooltipWidth,
+		tooltipHeight,
+		renderer);
 }
 
 void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
@@ -451,6 +492,7 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		parchmentHeight,
 		renderer);
 
+	// The original list background is PopUp, but the palette isn't right yet.
 	const auto &listPopUp = this->getGameState()->getTextureManager()
 		.getSurface(TextureFile::fromName(TextureName::PopUp11));
 
@@ -485,9 +527,7 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 		{
-			auto characterClass = std::unique_ptr<CharacterClass>(new CharacterClass(
-				*this->charClasses.at(index).get()));
-			this->drawClassTooltip(*characterClass.get(), renderer);
+			this->drawClassTooltip(index, renderer);
 		}
 	}
 }

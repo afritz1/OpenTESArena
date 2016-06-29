@@ -1,6 +1,7 @@
 #ifndef CHOOSE_CLASS_PANEL_H
 #define CHOOSE_CLASS_PANEL_H
 
+#include <map>
 #include <vector>
 
 #include "Panel.h"
@@ -15,6 +16,8 @@ class ListBox;
 class Surface;
 class TextBox;
 
+struct SDL_Texture;
+
 class ChooseClassPanel : public Panel
 {
 private:
@@ -24,13 +27,16 @@ private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
 	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
+	std::map<int, SDL_Texture*> tooltipTextures;
 	std::vector<std::unique_ptr<CharacterClass>> charClasses;
 	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
 
 	std::string getClassArmors(const CharacterClass &characterClass) const;
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
-	void drawClassTooltip(const CharacterClass &characterClass, SDL_Renderer *renderer);
+
+	void createTooltip(int tooltipIndex, SDL_Renderer *renderer);
+	void drawClassTooltip(int tooltipIndex, SDL_Renderer *renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
