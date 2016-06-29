@@ -94,7 +94,7 @@ void WorldMapPanel::handleEvents(bool &running)
 			}
 
 			// Listen for map clicks.
-			for (const auto &provinceName : Province::getAllProvinceNames())
+			for (const auto provinceName : Province::getAllProvinceNames())
 			{
 				Province province(provinceName);
 				const Rect &clickArea = province.getWorldMapClickArea();

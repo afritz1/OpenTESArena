@@ -168,7 +168,7 @@ std::vector<std::string> TextBox::textToLines(const std::string &text) const
 
 	const char newLine = '\n';
 	int textLineIndex = 0;
-	for (const auto &c : text)
+	for (const auto c : text)
 	{
 		if (c == newLine)
 		{
@@ -228,7 +228,7 @@ std::vector<std::unique_ptr<Surface>> TextBox::lineToSurfaces(const std::string 
 	}
 	else
 	{
-		for (const auto &c : line)
+		for (const auto c : line)
 		{
 			surfaces.push_back(this->getTrimmedLetter(c, textureManager));
 		}

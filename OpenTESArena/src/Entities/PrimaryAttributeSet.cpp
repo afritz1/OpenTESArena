@@ -27,7 +27,7 @@ PrimaryAttributeSet::PrimaryAttributeSet()
 	};
 
 	// Initialize each primary attribute to zero.
-	for (const auto &attributeName : attributeNames)
+	for (const auto attributeName : attributeNames)
 	{
 		PrimaryAttribute attribute(attributeName, 0);
 		this->primaryAttributes.insert(std::pair<PrimaryAttributeName, PrimaryAttribute>(

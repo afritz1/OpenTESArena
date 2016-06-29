@@ -141,7 +141,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 		else if (leftClick)
 		{
 			// Listen for map clicks.
-			for (const auto &provinceName : Province::getAllProvinceNames())
+			for (const auto provinceName : Province::getAllProvinceNames())
 			{
 				Province province(provinceName);
 				const Rect &clickArea = province.getWorldMapClickArea();
@@ -219,23 +219,6 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Don't worry about the yellow dots for now. Whatever the original game is doing
 	// to cover them up should be figured out sometime.
 
-	// Cover up the bottom-right "Exit" text.
-	/*Surface cornerCoverUp(40, 12);
-	const auto &worldMap2 = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::WorldMap));
-	Rect mapClipRect(
-		worldMap2.getWidth() - cornerCoverUp.getWidth(),
-		worldMap2.getHeight() - cornerCoverUp.getHeight(),
-		cornerCoverUp.getWidth(),
-		cornerCoverUp.getHeight());
-	worldMap2.blit(cornerCoverUp, Int2(), mapClipRect);
-	this->drawScaledToNative(cornerCoverUp,
-		ORIGINAL_WIDTH - cornerCoverUp.getWidth(),
-		ORIGINAL_HEIGHT - cornerCoverUp.getHeight(),
-		cornerCoverUp.getWidth(),
-		cornerCoverUp.getHeight(),
-		renderer);*/
-
 	// Draw visible parchments and text.
 	this->parchment->setTransparentColor(Color::Magenta);
 	if (this->initialTextBox->isVisible())
@@ -261,7 +244,7 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	{
 		// Draw tooltip if the mouse is in a province.
 		auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
-		for (const auto &provinceName : Province::getAllProvinceNames())
+		for (const auto provinceName : Province::getAllProvinceNames())
 		{
 			Province province(provinceName);
 			const Rect &clickArea = province.getWorldMapClickArea();

@@ -123,7 +123,7 @@ std::string TextureFile::fromName(TextureName textureName)
 std::vector<std::string> TextureFile::fromName(TextureSequenceName sequenceName)
 {
 	const auto &filename = TextureSequenceFilenames.at(sequenceName);
-	const int &count = TextureSequenceCounts.at(sequenceName);
+	const int count = TextureSequenceCounts.at(sequenceName);
 
 	std::vector<std::string> filenames;
 

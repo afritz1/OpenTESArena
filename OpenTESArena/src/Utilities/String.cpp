@@ -8,7 +8,7 @@ std::vector<std::string> String::split(const std::string &line, char separator)
 	// vector with one empty string is returned.
 	strings.push_back(std::string());
 
-	for (const auto &c : line)
+	for (const auto c : line)
 	{
 		if (c == separator)
 		{
@@ -36,7 +36,7 @@ std::string String::trim(const std::string &line)
 
 	std::string trimmed;
 
-	for (const auto &c : line)
+	for (const auto c : line)
 	{
 		if (c != space)
 		{
@@ -54,7 +54,7 @@ std::string String::trimLines(const std::string &line)
 
 	std::string trimmed;
 
-	for (const auto &c : line)
+	for (const auto c : line)
 	{
 		if ((c != carriageReturn) && (c != newLine))
 		{

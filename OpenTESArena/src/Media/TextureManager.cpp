@@ -650,7 +650,7 @@ void TextureManager::preloadSequences()
 {
 	Debug::mention("Texture Manager", "Preloading sequences.");
 
-	for (const auto &name : TextureFile::getSequenceNames())
+	for (const auto name : TextureFile::getSequenceNames())
 	{
 		std::vector<std::string> filenames = TextureFile::fromName(name);
 		for (const auto &filename : filenames)

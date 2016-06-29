@@ -123,9 +123,9 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 			"Location Parser", "Invalid climate \"" + climate + "\".");
 
 		// Convert the strings to recognized types.
-		const auto &provinceName = LocationParserProvinces.at(province);
-		const auto &locationType = LocationParserTypes.at(type);
-		const auto &climateName = LocationParserClimates.at(climate);
+		const auto provinceName = LocationParserProvinces.at(province);
+		const auto locationType = LocationParserTypes.at(type);
+		const auto climateName = LocationParserClimates.at(climate);
 
 		locations.push_back(std::unique_ptr<Location>(new Location(
 			displayName, provinceName, locationType, climateName)));
