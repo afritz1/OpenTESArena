@@ -26,8 +26,8 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 {
 	this->playerNameTextBox = [gameState]()
 	{
-		auto origin = Int2(10, 8);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 8);
+		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getDisplayName();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -41,8 +41,8 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->playerRaceTextBox = [gameState]()
 	{
-		auto origin = Int2(10, 17);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 17);
+		Color color(199, 199, 199);
 		std::string text = CharacterRace(gameState->getGameData()->getPlayer()
 			.getRaceName()).toString();
 		auto fontName = FontName::Arena;
@@ -57,8 +57,8 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->playerClassTextBox = [gameState]()
 	{
-		auto origin = Int2(10, 26);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 26);
+		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getCharacterClass()
 			.getDisplayName();
 		auto fontName = FontName::Arena;
@@ -73,7 +73,7 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->doneButton = [gameState]()
 	{
-		auto center = Int2(25, ORIGINAL_HEIGHT - 15);
+		Int2 center(25, ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
 		auto function = [gameState]()

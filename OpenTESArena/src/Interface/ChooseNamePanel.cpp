@@ -33,8 +33,8 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->titleTextBox = [gameState, charClass]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 90);
-		auto color = Color(48, 12, 12);
+		Int2 center(ORIGINAL_WIDTH / 2, 90);
+		Color color(48, 12, 12);
 		std::string text = "What will be thy name,\n" + charClass.getDisplayName() + "?";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -47,7 +47,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->nameTextBox = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 110);
+		Int2 center(ORIGINAL_WIDTH / 2, 110);
 		auto color = Color::White;
 		std::string text = "";
 		auto fontName = FontName::A;

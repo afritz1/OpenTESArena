@@ -30,8 +30,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 80);
-		auto color = Color(48, 12, 12);
+		Int2 center((ORIGINAL_WIDTH / 2), 80);
+		Color color(48, 12, 12);
 		std::string text = std::string("How do you wish\nto select your class?");
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -44,8 +44,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->generateTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 120);
-		auto color = Color(48, 12, 12);
+		Int2 center((ORIGINAL_WIDTH / 2), 120);
+		Color color(48, 12, 12);
 		std::string text = std::string("Generate\n(not implemented)");
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -58,8 +58,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->selectTextBox = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 160);
-		auto color = Color(48, 12, 12);
+		Int2 center(ORIGINAL_WIDTH / 2, 160);
+		Color color(48, 12, 12);
 		std::string text = std::string("Select");
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -82,7 +82,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->generateButton = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 120);
+		Int2 center(ORIGINAL_WIDTH / 2, 120);
 		auto function = [gameState]()
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
@@ -94,7 +94,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->selectButton = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 160);
+		Int2 center(ORIGINAL_WIDTH / 2, 160);
 		auto function = [gameState]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(new ChooseClassPanel(gameState));

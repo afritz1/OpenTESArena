@@ -27,14 +27,14 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 	{
 		const auto *surface = gameState->getTextureManager().getSurface(
 			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		auto origin = Int2((ORIGINAL_WIDTH / 2) - (surface->w / 2), 35);
+		Int2 origin((ORIGINAL_WIDTH / 2) - (surface->w / 2), 35);
 		return std::unique_ptr<Surface>(new Surface(origin.getX(), origin.getY(), surface));
 	}();
 
 	this->genderTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 80);
-		auto color = Color(48, 12, 12);
+		Int2 center((ORIGINAL_WIDTH / 2), 80);
+		Color color(48, 12, 12);
 		std::string text = "Choose thy gender...";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -47,8 +47,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 120);
-		auto color = Color(48, 12, 12);
+		Int2 center((ORIGINAL_WIDTH / 2), 120);
+		Color color(48, 12, 12);
 		std::string text = "Male";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -61,8 +61,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->femaleTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 160);
-		auto color = Color(48, 12, 12);
+		Int2 center((ORIGINAL_WIDTH / 2), 160);
+		Color color(48, 12, 12);
 		std::string text = "Female";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -85,7 +85,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleButton = [gameState, charClass, name]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 120);
+		Int2 center((ORIGINAL_WIDTH / 2), 120);
 		auto function = [gameState, charClass, name]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
@@ -97,7 +97,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->femaleButton = [gameState, charClass, name]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 2), 160);
+		Int2 center((ORIGINAL_WIDTH / 2), 160);
 		auto function = [gameState, charClass, name]()
 		{
 			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(

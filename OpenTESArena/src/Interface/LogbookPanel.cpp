@@ -21,7 +21,7 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 {
 	this->backButton = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
+		Int2 center(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
 		auto function = [gameState]()
 		{
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
@@ -32,8 +32,8 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, ORIGINAL_HEIGHT / 2);
-		auto color = Color(255, 207, 12);
+		Int2 center(ORIGINAL_WIDTH / 2, ORIGINAL_HEIGHT / 2);
+		Color color(255, 207, 12);
 		std::string text = "Your logbook is empty.";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(

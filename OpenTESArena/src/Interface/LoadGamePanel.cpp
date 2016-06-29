@@ -36,7 +36,7 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 
 	this->underConstructionTextBox = [gameState]()
 	{
-		auto center = Int2(160, 85);
+		Int2 center(160, 85);
 		auto color = Color::White;
 		std::string text = "Under construction!";
 		auto fontName = FontName::A;

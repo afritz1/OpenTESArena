@@ -33,7 +33,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 {
 	this->instructionsTextBox = [gameState]()
 	{
-		auto center = Int2((ORIGINAL_WIDTH / 4) + 5, 100);
+		Int2 center((ORIGINAL_WIDTH / 4) + 5, 100);
 		auto color = Color::White;
 		std::string text = std::string("Use thine A and D\nkeys to change\n") + 
 			"thy portrait.\n\nClick \"Done\" when\nthou art finished.";
@@ -48,8 +48,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->nameTextBox = [gameState, name]()
 	{
-		auto origin = Int2(10, 8);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 8);
+		Color color(199, 199, 199);
 		std::string text = name;
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -63,8 +63,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->raceTextBox = [gameState, raceName]()
 	{
-		auto origin = Int2(10, 17);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 17);
+		Color color(199, 199, 199);
 		std::string text = CharacterRace(raceName).toString();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -78,8 +78,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->classTextBox = [gameState, charClass]()
 	{
-		auto origin = Int2(10, 26);
-		auto color = Color(199, 199, 199);
+		Int2 origin(10, 26);
+		Color color(199, 199, 199);
 		std::string text = charClass.getDisplayName();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -104,7 +104,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->doneButton = [this, gameState, charClass, name, gender, raceName]()
 	{
-		auto center = Int2(25, ORIGINAL_HEIGHT - 15);
+		Int2 center(25, ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
 		auto function = [this, gameState, charClass, name, gender, raceName]()

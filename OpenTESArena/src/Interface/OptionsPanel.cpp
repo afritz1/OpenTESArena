@@ -20,7 +20,7 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 {
 	this->titleTextBox = [gameState]()
 	{
-		auto center = Int2(160, 30);
+		Int2 center(160, 30);
 		auto color = Color::White;
 		std::string text = "Options";
 		auto fontName = FontName::A;

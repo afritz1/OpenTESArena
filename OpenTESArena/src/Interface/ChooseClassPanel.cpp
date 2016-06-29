@@ -52,8 +52,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		auto center = Int2(160, 56);
-		auto color = Color(48, 12, 12);
+		Int2 center(160, 56);
+		Color color(48, 12, 12);
 		std::string text = "Choose thy class...";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -70,15 +70,16 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		int x = (ORIGINAL_WIDTH / 2) - 58;
 		int y = (ORIGINAL_HEIGHT / 2);
 		auto fontName = FontName::A;
-		auto color = Color(190, 113, 0);
+		Color color(190, 113, 0);
 		int maxElements = 6;
-		auto elements = std::vector<std::string>();
+		std::vector<std::string> elements;
 
 		// This depends on the character classes being already sorted.
 		for (const auto &item : this->charClasses)
 		{
 			elements.push_back(item->getDisplayName());
 		}
+
 		return std::unique_ptr<ListBox>(new ListBox(
 			x,
 			y,

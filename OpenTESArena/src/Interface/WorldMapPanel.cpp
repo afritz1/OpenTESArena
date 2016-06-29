@@ -23,7 +23,7 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 {
 	this->backToGameButton = [gameState]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH - 22, ORIGINAL_HEIGHT - 7);
+		Int2 center(ORIGINAL_WIDTH - 22, ORIGINAL_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
 		auto function = [gameState]()

@@ -23,7 +23,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 {
 	this->loadButton = [gameState]()
 	{
-		auto center = Int2(168, 58);
+		Int2 center(168, 58);
 		int width = 150;
 		int height = 20;
 		auto function = [gameState]()
@@ -37,7 +37,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 
 	this->newButton = [gameState]()
 	{
-		auto center = Int2(168, 112);
+		Int2 center(168, 112);
 		int width = 150;
 		int height = 20;
 		auto function = [gameState]()
@@ -73,7 +73,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 
 	this->exitButton = []()
 	{
-		auto center = Int2(168, 158);
+		Int2 center(168, 158);
 		int width = 45;
 		int height = 20;
 		auto function = []()

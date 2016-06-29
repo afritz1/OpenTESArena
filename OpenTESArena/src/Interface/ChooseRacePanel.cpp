@@ -36,8 +36,8 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 
 	this->initialTextBox = [gameState, charClass, name]()
 	{
-		auto center = Int2(ORIGINAL_WIDTH / 2, 100);
-		auto color = Color(48, 12, 12);
+		Int2 center(ORIGINAL_WIDTH / 2, 100);
+		Color color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
 		auto fontName = FontName::A;
