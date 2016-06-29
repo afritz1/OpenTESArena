@@ -44,6 +44,7 @@ enum class TextureName
 	Icon, // Custom window icon for the program.
 	IntroTitle, // Arena copyright, etc..
 	IntroQuote, // "The best techniques...".
+	Logbook, // Logbook background.
 	MainMenu, // Load, New, Exit.
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
 	ParchmentPopup, // For text boxes.

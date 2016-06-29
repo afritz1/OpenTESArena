@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "CharacterPanel.h"
+#include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
 #include "WorldMapPanel.h"
 #include "../Entities/CoordinateFrame.h"
@@ -39,6 +40,16 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		{
 			auto sheetPanel = std::unique_ptr<Panel>(new CharacterPanel(gameState));
 			gameState->setPanel(std::move(sheetPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
+	}();
+
+	this->logbookButton = [gameState]()
+	{
+		auto function = [gameState]()
+		{
+			auto logbookPanel = std::unique_ptr<Panel>(new LogbookPanel(gameState));
+			gameState->setPanel(std::move(logbookPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -99,6 +110,8 @@ void GameWorldPanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_e);
+		bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_l);
 		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_TAB);
 		bool mapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
@@ -111,6 +124,11 @@ void GameWorldPanel::handleEvents(bool &running)
 		if (activateHotkeyPressed)
 		{
 			// Activate whatever is looked at.
+		}
+		else if (logbookHotkeyPressed)
+		{
+			// Go to the logbook.
+			this->logbookButton->click();
 		}
 		else if (sheetHotkeyPressed)
 		{

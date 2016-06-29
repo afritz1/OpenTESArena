@@ -43,6 +43,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "TITLE.IMG" },
 	{ TextureName::IntroQuote, "QUOTE.IMG" },
+	{ TextureName::Logbook, "LOGBOOK.IMG" },
 	{ TextureName::MainMenu, "MENU.IMG" },
 	{ TextureName::ParchmentBig, "PARCH.IMG" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
