@@ -174,7 +174,8 @@ Float3<T> Float3<T>::normalized() const
 template<typename T>
 bool Float3<T>::isNormalized() const
 {
-	return std::fabs(static_cast<T>(1.0) - this->length()) < EPSILON;
+	return std::fabs(static_cast<T>(1.0) - this->length()) < 
+		static_cast<T>(EPSILON);
 }
 
 template<typename T>

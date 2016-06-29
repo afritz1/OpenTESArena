@@ -150,7 +150,7 @@ void Player::tick(GameState *gameState, double dt)
 	double frictionMagnitude = (this->getVelocity().length() * 0.5) * friction;
 
 	// Change the velocity if friction is valid.
-	if (std::isfinite(frictionDirection.length()))
+	if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > EPSILON))
 	{
 		this->accelerate(frictionDirection, frictionMagnitude, true, dt);
 	}

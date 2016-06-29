@@ -9,7 +9,8 @@
 
 GameData::GameData(std::unique_ptr<Player> player, 
 	std::unique_ptr<EntityManager> entityManager,
-	std::unique_ptr<CLProgram> clProgram, double gameTime)
+	std::unique_ptr<CLProgram> clProgram, double gameTime,
+	int worldWidth, int worldHeight, int worldDepth)
 {
 	Debug::mention("GameData", "Initializing.");
 
@@ -17,6 +18,9 @@ GameData::GameData(std::unique_ptr<Player> player,
 	this->entityManager = std::move(entityManager);
 	this->clProgram = std::move(clProgram);
 	this->gameTime = gameTime;
+	this->worldWidth = worldWidth;
+	this->worldHeight = worldHeight;
+	this->worldDepth = worldDepth;
 }
 
 GameData::~GameData()
@@ -42,6 +46,21 @@ CLProgram &GameData::getCLProgram() const
 double GameData::getGameTime() const
 {
 	return this->gameTime;
+}
+
+int GameData::getWorldWidth() const
+{
+	return this->worldWidth;
+}
+
+int GameData::getWorldHeight() const
+{
+	return this->worldHeight;
+}
+
+int GameData::getWorldDepth() const
+{
+	return this->worldDepth;
 }
 
 void GameData::incrementGameTime(double dt)

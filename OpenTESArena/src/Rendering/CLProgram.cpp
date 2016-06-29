@@ -10,6 +10,7 @@
 #include "../Math/Float2.h"
 #include "../Math/Float3.h"
 #include "../Math/Float4.h"
+#include "../Math/Random.h"
 #include "../Math/Triangle.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
@@ -20,7 +21,7 @@ namespace
 	// aligns structs to multiples of 8 bytes. Additional padding is sometimes 
 	// necessary to match struct alignment.
 	const cl::size_type SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float) + 12;
-	const cl::size_type SIZEOF_LIGHT = (sizeof(cl_float3) * 2);
+	const cl::size_type SIZEOF_LIGHT = sizeof(cl_float3) * 2;
 	const cl::size_type SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
@@ -31,7 +32,6 @@ namespace
 
 const std::string CLProgram::PATH = "data/kernels/";
 const std::string CLProgram::FILENAME = "kernel.cl";
-const std::string CLProgram::TEST_KERNEL = "test";
 const std::string CLProgram::INTERSECT_KERNEL = "intersect";
 const std::string CLProgram::AMBIENT_OCCLUSION_KERNEL = "ambientOcclusion";
 const std::string CLProgram::RAY_TRACE_KERNEL = "rayTrace";
@@ -39,15 +39,22 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer)
+CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer,
+	int worldWidth, int worldHeight, int worldDepth)
 {
 	assert(width > 0);
 	assert(height > 0);
+	assert(worldWidth > 0);
+	assert(worldHeight > 0);
+	assert(worldDepth > 0);
 
 	Debug::mention("CLProgram", "Initializing.");
 
 	this->width = width;
 	this->height = height;
+	this->worldWidth = worldWidth;
+	this->worldHeight = worldHeight;
+	this->worldDepth = worldDepth;
 
 	// Create the local output pixel buffer.
 	this->outputData = std::vector<char>(sizeof(cl_int) * width * height);
@@ -60,7 +67,7 @@ CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer)
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
 	Debug::check(platforms.size() > 0, "CLProgram", "No OpenCL platform found.");
-	
+
 	// Look at the first platform. Most computers shouldn't have more than one.
 	// More robust code can check for multiple platforms in the future.
 	const auto &platform = platforms.at(0);
@@ -97,25 +104,24 @@ CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue.");
 
 	// Read the kernel source from file.
-	auto source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
+	std::string source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
 
 	// Make some #defines to add to the kernel source.
-	auto defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
+	std::string defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
 		std::string("\n") + std::string("#define SCREEN_HEIGHT ") +
 		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
 		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
 		std::string("f\n") + // The "f" is for "float". OpenCL complains if it's a double.
-		// The world dimensions will be placeholders for now.
-		std::string("#define WORLD_WIDTH ") + std::to_string(1) + std::string("\n") +
-		std::string("#define WORLD_HEIGHT ") + std::to_string(1) + std::string("\n") +
-		std::string("#define WORLD_DEPTH ") + std::to_string(1) + std::string("\n");
-
-	// Add some kernel compilation switches.
-	std::string options("-cl-fast-relaxed-math -cl-strict-aliasing");
+		std::string("#define WORLD_WIDTH ") + std::to_string(worldWidth) + std::string("\n") +
+		std::string("#define WORLD_HEIGHT ") + std::to_string(worldHeight) + std::string("\n") +
+		std::string("#define WORLD_DEPTH ") + std::to_string(worldDepth) + std::string("\n");
 
 	// Put the kernel source in a program object within the OpenCL context.
 	this->program = cl::Program(this->context, defines + source, false, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Program.");
+
+	// Add some kernel compilation switches.
+	std::string options("-cl-fast-relaxed-math -cl-strict-aliasing");
 
 	// Build the program into something executable. If compilation fails, the program stops.
 	status = this->program.build(devices, options.c_str());
@@ -123,78 +129,200 @@ CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer)
 		this->getErrorString(status) + ").");
 
 	// Create the kernels and set their entry function to be a __kernel in the program.
-	this->kernel = cl::Kernel(this->program, CLProgram::TEST_KERNEL.c_str(), &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel.");
+	this->intersectKernel = cl::Kernel(
+		this->program, CLProgram::INTERSECT_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel intersectKernel.");
 
-	// Create the OpenCL buffers for reading and writing.
+	this->rayTraceKernel = cl::Kernel(
+		this->program, CLProgram::RAY_TRACE_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel rayTraceKernel.");
+
+	this->convertToRGBKernel = cl::Kernel(
+		this->program, CLProgram::CONVERT_TO_RGB_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel convertToRGBKernel.");
+
+	// Create the OpenCL buffers in the context for reading and/or writing.
+	// NOTE: The size of some of these buffers is just a placeholder for now.
 	this->cameraBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		SIZEOF_CAMERA, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer cameraBuffer.");
 
 	this->voxelRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_VOXEL_REF /* Placeholder size */, nullptr, &status);
+		SIZEOF_VOXEL_REF * worldWidth * worldHeight * worldDepth, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer voxelRefBuffer.");
 
 	this->spriteRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_SPRITE_REF /* Placeholder size */, nullptr, &status);
+		SIZEOF_SPRITE_REF * worldWidth * worldHeight * worldDepth, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer spriteRefBuffer.");
 
 	this->lightRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_LIGHT_REF /* Placeholder size */, nullptr, &status);
+		SIZEOF_LIGHT_REF * worldWidth * worldHeight * worldDepth, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
-	this->textureRefBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_TEXTURE_REF /* Placeholder size */, nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureRefBuffer.");
-
 	this->triangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_TRIANGLE /* Placeholder size */, nullptr, &status);
+		SIZEOF_TRIANGLE * 12 * worldWidth * worldHeight * worldDepth
+		/* This buffer size is actually very naive. Much of it will just be air.
+		Make a mapping of 3D cell coordinates to triangles at some point to help. */,
+		nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleBuffer.");
 
+	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_LIGHT /* Some # of lights * world dims, Placeholder size */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
+
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		sizeof(cl_float4) * 3 /* Placeholder size */, nullptr, &status);
+		sizeof(cl_float4) * 3 /* Some # of float4's, Placeholder size */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		sizeof(cl_float), nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer gameTimeBuffer.");
 
+	this->depthBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer depthBuffer.");
+
+	this->normalBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer normalBuffer.");
+
+	this->viewBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer viewBuffer.");
+
+	this->pointBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer pointBuffer.");
+
+	this->uvBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float2) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer uvBuffer.");
+
+	this->triangleIndexBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_int) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleIndexBuffer.");
+
+	this->colorBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * width * height, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
+
 	this->outputBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
 		sizeof(cl_int) * width * height, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer outputBuffer.");
 
-	// Tell the kernel arguments where their data lives.
-	// Maybe there should be methods which set kernel arguments for each kernel object.
-	// If only one kernel member is used, then update the targets for it on-the-fly.
-	status = this->kernel.setArg(0, this->cameraBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg cameraBuffer.");
+	// Tell the intersect kernel arguments where their buffers live.
+	status = this->intersectKernel.setArg(0, this->cameraBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel cameraBuffer.");
 
-	status = this->kernel.setArg(1, this->voxelRefBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg voxelRefBuffer.");
+	status = this->intersectKernel.setArg(1, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel voxelRefBuffer.");
 
-	status = this->kernel.setArg(2, this->spriteRefBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg spriteRefBuffer.");
+	status = this->intersectKernel.setArg(2, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel spriteRefBuffer.");
 
-	status = this->kernel.setArg(3, this->lightRefBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg lightRefBuffer.");
+	status = this->intersectKernel.setArg(3, this->triangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel triangleBuffer.");
 
-	status = this->kernel.setArg(4, this->textureRefBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg textureRefBuffer.");
+	status = this->intersectKernel.setArg(4, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel textureBuffer.");
 
-	status = this->kernel.setArg(5, this->triangleBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg triangleBuffer.");
+	status = this->intersectKernel.setArg(5, this->depthBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel depthBuffer.");
 
-	status = this->kernel.setArg(6, this->textureBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg textureBuffer.");
+	status = this->intersectKernel.setArg(6, this->normalBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel normalBuffer.");
 
-	status = this->kernel.setArg(7, this->gameTimeBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg gameTimeBuffer.");
+	status = this->intersectKernel.setArg(7, this->viewBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel viewBuffer.");
 
-	status = this->kernel.setArg(8, this->outputBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg outputBuffer.");
+	status = this->intersectKernel.setArg(8, this->pointBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel pointBuffer.");
+
+	status = this->intersectKernel.setArg(9, this->uvBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel uvBuffer.");
+
+	status = this->intersectKernel.setArg(10, this->triangleIndexBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel triangleIndexBuffer.");
+
+	// Tell the rayTrace kernel arguments where their buffers live.
+	status = this->rayTraceKernel.setArg(0, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel voxelRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(1, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel spriteRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(2, this->lightRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel lightRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(3, this->triangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel triangleBuffer.");
+
+	status = this->rayTraceKernel.setArg(4, this->lightBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel lightBuffer.");
+
+	status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel textureBuffer.");
+
+	status = this->rayTraceKernel.setArg(6, this->gameTimeBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel gameTimeBuffer.");
+
+	status = this->rayTraceKernel.setArg(7, this->depthBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel depthBuffer.");
+
+	status = this->rayTraceKernel.setArg(8, this->normalBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel normalBuffer.");
+
+	status = this->rayTraceKernel.setArg(9, this->viewBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel viewBuffer.");
+
+	status = this->rayTraceKernel.setArg(10, this->pointBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel pointBuffer.");
+
+	status = this->rayTraceKernel.setArg(11, this->uvBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel uvBuffer.");
+
+	status = this->rayTraceKernel.setArg(12, this->triangleIndexBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel triangleIndexBuffer.");
+
+	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel colorBuffer.");
+
+	// Tell the convertToRGB kernel arguments where their buffers live.
+	status = this->convertToRGBKernel.setArg(0, this->colorBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg convertToRGBKernel colorBuffer.");
+
+	status = this->convertToRGBKernel.setArg(1, this->outputBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg convertToRGBKernel outputBuffer.");
 
 	// --- TESTING PURPOSES ---
-	// The following code is for some tests.
+	// The following code is for testing. Remove it once using actual world data.
 
 	this->makeTestWorld();
 
@@ -215,19 +343,31 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->context = clProgram.context;
 	this->commandQueue = clProgram.commandQueue;
 	this->program = clProgram.program;
-	this->kernel = clProgram.kernel;
+	this->intersectKernel = clProgram.intersectKernel;
+	this->rayTraceKernel = clProgram.rayTraceKernel;
+	this->convertToRGBKernel = clProgram.convertToRGBKernel;
 	this->cameraBuffer = clProgram.cameraBuffer;
 	this->voxelRefBuffer = clProgram.voxelRefBuffer;
 	this->spriteRefBuffer = clProgram.spriteRefBuffer;
 	this->lightRefBuffer = clProgram.lightRefBuffer;
-	this->textureRefBuffer = clProgram.textureRefBuffer;
 	this->triangleBuffer = clProgram.triangleBuffer;
+	this->lightBuffer = clProgram.lightBuffer;
 	this->textureBuffer = clProgram.textureBuffer;
 	this->gameTimeBuffer = clProgram.gameTimeBuffer;
+	this->depthBuffer = clProgram.depthBuffer;
+	this->normalBuffer = clProgram.normalBuffer;
+	this->viewBuffer = clProgram.viewBuffer;
+	this->pointBuffer = clProgram.pointBuffer;
+	this->uvBuffer = clProgram.uvBuffer;
+	this->triangleIndexBuffer = clProgram.triangleIndexBuffer;
+	this->colorBuffer = clProgram.colorBuffer;
 	this->outputBuffer = clProgram.outputBuffer;
 	this->outputData = clProgram.outputData;
 	this->width = clProgram.width;
 	this->height = clProgram.height;
+	this->worldWidth = clProgram.worldWidth;
+	this->worldHeight = clProgram.worldHeight;
+	this->worldDepth = clProgram.worldDepth;
 
 	SDL_DestroyTexture(this->texture);
 	this->texture = clProgram.texture;
@@ -344,36 +484,151 @@ void CLProgram::makeTestWorld()
 {
 	Debug::mention("CLProgram", "Making test world.");
 
-	// This code is not using an acceleration structure yet. It will be very slow if 
-	// too many triangles are used!
+	// This method builds a simple test city with some blocks around.
+	// It does nothing with sprites, lights, and textures yet.
 
-	// Fill the triangle buffer with some test values. Remove these once actual data 
-	// are used. Do nothing with voxel, sprite, light, and texture references yet.
+	// Lambda for creating a vector of triangles for a particular voxel.
+	auto makeBlock = [](int cellX, int cellY, int cellZ)
+	{
+		double x = static_cast<double>(cellX);
+		double y = static_cast<double>(cellY);
+		double z = static_cast<double>(cellZ);
+		const double sideLength = 1.0;
 
-	// Some test dimensions.
-	const int width = 4;
-	const int depth = 4;
+		// Front.
+		Triangle t1(
+			Float3d(x + sideLength, y + sideLength, z),
+			Float3d(x + sideLength, y, z),
+			Float3d(x, y, z),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
 
-	// Overwrite the existing triangle buffer.
-	cl_int status = CL_SUCCESS;
-	cl::size_type bufferSize = SIZEOF_TRIANGLE * width * depth * 2;
-	this->triangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		bufferSize, nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleBuffer.");
+		Triangle t2(
+			Float3d(x, y, z),
+			Float3d(x, y + sideLength, z),
+			Float3d(x + sideLength, y + sideLength, z),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
 
-	// Remind the kernel where to look for the new triangle buffer.
-	status = this->kernel.setArg(5, this->triangleBuffer);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel::setArg test triangleBuffer.");
+		// Back.
+		Triangle t3(
+			Float3d(x, y + sideLength, z + sideLength),
+			Float3d(x, y, z + sideLength),
+			Float3d(x + sideLength, y, z + sideLength),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
 
-	std::vector<char> buffer(bufferSize);
-	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+		Triangle t4(
+			Float3d(x + sideLength, y, z + sideLength),
+			Float3d(x + sideLength, y + sideLength, z + sideLength),
+			Float3d(x, y + sideLength, z + sideLength),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
+
+		// Top.
+		Triangle t5(
+			Float3d(x + sideLength, y + sideLength, z + sideLength),
+			Float3d(x + sideLength, y + sideLength, z),
+			Float3d(x, y + sideLength, z),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
+
+		Triangle t6(
+			Float3d(x, y + sideLength, z),
+			Float3d(x, y + sideLength, z + sideLength),
+			Float3d(x + sideLength, y + sideLength, z + sideLength),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
+
+		// Bottom.
+		Triangle t7(
+			Float3d(x + sideLength, y, z),
+			Float3d(x + sideLength, y, z + sideLength),
+			Float3d(x, y, z + sideLength),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
+
+		Triangle t8(
+			Float3d(x, y, z + sideLength),
+			Float3d(x, y, z),
+			Float3d(x + sideLength, y, z),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
+
+		// Right.
+		Triangle t9(
+			Float3d(x, y + sideLength, z),
+			Float3d(x, y, z),
+			Float3d(x, y, z + sideLength),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
+
+		Triangle t10(
+			Float3d(x, y, z + sideLength),
+			Float3d(x, y + sideLength, z + sideLength),
+			Float3d(x, y + sideLength, z),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
+
+		// Left.
+		Triangle t11(
+			Float3d(x + sideLength, y + sideLength, z + sideLength),
+			Float3d(x + sideLength, y, z + sideLength),
+			Float3d(x + sideLength, y, z),
+			Float2d(0.0, 0.0),
+			Float2d(0.0, 1.0),
+			Float2d(1.0, 1.0));
+
+		Triangle t12(
+			Float3d(x + sideLength, y, z),
+			Float3d(x + sideLength, y + sideLength, z),
+			Float3d(x + sideLength, y + sideLength, z + sideLength),
+			Float2d(1.0, 1.0),
+			Float2d(1.0, 0.0),
+			Float2d(0.0, 0.0));
+
+		return std::vector<Triangle>
+		{
+			t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12
+		};
+	};
+
+	// Write some triangles to a triangle buffer.
+	const int maxTrianglesPerVoxel = 12;
+	size_t triangleBufferSize = SIZEOF_TRIANGLE * maxTrianglesPerVoxel *
+		this->worldWidth * this->worldHeight * this->worldDepth;
+	std::vector<char> triangleBuffer(triangleBufferSize);
+	cl_char *triPtr = reinterpret_cast<cl_char*>(triangleBuffer.data());
 
 	// Lambda for writing triangle data to the local buffer.
-	int trianglesWritten = 0;
-	auto writeTriangle = [bufPtr, &trianglesWritten](const Triangle &triangle)
+	auto writeTriangle = [this, maxTrianglesPerVoxel, triPtr](const Triangle &triangle,
+		int cellX, int cellY, int cellZ, int triangleOffset)
 	{
+		assert(cellX >= 0);
+		assert(cellY >= 0);
+		assert(cellZ >= 0);
+		assert(cellX < this->worldWidth);
+		assert(cellY < this->worldHeight);
+		assert(cellZ < this->worldDepth);
+
+		// Only 12 triangles max per block for now.
+		assert(triangleOffset < maxTrianglesPerVoxel);
+
 		// Offset in the local buffer.
-		cl_char *ptr = bufPtr + (trianglesWritten * SIZEOF_TRIANGLE);
+		cl_char *ptr = triPtr + (cellX * SIZEOF_TRIANGLE * maxTrianglesPerVoxel) +
+			((cellY * this->worldWidth) * SIZEOF_TRIANGLE * maxTrianglesPerVoxel) +
+			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_TRIANGLE *
+				maxTrianglesPerVoxel) + (triangleOffset * SIZEOF_TRIANGLE);
 
 		cl_float *p1Ptr = reinterpret_cast<cl_float*>(ptr);
 		*(p1Ptr + 0) = static_cast<cl_float>(triangle.getP1().getX());
@@ -409,43 +664,150 @@ void CLProgram::makeTestWorld()
 		*(uv3Ptr + 0) = static_cast<cl_float>(triangle.getUV3().getX());
 		*(uv3Ptr + 1) = static_cast<cl_float>(triangle.getUV3().getY());
 
-		trianglesWritten++;
+		// Ignore textureRef for now.
 	};
 
-	// Write some ground triangles to the buffer.
-	for (int k = 0; k < depth; ++k)
+	// Fill a voxel reference buffer with references to those triangles.
+	size_t voxelRefBufferSize = SIZEOF_VOXEL_REF * this->worldWidth * this->worldHeight *
+		this->worldDepth;
+	std::vector<char> voxelRefBuffer(voxelRefBufferSize);
+	cl_char *voxPtr = reinterpret_cast<cl_char*>(voxelRefBuffer.data());
+
+	// Lambda for writing a voxel reference into the local buffer. This only works 
+	// when using the naive triangle array storage (i.e., *every* voxel has 12 
+	// triangle slots). Consider making the offset based on the number of triangles
+	// written, instead of an arbitrary XYZ coordinate.
+	auto writeVoxelRef = [this, voxPtr](int cellX, int cellY, int cellZ, int count)
 	{
-		for (int i = 0; i < width; ++i)
+		assert(cellX >= 0);
+		assert(cellY >= 0);
+		assert(cellZ >= 0);
+		assert(cellX < this->worldWidth);
+		assert(cellY < this->worldHeight);
+		assert(cellZ < this->worldDepth);
+		assert(count >= 0);
+
+		cl_char *ptr = voxPtr + (cellX * SIZEOF_VOXEL_REF) +
+			((cellY * this->worldWidth) * SIZEOF_VOXEL_REF) +
+			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
+
+		// Number of triangles to skip in the triangles array.
+		int offset = 12 * (cellX + (cellY * this->worldWidth) +
+			(cellZ * this->worldWidth * this->worldHeight));
+
+		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr);
+		*(offsetPtr + 0) = offset;
+
+		cl_int *countPtr = reinterpret_cast<cl_int*>(ptr + sizeof(cl_int));
+		*(countPtr + 0) = count;
+	};
+
+	// Zero out all the voxel references to start.
+	for (int k = 0; k < this->worldDepth; ++k)
+	{
+		for (int j = 0; j < this->worldHeight; ++j)
 		{
-			double x = (static_cast<double>(width) * 0.5) - static_cast<double>(i);
-			double y = -1.0;
-			double z = (static_cast<double>(depth) * 0.5) - static_cast<double>(k);
-
-			Triangle t1(
-				Float3d(x, y, z),
-				Float3d(x, y, z - 1.0),
-				Float3d(x - 1.0, y, z - 1.0),
-				Float2d(0.0, 0.0),
-				Float2d(0.0, 1.0),
-				Float2d(1.0, 1.0));
-
-			Triangle t2(
-				Float3d(x - 1.0, y, z - 1.0),
-				Float3d(x - 1.0, y, z),
-				Float3d(x, y, z),
-				Float2d(1.0, 1.0),
-				Float2d(1.0, 0.0),
-				Float2d(0.0, 0.0));
-
-			writeTriangle(t1);
-			writeTriangle(t2);
+			for (int i = 0; i < this->worldWidth; ++i)
+			{
+				writeVoxelRef(i, j, k, 0);
+			}
 		}
 	}
 
-	// Write the buffer to device memory.
-	status = this->commandQueue.enqueueWriteBuffer(this->triangleBuffer,
-		CL_TRUE, 0, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test");
+	// Make the ground.
+	for (int k = 0; k < this->worldDepth; ++k)
+	{
+		for (int i = 0; i < this->worldWidth; ++i)
+		{
+			std::vector<Triangle> block = makeBlock(i, 0, k);
+			int triangleCount = static_cast<int>(block.size());
+
+			for (int index = 0; index < triangleCount; ++index)
+			{
+				writeTriangle(block.at(index), i, 0, k, index);
+			}
+
+			writeVoxelRef(i, 0, k, 12);
+		}
+	}
+
+	// Make the near X and far X walls.
+	for (int j = 1; j < this->worldHeight; ++j)
+	{
+		for (int k = 0; k < this->worldDepth; ++k)
+		{
+			std::vector<Triangle> block = makeBlock(0, j, k);
+			int triangleCount = static_cast<int>(block.size());
+
+			for (int index = 0; index < triangleCount; ++index)
+			{
+				writeTriangle(block.at(index), 0, j, k, index);
+			}
+
+			block = makeBlock(this->worldWidth - 1, j, k);
+			for (int index = 0; index < triangleCount; ++index)
+			{
+				writeTriangle(block.at(index), this->worldWidth - 1, j, k, index);
+			}
+
+			writeVoxelRef(0, j, k, 12);
+			writeVoxelRef(this->worldWidth - 1, j, k, 12);
+		}
+	}
+
+	// Make the near Z and far Z walls (ignoring existing corners).
+	for (int j = 1; j < this->worldHeight; ++j)
+	{
+		for (int i = 1; i < (this->worldWidth - 1); ++i)
+		{
+			std::vector<Triangle> block = makeBlock(i, j, 0);
+			int triangleCount = static_cast<int>(block.size());
+
+			for (int index = 0; index < triangleCount; ++index)
+			{
+				writeTriangle(block.at(index), i, j, 0, index);
+			}
+
+			block = makeBlock(i, j, this->worldDepth - 1);
+			for (int index = 0; index < triangleCount; ++index)
+			{
+				writeTriangle(block.at(index), i, j, this->worldDepth - 1, index);
+			}
+
+			writeVoxelRef(i, j, 0, 12);
+			writeVoxelRef(i, j, this->worldDepth - 1, 12);
+		}
+	}
+
+	// Add some random blocks around.
+	// Use the same seed so it's not a new city on every screen resize.
+	Random random(0);
+	for (int count = 0; count < 32; ++count)
+	{
+		int x = 1 + random.next(this->worldWidth - 2);
+		int y = 1 + random.next(this->worldHeight - 1);
+		int z = 1 + random.next(this->worldDepth - 2);
+
+		std::vector<Triangle> block = makeBlock(x, y, z);
+		int triangleCount = static_cast<int>(block.size());
+
+		for (int index = 0; index < triangleCount; ++index)
+		{
+			writeTriangle(block.at(index), x, y, z, index);
+		}
+
+		writeVoxelRef(x, y, z, 12);
+	}
+
+	// Write the triangle buffer to device memory.
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->triangleBuffer,
+		CL_TRUE, 0, triangleBufferSize, static_cast<const void*>(triPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test triangleBuffer");
+
+	// Write the voxel reference buffer to device memory.
+	status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
+		CL_TRUE, 0, voxelRefBufferSize, static_cast<const void*>(voxPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test voxelRefBuffer");
 }
 
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
@@ -511,11 +873,25 @@ void CLProgram::updateGameTime(double gameTime)
 
 void CLProgram::render(SDL_Renderer *renderer)
 {
-	// Run the kernel with the given dimensions.
-	cl_int status = this->commandQueue.enqueueNDRangeKernel(this->kernel,
-		cl::NullRange, cl::NDRange(this->width, this->height), cl::NullRange,
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueNDRangeKernel.");
+	cl::NDRange workDims(this->width, this->height);
+
+	// Run the intersect kernel.
+	cl_int status = this->commandQueue.enqueueNDRangeKernel(this->intersectKernel,
+		cl::NullRange, workDims, cl::NullRange, nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::CommandQueue::enqueueNDRangeKernel intersectKernel.");
+
+	// Run the ray tracing kernel using the results from the intersect kernel.
+	status = this->commandQueue.enqueueNDRangeKernel(this->rayTraceKernel,
+		cl::NullRange, workDims, cl::NullRange, nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::CommandQueue::enqueueNDRangeKernel rayTraceKernel.");
+
+	// Run the RGB conversion kernel using the results from ray tracing.
+	status = this->commandQueue.enqueueNDRangeKernel(this->convertToRGBKernel,
+		cl::NullRange, workDims, cl::NullRange, nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::CommandQueue::enqueueNDRangeKernel convertToRGBKernel.");
 
 	// Copy the output buffer into the destination pixel buffer.
 	void *outputDataPtr = static_cast<void*>(this->outputData.data());

@@ -114,8 +114,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// menu has settings for the CLProgram.
 			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
 
-			Float3d position = Float3d(0.0, 0.0, 0.0);
-			Float3d direction = Float3d(0.0, 0.0, 1.0).normalized();
+			Float3d position = Float3d(1.50, 1.70, 1.50); // Arbitrary player height.
+			Float3d direction = Float3d(1.0, 0.0, 1.0).normalized();
 			Float3d velocity = Float3d(0.0, 0.0, 0.0);
 			
 			// Some arbitrary max speeds.
@@ -125,15 +125,23 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
 				charClass, this->portraitIndex, position, direction, velocity,
 				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
+			
+			// Some arbitrary test dimensions.
+			int worldWidth = 32;
+			int worldHeight = 5;
+			int worldDepth = 32;
+
 			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY(),
-				gameState->getRenderer().getRenderer()));
+				gameState->getRenderer().getRenderer(),
+				worldWidth, worldHeight, worldDepth));
+
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			auto gameData = std::unique_ptr<GameData>(new GameData(
 				std::move(player), std::move(entityManager), std::move(clProgram),
-				gameTime));
-
+				gameTime, worldWidth, worldHeight, worldDepth));
+			
 			// Set the game data before constructing the game world panel.
 			gameState->setGameData(std::move(gameData));
 
