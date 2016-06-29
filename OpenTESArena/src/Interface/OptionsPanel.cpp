@@ -36,7 +36,7 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			auto pausePanel = std::unique_ptr<Panel>(new PauseMenuPanel(gameState));
+			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
 			gameState->setPanel(std::move(pausePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));

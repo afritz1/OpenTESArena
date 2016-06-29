@@ -88,7 +88,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		Int2 center((ORIGINAL_WIDTH / 2), 120);
 		auto function = [gameState, charClass, name]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
+			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Male));
 			gameState->setPanel(std::move(classPanel));
 		};
@@ -100,7 +100,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		Int2 center((ORIGINAL_WIDTH / 2), 160);
 		auto function = [gameState, charClass, name]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(new ChooseRacePanel(
+			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Female));
 			gameState->setPanel(std::move(classPanel));
 		};

@@ -53,7 +53,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 	{
 		auto function = [gameState, charClass, name]()
 		{
-			auto namePanel = std::unique_ptr<Panel>(new ChooseGenderPanel(
+			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
 				gameState, charClass, name));
 			gameState->setPanel(std::move(namePanel));
 		};
@@ -64,7 +64,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 	{
 		auto function = [this, gameState, gender, charClass, name]()
 		{
-			auto attributesPanel = std::unique_ptr<Panel>(new ChooseAttributesPanel(
+			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
 				gameState, charClass, name, gender, *this->raceName.get()));
 			gameState->setPanel(std::move(attributesPanel));
 		};
@@ -184,7 +184,7 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Rendere
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
-	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
+	std::unique_ptr<TextBox> tooltip(new TextBox(
 		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
 		Color::White,

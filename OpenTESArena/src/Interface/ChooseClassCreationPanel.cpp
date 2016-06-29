@@ -74,7 +74,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			gameState->setPanel(std::unique_ptr<Panel>(new MainMenuPanel(gameState)));
+			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
+			gameState->setPanel(std::move(mainMenuPanel));
 			gameState->setMusic(MusicName::PercIntro);
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -86,7 +87,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		auto function = [gameState]()
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
-			/*auto classPanel = std::unique_ptr<Panel>(new ChooseClassPanel(gameState));
+			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));*/
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
@@ -97,7 +98,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		Int2 center(ORIGINAL_WIDTH / 2, 160);
 		auto function = [gameState]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(new ChooseClassPanel(gameState));
+			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));

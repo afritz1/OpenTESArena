@@ -63,8 +63,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 	{
 		auto function = [gameState]()
 		{
-			auto classPanel = std::unique_ptr<Panel>(
-				new ChooseClassPanel(gameState));
+			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -74,15 +73,14 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 	{
 		auto function = [this, gameState, charClass]()
 		{
-			auto racePanel = std::unique_ptr<Panel>(new ChooseGenderPanel(
+			std::unique_ptr<Panel> racePanel(new ChooseGenderPanel(
 				gameState, charClass, this->name));
 			gameState->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->charClass = std::unique_ptr<CharacterClass>(
-		new CharacterClass(charClass));
+	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->name = std::string();
 }
 

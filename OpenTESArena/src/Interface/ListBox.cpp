@@ -31,7 +31,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	{
 		// Remove any new lines.
 		auto trimmedElement = String::trimLines(element);
-		auto textBox = std::unique_ptr<TextBox>(new TextBox(
+		std::unique_ptr<TextBox> textBox(new TextBox(
 			0, 0, textColor, trimmedElement, fontName, textureManager));
 		textBoxes.push_back(std::move(textBox));
 	}
@@ -125,7 +125,7 @@ void ListBox::updateDisplayText()
 	for (int i = this->scrollIndex; i < indexEnd; ++i)
 	{
 		const auto &element = this->elements.at(i);
-		auto textBox = std::unique_ptr<TextBox>(new TextBox(0, 0, *this->textColor.get(),
+		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, *this->textColor.get(),
 			element, this->fontName, this->textureManagerRef));
 
 		// Blit the text box onto the parent surface at the correct height offset.

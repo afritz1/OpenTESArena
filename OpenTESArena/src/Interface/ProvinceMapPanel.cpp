@@ -90,7 +90,7 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 		int height = clickArea.getHeight();
 		auto function = [gameState]()
 		{
-			auto gamePanel = std::unique_ptr<Panel>(new WorldMapPanel(gameState));
+			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
@@ -187,7 +187,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName,
 	SDL_Renderer *renderer)
 {
 	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
-	auto tooltip = std::unique_ptr<TextBox>(new TextBox(
+	std::unique_ptr<TextBox> tooltip(new TextBox(
 		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
 		Color::White,

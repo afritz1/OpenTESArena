@@ -28,8 +28,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		int height = 20;
 		auto function = [gameState]()
 		{
-			auto loadPanel = std::unique_ptr<Panel>(
-				new LoadGamePanel(gameState));
+			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
 			gameState->setPanel(std::move(loadPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
@@ -45,15 +44,14 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 			// Link together the opening scroll, intro cinematic, and character creation.
 			auto changeToCharCreation = [gameState]()
 			{
-				auto creationPanel = std::unique_ptr<Panel>(
-					new ChooseClassCreationPanel(gameState));
+				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(gameState));
 				gameState->setPanel(std::move(creationPanel));
 				gameState->setMusic(MusicName::Sheet);
 			};
 
 			auto changeToNewGameStory = [gameState, changeToCharCreation]()
 			{
-				auto newGameStoryPanel = std::unique_ptr<Panel>(new CinematicPanel(
+				std::unique_ptr<Panel> newGameStoryPanel(new CinematicPanel(
 					gameState,
 					TextureSequenceName::NewGameStory,
 					5.0,
@@ -61,11 +59,12 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 				gameState->setPanel(std::move(newGameStoryPanel));
 			};
 
-			gameState->setPanel(std::unique_ptr<Panel>(new CinematicPanel(
+			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
 				gameState,
 				TextureSequenceName::OpeningScroll,
 				CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
-				changeToNewGameStory)));
+				changeToNewGameStory));
+			gameState->setPanel(std::move(cinematicPanel));
 			gameState->setMusic(MusicName::EvilIntro);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));

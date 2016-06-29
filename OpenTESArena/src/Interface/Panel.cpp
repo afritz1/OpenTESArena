@@ -39,14 +39,15 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	// argument.
 	auto changeToMainMenu = [gameState]()
 	{
-		gameState->setPanel(std::unique_ptr<Panel>(new MainMenuPanel(gameState)));
+		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
+		gameState->setPanel(std::move(mainMenuPanel));
 	};
 
 	auto changeToIntroStory = [gameState, changeToMainMenu]()
 	{
 		// Lots of text to read, so give each image extra time.
 		double secondsPerImage = 14.0;
-		auto introStoryPanel = std::unique_ptr<Panel>(new CinematicPanel(
+		std::unique_ptr<Panel> introStoryPanel(new CinematicPanel(
 			gameState,
 			TextureSequenceName::IntroStory,
 			secondsPerImage,
@@ -56,7 +57,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	auto changeToScrolling = [gameState, changeToIntroStory]()
 	{
-		auto scrollingPanel = std::unique_ptr<Panel>(new CinematicPanel(
+		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			gameState,
 			TextureSequenceName::OpeningScroll,
 			CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
@@ -67,7 +68,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	auto changeToQuote = [gameState, changeToScrolling]()
 	{
 		double secondsToDisplay = 5.0;
-		auto quotePanel = std::unique_ptr<Panel>(new ImagePanel(
+		std::unique_ptr<Panel> quotePanel(new ImagePanel(
 			gameState,
 			TextureName::IntroQuote,
 			secondsToDisplay,
@@ -78,7 +79,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	auto changeToTitle = [gameState, changeToQuote]()
 	{
 		double secondsToDisplay = 5.0;
-		auto titlePanel = std::unique_ptr<Panel>(new ImagePanel(
+		std::unique_ptr<Panel> titlePanel(new ImagePanel(
 			gameState,
 			TextureName::IntroTitle,
 			secondsToDisplay,
@@ -86,8 +87,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(titlePanel));
 	};
 
-	return std::unique_ptr<Panel>(new CinematicPanel(gameState,
-		TextureSequenceName::IntroBook, 0.142 /* roughly 7fps */,
+	return std::unique_ptr<Panel>(new CinematicPanel(
+		gameState,
+		TextureSequenceName::IntroBook, 
+		0.142 /* roughly 7fps */,
 		changeToTitle));
 }
 

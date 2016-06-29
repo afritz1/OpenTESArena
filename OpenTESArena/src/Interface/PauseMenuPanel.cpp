@@ -30,7 +30,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		int y = 118;
 		auto function = [gameState]()
 		{
-			auto loadPanel = std::unique_ptr<Panel>(new LoadGamePanel(gameState));
+			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
 			gameState->setPanel(std::move(loadPanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
@@ -58,9 +58,9 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		{
 			gameState->setGameData(nullptr);
 
-			auto mainMenuPanel = std::unique_ptr<Panel>(new MainMenuPanel(gameState));
-			gameState->setMusic(MusicName::PercIntro);
+			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
 			gameState->setPanel(std::move(mainMenuPanel));
+			gameState->setMusic(MusicName::PercIntro);
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 65, 29, function));
 	}();
@@ -72,7 +72,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		auto function = [gameState]()
 		{
 			// SaveGamePanel...
-			//auto optionsPanel = std::unique_ptr<Panel>(new OptionsPanel(gameState));
+			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(gameState));
 			//gameState->setPanel(std::move(optionsPanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
@@ -84,7 +84,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		int y = 118;
 		auto function = [gameState]()
 		{
-			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));

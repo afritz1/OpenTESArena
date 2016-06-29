@@ -140,7 +140,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	{
 		auto function = [this, gameState]
 		{
-			auto namePanel = std::unique_ptr<Panel>(new ChooseNamePanel(
+			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(
 				gameState, *this->charClass.get()));
 			gameState->setPanel(std::move(namePanel));
 		};

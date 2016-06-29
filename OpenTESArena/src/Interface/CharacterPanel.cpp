@@ -78,7 +78,7 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 		int height = 12;
 		auto function = [gameState]()
 		{
-			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));

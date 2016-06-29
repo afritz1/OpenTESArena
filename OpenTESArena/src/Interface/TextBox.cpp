@@ -201,8 +201,7 @@ std::unique_ptr<Surface> TextBox::combineSurfaces(
 	int totalHeight = letterSurfaces.at(0)->getHeight();
 
 	// Make the big surface.
-	auto combinedSurface = std::unique_ptr<Surface>(new Surface(
-		totalWidth, totalHeight));
+	std::unique_ptr<Surface> combinedSurface(new Surface(totalWidth, totalHeight));
 
 	// Copy each little surface to the big one.
 	int offset = 0;
@@ -293,14 +292,14 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 		// so the character in the font texture must be empty. Use a space then.
 		if (letterWidth == rightPadding)
 		{
-			auto surface = std::unique_ptr<Surface>(new Surface(spaceWidth, letterHeight));
+			std::unique_ptr<Surface> surface(new Surface(spaceWidth, letterHeight));
 			surface->fill(Color::Magenta);
 			return surface;
 		}
 		else
 		{
 			// Make the letter surface and copy the character into it from the font texture.
-			auto letterSurface = std::unique_ptr<Surface>(new Surface(letterWidth, letterHeight));
+			std::unique_ptr<Surface> letterSurface(new Surface(letterWidth, letterHeight));
 			fontTexture.blit(*letterSurface.get(), Int2(),
 				Rect(corner.getX(), corner.getY(), letterWidth, letterHeight));
 			return letterSurface;
@@ -309,7 +308,7 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 	else
 	{
 		// The character is a space, so return the whitespace surface instead.
-		auto surface = std::unique_ptr<Surface>(new Surface(spaceWidth, letterHeight));
+		std::unique_ptr<Surface> surface(new Surface(spaceWidth, letterHeight));
 		surface->fill(Color::Magenta);
 		return surface;
 	}

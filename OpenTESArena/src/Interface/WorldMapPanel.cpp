@@ -28,7 +28,7 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 		int height = 9;
 		auto function = [gameState]()
 		{
-			auto gamePanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
@@ -38,7 +38,7 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 	{
 		auto function = [this, gameState]()
 		{
-			auto provincePanel = std::unique_ptr<Panel>(new ProvinceMapPanel(
+			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(
 				gameState, Province(*this->provinceName.get())));
 			gameState->setPanel(std::move(provincePanel));
 		};

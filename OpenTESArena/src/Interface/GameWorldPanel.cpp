@@ -38,7 +38,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			auto sheetPanel = std::unique_ptr<Panel>(new CharacterPanel(gameState));
+			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(gameState));
 			gameState->setPanel(std::move(sheetPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -48,7 +48,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			auto logbookPanel = std::unique_ptr<Panel>(new LogbookPanel(gameState));
+			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(gameState));
 			gameState->setPanel(std::move(logbookPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -58,7 +58,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			auto pausePanel = std::unique_ptr<Panel>(new PauseMenuPanel(gameState));
+			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
 			gameState->setPanel(std::move(pausePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
@@ -68,7 +68,7 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	{
 		auto function = [gameState]()
 		{
-			auto mapPanel = std::unique_ptr<Panel>(new WorldMapPanel(gameState));
+			std::unique_ptr<Panel> mapPanel(new WorldMapPanel(gameState));
 			gameState->setPanel(std::move(mapPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));

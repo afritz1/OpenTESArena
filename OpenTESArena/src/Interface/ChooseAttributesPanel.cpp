@@ -95,7 +95,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	{
 		auto function = [gameState, charClass, name, gender]()
 		{
-			auto racePanel = std::unique_ptr<Panel>(new ChooseRacePanel(
+			std::unique_ptr<Panel> racePanel(new ChooseRacePanel(
 				gameState, charClass, name, gender));
 			gameState->setPanel(std::move(racePanel));
 		};
@@ -112,7 +112,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
 			// menu has settings for the CLProgram.
-			auto entityManager = std::unique_ptr<EntityManager>(new EntityManager());
+			std::unique_ptr<EntityManager> entityManager(new EntityManager());
 
 			Float3d position = Float3d(1.50, 1.70, 1.50); // Arbitrary player height.
 			Float3d direction = Float3d(1.0, 0.0, 1.0).normalized();
@@ -122,7 +122,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			double maxWalkSpeed = 2.0;
 			double maxRunSpeed = 8.0;
 
-			auto player = std::unique_ptr<Player>(new Player(name, gender, raceName,
+			std::unique_ptr<Player> player(new Player(name, gender, raceName,
 				charClass, this->portraitIndex, position, direction, velocity,
 				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
 			
@@ -131,21 +131,21 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			int worldHeight = 5;
 			int worldDepth = 32;
 
-			auto clProgram = std::unique_ptr<CLProgram>(new CLProgram(
+			std::unique_ptr<CLProgram> clProgram (new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY(),
 				gameState->getRenderer().getRenderer(),
 				worldWidth, worldHeight, worldDepth));
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
-			auto gameData = std::unique_ptr<GameData>(new GameData(
+			std::unique_ptr<GameData> gameData(new GameData(
 				std::move(player), std::move(entityManager), std::move(clProgram),
 				gameTime, worldWidth, worldHeight, worldDepth));
 			
 			// Set the game data before constructing the game world panel.
 			gameState->setGameData(std::move(gameData));
 
-			auto gameWorldPanel = std::unique_ptr<Panel>(new GameWorldPanel(gameState));
+			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(gameState));
 
 			// Set the game world's music to be some placeholder for now.
 			gameState->setMusic(MusicName::SunnyDay);
