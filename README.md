@@ -3,20 +3,20 @@
 
 ## Current status
 
-June 22nd, 2016:
+June 28th, 2016:
+
+The game world is currently a test city with some untextured blocks. No jumping or collision yet. A few of the menus work, including most of character creation.  Pressing Tab in the game world opens the character sheet, and pressing M opens the world map. Clicking on a province in the world map opens the province map.
 
 OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [freepats](http://freepats.zenvoid.org/) project provides some good patches.
 
-The game is not yet in a playable state. A couple of the menus work, including most of character creation, though it's only a rough draft. The game world currently uses an infinite sky placeholder with a moving sun while the graphics engine is in development. Pressing Tab in the game world opens the current character sheet. Several other placeholders exist for now as well.
-
-The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine from a test project using some random cities for demonstration purposes. It is in development and is not currently implemented here.
+The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine from a test project using some random cities for demonstration purposes. It is in development and is not fully implemented here.
 
 ## Instructions
 
 The current subset of data files are from screen grabs in DOSBox and from extraction utilities for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
 
 - Build the executable on your machine.
-- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0).
+- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated June 28th).
 - Put the data files in the executable directory.
 - Make sure your options.txt points to a valid soundfont file and Arena data path.
 
@@ -88,17 +88,13 @@ New features:
 
 ## Graphics
 
-The 3D graphics will be done with a GPU ray tracer written in OpenCL, and its code will be added here once I finish other components first. Test versions show it functioning decently on high-end graphics cards, but there are still many optimizations that can be done. 
+The 3D graphics are being done with a GPU ray tracer written in OpenCL. Test versions show it functioning decently on high-end graphics cards, but there are still many optimizations that can be done.
 
 I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
 
 ## Resources
 
 All of the music and sound files, as well as the vast majority of wall and sprite textures, are available to look at thanks to exporter programs like WinArena and [other utilities](http://www.uesp.net/wiki/Arena:Files#Misc_Utilities). However, this project will still use the original files that came with the floppy disk version of Arena.
-
-Some original files like the character backgrounds are still stored in an unknown format, but they can be obtained simply by screen capturing in DOSBox. If those original files could actually be decoded some day, that would be nice. Check out the image decompression algorithms in WinArena and Daggerfall as a place to start.
-
-The format for the original map data for cities, dungeons, and wilderness is not currently known. This puts a considerable restriction on restoring the game world with its intended content. Main quest dungeons are not randomly-generated, but wilderness dungeons are (to a point).
 
 ## Other Resources
 
