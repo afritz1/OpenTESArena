@@ -124,7 +124,7 @@ void ChooseNamePanel::handleEvents(bool &running)
 		}
 
 		// Upper and lower case English characters.
-		const auto letters = std::map<SDL_Keycode, std::pair<char, char>>
+		const std::map<SDL_Keycode, std::pair<char, char>> letters =
 		{
 			{ SDLK_a, { 'A', 'a' } },
 			{ SDLK_b, { 'B', 'b' } },
@@ -155,7 +155,7 @@ void ChooseNamePanel::handleEvents(bool &running)
 		};
 
 		// Punctuation (some duplicates exist to keep the shift behavior for quotes).
-		const auto punctuation = std::map<SDL_Keycode, std::pair<char, char>>
+		const std::map<SDL_Keycode, std::pair<char, char>> punctuation =
 		{
 			{ SDLK_COMMA, { ',', ',' } },
 			{ SDLK_MINUS, { '-', '-' } },
