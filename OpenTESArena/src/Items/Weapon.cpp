@@ -62,25 +62,25 @@ const std::map<WeaponType, WeaponHandCount> WeaponTypeHandCounts =
 
 const std::map<WeaponType, std::pair<int, int>> WeaponTypeBaseDamages =
 {
-	{ WeaponType::BattleAxe, std::pair<int, int>(2, 16) },
-	{ WeaponType::Broadsword, std::pair<int, int>(1, 12) },
-	{ WeaponType::Claymore, std::pair<int, int>(2, 18) },
-	{ WeaponType::Dagger, std::pair<int, int>(1, 6) },
-	{ WeaponType::DaiKatana, std::pair<int, int>(3, 21) },
-	{ WeaponType::Fists, std::pair<int, int>(1, 2) },
-	{ WeaponType::Flail, std::pair<int, int>(2, 14) },
-	{ WeaponType::Katana, std::pair<int, int>(3, 16) },
-	{ WeaponType::LongBow, std::pair<int, int>(2, 12) },
-	{ WeaponType::Longsword, std::pair<int, int>(2, 16) },
-	{ WeaponType::Mace, std::pair<int, int>(1, 12) },
-	{ WeaponType::Saber, std::pair<int, int>(3, 12) },
-	{ WeaponType::ShortBow, std::pair<int, int>(2, 8) },
-	{ WeaponType::Shortsword, std::pair<int, int>(1, 8) },
-	{ WeaponType::Staff, std::pair<int, int>(1, 8) },
-	{ WeaponType::Tanto, std::pair<int, int>(1, 8) },
-	{ WeaponType::Wakizashi, std::pair<int, int>(1, 10) },
-	{ WeaponType::WarAxe, std::pair<int, int>(2, 12) },
-	{ WeaponType::Warhammer, std::pair<int, int>(3, 18) }
+	{ WeaponType::BattleAxe, std::make_pair(2, 16) },
+	{ WeaponType::Broadsword, std::make_pair(1, 12) },
+	{ WeaponType::Claymore, std::make_pair(2, 18) },
+	{ WeaponType::Dagger, std::make_pair(1, 6) },
+	{ WeaponType::DaiKatana, std::make_pair(3, 21) },
+	{ WeaponType::Fists, std::make_pair(1, 2) },
+	{ WeaponType::Flail, std::make_pair(2, 14) },
+	{ WeaponType::Katana, std::make_pair(3, 16) },
+	{ WeaponType::LongBow, std::make_pair(2, 12) },
+	{ WeaponType::Longsword, std::make_pair(2, 16) },
+	{ WeaponType::Mace, std::make_pair(1, 12) },
+	{ WeaponType::Saber, std::make_pair(3, 12) },
+	{ WeaponType::ShortBow, std::make_pair(2, 8) },
+	{ WeaponType::Shortsword, std::make_pair(1, 8) },
+	{ WeaponType::Staff, std::make_pair(1, 8) },
+	{ WeaponType::Tanto, std::make_pair(1, 8) },
+	{ WeaponType::Wakizashi, std::make_pair(1, 10) },
+	{ WeaponType::WarAxe, std::make_pair(2, 12) },
+	{ WeaponType::Warhammer, std::make_pair(3, 18) }
 };
 
 // Weights in kilograms. For some odd reason, the manual lists "fists" as having

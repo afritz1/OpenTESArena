@@ -30,8 +30,7 @@ PrimaryAttributeSet::PrimaryAttributeSet()
 	for (const auto attributeName : attributeNames)
 	{
 		PrimaryAttribute attribute(attributeName, 0);
-		this->primaryAttributes.insert(std::pair<PrimaryAttributeName, PrimaryAttribute>(
-			attributeName, attribute));
+		this->primaryAttributes.insert(std::make_pair(attributeName, attribute));
 	}
 
 	assert(this->primaryAttributes.size() == attributeNames.size());

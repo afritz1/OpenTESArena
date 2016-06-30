@@ -58,8 +58,7 @@ void EntityManager::add(std::unique_ptr<Entity> entity)
 
 	// Add the pair to the entities map.
 	int entityID = entity->getID();
-	this->entities.insert(std::pair<int, std::unique_ptr<Entity>>(
-		entityID, std::move(entity)));
+	this->entities.insert(std::make_pair(entityID, std::move(entity)));
 }
 
 void EntityManager::remove(int id)

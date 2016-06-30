@@ -45,7 +45,7 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 		const std::string &key = tokens.at(0);
 		std::string value = String::trimLines(tokens.at(1));
 
-		this->pairs.insert(std::pair<std::string, std::string>(key, value));
+		this->pairs.insert(std::make_pair(key, value));
 	}
 }
 
