@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstdint>
 #include <deque>
-#include <iostream>
 #include <map>
 #include <string>
 #include <thread>
@@ -248,7 +247,7 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(const Options *options);
+	void init(const Options &options);
 
 	bool musicIsPlaying() const;
 
@@ -540,12 +539,12 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-void AudioManagerImpl::init(const Options *options)
+void AudioManagerImpl::init(const Options &options)
 {
 	Debug::mention("Audio Manager", "Initializing.");
 
 #ifdef HAVE_WILDMIDI
-	WildMidiDevice::init(options->getSoundfont());
+	WildMidiDevice::init(options.getSoundfont());
 #endif
 
 	// Start initializing the OpenAL device.
@@ -559,9 +558,9 @@ void AudioManagerImpl::init(const Options *options)
 	ALCboolean success = alcMakeContextCurrent(context);
 	Debug::check(success == AL_TRUE, "Audio Manager", "alcMakeContextCurrent");
 
-	double musicVolume = options->getMusicVolume();
-	double soundVolume = options->getSoundVolume();
-	int maxChannels = options->getSoundChannelCount();
+	double musicVolume = options.getMusicVolume();
+	double soundVolume = options.getSoundVolume();
+	int maxChannels = options.getSoundChannelCount();
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
@@ -589,7 +588,7 @@ void AudioManagerImpl::playMusic(MusicName musicName)
 	if (music == MusicFilenames.end())
 	{
 		Debug::mention("Audio Manager", "Failed to lookup music ID " +
-			std::to_string((int)musicName) + ".");
+			std::to_string(static_cast<int>(musicName)) + ".");
 		mCurrentSong = nullptr;
 	}
 	else if (!mFreeSources.empty())
@@ -665,7 +664,7 @@ AudioManager::~AudioManager()
 
 }
 
-void AudioManager::init(Options *options)
+void AudioManager::init(const Options &options)
 {
 	pImpl->init(options);
 }

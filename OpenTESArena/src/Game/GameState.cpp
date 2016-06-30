@@ -39,7 +39,7 @@ GameState::GameState()
 		MusicName::PercIntro));
 
 	// Initialize the OpenAL Soft audio manager.
-	this->audioManager.init(this->options.get());
+	this->audioManager.init(*this->options.get());
 
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(

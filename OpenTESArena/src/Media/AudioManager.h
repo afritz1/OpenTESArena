@@ -21,7 +21,7 @@ public:
 	AudioManager();
 	~AudioManager();
 
-    void init(Options *options);
+    void init(const Options &options);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
