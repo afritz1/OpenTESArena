@@ -139,6 +139,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Interface\AutomapPanel.cpp" />
     <ClCompile Include="src\Interface\LogbookPanel.cpp" />
     <ClCompile Include="src\Interface\ProvinceMapPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseClassCreationPanel.cpp" />
@@ -253,6 +254,7 @@
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Interface\AutomapPanel.h" />
     <ClInclude Include="src\Interface\LogbookPanel.h" />
     <ClInclude Include="src\Interface\ProvinceButtonName.h" />
     <ClInclude Include="src\Interface\ProvinceMapPanel.h" />

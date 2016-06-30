@@ -4,6 +4,7 @@
 
 #include "GameWorldPanel.h"
 
+#include "AutomapPanel.h"
 #include "Button.h"
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
@@ -33,6 +34,16 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
 {
 	assert(gameState->gameDataIsActive());
+
+	this->automapButton = []()
+	{
+		auto function = [](GameState *gameState)
+		{
+			std::unique_ptr<Panel> automapPanel(new AutomapPanel(gameState));
+			gameState->setPanel(std::move(automapPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
+	}();
 
 	this->characterSheetButton = []()
 	{
@@ -110,20 +121,27 @@ void GameWorldPanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_e);
+		bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_n);
 		bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_l);
 		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_TAB);
-		bool mapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_m);
 
 		if (leftClick)
 		{
-
+			// Interface buttons? Entities in the world?
 		}
 		if (activateHotkeyPressed)
 		{
 			// Activate whatever is looked at.
+		}
+		else if (automapHotkeyPressed)
+		{
+			// Go to the automap.
+			this->automapButton->click(this->getGameState());
 		}
 		else if (logbookHotkeyPressed)
 		{
@@ -132,12 +150,12 @@ void GameWorldPanel::handleEvents(bool &running)
 		}
 		else if (sheetHotkeyPressed)
 		{
-			// Go to character screen.
+			// Go to the character screen.
 			this->characterSheetButton->click(this->getGameState());
 		}
-		else if (mapHotkeyPressed)
+		else if (worldMapHotkeyPressed)
 		{
-			// Go to world map.
+			// Go to the world map.
 			this->worldMapButton->click(this->getGameState());
 		}
 	}

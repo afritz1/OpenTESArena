@@ -17,8 +17,8 @@ class Button;
 class GameWorldPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> characterSheetButton, logbookButton, pauseButton, 
-		worldMapButton;
+	std::unique_ptr<Button> automapButton, characterSheetButton, logbookButton, 
+		pauseButton, worldMapButton;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

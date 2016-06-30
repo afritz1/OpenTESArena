@@ -31,9 +31,11 @@ protected:
 	virtual void handleMouse(double dt) = 0;
 	virtual void handleKeyboard(double dt) = 0;
 
-	unsigned int getFormattedRGB(const Color &color, SDL_PixelFormat *format) const;
+	double getCursorScale() const; // Should eventually be in the options.
+	unsigned int getFormattedRGB(const Color &color, const SDL_PixelFormat *format) const;
 
 	void clearScreen(SDL_Renderer *renderer);
+	void drawCursor(const Surface &cursor, int x, int y, SDL_Renderer *renderer);
 	void drawCursor(const Surface &cursor, SDL_Renderer *renderer);
 	void drawScaledToNative(const SDL_Texture *texture, int x, int y, int w, int h, 
 		SDL_Renderer *renderer);

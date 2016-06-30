@@ -138,10 +138,16 @@ Int2 Panel::originalPointToNative(const Int2 &point) const
 		(point.getY() * drawScale) + letterbox.y);
 }
 
-unsigned int Panel::getFormattedRGB(const Color &color,
-	SDL_PixelFormat *format) const
+double Panel::getCursorScale() const
 {
-	return SDL_MapRGB(format, color.getR(), color.getG(), color.getB());
+	return 2.0;
+}
+
+unsigned int Panel::getFormattedRGB(const Color &color,
+	const SDL_PixelFormat *format) const
+{
+	return SDL_MapRGB(const_cast<SDL_PixelFormat*>(format), 
+		color.getR(), color.getG(), color.getB());
 }
 
 void Panel::clearScreen(SDL_Renderer *renderer)
@@ -149,27 +155,32 @@ void Panel::clearScreen(SDL_Renderer *renderer)
 	SDL_RenderClear(renderer);
 }
 
-void Panel::drawCursor(const Surface &cursor, SDL_Renderer *renderer)
+void Panel::drawCursor(const Surface &cursor, int x, int y, SDL_Renderer *renderer)
 {
 	auto *cursorSurface = cursor.getSurface();
 
-	// This color key should still carry over to the SDL_Texture. Otherwise,
-	// implement transparency and blending.
+	// The color key also carries over to the SDL_Texture.
 	SDL_SetColorKey(cursorSurface, SDL_TRUE, Color::Black.toRGB());
 
 	SDL_Texture *cursorTexture = SDL_CreateTextureFromSurface(
 		renderer, cursorSurface);
 
-	const double cursorScale = 2.0;
-	auto mousePosition = this->getMousePosition();
+	const double cursorScale = this->getCursorScale();
+
 	SDL_Rect cursorRect;
-	cursorRect.x = mousePosition.getX();
-	cursorRect.y = mousePosition.getY();
+	cursorRect.x = x;
+	cursorRect.y = y;
 	cursorRect.w = static_cast<int>(cursorSurface->w * cursorScale);
 	cursorRect.h = static_cast<int>(cursorSurface->h * cursorScale);
 
 	SDL_RenderCopy(renderer, cursorTexture, nullptr, &cursorRect);
 	SDL_DestroyTexture(cursorTexture);
+}
+
+void Panel::drawCursor(const Surface &cursor, SDL_Renderer *renderer)
+{
+	auto mousePosition = this->getMousePosition();
+	this->drawCursor(cursor, mousePosition.getX(), mousePosition.getY(), renderer);
 }
 
 void Panel::drawScaledToNative(const SDL_Texture *texture, int x, int y,

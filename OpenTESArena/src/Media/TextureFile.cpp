@@ -65,6 +65,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::MurkwoodSplash, "MIRKWOOD.IMG" },
 
 	// Maps.
+	{ TextureName::Automap, "AUTOMAP.IMG" },
 	{ TextureName::BlackMarshMap, "BLAKMRSH.IMG" },
 	{ TextureName::ElsweyrMap, "ELSWEYR.IMG" },
 	{ TextureName::HammerfellMap, "HAMERFEL.IMG" },

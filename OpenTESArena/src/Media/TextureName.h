@@ -66,6 +66,7 @@ enum class TextureName
 	MurkwoodSplash,
 
 	// Maps.
+	Automap,
 	BlackMarshMap,
 	ElsweyrMap,
 	HammerfellMap,
