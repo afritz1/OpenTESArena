@@ -18,6 +18,7 @@
 // newlines built in as usual.
 
 class Button;
+class GameState;
 
 enum class TextureSequenceName;
 
@@ -37,7 +38,7 @@ protected:
 public:
 	TextCinematicPanel(GameState *gameState, TextureSequenceName name, 
 		const std::string &text, const std::vector<double> &secondsPerText,
-		double secondsPerImage, const std::function<void()> &endingAction);
+		double secondsPerImage, const std::function<void(GameState*)> &endingAction);
 	virtual ~TextCinematicPanel();
 
 	static const double DEFAULT_MOVIE_SECONDS_PER_IMAGE;

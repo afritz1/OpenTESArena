@@ -32,9 +32,9 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	this->backToPauseButton = [gameState]()
+	this->backToPauseButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
 			gameState->setPanel(std::move(pausePanel));
@@ -74,7 +74,7 @@ void OptionsPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToPauseButton->click();
+			this->backToPauseButton->click(this->getGameState());
 		}
 
 		/*bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&

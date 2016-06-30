@@ -59,9 +59,9 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 			gameState->getTextureManager()));
 	}();
 
-	this->backToClassButton = [gameState]()
+	this->backToClassButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));
@@ -69,9 +69,9 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->acceptButton = [this, gameState, charClass]()
+	this->acceptButton = [this, charClass]()
 	{
-		auto function = [this, gameState, charClass]()
+		auto function = [this, charClass](GameState *gameState)
 		{
 			std::unique_ptr<Panel> racePanel(new ChooseGenderPanel(
 				gameState, charClass, this->name));
@@ -114,13 +114,13 @@ void ChooseNamePanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToClassButton->click();
+			this->backToClassButton->click(this->getGameState());
 		}
 
 		// Only accept the name if it has a positive size.
 		if (enterPressed && (this->name.size() > 0))
 		{
-			this->acceptButton->click();
+			this->acceptButton->click(this->getGameState());
 		}
 
 		// Upper and lower case English characters.

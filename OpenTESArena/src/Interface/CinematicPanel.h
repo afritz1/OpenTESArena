@@ -9,6 +9,7 @@
 // eventually lead to another panel. Skipping is available, too.
 
 class Button;
+class GameState;
 
 enum class TextureSequenceName;
 
@@ -25,7 +26,7 @@ protected:
 	virtual void handleKeyboard(double dt) override;
 public:
 	CinematicPanel(GameState *gameState, TextureSequenceName name, 
-		double secondsPerImage, const std::function<void()> &endingAction);
+		double secondsPerImage, const std::function<void(GameState*)> &endingAction);
 	virtual ~CinematicPanel();
 
 	static const double DEFAULT_MOVIE_SECONDS_PER_IMAGE;

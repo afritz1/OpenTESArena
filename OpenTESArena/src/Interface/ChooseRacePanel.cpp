@@ -49,9 +49,9 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 			gameState->getTextureManager()));
 	}();
 
-	this->backToGenderButton = [gameState, charClass, name]()
+	this->backToGenderButton = [charClass, name]()
 	{
-		auto function = [gameState, charClass, name]()
+		auto function = [charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
 				gameState, charClass, name));
@@ -60,9 +60,9 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->acceptButton = [this, gameState, gender, charClass, name]()
+	this->acceptButton = [this, gender, charClass, name]()
 	{
-		auto function = [this, gameState, gender, charClass, name]()
+		auto function = [this, gender, charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
 				gameState, charClass, name, gender, *this->raceName.get()));
@@ -136,7 +136,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 		// Interact with the map screen instead.
 		if (escapePressed)
 		{
-			this->backToGenderButton->click();
+			this->backToGenderButton->click(this->getGameState());
 		}
 		else if (leftClick)
 		{
@@ -155,7 +155,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 						province.getRaceName()));
 
 					// Go to the attributes panel.
-					this->acceptButton->click();
+					this->acceptButton->click(this->getGameState());
 					break;
 				}
 			}

@@ -90,12 +90,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	this->backToClassCreationButton = [gameState]()
+	this->backToClassCreationButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
-			gameState->setPanel(std::unique_ptr<Panel>(
-				new ChooseClassCreationPanel(gameState)));
+			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(gameState));
+			gameState->setPanel(std::move(creationPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -106,7 +106,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		int y = (ORIGINAL_HEIGHT / 2) - 7;
 		int w = 8;
 		int h = 8;
-		auto function = [this]
+		auto function = [this](GameState *gameState)
 		{
 			// Scroll the list box up one if able.
 			if (this->classesListBox->getScrollIndex() > 0)
@@ -123,7 +123,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		int y = (ORIGINAL_HEIGHT / 2) + 62;
 		int w = 8;
 		int h = 8;
-		auto function = [this]
+		auto function = [this](GameState *gameState)
 		{
 			// Scroll the list box down one if able.
 			if (this->classesListBox->getScrollIndex() <
@@ -136,9 +136,9 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
 	}();
 
-	this->acceptButton = [this, gameState]
+	this->acceptButton = [this]
 	{
-		auto function = [this, gameState]
+		auto function = [this](GameState *gameState)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(
 				gameState, *this->charClass.get()));
@@ -189,7 +189,7 @@ void ChooseClassPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToClassCreationButton->click();
+			this->backToClassCreationButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -211,27 +211,27 @@ void ChooseClassPanel::handleEvents(bool &running)
 				{
 					this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
 						*this->charClasses.at(index).get()));
-					this->acceptButton->click();
+					this->acceptButton->click(this->getGameState());
 				}
 			}
 			else if (mouseWheelUp)
 			{
-				this->upButton->click();
+				this->upButton->click(this->getGameState());
 			}
 			else if (mouseWheelDown)
 			{
-				this->downButton->click();
+				this->downButton->click(this->getGameState());
 			}
 		}
 
 		// Check scroll buttons (they are outside the list box).
 		if (scrollUpClick)
 		{
-			this->upButton->click();
+			this->upButton->click(this->getGameState());
 		}
 		else if (scrollDownClick)
 		{
-			this->downButton->click();
+			this->downButton->click(this->getGameState());
 		}
 	}
 }

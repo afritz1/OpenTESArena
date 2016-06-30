@@ -24,11 +24,11 @@
 PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->loadButton = [gameState]()
+	this->loadButton = []()
 	{
 		int x = 65;
 		int y = 118;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
 			gameState->setPanel(std::move(loadPanel));
@@ -36,11 +36,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
 
-	this->exitButton = [gameState]()
+	this->exitButton = []()
 	{
 		int x = 193;
 		int y = 118;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			SDL_Event evt;
 			evt.quit.type = SDL_QUIT;
@@ -50,11 +50,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
 
-	this->newButton = [gameState]()
+	this->newButton = []()
 	{
 		int x = 0;
 		int y = 118;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			gameState->setGameData(nullptr);
 
@@ -65,11 +65,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(x, y, 65, 29, function));
 	}();
 
-	this->saveButton = [gameState]()
+	this->saveButton = []()
 	{
 		int x = 129;
 		int y = 118;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// SaveGamePanel...
 			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(gameState));
@@ -78,11 +78,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
 
-	this->resumeButton = [gameState]()
+	this->resumeButton = []()
 	{
 		int x = 257;
 		int y = 118;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
@@ -122,7 +122,7 @@ void PauseMenuPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->resumeButton->click();
+			this->resumeButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -133,23 +133,23 @@ void PauseMenuPanel::handleEvents(bool &running)
 			// See if any of the buttons are clicked.
 			if (this->loadButton->containsPoint(mouseOriginalPoint))
 			{
-				this->loadButton->click();
+				this->loadButton->click(this->getGameState());
 			}
 			else if (this->exitButton->containsPoint(mouseOriginalPoint))
 			{
-				this->exitButton->click();
+				this->exitButton->click(this->getGameState());
 			}
 			else if (this->newButton->containsPoint(mouseOriginalPoint))
 			{
-				this->newButton->click();
+				this->newButton->click(this->getGameState());
 			}
 			else if (this->saveButton->containsPoint(mouseOriginalPoint))
 			{
-				this->saveButton->click();
+				this->saveButton->click(this->getGameState());
 			}
 			else if (this->resumeButton->containsPoint(mouseOriginalPoint))
 			{
-				this->resumeButton->click();
+				this->resumeButton->click(this->getGameState());
 			}
 		}
 	}

@@ -13,10 +13,10 @@
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
 CinematicPanel::CinematicPanel(GameState *gameState, TextureSequenceName name,
-	double secondsPerImage, const std::function<void()> &endingAction)
+	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
-	this->skipButton = [gameState, &endingAction]()
+	this->skipButton = [&endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
@@ -62,7 +62,7 @@ void CinematicPanel::handleEvents(bool &running)
 
 		if (leftClick || skipHotkeyPressed)
 		{
-			this->skipButton->click();
+			this->skipButton->click(this->getGameState());
 		}
 	}
 }
@@ -101,7 +101,7 @@ void CinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	if (this->imageIndex >= filenames.size())
 	{
 		this->imageIndex = static_cast<int>(filenames.size() - 1);
-		this->skipButton->click();
+		this->skipButton->click(this->getGameState());
 	}
 
 	// Draw image.

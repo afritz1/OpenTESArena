@@ -71,12 +71,12 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	this->doneButton = [gameState]()
+	this->doneButton = []()
 	{
 		Int2 center(25, ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
@@ -118,7 +118,7 @@ void CharacterPanel::handleEvents(bool &running)
 		}
 		if (escapePressed || tabPressed)
 		{
-			this->doneButton->click();
+			this->doneButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -129,7 +129,7 @@ void CharacterPanel::handleEvents(bool &running)
 			// Check if "Done" was clicked.
 			if (this->doneButton->containsPoint(mouseOriginalPoint))
 			{
-				this->doneButton->click();
+				this->doneButton->click(this->getGameState());
 			}
 
 			// What other buttons should the character panel have?

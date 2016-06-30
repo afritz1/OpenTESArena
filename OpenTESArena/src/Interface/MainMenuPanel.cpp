@@ -21,12 +21,12 @@
 MainMenuPanel::MainMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->loadButton = [gameState]()
+	this->loadButton = []()
 	{
 		Int2 center(168, 58);
 		int width = 150;
 		int height = 20;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
 			gameState->setPanel(std::move(loadPanel));
@@ -34,22 +34,22 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
-	this->newButton = [gameState]()
+	this->newButton = []()
 	{
 		Int2 center(168, 112);
 		int width = 150;
 		int height = 20;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// Link together the opening scroll, intro cinematic, and character creation.
-			auto changeToCharCreation = [gameState]()
+			auto changeToCharCreation = [](GameState *gameState)
 			{
 				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(gameState));
 				gameState->setPanel(std::move(creationPanel));
 				gameState->setMusic(MusicName::Sheet);
 			};
 
-			auto changeToNewGameStory = [gameState, changeToCharCreation]()
+			auto changeToNewGameStory = [changeToCharCreation](GameState *gameState)
 			{
 				std::unique_ptr<Panel> newGameStoryPanel(new CinematicPanel(
 					gameState,
@@ -75,7 +75,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		Int2 center(168, 158);
 		int width = 45;
 		int height = 20;
-		auto function = []()
+		auto function = [](GameState *gameState)
 		{
             SDL_Event evt;
             evt.quit.type = SDL_QUIT;
@@ -142,15 +142,15 @@ void MainMenuPanel::handleEvents(bool &running)
 
 		if (loadHotkeyPressed || loadClicked)
 		{
-			this->loadButton->click();
+			this->loadButton->click(this->getGameState());
 		}
 		else if (newHotkeyPressed || newClicked)
 		{
-			this->newButton->click();
+			this->newButton->click(this->getGameState());
 		}
 		else if (exitHotkeyPressed || exitClicked)
 		{
-			this->exitButton->click();
+			this->exitButton->click(this->getGameState());
 		}
 	}
 }

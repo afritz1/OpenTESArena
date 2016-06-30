@@ -11,10 +11,10 @@
 #include "../Media/TextureName.h"
 
 ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
-	double secondsToDisplay, const std::function<void()> &endingAction)
+	double secondsToDisplay, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
-	this->skipButton = [gameState, &endingAction]()
+	this->skipButton = [&endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
@@ -59,7 +59,7 @@ void ImagePanel::handleEvents(bool &running)
 
 		if (leftClick || skipHotkeyPressed)
 		{
-			this->skipButton->click();
+			this->skipButton->click(this->getGameState());
 		}
 	}
 }
@@ -80,7 +80,7 @@ void ImagePanel::tick(double dt, bool &running)
 	this->currentSeconds += dt;
 	if (this->currentSeconds > this->secondsToDisplay)
 	{
-		this->skipButton->click();
+		this->skipButton->click(this->getGameState());
 	}
 }
 

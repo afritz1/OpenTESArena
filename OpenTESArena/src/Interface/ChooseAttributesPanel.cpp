@@ -91,9 +91,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->getTextureManager()));
 	}();
 
-	this->backToRaceButton = [gameState, charClass, name, gender]()
+	this->backToRaceButton = [charClass, name, gender]()
 	{
-		auto function = [gameState, charClass, name, gender]()
+		auto function = [charClass, name, gender](GameState *gameState)
 		{
 			std::unique_ptr<Panel> racePanel(new ChooseRacePanel(
 				gameState, charClass, name, gender));
@@ -102,12 +102,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->doneButton = [this, gameState, charClass, name, gender, raceName]()
+	this->doneButton = [this, charClass, name, gender, raceName]()
 	{
 		Int2 center(25, ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
-		auto function = [this, gameState, charClass, name, gender, raceName]()
+		auto function = [this, charClass, name, gender, raceName](GameState *gameState)
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
@@ -192,7 +192,7 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToRaceButton->click();
+			this->backToRaceButton->click(this->getGameState());
 		}
 
 		bool incrementIndex = (e.type == SDL_KEYDOWN) &&
@@ -216,7 +216,7 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 
 		if (leftClick && this->doneButton->containsPoint(mouseOriginalPoint))
 		{
-			this->doneButton->click();
+			this->doneButton->click(this->getGameState());
 		}
 	}
 }

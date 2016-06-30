@@ -14,14 +14,14 @@
 
 TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName name,
 	const std::string &text, const std::vector<double> &secondsPerText,
-	double secondsPerImage, const std::function<void()> &endingAction)
+	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
 	// There must be at least one text duration, and text to show must be non-empty.
 	assert(secondsPerText.size() > 0);
 	assert(text.size() > 0);
 
-	this->skipButton = [gameState, &endingAction]()
+	this->skipButton = [&endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
@@ -71,7 +71,7 @@ void TextCinematicPanel::handleEvents(bool &running)
 
 		if (leftClick || skipHotkeyPressed)
 		{
-			this->skipButton->click();
+			this->skipButton->click(this->getGameState());
 		}
 	}
 }
@@ -107,7 +107,7 @@ void TextCinematicPanel::tick(double dt, bool &running)
 		if (this->textIndex >= this->secondsPerText.size())
 		{
 			this->textIndex = static_cast<int>(this->secondsPerText.size() - 1);
-			this->skipButton->click();
+			this->skipButton->click(this->getGameState());
 			break;
 		}
 	}
@@ -123,7 +123,7 @@ void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbo
 	if (this->imageIndex >= imageFilenames.size())
 	{
 		this->imageIndex = 0;
-		this->skipButton->click();
+		this->skipButton->click(this->getGameState());
 	}
 
 	// Draw animation.

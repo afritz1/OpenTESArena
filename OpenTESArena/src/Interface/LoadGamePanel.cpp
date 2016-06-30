@@ -20,9 +20,9 @@
 LoadGamePanel::LoadGamePanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backButton = [gameState]()
+	this->backButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// Back button behavior depends on if game data is active.
 			auto backPanel = gameState->gameDataIsActive() ?
@@ -30,7 +30,6 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 				std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 			gameState->setPanel(std::move(backPanel));
 		};
-
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
@@ -80,7 +79,7 @@ void LoadGamePanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backButton->click();
+			this->backButton->click(this->getGameState());
 		}
 
 		/*bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&

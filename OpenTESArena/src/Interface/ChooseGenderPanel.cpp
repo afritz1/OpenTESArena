@@ -73,9 +73,9 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			gameState->getTextureManager()));
 	}();
 
-	this->backToNameButton = [gameState, charClass]()
+	this->backToNameButton = [charClass]()
 	{
-		auto function = [gameState, charClass]()
+		auto function = [charClass](GameState *gameState)
 		{
 			gameState->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
 				gameState, charClass)));
@@ -83,10 +83,10 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->maleButton = [gameState, charClass, name]()
+	this->maleButton = [charClass, name]()
 	{
 		Int2 center((ORIGINAL_WIDTH / 2), 120);
-		auto function = [gameState, charClass, name]()
+		auto function = [charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Male));
@@ -95,10 +95,10 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
 
-	this->femaleButton = [gameState, charClass, name]()
+	this->femaleButton = [charClass, name]()
 	{
 		Int2 center((ORIGINAL_WIDTH / 2), 160);
-		auto function = [gameState, charClass, name]()
+		auto function = [charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				gameState, charClass, name, CharacterGenderName::Female));
@@ -142,7 +142,7 @@ void ChooseGenderPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToNameButton->click();
+			this->backToNameButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -155,11 +155,11 @@ void ChooseGenderPanel::handleEvents(bool &running)
 
 		if (maleClicked)
 		{
-			this->maleButton->click();
+			this->maleButton->click(this->getGameState());
 		}
 		else if (femaleClicked)
 		{
-			this->femaleButton->click();
+			this->femaleButton->click(this->getGameState());
 		}
 	}
 }

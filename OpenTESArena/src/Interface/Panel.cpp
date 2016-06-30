@@ -34,16 +34,16 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	{
 		return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 	}
-
+	
 	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
-	auto changeToMainMenu = [gameState]()
+	auto changeToMainMenu = [](GameState *gameState)
 	{
 		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
 		gameState->setPanel(std::move(mainMenuPanel));
 	};
 
-	auto changeToIntroStory = [gameState, changeToMainMenu]()
+	auto changeToIntroStory = [changeToMainMenu](GameState *gameState)
 	{
 		// Lots of text to read, so give each image extra time.
 		double secondsPerImage = 14.0;
@@ -55,7 +55,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(introStoryPanel));
 	};
 
-	auto changeToScrolling = [gameState, changeToIntroStory]()
+	auto changeToScrolling = [changeToIntroStory](GameState *gameState)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			gameState,
@@ -65,7 +65,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(scrollingPanel));
 	};
 
-	auto changeToQuote = [gameState, changeToScrolling]()
+	auto changeToQuote = [changeToScrolling](GameState *gameState)
 	{
 		double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> quotePanel(new ImagePanel(
@@ -76,7 +76,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(quotePanel));
 	};
 
-	auto changeToTitle = [gameState, changeToQuote]()
+	auto changeToTitle = [changeToQuote](GameState *gameState)
 	{
 		double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> titlePanel(new ImagePanel(

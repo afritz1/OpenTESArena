@@ -21,12 +21,12 @@
 WorldMapPanel::WorldMapPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backToGameButton = [gameState]()
+	this->backToGameButton = []()
 	{
 		Int2 center(ORIGINAL_WIDTH - 22, ORIGINAL_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
@@ -34,9 +34,9 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
-	this->provinceButton = [this, gameState]()
+	this->provinceButton = [this]()
 	{
-		auto function = [this, gameState]()
+		auto function = [this](GameState *gameState)
 		{
 			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(
 				gameState, Province(*this->provinceName.get())));
@@ -80,7 +80,7 @@ void WorldMapPanel::handleEvents(bool &running)
 		}
 		if (escapePressed || mPressed)
 		{
-			this->backToGameButton->click();
+			this->backToGameButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -90,7 +90,7 @@ void WorldMapPanel::handleEvents(bool &running)
 		{
 			if (this->backToGameButton->containsPoint(mouseOriginalPoint))
 			{
-				this->backToGameButton->click();
+				this->backToGameButton->click(this->getGameState());
 			}
 
 			// Listen for map clicks.
@@ -106,7 +106,7 @@ void WorldMapPanel::handleEvents(bool &running)
 						provinceName));
 
 					// Go to the province panel.
-					this->provinceButton->click();
+					this->provinceButton->click(this->getGameState());
 					break;
 				}
 			}

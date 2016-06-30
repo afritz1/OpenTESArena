@@ -9,6 +9,7 @@
 // it's one image.
 
 class Button;
+class GameState;
 
 enum class TextureName;
 
@@ -24,7 +25,7 @@ protected:
 	virtual void handleKeyboard(double dt) override;
 public:
 	ImagePanel(GameState *gameState, TextureName textureName, double secondsToDisplay,
-		const std::function<void()> &endingAction);
+		const std::function<void(GameState*)> &endingAction);
 	virtual ~ImagePanel();
 	
 	virtual void tick(double dt, bool &running) override;

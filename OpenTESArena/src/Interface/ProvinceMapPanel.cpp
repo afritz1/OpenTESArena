@@ -53,42 +53,42 @@ namespace
 ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &province)
 	: Panel(gameState)
 {
-	this->searchButton = [gameState]()
+	this->searchButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Search);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
 		};
 		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
 	}();
 
-	this->travelButton = [gameState]()
+	this->travelButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Travel);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
 		};
 		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
 	}();
 
-	this->backToWorldMapButton = [gameState]()
+	this->backToWorldMapButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::BackToWorldMap);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(gameState));
 			gameState->setPanel(std::move(gamePanel));
@@ -130,7 +130,7 @@ void ProvinceMapPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToWorldMapButton->click();
+			this->backToWorldMapButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -142,23 +142,23 @@ void ProvinceMapPanel::handleEvents(bool &running)
 		// if a location is selected.
 		if (rightClick)
 		{
-			this->backToWorldMapButton->click();
+			this->backToWorldMapButton->click(this->getGameState());
 		}
 		else if (leftClick)
 		{
 			if (this->searchButton->containsPoint(mouseOriginalPoint))
 			{
-				this->searchButton->click();
+				this->searchButton->click(this->getGameState());
 			}
 
 			else if (this->travelButton->containsPoint(mouseOriginalPoint))
 			{
-				this->travelButton->click();
+				this->travelButton->click(this->getGameState());
 			}
 
 			else if (this->backToWorldMapButton->containsPoint(mouseOriginalPoint))
 			{
-				this->backToWorldMapButton->click();
+				this->backToWorldMapButton->click(this->getGameState());
 			}
 
 			// Check locations for clicks...

@@ -19,10 +19,10 @@
 LogbookPanel::LogbookPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backButton = [gameState]()
+	this->backButton = []()
 	{
 		Int2 center(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
 			gameState->setPanel(std::move(backPanel));
@@ -78,7 +78,7 @@ void LogbookPanel::handleEvents(bool &running)
 		}
 		if (escapePressed || lPressed)
 		{
-			this->backButton->click();
+			this->backButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -86,7 +86,7 @@ void LogbookPanel::handleEvents(bool &running)
 
 		if (leftClick && this->backButton->containsPoint(mouseOriginalPoint))
 		{
-			this->backButton->click();
+			this->backButton->click(this->getGameState());
 		}
 	}
 }

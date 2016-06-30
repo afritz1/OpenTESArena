@@ -70,9 +70,9 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 			gameState->getTextureManager()));
 	}();
 
-	this->backToMainMenuButton = [gameState]()
+	this->backToMainMenuButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
 			gameState->setPanel(std::move(mainMenuPanel));
@@ -81,10 +81,10 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->generateButton = [gameState]()
+	this->generateButton = []()
 	{
 		Int2 center(ORIGINAL_WIDTH / 2, 120);
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
 			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
@@ -93,10 +93,10 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
 
-	this->selectButton = [gameState]()
+	this->selectButton = []()
 	{
 		Int2 center(ORIGINAL_WIDTH / 2, 160);
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
 			gameState->setPanel(std::move(classPanel));
@@ -136,7 +136,7 @@ void ChooseClassCreationPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->backToMainMenuButton->click();
+			this->backToMainMenuButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -149,11 +149,11 @@ void ChooseClassCreationPanel::handleEvents(bool &running)
 
 		if (generateClicked)
 		{
-			this->generateButton->click();
+			this->generateButton->click(this->getGameState());
 		}
 		else if (selectClicked)
 		{
-			this->selectButton->click();
+			this->selectButton->click(this->getGameState());
 		}
 	}
 }

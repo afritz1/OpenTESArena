@@ -34,9 +34,9 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 {
 	assert(gameState->gameDataIsActive());
 
-	this->characterSheetButton = [gameState]()
+	this->characterSheetButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(gameState));
 			gameState->setPanel(std::move(sheetPanel));
@@ -44,9 +44,9 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->logbookButton = [gameState]()
+	this->logbookButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(gameState));
 			gameState->setPanel(std::move(logbookPanel));
@@ -54,9 +54,9 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->pauseButton = [gameState]()
+	this->pauseButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
 			gameState->setPanel(std::move(pausePanel));
@@ -64,9 +64,9 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->worldMapButton = [gameState]()
+	this->worldMapButton = []()
 	{
-		auto function = [gameState]()
+		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> mapPanel(new WorldMapPanel(gameState));
 			gameState->setPanel(std::move(mapPanel));
@@ -103,7 +103,7 @@ void GameWorldPanel::handleEvents(bool &running)
 		}
 		if (escapePressed)
 		{
-			this->pauseButton->click();
+			this->pauseButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -128,17 +128,17 @@ void GameWorldPanel::handleEvents(bool &running)
 		else if (logbookHotkeyPressed)
 		{
 			// Go to the logbook.
-			this->logbookButton->click();
+			this->logbookButton->click(this->getGameState());
 		}
 		else if (sheetHotkeyPressed)
 		{
 			// Go to character screen.
-			this->characterSheetButton->click();
+			this->characterSheetButton->click(this->getGameState());
 		}
 		else if (mapHotkeyPressed)
 		{
 			// Go to world map.
-			this->worldMapButton->click();
+			this->worldMapButton->click(this->getGameState());
 		}
 	}
 }
