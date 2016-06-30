@@ -34,7 +34,6 @@ const std::map<TextureName, std::string> TextureFilenames =
 
 	// Interface.
 	{ TextureName::CharacterCreation, "STARTGAM.MNU" },
-    { TextureName::CharacterRaceSelect, "TAMRIEL.IMG" },
 	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
 	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 	{ TextureName::CompassFrame, "COMPASS.IMG" },
@@ -43,6 +42,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "TITLE.IMG" },
 	{ TextureName::IntroQuote, "QUOTE.IMG" },
+	{ TextureName::LoadSave, "LOADSAVE.IMG" },
 	{ TextureName::Logbook, "LOGBOOK.IMG" },
 	{ TextureName::MainMenu, "MENU.IMG" },
 	{ TextureName::ParchmentBig, "PARCH.IMG" },
@@ -50,6 +50,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::PauseBackground, "OP.IMG" },
 	{ TextureName::PopUp, "POPUP.IMG" }, // I think this is what ChooseClassPanel should use.
 	{ TextureName::PopUp11, "POPUP11.IMG" },
+	{ TextureName::RaceSelect, "TAMRIEL.IMG" },
 	{ TextureName::UpDown, "UPDOWN.IMG" },
 	{ TextureName::YesNoCancel, "YESNO.IMG" },
 

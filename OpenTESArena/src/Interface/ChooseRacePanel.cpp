@@ -213,7 +213,7 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 
 	// Draw background map.
 	const auto *raceSelectMap = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterRaceSelect));
+		.getTexture(TextureFile::fromName(TextureName::RaceSelect));
 	this->drawLetterbox(raceSelectMap, renderer, letterbox);
 
 	// Don't worry about the yellow dots for now. Whatever the original game is doing

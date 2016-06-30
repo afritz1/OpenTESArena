@@ -2,8 +2,8 @@
 
 #include "Button.h"
 
-#include "../Math/Int2.h"
 #include "../Game/GameState.h"
+#include "../Math/Int2.h"
 
 Button::Button(int x, int y, int width, int height, 
 	const std::function<void(GameState*)> &function)

@@ -35,7 +35,6 @@ enum class TextureName
 
 	// Interface.
 	CharacterCreation, // Starry night with house.
-    CharacterRaceSelect, // World map without location dots.
 	CharacterEquipment, // Character sheet equipment.
 	CharacterStats, // Character sheet attributes, stats, etc..
 	CompassFrame, // Compass border with "gargoyle-like" object.
@@ -44,6 +43,7 @@ enum class TextureName
 	Icon, // Custom window icon for the program.
 	IntroTitle, // Arena copyright, etc..
 	IntroQuote, // "The best techniques...".
+	LoadSave, // Slots for loading and saving.
 	Logbook, // Logbook background.
 	MainMenu, // Load, New, Exit.
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
@@ -51,6 +51,7 @@ enum class TextureName
 	PauseBackground, // Arena logo with sound/music/detail and buttons
 	PopUp, // For class list.
 	PopUp11, // For items, etc..
+	RaceSelect, // World map with location dots and no exit text.
 	UpDown, // Scroll arrows.
 	YesNoCancel, // Yes/No/Cancel texture for bartering.
 
@@ -74,7 +75,7 @@ enum class TextureName
 	SkyrimMap,
 	SummersetIsleMap,
 	ValenwoodMap,
-	WorldMap,
+	WorldMap, // World map without location dots and with exit text.
 };
 
 #endif

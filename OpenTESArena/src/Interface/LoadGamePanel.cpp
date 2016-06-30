@@ -9,6 +9,7 @@
 #include "PauseMenuPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
+#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -35,7 +36,7 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 
 	this->underConstructionTextBox = [gameState]()
 	{
-		Int2 center(160, 85);
+		Int2 center(ORIGINAL_WIDTH / 2, 170);
 		auto color = Color::White;
 		std::string text = "Under construction!";
 		auto fontName = FontName::A;
@@ -110,6 +111,11 @@ void LoadGamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	// Clear full screen.
 	this->clearScreen(renderer);
+
+	// Draw slots background.
+	const auto *slotsBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::LoadSave));
+	this->drawScaledToNative(slotsBackground, renderer);
 
 	// Draw temp text. The load game design is unclear at this point, but it should
 	// have up/down arrows and buttons.
