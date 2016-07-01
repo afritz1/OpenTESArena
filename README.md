@@ -3,11 +3,11 @@
 
 ## Current status
 
-June 29th, 2016:
+June 30th, 2016:
 
 The game world is currently a test city with some untextured blocks. No jumping or collision yet. A few of the menus work, including most of character creation.  Pressing Tab in the game world opens the character sheet, and pressing M opens the world map. Clicking on a province in the world map opens the province map. Pressing L opens the logbook. Pressing N opens the automap.
 
-OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [freepats](http://freepats.zenvoid.org/) project provides some good patches.
+OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [eawpats](https://slackbuilds.org/repository/13.37/audio/eawpats/) library provides some good sound patches (use the .tar.gz link under "Source Downloads"). The freepats library isn't suggested anymore since it's actually missing some of the instruments used by Arena.
 
 The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine from a test project using some random cities for demonstration purposes. It is in development and is not fully implemented here.
 
