@@ -17,7 +17,7 @@ enum class TextureSequenceName
 	IntroBook, // Zoom in on book
 	IntroStory, // "For centuries..."
 	OpeningScroll, // Opening scroll for both intro and new game story
-	NewGameStory, // Uriel story
+	NewGameStory, // Uriel story (original is INTRO01.IMG, INTRO02.IMG, ...)
 	Silmane, // Ria Silmane looping cinematic
 };
 

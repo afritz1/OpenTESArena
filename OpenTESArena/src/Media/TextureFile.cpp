@@ -9,11 +9,30 @@
 // The filename of each TextureName, by type.
 const std::map<TextureName, std::string> TextureFilenames =
 {
+	// Character backgrounds (without clothes).
+	{ TextureName::FemaleArgonianBackground, "CHRBKF07.IMG" },
+	{ TextureName::FemaleBretonBackground, "CHRBKF00.IMG" },
+	{ TextureName::FemaleDarkElfBackground, "CHRBKF03.IMG" },
+	{ TextureName::FemaleHighElfBackground, "CHRBKF04.IMG" },
+	{ TextureName::FemaleKhajiitBackground, "CHRBKF06.IMG" },
+	{ TextureName::FemaleNordBackground, "CHRBKF02.IMG" },
+	{ TextureName::FemaleRedguardBackground, "CHRBKF01.IMG" },
+	{ TextureName::FemaleWoodElfBackground, "CHRBKF05.IMG" },
+	{ TextureName::MaleArgonianBackground, "CHARBK07.IMG" },
+	{ TextureName::MaleBretonBackground, "CHARBK00.IMG" },
+	{ TextureName::MaleDarkElfBackground, "CHARBK03.IMG" },
+	{ TextureName::MaleHighElfBackground, "CHARBK04.IMG" },
+	{ TextureName::MaleKhajiitBackground, "CHARBK06.IMG" },
+	{ TextureName::MaleNordBackground, "CHARBK02.IMG" },
+	{ TextureName::MaleRedguardBackground, "CHARBK01.IMG" },
+	{ TextureName::MaleWoodElfBackground, "CHARBK05.IMG" },
+
 	// Cursors.
 	{ TextureName::QuillCursor, "POINTER.IMG" },
 	{ TextureName::SwordCursor, "ARENARW.IMG" },
 
-	// Equipment overlays.
+	// Equipment overlays. "TOP.IMG" was used in a demo image, I think.
+	// 0ARGHELM.IMG and 1ARGHELM.IMG seem to be helmets.
 	{ TextureName::FemaleNonMagicShirt, "FSSHIRT.IMG" },
 	{ TextureName::FemaleMagicShirt, "FRSHIRT.IMG" },
 	{ TextureName::FemalePants, "FPANTS.IMG" },
@@ -33,24 +52,30 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::FontTeeny, "fonts/teeny_font" },
 
 	// Interface.
+	{ TextureName::AcceptReject, "ACCPREJT.IMG" },
+	{ TextureName::AcceptCounterReject, "NEGOTBUT.IMG" },
+	{ TextureName::AddJobStatusCancel, "NEWOLD.IMG" },
+	{ TextureName::BarterBackground, "MENUSCRN.IMG" },
 	{ TextureName::CharacterCreation, "STARTGAM.MNU" },
 	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
 	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 	{ TextureName::CompassFrame, "COMPASS.IMG" },
-	{ TextureName::CompassSlider, "SLIDER.IMG" },	
-	{ TextureName::GameWorldInterface, "P1.IMG" },
+	{ TextureName::CompassSlider, "SLIDER.IMG" },
+	{ TextureName::GameWorldInterface, "P1.IMG" }, // The portrait gradients might be in STATUS.CIF.
 	{ TextureName::Icon, "interface/icon" },
 	{ TextureName::IntroTitle, "TITLE.IMG" },
 	{ TextureName::IntroQuote, "QUOTE.IMG" },
 	{ TextureName::LoadSave, "LOADSAVE.IMG" },
 	{ TextureName::Logbook, "LOGBOOK.IMG" },
 	{ TextureName::MainMenu, "MENU.IMG" },
+	{ TextureName::NextPage, "PAGE2.IMG" },
 	{ TextureName::ParchmentBig, "PARCH.IMG" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
 	{ TextureName::PauseBackground, "OP.IMG" },
 	{ TextureName::PopUp, "POPUP.IMG" }, // I think this is what ChooseClassPanel should use.
 	{ TextureName::PopUp11, "POPUP11.IMG" },
 	{ TextureName::RaceSelect, "TAMRIEL.IMG" },
+	{ TextureName::SpellbookText, "SPELLBK.IMG" },
 	{ TextureName::UpDown, "UPDOWN.IMG" },
 	{ TextureName::YesNoCancel, "YESNO.IMG" },
 
@@ -76,6 +101,33 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::SummersetIsleMap, "SUMERSET.IMG" },
 	{ TextureName::ValenwoodMap, "VALNWOOD.IMG" },
 	{ TextureName::WorldMap, "TAMRIEL.MNU" },
+
+	// Map icons.
+	{ TextureName::CityStateIcon, "CITY.IMG" },
+	{ TextureName::DungeonIcon, "DUNGEON.IMG" },
+	{ TextureName::TownIcon, "TOWN.IMG" },
+	{ TextureName::VillageIcon, "VILLAGE.IMG" },
+
+	// Spellbook and spellmaker pop-ups.
+	{ TextureName::BuySpellBackground, "BUYSPELL.IMG" },
+	{ TextureName::Form1, "FORM1.IMG" },
+	{ TextureName::Form2, "FORM2.IMG" },
+	{ TextureName::Form3, "FORM3.IMG" },
+	{ TextureName::Form4, "FORM4.IMG" },
+	{ TextureName::Form4A, "FORM4A.IMG" },
+	{ TextureName::Form5, "FORM5.IMG" },
+	{ TextureName::Form6, "FORM6.IMG" },
+	{ TextureName::Form6A, "FORM6A.IMG" },
+	{ TextureName::Form7, "FORM7.IMG" },
+	{ TextureName::Form8, "FORM8.IMG" },
+	{ TextureName::Form9, "FORM9.IMG" },
+	{ TextureName::Form10, "FORM10.IMG" },
+	{ TextureName::Form11, "FORM11.IMG" },
+	{ TextureName::Form12, "FORM12.IMG" },
+	{ TextureName::Form13, "FORM13.IMG" },
+	{ TextureName::Form14, "FORM14.IMG" },
+	{ TextureName::Form15, "FORM15.IMG" },
+	{ TextureName::SpellMakerBackground, "SPELLMKR.IMG" },
 };
 
 // The filename prefix of each TextureSequenceName (with sub-folders). When looking

@@ -30,6 +30,8 @@ private:
 	static const std::string PATH;
 
 	Palette palette;
+	// Maybe the surfaces should take a pair of strings: filename and palette name.
+	// If no palette name is given in a load method, then assume PAL.COL.
 	std::map<std::string, Surface> surfaces;
 	std::map<std::string, SDL_Texture*> textures;
 	const SDL_Renderer *renderer;
@@ -37,6 +39,7 @@ private:
 
     SDL_Surface *loadPNG(const std::string &fullPath);
 	SDL_Surface *loadIMG(const std::string &fullPath);
+	// Perhaps methods like "loadDFA" and "loadCIF" would return a vector of surfaces.
 public:
 	TextureManager(const SDL_Renderer *renderer, const SDL_PixelFormat *format);
 	~TextureManager();

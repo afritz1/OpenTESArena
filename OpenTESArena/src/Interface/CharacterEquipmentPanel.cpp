@@ -2,11 +2,10 @@
 
 #include "SDL.h"
 
-#include "CharacterPanel.h"
+#include "CharacterEquipmentPanel.h"
 
 #include "Button.h"
-#include "CharacterEquipmentPanel.h"
-#include "GameWorldPanel.h"
+#include "CharacterPanel.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
@@ -15,25 +14,25 @@
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
-#include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
-CharacterPanel::CharacterPanel(GameState *gameState)
+CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 	: Panel(gameState)
 {
 	this->playerNameTextBox = [gameState]()
 	{
-		Int2 origin(10, 8);
+		int x = 10;
+		int y = 8;
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getDisplayName();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			x,
+			y,
 			color,
 			text,
 			fontName,
@@ -42,14 +41,15 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->playerRaceTextBox = [gameState]()
 	{
-		Int2 origin(10, 17);
+		int x = 10;
+		int y = 17;
 		Color color(199, 199, 199);
 		std::string text = CharacterRace(gameState->getGameData()->getPlayer()
 			.getRaceName()).toString();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			x,
+			y,
 			color,
 			text,
 			fontName,
@@ -58,54 +58,92 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->playerClassTextBox = [gameState]()
 	{
-		Int2 origin(10, 26);
+		int x = 10;
+		int y = 26;
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getCharacterClass()
 			.getDisplayName();
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			x,
+			y,
 			color,
 			text,
 			fontName,
 			gameState->getTextureManager()));
 	}();
 
-	this->doneButton = []()
+	this->backToStatsButton = []()
 	{
-		Int2 center(25, ORIGINAL_HEIGHT - 15);
-		int width = 21;
-		int height = 13;
+		int x = 0;
+		int y = 188;
+		int width = 47;
+		int height = 12;
 		auto function = [](GameState *gameState)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(gamePanel));
+			std::unique_ptr<Panel> characterPanel(new CharacterPanel(gameState));
+			gameState->setPanel(std::move(characterPanel));
+		};
+		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+	}();
+
+	this->spellbookButton = []()
+	{
+		int x = 47;
+		int y = 188;
+		int width = 76;
+		int height = 12;
+		auto function = [](GameState *gameState)
+		{
+			// Nothing yet.
+		};
+		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+	}();
+
+	this->dropButton = []()
+	{
+		int x = 123;
+		int y = 188;
+		int width = 48;
+		int height = 12;
+		auto function = [](GameState *gameState)
+		{
+			// Nothing yet.
+		};
+		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+	}();
+
+	this->scrollDownButton = []()
+	{
+		Int2 center(16, 131);
+		int width = 9;
+		int height = 9;
+		auto function = [](GameState *gameState)
+		{
+			// Nothing yet.
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
-	this->nextPageButton = []()
+	this->scrollUpButton = []()
 	{
-		int x = 108;
-		int y = 179;
-		int width = 49;
-		int height = 13;
+		Int2 center(152, 131);
+		int width = 9;
+		int height = 9;
 		auto function = [](GameState *gameState)
 		{
-			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(gameState));
-			gameState->setPanel(std::move(equipmentPanel));
+			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 }
 
-CharacterPanel::~CharacterPanel()
+CharacterEquipmentPanel::~CharacterEquipmentPanel()
 {
 
 }
 
-void CharacterPanel::handleEvents(bool &running)
+void CharacterEquipmentPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
 	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
@@ -133,7 +171,7 @@ void CharacterPanel::handleEvents(bool &running)
 		}
 		if (escapePressed || tabPressed)
 		{
-			this->doneButton->click(this->getGameState());
+			this->backToStatsButton->click(this->getGameState());
 		}
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -141,53 +179,59 @@ void CharacterPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			if (this->doneButton->containsPoint(mouseOriginalPoint))
+			if (this->backToStatsButton->containsPoint(mouseOriginalPoint))
 			{
-				this->doneButton->click(this->getGameState());
+				this->backToStatsButton->click(this->getGameState());
 			}
-
-			else if (this->nextPageButton->containsPoint(mouseOriginalPoint))
+			else if (this->spellbookButton->containsPoint(mouseOriginalPoint))
 			{
-				this->nextPageButton->click(this->getGameState());
+				this->spellbookButton->click(this->getGameState());
+			}
+			else if (this->dropButton->containsPoint(mouseOriginalPoint))
+			{
+				this->dropButton->click(this->getGameState());
+			}
+			else if (this->scrollUpButton->containsPoint(mouseOriginalPoint))
+			{
+				this->scrollUpButton->click(this->getGameState());
+			}
+			else if (this->scrollDownButton->containsPoint(mouseOriginalPoint))
+			{
+				this->scrollDownButton->click(this->getGameState());
 			}
 		}
 	}
 }
 
-void CharacterPanel::handleMouse(double dt)
+void CharacterEquipmentPanel::handleMouse(double dt)
 {
 	static_cast<void>(dt);
 }
 
-void CharacterPanel::handleKeyboard(double dt)
+void CharacterEquipmentPanel::handleKeyboard(double dt)
 {
 	static_cast<void>(dt);
 }
 
-void CharacterPanel::tick(double dt, bool &running)
+void CharacterEquipmentPanel::tick(double dt, bool &running)
 {
 	static_cast<void>(dt);
 
 	this->handleEvents(running);
 }
 
-void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw character stats background.
-	const auto *statsBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
-	this->drawScaledToNative(statsBackground, renderer);
-
-	// Draw "Next Page" texture.
+	// Draw character equipment background.
 	this->getGameState()->getTextureManager().setPalette("CHARSHT.COL");
-	const auto *nextPageTexture = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::NextPage));
-	this->drawScaledToNative(nextPageTexture, 108, 179, renderer);
+	const auto *equipmentBackground = this->getGameState()->getTextureManager()
+		.getTexture(TextureFile::fromName(TextureName::CharacterEquipment));
+	this->drawScaledToNative(equipmentBackground, renderer);
 	this->getGameState()->getTextureManager().setPalette("PAL.COL");
 
 	// Get a reference to the active player data.
@@ -201,7 +245,7 @@ void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	const auto *portrait = this->getGameState()->getTextureManager()
 		.getTexture(portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr, 
+	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr,
 		&portraitWidth, &portraitHeight);
 
 	this->drawScaledToNative(portrait,

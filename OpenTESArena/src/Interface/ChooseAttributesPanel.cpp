@@ -31,21 +31,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	CharacterRaceName raceName)
 	: Panel(gameState)
 {
-	this->instructionsTextBox = [gameState]()
-	{
-		Int2 center((ORIGINAL_WIDTH / 4) + 5, 100);
-		auto color = Color::White;
-		std::string text = std::string("Use thine A and D\nkeys to change\n") + 
-			"thy portrait.\n\nClick \"Done\" when\nthou art finished.";
-		auto fontName = FontName::A;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			fontName,
-			gameState->getTextureManager()));
-	}();
-
 	this->nameTextBox = [gameState, name]()
 	{
 		Int2 origin(10, 8);
@@ -146,10 +131,32 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setGameData(std::move(gameData));
 
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(gameState));
-
-			// Set the game world's music to be some placeholder for now.
-			gameState->setMusic(MusicName::SunnyDay);
 			gameState->setPanel(std::move(gameWorldPanel));
+			gameState->setMusic(MusicName::Overcast);
+		};
+		return std::unique_ptr<Button>(new Button(center, width, height, function));
+	}();
+
+	this->incrementPortraitButton = [this]()
+	{
+		Int2 center(ORIGINAL_WIDTH - 72, 25);
+		int width = 60;
+		int height = 42;
+		auto function = [this](GameState *gameState)
+		{
+			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
+		};
+		return std::unique_ptr<Button>(new Button(center, width, height, function));
+	}();
+
+	this->decrementPortraitButton = [this]()
+	{
+		Int2 center(ORIGINAL_WIDTH - 72, 25);
+		int width = 60;
+		int height = 42;
+		auto function = [this](GameState *gameState)
+		{
+			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -195,28 +202,29 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 			this->backToRaceButton->click(this->getGameState());
 		}
 
-		bool incrementIndex = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_d);
-		bool decrementIndex = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_a);
-
-		// Update the portrait index for which portrait to show. Only ten portraits
-		// are allowed for now.
-		if (incrementIndex)
-		{
-			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
-		}
-		if (decrementIndex)
-		{
-			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
-		}
-
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
+		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+			(e.button.button == SDL_BUTTON_RIGHT);
 
-		if (leftClick && this->doneButton->containsPoint(mouseOriginalPoint))
+		if (leftClick)
 		{
-			this->doneButton->click(this->getGameState());
+			if (this->doneButton->containsPoint(mouseOriginalPoint))
+			{
+				this->doneButton->click(this->getGameState());
+			}
+			else if (this->incrementPortraitButton->containsPoint(mouseOriginalPoint))
+			{
+				this->incrementPortraitButton->click(this->getGameState());
+			}
+		}
+
+		if (rightClick)
+		{
+			if (this->decrementPortraitButton->containsPoint(mouseOriginalPoint))
+			{
+				this->decrementPortraitButton->click(this->getGameState());
+			}
 		}
 	}
 }
@@ -244,8 +252,10 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 	this->clearScreen(renderer);
 
 	// Draw attributes texture.
+	this->getGameState()->getTextureManager().setPalette("CHARSHT.COL");
 	const auto *attributesBackground = this->getGameState()->getTextureManager()
 		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
+	this->getGameState()->getTextureManager().setPalette("PAL.COL");
 	this->drawScaledToNative(attributesBackground, renderer);
 
 	// Get the filenames for the portraits.
@@ -266,8 +276,7 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 		portraitHeight,
 		renderer);
 
-	// Draw text: instructions, name, race, class.
-	this->drawScaledToNative(*this->instructionsTextBox.get(), renderer);
+	// Draw text: name, race, class.
 	this->drawScaledToNative(*this->nameTextBox.get(), renderer);
 	this->drawScaledToNative(*this->raceTextBox.get(), renderer);
 	this->drawScaledToNative(*this->classTextBox.get(), renderer);

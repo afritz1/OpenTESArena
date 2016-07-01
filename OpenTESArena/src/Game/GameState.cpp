@@ -14,7 +14,6 @@
 #include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
-#include "../Media/WildMidi.hpp"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
@@ -67,7 +66,7 @@ GameState::GameState()
 	// Use a blitted surface as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// GameData is initialized when a player enters the game world. 
+	// GameData is initialized when the player enters the game world. 
 	// The panel is set at the beginning of a frame if one is waiting.
 	assert(this->gameData.get() == nullptr);
 	assert(this->panel.get() == nullptr);
@@ -159,7 +158,6 @@ void GameState::tick(double dt)
 	if (this->nextPanel.get() != nullptr)
 	{
 		this->panel = std::move(this->nextPanel);
-		assert(this->nextPanel.get() == nullptr);
 	}
 
 	// Change the music if requested.
@@ -169,17 +167,14 @@ void GameState::tick(double dt)
 		this->nextMusic = nullptr;
 	}
 
-	// Tick the current panel by delta time (does nothing if not required).
+	// Tick the current panel by delta time.
 	this->panel->tick(dt, this->running);
 }
 
 void GameState::render()
 {
-	// Now using GPU-accelerated renderer instead of SDL_Surface.
 	auto *renderer = this->renderer->getRenderer();
 	auto letterbox = this->getLetterboxDimensions();
-
 	this->panel->render(renderer, &letterbox);
-
 	this->renderer->present();
 }

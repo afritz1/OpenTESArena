@@ -6,6 +6,9 @@
 
 // This static class gets the filenames for character portraits.
 
+// The character backgrounds are available now. Once the original faces can be 
+// used also, then this class should be redesigned to better fit that.
+
 enum class CharacterGenderName;
 enum class CharacterRaceName;
 

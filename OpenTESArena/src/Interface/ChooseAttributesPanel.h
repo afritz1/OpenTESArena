@@ -7,7 +7,10 @@
 
 // This panel is for choosing character creation attributes and the portrait.
 
-// I don't think it will be used for level-up purposes.
+// I think it should be used for level-up purposes, since distributing points is
+// basically identical to setting your character's original attributes.
+
+// Maybe there could be a "LevelUpPanel" for that instead.
 
 class Button;
 class CharacterClass;
@@ -19,8 +22,9 @@ enum class CharacterRaceName;
 class ChooseAttributesPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> instructionsTextBox, nameTextBox, raceTextBox, classTextBox;
-	std::unique_ptr<Button> backToRaceButton, doneButton;
+	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
+	std::unique_ptr<Button> backToRaceButton, doneButton, incrementPortraitButton, 
+		decrementPortraitButton;
 	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
