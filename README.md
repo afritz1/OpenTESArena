@@ -3,7 +3,7 @@
 
 ## Current status
 
-June 30th, 2016:
+July 1st, 2016:
 
 The game world is currently a test city with some untextured blocks. No jumping or collision yet. A few of the menus work, including most of character creation.  Pressing Tab in the game world opens the character sheet, and pressing M opens the world map. Clicking on a province in the world map opens the province map. Pressing L opens the logbook. Pressing N opens the automap.
 
@@ -16,7 +16,7 @@ The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) a
 The current subset of data files are from screen grabs in DOSBox and from extraction utilities for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
 
 - Build the executable on your machine.
-- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated June 28th).
+- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated July 1st).
 - Put the data files in the executable directory.
 - Make sure your options.txt points to a valid soundfont file and Arena data path.
 
@@ -33,7 +33,7 @@ The current subset of data files are from screen grabs in DOSBox and from extrac
 
 This is my first big project! I'm already learning a ton.
 
-This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++11 and uses SDL2, OpenAL Soft, and OpenCL. There is currently support for Windows and Linux.
+This project aims to be an open-source reimplementation of the original "The Elder Scrolls I: Arena" game by Bethesda Softworks. It is being written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
@@ -95,7 +95,5 @@ I puzzled for a long time about whether to use a ray tracer or OpenGL, or even j
 ## Resources
 
 All of the music and sound files, as well as the vast majority of wall and sprite textures, are available to look at thanks to exporter programs like WinArena and [other utilities](http://www.uesp.net/wiki/Arena:Files#Misc_Utilities). However, this project will still use the original files that came with the floppy disk version of Arena.
-
-## Other Resources
 
 Here is the [Unofficial Elder Scrolls website](http://www.uesp.net/wiki/Arena:Arena) for information regarding the original game. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a (humorous) overview of the game's history and gameplay. The Arena manual PDF is available [here](http://www.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well.
