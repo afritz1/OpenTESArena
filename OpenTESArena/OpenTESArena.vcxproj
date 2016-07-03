@@ -265,6 +265,7 @@
     <ClInclude Include="src\Interface\ChooseClassCreationPanel.h" />
     <ClInclude Include="src\Interface\ListBox.h" />
     <ClInclude Include="src\Media\Midi.hpp" />
+    <ClInclude Include="src\Media\PaletteName.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Game\Options.h" />

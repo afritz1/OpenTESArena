@@ -21,7 +21,7 @@ public:
 	// For texture manager sequence preloading.
 	static std::vector<TextureSequenceName> getSequenceNames();
 
-	static std::string fromName(TextureName textureName);
+	static const std::string &fromName(TextureName textureName);
 	static std::vector<std::string> fromName(TextureSequenceName sequenceName);
 };
 

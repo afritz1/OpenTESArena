@@ -10,6 +10,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -105,18 +106,19 @@ void AutomapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->clearScreen(renderer);
 
 	// Draw automap background.
-	const auto *automapBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::Automap));
+	auto &textureManager = this->getGameState()->getTextureManager();
+	const auto *automapBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::Automap), PaletteName::CharSheet);
 	this->drawLetterbox(automapBackground, renderer, letterbox);
 
 	// Prepare the cursor color key.
-	const auto *pixelFormat = this->getGameState()->getTextureManager().getFormat();
+	const auto *pixelFormat = textureManager.getFormat();
 	unsigned int colorKey = this->getFormattedRGB(Color::Black, pixelFormat);
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::QuillCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::QuillCursor));
 	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE, colorKey);
 	const int cursorYOffset = static_cast<int>(
 		static_cast<double>(cursor.getHeight()) * this->getCursorScale());

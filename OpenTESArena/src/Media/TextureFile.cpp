@@ -168,9 +168,9 @@ std::vector<TextureSequenceName> TextureFile::getSequenceNames()
 	return names;
 }
 
-std::string TextureFile::fromName(TextureName textureName)
+const std::string &TextureFile::fromName(TextureName textureName)
 {
-	auto filename = TextureFilenames.at(textureName);
+	const auto &filename = TextureFilenames.at(textureName);
 	return filename;
 }
 

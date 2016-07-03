@@ -19,6 +19,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -252,10 +253,9 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 	this->clearScreen(renderer);
 
 	// Draw attributes texture.
-	this->getGameState()->getTextureManager().setPalette("CHARSHT.COL");
-	const auto *attributesBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
-	this->getGameState()->getTextureManager().setPalette("PAL.COL");
+	auto &textureManager = this->getGameState()->getTextureManager();
+	const auto *attributesBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CharacterStats), PaletteName::CharSheet);
 	this->drawScaledToNative(attributesBackground, renderer);
 
 	// Get the filenames for the portraits.
@@ -263,8 +263,8 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 		*this->raceName.get(), this->charClass->canCastMagic());
 
 	// Draw the current portrait.
-	const auto *portrait = this->getGameState()->getTextureManager()
-		.getTexture(portraitStrings.at(this->portraitIndex));
+	const auto *portrait = textureManager.getTexture(
+		portraitStrings.at(this->portraitIndex));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr, 
 		&portraitWidth, &portraitHeight);
@@ -282,7 +282,7 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 	this->drawScaledToNative(*this->classTextBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

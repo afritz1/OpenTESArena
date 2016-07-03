@@ -276,6 +276,7 @@
     <ClInclude Include="src\Interface\AutomapPanel.h" />
     <ClInclude Include="src\Interface\CharacterEquipmentPanel.h" />
     <ClInclude Include="src\Math\Int3.h" />
+    <ClInclude Include="src\Media\PaletteName.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

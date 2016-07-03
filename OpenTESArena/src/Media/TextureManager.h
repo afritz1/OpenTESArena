@@ -17,6 +17,8 @@
 
 class Surface;
 
+enum class PaletteName;
+
 struct SDL_PixelFormat;
 struct SDL_Renderer;
 struct SDL_Surface;
@@ -29,17 +31,18 @@ private:
 
 	static const std::string PATH;
 
-	Palette palette;
-	// Maybe the surfaces should take a pair of strings: filename and palette name.
-	// If no palette name is given in a load method, then assume PAL.COL.
-	std::map<std::string, Surface> surfaces;
-	std::map<std::string, SDL_Texture*> textures;
+	std::map<PaletteName, Palette> palettes;
+	std::map<std::pair<std::string, PaletteName>, Surface> surfaces;
+	std::map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
 	const SDL_Renderer *renderer;
 	const SDL_PixelFormat *format;
 
     SDL_Surface *loadPNG(const std::string &fullPath);
-	SDL_Surface *loadIMG(const std::string &fullPath);
+	SDL_Surface *loadIMG(const std::string &filename, PaletteName paletteName);
 	// Perhaps methods like "loadDFA" and "loadCIF" would return a vector of surfaces.
+
+	// Initialize the given palette with a certain palette from file.
+	void initPalette(Palette &palette, PaletteName paletteName);
 public:
 	TextureManager(const SDL_Renderer *renderer, const SDL_PixelFormat *format);
 	~TextureManager();
@@ -48,13 +51,12 @@ public:
 		
 	// Gets a surface from the texture manager. It will be loaded from file if not
 	// already stored. A valid filename might be something like "TAMRIEL.IMG".
+	const Surface &getSurface(const std::string &filename, PaletteName paletteName);
 	const Surface &getSurface(const std::string &filename);
 
-	// Similar to getSurface(), only for hardware-accelerated textures.
+	// Similar to getSurface(), only now for hardware-accelerated textures.
+	const SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
 	const SDL_Texture *getTexture(const std::string &filename);
-
-	// Set the currently used palette (default is PAL.COL).
-	void setPalette(const std::string &paletteName);
 
 	// Since cinematics are now loaded image by image instead of all at the same time,
 	// there may be some stuttering that occurs. This method loads all of the sequences

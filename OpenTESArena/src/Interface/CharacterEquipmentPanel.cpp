@@ -15,6 +15,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -228,11 +229,10 @@ void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *let
 	this->clearScreen(renderer);
 
 	// Draw character equipment background.
-	this->getGameState()->getTextureManager().setPalette("CHARSHT.COL");
-	const auto *equipmentBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterEquipment));
+	auto &textureManager = this->getGameState()->getTextureManager();
+	const auto *equipmentBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CharacterEquipment), PaletteName::CharSheet);
 	this->drawScaledToNative(equipmentBackground, renderer);
-	this->getGameState()->getTextureManager().setPalette("PAL.COL");
 
 	// Get a reference to the active player data.
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -242,8 +242,8 @@ void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *let
 		player.getRaceName(), player.getCharacterClass().canCastMagic());
 
 	// Draw the player's portrait.
-	const auto *portrait = this->getGameState()->getTextureManager()
-		.getTexture(portraitStrings.at(player.getPortraitID()));
+	const auto *portrait = textureManager.getTexture(
+		portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr,
 		&portraitWidth, &portraitHeight);
@@ -261,7 +261,7 @@ void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *let
 	this->drawScaledToNative(*this->playerRaceTextBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

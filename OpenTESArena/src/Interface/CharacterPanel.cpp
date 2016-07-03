@@ -17,6 +17,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -179,16 +180,15 @@ void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->clearScreen(renderer);
 
 	// Draw character stats background.
-	const auto *statsBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterStats));
+	auto &textureManager = this->getGameState()->getTextureManager();
+	const auto *statsBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CharacterStats), PaletteName::CharSheet);
 	this->drawScaledToNative(statsBackground, renderer);
 
 	// Draw "Next Page" texture.
-	this->getGameState()->getTextureManager().setPalette("CHARSHT.COL");
-	const auto *nextPageTexture = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::NextPage));
+	const auto *nextPageTexture = textureManager.getTexture(
+		TextureFile::fromName(TextureName::NextPage), PaletteName::CharSheet);
 	this->drawScaledToNative(nextPageTexture, 108, 179, renderer);
-	this->getGameState()->getTextureManager().setPalette("PAL.COL");
 
 	// Get a reference to the active player data.
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -198,8 +198,8 @@ void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		player.getRaceName(), player.getCharacterClass().canCastMagic());
 
 	// Draw the player's portrait.
-	const auto *portrait = this->getGameState()->getTextureManager()
-		.getTexture(portraitStrings.at(player.getPortraitID()));
+	const auto *portrait = textureManager.getTexture(
+		portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr, 
 		&portraitWidth, &portraitHeight);
