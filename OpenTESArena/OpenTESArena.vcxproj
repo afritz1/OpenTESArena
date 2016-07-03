@@ -139,6 +139,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Math\Int3.cpp" />
     <ClCompile Include="src\Interface\CharacterEquipmentPanel.cpp" />
     <ClCompile Include="src\Interface\AutomapPanel.cpp" />
     <ClCompile Include="src\Interface\LogbookPanel.cpp" />
@@ -255,6 +256,7 @@
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Math\Int3.h" />
     <ClInclude Include="src\Interface\CharacterEquipmentPanel.h" />
     <ClInclude Include="src\Interface\AutomapPanel.h" />
     <ClInclude Include="src\Interface\LogbookPanel.h" />
