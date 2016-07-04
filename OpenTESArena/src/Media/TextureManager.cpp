@@ -442,78 +442,68 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 	const Palette &paletteRef = (flags & 0x0100) ? custompal :
 		this->palettes.at(paletteName);
-	if ((flags & 0x00ff) == 0x0000)
+	if ((flags & 0x00FF) == 0x0000)
 	{
 		// Uncompressed IMG.
 		assert(srcdata.size() == (width * height));
 
 		// Create temporary ARGB surface.
 		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height,
-			Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-		if (SDL_LockSurface(surface) == 0)
+			Surface::DEFAULT_BPP, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		std::transform(srcdata.begin(), srcdata.end(), pixels,
+			[&paletteRef](uint8_t col) -> uint32_t
 		{
-			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-			std::transform(srcdata.begin(), srcdata.end(), pixels,
-				[&paletteRef](uint8_t col) -> uint32_t
-			{
-				return paletteRef[col].toARGB();
-			});
-			SDL_UnlockSurface(surface);
-		}
+			return paletteRef[col].toARGB();
+		});
 
 		auto *optSurface = SDL_ConvertSurface(surface, this->format, 0);
 		SDL_FreeSurface(surface);
 
 		return optSurface;
 	}
-	if ((flags & 0x00ff) == 0x0004)
+	if ((flags & 0x00FF) == 0x0004)
 	{
 		// Type 4 compression.
 		std::vector<uint8_t> decomp(width * height);
 		decode04Type(srcdata.begin(), srcdata.end(), decomp);
 
-		// Create temporary ARGB surface
+		// Create temporary ARGB surface.
 		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height,
-			Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-		if (SDL_LockSurface(surface) == 0)
+			Surface::DEFAULT_BPP, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		std::transform(decomp.begin(), decomp.end(), pixels,
+			[&paletteRef](uint8_t col) -> uint32_t
 		{
-			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-			std::transform(decomp.begin(), decomp.end(), pixels,
-				[&paletteRef](uint8_t col) -> uint32_t
-			{
-				return paletteRef[col].toARGB();
-			});
-			SDL_UnlockSurface(surface);
-		}
+			return paletteRef[col].toARGB();
+		});
 
 		auto *optSurface = SDL_ConvertSurface(surface, this->format, 0);
 		SDL_FreeSurface(surface);
 
 		return optSurface;
 	}
-	if ((flags & 0x00ff) == 0x0008)
+	if ((flags & 0x00FF) == 0x0008)
 	{
 		uint16_t decomplen = getLE16(srcdata.data());
-		assert(decomplen == width*height);
+		assert(decomplen == (width * height));
 
 		// Type 8 compression.
 		std::vector<uint8_t> decomp(width * height);
 		decode08Type(srcdata.begin() + 2, srcdata.end(), decomp);
 
-		// Create temporary ARGB surface
+		// Create temporary ARGB surface.
 		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height,
-			Surface::DEFAULT_BPP, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-		if (SDL_LockSurface(surface) == 0)
+			Surface::DEFAULT_BPP, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		std::transform(decomp.begin(), decomp.end(), pixels,
+			[&paletteRef](uint8_t col) -> uint32_t
 		{
-			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-			std::transform(decomp.begin(), decomp.end(), pixels,
-				[&paletteRef](uint8_t col) -> uint32_t
-			{
-				return paletteRef[col].toARGB();
-			}
-			);
-			SDL_UnlockSurface(surface);
-		}
+			return paletteRef[col].toARGB();
+		});
 
 		auto *optSurface = SDL_ConvertSurface(surface, this->format, 0);
 		SDL_FreeSurface(surface);
@@ -559,7 +549,7 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 				filename + "\" (" + std::to_string(len) + " bytes).");
 			failed = true;
 		}
-		else if (ver != 0xb123)
+		else if (ver != 0xB123)
 		{
 			Debug::mention("Texture Manager", "Invalid version for palette \"" +
 				filename + "\", 0x" + String::toHexString(ver) + ".");
@@ -570,8 +560,7 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 	{
 		auto iter = rawpal.begin() + 8;
 
-		/* First palette entry is transparent in 8-bit modes, so give it 0
-		* alpha. */
+		/* First palette entry is transparent in 8-bit modes, so give it 0 alpha. */
 		uint8_t r = *(iter++);
 		uint8_t g = *(iter++);
 		uint8_t b = *(iter++);
