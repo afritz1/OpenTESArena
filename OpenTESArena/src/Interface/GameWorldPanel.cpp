@@ -22,6 +22,7 @@
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -285,9 +286,13 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// higher than they should be. I haven't figured out yet what the equation is. I
 	// think it requires using the original height and the draw scale somehow.
 
+	// Set screen palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw game world interface.
-	const auto *gameInterface = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::GameWorldInterface));
+	const auto *gameInterface = textureManager.getTexture(
+		TextureFile::fromName(TextureName::GameWorldInterface));
 	int gameInterfaceWidth, gameInterfaceHeight;
 	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr,
 		&gameInterfaceWidth, &gameInterfaceHeight);
@@ -300,13 +305,13 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		renderer);
 
 	// Compass frame.
-	const auto &compassFrame = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CompassFrame));
+	const auto &compassFrame = textureManager.getSurface(
+		TextureFile::fromName(TextureName::CompassFrame));
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, Color::Black.toRGB());
 
 	// Compass slider (the actual headings). +X is north, +Z is east.
-	const auto &compassSlider = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::CompassSlider));
+	const auto &compassSlider = textureManager.getSurface(
+		TextureFile::fromName(TextureName::CompassSlider));
 
 	Surface compassSliderSegment(32, 7);
 	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
@@ -341,7 +346,7 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

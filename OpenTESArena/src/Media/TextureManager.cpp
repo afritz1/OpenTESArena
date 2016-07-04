@@ -323,18 +323,8 @@ TextureManager::TextureManager(const SDL_Renderer *renderer, const SDL_PixelForm
 	this->renderer = renderer;
 	this->format = format;
 
-	// Load palettes.
-	auto addPalette = [this](PaletteName paletteName)
-	{
-		Palette palette;
-		this->initPalette(palette, paletteName);
-		this->palettes.insert(std::make_pair(paletteName, palette));
-	};
-
-	addPalette(PaletteName::Default);
-	addPalette(PaletteName::CharSheet);
-	addPalette(PaletteName::Daytime);
-	addPalette(PaletteName::Dreary);
+	// Load default palette.
+	this->setPalette(PaletteName::Default);
 
 	// Intialize PNG file loading.
 	int imgFlags = IMG_INIT_PNG;
@@ -594,10 +584,9 @@ const SDL_PixelFormat *TextureManager::getFormat() const
 	return this->format;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename,
-	PaletteName paletteName)
+const Surface &TextureManager::getSurface(const std::string &filename)
 {
-	std::pair<std::string, PaletteName> namePair(filename, paletteName);
+	std::pair<std::string, PaletteName> namePair(filename, this->activePalette);
 
 	auto surfaceIter = this->surfaces.find(namePair);
 	if (surfaceIter != this->surfaces.end())
@@ -618,7 +607,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 
 	if (isIMG || isMNU)
 	{
-		optSurface = this->loadIMG(filename, paletteName);
+		optSurface = this->loadIMG(filename, this->activePalette);
 	}
 	else
 	{
@@ -636,15 +625,9 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	return iter->second;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename)
+const SDL_Texture *TextureManager::getTexture(const std::string &filename)
 {
-	return this->getSurface(filename, PaletteName::Default);
-}
-
-const SDL_Texture *TextureManager::getTexture(const std::string &filename,
-	PaletteName paletteName)
-{
-	std::pair<std::string, PaletteName> namePair(filename, paletteName);
+	std::pair<std::string, PaletteName> namePair(filename, this->activePalette);
 
 	if (this->textures.find(namePair) != this->textures.end())
 	{
@@ -655,7 +638,7 @@ const SDL_Texture *TextureManager::getTexture(const std::string &filename,
 	{
 		// Make a texture from the surface. It's okay if the surface isn't used except
 		// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
-		const Surface &surface = this->getSurface(filename, paletteName);
+		const Surface &surface = this->getSurface(filename);
 		SDL_Texture *texture = SDL_CreateTextureFromSurface(
 			const_cast<SDL_Renderer*>(this->renderer), surface.getSurface());
 
@@ -665,9 +648,16 @@ const SDL_Texture *TextureManager::getTexture(const std::string &filename,
 	}
 }
 
-const SDL_Texture *TextureManager::getTexture(const std::string &filename)
+void TextureManager::setPalette(PaletteName paletteName)
 {
-	return this->getTexture(filename, PaletteName::Default);
+	this->activePalette = paletteName;
+
+	if (this->palettes.find(paletteName) == this->palettes.end())
+	{
+		Palette palette;
+		this->initPalette(palette, paletteName);
+		this->palettes.insert(std::make_pair(paletteName, palette));
+	}
 }
 
 void TextureManager::preloadSequences()
@@ -679,7 +669,7 @@ void TextureManager::preloadSequences()
 		std::vector<std::string> filenames = TextureFile::fromName(name);
 		for (const auto &filename : filenames)
 		{
-			this->getSurface(filename);
+			this->getTexture(filename);
 		}
 	}
 }

@@ -228,10 +228,13 @@ void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *let
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw character equipment background.
+	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::CharSheet);
+
+	// Draw character equipment background.
 	const auto *equipmentBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterEquipment), PaletteName::CharSheet);
+		TextureFile::fromName(TextureName::CharacterEquipment));
 	this->drawScaledToNative(equipmentBackground, renderer);
 
 	// Get a reference to the active player data.

@@ -105,10 +105,13 @@ void AutomapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw automap background.
+	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::CharSheet);
+
+	// Draw automap background.
 	const auto *automapBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Automap), PaletteName::CharSheet);
+		TextureFile::fromName(TextureName::Automap));
 	this->drawLetterbox(automapBackground, renderer, letterbox);
 
 	// Prepare the cursor color key.
@@ -117,6 +120,7 @@ void AutomapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
+	textureManager.setPalette(PaletteName::Default);
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::QuillCursor));
 	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE, colorKey);

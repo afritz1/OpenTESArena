@@ -36,6 +36,7 @@ private:
 	std::map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
 	const SDL_Renderer *renderer;
 	const SDL_PixelFormat *format;
+	PaletteName activePalette;
 
     SDL_Surface *loadPNG(const std::string &fullPath);
 	SDL_Surface *loadIMG(const std::string &filename, PaletteName paletteName);
@@ -51,12 +52,14 @@ public:
 		
 	// Gets a surface from the texture manager. It will be loaded from file if not
 	// already stored. A valid filename might be something like "TAMRIEL.IMG".
-	const Surface &getSurface(const std::string &filename, PaletteName paletteName);
 	const Surface &getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
-	const SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
 	const SDL_Texture *getTexture(const std::string &filename);
+
+	// Sets the palette for subsequent surfaces and textures. If a requested image 
+	// is not currently loaded for the active palette, it is loaded from file.
+	void setPalette(PaletteName paletteName);
 
 	// Since cinematics are now loaded image by image instead of all at the same time,
 	// there may be some stuttering that occurs. This method loads all of the sequences

@@ -251,11 +251,14 @@ void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *lette
 {
 	// Clear full screen.
 	this->clearScreen(renderer);
+	
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::CharSheet);
 
 	// Draw attributes texture.
-	auto &textureManager = this->getGameState()->getTextureManager();
 	const auto *attributesBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats), PaletteName::CharSheet);
+		TextureFile::fromName(TextureName::CharacterStats));
 	this->drawScaledToNative(attributesBackground, renderer);
 
 	// Get the filenames for the portraits.

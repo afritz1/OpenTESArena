@@ -179,15 +179,18 @@ void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
-	// Draw character stats background.
+	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::CharSheet);
+
+	// Draw character stats background.
 	const auto *statsBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats), PaletteName::CharSheet);
+		TextureFile::fromName(TextureName::CharacterStats));
 	this->drawScaledToNative(statsBackground, renderer);
 
 	// Draw "Next Page" texture.
 	const auto *nextPageTexture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::NextPage), PaletteName::CharSheet);
+		TextureFile::fromName(TextureName::NextPage));
 	this->drawScaledToNative(nextPageTexture, 108, 179, renderer);
 
 	// Get a reference to the active player data.
@@ -217,7 +220,7 @@ void CharacterPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->drawScaledToNative(*this->playerRaceTextBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }
