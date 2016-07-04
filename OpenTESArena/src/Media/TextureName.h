@@ -8,6 +8,9 @@
 // Bulk textures should use some kind of filename indexing method that is loaded
 // from a text file, associating each wall or sprite with a set of filenames.
 
+// We don't want to have texture names for single-image sprites. Just include
+// those with the bulk textures, too.
+
 enum class TextureName
 {
 	// Character backgrounds (without clothes).
@@ -56,6 +59,7 @@ enum class TextureName
 	AcceptCounterReject, // Accept/Counter/Reject for bartering.
 	AddJobStatusCancel, // Blacksmith repair buttons.
 	BarterBackground, // Stone-looking background for bartering.
+	BonusPointsText, // Texture shown in character stats on level-up.
 	CharacterCreation, // Starry night with house.
 	CharacterEquipment, // Character sheet equipment. "NEWEQUIP.IMG" switches Drop and Exit.
 	CharacterStats, // Character sheet attributes, stats, etc..
@@ -108,7 +112,7 @@ enum class TextureName
 	TownIcon,
 	VillageIcon,
 
-	// Spellbook and spellmaker pop-ups.
+	// Spellbook and spellmaker.
 	BuySpellBackground,
 	Form1,
 	Form2,

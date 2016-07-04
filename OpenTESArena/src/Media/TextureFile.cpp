@@ -56,6 +56,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::AcceptCounterReject, "NEGOTBUT.IMG" },
 	{ TextureName::AddJobStatusCancel, "NEWOLD.IMG" },
 	{ TextureName::BarterBackground, "MENUSCRN.IMG" },
+	{ TextureName::BonusPointsText, "BONUS.IMG" },
 	{ TextureName::CharacterCreation, "STARTGAM.MNU" },
 	{ TextureName::CharacterEquipment, "EQUIP.IMG" },
 	{ TextureName::CharacterStats, "CHARSTAT.IMG" },
@@ -108,7 +109,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::TownIcon, "TOWN.IMG" },
 	{ TextureName::VillageIcon, "VILLAGE.IMG" },
 
-	// Spellbook and spellmaker pop-ups.
+	// Spellbook and spellmaker.
 	{ TextureName::BuySpellBackground, "BUYSPELL.IMG" },
 	{ TextureName::Form1, "FORM1.IMG" },
 	{ TextureName::Form2, "FORM2.IMG" },
