@@ -4,6 +4,7 @@
 #include <array>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 #include "Color.h"
 
@@ -24,6 +25,22 @@ struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
 
+// Hash function for the unordered map.
+// From http://stackoverflow.com/questions/18098178/how-do-i-use-unordered-set.
+namespace std
+{
+	template <>
+	struct hash<std::pair<std::string, PaletteName>>
+	{
+		size_t operator()(const std::pair<std::string, PaletteName> &pair) const
+		{
+			size_t k1 = std::hash<std::string>()(pair.first);
+			size_t k2 = 51 + std::hash<PaletteName>()(pair.second);
+			return k1 * k2;
+		}
+	};
+}
+
 class TextureManager
 {
 private:
@@ -32,13 +49,13 @@ private:
 	static const std::string PATH;
 
 	std::map<PaletteName, Palette> palettes;
-	std::map<std::pair<std::string, PaletteName>, Surface> surfaces;
-	std::map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
+	std::unordered_map<std::pair<std::string, PaletteName>, Surface> surfaces;
+	std::unordered_map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
 	const SDL_Renderer *renderer;
 	const SDL_PixelFormat *format;
 	PaletteName activePalette;
 
-    SDL_Surface *loadPNG(const std::string &fullPath);
+	SDL_Surface *loadPNG(const std::string &fullPath);
 	SDL_Surface *loadIMG(const std::string &filename, PaletteName paletteName);
 	// Perhaps methods like "loadDFA" and "loadCIF" would return a vector of surfaces.
 
@@ -49,12 +66,14 @@ public:
 	~TextureManager();
 
 	const SDL_PixelFormat *getFormat() const;
-		
+
 	// Gets a surface from the texture manager. It will be loaded from file if not
 	// already stored. A valid filename might be something like "TAMRIEL.IMG".
+	const Surface &getSurface(const std::string &filename, PaletteName paletteName);
 	const Surface &getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
+	const SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
 	const SDL_Texture *getTexture(const std::string &filename);
 
 	// Sets the palette for subsequent surfaces and textures. If a requested image 

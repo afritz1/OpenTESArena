@@ -14,6 +14,7 @@
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 
@@ -49,6 +50,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		double secondsPerImage = 14.0;
 		std::unique_ptr<Panel> introStoryPanel(new CinematicPanel(
 			gameState,
+			PaletteName::Default,
 			TextureSequenceName::IntroStory,
 			secondsPerImage,
 			changeToMainMenu));
@@ -59,6 +61,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			gameState,
+			PaletteName::Default,
 			TextureSequenceName::OpeningScroll,
 			CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
 			changeToIntroStory));
@@ -70,6 +73,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> quotePanel(new ImagePanel(
 			gameState,
+			PaletteName::BuiltIn,
 			TextureName::IntroQuote,
 			secondsToDisplay,
 			changeToScrolling));
@@ -81,6 +85,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> titlePanel(new ImagePanel(
 			gameState,
+			PaletteName::BuiltIn,
 			TextureName::IntroTitle,
 			secondsToDisplay,
 			changeToQuote));
@@ -89,6 +94,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	return std::unique_ptr<Panel>(new CinematicPanel(
 		gameState,
+		PaletteName::Default,
 		TextureSequenceName::IntroBook, 
 		0.142 /* roughly 7fps */,
 		changeToTitle));

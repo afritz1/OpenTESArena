@@ -6,14 +6,16 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureSequenceName.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
-CinematicPanel::CinematicPanel(GameState *gameState, TextureSequenceName name,
-	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
+CinematicPanel::CinematicPanel(GameState *gameState, PaletteName paletteName, 
+	TextureSequenceName name, double secondsPerImage, 
+	const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
 	this->skipButton = [&endingAction]()
@@ -21,6 +23,7 @@ CinematicPanel::CinematicPanel(GameState *gameState, TextureSequenceName name,
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
+	this->paletteName = paletteName;
 	this->sequenceName = name;
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
@@ -104,8 +107,10 @@ void CinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		this->skipButton->click(this->getGameState());
 	}
 
+	auto &textureManager = this->getGameState()->getTextureManager();
+
 	// Draw image.
-	const auto *image = this->getGameState()->getTextureManager()
-		.getTexture(filenames.at(this->imageIndex));
+	const auto *image = textureManager.getTexture(
+		filenames.at(this->imageIndex), this->paletteName);
 	this->drawLetterbox(image, renderer, letterbox);
 }

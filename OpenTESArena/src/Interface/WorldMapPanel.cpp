@@ -12,6 +12,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -138,13 +139,17 @@ void WorldMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw world map background. This one has "Exit" at the bottom right.
-	const auto *mapBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::WorldMap));
+	const auto *mapBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::WorldMap), PaletteName::BuiltIn);
 	this->drawScaledToNative(mapBackground, renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

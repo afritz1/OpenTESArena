@@ -17,6 +17,7 @@
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -211,9 +212,13 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw background map.
-	const auto *raceSelectMap = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::RaceSelect));
+	const auto *raceSelectMap = textureManager.getTexture(
+		TextureFile::fromName(TextureName::RaceSelect), PaletteName::BuiltIn);
 	this->drawLetterbox(raceSelectMap, renderer, letterbox);
 
 	// Don't worry about the yellow dots for now. Whatever the original game is doing
@@ -235,8 +240,8 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	}
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 
 	// Draw hovered province tooltip.

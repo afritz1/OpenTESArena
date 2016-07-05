@@ -11,12 +11,14 @@
 class Button;
 class GameState;
 
+enum class PaletteName;
 enum class TextureName;
 
 class ImagePanel : public Panel
 {
 private:
 	std::unique_ptr<Button> skipButton;
+	PaletteName paletteName;
 	TextureName textureName;
 	double secondsToDisplay, currentSeconds;
 protected:
@@ -24,8 +26,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	ImagePanel(GameState *gameState, TextureName textureName, double secondsToDisplay,
-		const std::function<void(GameState*)> &endingAction);
+	ImagePanel(GameState *gameState, PaletteName paletteName, TextureName textureName, 
+		double secondsToDisplay, const std::function<void(GameState*)> &endingAction);
 	virtual ~ImagePanel();
 	
 	virtual void tick(double dt, bool &running) override;

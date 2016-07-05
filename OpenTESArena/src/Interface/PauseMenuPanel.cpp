@@ -17,6 +17,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -177,14 +178,18 @@ void PauseMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw pause background.
-	const auto *pauseBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::PauseBackground));
+	const auto *pauseBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::PauseBackground));
 	this->drawScaledToNative(pauseBackground, renderer);
 
 	// Draw game world interface below the pause menu.
-	const auto *gameInterface = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::GameWorldInterface));
+	const auto *gameInterface = textureManager.getTexture(
+		TextureFile::fromName(TextureName::GameWorldInterface));
 	int gameInterfaceWidth, gameInterfaceHeight;
 	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr,
 		&gameInterfaceWidth, &gameInterfaceHeight);
@@ -197,7 +202,7 @@ void PauseMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

@@ -14,6 +14,7 @@
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -216,18 +217,22 @@ void ProvinceMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Get the texture name for this province.
 	auto provinceTextureName = ProvinceMapTextureNames.at(
-		this->province->getProvinceName());
+		this->province->getProvinceName());	
 
 	// Draw province map background.
-	const auto *mapBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(provinceTextureName));
+	const auto *mapBackground = textureManager.getTexture(
+		TextureFile::fromName(provinceTextureName), PaletteName::BuiltIn);
 	this->drawScaledToNative(mapBackground, renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 
 	// Draw tooltip if the mouse is over a button.

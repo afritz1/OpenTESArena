@@ -14,6 +14,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -112,9 +113,13 @@ void LoadGamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw slots background.
-	const auto *slotsBackground = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::LoadSave));
+	const auto *slotsBackground = textureManager.getTexture(
+		TextureFile::fromName(TextureName::LoadSave));
 	this->drawScaledToNative(slotsBackground, renderer);
 
 	// Draw temp text. The load game design is unclear at this point, but it should
@@ -122,7 +127,7 @@ void LoadGamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->drawScaledToNative(*this->underConstructionTextBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

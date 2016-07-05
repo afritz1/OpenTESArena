@@ -23,6 +23,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -470,9 +471,13 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw background.
-	const auto *background = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::CharacterCreation));
+	const auto *background = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CharacterCreation), PaletteName::BuiltIn);
 	this->drawLetterbox(background, renderer, letterbox);
 
 	// Draw parchments: title, list.
@@ -494,8 +499,8 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		renderer);
 
 	// The original list background is PopUp, but the palette isn't right yet.
-	const auto &listPopUp = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::PopUp11));
+	const auto &listPopUp = textureManager.getSurface(
+		TextureFile::fromName(TextureName::PopUp11));
 
 	double listXScale = 0.85;
 	double listYScale = 2.20;
@@ -517,8 +522,8 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->drawScaledToNative(*this->classesListBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 
 	// Draw tooltip if over a valid element in the list box.

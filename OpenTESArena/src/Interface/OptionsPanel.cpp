@@ -11,6 +11,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -106,6 +107,10 @@ void OptionsPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw temporary background.
 	SDL_SetRenderDrawColor(renderer, 48, 48, 36, 255);
 	SDL_RenderDrawRect(renderer, letterbox);
@@ -118,7 +123,7 @@ void OptionsPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

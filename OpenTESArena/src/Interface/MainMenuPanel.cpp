@@ -13,6 +13,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -53,6 +54,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 			{
 				std::unique_ptr<Panel> newGameStoryPanel(new CinematicPanel(
 					gameState,
+					PaletteName::Default,
 					TextureSequenceName::NewGameStory,
 					5.0,
 					changeToCharCreation));
@@ -61,6 +63,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 
 			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
 				gameState,
+				PaletteName::Default,
 				TextureSequenceName::OpeningScroll,
 				CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
 				changeToNewGameStory));
@@ -177,13 +180,17 @@ void MainMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// Draw main menu.
-	const auto *mainMenu = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(TextureName::MainMenu));
+	const auto *mainMenu = textureManager.getTexture(
+		TextureFile::fromName(TextureName::MainMenu), PaletteName::BuiltIn);
 	this->drawLetterbox(mainMenu, renderer, letterbox);
 
 	// Draw cursor.
-	const auto &cursor = this->getGameState()->getTextureManager()
-		.getSurface(TextureFile::fromName(TextureName::SwordCursor));
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
 	this->drawCursor(cursor, renderer);
 }

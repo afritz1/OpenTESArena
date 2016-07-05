@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureSequenceName.h"
@@ -118,6 +119,10 @@ void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbo
 	// Get all of the image filenames relevant to the sequence.
 	auto imageFilenames = TextureFile::fromName(this->sequenceName);
 
+	// Set palette.
+	auto &textureManager = this->getGameState()->getTextureManager();
+	textureManager.setPalette(PaletteName::Default);
+
 	// If at the end of the sequence, go back to the first image. The cinematic 
 	// ends when speech is done.
 	if (this->imageIndex >= imageFilenames.size())
@@ -127,8 +132,8 @@ void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbo
 	}
 
 	// Draw animation.
-	const auto *image = this->getGameState()->getTextureManager()
-		.getTexture(imageFilenames.at(this->imageIndex));
+	const auto *image = textureManager.getTexture(
+		imageFilenames.at(this->imageIndex));
 	this->drawScaledToNative(image, renderer);
 
 	// Draw text...

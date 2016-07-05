@@ -6,12 +6,14 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 
-ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
-	double secondsToDisplay, const std::function<void(GameState*)> &endingAction)
+ImagePanel::ImagePanel(GameState *gameState, PaletteName paletteName, 
+	TextureName textureName, double secondsToDisplay, 
+	const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
 	this->skipButton = [&endingAction]()
@@ -19,6 +21,7 @@ ImagePanel::ImagePanel(GameState *gameState, TextureName textureName,
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
+	this->paletteName = paletteName;
 	this->textureName = textureName;
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
@@ -89,8 +92,10 @@ void ImagePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Clear full screen.
 	this->clearScreen(renderer);
 
+	auto &textureManager = this->getGameState()->getTextureManager();
+
 	// Draw image.
-	const auto *image = this->getGameState()->getTextureManager()
-		.getTexture(TextureFile::fromName(this->textureName));
+	const auto *image = textureManager.getTexture(
+		TextureFile::fromName(this->textureName), this->paletteName);
 	this->drawLetterbox(image, renderer, letterbox);
 }

@@ -318,8 +318,8 @@ TextureManager::TextureManager(const SDL_Renderer *renderer, const SDL_PixelForm
 	assert(format != nullptr);
 
 	this->palettes = std::map<PaletteName, Palette>();
-	this->surfaces = std::map<std::pair<std::string, PaletteName>, Surface>();
-	this->textures = std::map<std::pair<std::string, PaletteName>, SDL_Texture*>();
+	this->surfaces = std::unordered_map<std::pair<std::string, PaletteName>, Surface>();
+	this->textures = std::unordered_map<std::pair<std::string, PaletteName>, SDL_Texture*>();
 	this->renderer = renderer;
 	this->format = format;
 
@@ -399,7 +399,9 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 		"Texture Manager", "Could not read texture \"" + filename + "\" data.");
 
 	Palette custompal;
-	if (flags & 0x0100)
+	bool hasBuiltInPalette = (flags & 0x0100) > 0;
+
+	if (hasBuiltInPalette)
 	{
 		std::array<uint8_t, 768> rawpal;
 
@@ -429,9 +431,16 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 			return Color(r, g, b, 255);
 		});
 	}
+	else 
+	{
+		// Don't try to use a built-in palette is there isn't one.
+		Debug::check(paletteName != PaletteName::BuiltIn, "Texture Manager",
+			"IMG file \"" + filename + "\" does not have a built-in palette.");
+	}
 
-	const Palette &paletteRef = (flags & 0x0100) ? custompal :
-		this->palettes.at(paletteName);
+	const Palette &paletteRef = (hasBuiltInPalette && (paletteName == PaletteName::BuiltIn)) ?
+		custompal : this->palettes.at(paletteName);
+
 	if ((flags & 0x00FF) == 0x0000)
 	{
 		// Uncompressed IMG.
@@ -584,9 +593,10 @@ const SDL_PixelFormat *TextureManager::getFormat() const
 	return this->format;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename)
+const Surface &TextureManager::getSurface(const std::string &filename,
+	PaletteName paletteName)
 {
-	std::pair<std::string, PaletteName> namePair(filename, this->activePalette);
+	std::pair<std::string, PaletteName> namePair(filename, paletteName);
 
 	auto surfaceIter = this->surfaces.find(namePair);
 	if (surfaceIter != this->surfaces.end())
@@ -595,7 +605,9 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		return surfaceIter->second;
 	}
 
-	// Check what kind of file extension is used.
+	// Check what kind of file extension is used. Every texture should have an
+	// extension, so the "dot position" might be unnecessary once PNGs are no
+	// longer used.
 	size_t dotPos = filename.rfind('.');
 	bool hasDot = (dotPos < filename.length()) && (dotPos != std::string::npos);
 	bool isIMG = hasDot &&
@@ -607,7 +619,7 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 
 	if (isIMG || isMNU)
 	{
-		optSurface = this->loadIMG(filename, this->activePalette);
+		optSurface = this->loadIMG(filename, paletteName);
 	}
 	else
 	{
@@ -616,18 +628,24 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 		optSurface = this->loadPNG(fullPath);
 	}
 
-	// Create surface from SDL_Surface. No need to optimize it again.
+	// Create surface from optimized SDL_Surface.
 	Surface surface(optSurface);
 	SDL_FreeSurface(optSurface);
 
 	// Add the new surface and return it.
-	auto iter = this->surfaces.insert(std::make_pair(namePair, surface)).first;
+	auto &iter = this->surfaces.emplace(std::make_pair(namePair, surface)).first;
 	return iter->second;
 }
 
-const SDL_Texture *TextureManager::getTexture(const std::string &filename)
+const Surface &TextureManager::getSurface(const std::string &filename)
 {
-	std::pair<std::string, PaletteName> namePair(filename, this->activePalette);
+	return this->getSurface(filename, this->activePalette);
+}
+
+const SDL_Texture *TextureManager::getTexture(const std::string &filename,
+	PaletteName paletteName)
+{
+	std::pair<std::string, PaletteName> namePair(filename, paletteName);
 
 	if (this->textures.find(namePair) != this->textures.end())
 	{
@@ -638,18 +656,26 @@ const SDL_Texture *TextureManager::getTexture(const std::string &filename)
 	{
 		// Make a texture from the surface. It's okay if the surface isn't used except
 		// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
-		const Surface &surface = this->getSurface(filename);
+		const Surface &surface = this->getSurface(filename, paletteName);
 		SDL_Texture *texture = SDL_CreateTextureFromSurface(
 			const_cast<SDL_Renderer*>(this->renderer), surface.getSurface());
-
+		
 		// Add the new texture and return it.
-		auto iter = this->textures.insert(std::make_pair(namePair, texture)).first;
+		auto &iter = this->textures.emplace(std::make_pair(namePair, texture)).first;
 		return iter->second;
 	}
 }
 
+const SDL_Texture *TextureManager::getTexture(const std::string &filename)
+{
+	return this->getTexture(filename, this->activePalette);
+}
+
 void TextureManager::setPalette(PaletteName paletteName)
 {
+	// Error if the palette name is "built-in".
+	assert(paletteName != PaletteName::BuiltIn);
+
 	this->activePalette = paletteName;
 
 	if (this->palettes.find(paletteName) == this->palettes.end())
