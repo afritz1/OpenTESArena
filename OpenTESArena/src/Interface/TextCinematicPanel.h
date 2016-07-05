@@ -19,17 +19,17 @@
 
 class Button;
 class GameState;
+class TextBox;
 
 enum class TextureSequenceName;
 
 class TextCinematicPanel : public Panel
 {
 private:
+	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
 	std::unique_ptr<Button> skipButton;
 	TextureSequenceName sequenceName;
-	std::string text;
-	std::vector<double> secondsPerText;
-	double secondsPerImage, currentImageSeconds, currentTextSeconds;
+	double secondsPerImage, currentImageSeconds;
 	int imageIndex, textIndex;
 protected:
 	virtual void handleEvents(bool &running) override;
@@ -37,8 +37,8 @@ protected:
 	virtual void handleKeyboard(double dt) override;
 public:
 	TextCinematicPanel(GameState *gameState, TextureSequenceName name, 
-		const std::string &text, const std::vector<double> &secondsPerText,
-		double secondsPerImage, const std::function<void(GameState*)> &endingAction);
+		const std::string &text, double secondsPerImage, 
+		const std::function<void(GameState*)> &endingAction);
 	virtual ~TextCinematicPanel();
 
 	static const double DEFAULT_MOVIE_SECONDS_PER_IMAGE;
