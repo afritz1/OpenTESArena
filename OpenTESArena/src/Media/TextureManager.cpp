@@ -395,8 +395,11 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 	std::vector<uint8_t> srcdata(srclen);
 	stream->read(reinterpret_cast<char*>(srcdata.data()), srcdata.size());
-	Debug::check(stream->gcount() == static_cast<std::streamsize>(srcdata.size()),
-		"Texture Manager", "Could not read texture \"" + filename + "\" data.");
+
+	// Commented this because wall textures are not in the "raw" list and do not have 
+	// a header, therefore causing the byte count to not match 4096 bytes.
+	/*Debug::check(stream->gcount() == static_cast<std::streamsize>(srcdata.size()),
+		"Texture Manager", "Could not read texture \"" + filename + "\" data.");*/
 
 	Palette custompal;
 	bool hasBuiltInPalette = (flags & 0x0100) > 0;
@@ -406,8 +409,11 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 		std::array<uint8_t, 768> rawpal;
 
 		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
-		Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
-			"Texture Manager", "Could not read texture \"" + filename + "\" palette.");
+		
+		// Commented because some wall textures are incorrectly matching the flags & 0x0100.
+		// Find a way to load wall textures without this problem!
+		/*Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
+			"Texture Manager", "Could not read texture \"" + filename + "\" palette.");*/
 
 		auto iter = rawpal.begin();
 
@@ -435,7 +441,7 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 	{
 		// Don't try to use a built-in palette is there isn't one.
 		Debug::check(paletteName != PaletteName::BuiltIn, "Texture Manager",
-			"IMG file \"" + filename + "\" does not have a built-in palette.");
+			"File \"" + filename + "\" does not have a built-in palette.");
 	}
 
 	const Palette &paletteRef = (hasBuiltInPalette && (paletteName == PaletteName::BuiltIn)) ?
@@ -462,7 +468,7 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 		return optSurface;
 	}
-	if ((flags & 0x00FF) == 0x0004)
+	else if ((flags & 0x00FF) == 0x0004)
 	{
 		// Type 4 compression.
 		std::vector<uint8_t> decomp(width * height);
@@ -484,7 +490,7 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 		return optSurface;
 	}
-	if ((flags & 0x00FF) == 0x0008)
+	else if ((flags & 0x00FF) == 0x0008)
 	{
 		uint16_t decomplen = getLE16(srcdata.data());
 		assert(decomplen == (width * height));
@@ -509,10 +515,54 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 		return optSurface;
 	}
+	else
+	{
+		// Assume wall texture.
+		// - 64x64
+		// - 4096 bytes
+		// - Uncompressed
+		// - No header info
 
-	Debug::crash("Texture Manager", "Unhandled IMG flags, 0x" +
-		String::toHexString(flags) + ".");
-	return nullptr;
+		// This is just a hack for now. It is not completely correct (for example,
+		// MURAL3.IMG, a wall texture, can't be loaded because its first few bytes
+		// just *happen* to match the built-in palette flags).
+		
+		// Reorganize these if statements so both the uncompressed IMG and wall images 
+		// fall under the same flag condition.
+
+		// There are no flags, so the header is essentially garbage (just whatever 
+		// the texture's colors are).
+
+		// There should be a "loadSET()" method. It would be easy to make. It just
+		// involves either two or three (maybe four?) 64x64 wall textures packed 
+		// together vertically.
+
+		width = 64;
+		height = 64;
+		srclen = width * height;
+		srcdata = std::vector<uint8_t>(srclen);
+
+		// Re-read the file in one big 4096 byte chunk.
+		// To do: use the original stream in this method.
+		VFS::IStreamPtr myStream = VFS::Manager::get().open(filename.c_str());
+		myStream->read(reinterpret_cast<char*>(srcdata.data()), srcdata.size());
+
+		// Create temporary ARGB surface.
+		SDL_Surface *surface = SDL_CreateRGBSurface(0, width, height,
+			Surface::DEFAULT_BPP, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		std::transform(srcdata.begin(), srcdata.end(), pixels,
+			[&paletteRef](uint8_t col) -> uint32_t
+		{
+			return paletteRef[col].toARGB();
+		});
+
+		auto *optSurface = SDL_ConvertSurface(surface, this->format, 0);
+		SDL_FreeSurface(surface);
+
+		return optSurface;
+	}
 }
 
 void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
