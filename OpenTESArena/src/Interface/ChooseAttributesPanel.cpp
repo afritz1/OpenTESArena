@@ -123,8 +123,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
 				gameState->getScreenDimensions().getX(),
 				gameState->getScreenDimensions().getY(),
-				gameState->getRenderer().getRenderer(),
-				worldWidth, worldHeight, worldDepth));
+				worldWidth, worldHeight, worldDepth,
+				gameState->getTextureManager(),
+				gameState->getRenderer().getRenderer()));				
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(

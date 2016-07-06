@@ -34,10 +34,10 @@ template<typename T>
 Float4<T> Float4<T>::fromARGB(unsigned int argb)
 {
 	return Float4(
-		static_cast<T>((static_cast<unsigned char>(argb) << 16) / 255.0),
-		static_cast<T>((static_cast<unsigned char>(argb) << 8) / 255.0),
-		static_cast<T>((static_cast<unsigned char>(argb)) / 255.0),
-		static_cast<T>((static_cast<unsigned char>(argb) << 24) / 255.0));
+		static_cast<T>(static_cast<unsigned char>(argb >> 16) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(argb >> 8) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(argb) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(argb >> 24) / 255.0));
 }
 
 template<typename T>

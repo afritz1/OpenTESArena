@@ -18,6 +18,8 @@
 // It is important to remember that cl_float3 and cl_float4 are structurally
 // equivalent.
 
+class TextureManager;
+
 struct SDL_Renderer;
 struct SDL_Texture;
 
@@ -44,6 +46,7 @@ private:
 		colorBuffer, outputBuffer;
 	std::vector<char> outputData; // For receiving pixels from the device's output buffer.
 	SDL_Texture *texture; // Streaming render texture for outputData to update.
+	TextureManager &textureManager;
 	int width, height, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
@@ -53,8 +56,8 @@ private:
 	void makeTestWorld();
 public:
 	// Constructor for the OpenCL render program.
-	CLProgram(int width, int height, SDL_Renderer *renderer, int worldWidth,
-		int worldHeight, int worldDepth);
+	CLProgram(int width, int height, int worldWidth, int worldHeight, int worldDepth,
+		TextureManager &textureManager, SDL_Renderer *renderer);
 	~CLProgram();
 
 	CLProgram &operator=(CLProgram &&clProgram);

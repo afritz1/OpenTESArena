@@ -6,12 +6,15 @@
 #include "CLProgram.h"
 
 #include "../Entities/Directable.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/Float2.h"
 #include "../Math/Float3.h"
 #include "../Math/Float4.h"
 #include "../Math/Random.h"
 #include "../Math/Triangle.h"
+#include "../Media/PaletteName.h"
+#include "../Media/TextureManager.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 
@@ -39,8 +42,9 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer,
-	int worldWidth, int worldHeight, int worldDepth)
+CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
+	int worldDepth, TextureManager &textureManager, SDL_Renderer *renderer)
+	: textureManager(textureManager)
 {
 	assert(width > 0);
 	assert(height > 0);
@@ -171,7 +175,7 @@ CLProgram::CLProgram(int width, int height, SDL_Renderer *renderer,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		sizeof(cl_float4) * 3 /* Some # of float4's, Placeholder size */, nullptr, &status);
+		sizeof(cl_float4) * 64 * 64 * 32 /* Placeholder size, 32 textures */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -363,6 +367,7 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->colorBuffer = clProgram.colorBuffer;
 	this->outputBuffer = clProgram.outputBuffer;
 	this->outputData = clProgram.outputData;
+	this->textureManager = clProgram.textureManager;
 	this->width = clProgram.width;
 	this->height = clProgram.height;
 	this->worldWidth = clProgram.worldWidth;
@@ -485,7 +490,7 @@ void CLProgram::makeTestWorld()
 	Debug::mention("CLProgram", "Making test world.");
 
 	// This method builds a simple test city with some blocks around.
-	// It does nothing with sprites, lights, and textures yet.
+	// It does nothing with sprites and lights yet.
 
 	// Lambda for creating a vector of triangles for a particular voxel.
 	auto makeBlock = [](int cellX, int cellY, int cellZ)
@@ -611,8 +616,9 @@ void CLProgram::makeTestWorld()
 	cl_char *triPtr = reinterpret_cast<cl_char*>(triangleBuffer.data());
 
 	// Lambda for writing triangle data to the local buffer.
+	// - NOTE: using texture index here assumes that all textures are 64x64.
 	auto writeTriangle = [this, maxTrianglesPerVoxel, triPtr](const Triangle &triangle,
-		int cellX, int cellY, int cellZ, int triangleOffset)
+		int cellX, int cellY, int cellZ, int triangleOffset, int textureIndex)
 	{
 		assert(cellX >= 0);
 		assert(cellY >= 0);
@@ -664,7 +670,14 @@ void CLProgram::makeTestWorld()
 		*(uv3Ptr + 0) = static_cast<cl_float>(triangle.getUV3().getX());
 		*(uv3Ptr + 1) = static_cast<cl_float>(triangle.getUV3().getY());
 
-		// Ignore textureRef for now.
+		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr + (sizeof(cl_float3) * 4) +
+			(sizeof(cl_float2) * 3));
+		*(offsetPtr + 0) = 64 * 64 * textureIndex; // Number of float4's to skip.
+
+		cl_short *dimPtr = reinterpret_cast<cl_short*>(ptr + (sizeof(cl_float3) * 4) +
+			(sizeof(cl_float2) * 3) + sizeof(cl_int));
+		*(dimPtr + 0) = 64;
+		*(dimPtr + 1) = 64;
 	};
 
 	// Fill a voxel reference buffer with references to those triangles.
@@ -702,6 +715,54 @@ void CLProgram::makeTestWorld()
 		*(countPtr + 0) = count;
 	};
 
+	// Prepare some textures for a local float4 buffer.	
+	this->textureManager.setPalette(PaletteName::Default);
+	std::vector<const SDL_Surface*> textures =
+	{
+		this->textureManager.getSurface("T_CITYWL.IMG").getSurface(),
+		this->textureManager.getSurface("T_NGRASS.IMG").getSurface(),
+		this->textureManager.getSurface("T_NROAD.IMG").getSurface(),
+		this->textureManager.getSurface("T_NSDWLK.IMG").getSurface(),
+		this->textureManager.getSurface("T_GARDEN.IMG").getSurface(),
+	};
+
+	const int textureCount = static_cast<int>(textures.size());
+	const int textureWidth = 64;
+	const int textureHeight = 64;
+	size_t textureBufferSize = sizeof(cl_float4) * textureWidth * 
+		textureHeight * textureCount;
+	std::vector<char> textureBuffer(textureBufferSize);
+	cl_char *texPtr = reinterpret_cast<cl_char*>(textureBuffer.data());
+	
+	// Pack the texture data into the local buffer.
+	for (int i = 0; i < textureCount; ++i)
+	{
+		const SDL_Surface *texture = textures.at(i);
+		uint32_t *pixels = static_cast<uint32_t*>(texture->pixels);
+
+		int pixelOffset = sizeof(cl_float4) * textureWidth * textureHeight * i;
+		cl_float4 *pixelPtr = reinterpret_cast<cl_float4*>(texPtr + pixelOffset);
+
+		for (int y = 0; y < texture->h; ++y)
+		{
+			for (int x = 0; x < texture->w; ++x)
+			{
+				int index = x + (y * texture->w);
+
+				// Convert from ARGB int to RGBA float4.
+				Float4f color = Float4f::fromARGB(pixels[index]);
+
+				cl_float *colorPtr = reinterpret_cast<cl_float*>(pixelPtr + index);
+				*(colorPtr + 0) = static_cast<cl_float>(color.getX());
+				*(colorPtr + 1) = static_cast<cl_float>(color.getY());
+				*(colorPtr + 2) = static_cast<cl_float>(color.getZ());
+
+				// Transparency depends on whether the pixel is black.
+				*(colorPtr + 3) = static_cast<cl_float>(pixels[index] == 0 ? 0.0f : 1.0f);
+			}
+		}
+	}
+
 	// Zero out all the voxel references to start.
 	for (int k = 0; k < this->worldDepth; ++k)
 	{
@@ -714,6 +775,9 @@ void CLProgram::makeTestWorld()
 		}
 	}
 
+	// Use the same seed so it's not a new city on every screen resize.
+	Random random(2);
+
 	// Make the ground.
 	for (int k = 0; k < this->worldDepth; ++k)
 	{
@@ -722,9 +786,10 @@ void CLProgram::makeTestWorld()
 			std::vector<Triangle> block = makeBlock(i, 0, k);
 			int triangleCount = static_cast<int>(block.size());
 
+			int textureIndex = 1 + random.next(3);
 			for (int index = 0; index < triangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, 0, k, index);
+				writeTriangle(block.at(index), i, 0, k, index, textureIndex);
 			}
 
 			writeVoxelRef(i, 0, k, 12);
@@ -741,13 +806,13 @@ void CLProgram::makeTestWorld()
 
 			for (int index = 0; index < triangleCount; ++index)
 			{
-				writeTriangle(block.at(index), 0, j, k, index);
+				writeTriangle(block.at(index), 0, j, k, index, 0);
 			}
 
 			block = makeBlock(this->worldWidth - 1, j, k);
 			for (int index = 0; index < triangleCount; ++index)
 			{
-				writeTriangle(block.at(index), this->worldWidth - 1, j, k, index);
+				writeTriangle(block.at(index), this->worldWidth - 1, j, k, index, 0);
 			}
 
 			writeVoxelRef(0, j, k, 12);
@@ -765,13 +830,13 @@ void CLProgram::makeTestWorld()
 
 			for (int index = 0; index < triangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, j, 0, index);
+				writeTriangle(block.at(index), i, j, 0, index, 0);
 			}
 
 			block = makeBlock(i, j, this->worldDepth - 1);
 			for (int index = 0; index < triangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, j, this->worldDepth - 1, index);
+				writeTriangle(block.at(index), i, j, this->worldDepth - 1, index, 0);
 			}
 
 			writeVoxelRef(i, j, 0, 12);
@@ -780,12 +845,10 @@ void CLProgram::makeTestWorld()
 	}
 
 	// Add some random blocks around.
-	// Use the same seed so it's not a new city on every screen resize.
-	Random random(0);
 	for (int count = 0; count < 32; ++count)
 	{
 		int x = 1 + random.next(this->worldWidth - 2);
-		int y = 1 + random.next(this->worldHeight - 1);
+		int y = 1;
 		int z = 1 + random.next(this->worldDepth - 2);
 
 		std::vector<Triangle> block = makeBlock(x, y, z);
@@ -793,7 +856,7 @@ void CLProgram::makeTestWorld()
 
 		for (int index = 0; index < triangleCount; ++index)
 		{
-			writeTriangle(block.at(index), x, y, z, index);
+			writeTriangle(block.at(index), x, y, z, index, 4);
 		}
 
 		writeVoxelRef(x, y, z, 12);
@@ -808,6 +871,11 @@ void CLProgram::makeTestWorld()
 	status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
 		CL_TRUE, 0, voxelRefBufferSize, static_cast<const void*>(voxPtr), nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test voxelRefBuffer");
+
+	// Write the texture buffer to device memory.
+	status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer,
+		CL_TRUE, 0, textureBufferSize, static_cast<const void*>(texPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test textureBuffer");
 }
 
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)

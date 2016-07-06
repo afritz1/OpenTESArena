@@ -60,9 +60,9 @@ template<typename T>
 Float3<T> Float3<T>::fromRGB(unsigned int rgb)
 {
 	return Float3(
-		static_cast<T>((static_cast<unsigned char>(rgb) << 16) / 255.0),
-		static_cast<T>((static_cast<unsigned char>(rgb) << 8) / 255.0),
-		static_cast<T>((static_cast<unsigned char>(rgb)) / 255.0));
+		static_cast<T>(static_cast<unsigned char>(rgb >> 16) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(rgb >> 8) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(rgb) / 255.0));
 }
 
 template<typename T>

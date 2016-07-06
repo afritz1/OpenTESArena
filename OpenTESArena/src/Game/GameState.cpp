@@ -130,10 +130,12 @@ void GameState::resizeWindow(int width, int height)
 	{
 		// Rebuild OpenCL program with new dimensions.		
 		this->gameData->getCLProgram() = std::move(CLProgram(
-			width, height, this->renderer->getRenderer(),
+			width, height,
 			this->gameData->getWorldWidth(),
 			this->gameData->getWorldHeight(),
-			this->gameData->getWorldDepth()));
+			this->gameData->getWorldDepth(),
+			this->getTextureManager(),
+			this->renderer->getRenderer()));
 	}
 }
 
