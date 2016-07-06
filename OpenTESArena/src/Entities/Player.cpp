@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+#include <vector>
 
 #include "Player.h"
 
@@ -11,6 +12,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
+#include "../Utilities/String.h"
 
 Player::Player(const std::string &displayName, CharacterGenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
@@ -50,6 +52,12 @@ EntityType Player::getEntityType() const
 const std::string &Player::getDisplayName() const
 {
 	return this->displayName;
+}
+
+std::string Player::getFirstName() const
+{
+	std::vector<std::string> nameTokens = String::split(this->displayName);
+	return nameTokens.at(0);
 }
 
 int Player::getPortraitID() const

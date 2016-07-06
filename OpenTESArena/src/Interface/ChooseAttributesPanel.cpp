@@ -28,7 +28,6 @@
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/String.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
@@ -97,7 +96,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		int width = 21;
 		int height = 12;
 
-		auto setGameDataFunction = [this, charClass, name, gender, raceName](GameState *gameState)
+		auto gameDataFunction = [this, charClass, name, gender, raceName](GameState *gameState)
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
@@ -143,9 +142,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setMusic(MusicName::Overcast);
 		};
 
-		auto cinematicFunction = [gameFunction, setGameDataFunction](GameState *gameState)
+		auto cinematicFunction = [gameFunction, gameDataFunction](GameState *gameState)
 		{
-			setGameDataFunction(gameState);
+			gameDataFunction(gameState);
 
 			// The original game wraps text onto the next screen if the player's name is
 			// too long. For example, it causes "listen to me" to go down one line and 
@@ -154,9 +153,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			std::string silmaneText;
 
 			// Use the player's first name.
-			std::string playerName = gameState->getGameData()->getPlayer().getDisplayName();
-			std::vector<std::string> nameTokens = String::split(playerName);
-			playerName = nameTokens.at(0);
+			std::string playerName = gameState->getGameData()->getPlayer().getFirstName();
 
 			// Load this text from the original data eventually. It's at #1400 in TEMPLATE.DAT.
 			// Do a string replace of the %pcf identifier with the player's name.
@@ -172,7 +169,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			silmaneText.append("to hide treasures he had stolen from the Emperor's coffers.\n");
 			silmaneText.append("If you wish, you can gather enough to support yourself away\n");
 			silmaneText.append("from the Imperial Seat. Be careful, there are many creatures\n");
-			silmaneText.append("that inhabit the sewers now, vile rats and goblins. It is\n");
+			silmaneText.append("which inhabit the sewers now, vile rats and goblins. It is\n");
 			silmaneText.append("too late for me, for I am already dead. Only my powers as a\n");
 			silmaneText.append("Sorceress keep me between this life and the next. That power\n");
 			silmaneText.append("however is waning. Do not succumb to greed or you may find\n");

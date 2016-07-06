@@ -45,6 +45,7 @@ public:
 	virtual EntityType getEntityType() const override;
 
 	const std::string &getDisplayName() const;
+	std::string getFirstName() const;
 	int getPortraitID() const;
 	CharacterGenderName getGenderName() const;
 	CharacterRaceName getRaceName() const;
