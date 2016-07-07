@@ -320,7 +320,17 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Should do some sin() and cos() functions to get the segment location.
 	//int segmentX = ...;
 
-	// Fill in transparent edges behind compass slider (due to SDL blit truncation).
+	// Fill in edges behind interface objects due to SDL blit truncation.
+	Surface mainFiller(gameInterfaceWidth, 2);
+	mainFiller.fill(Color(15, 15, 27));
+
+	this->drawScaledToNative(mainFiller,
+		(ORIGINAL_WIDTH / 2) - (mainFiller.getWidth() / 2),
+		ORIGINAL_HEIGHT - (mainFiller.getHeight() - 1),
+		mainFiller.getWidth(),
+		mainFiller.getHeight(),
+		renderer);
+
 	Surface compassFiller(36, 11);
 	compassFiller.fill(Color(205, 186, 155));
 
