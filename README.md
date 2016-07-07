@@ -7,18 +7,23 @@ July 6th, 2016:
 
 The game world is currently a test city with some textured blocks. No jumping or collision yet. A few of the menus work, including most of character creation.  Pressing Tab in the game world opens the character sheet, and pressing M opens the world map. Clicking on a province in the world map opens the province map. Pressing L opens the logbook. Pressing N opens the automap.
 
-OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though. The [eawpats](https://slackbuilds.org/repository/13.37/audio/eawpats/) library provides some good sound patches (use the .tar.gz link under "Source Downloads"). The freepats library isn't suggested anymore since it's actually missing some of the instruments used by Arena.
+OpenAL Soft and WildMIDI have been implemented, and MIDI music is now supported again. The user must provide their own patches, though (see instructions).
 
 The images [here](https://github.com/afritz1/OpenTESArena/tree/master/samples) are a preview of the graphics engine from a test project using some random cities for demonstration purposes. It is in development and is not fully implemented here.
 
 ## Instructions
 
-The current subset of data files are from screen grabs in DOSBox and from extraction utilities for testing purposes. This project will eventually read the original Arena data files instead, found on the official Bethesda [website](http://www.elderscrolls.com/arena/) using the "Download the Full Game" link.
+- Install the Arena data from the Bethesda [website](http://www.elderscrolls.com/arena/) ("Download the Full Game" link) in a folder somewhere.
+- Get a sound patches library like [eawpats](https://slackbuilds.org/repository/13.37/audio/eawpats/) (the .tar.gz under "Source Downloads". For decompression on Windows, 7-zip is an option). This determines how the MIDI is played.
+- Point your compiler to the developer libraries and build the executable.
+- Put the `data` and `options` folders from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated July 6th) in the executable directory.
+- Make sure `options.txt` points to a soundfont file (i.e., data/eawpats/timidity.cfg, see below) and Arena path (i.e., data/ARENA).
 
-- Build the executable on your machine.
-- Get the small subset of currently used data files [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated July 6th).
-- Put the data files in the executable directory.
-- Make sure your options.txt points to a valid soundfont file and Arena data path.
+If using Visual Studio, edit the project's include and library directories to fit your computer. I haven't gotten CMake to work well enough with Visual Studio yet.
+
+Copy the `timidity.cfg` file into the `eawpats` folder from `eawpats/winconfig` for Windows or `eawpats/linuxconfig` for Linux. You might need to comment out the lines with `dir` for it to use the folders in `eawpats`.
+
+The components static library (i.e., `components.lib`) is built using a separate project with the source files in the `components` folder. Link it to the main project once created.
 
 ## Developer Libraries
 
