@@ -21,7 +21,8 @@ public:
 
 	// Compared to iron.
 	virtual double getWeightMultiplier() const override;
-
+	
+	virtual bool isEnchantable() const override;
 	virtual std::string toString() const override;
 };
 

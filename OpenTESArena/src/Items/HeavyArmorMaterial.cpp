@@ -44,6 +44,11 @@ double HeavyArmorMaterial::getWeightMultiplier() const
 	return this->getMetal().getWeightMultiplier();
 }
 
+bool HeavyArmorMaterial::isEnchantable() const
+{
+	return true;
+}
+
 std::string HeavyArmorMaterial::toString() const
 {
 	return this->getMetal().toString();

@@ -29,6 +29,7 @@ public:
 	virtual int getArmorRating() const = 0;
 	virtual int getConditionMultiplier() const = 0; // Metal materials are stronger.
 	virtual double getWeightMultiplier() const = 0; // Some materials are heavier.
+	virtual bool isEnchantable() const = 0;
 	virtual std::string toString() const = 0;
 };
 

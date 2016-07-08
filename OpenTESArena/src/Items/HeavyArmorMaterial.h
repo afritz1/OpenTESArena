@@ -20,6 +20,7 @@ public:
 	virtual int getArmorRating() const override;
 	virtual int getConditionMultiplier() const override;
 	virtual double getWeightMultiplier() const override;
+	virtual bool isEnchantable() const override;
 	virtual std::string toString() const override;
 };
 

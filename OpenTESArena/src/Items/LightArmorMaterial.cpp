@@ -39,6 +39,11 @@ double LightArmorMaterial::getWeightMultiplier() const
 	return 0.25;
 }
 
+bool LightArmorMaterial::isEnchantable() const
+{
+	return false;
+}
+
 std::string LightArmorMaterial::toString() const
 {
 	return "Leather";

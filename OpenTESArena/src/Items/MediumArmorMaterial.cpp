@@ -39,6 +39,11 @@ double MediumArmorMaterial::getWeightMultiplier() const
 	return 0.75;
 }
 
+bool MediumArmorMaterial::isEnchantable() const
+{
+	return false;
+}
+
 std::string MediumArmorMaterial::toString() const
 {
 	return "Chain";
