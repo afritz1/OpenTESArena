@@ -15,7 +15,7 @@
 const int Renderer::DEFAULT_COLOR_BITS = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 
-Renderer::Renderer(int width, int height, bool fullscreen, const std::string &title)
+Renderer::Renderer(int width, int height, bool fullscreen)
 {
 	Debug::mention("Renderer", "Initializing.");
 
@@ -23,8 +23,9 @@ Renderer::Renderer(int width, int height, bool fullscreen, const std::string &ti
 	assert(height > 0);
 
 	// Initialize window. The SDL_Surface is obtained from this window.
-	this->window = [width, height, fullscreen, &title]()
+	this->window = [width, height, fullscreen]()
 	{
+		std::string title = "OpenTESArena";
 		return fullscreen ?
 			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED,
 				SDL_WINDOWPOS_UNDEFINED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP) :

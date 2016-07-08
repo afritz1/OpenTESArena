@@ -27,8 +27,6 @@ struct SDL_Rect;
 class GameState
 {
 private:
-	static const std::string DEFAULT_SCREEN_TITLE;
-
 	AudioManager audioManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<MusicName> nextMusic;

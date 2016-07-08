@@ -43,7 +43,7 @@ private:
 	// Helper method for making a renderer context.
 	SDL_Renderer *createRenderer();
 public:
-	Renderer(int width, int height, bool fullscreen, const std::string &title);
+	Renderer(int width, int height, bool fullscreen);
 	~Renderer();
 	
 	// Get the dimensions of the render texture. This should always match the window

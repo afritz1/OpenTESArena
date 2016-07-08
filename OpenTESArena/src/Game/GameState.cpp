@@ -20,8 +20,6 @@
 
 #include "components/vfs/manager.hpp"
 
-const std::string GameState::DEFAULT_SCREEN_TITLE = "OpenTESArena";
-
 GameState::GameState()
 {
 	Debug::mention("GameState", "Initializing.");
@@ -43,7 +41,7 @@ GameState::GameState()
 	// Initialize the SDL renderer and window with the given dimensions and title.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		this->options->getScreenWidth(), this->options->getScreenHeight(),
-		this->options->isFullscreen(), GameState::DEFAULT_SCREEN_TITLE));
+		this->options->isFullscreen()));
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
