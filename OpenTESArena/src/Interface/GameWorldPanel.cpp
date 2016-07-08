@@ -307,7 +307,7 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	// Set screen palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
-
+	
 	// Get some rendering values.
 	int screenWidth, screenHeight;
 	SDL_RenderGetLogicalSize(renderer, &screenWidth, &screenHeight);
@@ -332,6 +332,24 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 
 		SDL_RenderCopy(renderer, const_cast<SDL_Texture*>(texture), nullptr, &rect);
 	};
+
+	// Fill in edges behind game interface due to SDL blit truncation.
+	Surface mainFiller(320, 2);
+	mainFiller.fill(Color(15, 15, 27));
+	SDL_Texture *mainFillerTexture = SDL_CreateTextureFromSurface(
+		renderer, mainFiller.getSurface());
+
+	int nativeMainFillerWidth = static_cast<int>(
+		static_cast<double>(mainFiller.getWidth()) * drawScale);
+	int nativeMainFillerHeight = static_cast<int>(
+		static_cast<double>(mainFiller.getHeight()) * drawScale);
+
+	drawNative(mainFillerTexture,
+		(screenWidth / 2) - (nativeMainFillerWidth / 2),
+		screenHeight - (nativeMainFillerHeight - 1),
+		renderer);
+
+	SDL_DestroyTexture(mainFillerTexture);
 
 	// Draw game world interface.
 	const auto *gameInterface = textureManager.getTexture(
@@ -407,24 +425,6 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		renderer);
 
 	SDL_DestroyTexture(compassSegmentTexture);
-
-	// Fill in edges behind game interface due to SDL blit truncation.
-	Surface mainFiller(gameInterfaceWidth, 2);
-	mainFiller.fill(Color(15, 15, 27));
-	SDL_Texture *mainFillerTexture = SDL_CreateTextureFromSurface(
-		renderer, mainFiller.getSurface());
-
-	int nativeMainFillerWidth = static_cast<int>(
-		static_cast<double>(mainFiller.getWidth()) * drawScale);
-	int nativeMainFillerHeight = static_cast<int>(
-		static_cast<double>(mainFiller.getHeight()) * drawScale);
-
-	drawNative(mainFillerTexture,
-		(screenWidth / 2) - (nativeMainFillerWidth / 2),
-		screenHeight - (nativeMainFillerHeight - 1),
-		renderer);
-
-	SDL_DestroyTexture(mainFillerTexture);
 
 	// Draw text: player's name.
 	// Since the game world is likely going to be CPU intensive, this draw call
