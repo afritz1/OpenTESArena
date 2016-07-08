@@ -13,6 +13,7 @@ class TextBox;
 class PauseMenuPanel : public Panel
 {
 private:
+	std::unique_ptr<TextBox> playerNameTextBox;
 	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton;
 protected:
 	virtual void handleEvents(bool &running) override;

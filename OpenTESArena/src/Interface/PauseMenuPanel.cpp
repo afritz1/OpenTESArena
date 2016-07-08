@@ -10,6 +10,7 @@
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
 #include "TextBox.h"
+#include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
@@ -25,6 +26,22 @@
 PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	: Panel(gameState)
 {
+	this->playerNameTextBox = [gameState]()
+	{
+		int x = 17;
+		int y = 154;
+		Color color(215, 121, 8);
+		std::string text = gameState->getGameData()->getPlayer().getFirstName();
+		auto fontName = FontName::Char;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager()));
+	}();
+
 	this->loadButton = []()
 	{
 		int x = 65;
@@ -200,6 +217,9 @@ void PauseMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		gameInterfaceWidth,
 		gameInterfaceHeight,
 		renderer);
+
+	// Draw text: player's name.
+	this->drawScaledToNative(*this->playerNameTextBox.get(), renderer);
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(

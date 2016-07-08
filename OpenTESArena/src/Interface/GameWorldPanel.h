@@ -13,10 +13,12 @@
 // The modern interface does not need the mouse cursor visible.
 
 class Button;
+class TextBox;
 
 class GameWorldPanel : public Panel
 {
 private:
+	std::unique_ptr<TextBox> playerNameTextBox;
 	std::unique_ptr<Button> automapButton, characterSheetButton, logbookButton, 
 		pauseButton, worldMapButton;
 protected:

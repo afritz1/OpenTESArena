@@ -9,6 +9,7 @@
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
+#include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Entities/CoordinateFrame.h"
 #include "../Entities/Player.h"
@@ -21,6 +22,7 @@
 #include "../Math/Rect.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteName.h"
 #include "../Media/SoundName.h"
@@ -35,6 +37,22 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
 {
 	assert(gameState->gameDataIsActive());
+
+	this->playerNameTextBox = [gameState]()
+	{
+		int x = 17;
+		int y = 154;
+		Color color(215, 121, 8);
+		std::string text = gameState->getGameData()->getPlayer().getFirstName();
+		auto fontName = FontName::Char;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager()));
+	}();
 
 	this->automapButton = []()
 	{
@@ -316,6 +334,11 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	Surface compassSliderSegment(32, 7);
 	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
+
+	// Draw text: player's name.
+	// Since the game world is likely going to be CPU intensive, this draw call
+	// should use a texture instead of a surface. Preferably sooner than later.
+	this->drawScaledToNative(*this->playerNameTextBox.get(), renderer);
 
 	// Should do some sin() and cos() functions to get the segment location.
 	//int segmentX = ...;
