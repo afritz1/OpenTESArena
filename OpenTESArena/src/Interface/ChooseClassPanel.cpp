@@ -62,7 +62,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->classesListBox = [this, gameState]()
@@ -88,7 +89,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			color,
 			maxElements,
 			elements,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToClassCreationButton = []()
@@ -167,7 +169,8 @@ ChooseClassPanel::~ChooseClassPanel()
 void ChooseClassPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -254,7 +257,7 @@ void ChooseClassPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseClassPanel::createTooltip(int tooltipIndex, SDL_Renderer *renderer)
+void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 {
 	const auto &characterClass = *this->charClasses.at(tooltipIndex).get();
 
@@ -271,8 +274,9 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, SDL_Renderer *renderer)
 		0, 0,
 		Color::White,
 		tooltipText,
-		FontName::A,
-		this->getGameState()->getTextureManager()));
+		FontName::D,
+		this->getGameState()->getTextureManager(),
+		this->getGameState()->getRenderer()));
 
 	const int width = tooltipTextBox->getWidth();
 	const int height = tooltipTextBox->getHeight();
@@ -281,8 +285,8 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, SDL_Renderer *renderer)
 	Surface tooltip(width, height + padding);
 	tooltip.fill(Color(32, 32, 32));
 	tooltipTextBox->blit(tooltip, Int2(0, 1));
-
-	SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+		
+	SDL_Texture *texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STATIC, tooltip.getWidth(), tooltip.getHeight());
 	SDL_UpdateTexture(texture, nullptr, tooltip.getSurface()->pixels,
 		tooltip.getWidth() * (Surface::DEFAULT_BPP / 8));
@@ -431,9 +435,10 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
-void ChooseClassPanel::drawClassTooltip(int tooltipIndex, SDL_Renderer *renderer)
+void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 {
-	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(this->getMousePosition());
 
 	// Make the tooltip if it does not exist already.
 	if (this->tooltipTextures.find(tooltipIndex) == this->tooltipTextures.end())
@@ -445,63 +450,43 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, SDL_Renderer *renderer
 	int tooltipWidth, tooltipHeight;
 	SDL_QueryTexture(tooltipTexture, nullptr, nullptr, &tooltipWidth, &tooltipHeight);
 
-	// Draw the tooltip smaller.
-	tooltipWidth /= 2;
-	tooltipHeight /= 2;
-
 	// Calculate the top left corner, given the mouse position.
 	const int mouseX = mouseOriginalPoint.getX();
 	const int mouseY = mouseOriginalPoint.getY();
-	const int x = ((mouseX + tooltipWidth) < ORIGINAL_WIDTH) ? (mouseX + 4) :
-		(mouseX + 4 - tooltipWidth);
-	const int y = ((mouseY + tooltipHeight) < ORIGINAL_HEIGHT) ? (mouseY - 1) :
-		(mouseY - tooltipHeight);
+	const int x = ((mouseX + 8 + tooltipWidth) < ORIGINAL_WIDTH) ? 
+		(mouseX + 8) : (mouseX - tooltipWidth);
+	const int y = ((mouseY + tooltipHeight) < ORIGINAL_HEIGHT) ? 
+		(mouseY - 1) : (mouseY - tooltipHeight);
 
-	this->drawScaledToNative(
-		tooltipTexture,
-		x,
-		y,
-		tooltipWidth,
-		tooltipHeight,
-		renderer);
+	renderer.drawToOriginal(tooltipTexture, x, y, tooltipWidth, tooltipHeight);
 }
 
-void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ChooseClassPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw background.
-	const auto *background = textureManager.getTexture(
+	auto *background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation), PaletteName::BuiltIn);
-	this->drawLetterbox(background, renderer, letterbox);
+	renderer.drawToOriginal(background);
 
 	// Draw parchments: title, list.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	double parchmentXScale = 1.0;
-	double parchmentYScale = 1.0;
-	int parchmentWidth =
-		static_cast<int>(this->parchment->getWidth() * parchmentXScale);
-	int parchmentHeight =
-		static_cast<int>(this->parchment->getHeight() * parchmentYScale);
-
-	this->drawScaledToNative(
-		*this->parchment.get(),
-		(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
-		35,
-		parchmentWidth,
-		parchmentHeight,
-		renderer);
+	renderer.drawToOriginal(this->parchment->getSurface(),
+		(ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2), 35);
 
 	// The original list background is PopUp, but the palette isn't right yet.
-	const auto &listPopUp = textureManager.getSurface(
+	auto *listPopUp = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PopUp11));
 
+	// This scaling is causing the pop up to lose quality. It should't be an issue
+	// once the actual pop up is being used.
 	double listXScale = 0.85;
 	double listYScale = 2.20;
 	int listWidth =
@@ -509,25 +494,22 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	int listHeight =
 		static_cast<int>(this->parchment->getHeight() * listYScale);
 
-	this->drawScaledToNative(
-		listPopUp,
+	renderer.drawToOriginal(listPopUp,
 		(ORIGINAL_WIDTH / 2) - (listWidth / 2),
 		(ORIGINAL_HEIGHT / 2) - 12,
 		listWidth,
-		listHeight,
-		renderer);
+		listHeight);
 
 	// Draw text: title, list.
-	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
-	this->drawScaledToNative(*this->classesListBox.get(), renderer);
-
-	// Draw cursor.
-	const auto &cursor = textureManager.getSurface(
-		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawToOriginal(this->classesListBox->getSurface(),
+		this->classesListBox->getX(), this->classesListBox->getY());
 
 	// Draw tooltip if over a valid element in the list box.
-	auto mouseOriginalPoint = this->nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(this->getMousePosition());
+
 	if (this->classesListBox->containsPoint(mouseOriginalPoint))
 	{
 		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
@@ -536,4 +518,18 @@ void ChooseClassPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 			this->drawClassTooltip(index, renderer);
 		}
 	}
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
+
+	// Draw cursor.
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

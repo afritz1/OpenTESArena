@@ -51,7 +51,8 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->automapButton = []()
@@ -188,14 +189,13 @@ void GameWorldPanel::handleMouse(double dt)
 	int dx, dy;
 	const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
 
-	// The program will eventually not require holding a mouse button to turn.
 	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
 	bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
 	bool turning = ((dx != 0) || (dy != 0)) && (leftClick || rightClick);
 
 	if (turning)
 	{
-		auto dimensions = this->getGameState()->getScreenDimensions();
+		auto dimensions = this->getGameState()->getRenderer().getWindowDimensions();
 		double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
 		double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
 
@@ -291,117 +291,29 @@ void GameWorldPanel::tick(double dt, bool &running)
 	clProgram.updateGameTime(gameData->getGameTime());
 }
 
-void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void GameWorldPanel::render(Renderer &renderer)
 {
 	assert(this->getGameState()->gameDataIsActive());
+
+	// Clear original frame buffer.
+	renderer.clearOriginal();
 
 	// Draw game world using OpenCL rendering.
 	this->getGameState()->getGameData()->getCLProgram().render(renderer);
 
-	// Interface objects (stat bars, compass, ...) should snap to the edges of the native
-	// screen, not just the letterbox, because right now, when the screen is tall, the
-	// compass is near the middle of the screen (in the way), and the stat bars are much
-	// higher than they should be. I haven't figured out yet what the equation is. I
-	// think it requires using the original height and the draw scale somehow.
-
 	// Set screen palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
-	
-	// Get some rendering values.
-	int screenWidth, screenHeight;
-	SDL_RenderGetLogicalSize(renderer, &screenWidth, &screenHeight);
-	const double drawScale = this->getDrawScale();
 
-	// Lambda for drawing textures relative to the renderer rather than the letterbox.
-	auto drawNative = [screenWidth, screenHeight, drawScale](const SDL_Texture *texture,
-		int nativeX, int nativeY, SDL_Renderer *renderer)
-	{
-		int textureWidth, textureHeight;
-		SDL_QueryTexture(const_cast<SDL_Texture*>(texture), nullptr, nullptr,
-			&textureWidth, &textureHeight);
-
-		int nativeWidth = static_cast<int>(static_cast<double>(textureWidth) * drawScale);
-		int nativeHeight = static_cast<int>(static_cast<double>(textureHeight) * drawScale);
-
-		SDL_Rect rect;
-		rect.x = nativeX;
-		rect.y = nativeY;
-		rect.w = nativeWidth;
-		rect.h = nativeHeight;
-
-		SDL_RenderCopy(renderer, const_cast<SDL_Texture*>(texture), nullptr, &rect);
-	};
-
-	// Fill in edges behind game interface due to SDL blit truncation.
-	Surface mainFiller(320, 2);
-	mainFiller.fill(Color(15, 15, 27));
-	SDL_Texture *mainFillerTexture = SDL_CreateTextureFromSurface(
-		renderer, mainFiller.getSurface());
-
-	int nativeMainFillerWidth = static_cast<int>(
-		static_cast<double>(mainFiller.getWidth()) * drawScale);
-	int nativeMainFillerHeight = static_cast<int>(
-		static_cast<double>(mainFiller.getHeight()) * drawScale);
-
-	drawNative(mainFillerTexture,
-		(screenWidth / 2) - (nativeMainFillerWidth / 2),
-		screenHeight - (nativeMainFillerHeight - 1),
-		renderer);
-
-	SDL_DestroyTexture(mainFillerTexture);
+	// Set original frame buffer blending to true.
+	renderer.useTransparencyBlending(true);
 
 	// Draw game world interface.
-	const auto *gameInterface = textureManager.getTexture(
+	auto *gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	int gameInterfaceWidth, gameInterfaceHeight;
-	SDL_QueryTexture(const_cast<SDL_Texture*>(gameInterface), nullptr, nullptr,
-		&gameInterfaceWidth, &gameInterfaceHeight);
-
-	int nativeInterfaceWidth = static_cast<int>(
-		static_cast<double>(gameInterfaceWidth) * drawScale);
-	int nativeInterfaceHeight = static_cast<int>(
-		static_cast<double>(gameInterfaceHeight) * drawScale);
-
-	drawNative(gameInterface,
-		(screenWidth / 2) - (nativeInterfaceWidth / 2),
-		screenHeight - nativeInterfaceHeight,
-		renderer);
-
-	// Fill in edges behind compass slider due to SDL blit truncation.
-	Surface compassFiller(36, 11);
-	compassFiller.fill(Color(205, 186, 155));
-	SDL_Texture *compassFillerTexture = SDL_CreateTextureFromSurface(
-		renderer, compassFiller.getSurface());
-
-	int nativeCompassFillerWidth = static_cast<int>(
-		static_cast<double>(compassFiller.getWidth()) * drawScale);
-	int nativeCompassFillerHeight = static_cast<int>(
-		static_cast<double>(compassFiller.getHeight()) * drawScale);
-
-	drawNative(compassFillerTexture,
-		(screenWidth / 2) - (nativeCompassFillerWidth / 2),
-		static_cast<int>(5.0 * drawScale),
-		renderer);
-
-	SDL_DestroyTexture(compassFillerTexture);
-
-	// Draw compass frame.
-	const auto &compassFrame = textureManager.getSurface(
-		TextureFile::fromName(TextureName::CompassFrame));
-	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE, Color::Black.toRGB());
-	SDL_Texture *compassFrameTexture = SDL_CreateTextureFromSurface(
-		renderer, compassFrame.getSurface());
-
-	int nativeCompassFrameWidth = static_cast<int>(
-		static_cast<double>(compassFrame.getWidth()) * drawScale);
-
-	drawNative(compassFrameTexture,
-		(screenWidth / 2) - (nativeCompassFrameWidth / 2),
-		0,
-		renderer);
-
-	SDL_DestroyTexture(compassFrameTexture);
+	int gameInterfaceHeight;
+	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
+	renderer.drawToOriginal(gameInterface, 0, ORIGINAL_HEIGHT - gameInterfaceHeight);
 
 	// Draw compass slider (the actual headings). +X is north, +Z is east.
 	// Should do some sin() and cos() functions to get the pixel offset.
@@ -411,36 +323,39 @@ void GameWorldPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	Surface compassSliderSegment(32, 7);
 	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
-	SDL_Texture *compassSegmentTexture = SDL_CreateTextureFromSurface(
-		renderer, compassSliderSegment.getSurface());
+	renderer.drawToOriginal(compassSliderSegment.getSurface(),
+		(ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
+		compassSliderSegment.getHeight());
 
-	int nativeCompassSegmentWidth = static_cast<int>(
-		static_cast<double>(compassSliderSegment.getWidth()) * drawScale);
-	int nativeCompassSegmentHeight = static_cast<int>(
-		static_cast<double>(compassSliderSegment.getHeight()) * drawScale);
+	// Draw compass frame over the headings.
+	const auto &compassFrame = textureManager.getSurface(
+		TextureFile::fromName(TextureName::CompassFrame));
+	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	renderer.drawToOriginal(compassFrame.getSurface(),
+		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
-	drawNative(compassSegmentTexture,
-		(screenWidth / 2) - (nativeCompassSegmentWidth / 2),
-		nativeCompassSegmentHeight,
-		renderer);
+	// Draw text: player name.
+	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
+		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
-	SDL_DestroyTexture(compassSegmentTexture);
-
-	// Draw text: player's name.
-	// Since the game world is likely going to be CPU intensive, this draw call
-	// should use a texture instead of a surface. Preferably sooner than later.
-	SDL_Texture *playerNameTexture = SDL_CreateTextureFromSurface(
-		renderer, this->playerNameTextBox->getSurface());
-
-	drawNative(playerNameTexture,
-		(screenWidth / 2) - static_cast<int>(143.0 * drawScale),
-		screenHeight - static_cast<int>(46.0 * drawScale),
-		renderer);
-
-	SDL_DestroyTexture(playerNameTexture);
+	// Scale the original frame buffer onto the native one.
+	// This shouldn't be done for the game world interface because it needs to
+	// clamp to the screen edges, not the letterbox edges. 
+	// Fix this eventually... again.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+
+	// Set the transparency blending back to normal (off).
+	renderer.useTransparencyBlending(false);
 }

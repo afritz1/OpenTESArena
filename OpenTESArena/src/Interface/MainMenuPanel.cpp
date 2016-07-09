@@ -18,6 +18,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
+#include "../Rendering/Renderer.h"
 
 MainMenuPanel::MainMenuPanel(GameState *gameState)
 	: Panel(gameState)
@@ -111,7 +112,8 @@ void MainMenuPanel::handleEvents(bool &running)
 	// Panel::nativePointToOriginalInt2(nativePoint) method?
 
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -175,22 +177,31 @@ void MainMenuPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void MainMenuPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void MainMenuPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw main menu.
-	const auto *mainMenu = textureManager.getTexture(
+	auto *mainMenu = textureManager.getTexture(
 		TextureFile::fromName(TextureName::MainMenu), PaletteName::BuiltIn);
-	this->drawLetterbox(mainMenu, renderer, letterbox);
+	renderer.drawToOriginal(mainMenu);
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

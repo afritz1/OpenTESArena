@@ -16,6 +16,7 @@
 
 class Button;
 class CharacterClass;
+class Renderer;
 class Surface;
 class TextBox;
 
@@ -38,7 +39,7 @@ public:
 	virtual ~ChooseNamePanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

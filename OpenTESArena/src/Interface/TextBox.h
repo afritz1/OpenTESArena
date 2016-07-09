@@ -12,6 +12,7 @@
 // shown, and the position would follow a similar pattern.
 
 class Color;
+class Renderer;
 class TextureManager;
 
 enum class FontName;
@@ -43,9 +44,9 @@ private:
 		TextureManager &textureManager) const;
 public:
 	TextBox(int x, int y, const Color &textColor, const std::string &text,
-		FontName fontName, TextureManager &textureManager);
+		FontName fontName, TextureManager &textureManager, Renderer &renderer);
 	TextBox(const Int2 &center, const Color &textColor, const std::string &text,
-		FontName fontName, TextureManager &textureManager);
+		FontName fontName, TextureManager &textureManager, Renderer &renderer);
 	virtual ~TextBox();
 
 	FontName getFontName() const;

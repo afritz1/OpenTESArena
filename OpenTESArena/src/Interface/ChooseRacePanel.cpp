@@ -21,6 +21,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -47,7 +48,8 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToGenderButton = [charClass, name]()
@@ -86,7 +88,8 @@ ChooseRacePanel::~ChooseRacePanel()
 void ChooseRacePanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -181,45 +184,49 @@ void ChooseRacePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, SDL_Renderer *renderer)
+void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer)
 {
-	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+		.nativePointToOriginal(this->getMousePosition());
 	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
 	std::unique_ptr<TextBox> tooltip(new TextBox(
 		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
 		Color::White,
 		"Land of the " + raceName,
-		FontName::A,
-		this->getGameState()->getTextureManager()));
+		FontName::D,
+		this->getGameState()->getTextureManager(),
+		this->getGameState()->getRenderer()));
 	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
 	const int tooltipX = tooltip->getX();
 	const int tooltipY = tooltip->getY();
-	const int width = tooltip->getWidth() / 2;
-	const int height = tooltip->getHeight() / 2;
-	const int x = ((tooltipX + width) < ORIGINAL_WIDTH) ? tooltipX : (tooltipX - width);
-	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? tooltipY : (tooltipY - height);
+	const int width = tooltip->getWidth();
+	const int height = tooltip->getHeight();
+	const int x = ((tooltipX + 8 + width) < ORIGINAL_WIDTH) ?
+		(tooltipX + 8) : (tooltipX - width);
+	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ?
+		tooltipY : (tooltipY - height);
 
-	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, renderer);
-	this->drawScaledToNative(*tooltip.get(), x, y, width, height, renderer);
+	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
+	renderer.drawToOriginal(tooltip->getSurface(), x, y, width, height);
 }
 
-void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ChooseRacePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw background map.
-	const auto *raceSelectMap = textureManager.getTexture(
+	auto *raceSelectMap = textureManager.getTexture(
 		TextureFile::fromName(TextureName::RaceSelect), PaletteName::BuiltIn);
-	this->drawLetterbox(raceSelectMap, renderer, letterbox);
+	renderer.drawToOriginal(raceSelectMap);
 
 	// Don't worry about the yellow dots for now. Whatever the original game is doing
 	// to cover them up should be figured out sometime.
@@ -230,25 +237,24 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	{
 		const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * 1.35);
 		const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * 1.65);
-		this->drawScaledToNative(*this->parchment.get(),
+
+		renderer.drawToOriginal(this->parchment->getSurface(),
 			(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
 			(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 			parchmentWidth,
-			parchmentHeight,
-			renderer);
-		this->drawScaledToNative(*this->initialTextBox.get(), renderer);
-	}
+			parchmentHeight);
 
-	// Draw cursor.
-	const auto &cursor = textureManager.getSurface(
-		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+		renderer.drawToOriginal(this->initialTextBox->getSurface(),
+			this->initialTextBox->getX(), this->initialTextBox->getY());
+	}
 
 	// Draw hovered province tooltip.
 	if (!this->initialTextBox->isVisible())
 	{
+		auto mouseOriginalPosition = this->getGameState()->getRenderer()
+			.nativePointToOriginal(this->getMousePosition());
+
 		// Draw tooltip if the mouse is in a province.
-		auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
 		for (const auto provinceName : Province::getAllProvinceNames())
 		{
 			Province province(provinceName);
@@ -262,4 +268,18 @@ void ChooseRacePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 			}
 		}
 	}
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
+
+	// Draw cursor.
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

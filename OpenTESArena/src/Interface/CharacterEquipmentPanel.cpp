@@ -20,6 +20,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 	: Panel(gameState)
@@ -37,7 +38,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->playerRaceTextBox = [gameState]()
@@ -54,7 +56,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->playerClassTextBox = [gameState]()
@@ -71,7 +74,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToStatsButton = []()
@@ -147,7 +151,8 @@ CharacterEquipmentPanel::~CharacterEquipmentPanel()
 void CharacterEquipmentPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -221,21 +226,21 @@ void CharacterEquipmentPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void CharacterEquipmentPanel::render(Renderer &renderer)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::CharSheet);
 
 	// Draw character equipment background.
-	const auto *equipmentBackground = textureManager.getTexture(
+	auto *equipmentBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterEquipment));
-	this->drawScaledToNative(equipmentBackground, renderer);
+	renderer.drawToOriginal(equipmentBackground);
 
 	// Get a reference to the active player data.
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -245,26 +250,31 @@ void CharacterEquipmentPanel::render(SDL_Renderer *renderer, const SDL_Rect *let
 		player.getRaceName(), player.getCharacterClass().canCastMagic());
 
 	// Draw the player's portrait.
-	const auto *portrait = textureManager.getTexture(
+	auto *portrait = textureManager.getTexture(
 		portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr,
-		&portraitWidth, &portraitHeight);
-
-	this->drawScaledToNative(portrait,
-		ORIGINAL_WIDTH - portraitWidth,
-		0,
-		portraitWidth,
-		portraitHeight,
-		renderer);
+	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	renderer.drawToOriginal(portrait, ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
-	this->drawScaledToNative(*this->playerClassTextBox.get(), renderer);
-	this->drawScaledToNative(*this->playerNameTextBox.get(), renderer);
-	this->drawScaledToNative(*this->playerRaceTextBox.get(), renderer);
+	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
+		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+	renderer.drawToOriginal(this->playerRaceTextBox->getSurface(),
+		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
+	renderer.drawToOriginal(this->playerClassTextBox->getSurface(),
+		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	const auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

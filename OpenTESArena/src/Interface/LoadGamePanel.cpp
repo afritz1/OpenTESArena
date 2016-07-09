@@ -18,6 +18,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 LoadGamePanel::LoadGamePanel(GameState *gameState)
 	: Panel(gameState)
@@ -46,7 +47,8 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 }
 
@@ -58,7 +60,8 @@ LoadGamePanel::~LoadGamePanel()
 void LoadGamePanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -108,26 +111,37 @@ void LoadGamePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void LoadGamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void LoadGamePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
+	renderer.clearOriginal();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw slots background.
-	const auto *slotsBackground = textureManager.getTexture(
+	auto *slotsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::LoadSave));
-	this->drawScaledToNative(slotsBackground, renderer);
+	renderer.drawToOriginal(slotsBackground);
 
 	// Draw temp text. The load game design is unclear at this point, but it should
 	// have up/down arrows and buttons.
-	this->drawScaledToNative(*this->underConstructionTextBox.get(), renderer);
+	renderer.drawToOriginal(this->underConstructionTextBox->getSurface(),
+		this->underConstructionTextBox->getX(), this->underConstructionTextBox->getY());
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

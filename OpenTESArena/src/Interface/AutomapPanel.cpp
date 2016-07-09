@@ -14,6 +14,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 AutomapPanel::AutomapPanel(GameState *gameState)
 	: Panel(gameState)
@@ -40,7 +41,8 @@ AutomapPanel::~AutomapPanel()
 void AutomapPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -100,23 +102,25 @@ void AutomapPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void AutomapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void AutomapPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw automap background.
-	const auto *automapBackground = textureManager.getTexture(
+	auto *automapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Automap), PaletteName::BuiltIn);
-	this->drawLetterbox(automapBackground, renderer, letterbox);
+	renderer.drawToOriginal(automapBackground);
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Prepare the cursor color key.
-	const auto *pixelFormat = textureManager.getFormat();
-	unsigned int colorKey = this->getFormattedRGB(Color::Black, pixelFormat);
+	unsigned int colorKey = renderer.getFormattedARGB(Color::Black);
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
@@ -126,6 +130,9 @@ void AutomapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	const int cursorYOffset = static_cast<int>(
 		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
 	const auto mousePosition = this->getMousePosition();
-	this->drawCursor(cursor, mousePosition.getX(),
-		mousePosition.getY() - cursorYOffset, renderer);
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(),
+		mousePosition.getY() - cursorYOffset,
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

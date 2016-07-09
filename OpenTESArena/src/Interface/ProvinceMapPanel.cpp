@@ -18,6 +18,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -108,7 +109,8 @@ ProvinceMapPanel::~ProvinceMapPanel()
 void ProvinceMapPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -184,38 +186,42 @@ void ProvinceMapPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, 
-	SDL_Renderer *renderer)
+void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer)
 {
-	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+		.nativePointToOriginal(this->getMousePosition());
+
 	std::unique_ptr<TextBox> tooltip(new TextBox(
 		mouseOriginalPosition.getX(),
 		mouseOriginalPosition.getY(),
 		Color::White,
 		ProvinceButtonTooltips.at(buttonName),
-		FontName::A,
-		this->getGameState()->getTextureManager()));
+		FontName::D,
+		this->getGameState()->getTextureManager(),
+		this->getGameState()->getRenderer()));
 	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
 	const int tooltipX = tooltip->getX();
 	const int tooltipY = tooltip->getY();
-	const int width = tooltip->getWidth() / 2;
-	const int height = tooltip->getHeight() / 2;
-	const int x = ((tooltipX + width) < ORIGINAL_WIDTH) ? tooltipX : (tooltipX - width);
-	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? tooltipY : (tooltipY - height);
+	const int width = tooltip->getWidth();
+	const int height = tooltip->getHeight();
+	const int x = ((tooltipX + 8 + width) < ORIGINAL_WIDTH) ? 
+		(tooltipX + 8) : (tooltipX - width);
+	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? 
+		tooltipY : (tooltipY - height);
 
-	this->drawScaledToNative(tooltipBackground, x, y - 1, width, height + 2, renderer);
-	this->drawScaledToNative(*tooltip.get(), x, y, width, height, renderer);
+	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
+	renderer.drawToOriginal(tooltip->getSurface(), x, y, width, height);
 }
 
-void ProvinceMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ProvinceMapPanel::render(Renderer &renderer)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
@@ -226,17 +232,14 @@ void ProvinceMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 		this->province->getProvinceName());	
 
 	// Draw province map background.
-	const auto *mapBackground = textureManager.getTexture(
+	auto *mapBackground = textureManager.getTexture(
 		TextureFile::fromName(provinceTextureName), PaletteName::BuiltIn);
-	this->drawScaledToNative(mapBackground, renderer);
-
-	// Draw cursor.
-	const auto &cursor = textureManager.getSurface(
-		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	renderer.drawToOriginal(mapBackground);
 
 	// Draw tooltip if the mouse is over a button.
-	auto mouseOriginalPosition = this->nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+		.nativePointToOriginal(this->getMousePosition());
+
 	for (const auto &pair : ProvinceButtonTooltips)
 	{
 		const Rect &clickArea = ProvinceButtonClickAreas.at(pair.first);
@@ -246,4 +249,18 @@ void ProvinceMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 			this->drawButtonTooltip(pair.first, renderer);
 		}
 	}
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
+
+	// Draw cursor.
+	const auto &cursor = textureManager.getSurface(
+		TextureFile::fromName(TextureName::SwordCursor));
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

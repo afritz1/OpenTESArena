@@ -11,11 +11,13 @@
 #include "../Media/Font.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
-	const std::vector<std::string> &elements, TextureManager &textureManager)
-	: Surface(x, y, 1, 1), textureManagerRef(textureManager)
+	const std::vector<std::string> &elements, TextureManager &textureManager,
+	Renderer &renderer)
+	: Surface(x, y, 1, 1), textureManagerRef(textureManager), rendererRef(renderer)
 {
 	assert(maxDisplayed > 0);
 
@@ -32,7 +34,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 		// Remove any new lines.
 		auto trimmedElement = String::trimLines(element);
 		std::unique_ptr<TextBox> textBox(new TextBox(
-			0, 0, textColor, trimmedElement, fontName, textureManager));
+			0, 0, textColor, trimmedElement, fontName, textureManager, renderer));
 		textBoxes.push_back(std::move(textBox));
 	}
 
@@ -41,9 +43,11 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	int height = this->getTotalHeight();
 
 	// Replace the old SDL surface. It was just a placeholder until now.
+	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
-	this->optimize(textureManager.getFormat());
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	this->optimize(renderer.getFormat());
 
 	// It's okay for there to be zero elements. Just be blank, then!
 
@@ -126,7 +130,7 @@ void ListBox::updateDisplayText()
 	{
 		const auto &element = this->elements.at(i);
 		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, *this->textColor.get(),
-			element, this->fontName, this->textureManagerRef));
+			element, this->fontName, this->textureManagerRef, this->rendererRef));
 
 		// Blit the text box onto the parent surface at the correct height offset.
 		textBox->blit(*this, Int2(0, (i - this->scrollIndex) * textBox->getHeight()));

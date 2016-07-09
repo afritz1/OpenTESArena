@@ -10,6 +10,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 ImagePanel::ImagePanel(GameState *gameState, PaletteName paletteName, 
 	TextureName textureName, double secondsToDisplay, 
@@ -87,15 +88,18 @@ void ImagePanel::tick(double dt, bool &running)
 	}
 }
 
-void ImagePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ImagePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	auto &textureManager = this->getGameState()->getTextureManager();
 
 	// Draw image.
-	const auto *image = textureManager.getTexture(
+	auto *image = textureManager.getTexture(
 		TextureFile::fromName(this->textureName), this->paletteName);
-	this->drawLetterbox(image, renderer, letterbox);
+	renderer.drawToOriginal(image);
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 }

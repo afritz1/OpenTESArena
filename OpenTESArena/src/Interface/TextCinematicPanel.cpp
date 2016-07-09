@@ -15,6 +15,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureSequenceName.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -58,7 +59,8 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 				textColor,
 				textBoxText,
 				FontName::Arena,
-				gameState->getTextureManager()));
+				gameState->getTextureManager(),
+				gameState->getRenderer()));
 			textBoxes.push_back(std::move(textBox));
 		}
 
@@ -163,10 +165,10 @@ void TextCinematicPanel::tick(double dt, bool &running)
 	}
 }
 
-void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void TextCinematicPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
@@ -176,13 +178,16 @@ void TextCinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbo
 	auto imageFilenames = TextureFile::fromName(this->sequenceName);
 
 	// Draw animation.
-	const auto *image = textureManager.getTexture(
+	auto *image = textureManager.getTexture(
 		imageFilenames.at(this->imageIndex));
-	this->drawScaledToNative(image, renderer);
+	renderer.drawToOriginal(image);
 
 	// Get the relevant text box.
 	const auto &textBox = this->textBoxes.at(this->textIndex);
 
 	// Draw text.
-	this->drawScaledToNative(*textBox.get(), renderer);
+	renderer.drawToOriginal(textBox->getSurface(), textBox->getX(), textBox->getY());
+	
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 }

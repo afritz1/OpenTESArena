@@ -13,6 +13,7 @@
 // The modern interface does not need the mouse cursor visible.
 
 class Button;
+class Renderer;
 class TextBox;
 
 class GameWorldPanel : public Panel
@@ -32,7 +33,7 @@ public:
 	virtual ~GameWorldPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

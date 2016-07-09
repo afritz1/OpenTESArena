@@ -15,6 +15,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 OptionsPanel::OptionsPanel(GameState *gameState)
 	: Panel(gameState)
@@ -30,7 +31,8 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToPauseButton = []()
@@ -52,7 +54,8 @@ OptionsPanel::~OptionsPanel()
 void OptionsPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -102,28 +105,36 @@ void OptionsPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void OptionsPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void OptionsPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw temporary background.
-	SDL_SetRenderDrawColor(renderer, 48, 48, 36, 255);
-	SDL_RenderDrawRect(renderer, letterbox);
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	renderer.clearOriginal(Color(48, 48, 36));
 
 	// Draw buttons, eventually...
 
 
 	// Draw text: title.
-	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
+	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+		this->titleTextBox->getX(), this->titleTextBox->getY());
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -22,8 +22,6 @@ class TextureManager;
 
 enum class MusicName;
 
-struct SDL_Rect;
-
 class GameState
 {
 private:
@@ -44,20 +42,14 @@ public:
 	// This boolean determines if a session is currently running. This should be 
 	// true when in the game world or in some form of pause menu or conversation.
 	bool gameDataIsActive() const;
-
-	AudioManager &getAudioManager();
-
+	
 	// This might be null, so it returns a pointer instead of a reference for safety.
 	GameData *getGameData() const;
 
+	AudioManager &getAudioManager();
 	Options &getOptions() const;
-
 	Renderer &getRenderer() const;
-
 	TextureManager &getTextureManager() const;
-
-	Int2 getScreenDimensions() const;
-	SDL_Rect getLetterboxDimensions() const;
 
 	void resizeWindow(int width, int height);
 

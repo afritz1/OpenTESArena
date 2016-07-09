@@ -10,6 +10,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureSequenceName.h"
+#include "../Rendering/Renderer.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
@@ -92,15 +93,16 @@ void CinematicPanel::tick(double dt, bool &running)
 	}
 }
 
-void CinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void CinematicPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Get all of the image filenames relevant to the sequence.
 	std::vector<std::string> filenames = TextureFile::fromName(this->sequenceName);
 
 	// If at the end, then prepare for the next panel.
+	// This should be checked in "tick()" instead.
 	if (this->imageIndex >= filenames.size())
 	{
 		this->imageIndex = static_cast<int>(filenames.size() - 1);
@@ -110,7 +112,10 @@ void CinematicPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	auto &textureManager = this->getGameState()->getTextureManager();
 
 	// Draw image.
-	const auto *image = textureManager.getTexture(
+	auto *image = textureManager.getTexture(
 		filenames.at(this->imageIndex), this->paletteName);
-	this->drawLetterbox(image, renderer, letterbox);
+	renderer.drawToOriginal(image);
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 }

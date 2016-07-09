@@ -46,7 +46,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->raceTextBox = [gameState, raceName]()
@@ -61,7 +62,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->classTextBox = [gameState, charClass]()
@@ -76,7 +78,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToRaceButton = [charClass, name, gender]()
@@ -121,11 +124,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			int worldDepth = 32;
 
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
-				gameState->getScreenDimensions().getX(),
-				gameState->getScreenDimensions().getY(),
+				gameState->getRenderer().getWindowDimensions().getX(),
+				gameState->getRenderer().getWindowDimensions().getY(),
 				worldWidth, worldHeight, worldDepth,
 				gameState->getTextureManager(),
-				gameState->getRenderer().getRenderer()));				
+				gameState->getRenderer()));
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(
@@ -243,7 +246,8 @@ ChooseAttributesPanel::~ChooseAttributesPanel()
 void ChooseAttributesPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -313,45 +317,50 @@ void ChooseAttributesPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseAttributesPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ChooseAttributesPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::CharSheet);
 
 	// Draw attributes texture.
-	const auto *attributesBackground = textureManager.getTexture(
+	auto *attributesBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterStats));
-	this->drawScaledToNative(attributesBackground, renderer);
+	renderer.drawToOriginal(attributesBackground);
 
 	// Get the filenames for the portraits.
 	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(),
 		*this->raceName.get(), this->charClass->canCastMagic());
 
 	// Draw the current portrait.
-	const auto *portrait = textureManager.getTexture(
+	auto *portrait = textureManager.getTexture(
 		portraitStrings.at(this->portraitIndex));
 	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(const_cast<SDL_Texture*>(portrait), nullptr, nullptr,
-		&portraitWidth, &portraitHeight);
+	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	renderer.drawToOriginal(portrait, ORIGINAL_WIDTH - portraitWidth, 0);
 
-	this->drawScaledToNative(portrait,
-		ORIGINAL_WIDTH - portraitWidth,
-		0,
-		portraitWidth,
-		portraitHeight,
-		renderer);
+	// Draw text boxes: player name, race, class.
+	renderer.drawToOriginal(this->nameTextBox->getSurface(),
+		this->nameTextBox->getX(), this->nameTextBox->getY());
+	renderer.drawToOriginal(this->raceTextBox->getSurface(),
+		this->raceTextBox->getX(), this->raceTextBox->getY());
+	renderer.drawToOriginal(this->classTextBox->getSurface(),
+		this->classTextBox->getX(), this->classTextBox->getY());
 
-	// Draw text: name, race, class.
-	this->drawScaledToNative(*this->nameTextBox.get(), renderer);
-	this->drawScaledToNative(*this->raceTextBox.get(), renderer);
-	this->drawScaledToNative(*this->classTextBox.get(), renderer);
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	const auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

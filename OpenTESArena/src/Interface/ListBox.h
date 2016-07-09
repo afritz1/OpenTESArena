@@ -11,6 +11,7 @@
 
 class Color;
 class Int2;
+class Renderer;
 class TextBox;
 class TextureManager;
 
@@ -20,8 +21,9 @@ class ListBox : public Surface
 {
 private:
 	std::vector<std::string> elements;
-	std::unique_ptr<Color> textColor;
+	std::unique_ptr<Color> textColor;	
 	TextureManager &textureManagerRef;
+	Renderer &rendererRef;
 	FontName fontName;
 	int scrollIndex, maxDisplayed;
 
@@ -31,7 +33,8 @@ private:
 public:
 	// No "center" constructor, because a list box is intended to be left-aligned.
 	ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
-		const std::vector<std::string> &elements, TextureManager &textureManager);
+		const std::vector<std::string> &elements, TextureManager &textureManager,
+		Renderer &renderer);
 	virtual ~ListBox();
 
 	// Index of the top-most displayed element.

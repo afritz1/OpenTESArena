@@ -12,12 +12,13 @@
 #include "../Media/FontName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/Renderer.h"
 
 // The Surface constructor is given (1, 1) for width and height because the text box
 // dimensions are calculated in the TextBox constructor, and a surface cannot have
 // width and height of zero. They are placeholder values, essentially.
 TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
-	FontName fontName, TextureManager &textureManager)
+	FontName fontName, TextureManager &textureManager, Renderer &renderer)
 	: Surface(x, y, 1, 1)
 {
 	this->fontName = fontName;
@@ -44,9 +45,11 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 		static_cast<int>(lineSurfaces.size());
 
 	// Replace the old SDL surface. It was just a placeholder until now.
+	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
-	this->optimize(textureManager.getFormat());
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	this->optimize(renderer.getFormat());
 
 	// Make the parent surface transparent.
 	this->fill(Color::Magenta);
@@ -76,7 +79,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 // text to center over the given point. (Maybe this can call the other constructor,
 // and just translate "this->point" by the center?)
 TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text,
-	FontName fontName, TextureManager &textureManager)
+	FontName fontName, TextureManager &textureManager, Renderer &renderer)
 	: Surface(0, 0, 1, 1)
 {
 	this->fontName = fontName;
@@ -103,9 +106,12 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 		static_cast<int>(lineSurfaces.size());
 
 	// Replace the old SDL surface. It was just a placeholder until now.
+	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
-	this->optimize(textureManager.getFormat());
+	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	this->optimize(renderer.getFormat());
+
 	this->setX(center.getX() - (width / 2));
 	this->setY(center.getY() - (height / 2));
 

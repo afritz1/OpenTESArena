@@ -15,6 +15,7 @@
 #include "../Math/Triangle.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 
@@ -43,7 +44,7 @@ const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
-	int worldDepth, TextureManager &textureManager, SDL_Renderer *renderer)
+	int worldDepth, TextureManager &textureManager, Renderer &renderer)
 	: textureManager(textureManager)
 {
 	assert(width > 0);
@@ -63,8 +64,8 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	// Create the local output pixel buffer.
 	this->outputData = std::vector<char>(sizeof(cl_int) * width * height);
 
-	// Create streaming texture to be used as the game world frame buffer.
-	this->texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+	// Create streaming texture to be used as the game world frame buffer.	
+	this->texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STREAMING, width, height);
 	Debug::check(this->texture != nullptr, "CLProgram", "SDL_CreateTexture");
 
@@ -367,7 +368,7 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->colorBuffer = clProgram.colorBuffer;
 	this->outputBuffer = clProgram.outputBuffer;
 	this->outputData = clProgram.outputData;
-	this->textureManager = clProgram.textureManager;
+	this->textureManager = std::move(clProgram.textureManager);
 	this->width = clProgram.width;
 	this->height = clProgram.height;
 	this->worldWidth = clProgram.worldWidth;
@@ -939,7 +940,7 @@ void CLProgram::updateGameTime(double gameTime)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateGameTime");
 }
 
-void CLProgram::render(SDL_Renderer *renderer)
+void CLProgram::render(Renderer &renderer)
 {
 	cl::NDRange workDims(this->width, this->height);
 
@@ -970,5 +971,5 @@ void CLProgram::render(SDL_Renderer *renderer)
 
 	// Update the frame buffer texture and draw to the renderer.
 	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, this->width * sizeof(cl_int));
-	SDL_RenderCopy(renderer, this->texture, nullptr, nullptr);
+	renderer.drawToNative(this->texture);
 }

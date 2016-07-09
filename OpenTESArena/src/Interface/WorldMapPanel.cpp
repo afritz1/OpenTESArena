@@ -16,6 +16,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -57,7 +58,8 @@ WorldMapPanel::~WorldMapPanel()
 void WorldMapPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -132,24 +134,33 @@ void WorldMapPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void WorldMapPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void WorldMapPanel::render(Renderer &renderer)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw world map background. This one has "Exit" at the bottom right.
-	const auto *mapBackground = textureManager.getTexture(
+	auto *mapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::WorldMap), PaletteName::BuiltIn);
-	this->drawScaledToNative(mapBackground, renderer);
+	renderer.drawToOriginal(mapBackground);
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

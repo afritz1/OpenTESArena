@@ -8,6 +8,7 @@
 // modifiable on start-up.
 
 class Button;
+class Renderer;
 class TextBox;
 
 class OptionsPanel : public Panel
@@ -24,7 +25,7 @@ public:
 	virtual ~OptionsPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

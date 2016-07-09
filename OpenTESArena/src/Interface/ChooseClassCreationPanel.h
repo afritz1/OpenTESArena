@@ -14,6 +14,8 @@
 // - "Choose from a list" for "Select".
 
 class Button;
+class Renderer;
+class Surface;
 class TextBox;
 
 class ChooseClassCreationPanel : public Panel
@@ -31,7 +33,7 @@ public:
 	virtual ~ChooseClassCreationPanel();
 	
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

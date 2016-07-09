@@ -18,9 +18,9 @@
 // It is important to remember that cl_float3 and cl_float4 are structurally
 // equivalent.
 
+class Renderer;
 class TextureManager;
 
-struct SDL_Renderer;
 struct SDL_Texture;
 
 class CLProgram
@@ -57,7 +57,7 @@ private:
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int width, int height, int worldWidth, int worldHeight, int worldDepth,
-		TextureManager &textureManager, SDL_Renderer *renderer);
+		TextureManager &textureManager, Renderer &renderer);
 	~CLProgram();
 
 	CLProgram &operator=(CLProgram &&clProgram);
@@ -74,7 +74,7 @@ public:
 	// need a "start time". Also, this prevents any additive "double -> float" error.
 	void updateGameTime(double gameTime);	
 
-	void render(SDL_Renderer *renderer);
+	void render(Renderer &renderer);
 };
 
 #endif

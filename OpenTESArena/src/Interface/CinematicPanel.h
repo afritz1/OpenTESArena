@@ -10,6 +10,7 @@
 
 class Button;
 class GameState;
+class Renderer;
 
 enum class PaletteName;
 enum class TextureSequenceName;
@@ -35,7 +36,7 @@ public:
 	static const double DEFAULT_MOVIE_SECONDS_PER_IMAGE;
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

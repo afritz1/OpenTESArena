@@ -13,6 +13,7 @@
 class Button;
 class CharacterClass;
 class ListBox;
+class Renderer;
 class Surface;
 class TextBox;
 
@@ -35,8 +36,8 @@ private:
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
 
-	void createTooltip(int tooltipIndex, SDL_Renderer *renderer);
-	void drawClassTooltip(int tooltipIndex, SDL_Renderer *renderer);
+	void createTooltip(int tooltipIndex, Renderer &renderer);
+	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
@@ -46,7 +47,7 @@ public:
 	virtual ~ChooseClassPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

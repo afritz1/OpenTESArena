@@ -16,12 +16,12 @@
 // get a unique integer ID either before or during parsing (perhaps depending on 
 // the order they were parsed). Perhaps the ID could be their offset in GLOBAL.BSA.
 
+class Renderer;
 class Surface;
 
 enum class PaletteName;
 
 struct SDL_PixelFormat;
-struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
 
@@ -51,8 +51,7 @@ private:
 	std::map<PaletteName, Palette> palettes;
 	std::unordered_map<std::pair<std::string, PaletteName>, Surface> surfaces;
 	std::unordered_map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
-	const SDL_Renderer *renderer;
-	const SDL_PixelFormat *format;
+	Renderer &renderer;
 	PaletteName activePalette;
 
 	SDL_Surface *loadPNG(const std::string &fullPath);
@@ -62,10 +61,10 @@ private:
 	// Initialize the given palette with a certain palette from file.
 	void initPalette(Palette &palette, PaletteName paletteName);
 public:
-	TextureManager(const SDL_Renderer *renderer, const SDL_PixelFormat *format);
+	TextureManager(Renderer &renderer);
 	~TextureManager();
 
-	const SDL_PixelFormat *getFormat() const;
+	TextureManager &operator =(TextureManager &&textureManager);
 
 	// Gets a surface from the texture manager. It will be loaded from file if not
 	// already stored. A valid filename might be something like "TAMRIEL.IMG".
@@ -73,8 +72,8 @@ public:
 	const Surface &getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
-	const SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
-	const SDL_Texture *getTexture(const std::string &filename);
+	SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
+	SDL_Texture *getTexture(const std::string &filename);
 
 	// Sets the palette for subsequent surfaces and textures. If a requested image 
 	// is not currently loaded for the active palette, it is loaded from file.
@@ -87,7 +86,7 @@ public:
 
 	// This method might be necessary when resizing the window, if SDL causes all of
 	// the textures to become black.
-	void reloadTextures(SDL_Renderer *renderer);
+	void reloadTextures(Renderer &renderer);
 };
 
 #endif

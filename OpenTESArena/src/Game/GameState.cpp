@@ -45,7 +45,7 @@ GameState::GameState()
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
-		this->renderer->getRenderer(), this->renderer->getPixelFormat()));
+		*this->renderer.get()));
 
 	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
 	// cinematics otherwise load their frames one at a time while playing.
@@ -85,14 +85,14 @@ bool GameState::gameDataIsActive() const
 	return this->gameData.get() != nullptr;
 }
 
-AudioManager &GameState::getAudioManager()
-{
-	return this->audioManager;
-}
-
 GameData *GameState::getGameData() const
 {
 	return this->gameData.get();
+}
+
+AudioManager &GameState::getAudioManager()
+{
+	return this->audioManager;
 }
 
 Options &GameState::getOptions() const
@@ -110,16 +110,6 @@ TextureManager &GameState::getTextureManager() const
 	return *this->textureManager.get();
 }
 
-Int2 GameState::getScreenDimensions() const
-{
-	return this->renderer->getRenderDimensions();
-}
-
-SDL_Rect GameState::getLetterboxDimensions() const
-{
-	return this->renderer->getLetterboxDimensions();
-}
-
 void GameState::resizeWindow(int width, int height)
 {
 	this->renderer->resize(width, height);
@@ -133,7 +123,7 @@ void GameState::resizeWindow(int width, int height)
 			this->gameData->getWorldHeight(),
 			this->gameData->getWorldDepth(),
 			this->getTextureManager(),
-			this->renderer->getRenderer()));
+			this->getRenderer()));
 	}
 }
 
@@ -173,8 +163,6 @@ void GameState::tick(double dt)
 
 void GameState::render()
 {
-	auto *renderer = this->renderer->getRenderer();
-	auto letterbox = this->getLetterboxDimensions();
-	this->panel->render(renderer, &letterbox);
+	this->panel->render(*this->renderer.get());
 	this->renderer->present();
 }

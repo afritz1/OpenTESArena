@@ -19,6 +19,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass &charClass,
 	const std::string &name)
@@ -43,7 +44,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->maleTextBox = [gameState]()
@@ -57,7 +59,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->femaleTextBox = [gameState]()
@@ -71,7 +74,8 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToNameButton = [charClass]()
@@ -120,7 +124,8 @@ ChooseGenderPanel::~ChooseGenderPanel()
 void ChooseGenderPanel::handleEvents(bool &running)
 {
 	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->nativePointToOriginal(mousePosition);
+	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+		.nativePointToOriginal(mousePosition);
 
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -182,59 +187,48 @@ void ChooseGenderPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseGenderPanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ChooseGenderPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw background.
-	const auto *background = textureManager.getTexture(
+	auto *background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation), PaletteName::BuiltIn);
-	this->drawLetterbox(background, renderer, letterbox);
+	renderer.drawToOriginal(background);
 
 	// Draw parchments: title, male, and female.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	double parchmentXScale = 1.0;
-	double parchmentYScale = 1.0;
-	int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
-	int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
-	int parchmentX = (ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
-	int parchmentY = (ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2) - 20;
-	this->drawScaledToNative(*this->parchment.get(),
-		parchmentX,
-		parchmentY,
-		parchmentWidth,
-		parchmentHeight,
-		renderer);
-
-	parchmentY += 40;
-	this->drawScaledToNative(*this->parchment.get(),
-		parchmentX,
-		parchmentY,
-		parchmentWidth,
-		parchmentHeight,
-		renderer);
-
-	parchmentY += 40;
-	this->drawScaledToNative(*this->parchment.get(),
-		parchmentX,
-		parchmentY,
-		parchmentWidth,
-		parchmentHeight,
-		renderer);
+	int parchmentX = (ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
+	int parchmentY = (ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
+	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY);
+	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 40);
+	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);
 
 	// Draw text: title, male, and female.
-	this->drawScaledToNative(*this->genderTextBox.get(), renderer);
-	this->drawScaledToNative(*this->maleTextBox.get(), renderer);
-	this->drawScaledToNative(*this->femaleTextBox.get(), renderer);
+	renderer.drawToOriginal(this->genderTextBox->getSurface(),
+		this->genderTextBox->getX(), this->genderTextBox->getY());
+	renderer.drawToOriginal(this->maleTextBox->getSurface(),
+		this->maleTextBox->getX(), this->maleTextBox->getY());
+	renderer.drawToOriginal(this->femaleTextBox->getSurface(),
+		this->femaleTextBox->getX(), this->femaleTextBox->getY());
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

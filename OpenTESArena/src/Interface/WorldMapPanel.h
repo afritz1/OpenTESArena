@@ -4,6 +4,7 @@
 #include "Panel.h"
 
 class Button;
+class Renderer;
 
 enum class ProvinceName;
 
@@ -21,7 +22,7 @@ public:
 	virtual ~WorldMapPanel();
 
 	virtual void tick(double dt, bool &running) override;
-	virtual void render(SDL_Renderer *renderer, const SDL_Rect *letterbox) override;
+	virtual void render(Renderer &renderer) override;
 };
 
 #endif

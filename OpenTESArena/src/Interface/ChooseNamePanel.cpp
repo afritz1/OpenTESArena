@@ -19,6 +19,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../Rendering/Renderer.h"
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
@@ -43,7 +44,8 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->nameTextBox = [gameState]()
@@ -57,7 +59,8 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 			color,
 			text,
 			fontName,
-			gameState->getTextureManager()));
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
 	}();
 
 	this->backToClassButton = []()
@@ -214,7 +217,8 @@ void ChooseNamePanel::handleEvents(bool &running)
 					Color::White,
 					this->name,
 					FontName::A,
-					this->getGameState()->getTextureManager()));
+					this->getGameState()->getTextureManager(),
+					this->getGameState()->getRenderer()));
 			}();
 		}
 
@@ -242,19 +246,19 @@ void ChooseNamePanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseNamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
+void ChooseNamePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	this->clearScreen(renderer);
+	renderer.clearNative();
 	
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteName::Default);
 
 	// Draw background.
-	const auto *background = textureManager.getTexture(
+	auto *background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation), PaletteName::BuiltIn);
-	this->drawLetterbox(background, renderer, letterbox);
+	renderer.drawToOriginal(background);
 
 	// Draw parchment: title.
 	this->parchment->setTransparentColor(Color::Magenta);
@@ -263,19 +267,30 @@ void ChooseNamePanel::render(SDL_Renderer *renderer, const SDL_Rect *letterbox)
 	const double parchmentYScale = 1.65;
 	const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
 	const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
-	this->drawScaledToNative(*this->parchment.get(),
+
+	renderer.drawToOriginal(this->parchment->getSurface(),
 		(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
 		(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 		parchmentWidth,
-		parchmentHeight,
-		renderer);
-
+		parchmentHeight);
+	
 	// Draw text: title, name.
-	this->drawScaledToNative(*this->titleTextBox.get(), renderer);
-	this->drawScaledToNative(*this->nameTextBox.get(), renderer);
+	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawToOriginal(this->nameTextBox->getSurface(),
+		this->nameTextBox->getX(), this->nameTextBox->getY());
+
+	// Scale the original frame buffer onto the native one.
+	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	this->drawCursor(cursor, renderer);
+	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
+		renderer.getFormattedARGB(Color::Black));
+	auto mousePosition = this->getMousePosition();
+	renderer.drawToNative(cursor.getSurface(),
+		mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }
