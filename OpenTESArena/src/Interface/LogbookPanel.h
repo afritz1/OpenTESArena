@@ -10,8 +10,8 @@ class TextBox;
 class LogbookPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> backButton;
 	std::unique_ptr<TextBox> titleTextBox;
+	std::unique_ptr<Button> backButton;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

@@ -23,19 +23,6 @@
 LoadGamePanel::LoadGamePanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backButton = []()
-	{
-		auto function = [](GameState *gameState)
-		{
-			// Back button behavior depends on if game data is active.
-			auto backPanel = gameState->gameDataIsActive() ?
-				std::unique_ptr<Panel>(new PauseMenuPanel(gameState)) :
-				std::unique_ptr<Panel>(new MainMenuPanel(gameState));
-			gameState->setPanel(std::move(backPanel));
-		};
-		return std::unique_ptr<Button>(new Button(function));
-	}();
-
 	this->underConstructionTextBox = [gameState]()
 	{
 		Int2 center(ORIGINAL_WIDTH / 2, 170);
@@ -49,6 +36,19 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 			fontName,
 			gameState->getTextureManager(),
 			gameState->getRenderer()));
+	}();
+
+	this->backButton = []()
+	{
+		auto function = [](GameState *gameState)
+		{
+			// Back button behavior depends on if game data is active.
+			auto backPanel = gameState->gameDataIsActive() ?
+				std::unique_ptr<Panel>(new PauseMenuPanel(gameState)) :
+				std::unique_ptr<Panel>(new MainMenuPanel(gameState));
+			gameState->setPanel(std::move(backPanel));
+		};
+		return std::unique_ptr<Button>(new Button(function));
 	}();
 }
 

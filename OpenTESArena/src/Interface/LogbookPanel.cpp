@@ -21,17 +21,6 @@
 LogbookPanel::LogbookPanel(GameState *gameState)
 	: Panel(gameState)
 {
-	this->backButton = []()
-	{
-		Int2 center(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
-		auto function = [](GameState *gameState)
-		{
-			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(backPanel));
-		};
-		return std::unique_ptr<Button>(new Button(center, 34, 14, function));
-	}();
-
 	this->titleTextBox = [gameState]()
 	{
 		Int2 center(ORIGINAL_WIDTH / 2, ORIGINAL_HEIGHT / 2);
@@ -45,6 +34,17 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 			fontName,
 			gameState->getTextureManager(),
 			gameState->getRenderer()));
+	}();
+
+	this->backButton = []()
+	{
+		Int2 center(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
+		auto function = [](GameState *gameState)
+		{
+			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
+			gameState->setPanel(std::move(backPanel));
+		};
+		return std::unique_ptr<Button>(new Button(center, 34, 14, function));
 	}();
 }
 

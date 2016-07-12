@@ -11,9 +11,9 @@ class TextBox;
 class LoadGamePanel : public Panel
 {
 private:
-	// up/down arrow buttons, saved game buttons...
-	std::unique_ptr<Button> backButton;
 	std::unique_ptr<TextBox> underConstructionTextBox;
+	std::unique_ptr<Button> backButton;
+	// up/down arrow buttons, saved game buttons...
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
