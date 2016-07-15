@@ -106,8 +106,8 @@ GameState *Panel::getGameState() const
 
 double Panel::getCursorScale() const
 {
-	// Get from options eventually.
-	return 2.0;
+	double cursorScale = this->getGameState()->getOptions().getCursorScale();
+	return cursorScale;
 }
 
 Int2 Panel::getMousePosition() const

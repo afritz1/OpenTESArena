@@ -11,7 +11,6 @@
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/MusicName.h"
-#include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"

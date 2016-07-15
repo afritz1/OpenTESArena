@@ -13,6 +13,7 @@ private:
 	int screenWidth, screenHeight;
 	bool fullscreen;
 	double verticalFOV; // In degrees.
+	double cursorScale;
 
 	// Input.
 	double hSensitivity, vSensitivity;
@@ -27,7 +28,7 @@ private:
 	bool skipIntro;
 public:
 	Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
-        double verticalFOV, double hSensitivity, double vSensitivity,
+        double verticalFOV, double cursorScale, double hSensitivity, double vSensitivity,
         std::string &&soundfont, double musicVolume, double soundVolume,
         int soundChannels, bool skipIntro);
 	~Options();
@@ -36,6 +37,7 @@ public:
 	int getScreenHeight() const;
 	bool isFullscreen() const;
 	double getVerticalFOV() const;
+	double getCursorScale() const;
 	double getHorizontalSensitivity() const;
 	double getVerticalSensitivity() const;
 	const std::string &getSoundfont() const;
@@ -49,6 +51,7 @@ public:
 	void setScreenHeight(int height);
 	void setFullscreen(bool fullscreen);
 	void setVerticalFOV(double fov);
+	void setCursorScale(double cursorScale);
 	void setHorizontalSensitivity(double hSensitivity);
 	void setVerticalSensitivity(double vSensitivity);
     void setSoundfont(std::string sfont);
