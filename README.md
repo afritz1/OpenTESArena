@@ -3,7 +3,7 @@
 
 ## Current status
 
-July 10th, 2016:
+July 14th, 2016:
 
 The game world is currently a barebones test city with some textured blocks, stone arches, and day/night cycles. No jumping, collision, or sprites yet (they're only in the test project). A few of the menus work, including most of character creation.
 
@@ -22,7 +22,7 @@ I'm currently trying to catch back up to the state of the world shown in these [
 - Install the Arena data from the Bethesda [website](http://www.elderscrolls.com/arena/) ("Download the Full Game" link) in a folder somewhere.
 - Get a sound patches library like [eawpats](https://slackbuilds.org/repository/13.37/audio/eawpats/) for the MIDI configuration (the .tar.gz under "Source Downloads". For decompression on Windows, 7-zip is an option).
 - Point your compiler to the developer libraries and build the executable.
-- Put the `data` and `options` folders from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated July 6th) in the executable directory.
+- Put the `data` and `options` folders from [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (updated July 14th) in the executable directory.
 - Make sure `options.txt` points to a soundfont file (i.e., data/eawpats/timidity.cfg, see below) and Arena path (i.e., data/ARENA).
 
 If using Visual Studio, edit the project's include and library directories to fit your computer. I haven't gotten CMake to work well enough with Visual Studio yet.
