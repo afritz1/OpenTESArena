@@ -37,10 +37,10 @@ GameState::GameState()
 	// Initialize the OpenAL Soft audio manager.
 	this->audioManager.init(*this->options.get());
 
-	// Initialize the SDL renderer and window with the given dimensions and title.
+	// Initialize the SDL renderer and window with the given settings.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		this->options->getScreenWidth(), this->options->getScreenHeight(),
-		this->options->isFullscreen()));
+		this->options->isFullscreen(), this->options->getLetterboxAspect()));
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(

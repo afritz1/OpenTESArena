@@ -108,8 +108,9 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 	assert(verticalFOV > 0.0);
 	assert(verticalFOV < 180.0);
 
-	double lookRightRads = (hSensitivity * dx) * DEG_TO_RAD;
-	double lookUpRads = (vSensitivity * dy) * DEG_TO_RAD;
+	// Multiply sensitivities by 100.0 so the values in options.txt are nicer.
+	double lookRightRads = (hSensitivity * 100.0 * dx) * DEG_TO_RAD;
+	double lookUpRads = (vSensitivity * 100.0 * dy) * DEG_TO_RAD;
 
 	if (!std::isfinite(lookRightRads))
 	{

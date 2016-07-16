@@ -5,9 +5,9 @@
 #include "../Utilities/Debug.h"
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double verticalFOV, double cursorScale, double hSensitivity, double vSensitivity,
-	std::string &&soundfont, double musicVolume, double soundVolume, int soundChannels, 
-	bool skipIntro)
+    double verticalFOV, double letterboxAspect, double cursorScale, double hSensitivity, 
+	double vSensitivity, std::string &&soundfont, double musicVolume, double soundVolume, 
+	int soundChannels, bool skipIntro)
     : dataPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
@@ -15,6 +15,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	Debug::check(screenHeight > 0, "Options", "Screen height must be positive.");
 	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options", 
 		"Field of view must be between 0.0 and 180.0 exclusive.");
+	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
 	Debug::check(cursorScale > 0.0, "Options", "Cursor scale must be positive.");
 	Debug::check(hSensitivity > 0.0, "Options", "Horizontal sensitivity must be positive.");
 	Debug::check(vSensitivity > 0.0, "Options", "Vertical sensitivity must be positive.");
@@ -28,6 +29,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	this->screenHeight = screenHeight;
 	this->fullscreen = fullscreen;
 	this->verticalFOV = verticalFOV;
+	this->letterboxAspect = letterboxAspect;
 	this->cursorScale = cursorScale;
 	this->hSensitivity = hSensitivity;
 	this->vSensitivity = vSensitivity;
@@ -60,6 +62,11 @@ bool Options::isFullscreen() const
 double Options::getVerticalFOV() const
 {
 	return this->verticalFOV;
+}
+
+double Options::getLetterboxAspect() const
+{
+	return this->letterboxAspect;
 }
 
 double Options::getCursorScale() const
@@ -132,6 +139,11 @@ void Options::setVerticalFOV(double fov)
 	assert(fov < 180.0);
 
 	this->verticalFOV = fov;
+}
+
+void Options::setLetterboxAspect(double aspect)
+{
+	this->letterboxAspect = aspect;
 }
 
 void Options::setCursorScale(double cursorScale)
