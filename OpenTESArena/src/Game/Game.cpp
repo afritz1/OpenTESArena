@@ -33,8 +33,8 @@ void Game::loop()
 	// This loop doesn't check for SDL events itself. The current panel does that,
 	// because most events like pressing "Esc" are context-sensitive.
 
-    const int maximumMS = 1000 / Game::MIN_FPS;
-    const int minimumMS = 1000 / this->targetFPS;
+    const int minimumMS = 1000 / Game::MIN_FPS;
+    const int maximumMS = 1000 / this->targetFPS;
     int thisTime = SDL_GetTicks();
     int lastTime = thisTime;
 
@@ -44,14 +44,14 @@ void Game::loop()
         thisTime = SDL_GetTicks();
 
         int frameTime = thisTime - lastTime;
-        if(frameTime < minimumMS)
+        if(frameTime < maximumMS)
         {
-            this->delay(minimumMS - frameTime);
+            this->delay(maximumMS - frameTime);
             thisTime = SDL_GetTicks();
             frameTime = thisTime - lastTime;
         }
 
-        double dt = std::fmin(frameTime, maximumMS) / 1000.0;
+        double dt = std::fmin(frameTime, minimumMS) / 1000.0;
 
 		this->gameState->tick(dt);
 		this->gameState->render();
