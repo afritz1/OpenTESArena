@@ -116,6 +116,7 @@
     <ClCompile Include="src\Interface\AutomapPanel.cpp" />
     <ClCompile Include="src\Interface\CharacterEquipmentPanel.cpp" />
     <ClCompile Include="src\Math\Int3.cpp" />
+    <ClCompile Include="src\Math\Rect3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -277,6 +278,7 @@
     <ClInclude Include="src\Interface\CharacterEquipmentPanel.h" />
     <ClInclude Include="src\Math\Int3.h" />
     <ClInclude Include="src\Media\PaletteName.h" />
+    <ClInclude Include="src\Math\Rect3D.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
