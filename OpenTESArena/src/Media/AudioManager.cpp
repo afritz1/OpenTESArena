@@ -298,8 +298,8 @@ class OpenALStream {
 			if (got < toget)
 			{
 				/* End of song, rewind to loop. */
-				if (mSong->seek(0))
-					got += mSong->read(buffer.data() + totalSize + got, toget - got);
+				if (!mSong->seek(0))
+					break;
 			}
 			totalSize += got*mFrameSize;
 		}
