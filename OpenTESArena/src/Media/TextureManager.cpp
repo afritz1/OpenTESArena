@@ -687,7 +687,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	SDL_FreeSurface(optSurface);
 
 	// Add the new surface and return it.
-	auto &iter = this->surfaces.emplace(std::make_pair(namePair, surface)).first;
+	auto iter = this->surfaces.emplace(std::make_pair(namePair, surface)).first;
 	return iter->second;
 }
 
@@ -714,7 +714,7 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename,
 		SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
 		
 		// Add the new texture and return it.
-		auto &iter = this->textures.emplace(std::make_pair(namePair, texture)).first;
+		auto iter = this->textures.emplace(std::make_pair(namePair, texture)).first;
 		return iter->second;
 	}
 }
