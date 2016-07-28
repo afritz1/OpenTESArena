@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "../Interface/Surface.h"
 #include "Color.h"
 
 // The behavior of this class might be changing to work with BSA parsing and
@@ -17,7 +18,6 @@
 // the order they were parsed). Perhaps the ID could be their offset in GLOBAL.BSA.
 
 class Renderer;
-class Surface;
 
 enum class PaletteName;
 
@@ -35,7 +35,7 @@ namespace std
 		size_t operator()(const std::pair<std::string, PaletteName> &pair) const
 		{
 			size_t k1 = std::hash<std::string>()(pair.first);
-			size_t k2 = 51 + std::hash<PaletteName>()(pair.second);
+			size_t k2 = 51 + static_cast<std::size_t>(pair.second);
 			return k1 * k2;
 		}
 	};
