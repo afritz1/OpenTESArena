@@ -353,20 +353,42 @@ TextureManager &TextureManager::operator=(TextureManager &&textureManager)
 	return *this;
 }
 
-SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
+std::vector<SDL_Surface*> TextureManager::loadCFA(const std::string &filename, 
+	PaletteName paletteName)
 {
-	// Load the SDL_Surface from file.
-	auto *unOptSurface = IMG_Load(fullPath.c_str());
-	Debug::check(unOptSurface != nullptr, "Texture Manager",
-		"Could not open texture \"" + fullPath + "\".");
+	// Enemy sprite animations (goblin, orc, skeleton, ...), as well as
+	// spell animations, are CFA.
 
-	// Try to optimize the SDL_Surface.
-	auto *optSurface = SDL_ConvertSurface(unOptSurface, this->renderer.getFormat(), 0);
-	SDL_FreeSurface(unOptSurface);
-	Debug::check(optSurface != nullptr, "Texture Manager",
-		"Could not optimize texture \"" + fullPath + "\".");
+	Debug::crash("Texture Manager", "loadCFA not implemented.");
+	return std::vector<SDL_Surface*>();
+}
 
-	return optSurface;
+std::vector<SDL_Surface*> TextureManager::loadCIF(const std::string &filename, 
+	PaletteName paletteName)
+{
+	// CIF is for player weapon animations, some arrow cursors, and character heads.
+
+	Debug::crash("Texture Manager", "loadCIF not implemented.");
+	return std::vector<SDL_Surface*>();
+}
+
+std::vector<SDL_Surface*> TextureManager::loadDFA(const std::string &filename, 
+	PaletteName paletteName)
+{
+	// Lots of sprite animations (bartender, tavern folk, volcanoes), and 
+	// some torches, fountains, etc. are DFA.
+
+	Debug::crash("Texture Manager", "loadDFA not implemented.");
+	return std::vector<SDL_Surface*>();
+}
+
+std::vector<SDL_Surface*> TextureManager::loadFLC(const std::string &filename)
+{
+	// FLC and CEL files are movies. I'm pretty sure they're identical formats,
+	// and they are related to GIF.
+
+	Debug::crash("Texture Manager", "loadFLC not implemented.");
+	return std::vector<SDL_Surface*>();
 }
 
 SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName paletteName)
@@ -572,6 +594,37 @@ SDL_Surface *TextureManager::loadIMG(const std::string &filename, PaletteName pa
 
 		return optSurface;
 	}
+}
+
+SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
+{
+	// Load the SDL_Surface from file.
+	auto *unOptSurface = IMG_Load(fullPath.c_str());
+	Debug::check(unOptSurface != nullptr, "Texture Manager",
+		"Could not open texture \"" + fullPath + "\".");
+
+	// Try to optimize the SDL_Surface.
+	auto *optSurface = SDL_ConvertSurface(unOptSurface, this->renderer.getFormat(), 0);
+	SDL_FreeSurface(unOptSurface);
+	Debug::check(optSurface != nullptr, "Texture Manager",
+		"Could not optimize texture \"" + fullPath + "\".");
+
+	return optSurface;
+}
+
+std::vector<SDL_Surface*> TextureManager::loadSET(const std::string &filename, 
+	PaletteName paletteName)
+{
+	// A SET is just some IMGs packed together vertically, so split them here
+	// and return them separately in a vector. They're basically all uncompressed
+	// wall textures grouped by type.
+
+	// The height of the image should be a multiple of 64, so divide by 64 to get
+	// the number of IMGs in the SET. Alternatively, since all wall textures are
+	// 4096 bytes, just divide the SET byte size by 4096 for the IMG count.
+
+	Debug::crash("Texture Manager", "loadSET not implemented.");
+	return std::vector<SDL_Surface*>();
 }
 
 void TextureManager::initPalette(Palette &palette, PaletteName paletteName)

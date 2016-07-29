@@ -8,6 +8,11 @@
 // Certain texture names are hardcoded because they should never change for the 
 // lifetime of the application and are known beforehand.
 
+// Once using the FLC and CEL movies, the texture sequences will represent the
+// list of frames associated with each movie, instead of a list of PNG screenshots.
+// So instead of getting an array of strings, a texture sequence name would get
+// an array of SDL_Textures.
+
 enum class TextureName;
 enum class TextureSequenceName;
 

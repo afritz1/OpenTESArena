@@ -6,8 +6,8 @@
 #include <string>
 #include <unordered_map>
 
-#include "../Interface/Surface.h"
 #include "Color.h"
+#include "../Interface/Surface.h"
 
 // The behavior of this class might be changing to work with BSA parsing and
 // associated files.
@@ -54,9 +54,13 @@ private:
 	Renderer &renderer;
 	PaletteName activePalette;
 
-	SDL_Surface *loadPNG(const std::string &fullPath);
+	std::vector<SDL_Surface*> loadCFA(const std::string &filename, PaletteName paletteName);
+	std::vector<SDL_Surface*> loadCIF(const std::string &filename, PaletteName paletteName);
+	std::vector<SDL_Surface*> loadDFA(const std::string &filename, PaletteName paletteName);
+	std::vector<SDL_Surface*> loadFLC(const std::string &filename);
 	SDL_Surface *loadIMG(const std::string &filename, PaletteName paletteName);
-	// Perhaps methods like "loadDFA" and "loadCIF" would return a vector of surfaces.
+	SDL_Surface *loadPNG(const std::string &fullPath);
+	std::vector<SDL_Surface*> loadSET(const std::string &filename, PaletteName paletteName);
 
 	// Initialize the given palette with a certain palette from file.
 	void initPalette(Palette &palette, PaletteName paletteName);
