@@ -309,7 +309,7 @@ namespace
 
 }
 
-// This path might be obsolete soon.
+// This path should be removed once using original Arena files exclusively.
 const std::string TextureManager::PATH = "data/textures/";
 
 TextureManager::TextureManager(Renderer &renderer)
@@ -318,8 +318,12 @@ TextureManager::TextureManager(Renderer &renderer)
 	Debug::mention("Texture Manager", "Initializing.");
 
 	this->palettes = std::map<PaletteName, Palette>();
-	this->surfaces = std::unordered_map<std::pair<std::string, PaletteName>, Surface>();
-	this->textures = std::unordered_map<std::pair<std::string, PaletteName>, SDL_Texture*>();
+	this->surfaces = std::unordered_map<std::string, std::map<PaletteName, Surface>>();
+	this->textures = std::unordered_map<std::string, std::map<PaletteName, SDL_Texture*>>();
+	this->surfaceSets = std::unordered_map<std::string, 
+		std::map<PaletteName, std::vector<Surface>>>();
+	this->textureSets = std::unordered_map<std::string,
+		std::map<PaletteName, std::vector<SDL_Texture*>>>();
 
 	// Load default palette.
 	this->setPalette(PaletteName::Default);
@@ -336,7 +340,21 @@ TextureManager::~TextureManager()
 	// The SDL_Renderer destroys these itself with SDL_DestroyRenderer(), too.
 	for (auto &pair : this->textures)
 	{
-		SDL_DestroyTexture(pair.second);
+		for (auto &innerPair : pair.second)
+		{
+			SDL_DestroyTexture(innerPair.second);
+		}
+	}
+
+	for (auto &pair : this->textureSets)
+	{
+		for (auto &innerPair : pair.second)
+		{
+			for (auto *texture : innerPair.second)
+			{
+				SDL_DestroyTexture(texture);
+			}
+		}
 	}
 
 	IMG_Quit();
@@ -347,6 +365,8 @@ TextureManager &TextureManager::operator=(TextureManager &&textureManager)
 	this->palettes = std::move(textureManager.palettes);
 	this->surfaces = std::move(textureManager.surfaces);
 	this->textures = std::move(textureManager.textures);
+	this->surfaceSets = std::move(textureManager.surfaceSets);
+	this->textureSets = std::move(textureManager.textureSets);
 	this->renderer = textureManager.renderer;
 	this->activePalette = textureManager.activePalette;
 
@@ -703,13 +723,26 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 const Surface &TextureManager::getSurface(const std::string &filename,
 	PaletteName paletteName)
 {
-	std::pair<std::string, PaletteName> namePair(filename, paletteName);
-
-	auto surfaceIter = this->surfaces.find(namePair);
+	// See if the image file already exists with any palette. Otherwise,
+	// decide how to load it further down.
+	auto surfaceIter = this->surfaces.find(filename);
 	if (surfaceIter != this->surfaces.end())
 	{
-		// Get the existing surface.
-		return surfaceIter->second;
+		// Now see if the image exists with the requested palette.
+		const auto &paletteMap = surfaceIter->second;
+		auto paletteIter = paletteMap.find(paletteName);
+
+		if (paletteIter != paletteMap.end())
+		{
+			// The requested surface exists.
+			return paletteIter->second;
+		}
+	}
+	else
+	{
+		// The image hasn't been loaded with any palettes yet, so make a new entry.
+		surfaceIter = this->surfaces.emplace(std::make_pair(
+			filename, std::map<PaletteName, Surface>())).first;
 	}
 
 	// Check what kind of file extension is used. Every texture should have an
@@ -730,7 +763,8 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 	else
 	{
-		// PNG file.
+		// PNG file. This "else" case should eventually throw a runtime error instead
+		// once PNGs aren't used anymore.
 		std::string fullPath(TextureManager::PATH + filename + ".png");
 		optSurface = this->loadPNG(fullPath);
 	}
@@ -740,7 +774,8 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	SDL_FreeSurface(optSurface);
 
 	// Add the new surface and return it.
-	auto iter = this->surfaces.emplace(std::make_pair(namePair, surface)).first;
+	auto &paletteMap = surfaceIter->second;	
+	auto iter = paletteMap.emplace(std::make_pair(paletteName, surface)).first;
 	return iter->second;
 }
 
@@ -752,29 +787,75 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 SDL_Texture *TextureManager::getTexture(const std::string &filename,
 	PaletteName paletteName)
 {
-	std::pair<std::string, PaletteName> namePair(filename, paletteName);
-
-	if (this->textures.find(namePair) != this->textures.end())
+	// See if the image file already exists with any palette. Otherwise,
+	// decide how to load it further down.
+	auto textureIter = this->textures.find(filename);
+	if (textureIter != this->textures.end())
 	{
-		SDL_Texture *texture = this->textures.at(namePair);
-		return texture;
+		// Now see if the image exists with the requested palette.
+		const auto &paletteMap = textureIter->second;
+		auto paletteIter = paletteMap.find(paletteName);
+
+		if (paletteIter != paletteMap.end())
+		{
+			// The requested texture exists.
+			return paletteIter->second;
+		}
 	}
 	else
 	{
-		// Make a texture from the surface. It's okay if the surface isn't used except
-		// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
-		const Surface &surface = this->getSurface(filename, paletteName);		
-		SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
-		
-		// Add the new texture and return it.
-		auto iter = this->textures.emplace(std::make_pair(namePair, texture)).first;
-		return iter->second;
+		// The image hasn't been loaded with any palettes yet, so make a new entry.
+		textureIter = this->textures.emplace(std::make_pair(
+			filename, std::map<PaletteName, SDL_Texture*>())).first;
 	}
+
+	// Make a texture from the surface. It's okay if the surface isn't used except
+	// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
+	const Surface &surface = this->getSurface(filename, paletteName);		
+	SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
+		
+	// Add the new texture and return it.
+	auto &paletteMap = textureIter->second;
+	auto iter = paletteMap.emplace(std::make_pair(paletteName, texture)).first;
+	return iter->second;	
 }
 
 SDL_Texture *TextureManager::getTexture(const std::string &filename)
 {
 	return this->getTexture(filename, this->activePalette);
+}
+
+const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename, 
+	PaletteName paletteName)
+{
+	// I would like this method to deal with the animations and movies, so it'll 
+	// check filenames for ".CFA", ".CIF", ".DFA", ".FLC", etc..
+
+	Debug::crash("Texture Manager", "getSurfaces() not implemented.");
+	return this->surfaceSets.at("").at(PaletteName::Default); // Dummy placeholder.
+}
+
+const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename)
+{
+	return this->getSurfaces(filename, this->activePalette);
+}
+
+const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename, 
+	PaletteName paletteName)
+{
+	// This method will just take the surfaces from getSurfaces() and turn them into 
+	// SDL_Textures if not already loaded. I'm not too worried about memory consumption 
+	// and unused surfaces at this point. A fullscreen (320x200) uncompressed 32-bit 
+	// image is only 256KB, and with all the movies and animations combined, that's 
+	// like... 450MB? I think an "unloadTexture()" method is a bit too far ahead right now.
+
+	Debug::crash("Texture Manager", "getTextures() not implemented.");
+	return this->textureSets.at("").at(PaletteName::Default); // Dummy placeholder.
+}
+
+const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename)
+{
+	return this->getTextures(filename, this->activePalette);
 }
 
 void TextureManager::setPalette(PaletteName paletteName)
@@ -788,7 +869,7 @@ void TextureManager::setPalette(PaletteName paletteName)
 	{
 		Palette palette;
 		this->initPalette(palette, paletteName);
-		this->palettes.insert(std::make_pair(paletteName, palette));
+		this->palettes.emplace(std::make_pair(paletteName, palette));
 	}
 }
 
@@ -803,20 +884,5 @@ void TextureManager::preloadSequences()
 		{
 			this->getTexture(filename);
 		}
-	}
-}
-
-void TextureManager::reloadTextures(Renderer &renderer)
-{
-	// This assignment isn't completely necessary. The renderer shouldn't need to 
-	// be destroyed and reinitialized on window resize events.
-	this->renderer = renderer;
-
-	for (auto &pair : this->textures)
-	{
-		SDL_DestroyTexture(pair.second);
-		const std::string &filename = pair.first.first;
-		const Surface &surface = this->getSurface(filename);
-		this->textures.at(pair.first) = this->renderer.createTextureFromSurface(surface);
 	}
 }

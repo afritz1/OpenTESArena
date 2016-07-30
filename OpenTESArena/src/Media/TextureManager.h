@@ -25,22 +25,6 @@ struct SDL_PixelFormat;
 struct SDL_Surface;
 struct SDL_Texture;
 
-// Hash function for the unordered map.
-// From http://stackoverflow.com/questions/18098178/how-do-i-use-unordered-set.
-namespace std
-{
-	template <>
-	struct hash<std::pair<std::string, PaletteName>>
-	{
-		size_t operator()(const std::pair<std::string, PaletteName> &pair) const
-		{
-			size_t k1 = std::hash<std::string>()(pair.first);
-			size_t k2 = 51 + static_cast<std::size_t>(pair.second);
-			return k1 * k2;
-		}
-	};
-}
-
 class TextureManager
 {
 private:
@@ -49,8 +33,10 @@ private:
 	static const std::string PATH;
 
 	std::map<PaletteName, Palette> palettes;
-	std::unordered_map<std::pair<std::string, PaletteName>, Surface> surfaces;
-	std::unordered_map<std::pair<std::string, PaletteName>, SDL_Texture*> textures;
+	std::unordered_map<std::string, std::map<PaletteName, Surface>> surfaces;
+	std::unordered_map<std::string, std::map<PaletteName, SDL_Texture*>> textures;
+	std::unordered_map<std::string, std::map<PaletteName, std::vector<Surface>>> surfaceSets;
+	std::unordered_map<std::string, std::map<PaletteName, std::vector<SDL_Texture*>>> textureSets;
 	Renderer &renderer;
 	PaletteName activePalette;
 
@@ -70,8 +56,8 @@ public:
 
 	TextureManager &operator =(TextureManager &&textureManager);
 
-	// Gets a surface from the texture manager. It will be loaded from file if not
-	// already stored. A valid filename might be something like "TAMRIEL.IMG".
+	// Gets a surface from file. It will be loaded if not already stored with the 
+	// requested palette. A valid filename might be something like "TAMRIEL.IMG".
 	const Surface &getSurface(const std::string &filename, PaletteName paletteName);
 	const Surface &getSurface(const std::string &filename);
 
@@ -79,18 +65,26 @@ public:
 	SDL_Texture *getTexture(const std::string &filename, PaletteName paletteName);
 	SDL_Texture *getTexture(const std::string &filename);
 
+	// Gets a set of surfaces from a file. This is intended for animations and movies,
+	// where the filename essentially points to several images.
+	const std::vector<Surface> &getSurfaces(const std::string &filename,
+		PaletteName paletteName);
+	const std::vector<Surface> &getSurfaces(const std::string &filename);
+
+	// Similar to getSurfaces(), only now for a series of hardware-accelerated textures.
+	const std::vector<SDL_Texture*> &getTextures(const std::string &filename,
+		PaletteName paletteName);
+	const std::vector<SDL_Texture*> &getTextures(const std::string &filename);
+
 	// Sets the palette for subsequent surfaces and textures. If a requested image 
 	// is not currently loaded for the active palette, it is loaded from file.
 	void setPalette(PaletteName paletteName);
 
+	// To do: remove this method once FLC movies can be loaded through "getTextures()".
 	// Since cinematics are now loaded image by image instead of all at the same time,
 	// there may be some stuttering that occurs. This method loads all of the sequences
 	// into memory at the same time to compensate.
 	void preloadSequences();
-
-	// This method might be necessary when resizing the window, if SDL causes all of
-	// the textures to become black.
-	void reloadTextures(Renderer &renderer);
 };
 
 #endif
