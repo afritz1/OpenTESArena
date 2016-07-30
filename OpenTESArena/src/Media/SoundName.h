@@ -15,12 +15,12 @@ enum class SoundName
 	Birds,
 	Birds2,
 	Clicks,
-	DeepChoi,
+	DeepChoir,
 	Drip1,
 	Drip2,
 	Drums,
 	Eerie,
-	HiChoi,
+	HiChoir,
 	HumEerie,
 	Scream1,
 	Scream2,
@@ -88,9 +88,6 @@ enum class SoundName
 	Fanfare1,
 	Fanfare2,
 
-	// Interface
-	Burst,
-
 	// Movement
 	DirtLeft,
 	DirtRight,
@@ -101,8 +98,11 @@ enum class SoundName
 	Splash,
 	Swim,
 
-	// Speech
-	EmperorThanks,
+	// Speech. These are only in the CD version (SPEECH folder). 
+	// Each sequence is actually made up of several more little files. Simply
+	// concatenating each file together at runtime should be okay. I don't remember
+	// there being any overlap between files.
+	/*EmperorThanks,
 	EmperorReward,
 	SilmaneIntro,
 	SilmanePlayerDeath,
@@ -126,9 +126,10 @@ enum class SoundName
 	TharnSeventhPieceObtained,
 	TharnFinalPieceObtained,
 	TharnFinalBattle,
-	TharnAngryJewel,
+	TharnAngryJewel,*/
 
 	// Spells
+	Burst,
 	Explode,
 	SlowBall
 };

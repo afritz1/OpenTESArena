@@ -13,8 +13,7 @@ enum class MusicName
 	Dungeon1,
 	Dungeon2,
 	Dungeon3,
-	Dungeon4,
-	Dungeon5,
+	Dungeon4, // Dungeon5 is a duplicate of Dungeon1.
 	Equipment,
 	Evil,
 	EvilIntro,

@@ -33,8 +33,7 @@ namespace
 		{ MusicType::ArabVillageEnter, { MusicName::ArabVillageEnter } },
 		{ MusicType::CityEnter, { MusicName::CityEnter } },
 		{ MusicType::Credits, { MusicName::Credits } },
-		{ MusicType::Dungeon, { MusicName::Dungeon1, MusicName::Dungeon2, MusicName::Dungeon3,
-		MusicName::Dungeon4 } }, // Dungeon5 is a duplicate of Dungeon1
+		{ MusicType::Dungeon, { MusicName::Dungeon1, MusicName::Dungeon2, MusicName::Dungeon3, MusicName::Dungeon4 } }, 
 		{ MusicType::Equipment, { MusicName::Equipment } },
 		{ MusicType::Evil, { MusicName::Evil } },
 		{ MusicType::EvilIntro, { MusicName::EvilIntro } },
@@ -73,7 +72,6 @@ namespace
 		{ MusicName::Dungeon2, "DUNGEON2.XMI" },
 		{ MusicName::Dungeon3, "DUNGEON3.XMI" },
 		{ MusicName::Dungeon4, "DUNGEON4.XMI" },
-		{ MusicName::Dungeon5, "DUNGEON5.XMI" }, // duplicate of DUNGEON1?
 		{ MusicName::Equipment, "EQUIPMNT.XMI" },
 		{ MusicName::Evil, "EVIL.XMI" },
 		{ MusicName::EvilIntro, "EVLINTRO.XMI" },
@@ -98,137 +96,108 @@ namespace
 		{ MusicName::WinGame, "WINGAME.XMI" }
 	};
 
-	// To do: change these to match the original filenames like with music.
-	// Each SoundName has a corresponding filename.
+	// Each SoundName has a corresponding filename. A number of them have
+	// their name mixed up with another in the original files. I'm not sure
+	// if the entity "Walk" sounds are used (maybe just the iron golem's).
+	// - Unused/duplicate sounds: MOON.VOC, SNARL2.VOC, UMPH.VOC, WHINE.VOC.
 	const std::map<SoundName, std::string> SoundFilenames =
 	{
 		// Ambient
-		{ SoundName::Back1, "ambient/back1" },
-		{ SoundName::Birds, "ambient/birds" },
-		{ SoundName::Birds2, "ambient/birds2" },
-		{ SoundName::Clicks, "ambient/clicks" },
-		{ SoundName::DeepChoi, "ambient/deep_choi" },
-		{ SoundName::Drip1, "ambient/drip1" },
-		{ SoundName::Drip2, "ambient/drip2" },
-		{ SoundName::Drums, "ambient/drums" },
-		{ SoundName::Eerie, "ambient/eerie" },
-		{ SoundName::HiChoi, "ambient/hi_choi" },
-		{ SoundName::HumEerie, "ambient/hum_eerie" },
-		{ SoundName::Scream1, "ambient/scream1" },
-		{ SoundName::Scream2, "ambient/scream2" },
-		{ SoundName::Thunder, "ambient/thunder" },
-		{ SoundName::Wind, "ambient/wind" },
+		{ SoundName::Back1, "BACK1.VOC" },
+		{ SoundName::Birds, "BIRDS.VOC" },
+		{ SoundName::Birds2, "BIRDS2.VOC" },
+		{ SoundName::Clicks, "CLICKS.VOC" },
+		{ SoundName::DeepChoir, "DEEPCHOI.VOC" },
+		{ SoundName::Drip1, "DRIP1.VOC" },
+		{ SoundName::Drip2, "DRIP2.VOC" },
+		{ SoundName::Drums, "DRUMS.VOC" },
+		{ SoundName::Eerie, "EERIE.VOC" },
+		{ SoundName::HiChoir, "HICHOIR.VOC" },
+		{ SoundName::HumEerie, "HUMEERIE.VOC" },
+		{ SoundName::Scream1, "SCREAM1.VOC" },
+		{ SoundName::Scream2, "SCREAM2.VOC" },
+		{ SoundName::Thunder, "THUNDER.VOC" },
+		{ SoundName::Wind, "WIND.VOC" },
 
 		// Combat
-		{ SoundName::ArrowFire, "combat/arrow_fire" },
-		{ SoundName::ArrowHit, "combat/arrow_hit" },
-		{ SoundName::Bash, "combat/bash" },
-		{ SoundName::BodyFall, "combat/body_fall" },
-		{ SoundName::Clank, "combat/clank" },
-		{ SoundName::EnemyHit, "combat/enemy_hit" },
-		{ SoundName::FemaleDie, "combat/female_die" },
-		{ SoundName::MaleDie, "combat/male_die" },
-		{ SoundName::NHit, "combat/n_hit" },
-		{ SoundName::PlayerHit, "combat/player_hit" },
-		{ SoundName::Swish, "combat/swish" },
+		{ SoundName::ArrowFire, "ARROWFR.VOC" },
+		{ SoundName::ArrowHit, "ARROWHT.VOC" },
+		{ SoundName::Bash, "BASH.VOC" },
+		{ SoundName::BodyFall, "BODYFALL.VOC" },
+		{ SoundName::Clank, "CLANK.VOC" },
+		{ SoundName::EnemyHit, "EHIT.VOC" },
+		{ SoundName::FemaleDie, "FDIE.VOC" },
+		{ SoundName::MaleDie, "MDIE.VOC" },
+		{ SoundName::NHit, "NHIT.VOC" },
+		{ SoundName::PlayerHit, "UHIT.VOC" },
+		{ SoundName::Swish, "SWISH.VOC" },
 
 		// Crime
-		{ SoundName::Halt, "crime/halt" },
-		{ SoundName::StopThief, "crime/stop_thief" },
+		{ SoundName::Halt, "HALT.VOC" },
+		{ SoundName::StopThief, "STPTHIEF.VOC" },
 
 		// Doors
-		{ SoundName::CloseDoor, "doors/close_door" },
-		{ SoundName::Grind, "doors/grind" },
-		{ SoundName::Lock, "doors/lock" },
-		{ SoundName::OpenAlt, "doors/open_alt" },
-		{ SoundName::OpenDoor, "doors/open_door" },
-		{ SoundName::Portcullis, "doors/portcullis" },
+		{ SoundName::CloseDoor, "CLOSDOOR.VOC" },
+		{ SoundName::Grind, "GRIND.VOC" },
+		{ SoundName::Lock, "LOCK.VOC" },
+		{ SoundName::OpenAlt, "OPENALT.VOC" },
+		{ SoundName::OpenDoor, "OPENDOOR.VOC" },
+		{ SoundName::Portcullis, "PORTC.VOC" },
 
 		// Entities
-		{ SoundName::Rat, "entities/animals/rat" },
-		{ SoundName::SnowWolf, "entities/animals/snow_wolf" },
-		{ SoundName::Spider, "entities/animals/spider" },
-		{ SoundName::Troll, "entities/animals/troll" },
-		{ SoundName::Wolf, "entities/animals/wolf" },
+		{ SoundName::Rat, "RATS.VOC" },
+		{ SoundName::SnowWolf, "WOLF.VOC" },
+		{ SoundName::Spider, "SKELETON.VOC" },
+		{ SoundName::Troll, "TROLL.VOC" },
+		{ SoundName::Wolf, "WOLF.VOC" },
 
-		{ SoundName::Goblin, "entities/creatures/goblin" },
-		{ SoundName::LizardMan, "entities/creatures/lizard_man" },
-		{ SoundName::LizardManWalk, "entities/creatures/lizard_man_walk" },
-		{ SoundName::Medusa, "entities/creatures/medusa" },
-		{ SoundName::Minotaur, "entities/creatures/minotaur" },
-		{ SoundName::Orc, "entities/creatures/orc" },
+		{ SoundName::Goblin, "LICH.VOC" },
+		{ SoundName::LizardMan, "MONSTER.VOC" },
+		{ SoundName::LizardManWalk, "LIZARDST.VOC" },
+		{ SoundName::Medusa, "SQUISH1.VOC" },
+		{ SoundName::Minotaur, "GROWL2.VOC" },
+		{ SoundName::Orc, "ORC.VOC" },
 
-		{ SoundName::IceGolem, "entities/golems/ice_golem" },
-		{ SoundName::IronGolem, "entities/golems/iron_golem" },
-		{ SoundName::IronGolemWalk, "entities/golems/iron_golem_walk" },
-		{ SoundName::StoneGolem, "entities/golems/stone_golem" },
+		{ SoundName::IceGolem, "ICEGOLEM.VOC" },
+		{ SoundName::IronGolem, "GROWL1.VOC" },
+		{ SoundName::IronGolemWalk, "IRONGOLS.VOC" },
+		{ SoundName::StoneGolem, "STONEGOL.VOC" },
 
-		{ SoundName::FireDaemon, "entities/netherworld/fire_daemon" },
-		{ SoundName::HellHound, "entities/netherworld/hell_hound" },
-		{ SoundName::HellHoundWalk, "entities/netherworld/hell_hound_walk" },
-		{ SoundName::Homonculus, "entities/netherworld/homonculus" },
+		{ SoundName::FireDaemon, "FIREDAEM.VOC" },
+		{ SoundName::HellHound, "GROWL.VOC" },
+		{ SoundName::HellHoundWalk, "HELLHOUN.VOC" },
+		{ SoundName::Homonculus, "HOMO.VOC" },
 
-		{ SoundName::Ghost, "entities/undead/ghost" },
-		{ SoundName::Ghoul, "entities/undead/ghoul" },
-		{ SoundName::Lich, "entities/undead/lich" },
-		{ SoundName::Skeleton, "entities/undead/skeleton" },
-		{ SoundName::Vampire, "entities/undead/vampire" },
-		{ SoundName::Wraith, "entities/undead/wraith" },
-		{ SoundName::Zombie, "entities/undead/zombie" },
+		{ SoundName::Ghost, "GHOST.VOC" },
+		{ SoundName::Ghoul, "GHOUL.VOC" },
+		{ SoundName::Lich, "MINOTAUR.VOC" },
+		{ SoundName::Skeleton, "MEDUSA.VOC" },
+		{ SoundName::Vampire, "VAMPIRE.VOC" },
+		{ SoundName::Wraith, "WRAITH.VOC" },
+		{ SoundName::Zombie, "ZOMBIE.VOC" },
 
 		// Fanfare
-		{ SoundName::Fanfare1, "fanfare/fanfare_1" },
-		{ SoundName::Fanfare2, "fanfare/fanfare_2" },
-
-		// Interface
-		{ SoundName::Burst, "interface/burst" },
+		{ SoundName::Fanfare1, "FANFARE1.VOC" },
+		{ SoundName::Fanfare2, "FANFARE2.VOC" },
 
 		// Movement
-		{ SoundName::DirtLeft, "movement/dirt_left" },
-		{ SoundName::DirtRight, "movement/dirt_right" },
-		{ SoundName::MudLeft, "movement/mud_left" },
-		{ SoundName::MudRight, "movement/mud_right" },
-		{ SoundName::SnowLeft, "movement/snow_left" },
-		{ SoundName::SnowRight, "movement/snow_right" },
-		{ SoundName::Splash, "movement/splash" },
-		{ SoundName::Swim, "movement/swim" },
-
-		// Speech. These are only in the CD version (not used anymore?)
-		{ SoundName::EmperorThanks, "speech/emperor_thanks" },
-		{ SoundName::EmperorReward, "speech/emperor_reward" },
-		{ SoundName::SilmaneIntro, "speech/silmane_intro" },
-		{ SoundName::SilmanePlayerDeath, "speech/silmane_player_death" },
-		{ SoundName::SilmaneJourneyBegin, "speech/silmane_journey_begin" },
-		{ SoundName::SilmaneFirstSleepQuest, "speech/silmane_first_sleep_quest" },
-		{ SoundName::SilmaneFirstPieceObtained, "speech/silmane_first_piece_obtained" },
-		{ SoundName::SilmaneSecondPieceObtained, "speech/silmane_second_piece_obtained" },
-		{ SoundName::SilmaneThirdPieceObtained, "speech/silmane_third_piece_obtained" },
-		{ SoundName::SilmaneFourthPieceObtained, "speech/silmane_fourth_piece_obtained" },
-		{ SoundName::SilmaneFifthPieceObtained, "speech/silmane_fifth_piece_obtained" },
-		{ SoundName::SilmaneSixthPieceObtained, "speech/silmane_sixth_piece_obtained" },
-		{ SoundName::SilmaneSeventhPieceObtained, "speech/silmane_seventh_piece_obtained" },
-		{ SoundName::SilmaneFinalPieceObtained, "speech/silmane_final_piece_obtained" },
-		{ SoundName::TharnPlayerDeath, "speech/tharn_player_death" },
-		{ SoundName::TharnFirstPieceObtained, "speech/tharn_first_piece_obtained" },
-		{ SoundName::TharnSecondPieceObtained, "speech/tharn_second_piece_obtained" },
-		{ SoundName::TharnThirdPieceObtained, "speech/tharn_third_piece_obtained" },
-		{ SoundName::TharnFourthPieceObtained, "speech/tharn_fourth_piece_obtained" },
-		{ SoundName::TharnFifthPieceObtained, "speech/tharn_fifth_piece_obtained" },
-		{ SoundName::TharnSixthPieceObtained, "speech/tharn_sixth_piece_obtained" },
-		{ SoundName::TharnSeventhPieceObtained, "speech/tharn_seventh_piece_obtained" },
-		{ SoundName::TharnFinalPieceObtained, "speech/tharn_final_piece_obtained" },
-		{ SoundName::TharnFinalBattle, "speech/tharn_final_battle" },
-		{ SoundName::TharnAngryJewel, "speech/tharn_angry_jewel" },
+		{ SoundName::DirtLeft, "DIRTL.VOC" },
+		{ SoundName::DirtRight, "DIRTR.VOC" },
+		{ SoundName::MudLeft, "MUDSTE.VOC" },
+		{ SoundName::MudRight, "MUDSTEP.VOC" },
+		{ SoundName::SnowLeft, "SNOWL.VOC" },
+		{ SoundName::SnowRight, "SNOWR.VOC" },
+		{ SoundName::Splash, "SPLASH.VOC" },
+		{ SoundName::Swim, "SWIMMING.VOC" },
 
 		// Spells
-		{ SoundName::Explode, "spells/explode" },
-		{ SoundName::SlowBall, "spells/slow_ball" }
+		{ SoundName::Burst, "BURST5.VOC" },
+		{ SoundName::Explode, "EXPLODE.VOC" },
+		{ SoundName::SlowBall, "SLOWBALL.VOC" }
 	};
 }
 
-
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
-
 
 class OpenALStream;
 
