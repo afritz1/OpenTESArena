@@ -3,8 +3,8 @@
 
 #include "Directable.h"
 
-#include "CoordinateFrame.h"
 #include "../Math/Constants.h"
+#include "../Math/CoordinateFrame.h"
 
 Directable::Directable(const Float3d &direction)
 {

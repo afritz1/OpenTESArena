@@ -150,7 +150,7 @@
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Game\OptionsParser.cpp" />
     <ClCompile Include="src\Game\Options.cpp" />
-    <ClCompile Include="src\Entities\CoordinateFrame.cpp" />
+    <ClCompile Include="src\Math\CoordinateFrame.cpp" />
     <ClCompile Include="src\Media\WildMidi.cpp" />
     <ClCompile Include="src\Rendering\CLProgram.cpp" />
     <ClCompile Include="src\Interface\CharacterPanel.cpp" />
@@ -271,7 +271,7 @@
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Game\Options.h" />
-    <ClInclude Include="src\Entities\CoordinateFrame.h" />
+    <ClInclude Include="src\Math\CoordinateFrame.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\Media\WildMidi.hpp" />
     <ClInclude Include="src\Rendering\CLProgram.h" />

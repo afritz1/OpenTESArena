@@ -4,13 +4,13 @@
 
 #include "Player.h"
 
-#include "CoordinateFrame.h"
 #include "CharacterClass.h"
 #include "CharacterGenderName.h"
 #include "CharacterRaceName.h"
 #include "EntityType.h"
 #include "../Game/GameState.h"
 #include "../Math/Constants.h"
+#include "../Math/CoordinateFrame.h"
 #include "../Math/Quaternion.h"
 #include "../Utilities/String.h"
 

@@ -17,7 +17,7 @@ private:
 	Float3d p1, p2, p3;
 	Float2d uv1, uv2, uv3;
 public:
-	// Maybe have a constructor for floats and a constructor for doubls. They
+	// Maybe have a constructor for floats and a constructor for doubles. They
 	// should be stored in the triangle as Float3f and Float2f since they're only
 	// going to be used for rendering in the OpenCL kernel.
 

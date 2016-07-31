@@ -1,8 +1,8 @@
 #ifndef COORDINATE_FRAME_H
 #define COORDINATE_FRAME_H
 
-#include "../Math/Float3.h"
-#include "../Math/Matrix4.h"
+#include "Float3.h"
+#include "Matrix4.h"
 
 // A coordinate frame is a 3D axis to help with orienting entities in the world.
 
