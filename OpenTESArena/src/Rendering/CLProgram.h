@@ -40,14 +40,14 @@ private:
 	cl::CommandQueue commandQueue;
 	cl::Program program;
 	cl::Kernel intersectKernel, rayTraceKernel, convertToRGBKernel;
-	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer, 
-		triangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer, 
-		normalBuffer, viewBuffer, pointBuffer, uvBuffer, triangleIndexBuffer, 
+	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer,
+		rectangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer,
+		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer,
 		colorBuffer, outputBuffer;
 	std::vector<char> outputData; // For receiving pixels from the device's output buffer.
 	SDL_Texture *texture; // Streaming render texture for outputData to update.
 	TextureManager &textureManager;
-	int width, height, worldWidth, worldHeight, worldDepth;
+	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
@@ -56,7 +56,7 @@ private:
 	void makeTestWorld();
 public:
 	// Constructor for the OpenCL render program.
-	CLProgram(int width, int height, int worldWidth, int worldHeight, int worldDepth,
+	CLProgram(int worldWidth, int worldHeight, int worldDepth,
 		TextureManager &textureManager, Renderer &renderer);
 	~CLProgram();
 
@@ -72,7 +72,7 @@ public:
 
 	// Give this method total ticks instead of delta time so the constructor doesn't
 	// need a "start time". Also, this prevents any additive "double -> float" error.
-	void updateGameTime(double gameTime);	
+	void updateGameTime(double gameTime);
 
 	void render(Renderer &renderer);
 };

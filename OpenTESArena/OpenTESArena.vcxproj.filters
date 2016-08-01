@@ -7,7 +7,6 @@
     <ClCompile Include="src\Math\Random.cpp" />
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
-    <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Interface\TextBox.cpp" />
     <ClCompile Include="src\Interface\Surface.cpp" />
     <ClCompile Include="src\Media\TextureManager.cpp" />
@@ -49,7 +48,6 @@
     <ClCompile Include="src\Game\Year.cpp" />
     <ClCompile Include="src\Game\Date.cpp" />
     <ClCompile Include="src\World\Chunk.cpp" />
-    <ClCompile Include="src\Math\Triangle.cpp" />
     <ClCompile Include="src\Entities\AttributeModifier.cpp" />
     <ClCompile Include="src\Items\Consumable.cpp" />
     <ClCompile Include="src\Items\Item.cpp" />
@@ -128,7 +126,6 @@
     <ClInclude Include="src\Media\MusicName.h" />
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\Voxel.h" />
-    <ClInclude Include="src\Rendering\Texture.h" />
     <ClInclude Include="src\Interface\TextBox.h" />
     <ClInclude Include="src\Interface\Surface.h" />
     <ClInclude Include="src\Media\TextureManager.h" />
@@ -202,7 +199,6 @@
     <ClInclude Include="src\Items\WeaponRangeName.h" />
     <ClInclude Include="src\World\VoxelType.h" />
     <ClInclude Include="src\World\VoxelMaterialType.h" />
-    <ClInclude Include="src\Math\Triangle.h" />
     <ClInclude Include="src\Entities\AttributeModifier.h" />
     <ClInclude Include="src\Entities\AttributeModifierName.h" />
     <ClInclude Include="src\Items\ConsumableType.h" />

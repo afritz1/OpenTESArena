@@ -1,6 +1,6 @@
 #include "TextureReference.h"
 
-TextureReference::TextureReference(int offset, int width, int height)
+TextureReference::TextureReference(int offset, short width, short height)
 {
 	this->offset = offset;
 	this->width = width;
@@ -17,12 +17,12 @@ int TextureReference::getOffset() const
 	return this->offset;
 }
 
-int TextureReference::getWidth() const
+short TextureReference::getWidth() const
 {
 	return this->width;
 }
 
-int TextureReference::getHeight() const
+short TextureReference::getHeight() const
 {
 	return this->height;
 }

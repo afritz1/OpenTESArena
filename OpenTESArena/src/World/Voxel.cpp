@@ -5,7 +5,7 @@
 
 #include "VoxelMaterialType.h"
 #include "VoxelType.h"
-#include "../Math/Triangle.h"
+#include "../Math/Rect3D.h"
 
 // These voxel type things are still experimental. I'm not sure if I'll use them in
 // this exact form.
@@ -29,10 +29,10 @@ const std::map<VoxelType, VoxelMaterialType> VoxelTypeMaterials =
 	// etc.
 };
 
-// Each voxel type has a set of triangles (with texture coordinates) that define
+// Each voxel type has a set of rectangles (with texture coordinates) that define
 // its contents. These essentially replace "voxel templates", and are intended for 
 // rendering, but could really be used anywhere.
-const std::map<VoxelType, std::vector<Triangle>> VoxelTypeGeometries =
+const std::map<VoxelType, std::vector<Rect3D>> VoxelTypeGeometries =
 {
 
 };
@@ -73,7 +73,7 @@ std::string Voxel::materialToString() const
 	return displayName;
 }
 
-std::vector<Triangle> Voxel::getGeometry() const
+std::vector<Rect3D> Voxel::getGeometry() const
 {
 	auto geometry = VoxelTypeGeometries.at(this->getVoxelType());
 	return geometry;

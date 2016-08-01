@@ -6,13 +6,13 @@
 #include "CLProgram.h"
 
 #include "../Entities/Directable.h"
-#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/Float2.h"
 #include "../Math/Float3.h"
 #include "../Math/Float4.h"
+#include "../Math/Int2.h"
 #include "../Math/Random.h"
-#include "../Math/Triangle.h"
+#include "../Math/Rect3D.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -29,8 +29,7 @@ namespace
 	const cl::size_type SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
-	const cl::size_type SIZEOF_TRIANGLE = (sizeof(cl_float3) * 4) +
-		(sizeof(cl_float2) * 3) + SIZEOF_TEXTURE_REF;
+	const cl::size_type SIZEOF_RECTANGLE = (sizeof(cl_float3) * 6) + SIZEOF_TEXTURE_REF + 8;
 	const cl::size_type SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
 }
 
@@ -43,30 +42,36 @@ const std::string CLProgram::ANTI_ALIAS_KERNEL = "antiAlias";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
-	int worldDepth, TextureManager &textureManager, Renderer &renderer)
+CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
+	TextureManager &textureManager, Renderer &renderer)
 	: textureManager(textureManager)
 {
-	assert(width > 0);
-	assert(height > 0);
 	assert(worldWidth > 0);
 	assert(worldHeight > 0);
 	assert(worldDepth > 0);
 
 	Debug::mention("CLProgram", "Initializing.");
 
-	this->width = width;
-	this->height = height;
+	const int screenWidth = renderer.getWindowDimensions().getX();
+	const int screenHeight = renderer.getWindowDimensions().getY();
+
+	// To do: Eventually use the renderer's "resolution percent" with these.
+	// The resolution percent should have a range of about [0.30, 1.0] in
+	// increments of either 0.05 or 0.10.
+	this->renderWidth = screenWidth;
+	this->renderHeight = screenHeight;
+
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;
 	this->worldDepth = worldDepth;
 
 	// Create the local output pixel buffer.
-	this->outputData = std::vector<char>(sizeof(cl_int) * width * height);
-
+	this->outputData = std::vector<char>(sizeof(cl_int) * 
+		this->renderWidth * this->renderHeight);
+	
 	// Create streaming texture to be used as the game world frame buffer.	
 	this->texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING, width, height);
+		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
 	Debug::check(this->texture != nullptr, "CLProgram", "SDL_CreateTexture");
 
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
@@ -112,11 +117,9 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	std::string source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
 
 	// Make some #defines to add to the kernel source.
-	std::string defines = std::string("#define SCREEN_WIDTH ") + std::to_string(width) +
-		std::string("\n") + std::string("#define SCREEN_HEIGHT ") +
-		std::to_string(height) + std::string("\n") + std::string("#define ASPECT_RATIO ") +
-		std::to_string(static_cast<double>(width) / static_cast<double>(height)) +
-		std::string("f\n") + // The "f" is for "float". OpenCL complains if it's a double.
+	std::string defines = std::string("#define RENDER_WIDTH ") + std::to_string(this->renderWidth) +
+		std::string("\n") + std::string("#define RENDER_HEIGHT ") +
+		std::to_string(this->renderHeight) + std::string("\n") + 
 		std::string("#define WORLD_WIDTH ") + std::to_string(worldWidth) + std::string("\n") +
 		std::string("#define WORLD_HEIGHT ") + std::to_string(worldHeight) + std::string("\n") +
 		std::string("#define WORLD_DEPTH ") + std::to_string(worldDepth) + std::string("\n");
@@ -148,6 +151,7 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 
 	// Create the OpenCL buffers in the context for reading and/or writing.
 	// NOTE: The size of some of these buffers is just a placeholder for now.
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	this->cameraBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		SIZEOF_CAMERA, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer cameraBuffer.");
@@ -164,12 +168,12 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 		SIZEOF_LIGHT_REF * worldWidth * worldHeight * worldDepth, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
-	this->triangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_TRIANGLE * 12 * worldWidth * worldHeight * worldDepth
+	this->rectangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		SIZEOF_RECTANGLE * 6 * worldWidth * worldHeight * worldDepth
 		/* This buffer size is actually very naive. Much of it will just be air.
-		Make a mapping of 3D cell coordinates to triangles at some point to help. */,
+		Make a mapping of 3D cell coordinates to rectangles at some point to help. */,
 		nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleBuffer.");
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
 	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		SIZEOF_LIGHT /* Some # of lights * world dims, Placeholder size */, nullptr, &status);
@@ -184,35 +188,35 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer gameTimeBuffer.");
 
 	this->depthBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float) * width * height, nullptr, &status);
+		sizeof(cl_float) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer depthBuffer.");
 
 	this->normalBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float3) * width * height, nullptr, &status);
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer normalBuffer.");
 
 	this->viewBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float3) * width * height, nullptr, &status);
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer viewBuffer.");
 
 	this->pointBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float3) * width * height, nullptr, &status);
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer pointBuffer.");
 
 	this->uvBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float2) * width * height, nullptr, &status);
+		sizeof(cl_float2) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer uvBuffer.");
 
-	this->triangleIndexBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_int) * width * height, nullptr, &status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer triangleIndexBuffer.");
+	this->rectangleIndexBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_int) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleIndexBuffer.");
 
 	this->colorBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
-		sizeof(cl_float3) * width * height, nullptr, &status);
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer colorBuffer.");
 
 	this->outputBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
-		sizeof(cl_int) * width * height, nullptr, &status);
+		sizeof(cl_int) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer outputBuffer.");
 
 	// Tell the intersect kernel arguments where their buffers live.
@@ -228,9 +232,9 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg intersectKernel spriteRefBuffer.");
 
-	status = this->intersectKernel.setArg(3, this->triangleBuffer);
+	status = this->intersectKernel.setArg(3, this->rectangleBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::Kernel::setArg intersectKernel triangleBuffer.");
+		"cl::Kernel::setArg intersectKernel rectangleBuffer.");
 
 	status = this->intersectKernel.setArg(4, this->textureBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
@@ -256,9 +260,9 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg intersectKernel uvBuffer.");
 
-	status = this->intersectKernel.setArg(10, this->triangleIndexBuffer);
+	status = this->intersectKernel.setArg(10, this->rectangleIndexBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::Kernel::setArg intersectKernel triangleIndexBuffer.");
+		"cl::Kernel::setArg intersectKernel rectangleIndexBuffer.");
 
 	// Tell the rayTrace kernel arguments where their buffers live.
 	status = this->rayTraceKernel.setArg(0, this->voxelRefBuffer);
@@ -273,9 +277,9 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel lightRefBuffer.");
 
-	status = this->rayTraceKernel.setArg(3, this->triangleBuffer);
+	status = this->rayTraceKernel.setArg(3, this->rectangleBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::Kernel::setArg rayTraceKernel triangleBuffer.");
+		"cl::Kernel::setArg rayTraceKernel rectangleBuffer.");
 
 	status = this->rayTraceKernel.setArg(4, this->lightBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
@@ -309,9 +313,9 @@ CLProgram::CLProgram(int width, int height, int worldWidth, int worldHeight,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel uvBuffer.");
 
-	status = this->rayTraceKernel.setArg(12, this->triangleIndexBuffer);
+	status = this->rayTraceKernel.setArg(12, this->rectangleIndexBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::Kernel::setArg rayTraceKernel triangleIndexBuffer.");
+		"cl::Kernel::setArg rayTraceKernel rectangleIndexBuffer.");
 
 	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
@@ -355,7 +359,7 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->voxelRefBuffer = clProgram.voxelRefBuffer;
 	this->spriteRefBuffer = clProgram.spriteRefBuffer;
 	this->lightRefBuffer = clProgram.lightRefBuffer;
-	this->triangleBuffer = clProgram.triangleBuffer;
+	this->rectangleBuffer = clProgram.rectangleBuffer;
 	this->lightBuffer = clProgram.lightBuffer;
 	this->textureBuffer = clProgram.textureBuffer;
 	this->gameTimeBuffer = clProgram.gameTimeBuffer;
@@ -364,13 +368,13 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->viewBuffer = clProgram.viewBuffer;
 	this->pointBuffer = clProgram.pointBuffer;
 	this->uvBuffer = clProgram.uvBuffer;
-	this->triangleIndexBuffer = clProgram.triangleIndexBuffer;
+	this->rectangleIndexBuffer = clProgram.rectangleIndexBuffer;
 	this->colorBuffer = clProgram.colorBuffer;
 	this->outputBuffer = clProgram.outputBuffer;
 	this->outputData = clProgram.outputData;
 	this->textureManager = std::move(clProgram.textureManager);
-	this->width = clProgram.width;
-	this->height = clProgram.height;
+	this->renderWidth = clProgram.renderWidth;
+	this->renderHeight = clProgram.renderHeight;
 	this->worldWidth = clProgram.worldWidth;
 	this->worldHeight = clProgram.worldHeight;
 	this->worldDepth = clProgram.worldDepth;
@@ -493,133 +497,64 @@ void CLProgram::makeTestWorld()
 	// This method builds a simple test city with some blocks around.
 	// It does nothing with sprites and lights yet.
 
-	// Lambda for creating a vector of triangles for a particular voxel.
+	// Lambda for creating a vector of rectangles for a particular voxel.
 	auto makeBlock = [](int cellX, int cellY, int cellZ)
 	{
-		double x = static_cast<double>(cellX);
-		double y = static_cast<double>(cellY);
-		double z = static_cast<double>(cellZ);
-		const double sideLength = 1.0;
+		float x = static_cast<float>(cellX);
+		float y = static_cast<float>(cellY);
+		float z = static_cast<float>(cellZ);
+		const float sideLength = 1.0f;
 
 		// Front.
-		Triangle t1(
-			Float3d(x + sideLength, y + sideLength, z),
-			Float3d(x + sideLength, y, z),
-			Float3d(x, y, z),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
-
-		Triangle t2(
-			Float3d(x, y, z),
-			Float3d(x, y + sideLength, z),
-			Float3d(x + sideLength, y + sideLength, z),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
+		Rect3D r1(
+			Float3f(x + sideLength, y + sideLength, z),
+			Float3f(x + sideLength, y, z),
+			Float3f(x, y, z));
 
 		// Back.
-		Triangle t3(
-			Float3d(x, y + sideLength, z + sideLength),
-			Float3d(x, y, z + sideLength),
-			Float3d(x + sideLength, y, z + sideLength),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
-
-		Triangle t4(
-			Float3d(x + sideLength, y, z + sideLength),
-			Float3d(x + sideLength, y + sideLength, z + sideLength),
-			Float3d(x, y + sideLength, z + sideLength),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
+		Rect3D r2(
+			Float3f(x, y + sideLength, z + sideLength),
+			Float3f(x, y, z + sideLength),
+			Float3f(x + sideLength, y, z + sideLength));
 
 		// Top.
-		Triangle t5(
-			Float3d(x + sideLength, y + sideLength, z + sideLength),
-			Float3d(x + sideLength, y + sideLength, z),
-			Float3d(x, y + sideLength, z),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
-
-		Triangle t6(
-			Float3d(x, y + sideLength, z),
-			Float3d(x, y + sideLength, z + sideLength),
-			Float3d(x + sideLength, y + sideLength, z + sideLength),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
+		Rect3D r3(
+			Float3f(x + sideLength, y + sideLength, z + sideLength),
+			Float3f(x + sideLength, y + sideLength, z),
+			Float3f(x, y + sideLength, z));
 
 		// Bottom.
-		Triangle t7(
-			Float3d(x + sideLength, y, z),
-			Float3d(x + sideLength, y, z + sideLength),
-			Float3d(x, y, z + sideLength),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
-
-		Triangle t8(
-			Float3d(x, y, z + sideLength),
-			Float3d(x, y, z),
-			Float3d(x + sideLength, y, z),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
+		Rect3D r4(
+			Float3f(x + sideLength, y, z),
+			Float3f(x + sideLength, y, z + sideLength),
+			Float3f(x, y, z + sideLength));
 
 		// Right.
-		Triangle t9(
-			Float3d(x, y + sideLength, z),
-			Float3d(x, y, z),
-			Float3d(x, y, z + sideLength),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
-
-		Triangle t10(
-			Float3d(x, y, z + sideLength),
-			Float3d(x, y + sideLength, z + sideLength),
-			Float3d(x, y + sideLength, z),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
+		Rect3D r5(
+			Float3f(x, y + sideLength, z),
+			Float3f(x, y, z),
+			Float3f(x, y, z + sideLength));
 
 		// Left.
-		Triangle t11(
-			Float3d(x + sideLength, y + sideLength, z + sideLength),
-			Float3d(x + sideLength, y, z + sideLength),
-			Float3d(x + sideLength, y, z),
-			Float2d(0.0, 0.0),
-			Float2d(0.0, 1.0),
-			Float2d(1.0, 1.0));
+		Rect3D r6(
+			Float3f(x + sideLength, y + sideLength, z + sideLength),
+			Float3f(x + sideLength, y, z + sideLength),
+			Float3f(x + sideLength, y, z));
 
-		Triangle t12(
-			Float3d(x + sideLength, y, z),
-			Float3d(x + sideLength, y + sideLength, z),
-			Float3d(x + sideLength, y + sideLength, z + sideLength),
-			Float2d(1.0, 1.0),
-			Float2d(1.0, 0.0),
-			Float2d(0.0, 0.0));
-
-		return std::vector<Triangle>
-		{
-			t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12
-		};
+		return std::vector<Rect3D>{ r1, r2, r3, r4, r5, r6 };
 	};
 
-	// Write some triangles to a triangle buffer.
-	const int maxTrianglesPerVoxel = 12;
-	size_t triangleBufferSize = SIZEOF_TRIANGLE * maxTrianglesPerVoxel *
+	// Write some rectangles to a rectangle buffer.
+	const int maxRectanglesPerVoxel = 6;
+	size_t rectangleBufferSize = SIZEOF_RECTANGLE * maxRectanglesPerVoxel *
 		this->worldWidth * this->worldHeight * this->worldDepth;
-	std::vector<char> triangleBuffer(triangleBufferSize);
-	cl_char *triPtr = reinterpret_cast<cl_char*>(triangleBuffer.data());
+	std::vector<char> rectangleBuffer(rectangleBufferSize);
+	cl_char *recPtr = reinterpret_cast<cl_char*>(rectangleBuffer.data());
 
-	// Lambda for writing triangle data to the local buffer.
+	// Lambda for writing rectangle data to the local buffer.
 	// - NOTE: using texture index here assumes that all textures are 64x64.
-	auto writeTriangle = [this, maxTrianglesPerVoxel, triPtr](const Triangle &triangle,
-		int cellX, int cellY, int cellZ, int triangleOffset, int textureIndex)
+	auto writeRectangle = [this, maxRectanglesPerVoxel, recPtr](const Rect3D &rect,
+		int cellX, int cellY, int cellZ, int rectangleOffset, int textureIndex)
 	{
 		assert(cellX >= 0);
 		assert(cellY >= 0);
@@ -628,68 +563,66 @@ void CLProgram::makeTestWorld()
 		assert(cellY < this->worldHeight);
 		assert(cellZ < this->worldDepth);
 
-		// Only 12 triangles max per block for now.
-		assert(triangleOffset < maxTrianglesPerVoxel);
+		// Only 6 rectangles max per block for now.
+		assert(rectangleOffset < maxRectanglesPerVoxel);
 
 		// Offset in the local buffer.
-		cl_char *ptr = triPtr + (cellX * SIZEOF_TRIANGLE * maxTrianglesPerVoxel) +
-			((cellY * this->worldWidth) * SIZEOF_TRIANGLE * maxTrianglesPerVoxel) +
-			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_TRIANGLE *
-				maxTrianglesPerVoxel) + (triangleOffset * SIZEOF_TRIANGLE);
+		cl_char *ptr = recPtr + (cellX * SIZEOF_RECTANGLE * maxRectanglesPerVoxel) +
+			((cellY * this->worldWidth) * SIZEOF_RECTANGLE * maxRectanglesPerVoxel) +
+			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_RECTANGLE *
+				maxRectanglesPerVoxel) + (rectangleOffset * SIZEOF_RECTANGLE);
 
 		cl_float *p1Ptr = reinterpret_cast<cl_float*>(ptr);
-		*(p1Ptr + 0) = static_cast<cl_float>(triangle.getP1().getX());
-		*(p1Ptr + 1) = static_cast<cl_float>(triangle.getP1().getY());
-		*(p1Ptr + 2) = static_cast<cl_float>(triangle.getP1().getZ());
+		*(p1Ptr + 0) = static_cast<cl_float>(rect.getP1().getX());
+		*(p1Ptr + 1) = static_cast<cl_float>(rect.getP1().getY());
+		*(p1Ptr + 2) = static_cast<cl_float>(rect.getP1().getZ());
 
 		cl_float *p2Ptr = reinterpret_cast<cl_float*>(ptr + sizeof(cl_float3));
-		*(p2Ptr + 0) = static_cast<cl_float>(triangle.getP2().getX());
-		*(p2Ptr + 1) = static_cast<cl_float>(triangle.getP2().getY());
-		*(p2Ptr + 2) = static_cast<cl_float>(triangle.getP2().getZ());
+		*(p2Ptr + 0) = static_cast<cl_float>(rect.getP2().getX());
+		*(p2Ptr + 1) = static_cast<cl_float>(rect.getP2().getY());
+		*(p2Ptr + 2) = static_cast<cl_float>(rect.getP2().getZ());
 
 		cl_float *p3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 2));
-		*(p3Ptr + 0) = static_cast<cl_float>(triangle.getP3().getX());
-		*(p3Ptr + 1) = static_cast<cl_float>(triangle.getP3().getY());
-		*(p3Ptr + 2) = static_cast<cl_float>(triangle.getP3().getZ());
+		*(p3Ptr + 0) = static_cast<cl_float>(rect.getP3().getX());
+		*(p3Ptr + 1) = static_cast<cl_float>(rect.getP3().getY());
+		*(p3Ptr + 2) = static_cast<cl_float>(rect.getP3().getZ());
 
-		cl_float *normalPtr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 3));
-		*(normalPtr + 0) = static_cast<cl_float>(triangle.getNormal().getX());
-		*(normalPtr + 1) = static_cast<cl_float>(triangle.getNormal().getY());
-		*(normalPtr + 2) = static_cast<cl_float>(triangle.getNormal().getZ());
+		const Float3f p1p2 = rect.getP2() - rect.getP1();
+		cl_float *p1p2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 3));
+		*(p1p2Ptr + 0) = static_cast<cl_float>(p1p2.getX());
+		*(p1p2Ptr + 1) = static_cast<cl_float>(p1p2.getY());
+		*(p1p2Ptr + 2) = static_cast<cl_float>(p1p2.getZ());
 
-		cl_float *uv1Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4));
-		*(uv1Ptr + 0) = static_cast<cl_float>(triangle.getUV1().getX());
-		*(uv1Ptr + 1) = static_cast<cl_float>(triangle.getUV1().getY());
+		const Float3f p2p3 = rect.getP3() - rect.getP2();
+		cl_float *p2p3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4));
+		*(p2p3Ptr + 0) = static_cast<cl_float>(p2p3.getX());
+		*(p2p3Ptr + 1) = static_cast<cl_float>(p2p3.getY());
+		*(p2p3Ptr + 2) = static_cast<cl_float>(p2p3.getZ());
 
-		cl_float *uv2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) +
-			sizeof(cl_float2));
-		*(uv2Ptr + 0) = static_cast<cl_float>(triangle.getUV2().getX());
-		*(uv2Ptr + 1) = static_cast<cl_float>(triangle.getUV2().getY());
+		const Float3f normal = rect.getNormal();
+		cl_float *normalPtr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 5));
+		*(normalPtr + 0) = static_cast<cl_float>(normal.getX());
+		*(normalPtr + 1) = static_cast<cl_float>(normal.getY());
+		*(normalPtr + 2) = static_cast<cl_float>(normal.getZ());
 
-		cl_float *uv3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4) +
-			(sizeof(cl_float2) * 2));
-		*(uv3Ptr + 0) = static_cast<cl_float>(triangle.getUV3().getX());
-		*(uv3Ptr + 1) = static_cast<cl_float>(triangle.getUV3().getY());
-
-		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr + (sizeof(cl_float3) * 4) +
-			(sizeof(cl_float2) * 3));
+		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr + (sizeof(cl_float3) * 6));
 		*(offsetPtr + 0) = 64 * 64 * textureIndex; // Number of float4's to skip.
 
-		cl_short *dimPtr = reinterpret_cast<cl_short*>(ptr + (sizeof(cl_float3) * 4) +
-			(sizeof(cl_float2) * 3) + sizeof(cl_int));
+		cl_short *dimPtr = reinterpret_cast<cl_short*>(ptr + (sizeof(cl_float3) * 6) +
+			sizeof(cl_int));
 		*(dimPtr + 0) = 64;
 		*(dimPtr + 1) = 64;
 	};
 
-	// Fill a voxel reference buffer with references to those triangles.
-	size_t voxelRefBufferSize = SIZEOF_VOXEL_REF * this->worldWidth * this->worldHeight *
-		this->worldDepth;
+	// Fill a voxel reference buffer with references to those rectangles.
+	size_t voxelRefBufferSize = SIZEOF_VOXEL_REF * this->worldWidth * 
+		this->worldHeight * this->worldDepth;
 	std::vector<char> voxelRefBuffer(voxelRefBufferSize);
 	cl_char *voxPtr = reinterpret_cast<cl_char*>(voxelRefBuffer.data());
 
 	// Lambda for writing a voxel reference into the local buffer. This only works 
-	// when using the naive triangle array storage (i.e., *every* voxel has 12 
-	// triangle slots). Consider making the offset based on the number of triangles
+	// when using the naive rectangle array storage (i.e., *every* voxel has 6 
+	// rectangle slots). Consider making the offset based on the number of rectangles
 	// written, instead of an arbitrary XYZ coordinate.
 	auto writeVoxelRef = [this, voxPtr](int cellX, int cellY, int cellZ, int count)
 	{
@@ -705,8 +638,8 @@ void CLProgram::makeTestWorld()
 			((cellY * this->worldWidth) * SIZEOF_VOXEL_REF) +
 			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
 
-		// Number of triangles to skip in the triangles array.
-		int offset = 12 * (cellX + (cellY * this->worldWidth) +
+		// Number of rectangles to skip in the rectangles array.
+		int offset = 6 * (cellX + (cellY * this->worldWidth) +
 			(cellZ * this->worldWidth * this->worldHeight));
 
 		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr);
@@ -784,16 +717,16 @@ void CLProgram::makeTestWorld()
 	{
 		for (int i = 0; i < this->worldWidth; ++i)
 		{
-			std::vector<Triangle> block = makeBlock(i, 0, k);
-			int triangleCount = static_cast<int>(block.size());
+			std::vector<Rect3D> block = makeBlock(i, 0, k);
+			int rectangleCount = static_cast<int>(block.size());
 
 			int textureIndex = 1 + random.next(3);
-			for (int index = 0; index < triangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, 0, k, index, textureIndex);
+				writeRectangle(block.at(index), i, 0, k, index, textureIndex);
 			}
 
-			writeVoxelRef(i, 0, k, 12);
+			writeVoxelRef(i, 0, k, 6);
 		}
 	}
 
@@ -802,22 +735,22 @@ void CLProgram::makeTestWorld()
 	{
 		for (int k = 0; k < this->worldDepth; ++k)
 		{
-			std::vector<Triangle> block = makeBlock(0, j, k);
-			int triangleCount = static_cast<int>(block.size());
+			std::vector<Rect3D> block = makeBlock(0, j, k);
+			int rectangleCount = static_cast<int>(block.size());
 
-			for (int index = 0; index < triangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
-				writeTriangle(block.at(index), 0, j, k, index, 0);
+				writeRectangle(block.at(index), 0, j, k, index, 0);
 			}
 
 			block = makeBlock(this->worldWidth - 1, j, k);
-			for (int index = 0; index < triangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
-				writeTriangle(block.at(index), this->worldWidth - 1, j, k, index, 0);
+				writeRectangle(block.at(index), this->worldWidth - 1, j, k, index, 0);
 			}
 
-			writeVoxelRef(0, j, k, 12);
-			writeVoxelRef(this->worldWidth - 1, j, k, 12);
+			writeVoxelRef(0, j, k, 6);
+			writeVoxelRef(this->worldWidth - 1, j, k, 6);
 		}
 	}
 
@@ -826,22 +759,22 @@ void CLProgram::makeTestWorld()
 	{
 		for (int i = 1; i < (this->worldWidth - 1); ++i)
 		{
-			std::vector<Triangle> block = makeBlock(i, j, 0);
-			int triangleCount = static_cast<int>(block.size());
+			std::vector<Rect3D> block = makeBlock(i, j, 0);
+			int rectangleCount = static_cast<int>(block.size());
 
-			for (int index = 0; index < triangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, j, 0, index, 0);
+				writeRectangle(block.at(index), i, j, 0, index, 0);
 			}
 
 			block = makeBlock(i, j, this->worldDepth - 1);
-			for (int index = 0; index < triangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
-				writeTriangle(block.at(index), i, j, this->worldDepth - 1, index, 0);
+				writeRectangle(block.at(index), i, j, this->worldDepth - 1, index, 0);
 			}
 
-			writeVoxelRef(i, j, 0, 12);
-			writeVoxelRef(i, j, this->worldDepth - 1, 12);
+			writeVoxelRef(i, j, 0, 6);
+			writeVoxelRef(i, j, this->worldDepth - 1, 6);
 		}
 	}
 
@@ -852,21 +785,21 @@ void CLProgram::makeTestWorld()
 		int y = 1;
 		int z = 1 + random.next(this->worldDepth - 2);
 
-		std::vector<Triangle> block = makeBlock(x, y, z);
-		int triangleCount = static_cast<int>(block.size());
+		std::vector<Rect3D> block = makeBlock(x, y, z);
+		int rectangleCount = static_cast<int>(block.size());
 
-		for (int index = 0; index < triangleCount; ++index)
+		for (int index = 0; index < rectangleCount; ++index)
 		{
-			writeTriangle(block.at(index), x, y, z, index, 4);
+			writeRectangle(block.at(index), x, y, z, index, 4);
 		}
 
-		writeVoxelRef(x, y, z, 12);
+		writeVoxelRef(x, y, z, 6);
 	}
 
-	// Write the triangle buffer to device memory.
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->triangleBuffer,
-		CL_TRUE, 0, triangleBufferSize, static_cast<const void*>(triPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test triangleBuffer");
+	// Write the rectangle buffer to device memory.
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
+		CL_TRUE, 0, rectangleBufferSize, static_cast<const void*>(recPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test rectangleBuffer");
 
 	// Write the voxel reference buffer to device memory.
 	status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
@@ -942,7 +875,7 @@ void CLProgram::updateGameTime(double gameTime)
 
 void CLProgram::render(Renderer &renderer)
 {
-	cl::NDRange workDims(this->width, this->height);
+	cl::NDRange workDims(this->renderWidth, this->renderHeight);
 
 	// Run the intersect kernel.
 	cl_int status = this->commandQueue.enqueueNDRangeKernel(this->intersectKernel,
@@ -964,12 +897,14 @@ void CLProgram::render(Renderer &renderer)
 
 	// Copy the output buffer into the destination pixel buffer.
 	void *outputDataPtr = static_cast<void*>(this->outputData.data());
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
-		static_cast<cl::size_type>(sizeof(cl_int) * this->width * this->height),
+		static_cast<cl::size_type>(sizeof(cl_int) * renderPixelCount),
 		outputDataPtr, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 
 	// Update the frame buffer texture and draw to the renderer.
-	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, this->width * sizeof(cl_int));
-	renderer.drawToNative(this->texture);
+	const int pitch = this->renderWidth * sizeof(cl_int);
+	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, pitch);
+	renderer.fillNative(this->texture);
 }

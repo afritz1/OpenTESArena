@@ -16,7 +16,7 @@
 // be moved up even higher to the chunk manager, since it's on a "World" basis
 // if interior locations are considered their own world.
 
-class Triangle;
+class Rect3D;
 
 enum class VoxelMaterialType;
 enum class VoxelType;
@@ -35,12 +35,11 @@ public:
 	std::string typeToString() const;
 	std::string materialToString() const;
 
-	// This method replaces the VoxelTemplate class. Assume that all voxel types
-	// are composed of only convex shapes (like cubes). Objects like doors and
-	// flats are not part of the voxel types even though they are static objects
-	// in voxels. They should be managed separately. If this method is a bottleneck,
-	// the return type can be changed to a const vector&.
-	std::vector<Triangle> getGeometry() const;
+	// Assume that all voxel types are composed of only convex shapes (like cubes). 
+	// Objects like doors and flats are not part of the voxel types even though they 
+	// are static objects in voxels. They should be managed separately. If this 
+	// method is a bottleneck, the return type can be changed to a const vector&.
+	std::vector<Rect3D> getGeometry() const;
 };
 
 #endif

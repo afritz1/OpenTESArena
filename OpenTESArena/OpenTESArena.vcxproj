@@ -235,7 +235,6 @@
     <ClCompile Include="src\Math\Float2.cpp" />
     <ClCompile Include="src\Math\Float3.cpp" />
     <ClCompile Include="src\Math\Float4.cpp" />
-    <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\Interface\Surface.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
@@ -245,7 +244,6 @@
     <ClCompile Include="src\Items\Trinket.cpp" />
     <ClCompile Include="src\Game\Weekday.cpp" />
     <ClCompile Include="src\Game\Year.cpp" />
-    <ClCompile Include="src\Math\Triangle.cpp" />
     <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
     <ClCompile Include="src\World\VoxelReference.cpp" />
     <ClCompile Include="src\Interface\ImagePanel.cpp" />
@@ -392,7 +390,6 @@
     <ClInclude Include="src\Math\Float3.h" />
     <ClInclude Include="src\Media\MusicName.h" />
     <ClInclude Include="src\Media\MusicType.h" />
-    <ClInclude Include="src\Rendering\Texture.h" />
     <ClInclude Include="src\Rendering\TextureReference.h" />
     <ClInclude Include="src\Interface\Surface.h" />
     <ClInclude Include="src\World\ClimateName.h" />
@@ -407,7 +404,6 @@
     <ClInclude Include="src\Game\Year.h" />
     <ClInclude Include="src\World\VoxelMaterialType.h" />
     <ClInclude Include="src\World\VoxelType.h" />
-    <ClInclude Include="src\Math\Triangle.h" />
     <ClInclude Include="src\Items\WeaponArtifactData.h" />
     <ClInclude Include="src\World\VoxelReference.h" />
     <ClInclude Include="src\Interface\ImagePanel.h" />

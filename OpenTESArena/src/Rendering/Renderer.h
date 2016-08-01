@@ -98,6 +98,9 @@ public:
 	void drawToOriginal(SDL_Surface *surface, int x, int y);
 	void drawToOriginal(SDL_Surface *surface);
 
+	// Stretches a texture over the entire native frame buffer.
+	void fillNative(SDL_Texture *texture);
+
 	// Scales and copies the original frame buffer onto the native frame buffer.
 	// If Renderer::useTransparencyBlending() is set to true, it also uses blending.
 	void drawOriginalToNative();

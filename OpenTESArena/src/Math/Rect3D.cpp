@@ -46,7 +46,5 @@ Float3f Rect3D::getNormal() const
 {
 	const Float3f p1p2 = this->p2 - this->p1;
 	const Float3f p1p3 = this->p3 - this->p1;
-
-	// To do: Reverse the order if the normal is flipped.
 	return p1p2.cross(p1p3).normalized();
 }

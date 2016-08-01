@@ -393,6 +393,12 @@ void Renderer::drawToOriginal(SDL_Surface *surface)
 	this->drawToOriginal(surface, 0, 0);
 }
 
+void Renderer::fillNative(SDL_Texture *texture)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_RenderCopy(this->renderer, texture, nullptr, nullptr);
+}
+
 void Renderer::drawOriginalToNative()
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);

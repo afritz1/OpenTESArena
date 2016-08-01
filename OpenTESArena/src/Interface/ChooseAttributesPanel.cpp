@@ -124,8 +124,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			int worldDepth = 32;
 
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
-				gameState->getRenderer().getWindowDimensions().getX(),
-				gameState->getRenderer().getWindowDimensions().getY(),
 				worldWidth, worldHeight, worldDepth,
 				gameState->getTextureManager(),
 				gameState->getRenderer()));
