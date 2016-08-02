@@ -3,7 +3,7 @@
 
 ## Current status
 
-July 31st, 2016:
+August 2nd, 2016:
 
 The game world is currently a barebones test city with some textured blocks, stone arches, and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation.
 
@@ -63,56 +63,50 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 This project is early in development.
 
-Baseline features to do:
-- Load original assets
-- Character creation
-- Game world interface and buttons (some hotkeys already work)
-- Graphics engine using OpenCL
-- Free-look camera
-- Music and sound using OpenAL Soft
-- Random test cities and dungeons
+Current priority:
+- Load character faces (.CIF, to replace PNGs)
+- Load font files (.DAT, to replace PNGs)
+- Load frames from videos (.FLC/.CEL, to replace PNGs)
+- Load original textures (.CFA, .CIF, .DFA, .IMG, etc.)
 - Sprites
-- Collision detection
-- Weapon attacks (eventually hold right mouse button to swing)
 
-Later features:
+Next priority:
+- Collision detection
+- Character creation questions
+- Game interface/buttons (some hotkeys already work)
+- Options menu
+- Weapon attacks (hold RMB to swing)
+
+Later:
 - Automap
-- Character faces (currently just DOSBox captures)
-- Class traits (spell point multiplier, knight auto-repairing, etc.)
+- Class rules and traits
 - Click to move and turn
 - Enemies
-- Inventory
-- Weapon and armor overlays
+- Inventory and containers
 - Levels and experience
-- Options menu (just `options.txt` for now)
+- More sprite detail (various clothes/hair/skin colors)
+- Random test cities and dungeons
 
-## Outside Scope (until later)
-
-Some of these features are being left until later either because the original data is not accessible, they're simply too complex to mess with at this stage, or they're new ideas to consider.
-
-Original features:
-- City and dungeon data
+Outside scope (until later):
+- (new) Custom class creation
+- (new) Followers
+- (new) Imperial race
+- (new) Journal tabs
+- (new) Left click to attack
 - Loading/saving
-- Quests
+- Main and side quests
+- Modding
+- (new) New kinds of stores
+- Original city/dungeon data
 - Spells
 - Wandering people
 - Wilderness
 
-New features:
-- Custom class creation
-- Followers
-- Left click to attack
-- New Imperial race
-- New journal tabs
-- New stores
-
 ## Graphics
 
-The 3D graphics are being done with a ray tracer I am writing in OpenCL. Test versions show it functioning decently on high-end graphics cards, but there are still many optimizations that can be done. As it is fairly experimental, I can't guarantee that the graphics engine will run well either on low-end computers or in CPU mode. I suggest using a modern GPU.
+The 3D graphics are being done with a ray tracer I am writing in OpenCL. Test versions show it functioning decently on high-end graphics cards, but there are still many optimizations that can be done. As it is fairly experimental, I can't guarantee that the graphics engine will run well either on low-end computers or in CPU mode unless the render resolution is low. I suggest using a modern GPU.
 
 I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
-
-I've also considered replacing all of the geometry with rectangles instead of triangles. This would theoretically speed up rendering by 2x, but it would make integrating any kind of traditional rendering like OpenGL more involved if I ever consider adding that option in the future.
 
 ## Resources
 
