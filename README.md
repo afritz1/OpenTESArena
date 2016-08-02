@@ -5,6 +5,8 @@
 
 August 2nd, 2016:
 
+This project is early in development.
+
 The game world is currently a barebones test city with some textured blocks, stone arches, and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation.
 
 Here are some hotkeys in the game world:
@@ -61,8 +63,6 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 ## Scope
 
-This project is early in development.
-
 Current priority:
 - Load character faces (.CIF, to replace PNGs)
 - Load font files (.DAT, to replace PNGs)
@@ -71,8 +71,8 @@ Current priority:
 - Sprites
 
 Next priority:
-- Collision detection
 - Character creation questions
+- Collision detection
 - Game interface/buttons (some hotkeys already work)
 - Options menu
 - Weapon attacks (hold RMB to swing)
@@ -84,6 +84,9 @@ Later:
 - Enemies
 - Inventory and containers
 - Levels and experience
+- Load artifact data (to replace artifacts.txt)
+- Load class data (to replace classes.txt)
+- Load locations data (to replace locations.txt)
 - More sprite detail (various clothes/hair/skin colors)
 - Random test cities and dungeons
 
