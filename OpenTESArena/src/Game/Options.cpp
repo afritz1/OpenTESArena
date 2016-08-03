@@ -5,14 +5,16 @@
 #include "../Utilities/Debug.h"
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double verticalFOV, double letterboxAspect, double cursorScale, double hSensitivity, 
-	double vSensitivity, std::string &&soundfont, double musicVolume, double soundVolume, 
-	int soundChannels, bool skipIntro)
-    : dataPath(std::move(dataPath)), soundfont(std::move(soundfont))
+    double renderQuality, double verticalFOV, double letterboxAspect, double cursorScale, 
+	double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
+	double soundVolume, int soundChannels, bool skipIntro)
+    : arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
 	Debug::check(screenWidth > 0, "Options", "Screen width must be positive.");
 	Debug::check(screenHeight > 0, "Options", "Screen height must be positive.");
+	Debug::check((renderQuality >= 0.25) && (renderQuality <= 1.0), "Options", 
+		"Render quality must be between 0.25 and 1.0.");
 	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options", 
 		"Field of view must be between 0.0 and 180.0 exclusive.");
 	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
@@ -28,6 +30,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 	this->fullscreen = fullscreen;
+	this->renderQuality = renderQuality;
 	this->verticalFOV = verticalFOV;
 	this->letterboxAspect = letterboxAspect;
 	this->cursorScale = cursorScale;
@@ -57,6 +60,11 @@ int Options::getScreenHeight() const
 bool Options::isFullscreen() const
 {
 	return this->fullscreen;
+}
+
+double Options::getRenderQuality() const
+{
+	return this->renderQuality;
 }
 
 double Options::getVerticalFOV() const
@@ -104,9 +112,9 @@ int Options::getSoundChannelCount() const
 	return this->soundChannels;
 }
 
-const std::string &Options::getDataPath() const
+const std::string &Options::getArenaPath() const
 {
-	return this->dataPath;
+	return this->arenaPath;
 }
 
 bool Options::introIsSkipped() const
@@ -131,6 +139,11 @@ void Options::setScreenHeight(int height)
 void Options::setFullscreen(bool fullscreen)
 {
 	this->fullscreen = fullscreen;
+}
+
+void Options::setRenderQuality(double percent)
+{
+	this->renderQuality = percent;
 }
 
 void Options::setVerticalFOV(double fov)
@@ -187,9 +200,9 @@ void Options::setSoundChannelCount(int count)
 	this->soundChannels = count;
 }
 
-void Options::setDataPath(std::string path)
+void Options::setArenaPath(std::string path)
 {
-	this->dataPath = std::move(path);
+	this->arenaPath = std::move(path);
 }
 
 void Options::setSkipIntro(bool skip)

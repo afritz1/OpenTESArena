@@ -11,6 +11,7 @@ const std::string OptionsParser::FILENAME = "options.txt";
 const std::string OptionsParser::SCREEN_WIDTH_KEY = "ScreenWidth";
 const std::string OptionsParser::SCREEN_HEIGHT_KEY = "ScreenHeight";
 const std::string OptionsParser::FULLSCREEN_KEY = "Fullscreen";
+const std::string OptionsParser::RENDER_QUALITY_KEY = "RenderQuality";
 const std::string OptionsParser::VERTICAL_FOV_KEY = "VerticalFieldOfView";
 const std::string OptionsParser::LETTERBOX_ASPECT_KEY = "LetterboxAspect";
 const std::string OptionsParser::CURSOR_SCALE_KEY = "CursorScale";
@@ -20,7 +21,7 @@ const std::string OptionsParser::MUSIC_VOLUME_KEY = "MusicVolume";
 const std::string OptionsParser::SOUND_VOLUME_KEY = "SoundVolume";
 const std::string OptionsParser::SOUNDFONT_KEY = "Soundfont";
 const std::string OptionsParser::SOUND_CHANNELS_KEY = "SoundChannels";
-const std::string OptionsParser::DATA_PATH_KEY = "DataPath";
+const std::string OptionsParser::ARENA_PATH_KEY = "ArenaPath";
 const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 
 std::unique_ptr<Options> OptionsParser::parse()
@@ -35,6 +36,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 	int screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);
 	int screenHeight = textMap.getInteger(OptionsParser::SCREEN_HEIGHT_KEY);
 	bool fullscreen = textMap.getBoolean(OptionsParser::FULLSCREEN_KEY);
+	double renderQuality = textMap.getDouble(OptionsParser::RENDER_QUALITY_KEY);
 	double verticalFOV = textMap.getDouble(OptionsParser::VERTICAL_FOV_KEY);
 	double letterboxAspect = textMap.getDouble(OptionsParser::LETTERBOX_ASPECT_KEY);
 	double cursorScale = textMap.getDouble(OptionsParser::CURSOR_SCALE_KEY);
@@ -50,13 +52,13 @@ std::unique_ptr<Options> OptionsParser::parse()
     int soundChannels = textMap.getInteger(OptionsParser::SOUND_CHANNELS_KEY);
 
 	// Miscellaneous.
-	std::string dataPath = textMap.getString(OptionsParser::DATA_PATH_KEY);
+	std::string arenaPath = textMap.getString(OptionsParser::ARENA_PATH_KEY);
 	bool skipIntro = textMap.getBoolean(OptionsParser::SKIP_INTRO_KEY);
 	
-	return std::unique_ptr<Options>(new Options(std::move(dataPath),
-		screenWidth, screenHeight, fullscreen, verticalFOV, letterboxAspect,
-		cursorScale, hSensitivity, vSensitivity, std::move(soundfont), 
-		musicVolume, soundVolume, soundChannels, skipIntro));
+	return std::unique_ptr<Options>(new Options(std::move(arenaPath),
+		screenWidth, screenHeight, fullscreen, renderQuality, verticalFOV, 
+		letterboxAspect, cursorScale, hSensitivity, vSensitivity, 
+		std::move(soundfont), musicVolume, soundVolume, soundChannels, skipIntro));
 }
 
 void OptionsParser::save(const Options &options)

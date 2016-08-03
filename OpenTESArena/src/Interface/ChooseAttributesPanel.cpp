@@ -15,6 +15,7 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
+#include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -126,7 +127,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
 				worldWidth, worldHeight, worldDepth,
 				gameState->getTextureManager(),
-				gameState->getRenderer()));
+				gameState->getRenderer(),
+				gameState->getOptions().getRenderQuality()));
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(

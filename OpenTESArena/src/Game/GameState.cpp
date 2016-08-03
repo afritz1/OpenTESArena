@@ -27,7 +27,7 @@ GameState::GameState()
 	this->options = OptionsParser::parse();
 
 	// Initialize virtual file system using the data path in the options file.
-	VFS::Manager::get().initialize(std::string(this->options->getDataPath()));
+	VFS::Manager::get().initialize(std::string(this->options->getArenaPath()));
 
 	// Set the panel and music for the next tick. Don't use "this->panel" yet.
 	this->nextPanel = Panel::defaultPanel(this);
@@ -121,7 +121,8 @@ void GameState::resizeWindow(int width, int height)
 			this->gameData->getWorldHeight(),
 			this->gameData->getWorldDepth(),
 			this->getTextureManager(),
-			this->getRenderer()));
+			this->getRenderer(),
+			this->getOptions().getRenderQuality()));
 	}
 }
 

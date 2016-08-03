@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
@@ -43,7 +44,7 @@ const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
-	TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer, double renderQuality)
 	: textureManager(textureManager)
 {
 	assert(worldWidth > 0);
@@ -55,19 +56,18 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	const int screenWidth = renderer.getWindowDimensions().getX();
 	const int screenHeight = renderer.getWindowDimensions().getY();
 
-	// To do: Eventually use the renderer's "resolution percent" with these.
-	// The resolution percent should have a range of about [0.30, 1.0] in
-	// increments of either 0.05 or 0.10.
-	this->renderWidth = screenWidth;
-	this->renderHeight = screenHeight;
+	// Render dimensions for ray tracing. To prevent issues when the user shrinks
+	// the window down too far, clamp them to at least 1.
+	this->renderWidth = std::max(static_cast<int>(screenWidth * renderQuality), 1);
+	this->renderHeight = std::max(static_cast<int>(screenHeight * renderQuality), 1);
 
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;
 	this->worldDepth = worldDepth;
 
 	// Create the local output pixel buffer.
-	this->outputData = std::vector<char>(sizeof(cl_int) * 
-		this->renderWidth * this->renderHeight);
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
+	this->outputData = std::vector<char>(sizeof(cl_int) * renderPixelCount);
 	
 	// Create streaming texture to be used as the game world frame buffer.	
 	this->texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
@@ -151,7 +151,6 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	// Create the OpenCL buffers in the context for reading and/or writing.
 	// NOTE: The size of some of these buffers is just a placeholder for now.
-	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	this->cameraBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		SIZEOF_CAMERA, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer cameraBuffer.");
@@ -672,7 +671,7 @@ void CLProgram::makeTestWorld()
 	for (int i = 0; i < textureCount; ++i)
 	{
 		const SDL_Surface *texture = textures.at(i);
-		uint32_t *pixels = static_cast<uint32_t*>(texture->pixels);
+		const uint32_t *pixels = static_cast<uint32_t*>(texture->pixels);
 
 		int pixelOffset = sizeof(cl_float4) * textureWidth * textureHeight * i;
 		cl_float4 *pixelPtr = reinterpret_cast<cl_float4*>(texPtr + pixelOffset);

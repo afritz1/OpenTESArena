@@ -18,6 +18,9 @@
 // It is important to remember that cl_float3 and cl_float4 are structurally
 // equivalent.
 
+// When resizing buffers, the old data either needs to be copied to a temp
+// buffer, or reloaded completely using the managed IDs to access data, etc..
+
 class Renderer;
 class TextureManager;
 
@@ -57,7 +60,7 @@ private:
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
-		TextureManager &textureManager, Renderer &renderer);
+		TextureManager &textureManager, Renderer &renderer, double renderQuality);
 	~CLProgram();
 
 	CLProgram &operator=(CLProgram &&clProgram);
