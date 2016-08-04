@@ -51,6 +51,17 @@ namespace
 		{ "VILLAGE.IMG", {  8,  8} }
 	};
 
+	// These CIF files are headerless with hardcoded dimensions as well.
+	const std::map<std::string, Int2> RawCifOverride =
+	{
+		{ "BRASS.CIF", { 8, 8 } },
+		{ "BRASS2.CIF", { 8, 8 } },
+		{ "MARBLE.CIF", { 3, 3 } },
+		{ "MARBLE2.CIF", { 3, 3 } },
+		{ "PARCH.CIF", { 20, 20 } },
+		{ "SCROLL.CIF", { 20, 20 } }
+	};
+
 	template<typename T>
 	void decode04Type(T src, T srcend, std::vector<uint8_t> &out)
 	{
