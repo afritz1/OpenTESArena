@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 
 #include "SDL.h"
 
@@ -13,8 +15,10 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
+#include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
+#include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
@@ -37,6 +41,38 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
+	}();
+
+	this->musicTextBox = [gameState]()
+	{
+		Int2 center(127, 96);
+		Color color(12, 73, 16);
+		std::string text = std::to_string(static_cast<int>(
+			std::round(gameState->getOptions().getMusicVolume() * 100.0)));
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			fontName,
+			gameState->getTextureManager(),
+			gameState->getRenderer()));
+	}();
+
+	this->soundTextBox = [gameState]()
+	{
+		Int2 center(54, 96);
+		Color color(12, 73, 16);
+		std::string text = std::to_string(static_cast<int>(
+			std::round(gameState->getOptions().getSoundVolume() * 100.0)));
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
 			color,
 			text,
 			fontName,
@@ -109,11 +145,125 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
+
+	this->musicUpButton = [this]()
+	{
+		int x = 119;
+		int y = 79;
+		auto function = [this](GameState *gameState)
+		{
+			Options &options = gameState->getOptions();
+			options.setMusicVolume(std::min(options.getMusicVolume() + 0.050, 1.0));
+
+			AudioManager &audioManager = gameState->getAudioManager();
+			audioManager.setMusicVolume(options.getMusicVolume());
+
+			// Update the music volume text.
+			this->updateMusicText(options.getMusicVolume());
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
+	}();
+
+	this->musicDownButton = [this]()
+	{
+		int x = 119;
+		int y = 104;
+		auto function = [this](GameState *gameState)
+		{
+			Options &options = gameState->getOptions();
+			options.setMusicVolume(std::max(options.getMusicVolume() - 0.050, 0.0));
+
+			AudioManager &audioManager = gameState->getAudioManager();
+			audioManager.setMusicVolume(options.getMusicVolume());
+
+			// Update the music volume text.
+			this->updateMusicText(options.getMusicVolume());
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
+	}();
+
+	this->soundUpButton = [this]()
+	{
+		int x = 46;
+		int y = 79;
+		auto function = [this](GameState *gameState)
+		{
+			Options &options = gameState->getOptions();
+			options.setSoundVolume(std::min(options.getSoundVolume() + 0.050, 1.0));
+
+			AudioManager &audioManager = gameState->getAudioManager();
+			audioManager.setSoundVolume(options.getSoundVolume());
+
+			// Update the sound volume text.
+			this->updateSoundText(options.getSoundVolume());
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
+	}();
+
+	this->soundDownButton = [this]()
+	{
+		int x = 46;
+		int y = 104;
+		auto function = [this](GameState *gameState)
+		{
+			Options &options = gameState->getOptions();
+			options.setSoundVolume(std::max(options.getSoundVolume() - 0.050, 0.0));
+
+			AudioManager &audioManager = gameState->getAudioManager();
+			audioManager.setSoundVolume(options.getSoundVolume());
+
+			// Update the sound volume text.
+			this->updateSoundText(options.getSoundVolume());
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
+	}();
 }
 
 PauseMenuPanel::~PauseMenuPanel()
 {
 
+}
+
+void PauseMenuPanel::updateMusicText(double volume)
+{
+	// Update the displayed music volume.
+	this->musicTextBox = [this, volume]()
+	{
+		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+
+		Int2 center(127, 96);
+		Color color(12, 73, 16);
+		std::string text = std::to_string(displayedVolume);
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			fontName,
+			this->getGameState()->getTextureManager(),
+			this->getGameState()->getRenderer()));
+	}();
+}
+
+void PauseMenuPanel::updateSoundText(double volume)
+{
+	// Update the displayed sound volume.
+	this->soundTextBox = [this, volume]()
+	{
+		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+
+		Int2 center(54, 96);
+		Color color(12, 73, 16);
+		std::string text = std::to_string(displayedVolume);
+		auto fontName = FontName::Arena;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			fontName,
+			this->getGameState()->getTextureManager(),
+			this->getGameState()->getRenderer()));
+	}();
 }
 
 void PauseMenuPanel::handleEvents(bool &running)
@@ -152,6 +302,7 @@ void PauseMenuPanel::handleEvents(bool &running)
 		if (leftClick)
 		{
 			// See if any of the buttons are clicked.
+			// (This code is getting kind of bad now. Maybe use a vector?)
 			if (this->loadButton->containsPoint(mouseOriginalPoint))
 			{
 				this->loadButton->click(this->getGameState());
@@ -171,6 +322,22 @@ void PauseMenuPanel::handleEvents(bool &running)
 			else if (this->resumeButton->containsPoint(mouseOriginalPoint))
 			{
 				this->resumeButton->click(this->getGameState());
+			}
+			else if (this->musicUpButton->containsPoint(mouseOriginalPoint))
+			{
+				this->musicUpButton->click(this->getGameState());
+			}
+			else if (this->musicDownButton->containsPoint(mouseOriginalPoint))
+			{
+				this->musicDownButton->click(this->getGameState());
+			}
+			else if (this->soundUpButton->containsPoint(mouseOriginalPoint))
+			{
+				this->soundUpButton->click(this->getGameState());
+			}
+			else if (this->soundDownButton->containsPoint(mouseOriginalPoint))
+			{
+				this->soundDownButton->click(this->getGameState());
 			}
 		}
 	}
@@ -214,9 +381,13 @@ void PauseMenuPanel::render(Renderer &renderer)
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
 	renderer.drawToOriginal(gameInterface, 0, ORIGINAL_HEIGHT - gameInterfaceHeight);
 
-	// Draw text: player's name.
+	// Draw text: player's name, music volume, sound volume.
 	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+	renderer.drawToOriginal(this->musicTextBox->getSurface(),
+		this->musicTextBox->getX(), this->musicTextBox->getY());
+	renderer.drawToOriginal(this->soundTextBox->getSurface(),
+		this->soundTextBox->getX(), this->soundTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

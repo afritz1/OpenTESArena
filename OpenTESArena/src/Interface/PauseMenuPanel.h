@@ -3,10 +3,6 @@
 
 #include "Panel.h"
 
-// The pause menu background might be redesigned to fit new options and things.
-// The old pause menu had the game world interface still drawn in it, which might
-// be considered pointless by some players.
-
 class Button;
 class Renderer;
 class TextBox;
@@ -14,8 +10,12 @@ class TextBox;
 class PauseMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton;
+	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox;
+	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton,
+		musicUpButton, musicDownButton, soundUpButton, soundDownButton;
+
+	void updateMusicText(double volume);
+	void updateSoundText(double volume);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;
