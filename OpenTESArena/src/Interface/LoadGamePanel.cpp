@@ -9,7 +9,6 @@
 #include "PauseMenuPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -25,7 +24,7 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 {
 	this->underConstructionTextBox = [gameState]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 170);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 170);
 		auto color = Color::White;
 		std::string text = "Under construction!";
 		auto fontName = FontName::A;

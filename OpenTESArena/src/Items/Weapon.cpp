@@ -60,6 +60,7 @@ const std::map<WeaponType, WeaponHandCount> WeaponTypeHandCounts =
 	{ WeaponType::Warhammer, WeaponHandCount::Two }
 };
 
+// From the manual.
 const std::map<WeaponType, std::pair<int, int>> WeaponTypeBaseDamages =
 {
 	{ WeaponType::BattleAxe, std::make_pair(2, 16) },

@@ -74,7 +74,6 @@ const std::map<std::string, BodyPartName> ArtifactParserBodyArmorParts =
 
 const std::map<std::string, ConsumableType> ArtifactParserConsumableTypes =
 {
-	{ "Food", ConsumableType::Food },
 	{ "Potion", ConsumableType::Potion }
 };
 

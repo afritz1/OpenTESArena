@@ -15,7 +15,6 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
-#include "../Math/Constants.h"
 #include "../Math/CoordinateFrame.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
@@ -313,7 +312,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::GameWorldInterface));
 	int gameInterfaceHeight;
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
-	renderer.drawToOriginal(gameInterface, 0, ORIGINAL_HEIGHT - gameInterfaceHeight);
+	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
 	// Draw compass slider (the actual headings). +X is north, +Z is east.
 	// Should do some sin() and cos() functions to get the pixel offset.
@@ -324,7 +323,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
 		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
 	renderer.drawToOriginal(compassSliderSegment.getSurface(),
-		(ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
 		compassSliderSegment.getHeight());
 
 	// Draw compass frame over the headings.
@@ -333,7 +332,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE,
 		renderer.getFormattedARGB(Color::Black));
 	renderer.drawToOriginal(compassFrame.getSurface(),
-		(ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
 	// Draw text: player name.
 	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),

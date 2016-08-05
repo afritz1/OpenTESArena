@@ -17,9 +17,9 @@ enum class MiscellaneousItemType
 	// Keys (not equipable. The inventory should search to see if a key is contained).
 	Key,
 
-	// Empty potion flask? Where does it go when the potion is consumed?! *crunch*
-
-	// Main quest.
+	// Main quest. I don't think there should be multiple types for inventory pieces,
+	// but the in-game sprite should be differentiable somehow, regardless. The
+	// number of pieces held is all that really matters quest-wise.
 	StaffPiece, // StaffHead, StaffTail...?
 
 	// Lights.

@@ -9,7 +9,6 @@
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/PaletteName.h"
@@ -25,7 +24,7 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 {
 	this->backToGameButton = []()
 	{
-		Int2 center(ORIGINAL_WIDTH - 22, ORIGINAL_HEIGHT - 7);
+		Int2 center(Renderer::ORIGINAL_WIDTH - 22, Renderer::ORIGINAL_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
 		auto function = [](GameState *gameState)

@@ -57,7 +57,6 @@
     <ClCompile Include="src\Items\MiscellaneousArtifactData.cpp" />
     <ClCompile Include="src\Items\ShieldArtifactData.cpp" />
     <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
-    <ClCompile Include="src\Items\Food.cpp" />
     <ClCompile Include="src\Items\Potion.cpp" />
     <ClCompile Include="src\World\VoxelReference.cpp" />
     <ClCompile Include="src\Game\Game.cpp" />
@@ -211,7 +210,6 @@
     <ClInclude Include="src\Items\WeaponArtifactData.h" />
     <ClInclude Include="src\Items\MiscellaneousArtifactData.h" />
     <ClInclude Include="src\Items\ShieldArtifactData.h" />
-    <ClInclude Include="src\Items\Food.h" />
     <ClInclude Include="src\Items\Potion.h" />
     <ClInclude Include="src\World\VoxelReference.h" />
     <ClInclude Include="src\Game\Game.h" />

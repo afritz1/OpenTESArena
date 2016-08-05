@@ -12,7 +12,6 @@
 #include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
@@ -38,7 +37,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 
 	this->initialTextBox = [gameState, charClass, name]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 100);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 100);
 		Color color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
@@ -205,9 +204,9 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &r
 	const int tooltipY = tooltip->getY();
 	const int width = tooltip->getWidth();
 	const int height = tooltip->getHeight();
-	const int x = ((tooltipX + 8 + width) < ORIGINAL_WIDTH) ?
+	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
 		(tooltipX + 8) : (tooltipX - width);
-	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ?
+	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
 		tooltipY : (tooltipY - height);
 
 	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
@@ -239,8 +238,8 @@ void ChooseRacePanel::render(Renderer &renderer)
 		const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * 1.65);
 
 		renderer.drawToOriginal(this->parchment->getSurface(),
-			(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
-			(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
+			(Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
+			(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 			parchmentWidth,
 			parchmentHeight);
 

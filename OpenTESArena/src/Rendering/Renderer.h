@@ -34,12 +34,16 @@ private:
 	// Helper method for making a renderer context.
 	SDL_Renderer *createRenderer();
 
-	// For use with window dimensions, etc.. Not for rendering.
+	// For use with window dimensions, etc.. No longer used for rendering.
 	SDL_Surface *getWindowSurface() const;
 public:
 	Renderer(int width, int height, bool fullscreen, double letterboxAspect);
 	Renderer(int width, int height, bool fullscreen);
 	~Renderer();
+
+	// Original screen dimensions.
+	static const int ORIGINAL_WIDTH;
+	static const int ORIGINAL_HEIGHT;
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
@@ -105,6 +109,7 @@ public:
 	// If Renderer::useTransparencyBlending() is set to true, it also uses blending.
 	void drawOriginalToNative();
 
+	// Refreshes the displayed frame buffer.
 	void present();
 };
 

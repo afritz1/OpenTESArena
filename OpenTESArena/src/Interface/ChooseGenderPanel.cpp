@@ -11,7 +11,6 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -29,13 +28,13 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 	{
 		const auto *surface = gameState->getTextureManager().getSurface(
 			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		Int2 origin((ORIGINAL_WIDTH / 2) - (surface->w / 2), 35);
+		Int2 origin((Renderer::ORIGINAL_WIDTH / 2) - (surface->w / 2), 35);
 		return std::unique_ptr<Surface>(new Surface(origin.getX(), origin.getY(), surface));
 	}();
 
 	this->genderTextBox = [gameState]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 80);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text = "Choose thy gender...";
 		auto fontName = FontName::A;
@@ -50,7 +49,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleTextBox = [gameState]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 120);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text = "Male";
 		auto fontName = FontName::A;
@@ -65,7 +64,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->femaleTextBox = [gameState]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 160);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text = "Female";
 		auto fontName = FontName::A;
@@ -90,7 +89,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->maleButton = [charClass, name]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 120);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		auto function = [charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
@@ -102,7 +101,7 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 
 	this->femaleButton = [charClass, name]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 160);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		auto function = [charClass, name](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
@@ -204,8 +203,8 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	// Draw parchments: title, male, and female.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	int parchmentX = (ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
-	int parchmentY = (ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
+	int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
+	int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY);
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 40);
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);

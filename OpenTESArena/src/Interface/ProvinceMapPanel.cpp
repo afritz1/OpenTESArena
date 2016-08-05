@@ -10,7 +10,6 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/FontName.h"
@@ -33,9 +32,9 @@ namespace
 
 	const std::map<ProvinceButtonName, Rect> ProvinceButtonClickAreas =
 	{
-		{ ProvinceButtonName::Search, Rect(34, ORIGINAL_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::Travel, Rect(53, ORIGINAL_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::BackToWorldMap, Rect(72, ORIGINAL_HEIGHT - 32, 18, 27) }
+		{ ProvinceButtonName::Search, Rect(34, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
+		{ ProvinceButtonName::Travel, Rect(53, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
+		{ ProvinceButtonName::BackToWorldMap, Rect(72, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) }
 	};
 
 	const std::map<ProvinceName, TextureName> ProvinceMapTextureNames =
@@ -207,9 +206,9 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const int tooltipY = tooltip->getY();
 	const int width = tooltip->getWidth();
 	const int height = tooltip->getHeight();
-	const int x = ((tooltipX + 8 + width) < ORIGINAL_WIDTH) ? 
+	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
 		(tooltipX + 8) : (tooltipX - width);
-	const int y = ((tooltipY + height) < ORIGINAL_HEIGHT) ? 
+	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
 		tooltipY : (tooltipY - height);
 
 	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);

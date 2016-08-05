@@ -11,7 +11,6 @@
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -35,7 +34,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->titleTextBox = [gameState, charClass]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 90);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 90);
 		Color color(48, 12, 12);
 		std::string text = "What will be thy name,\n" + charClass.getDisplayName() + "?";
 		auto fontName = FontName::A;
@@ -50,7 +49,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->nameTextBox = [gameState]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 110);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 110);
 		auto color = Color::White;
 		std::string text = "";
 		auto fontName = FontName::A;
@@ -213,7 +212,7 @@ void ChooseNamePanel::handleEvents(bool &running)
 			this->nameTextBox = [this]
 			{
 				return std::unique_ptr<TextBox>(new TextBox(
-					Int2(ORIGINAL_WIDTH / 2, 110),
+					Int2(Renderer::ORIGINAL_WIDTH / 2, 110),
 					Color::White,
 					this->name,
 					FontName::A,
@@ -269,8 +268,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 	const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
 
 	renderer.drawToOriginal(this->parchment->getSurface(),
-		(ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
-		(ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
+		(Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
+		(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
 		parchmentWidth,
 		parchmentHeight);
 	

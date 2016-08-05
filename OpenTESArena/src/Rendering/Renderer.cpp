@@ -16,6 +16,8 @@
 
 const int Renderer::DEFAULT_COLOR_BITS_PER_PIXEL = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
+const int Renderer::ORIGINAL_WIDTH = 320;
+const int Renderer::ORIGINAL_HEIGHT = 200;
 
 Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
 {
@@ -46,22 +48,22 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	Int2 windowDimensions = this->getWindowDimensions();
 
 	// Initialize native frame buffer.
-	this->nativeTexture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
+	this->nativeTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.getX(), windowDimensions.getY());
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
 	// Initialize 320x200 frame buffer.
-	this->originalTexture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_TARGET, ORIGINAL_WIDTH, ORIGINAL_HEIGHT);
+	this->originalTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_TARGET, Renderer::ORIGINAL_WIDTH, Renderer::ORIGINAL_HEIGHT);
 
 	// Set the original frame buffer to not use transparency by default.
 	this->useTransparencyBlending(false);
 }
 
 Renderer::Renderer(int width, int height, bool fullscreen)
-	: Renderer(width, height, fullscreen, static_cast<double>(ORIGINAL_WIDTH) /
-		static_cast<double>(ORIGINAL_HEIGHT)) { }
+	: Renderer(width, height, fullscreen, static_cast<double>(Renderer::ORIGINAL_WIDTH) /
+		static_cast<double>(Renderer::ORIGINAL_HEIGHT)) { }
 
 Renderer::~Renderer()
 {
@@ -200,8 +202,8 @@ Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
 		static_cast<double>(letterbox.h);
 
 	Int2 originalPoint(
-		static_cast<double>(ORIGINAL_WIDTH) * letterboxXPercent,
-		static_cast<double>(ORIGINAL_HEIGHT) * letterboxYPercent);
+		static_cast<double>(Renderer::ORIGINAL_WIDTH) * letterboxXPercent,
+		static_cast<double>(Renderer::ORIGINAL_HEIGHT) * letterboxYPercent);
 
 	return originalPoint;
 }
@@ -209,10 +211,10 @@ Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
 Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
-	double originalXPercent = static_cast<double>(originalPoint.getX()) / 
-		static_cast<double>(ORIGINAL_WIDTH);
+	double originalXPercent = static_cast<double>(originalPoint.getX()) /
+		static_cast<double>(Renderer::ORIGINAL_WIDTH);
 	double originalYPercent = static_cast<double>(originalPoint.getY()) /
-		static_cast<double>(ORIGINAL_HEIGHT);
+		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
 
 	const auto letterbox = this->getLetterboxDimensions();
 	Int2 letterboxPoint(
@@ -261,7 +263,7 @@ void Renderer::resize(int width, int height)
 
 	// Reinitialize native frame buffer.
 	SDL_DestroyTexture(this->nativeTexture);
-	this->nativeTexture = SDL_CreateTexture(this->renderer, SDL_PIXELFORMAT_ARGB8888,
+	this->nativeTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_TARGET, width, height);
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
@@ -335,7 +337,7 @@ void Renderer::drawToNative(SDL_Texture *texture)
 
 void Renderer::drawToNative(SDL_Surface *surface, int x, int y, int w, int h)
 {
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+	SDL_Texture *texture = this->createTextureFromSurface(surface);
 	this->drawToNative(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
 }
@@ -378,7 +380,7 @@ void Renderer::drawToOriginal(SDL_Texture *texture)
 
 void Renderer::drawToOriginal(SDL_Surface *surface, int x, int y, int w, int h)
 {
-	SDL_Texture *texture = SDL_CreateTextureFromSurface(this->renderer, surface);
+	SDL_Texture *texture = this->createTextureFromSurface(surface);
 	this->drawToOriginal(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
 }

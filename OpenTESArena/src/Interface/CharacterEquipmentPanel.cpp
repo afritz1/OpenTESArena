@@ -12,7 +12,6 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteName.h"
@@ -254,7 +253,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 		portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(portrait, ORIGINAL_WIDTH - portraitWidth, 0);
+	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),

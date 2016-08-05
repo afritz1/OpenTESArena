@@ -50,7 +50,7 @@ ItemType Trinket::getItemType() const
 
 double Trinket::getWeight() const
 {
-	auto weight = TrinketWeights.at(this->getTrinketType());
+	double weight = TrinketWeights.at(this->getTrinketType());
 	assert(weight >= 0.0);
 	return weight;
 }

@@ -9,7 +9,6 @@
 #include "MainMenuPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -32,7 +31,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 80);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text = std::string("How do you wish\nto select your class?");
 		auto fontName = FontName::A;
@@ -47,7 +46,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->generateTextBox = [gameState]()
 	{
-		Int2 center((ORIGINAL_WIDTH / 2), 120);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text = std::string("Generate\n(not implemented)");
 		auto fontName = FontName::A;
@@ -62,7 +61,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->selectTextBox = [gameState]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 160);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text = std::string("Select");
 		auto fontName = FontName::A;
@@ -88,7 +87,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->generateButton = []()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 120);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		auto function = [](GameState *gameState)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
@@ -100,7 +99,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 	this->selectButton = []()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, 160);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
@@ -198,8 +197,8 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	// Draw parchments: title, generate, select.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	int parchmentX = (ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
-	int parchmentY = (ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
+	int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
+	int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
 
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY);
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 40);

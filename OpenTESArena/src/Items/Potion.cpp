@@ -5,6 +5,7 @@
 #include "ConsumableType.h"
 
 Potion::Potion()
+	: Consumable()
 {
 
 }
@@ -16,13 +17,13 @@ Potion::~Potion()
 
 double Potion::getWeight() const
 {
-	auto weight = 0.5;
+	double weight = 0.5;
 	return weight;
 }
 
 int Potion::getGoldValue() const
 {
-	auto baseValue = 0;
+	int baseValue = 0;
 	return baseValue;
 }
 

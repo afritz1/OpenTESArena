@@ -16,7 +16,6 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -96,7 +95,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->doneButton = [this, charClass, name, gender, raceName]()
 	{
-		Int2 center(25, ORIGINAL_HEIGHT - 15);
+		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
 
@@ -209,7 +208,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->incrementPortraitButton = [this]()
 	{
-		Int2 center(ORIGINAL_WIDTH - 72, 25);
+		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
 		auto function = [this](GameState *gameState)
@@ -221,7 +220,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 	this->decrementPortraitButton = [this]()
 	{
-		Int2 center(ORIGINAL_WIDTH - 72, 25);
+		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
 		auto function = [this](GameState *gameState)
@@ -340,7 +339,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 		portraitStrings.at(this->portraitIndex));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(portrait, ORIGINAL_WIDTH - portraitWidth, 0);
+	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->nameTextBox->getSurface(),

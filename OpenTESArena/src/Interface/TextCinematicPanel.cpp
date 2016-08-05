@@ -8,7 +8,6 @@
 #include "Button.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteName.h"
@@ -31,7 +30,7 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 
 	this->textBoxes = [gameState, &text]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, ORIGINAL_HEIGHT - 12);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT - 12);
 
 		// Count new lines.
 		int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));

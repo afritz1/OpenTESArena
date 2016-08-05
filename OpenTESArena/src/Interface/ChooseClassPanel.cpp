@@ -19,7 +19,6 @@
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
 #include "../Items/Weapon.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -69,8 +68,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	this->classesListBox = [this, gameState]()
 	{
 		// Intended to be left aligned against something like a scroll bar.
-		int x = (ORIGINAL_WIDTH / 2) - 58;
-		int y = (ORIGINAL_HEIGHT / 2);
+		int x = (Renderer::ORIGINAL_WIDTH / 2) - 58;
+		int y = (Renderer::ORIGINAL_HEIGHT / 2);
 		auto fontName = FontName::A;
 		Color color(190, 113, 0);
 		int maxElements = 6;
@@ -105,8 +104,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->upButton = [this]
 	{
-		int x = (ORIGINAL_WIDTH / 2) - 71;
-		int y = (ORIGINAL_HEIGHT / 2) - 7;
+		int x = (Renderer::ORIGINAL_WIDTH / 2) - 71;
+		int y = (Renderer::ORIGINAL_HEIGHT / 2) - 7;
 		int w = 8;
 		int h = 8;
 		auto function = [this](GameState *gameState)
@@ -122,8 +121,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->downButton = [this]
 	{
-		int x = (ORIGINAL_WIDTH / 2) - 71;
-		int y = (ORIGINAL_HEIGHT / 2) + 62;
+		int x = (Renderer::ORIGINAL_WIDTH / 2) - 71;
+		int y = (Renderer::ORIGINAL_HEIGHT / 2) + 62;
 		int w = 8;
 		int h = 8;
 		auto function = [this](GameState *gameState)
@@ -453,9 +452,9 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	// Calculate the top left corner, given the mouse position.
 	const int mouseX = mouseOriginalPoint.getX();
 	const int mouseY = mouseOriginalPoint.getY();
-	const int x = ((mouseX + 8 + tooltipWidth) < ORIGINAL_WIDTH) ? 
+	const int x = ((mouseX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltipWidth);
-	const int y = ((mouseY + tooltipHeight) < ORIGINAL_HEIGHT) ? 
+	const int y = ((mouseY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltipHeight);
 
 	renderer.drawToOriginal(tooltipTexture, x, y, tooltipWidth, tooltipHeight);
@@ -479,7 +478,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	this->parchment->setTransparentColor(Color::Magenta);
 
 	renderer.drawToOriginal(this->parchment->getSurface(),
-		(ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2), 35);
+		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2), 35);
 
 	// The original list background is PopUp, but the palette isn't right yet.
 	auto *listPopUp = textureManager.getTexture(
@@ -495,8 +494,8 @@ void ChooseClassPanel::render(Renderer &renderer)
 		static_cast<int>(this->parchment->getHeight() * listYScale);
 
 	renderer.drawToOriginal(listPopUp,
-		(ORIGINAL_WIDTH / 2) - (listWidth / 2),
-		(ORIGINAL_HEIGHT / 2) - 12,
+		(Renderer::ORIGINAL_WIDTH / 2) - (listWidth / 2),
+		(Renderer::ORIGINAL_HEIGHT / 2) - 12,
 		listWidth,
 		listHeight);
 

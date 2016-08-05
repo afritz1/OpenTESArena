@@ -8,7 +8,6 @@
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -21,7 +20,7 @@ AutomapPanel::AutomapPanel(GameState *gameState)
 {
 	this->backToGameButton = []()
 	{
-		Int2 center(ORIGINAL_WIDTH - 57, ORIGINAL_HEIGHT - 29);
+		Int2 center(Renderer::ORIGINAL_WIDTH - 57, Renderer::ORIGINAL_HEIGHT - 29);
 		int width = 38;
 		int height = 13;
 		auto function = [](GameState *gameState)

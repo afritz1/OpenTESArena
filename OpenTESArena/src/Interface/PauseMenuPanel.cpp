@@ -16,7 +16,6 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
@@ -379,7 +378,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::GameWorldInterface));
 	int gameInterfaceHeight;
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
-	renderer.drawToOriginal(gameInterface, 0, ORIGINAL_HEIGHT - gameInterfaceHeight);
+	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
 	// Draw text: player's name, music volume, sound volume.
 	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),

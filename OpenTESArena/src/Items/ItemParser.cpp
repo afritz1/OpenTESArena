@@ -7,7 +7,6 @@
 #include "ArmorMaterialType.h"
 #include "ArmorType.h"
 #include "BodyArmor.h"
-#include "Food.h"
 #include "HeavyArmorMaterial.h"
 #include "Item.h"
 #include "ItemType.h"

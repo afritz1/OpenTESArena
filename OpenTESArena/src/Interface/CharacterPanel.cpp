@@ -13,7 +13,6 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -79,7 +78,7 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->doneButton = []()
 	{
-		Int2 center(25, ORIGINAL_HEIGHT - 15);
+		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 13;
 		auto function = [](GameState *gameState)
@@ -210,7 +209,7 @@ void CharacterPanel::render(Renderer &renderer)
 		portraitStrings.at(player.getPortraitID()));
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(portrait, ORIGINAL_WIDTH - portraitWidth, 0);
+	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),

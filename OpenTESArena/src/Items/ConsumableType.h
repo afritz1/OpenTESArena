@@ -1,14 +1,11 @@
 #ifndef CONSUMABLE_TYPE_H
 #define CONSUMABLE_TYPE_H
 
-// Consumables are abstract types and thus require a derived implementation.
-
-// One of the reasons for separation is that foods should not require identification,
-// but potions should.
+// Potions require identification. There are no foods in Arena, and that's 
+// currently out of scope with respect to any sort of modding.
 
 enum class ConsumableType
 {
-	Food,
 	Potion
 };
 

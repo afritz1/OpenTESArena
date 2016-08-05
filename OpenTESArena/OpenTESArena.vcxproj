@@ -188,7 +188,6 @@
     <ClCompile Include="src\Items\AccessoryArtifactData.cpp" />
     <ClCompile Include="src\Items\MiscellaneousItem.cpp" />
     <ClCompile Include="src\Items\Item.cpp" />
-    <ClCompile Include="src\Items\Food.cpp" />
     <ClCompile Include="src\Items\Potion.cpp" />
     <ClCompile Include="src\Items\Consumable.cpp" />
     <ClCompile Include="src\Entities\AttributeModifier.cpp" />
@@ -308,7 +307,6 @@
     <ClInclude Include="src\Items\AccessoryArtifactData.h" />
     <ClInclude Include="src\Items\MiscellaneousItem.h" />
     <ClInclude Include="src\Items\Item.h" />
-    <ClInclude Include="src\Items\Food.h" />
     <ClInclude Include="src\Items\Potion.h" />
     <ClInclude Include="src\Items\Consumable.h" />
     <ClInclude Include="src\Entities\AttributeModifier.h" />

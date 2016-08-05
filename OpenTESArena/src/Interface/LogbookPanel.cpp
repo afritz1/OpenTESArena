@@ -8,7 +8,6 @@
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
-#include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -23,7 +22,7 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 {
 	this->titleTextBox = [gameState]()
 	{
-		Int2 center(ORIGINAL_WIDTH / 2, ORIGINAL_HEIGHT / 2);
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
 		Color color(255, 207, 12);
 		std::string text = "Your logbook is empty.";
 		auto fontName = FontName::A;
@@ -38,7 +37,7 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 
 	this->backButton = []()
 	{
-		Int2 center(ORIGINAL_WIDTH - 40, ORIGINAL_HEIGHT - 13);
+		Int2 center(Renderer::ORIGINAL_WIDTH - 40, Renderer::ORIGINAL_HEIGHT - 13);
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
