@@ -13,15 +13,11 @@
 
 enum class PaletteName;
 
-struct IMGProperties;
-
 class IMGFile
 {
 private:
 	int w, h;
 	std::unique_ptr<uint32_t> pixels;
-
-	static IMGProperties getProperties(const std::string &filename);
 public:
 	// Loads an IMG from file. Uses the given palette unless the palette name is
 	// "built-in", then it refers to the IMG's palette instead.

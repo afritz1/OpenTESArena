@@ -5,9 +5,9 @@
 #include "../Utilities/Debug.h"
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double renderQuality, double verticalFOV, double letterboxAspect, double cursorScale, 
-	double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
-	double soundVolume, int soundChannels, bool skipIntro)
+    double renderQuality, bool ambientOcclusion, double verticalFOV, double letterboxAspect, 
+	double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont, 
+	double musicVolume, double soundVolume, int soundChannels, bool skipIntro)
     : arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
@@ -31,6 +31,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	this->screenHeight = screenHeight;
 	this->fullscreen = fullscreen;
 	this->renderQuality = renderQuality;
+	this->ambientOcclusion = ambientOcclusion;
 	this->verticalFOV = verticalFOV;
 	this->letterboxAspect = letterboxAspect;
 	this->cursorScale = cursorScale;
@@ -65,6 +66,11 @@ bool Options::isFullscreen() const
 double Options::getRenderQuality() const
 {
 	return this->renderQuality;
+}
+
+bool Options::useAmbientOcclusion() const
+{
+	return this->ambientOcclusion;
 }
 
 double Options::getVerticalFOV() const
@@ -144,6 +150,11 @@ void Options::setFullscreen(bool fullscreen)
 void Options::setRenderQuality(double percent)
 {
 	this->renderQuality = percent;
+}
+
+void Options::setAmbientOcclusion(bool occlusion)
+{
+	this->ambientOcclusion = occlusion;
 }
 
 void Options::setVerticalFOV(double fov)

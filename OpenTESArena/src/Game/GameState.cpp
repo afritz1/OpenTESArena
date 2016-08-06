@@ -122,7 +122,8 @@ void GameState::resizeWindow(int width, int height)
 			this->gameData->getWorldDepth(),
 			this->getTextureManager(),
 			this->getRenderer(),
-			this->getOptions().getRenderQuality()));
+			this->getOptions().getRenderQuality(),
+			this->getOptions().useAmbientOcclusion()));
 	}
 }
 

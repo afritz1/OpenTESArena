@@ -127,7 +127,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				worldWidth, worldHeight, worldDepth,
 				gameState->getTextureManager(),
 				gameState->getRenderer(),
-				gameState->getOptions().getRenderQuality()));
+				gameState->getOptions().getRenderQuality(),
+				gameState->getOptions().useAmbientOcclusion()));
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(

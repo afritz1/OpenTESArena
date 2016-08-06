@@ -45,7 +45,8 @@ const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
-	TextureManager &textureManager, Renderer &renderer, double renderQuality)
+	TextureManager &textureManager, Renderer &renderer, double renderQuality,
+	bool ambientOcclusion)
 	: textureManager(textureManager)
 {
 	assert(worldWidth > 0);
@@ -120,10 +121,11 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	// Make some #defines to add to the kernel source.
 	std::string defines = std::string("#define RENDER_WIDTH ") + std::to_string(this->renderWidth) +
 		std::string("\n") + std::string("#define RENDER_HEIGHT ") +
-		std::to_string(this->renderHeight) + std::string("\n") + 
+		std::to_string(this->renderHeight) + std::string("\n") +
 		std::string("#define WORLD_WIDTH ") + std::to_string(worldWidth) + std::string("\n") +
 		std::string("#define WORLD_HEIGHT ") + std::to_string(worldHeight) + std::string("\n") +
-		std::string("#define WORLD_DEPTH ") + std::to_string(worldDepth) + std::string("\n");
+		std::string("#define WORLD_DEPTH ") + std::to_string(worldDepth) + std::string("\n") +
+		std::string("#define AMBIENT_OCCLUSION ") + (ambientOcclusion ? "1" : "0") + std::string("\n");
 
 	// Put the kernel source in a program object within the OpenCL context.
 	this->program = cl::Program(this->context, defines + source, false, &status);
@@ -141,6 +143,10 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	this->intersectKernel = cl::Kernel(
 		this->program, CLProgram::INTERSECT_KERNEL.c_str(), &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel intersectKernel.");
+
+	this->ambientOcclusionKernel = cl::Kernel(
+		this->program, CLProgram::AMBIENT_OCCLUSION_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel ambientOcclusionKernel.");
 
 	this->rayTraceKernel = cl::Kernel(
 		this->program, CLProgram::RAY_TRACE_KERNEL.c_str(), &status);
@@ -207,6 +213,10 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 		sizeof(cl_float2) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer uvBuffer.");
 
+	this->ambientBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer ambientBuffer.");
+
 	this->rectangleIndexBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
 		sizeof(cl_int) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleIndexBuffer.");
@@ -264,6 +274,43 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg intersectKernel rectangleIndexBuffer.");
 
+	// Tell the ambientOcclusion kernel arguments where their buffers live.
+	status = this->ambientOcclusionKernel.setArg(0, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel voxelRefBuffer.");
+	
+	status = this->ambientOcclusionKernel.setArg(1, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel spriteRefBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(2, this->rectangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel rectangleBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(3, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel textureBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(4, this->depthBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel depthBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(5, this->normalBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel normalBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(6, this->pointBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel pointBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(7, this->rectangleIndexBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel rectangleIndexBuffer.");
+
+	status = this->ambientOcclusionKernel.setArg(8, this->ambientBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg ambientOcclusionKernel ambientBuffer.");
+
 	// Tell the rayTrace kernel arguments where their buffers live.
 	status = this->rayTraceKernel.setArg(0, this->voxelRefBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
@@ -313,11 +360,15 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel uvBuffer.");
 
-	status = this->rayTraceKernel.setArg(12, this->rectangleIndexBuffer);
+	status = this->rayTraceKernel.setArg(12, this->ambientBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel ambientBuffer.");
+
+	status = this->rayTraceKernel.setArg(13, this->rectangleIndexBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel rectangleIndexBuffer.");
 
-	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
+	status = this->rayTraceKernel.setArg(14, this->colorBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel colorBuffer.");
 
@@ -353,6 +404,7 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->commandQueue = clProgram.commandQueue;
 	this->program = clProgram.program;
 	this->intersectKernel = clProgram.intersectKernel;
+	this->ambientOcclusionKernel = clProgram.ambientOcclusionKernel;
 	this->rayTraceKernel = clProgram.rayTraceKernel;
 	this->convertToRGBKernel = clProgram.convertToRGBKernel;
 	this->cameraBuffer = clProgram.cameraBuffer;
@@ -368,6 +420,7 @@ CLProgram &CLProgram::operator=(CLProgram &&clProgram)
 	this->viewBuffer = clProgram.viewBuffer;
 	this->pointBuffer = clProgram.pointBuffer;
 	this->uvBuffer = clProgram.uvBuffer;
+	this->ambientBuffer = clProgram.ambientBuffer;
 	this->rectangleIndexBuffer = clProgram.rectangleIndexBuffer;
 	this->colorBuffer = clProgram.colorBuffer;
 	this->outputBuffer = clProgram.outputBuffer;
@@ -883,7 +936,14 @@ void CLProgram::render(Renderer &renderer)
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::CommandQueue::enqueueNDRangeKernel intersectKernel.");
 
-	// Run the ray tracing kernel using the results from the intersect kernel.
+	// Run the ambient occlusion kernel using the results from the intersect kernel.
+	status = this->commandQueue.enqueueNDRangeKernel(this->ambientOcclusionKernel,
+		cl::NullRange, workDims, cl::NullRange, nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::CommandQueue::enqueueNDRangeKernel ambientOcclusionKernel.");
+
+	// Run the ray tracing kernel using the results from the intersect and ambient
+	// occlusion kernels.
 	status = this->commandQueue.enqueueNDRangeKernel(this->rayTraceKernel,
 		cl::NullRange, workDims, cl::NullRange, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
