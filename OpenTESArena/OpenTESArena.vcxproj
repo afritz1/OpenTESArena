@@ -264,7 +264,6 @@
   <ItemGroup>
     <ClInclude Include="src\Assets\FLCFile.h" />
     <ClInclude Include="src\Assets\RCIFile.h" />
-    <ClInclude Include="src\Assets\IMGFileType.h" />
     <ClInclude Include="src\Assets\SETFile.h" />
     <ClInclude Include="src\Assets\CIFFile.h" />
     <ClInclude Include="src\Assets\Compression.h" />
@@ -281,6 +280,7 @@
     <ClInclude Include="src\Interface\ChooseClassCreationPanel.h" />
     <ClInclude Include="src\Interface\ListBox.h" />
     <ClInclude Include="src\Media\Midi.hpp" />
+    <ClInclude Include="src\Media\Palette.h" />
     <ClInclude Include="src\Media\PaletteName.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Game\OptionsParser.h" />

@@ -287,9 +287,9 @@
     <ClInclude Include="src\Assets\DFAFile.h" />
     <ClInclude Include="src\Assets\IMGFile.h" />
     <ClInclude Include="src\Assets\SETFile.h" />
-    <ClInclude Include="src\Assets\IMGFileType.h" />
     <ClInclude Include="src\Assets\RCIFile.h" />
     <ClInclude Include="src\Assets\FLCFile.h" />
+    <ClInclude Include="src\Media\Palette.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

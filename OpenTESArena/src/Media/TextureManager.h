@@ -1,23 +1,18 @@
 #ifndef TEXTURE_MANAGER_H
 #define TEXTURE_MANAGER_H
 
-#include <array>
 #include <map>
 #include <string>
 #include <unordered_map>
 
-#include "Color.h"
-#include "../Interface/Surface.h"
+#include "Palette.h"
 
-// The behavior of this class might be changing to work with BSA parsing and
-// associated files.
-
-// When loading wall and sprite textures from file, use a texture name parser or
-// something that produces a texture/index -> filename mapping. Each of those would 
-// get a unique integer ID either before or during parsing (perhaps depending on 
-// the order they were parsed). Perhaps the ID could be their offset in GLOBAL.BSA.
+// Find a way to map original wall and sprite filenames to unique integer IDs 
+// (probably depending on the order they were parsed). Or perhaps the ID could 
+// be their offset in GLOBAL.BSA.
 
 class Renderer;
+class Surface;
 
 enum class PaletteName;
 
@@ -28,8 +23,6 @@ struct SDL_Texture;
 class TextureManager
 {
 private:
-	typedef std::array<Color, 256> Palette;
-
 	static const std::string PATH;
 
 	std::map<PaletteName, Palette> palettes;
@@ -39,14 +32,8 @@ private:
 	std::unordered_map<std::string, std::map<PaletteName, std::vector<SDL_Texture*>>> textureSets;
 	Renderer &renderer;
 	PaletteName activePalette;
-
-	std::vector<SDL_Surface*> loadCFA(const std::string &filename, PaletteName paletteName);
-	std::vector<SDL_Surface*> loadCIF(const std::string &filename, PaletteName paletteName);
-	std::vector<SDL_Surface*> loadDFA(const std::string &filename, PaletteName paletteName);
-	std::vector<SDL_Surface*> loadFLC(const std::string &filename);
-	SDL_Surface *loadIMG(const std::string &filename, PaletteName paletteName);
+		
 	SDL_Surface *loadPNG(const std::string &fullPath);
-	std::vector<SDL_Surface*> loadSET(const std::string &filename, PaletteName paletteName);
 
 	// Initialize the given palette with a certain palette from file.
 	void initPalette(Palette &palette, PaletteName paletteName);

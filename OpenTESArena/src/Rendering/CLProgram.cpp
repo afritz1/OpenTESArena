@@ -7,6 +7,7 @@
 #include "CLProgram.h"
 
 #include "../Entities/Directable.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/Float2.h"
 #include "../Math/Float3.h"
