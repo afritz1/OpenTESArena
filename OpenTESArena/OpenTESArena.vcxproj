@@ -139,6 +139,14 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\FLCFile.cpp" />
+    <ClCompile Include="src\Assets\RCIFile.cpp" />
+    <ClCompile Include="src\Assets\SETFile.cpp" />
+    <ClCompile Include="src\Assets\CIFFile.cpp" />
+    <ClCompile Include="src\Assets\Compression.cpp" />
+    <ClCompile Include="src\Assets\DFAFile.cpp" />
+    <ClCompile Include="src\Assets\IMGFile.cpp" />
+    <ClCompile Include="src\Assets\CFAFile.cpp" />
     <ClCompile Include="src\Math\Rect3D.cpp" />
     <ClCompile Include="src\Math\Int3.cpp" />
     <ClCompile Include="src\Interface\CharacterEquipmentPanel.cpp" />
@@ -254,6 +262,15 @@
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Assets\FLCFile.h" />
+    <ClInclude Include="src\Assets\RCIFile.h" />
+    <ClInclude Include="src\Assets\IMGFileType.h" />
+    <ClInclude Include="src\Assets\SETFile.h" />
+    <ClInclude Include="src\Assets\CIFFile.h" />
+    <ClInclude Include="src\Assets\Compression.h" />
+    <ClInclude Include="src\Assets\DFAFile.h" />
+    <ClInclude Include="src\Assets\IMGFile.h" />
+    <ClInclude Include="src\Assets\CFAFile.h" />
     <ClInclude Include="src\Math\Rect3D.h" />
     <ClInclude Include="src\Math\Int3.h" />
     <ClInclude Include="src\Interface\CharacterEquipmentPanel.h" />
