@@ -21,12 +21,12 @@ private:
 public:
 	// Loads an IMG from file. Uses the given palette unless the palette name is
 	// "built-in", then it refers to the IMG's palette instead.
-	IMGFile(const std::string &filename, Palette *palette, PaletteName paletteName);
+	IMGFile(const std::string &filename, Palette *palette);
 	~IMGFile();
 
-	// Extracts the palette from an IMG file. Causes an exception if the IMG file 
-	// doesn't have a palette.
-	static Palette getPalette(const std::string &filename);
+	// Extracts the palette from an IMG file and writes it into the given palette
+	// reference. Causes an error if the IMG file doesn't have a palette.
+	static void extractPalette(Palette &palette, const std::string &filename);
 
 	int getWidth() const;
 	int getHeight() const;

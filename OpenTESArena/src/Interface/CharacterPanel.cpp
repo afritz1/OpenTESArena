@@ -16,6 +16,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
@@ -185,7 +186,7 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::CharSheet);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Draw character stats background.
 	auto *statsBackground = textureManager.getTexture(

@@ -33,18 +33,8 @@ namespace
 	};
 }
 
-IMGFile::IMGFile(const std::string &filename, Palette *palette, PaletteName paletteName)
+IMGFile::IMGFile(const std::string &filename, Palette *palette)
 {
-	// If not using a built-in palette, then make sure one is given.
-	if (paletteName != PaletteName::BuiltIn)
-	{
-		assert(palette != nullptr);
-	}
-	else
-	{
-		assert(palette == nullptr);
-	}
-
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
 
@@ -84,7 +74,8 @@ IMGFile::IMGFile(const std::string &filename, Palette *palette, PaletteName pale
 		"IMGFile", "Could not read \"" + filename + "\" data.");*/
 
 	Palette custompal;
-	bool hasBuiltInPalette = (flags & 0x0100) > 0;
+	const bool useBuiltInPalette = palette == nullptr;
+	const bool hasBuiltInPalette = (flags & 0x0100) > 0;
 
 	if (hasBuiltInPalette)
 	{
@@ -122,12 +113,12 @@ IMGFile::IMGFile(const std::string &filename, Palette *palette, PaletteName pale
 	else
 	{
 		// Don't try to use a built-in palette is there isn't one.
-		Debug::check(paletteName != PaletteName::BuiltIn, "IMGFile",
+		Debug::check(!useBuiltInPalette, "IMGFile",
 			"\"" + filename + "\" does not have a built-in palette.");
 	}
 
-	const Palette &paletteRef = (hasBuiltInPalette && 
-		(paletteName == PaletteName::BuiltIn)) ? custompal : (*palette);
+	const Palette &paletteRef = (hasBuiltInPalette && useBuiltInPalette) ? 
+		custompal : (*palette);
 
 	if ((flags & 0x00FF) == 0x0000)
 	{
@@ -232,7 +223,7 @@ IMGFile::~IMGFile()
 
 }
 
-Palette IMGFile::getPalette(const std::string &filename)
+void IMGFile::extractPalette(Palette &dstPalette, const std::string &filename)
 {
 	// This is still experimental. It might need some correction.
 
@@ -241,44 +232,29 @@ Palette IMGFile::getPalette(const std::string &filename)
 
 	uint16_t xoff, yoff, width, height, flags, srclen;
 
-	auto rawoverride = RawImgOverride.find(filename);
-	if (rawoverride != RawImgOverride.end())
-	{
-		xoff = 0;
-		yoff = 0;
-		width = rawoverride->second.getX();
-		height = rawoverride->second.getY();
-		flags = 0;
-		srclen = width * height;
-	}
-	else
-	{
-		std::array<uint8_t, 12> imghdr;
-		stream->read(reinterpret_cast<char*>(imghdr.data()), imghdr.size());
-		Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()),
-			"IMGFile", "Could not read \"" + filename + "\" header.");
+	// No need to check for raw override. All given filenames should point to IMGs
+	// with "built-in" palettes, and none of those IMGs are in the raw override.
+	std::array<uint8_t, 12> imgHeader;
+	stream->read(reinterpret_cast<char*>(imgHeader.data()), imgHeader.size());
+	Debug::check(stream->gcount() == static_cast<std::streamsize>(imgHeader.size()),
+		"IMGFile", "Could not read \"" + filename + "\" header.");
 
-		xoff = Compression::getLE16(imghdr.data());
-		yoff = Compression::getLE16(imghdr.data() + 2);
-		width = Compression::getLE16(imghdr.data() + 4);
-		height = Compression::getLE16(imghdr.data() + 6);
-		flags = Compression::getLE16(imghdr.data() + 8);
-		srclen = Compression::getLE16(imghdr.data() + 10);
-	}
+	xoff = Compression::getLE16(imgHeader.data());
+	yoff = Compression::getLE16(imgHeader.data() + 2);
+	width = Compression::getLE16(imgHeader.data() + 4);
+	height = Compression::getLE16(imgHeader.data() + 6);
+	flags = Compression::getLE16(imgHeader.data() + 8);
+	srclen = Compression::getLE16(imgHeader.data() + 10);	
 
-	const bool hasBuiltInPalette = (flags & 0x0100) > 0;
-
-	Palette customPal;
+	const bool hasBuiltInPalette = (flags & 0x0100) == 0x0100;
 
 	if (hasBuiltInPalette)
 	{
 		std::array<uint8_t, 768> rawpal;
 		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
 
-		// Commented because some wall textures are incorrectly matching the flags & 0x0100.
-		// Find a way to load wall textures without this problem!
-		/*Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
-		"IMGFile", "Could not read texture \"" + filename + "\" palette.");*/
+		Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
+			"IMGFile", "Could not read texture \"" + filename + "\" palette.");
 
 		auto iter = rawpal.begin();
 
@@ -290,10 +266,10 @@ Palette IMGFile::getPalette(const std::string &filename)
 		uint8_t r = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 		uint8_t g = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
 		uint8_t b = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
-		customPal[0] = Color(r, g, b, 0);
+		dstPalette[0] = Color(r, g, b, 0);
 
 		/* Remaining are solid, so give them 255 alpha. */
-		std::generate(customPal.begin() + 1, customPal.end(),
+		std::generate(dstPalette.begin() + 1, dstPalette.end(),
 			[&iter]() -> Color
 		{
 			uint8_t r = std::min<uint8_t>(*(iter++), 63) * 255 / 63;
@@ -307,8 +283,6 @@ Palette IMGFile::getPalette(const std::string &filename)
 		// Don't try to take a built-in palette is there isn't one.
 		Debug::crash("IMGFile", "\"" + filename + "\" has no built-in palette to extract.");
 	}
-
-	return customPal;
 }
 
 int IMGFile::getWidth() const

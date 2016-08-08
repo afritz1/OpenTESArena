@@ -23,6 +23,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureFile.h"
@@ -302,7 +303,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Set screen palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Set original frame buffer blending to true.
 	renderer.useTransparencyBlending(true);

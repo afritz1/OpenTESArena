@@ -20,6 +20,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
@@ -324,7 +325,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::CharSheet);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Draw attributes texture.
 	auto *attributesBackground = textureManager.getTexture(

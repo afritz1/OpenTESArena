@@ -14,6 +14,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
@@ -234,7 +235,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::CharSheet);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Draw character equipment background.
 	auto *equipmentBackground = textureManager.getTexture(

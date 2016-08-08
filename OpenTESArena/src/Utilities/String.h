@@ -26,6 +26,9 @@ public:
 	// Removes new line characters from a string.
 	static std::string trimLines(const std::string &line);
 
+	// Gets the right-most extension from a string, i.e., ".txt".
+	static std::string getExtension(const std::string &str);
+
 	// Turns an integral value into a hex string.
 	template <typename T>
 	static std::string toHexString(T val)

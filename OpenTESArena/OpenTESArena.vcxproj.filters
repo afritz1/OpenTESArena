@@ -122,6 +122,7 @@
     <ClCompile Include="src\Assets\SETFile.cpp" />
     <ClCompile Include="src\Assets\RCIFile.cpp" />
     <ClCompile Include="src\Assets\FLCFile.cpp" />
+    <ClCompile Include="src\Media\PaletteFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -290,6 +291,7 @@
     <ClInclude Include="src\Assets\RCIFile.h" />
     <ClInclude Include="src\Assets\FLCFile.h" />
     <ClInclude Include="src\Media\Palette.h" />
+    <ClInclude Include="src\Media\PaletteFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

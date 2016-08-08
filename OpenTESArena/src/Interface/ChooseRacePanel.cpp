@@ -16,6 +16,7 @@
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -220,11 +221,12 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background map.
 	auto *raceSelectMap = textureManager.getTexture(
-		TextureFile::fromName(TextureName::RaceSelect), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::RaceSelect), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(raceSelectMap);
 
 	// Don't worry about the yellow dots for now. Whatever the original game is doing

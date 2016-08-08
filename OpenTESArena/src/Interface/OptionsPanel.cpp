@@ -11,6 +11,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -112,7 +113,7 @@ void OptionsPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw temporary background.
 	renderer.clearOriginal(Color(48, 48, 36));

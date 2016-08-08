@@ -13,6 +13,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -187,11 +188,12 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
 	auto *background = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterCreation), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::CharacterCreation), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(background);
 
 	// Draw parchments: title, generate, select.

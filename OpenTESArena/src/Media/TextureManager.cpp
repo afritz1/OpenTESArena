@@ -6,6 +6,7 @@
 #include "TextureManager.h"
 
 #include "Color.h"
+#include "PaletteFile.h"
 #include "PaletteName.h"
 #include "TextureFile.h"
 #include "../Assets/Compression.h"
@@ -18,37 +19,19 @@
 
 #include "components/vfs/manager.hpp"
 
-namespace
-{
-	const std::map<PaletteName, std::string> PaletteFilenames =
-	{
-		{ PaletteName::Default, "PAL.COL" },
-		{ PaletteName::CharSheet, "CHARSHT.COL" },
-		{ PaletteName::Daytime, "DAYTIME.COL" },
-		{ PaletteName::Dreary, "DREARY.COL" }
-	};
-}
-
 // This path should be removed once using original Arena files exclusively.
 const std::string TextureManager::PATH = "data/textures/";
 
 TextureManager::TextureManager(Renderer &renderer)
-	: renderer(renderer)
+	: renderer(renderer), palettes(), surfaces(), textures(), 
+	surfaceSets(), textureSets()
 {
 	Debug::mention("Texture Manager", "Initializing.");
 
-	this->palettes = std::map<PaletteName, Palette>();
-	this->surfaces = std::unordered_map<std::string, std::map<PaletteName, Surface>>();
-	this->textures = std::unordered_map<std::string, std::map<PaletteName, SDL_Texture*>>();
-	this->surfaceSets = std::unordered_map<std::string, 
-		std::map<PaletteName, std::vector<Surface>>>();
-	this->textureSets = std::unordered_map<std::string,
-		std::map<PaletteName, std::vector<SDL_Texture*>>>();
-
 	// Load default palette.
-	this->setPalette(PaletteName::Default);
+	this->setPalette(PaletteFile::fromName(PaletteName::Default));
 
-	// Intialize PNG file loading.
+	// Intialize PNG file loading (remove this code once PNGs are no longer used).
 	int imgFlags = IMG_INIT_PNG;
 	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager",
 		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
@@ -60,20 +43,14 @@ TextureManager::~TextureManager()
 	// The SDL_Renderer destroys these itself with SDL_DestroyRenderer(), too.
 	for (auto &pair : this->textures)
 	{
-		for (auto &innerPair : pair.second)
-		{
-			SDL_DestroyTexture(innerPair.second);
-		}
+		SDL_DestroyTexture(pair.second);
 	}
 
 	for (auto &pair : this->textureSets)
 	{
-		for (auto &innerPair : pair.second)
+		for (auto *texture : pair.second)
 		{
-			for (auto *texture : innerPair.second)
-			{
-				SDL_DestroyTexture(texture);
-			}
+			SDL_DestroyTexture(texture);
 		}
 	}
 
@@ -109,17 +86,16 @@ SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
 	return optSurface;
 }
 
-void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
+void TextureManager::loadCOLPalette(const std::string &colName)
 {
 	bool failed = false;
 	std::array<uint8_t, 776> rawpal;
-	const std::string &filename = PaletteFilenames.at(paletteName);
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(colName.c_str());
 
 	if (!stream)
 	{
 		Debug::mention("Texture Manager",
-			"Failed to open palette \"" + filename + "\".");
+			"Failed to open palette \"" + colName + "\".");
 		failed = true;
 	}
 	else
@@ -128,7 +104,7 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 		if (stream->gcount() != static_cast<std::streamsize>(rawpal.size()))
 		{
 			Debug::mention("Texture Manager", "Failed to read palette \"" +
-				filename + "\", got " + std::to_string(stream->gcount()) + " bytes.");
+				colName + "\", got " + std::to_string(stream->gcount()) + " bytes.");
 			failed = true;
 		}
 	}
@@ -139,16 +115,20 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 		if (len != 776)
 		{
 			Debug::mention("Texture Manager", "Invalid length for palette \"" +
-				filename + "\" (" + std::to_string(len) + " bytes).");
+				colName + "\" (" + std::to_string(len) + " bytes).");
 			failed = true;
 		}
 		else if (ver != 0xB123)
 		{
 			Debug::mention("Texture Manager", "Invalid version for palette \"" +
-				filename + "\", 0x" + String::toHexString(ver) + ".");
+				colName + "\", 0x" + String::toHexString(ver) + ".");
 			failed = true;
 		}
 	}
+
+	// The palette to write new colors into and then place in the palettes map.
+	Palette palette;
+
 	if (!failed)
 	{
 		auto iter = rawpal.begin() + 8;
@@ -180,53 +160,89 @@ void TextureManager::initPalette(Palette &palette, PaletteName paletteName)
 			return Color(c, c, c, 255);
 		});
 	}
+
+	// Add the new palette into the palettes map.
+	this->palettes.emplace(std::make_pair(colName, palette));
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename,
-	PaletteName paletteName)
+void TextureManager::loadIMGPalette(const std::string &imgName)
 {
-	// See if the image file already exists with any palette. Otherwise,
-	// decide how to load it further down.
-	auto surfaceIter = this->surfaces.find(filename);
-	if (surfaceIter != this->surfaces.end())
-	{
-		// Now see if the image exists with the requested palette.
-		const auto &paletteMap = surfaceIter->second;
-		auto paletteIter = paletteMap.find(paletteName);
+	Palette dstPalette;
+	IMGFile::extractPalette(dstPalette, imgName);
+	this->palettes.emplace(std::make_pair(imgName, dstPalette));
+}
 
-		if (paletteIter != paletteMap.end())
-		{
-			// The requested surface exists.
-			return paletteIter->second;
-		}
+void TextureManager::loadPalette(const std::string &paletteName)
+{
+	// Don't load the same palette more than once.
+	assert(this->palettes.find(paletteName) == this->palettes.end());
+
+	// Get file extension of the palette name.
+	const std::string extension = String::getExtension(paletteName);
+	const bool isCOL = extension.compare(".COL") == 0;
+	const bool isIMG = extension.compare(".IMG") == 0;
+	const bool isMNU = extension.compare(".MNU") == 0;
+
+	if (isCOL)
+	{
+		this->loadCOLPalette(paletteName);
+	}
+	else if (isIMG || isMNU)
+	{
+		this->loadIMGPalette(paletteName);
 	}
 	else
 	{
-		// The image hasn't been loaded with any palettes yet, so make a new entry.
-		surfaceIter = this->surfaces.emplace(std::make_pair(
-			filename, std::map<PaletteName, Surface>())).first;
+		Debug::crash("Texture Manager", "Unrecognized palette \"" + paletteName + "\".");
 	}
 
-	// Check what kind of file extension is used. Every texture should have an
+	// Make sure everything above works as intended.
+	assert(this->palettes.find(paletteName) != this->palettes.end());
+}
+
+const Surface &TextureManager::getSurface(const std::string &filename,
+	const std::string &paletteName)
+{
+	// Use this name when interfacing with the surfaces map.
+	const std::string fullName = filename + paletteName;
+
+	// See if the image file has already been loaded with the palette.
+	auto surfaceIter = this->surfaces.find(fullName);
+	if (surfaceIter != this->surfaces.end())
+	{
+		// The requested surface exists.
+		return surfaceIter->second;
+	}
+
+	// Attempt to use the image's built-in palette if requested.
+	const bool useBuiltInPalette = paletteName.compare(
+		PaletteFile::fromName(PaletteName::BuiltIn)) == 0;
+
+	// See if the palette hasn't already been loaded.
+	if (this->palettes.find(paletteName) == this->palettes.end())
+	{
+		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
+		// Otherwise, use the given palette name (i.e., PAL.COL).
+		this->loadPalette(useBuiltInPalette ? filename : paletteName);
+	}
+	
+	// The image hasn't been loaded with the palette yet, so make a new entry.
+	// Check what kind of file extension is used (every texture should have an
 	// extension, so the "dot position" might be unnecessary once PNGs are no
-	// longer used.
-	size_t dotPos = filename.rfind('.');
-	bool hasDot = (dotPos < filename.length()) && (dotPos != std::string::npos);
-	bool isIMG = hasDot &&
-		(filename.compare(dotPos, filename.length() - dotPos, ".IMG") == 0);
-	bool isMNU = hasDot &&
-		(filename.compare(dotPos, filename.length() - dotPos, ".MNU") == 0);
+	// longer used).
+	const std::string extension = String::getExtension(filename);
+	const bool isIMG = extension.compare(".IMG") == 0;
+	const bool isMNU = extension.compare(".MNU") == 0;
 
 	SDL_Surface *optSurface = nullptr;
 
 	if (isIMG || isMNU)
 	{
 		// Decide if the IMG will use its own palette or not.
-		Palette *palette = (paletteName == PaletteName::BuiltIn) ? nullptr :
-			&this->palettes.at(paletteName);
+		Palette *palette = useBuiltInPalette ? nullptr : &this->palettes.at(paletteName);
 
 		// Load the IMG file.
-		IMGFile img(filename, palette, paletteName);
+		IMGFile img(filename, palette);
 
 		// Create an unoptimized SDL surface from the IMG.
 		SDL_Surface *unoptSurface = SDL_CreateRGBSurfaceFrom(
@@ -240,10 +256,12 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 	else
 	{
-		// PNG file. This "else" case should eventually throw a runtime error instead
-		// once PNGs aren't used anymore.
-		std::string fullPath(TextureManager::PATH + filename + ".png");
-		optSurface = this->loadPNG(fullPath);
+		// Assume PNG for now.
+		// Remove this once PNGs aren't needed anymore.
+		optSurface = this->loadPNG(TextureManager::PATH + filename + ".png");
+
+		// Uncomment this once PNGs are gone.
+		//Debug::crash("Texture Manager", "Unrecognized image \"" + filename + "\".");
 	}
 
 	// Create surface from optimized SDL_Surface.
@@ -251,8 +269,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	SDL_FreeSurface(optSurface);
 
 	// Add the new surface and return it.
-	auto &paletteMap = surfaceIter->second;	
-	auto iter = paletteMap.emplace(std::make_pair(paletteName, surface)).first;
+	auto iter = this->surfaces.emplace(std::make_pair(fullName, surface)).first;
 	return iter->second;
 }
 
@@ -262,38 +279,27 @@ const Surface &TextureManager::getSurface(const std::string &filename)
 }
 
 SDL_Texture *TextureManager::getTexture(const std::string &filename,
-	PaletteName paletteName)
+	const std::string &paletteName)
 {
-	// See if the image file already exists with any palette. Otherwise,
-	// decide how to load it further down.
-	auto textureIter = this->textures.find(filename);
+	// Use this name when interfacing with the textures map.
+	const std::string fullName = filename + paletteName;
+
+	// See if the image file has already been loaded with the palette.
+	auto textureIter = this->textures.find(fullName);
 	if (textureIter != this->textures.end())
 	{
-		// Now see if the image exists with the requested palette.
-		const auto &paletteMap = textureIter->second;
-		auto paletteIter = paletteMap.find(paletteName);
-
-		if (paletteIter != paletteMap.end())
-		{
-			// The requested texture exists.
-			return paletteIter->second;
-		}
-	}
-	else
-	{
-		// The image hasn't been loaded with any palettes yet, so make a new entry.
-		textureIter = this->textures.emplace(std::make_pair(
-			filename, std::map<PaletteName, SDL_Texture*>())).first;
+		// The requested texture exists.
+		return textureIter->second;
 	}
 
+	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Make a texture from the surface. It's okay if the surface isn't used except
 	// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
-	const Surface &surface = this->getSurface(filename, paletteName);		
+	const Surface &surface = this->getSurface(filename, paletteName);
 	SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
 		
 	// Add the new texture and return it.
-	auto &paletteMap = textureIter->second;
-	auto iter = paletteMap.emplace(std::make_pair(paletteName, texture)).first;
+	auto iter = this->textures.emplace(std::make_pair(fullName, texture)).first;
 	return iter->second;	
 }
 
@@ -303,13 +309,13 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename)
 }
 
 const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename, 
-	PaletteName paletteName)
+	const std::string &paletteName)
 {
 	// I would like this method to deal with the animations and movies, so it'll 
 	// check filenames for ".CFA", ".CIF", ".DFA", ".FLC", etc..
 
 	Debug::crash("Texture Manager", "getSurfaces() not implemented.");
-	return this->surfaceSets.at("").at(PaletteName::Default); // Dummy placeholder.
+	return this->surfaceSets.at(""); // Dummy placeholder.
 }
 
 const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename)
@@ -318,7 +324,7 @@ const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filen
 }
 
 const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename, 
-	PaletteName paletteName)
+	const std::string &paletteName)
 {
 	// This method will just take the surfaces from getSurfaces() and turn them into 
 	// SDL_Textures if not already loaded. I'm not too worried about memory consumption 
@@ -327,7 +333,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &
 	// like... 450MB? I think an "unloadTexture()" method is a bit too far ahead right now.
 
 	Debug::crash("Texture Manager", "getTextures() not implemented.");
-	return this->textureSets.at("").at(PaletteName::Default); // Dummy placeholder.
+	return this->textureSets.at(""); // Dummy placeholder.
 }
 
 const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename)
@@ -335,19 +341,15 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &
 	return this->getTextures(filename, this->activePalette);
 }
 
-void TextureManager::setPalette(PaletteName paletteName)
+void TextureManager::setPalette(const std::string &paletteName)
 {
-	// Error if the palette name is "built-in".
-	assert(paletteName != PaletteName::BuiltIn);
-
-	this->activePalette = paletteName;
-
+	// Check if the palette hasn't already been loaded.
 	if (this->palettes.find(paletteName) == this->palettes.end())
 	{
-		Palette palette;
-		this->initPalette(palette, paletteName);
-		this->palettes.emplace(std::make_pair(paletteName, palette));
+		this->loadPalette(paletteName);
 	}
+
+	this->activePalette = paletteName;
 }
 
 void TextureManager::preloadSequences()

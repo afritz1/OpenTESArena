@@ -15,6 +15,7 @@
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Math/Rect3D.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -703,7 +704,7 @@ void CLProgram::makeTestWorld()
 	};
 
 	// Prepare some textures for a local float4 buffer.	
-	this->textureManager.setPalette(PaletteName::Default);
+	this->textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 	std::vector<const SDL_Surface*> textures =
 	{
 		this->textureManager.getSurface("T_CITYWL.IMG").getSurface(),

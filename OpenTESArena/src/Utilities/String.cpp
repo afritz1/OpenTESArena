@@ -64,3 +64,10 @@ std::string String::trimLines(const std::string &line)
 
 	return trimmed;
 }
+
+std::string String::getExtension(const std::string &str)
+{
+	const size_t dotPos = str.rfind('.');
+	const bool hasDot = (dotPos < str.length()) && (dotPos != std::string::npos);
+	return hasDot ? std::string(str.begin() + dotPos, str.end()) : std::string();
+}

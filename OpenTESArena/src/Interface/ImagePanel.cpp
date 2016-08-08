@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -97,7 +98,8 @@ void ImagePanel::render(Renderer &renderer)
 
 	// Draw image.
 	auto *image = textureManager.getTexture(
-		TextureFile::fromName(this->textureName), this->paletteName);
+		TextureFile::fromName(this->textureName), 
+		PaletteFile::fromName(this->paletteName));
 	renderer.drawToOriginal(image);
 
 	// Scale the original frame buffer onto the native one.

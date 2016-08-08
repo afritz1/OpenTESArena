@@ -11,6 +11,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -118,11 +119,12 @@ void LogbookPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw logbook background.
 	auto *logbookBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Logbook), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::Logbook), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(logbookBackground);
 
 	// Draw text: title.

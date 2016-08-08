@@ -11,6 +11,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -142,11 +143,12 @@ void WorldMapPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw world map background. This one has "Exit" at the bottom right.
 	auto *mapBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::WorldMap), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::WorldMap), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mapBackground);
 
 	// Scale the original frame buffer onto the native one.

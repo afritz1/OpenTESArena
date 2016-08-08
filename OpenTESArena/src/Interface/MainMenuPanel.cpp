@@ -13,6 +13,7 @@
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -184,11 +185,12 @@ void MainMenuPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw main menu.
 	auto *mainMenu = textureManager.getTexture(
-		TextureFile::fromName(TextureName::MainMenu), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::MainMenu), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mainMenu);
 
 	// Scale the original frame buffer onto the native one.

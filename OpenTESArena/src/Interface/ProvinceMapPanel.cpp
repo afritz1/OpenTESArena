@@ -13,6 +13,7 @@
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -224,7 +225,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get the texture name for this province.
 	auto provinceTextureName = ProvinceMapTextureNames.at(
@@ -232,7 +233,8 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Draw province map background.
 	auto *mapBackground = textureManager.getTexture(
-		TextureFile::fromName(provinceTextureName), PaletteName::BuiltIn);
+		TextureFile::fromName(provinceTextureName), 
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mapBackground);
 
 	// Draw tooltip if the mouse is over a button.

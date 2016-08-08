@@ -9,6 +9,7 @@
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -108,11 +109,12 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw automap background.
 	auto *automapBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Automap), PaletteName::BuiltIn);
+		TextureFile::fromName(TextureName::Automap),
+		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(automapBackground);
 
 	// Scale the original frame buffer onto the native one.
@@ -123,8 +125,11 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
+	// - To do: the palette used with the quill should be AUTOMAP.IMG, but it makes 
+	//   everything black (transparent) for some reason. Maybe this palette is an
+	//   exception to the IMGFile::extractPalette code?
 	const auto &cursor = textureManager.getSurface(
-		TextureFile::fromName(TextureName::QuillCursor));
+		TextureFile::fromName(TextureName::QuillCursor)/*, AUTOMAP.IMG*/);
 	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE, colorKey);
 	const int cursorYOffset = static_cast<int>(
 		static_cast<double>(cursor.getHeight()) * this->getCursorScale());

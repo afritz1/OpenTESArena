@@ -10,6 +10,7 @@
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/FontName.h"
+#include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -171,7 +172,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
-	textureManager.setPalette(PaletteName::Default);
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get all of the image filenames relevant to the sequence.
 	auto imageFilenames = TextureFile::fromName(this->sequenceName);
