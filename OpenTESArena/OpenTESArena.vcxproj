@@ -253,7 +253,7 @@
     <ClCompile Include="src\Game\Weekday.cpp" />
     <ClCompile Include="src\Game\Year.cpp" />
     <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
-    <ClCompile Include="src\World\VoxelReference.cpp" />
+    <ClCompile Include="src\Rendering\VoxelReference.cpp" />
     <ClCompile Include="src\Interface\ImagePanel.cpp" />
     <ClCompile Include="src\Interface\TextCinematicPanel.cpp" />
     <ClCompile Include="src\Media\TextureFile.cpp" />
@@ -419,10 +419,9 @@
     <ClInclude Include="src\Items\Trinket.h" />
     <ClInclude Include="src\Game\Weekday.h" />
     <ClInclude Include="src\Game\Year.h" />
-    <ClInclude Include="src\World\VoxelMaterialType.h" />
     <ClInclude Include="src\World\VoxelType.h" />
     <ClInclude Include="src\Items\WeaponArtifactData.h" />
-    <ClInclude Include="src\World\VoxelReference.h" />
+    <ClInclude Include="src\Rendering\VoxelReference.h" />
     <ClInclude Include="src\Interface\ImagePanel.h" />
     <ClInclude Include="src\Interface\TextCinematicPanel.h" />
     <ClInclude Include="src\Media\TextureFile.h" />

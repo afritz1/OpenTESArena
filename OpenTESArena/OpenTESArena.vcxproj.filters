@@ -58,7 +58,6 @@
     <ClCompile Include="src\Items\ShieldArtifactData.cpp" />
     <ClCompile Include="src\Items\WeaponArtifactData.cpp" />
     <ClCompile Include="src\Items\Potion.cpp" />
-    <ClCompile Include="src\World\VoxelReference.cpp" />
     <ClCompile Include="src\Game\Game.cpp" />
     <ClCompile Include="src\Game\GameState.cpp" />
     <ClCompile Include="src\Interface\MainMenuPanel.cpp" />
@@ -123,6 +122,7 @@
     <ClCompile Include="src\Assets\RCIFile.cpp" />
     <ClCompile Include="src\Assets\FLCFile.cpp" />
     <ClCompile Include="src\Media\PaletteFile.cpp" />
+    <ClCompile Include="src\Rendering\VoxelReference.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -206,7 +206,6 @@
     <ClInclude Include="src\Game\Date.h" />
     <ClInclude Include="src\Items\WeaponRangeName.h" />
     <ClInclude Include="src\World\VoxelType.h" />
-    <ClInclude Include="src\World\VoxelMaterialType.h" />
     <ClInclude Include="src\Entities\AttributeModifier.h" />
     <ClInclude Include="src\Entities\AttributeModifierName.h" />
     <ClInclude Include="src\Items\ConsumableType.h" />
@@ -220,7 +219,6 @@
     <ClInclude Include="src\Items\MiscellaneousArtifactData.h" />
     <ClInclude Include="src\Items\ShieldArtifactData.h" />
     <ClInclude Include="src\Items\Potion.h" />
-    <ClInclude Include="src\World\VoxelReference.h" />
     <ClInclude Include="src\Game\Game.h" />
     <ClInclude Include="src\Game\GameState.h" />
     <ClInclude Include="src\Interface\MainMenuPanel.h" />
@@ -292,6 +290,7 @@
     <ClInclude Include="src\Assets\FLCFile.h" />
     <ClInclude Include="src\Media\Palette.h" />
     <ClInclude Include="src\Media\PaletteFile.h" />
+    <ClInclude Include="src\Rendering\VoxelReference.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

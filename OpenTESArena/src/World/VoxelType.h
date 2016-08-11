@@ -28,7 +28,7 @@
 // "close enough" in this case.
 
 // The sides of pits and rivers aren't really their own voxel. I'm not sure how that
-// will fit into the voxel generation. Maybe it could be a second-pass triangle
+// will fit into the voxel generation. Maybe it could be a second-pass rectangle
 // generation algorithm that checks adjacencies between voxel faces. I'll need to
 // look more into this.
 

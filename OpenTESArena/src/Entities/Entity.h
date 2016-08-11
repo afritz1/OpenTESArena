@@ -16,7 +16,7 @@
 // Since the position of a light held by a sprite would likely be near its middle, 
 // no shadow check between an intersection on the sprite and its light should be done, 
 // in order to avoid divide-by-zero distance errors in the ray tracer. The sprite 
-// would be fully lit by its own light at all points. The triangles would probably 
+// would be fully lit by its own light at all points. The rectangles would probably 
 // have a "hasLight" boolean that tells if it's a sprite-light, and an index into the 
 // lights array to tell which one to avoid. Essentially, sprites with lights cannot 
 // cast shadows from their own light, but can cast shadows from other lights, because 

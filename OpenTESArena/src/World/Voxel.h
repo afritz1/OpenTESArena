@@ -18,7 +18,6 @@
 
 class Rect3D;
 
-enum class VoxelMaterialType;
 enum class VoxelType;
 
 class Voxel
@@ -31,9 +30,7 @@ public:
 	~Voxel();
 
 	VoxelType getVoxelType() const;
-	VoxelMaterialType getVoxelMaterialType() const;
 	std::string typeToString() const;
-	std::string materialToString() const;
 
 	// Assume that all voxel types are composed of only convex shapes (like cubes). 
 	// Objects like doors and flats are not part of the voxel types even though they 

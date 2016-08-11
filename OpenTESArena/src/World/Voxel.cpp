@@ -3,7 +3,6 @@
 
 #include "Voxel.h"
 
-#include "VoxelMaterialType.h"
 #include "VoxelType.h"
 #include "../Math/Rect3D.h"
 
@@ -15,23 +14,8 @@ const std::map<VoxelType, std::string> VoxelTypeDisplayNames =
 
 };
 
-const std::map<VoxelMaterialType, std::string> VoxelMaterialDisplayNames =
-{
-	{ VoxelMaterialType::Air, "Air" },
-	{ VoxelMaterialType::Liquid, "Liquid" },
-	{ VoxelMaterialType::Solid, "Solid" }
-};
-
-const std::map<VoxelType, VoxelMaterialType> VoxelTypeMaterials =
-{
-	// Air -> Air...
-	// Ground1 -> Solid...
-	// etc.
-};
-
-// Each voxel type has a set of rectangles (with texture coordinates) that define
-// its contents. These essentially replace "voxel templates", and are intended for 
-// rendering, but could really be used anywhere.
+// Each voxel type has a set of rectangles that define its contents. These are intended 
+// for rendering, but could really be used anywhere.
 const std::map<VoxelType, std::vector<Rect3D>> VoxelTypeGeometries =
 {
 
@@ -55,21 +39,9 @@ VoxelType Voxel::getVoxelType() const
 	return this->voxelType;
 }
 
-VoxelMaterialType Voxel::getVoxelMaterialType() const
-{
-	auto materialType = VoxelTypeMaterials.at(this->getVoxelType());
-	return materialType;
-}
-
 std::string Voxel::typeToString() const
 {
 	auto displayName = VoxelTypeDisplayNames.at(this->getVoxelType());
-	return displayName;
-}
-
-std::string Voxel::materialToString() const
-{
-	auto displayName = VoxelMaterialDisplayNames.at(this->getVoxelMaterialType());
 	return displayName;
 }
 
