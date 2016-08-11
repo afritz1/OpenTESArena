@@ -139,6 +139,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\FontFile.cpp" />
+    <ClCompile Include="src\Rendering\SpriteReference.cpp" />
     <ClCompile Include="src\Media\PaletteFile.cpp" />
     <ClCompile Include="src\Assets\FLCFile.cpp" />
     <ClCompile Include="src\Assets\RCIFile.cpp" />
@@ -263,6 +265,8 @@
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Assets\FontFile.h" />
+    <ClInclude Include="src\Rendering\SpriteReference.h" />
     <ClInclude Include="src\Media\PaletteFile.h" />
     <ClInclude Include="src\Assets\FLCFile.h" />
     <ClInclude Include="src\Assets\RCIFile.h" />
