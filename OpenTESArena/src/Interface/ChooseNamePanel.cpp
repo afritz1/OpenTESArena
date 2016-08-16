@@ -50,8 +50,8 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 	this->nameTextBox = [gameState]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 110);
-		auto color = Color::White;
+		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 112);
+		Color color(48, 12, 12);
 		std::string text = "";
 		auto fontName = FontName::A;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -213,19 +213,14 @@ void ChooseNamePanel::handleEvents(bool &running)
 			this->nameTextBox = [this]
 			{
 				return std::unique_ptr<TextBox>(new TextBox(
-					Int2(Renderer::ORIGINAL_WIDTH / 2, 110),
-					Color::White,
+					Int2(Renderer::ORIGINAL_WIDTH / 2, 112),
+					Color(48, 12, 12),
 					this->name,
 					FontName::A,
 					this->getGameState()->getTextureManager(),
 					this->getGameState()->getRenderer()));
 			}();
 		}
-
-		// If (asciiCharacter or space is pressed) then push it onto the string.
-		// If (Backspace is pressed) then delete one off if not at the start.
-
-		// If (enter is pressed) then try and accept the string. Save it to a member.
 	}
 }
 

@@ -76,7 +76,8 @@ enum class TextureName
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
 	ParchmentPopup, // For text boxes.
 	PauseBackground, // Arena logo with sound/music/detail and buttons
-	PopUp, // For class list.
+	PopUp,
+	PopUp2, // For character creation classes.
 	PopUp11, // For items, etc..
 	RaceSelect, // World map with location dots and no exit text.
 	SpellbookText, // Text that covers up "Equipment" in player's inventory.

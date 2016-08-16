@@ -140,7 +140,7 @@ const std::map<FontName, int> FontSpaceWidths =
 	{ FontName::A, 5 },
 	{ FontName::Arena, 3 },
 	{ FontName::B, 3 },
-	{ FontName::C, 5 },
+	{ FontName::C, 4 },
 	{ FontName::Char, 3 },
 	{ FontName::D, 3 },
 	{ FontName::Four, 3 },

@@ -44,21 +44,16 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return a->getDisplayName().compare(b->getDisplayName()) < 0;
 	});
 
-	this->parchment = [gameState]()
-	{
-		auto *surface = gameState->getTextureManager().getSurface(
-			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		return std::unique_ptr<Surface>(new Surface(surface));
-	}();
-
 	this->titleTextBox = [gameState]()
 	{
-		Int2 center(160, 56);
-		Color color(48, 12, 12);
+		int x = 89;
+		int y = 32;
+		Color color(211, 211, 211);
 		std::string text = "Choose thy class...";
-		auto fontName = FontName::A;
+		auto fontName = FontName::C;
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
+			x,
+			y,
 			color,
 			text,
 			fontName,
@@ -68,11 +63,10 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->classesListBox = [this, gameState]()
 	{
-		// Intended to be left aligned against something like a scroll bar.
-		int x = (Renderer::ORIGINAL_WIDTH / 2) - 58;
-		int y = (Renderer::ORIGINAL_HEIGHT / 2);
+		int x = 85;
+		int y = 46;
 		auto fontName = FontName::A;
-		Color color(190, 113, 0);
+		Color color(85, 44, 20);
 		int maxElements = 6;
 		std::vector<std::string> elements;
 
@@ -105,8 +99,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->upButton = [this]
 	{
-		int x = (Renderer::ORIGINAL_WIDTH / 2) - 71;
-		int y = (Renderer::ORIGINAL_HEIGHT / 2) - 7;
+		Int2 center(68, 22);
 		int w = 8;
 		int h = 8;
 		auto function = [this](GameState *gameState)
@@ -117,13 +110,12 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 				this->classesListBox->scrollUp();
 			}
 		};
-		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
+		return std::unique_ptr<Button>(new Button(center, w, h, function));
 	}();
 
 	this->downButton = [this]
 	{
-		int x = (Renderer::ORIGINAL_WIDTH / 2) - 71;
-		int y = (Renderer::ORIGINAL_HEIGHT / 2) + 62;
+		Int2 center(68, 117);
 		int w = 8;
 		int h = 8;
 		auto function = [this](GameState *gameState)
@@ -136,7 +128,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 				this->classesListBox->scrollDown();
 			}
 		};
-		return std::unique_ptr<Button>(new Button(x, y, w, h, function));
+		return std::unique_ptr<Button>(new Button(center, w, h, function));
 	}();
 
 	this->acceptButton = [this]
@@ -261,8 +253,8 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 {
 	const auto &characterClass = *this->charClasses.at(tooltipIndex).get();
 
-	std::string tooltipText = characterClass.getDisplayName() + "\n\n" +
-		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class" +
+	std::string tooltipText = characterClass.getDisplayName() + " (" +
+		CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class)\n" +
 		"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
 		"Health: " + std::to_string(characterClass.getStartingHealth()) +
 		" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +
@@ -476,28 +468,18 @@ void ChooseClassPanel::render(Renderer &renderer)
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(background);
 
-	// Draw parchments: title, list.
-	this->parchment->setTransparentColor(Color::Magenta);
-
-	renderer.drawToOriginal(this->parchment->getSurface(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2), 35);
-
-	// The original list background is PopUp, but the palette isn't right yet.
+	// Draw list pop-up.
+	// To do: change the palette to "STARTGAM.MNU" once the palette extraction 
+	// is corrected.
 	auto *listPopUp = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PopUp11));
+		TextureFile::fromName(TextureName::PopUp2), 
+		PaletteFile::fromName(PaletteName::CharSheet));
 
-	// This scaling is causing the pop up to lose quality. It should't be an issue
-	// once the actual pop up is being used.
-	double listXScale = 0.85;
-	double listYScale = 2.20;
-	int listWidth =
-		static_cast<int>(this->parchment->getWidth() * listXScale);
-	int listHeight =
-		static_cast<int>(this->parchment->getHeight() * listYScale);
-
+	int listWidth, listHeight;
+	SDL_QueryTexture(listPopUp, nullptr, nullptr, &listWidth, &listHeight);
 	renderer.drawToOriginal(listPopUp,
-		(Renderer::ORIGINAL_WIDTH / 2) - (listWidth / 2),
-		(Renderer::ORIGINAL_HEIGHT / 2) - 12,
+		55,
+		9,
 		listWidth,
 		listHeight);
 
@@ -506,7 +488,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawToOriginal(this->classesListBox->getSurface(),
 		this->classesListBox->getX(), this->classesListBox->getY());
-
+	
 	// Draw tooltip if over a valid element in the list box.
 	auto mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());

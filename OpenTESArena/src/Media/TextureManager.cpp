@@ -219,7 +219,8 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		PaletteFile::fromName(PaletteName::BuiltIn)) == 0;
 
 	// See if the palette hasn't already been loaded.
-	if (this->palettes.find(paletteName) == this->palettes.end())
+	if ((!useBuiltInPalette && (this->palettes.find(paletteName) == this->palettes.end())) ||
+		(useBuiltInPalette && (this->palettes.find(filename) == this->palettes.end())))
 	{
 		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
 		// Otherwise, use the given palette name (i.e., PAL.COL).

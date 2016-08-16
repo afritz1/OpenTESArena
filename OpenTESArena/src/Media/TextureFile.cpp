@@ -73,7 +73,8 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::ParchmentBig, "PARCH.IMG" },
 	{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" },
 	{ TextureName::PauseBackground, "OP.IMG" },
-	{ TextureName::PopUp, "POPUP.IMG" }, // I think this is what ChooseClassPanel should use.
+	{ TextureName::PopUp, "POPUP.IMG" },
+	{ TextureName::PopUp2, "POPUP2.IMG" },
 	{ TextureName::PopUp11, "POPUP11.IMG" },
 	{ TextureName::RaceSelect, "TAMRIEL.IMG" },
 	{ TextureName::SpellbookText, "SPELLBK.IMG" },
