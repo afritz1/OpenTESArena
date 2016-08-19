@@ -1,9 +1,9 @@
 # OpenTESArena
-#### An open-source project for "The Elder Scrolls I: Arena"
+### A free open-source project for "The Elder Scrolls I: Arena"
 
 ## Current status
 
-August 10th, 2016:
+August 19th, 2016:
 
 This project is early in development.
 
@@ -23,13 +23,15 @@ This open-source project aims to be a modern reimplementation of "The Elder Scro
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
+Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and that is what this project currently uses.
+
 It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
 
 Open a pull request if you'd like to contribute.
 
 ## Instructions
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 10th).
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 10th). The program's dependency on the `data` folder will mostly be removed once the original assets are being loaded exclusively.
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
@@ -57,7 +59,7 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 
 #### Running the executable:
 - Put the `data` and `options` folders, as well as any dependencies (SDL2.dll, wildmidi_dynamic.dll, etc.), in the executable directory.
-- Verify that `Soundfont` and `DataPath` in `options\options.txt` point to valid locations on your computer (i.e., `data\eawpats\timidity.cfg` and `data\ARENA` respectively).
+- Verify that `Soundfont` and `ArenaPath` in `options\options.txt` point to valid locations on your computer (i.e., `data\eawpats\timidity.cfg` and `data\ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
 
@@ -102,14 +104,13 @@ Outside scope (until later):
 - (new) New kinds of stores
 - Original city/dungeon data
 - Spells
+- (new) UI scale
 - Wandering people
 - Wilderness
 
 ## Graphics
 
-The 3D graphics are being done with a ray tracer I am writing in OpenCL. Test versions show it functioning decently on high-end graphics cards, but there are still many optimizations that can be done. As it is fairly experimental, I can't guarantee that the graphics engine will run well either on low-end computers or in CPU mode unless the render resolution is low. I suggest using a modern GPU.
-
-I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+The 3D graphics are being done with a ray tracer I am writing in OpenCL. As it is fairly experimental, I can't guarantee that the graphics engine will run well either on low-end computers or in CPU mode unless the render resolution is low. I suggest using a modern GPU. I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
 
 ## Resources
 
