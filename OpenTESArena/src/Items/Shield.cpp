@@ -96,13 +96,13 @@ double Shield::getWeight() const
 	return weight;
 }
 
-int32_t Shield::getGoldValue() const
+int Shield::getGoldValue() const
 {
 	// Refine this method sometime.
-	int32_t baseValue = ShieldGoldValues.at(this->getShieldType());
-	int32_t ratingModifier = this->getArmorRating();
+	int baseValue = ShieldGoldValues.at(this->getShieldType());
+	int ratingModifier = this->getArmorRating();
 	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
-	int32_t value = static_cast<int32_t>(static_cast<double>(baseValue + ratingModifier) * 
+	int value = static_cast<int>(static_cast<double>(baseValue + ratingModifier) * 
 		metalMultiplier);
 	return value;
 }
@@ -139,8 +139,8 @@ std::vector<BodyPartName> Shield::getProtectedBodyParts() const
 	return partNames;
 }
 
-int32_t Shield::getArmorRating() const
+int Shield::getArmorRating() const
 {
-	int32_t rating = ShieldRatings.at(this->getShieldType());
+	int rating = ShieldRatings.at(this->getShieldType());
 	return rating;
 }

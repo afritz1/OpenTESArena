@@ -28,7 +28,7 @@ const std::map<WeekdayName, WeekdayName> WeekdayNexts =
 	{ WeekdayName::Sundas, WeekdayName::Morndas }
 };
 
-const int32_t Weekday::DAYS_PER_WEEK = 7;
+const int Weekday::DAYS_PER_WEEK = 7;
 
 Weekday::Weekday(WeekdayName weekdayName)
 {

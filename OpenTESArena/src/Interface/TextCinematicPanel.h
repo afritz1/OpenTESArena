@@ -31,7 +31,7 @@ private:
 	std::unique_ptr<Button> skipButton;
 	TextureSequenceName sequenceName;
 	double secondsPerImage, currentImageSeconds;
-	int32_t imageIndex, textIndex;
+	int imageIndex, textIndex;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

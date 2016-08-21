@@ -280,7 +280,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		}
 
 		// Get the display name.
-		int32_t index = 0;
+		int index = 0;
 		while (line.at(index) != comma)
 		{
 			++index;
@@ -290,7 +290,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 
 		// Get the item type, any derived types, and any material/metal.
 		index += 2;
-		int32_t oldIndex = index;
+		int oldIndex = index;
 		while (line.at(index) != comma)
 		{
 			++index;

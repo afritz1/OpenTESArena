@@ -4,10 +4,10 @@
 
 #include "../Utilities/Debug.h"
 
-Options::Options(std::string &&dataPath, int32_t screenWidth, int32_t screenHeight, bool fullscreen,
+Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
     double renderQuality, double verticalFOV, double letterboxAspect, double cursorScale, 
 	double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
-	double soundVolume, int32_t soundChannels, bool skipIntro)
+	double soundVolume, int soundChannels, bool skipIntro)
     : arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
@@ -47,12 +47,12 @@ Options::~Options()
 
 }
 
-int32_t Options::getScreenWidth() const
+int Options::getScreenWidth() const
 {
 	return this->screenWidth;
 }
 
-int32_t Options::getScreenHeight() const
+int Options::getScreenHeight() const
 {
 	return this->screenHeight;
 }
@@ -107,7 +107,7 @@ double Options::getSoundVolume() const
 	return this->soundVolume;
 }
 
-int32_t Options::getSoundChannelCount() const
+int Options::getSoundChannelCount() const
 {
 	return this->soundChannels;
 }
@@ -122,14 +122,14 @@ bool Options::introIsSkipped() const
 	return this->skipIntro;
 }
 
-void Options::setScreenWidth(int32_t width)
+void Options::setScreenWidth(int width)
 {
 	assert(width > 0);
 
 	this->screenWidth = width;
 }
 
-void Options::setScreenHeight(int32_t height)
+void Options::setScreenHeight(int height)
 {
 	assert(height > 0);
 
@@ -195,7 +195,7 @@ void Options::setSoundVolume(double percent)
 	this->soundVolume = percent;
 }
 
-void Options::setSoundChannelCount(int32_t count)
+void Options::setSoundChannelCount(int count)
 {
 	this->soundChannels = count;
 }

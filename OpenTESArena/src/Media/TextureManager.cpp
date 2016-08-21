@@ -32,7 +32,7 @@ TextureManager::TextureManager(Renderer &renderer)
 	this->setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Intialize PNG file loading (remove this code once PNGs are no longer used).
-	int32_t imgFlags = IMG_INIT_PNG;
+	int imgFlags = IMG_INIT_PNG;
 	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager",
 		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
 }

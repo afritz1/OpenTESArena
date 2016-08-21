@@ -20,30 +20,30 @@ protected:
 	std::unique_ptr<Int2> point;
 	bool visible;
 public:
-	Surface(int32_t x, int32_t y, int32_t width, int32_t height);
-	Surface(int32_t width, int32_t height);
-	Surface(int32_t x, int32_t y, const SDL_Surface *surface);
+	Surface(int x, int y, int width, int height);
+	Surface(int width, int height);
+	Surface(int x, int y, const SDL_Surface *surface);
 	Surface(const SDL_Surface *surface, double scale);
 	Surface(const SDL_Surface *surface);
 	Surface(const Surface &surface);
 	virtual ~Surface();
 
-	static const int32_t DEFAULT_BPP;
+	static const int DEFAULT_BPP;
 
-	static Surface randomNoise(int32_t width, int32_t height, Random &random);
+	static Surface randomNoise(int width, int height, Random &random);
 
-	int32_t getX() const;
-	int32_t getY() const;
-	int32_t getWidth() const;
-	int32_t getHeight() const;
+	int getX() const;
+	int getY() const;
+	int getWidth() const;
+	int getHeight() const;
 	SDL_Surface *getSurface() const;
 	const Int2 &getPoint() const;
 
 	bool isVisible() const;
 	bool containsPoint(const Int2 &point);
 
-	void setX(int32_t x);
-	void setY(int32_t y);
+	void setX(int x);
+	void setY(int y);
 	void setVisibility(bool visible);
 	void optimize(const SDL_PixelFormat *format);
 	void setTransparentColor(const Color &color);

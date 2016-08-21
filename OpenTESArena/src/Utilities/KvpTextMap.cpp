@@ -71,7 +71,7 @@ bool KvpTextMap::getBoolean(const std::string &key) const
 	return KvpTextMapBooleans.at(value);
 }
 
-int32_t KvpTextMap::getInteger(const std::string &key) const
+int KvpTextMap::getInteger(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	return std::stoi(value);

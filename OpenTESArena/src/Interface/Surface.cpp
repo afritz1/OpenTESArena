@@ -11,9 +11,9 @@
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
 
-const int32_t Surface::DEFAULT_BPP = 32;
+const int Surface::DEFAULT_BPP = 32;
 
-Surface::Surface(int32_t x, int32_t y, int32_t width, int32_t height)
+Surface::Surface(int x, int y, int width, int height)
 {
 	assert(width > 0);
 	assert(height > 0);
@@ -26,10 +26,10 @@ Surface::Surface(int32_t x, int32_t y, int32_t width, int32_t height)
 	this->visible = true;
 }
 
-Surface::Surface(int32_t width, int32_t height)
+Surface::Surface(int width, int height)
 	: Surface(0, 0, width, height) { }
 
-Surface::Surface(int32_t x, int32_t y, const SDL_Surface *surface)
+Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
 	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
 		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
@@ -46,8 +46,8 @@ Surface::Surface(int32_t x, int32_t y, const SDL_Surface *surface)
 
 Surface::Surface(const SDL_Surface *surface, double scale)
 {
-	int32_t width = static_cast<int32_t>(static_cast<double>(surface->w) * scale);
-	int32_t height = static_cast<int32_t>(static_cast<double>(surface->h) * scale);
+	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
+	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
 	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
 		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
 		surface->format->Amask);
@@ -74,12 +74,12 @@ Surface::~Surface()
 	SDL_FreeSurface(this->surface);
 }
 
-Surface Surface::randomNoise(int32_t width, int32_t height, Random &random)
+Surface Surface::randomNoise(int width, int height, Random &random)
 {
 	Surface surface(width, height);
-	auto *pixels = static_cast<uint32_t*>(surface.getSurface()->pixels);
-	int32_t area = surface.getWidth() * surface.getHeight();
-	for (int32_t i = 0; i < area; ++i)
+	auto *pixels = static_cast<unsigned int*>(surface.getSurface()->pixels);
+	int area = surface.getWidth() * surface.getHeight();
+	for (int i = 0; i < area; ++i)
 	{
 		pixels[i] = Color::randomRGB(random).toRGB();
 	}
@@ -87,22 +87,22 @@ Surface Surface::randomNoise(int32_t width, int32_t height, Random &random)
 	return surface;
 }
 
-int32_t Surface::getX() const
+int Surface::getX() const
 {
 	return this->point->getX();
 }
 
-int32_t Surface::getY() const
+int Surface::getY() const
 {
 	return this->point->getY();
 }
 
-int32_t Surface::getWidth() const
+int Surface::getWidth() const
 {
 	return this->surface->w;
 }
 
-int32_t Surface::getHeight() const
+int Surface::getHeight() const
 {
 	return this->surface->h;
 }
@@ -129,12 +129,12 @@ bool Surface::containsPoint(const Int2 &point)
 	return rect.contains(point);
 }
 
-void Surface::setX(int32_t x)
+void Surface::setX(int x)
 {
 	this->point->setX(x);
 }
 
-void Surface::setY(int32_t y)
+void Surface::setY(int y)
 {
 	this->point->setY(y);
 }
@@ -186,20 +186,20 @@ void Surface::outline(const Color &color)
 {
 	auto mappedColor = SDL_MapRGBA(this->surface->format, color.getR(), color.getG(),
 		color.getB(), color.getA());
-	auto *surfacePixels = static_cast<uint32_t*>(this->surface->pixels);
+	auto *surfacePixels = static_cast<unsigned int*>(this->surface->pixels);
 
-	int32_t width = this->surface->w;
-	int32_t height = this->surface->h;
+	int width = this->surface->w;
+	int height = this->surface->h;
 
 	// Top and bottom rows.
-	for (int32_t x = 0; x < width; ++x)
+	for (int x = 0; x < width; ++x)
 	{
 		surfacePixels[x] = mappedColor;
 		surfacePixels[x + ((height - 1) * width)] = mappedColor;
 	}
 
 	// Left and right columns, ignoring already-written top and bottom pixels.
-	for (int32_t y = 1; y < (height - 1); ++y)
+	for (int y = 1; y < (height - 1); ++y)
 	{
 		surfacePixels[y * width] = mappedColor;
 		surfacePixels[(width - 1) + (y * width)] = mappedColor;
@@ -230,8 +230,8 @@ void Surface::blitScaled(Surface &dst, double scale, const Int2 &point,
 	SDL_Rect scaleRect;
 	scaleRect.x = point.getX();
 	scaleRect.y = point.getY();
-	scaleRect.w = static_cast<int32_t>(static_cast<double>(this->surface->w) * scale);
-	scaleRect.h = static_cast<int32_t>(static_cast<double>(this->surface->h) * scale);
+	scaleRect.w = static_cast<int>(static_cast<double>(this->surface->w) * scale);
+	scaleRect.h = static_cast<int>(static_cast<double>(this->surface->h) * scale);
 	SDL_BlitScaled(this->surface, clipRect.getRect(), dst.getSurface(), &scaleRect);
 }
 

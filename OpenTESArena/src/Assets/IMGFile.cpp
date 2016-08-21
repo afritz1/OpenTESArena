@@ -285,12 +285,12 @@ void IMGFile::extractPalette(Palette &dstPalette, const std::string &filename)
 	}
 }
 
-int32_t IMGFile::getWidth() const
+int IMGFile::getWidth() const
 {
 	return this->w;
 }
 
-int32_t IMGFile::getHeight() const
+int IMGFile::getHeight() const
 {
 	return this->h;
 }

@@ -29,15 +29,15 @@ public:
 
 		std::array<uint8_t, 4096> history;
 		std::fill(history.begin(), history.end(), 0x20);
-		int32_t historypos = 0;
+		int historypos = 0;
 
 		// This appears to be some form of LZ compression. It starts with a 1-byte-
 		// wide bitmask, where each bit declares if the next pixel comes directly
 		// from the input, or refers back to a previous run of output pixels that
 		// get duplicated. After each bit in the mask is used, another byte is read
 		// for another bitmask and the cycle repeats until the end of input.
-		int32_t bitcount = 0;
-		int32_t mask = 0;
+		int bitcount = 0;
+		int mask = 0;
 		while (src != srcend)
 		{
 			if (!bitcount)
@@ -74,15 +74,15 @@ public:
 
 				uint8_t byte1 = *(src++);
 				uint8_t byte2 = *(src++);
-				int32_t tocopy = (byte2 & 0x0F) + 3;
-				int32_t copypos = (((byte2 & 0xF0) << 4) | byte1) + 18;
+				int tocopy = (byte2 & 0x0F) + 3;
+				int copypos = (((byte2 & 0xF0) << 4) | byte1) + 18;
 
 				if (std::distance(dst, out.end()) < tocopy)
 				{
 					throw std::runtime_error("Decoded image overflow.");
 				}
 
-				for (int32_t i = 0; i < tocopy; ++i)
+				for (int i = 0; i < tocopy; ++i)
 				{
 					*dst = history[copypos++ & 0x0FFF];
 					history[historypos++ & 0x0FFF] = *(dst++);
@@ -136,7 +136,7 @@ public:
 
 		std::array<uint8_t, 4096> history;
 		std::fill(history.begin(), history.end(), 0x20);
-		int32_t historypos = 0;
+		int historypos = 0;
 
 		std::array<uint16_t, 941> NodeIdxMap;
 		std::iota(NodeIdxMap.begin(), NodeIdxMap.begin() + 626, 0);

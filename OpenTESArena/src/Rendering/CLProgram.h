@@ -48,7 +48,7 @@ private:
 	std::vector<char> outputData; // For receiving pixels from the device's output buffer.
 	SDL_Texture *texture; // Streaming render texture for outputData to update.
 	TextureManager &textureManager;
-	int32_t renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
+	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
@@ -57,7 +57,7 @@ private:
 	void makeTestWorld();
 public:
 	// Constructor for the OpenCL render program.
-	CLProgram(int32_t worldWidth, int32_t worldHeight, int32_t worldDepth,
+	CLProgram(int worldWidth, int worldHeight, int worldDepth,
 		TextureManager &textureManager, Renderer &renderer, double renderQuality);
 	~CLProgram();
 

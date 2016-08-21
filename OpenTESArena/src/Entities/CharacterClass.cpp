@@ -9,8 +9,8 @@
 #include "../Items/WeaponType.h"
 
 CharacterClass::CharacterClass(const std::string &displayName, 
-	CharacterClassCategoryName categoryName, bool castsMagic, int32_t startingHealth, 
-	int32_t healthDice, const std::vector<ArmorMaterialType> &allowedArmors, 
+	CharacterClassCategoryName categoryName, bool castsMagic, int startingHealth, 
+	int healthDice, const std::vector<ArmorMaterialType> &allowedArmors, 
 	const std::vector<ShieldType> &allowedShields, 
 	const std::vector<WeaponType> &allowedWeapons)
 {
@@ -44,12 +44,12 @@ bool CharacterClass::canCastMagic() const
 	return this->castsMagic;
 }
 
-int32_t CharacterClass::getStartingHealth() const
+int CharacterClass::getStartingHealth() const
 {
 	return this->startingHealth;
 }
 
-int32_t CharacterClass::getHealthDice() const
+int CharacterClass::getHealthDice() const
 {
 	return this->healthDice;
 }

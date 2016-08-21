@@ -43,7 +43,7 @@ const std::string CLProgram::RAY_TRACE_KERNEL = "rayTrace";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int32_t worldWidth, int32_t worldHeight, int32_t worldDepth, 
+CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
 	TextureManager &textureManager, Renderer &renderer, double renderQuality)
 	: textureManager(textureManager)
 {
@@ -53,20 +53,20 @@ CLProgram::CLProgram(int32_t worldWidth, int32_t worldHeight, int32_t worldDepth
 
 	Debug::mention("CLProgram", "Initializing.");
 
-	const int32_t screenWidth = renderer.getWindowDimensions().getX();
-	const int32_t screenHeight = renderer.getWindowDimensions().getY();
+	const int screenWidth = renderer.getWindowDimensions().getX();
+	const int screenHeight = renderer.getWindowDimensions().getY();
 
 	// Render dimensions for ray tracing. To prevent issues when the user shrinks
 	// the window down too far, clamp them to at least 1.
-	this->renderWidth = std::max(static_cast<int32_t>(screenWidth * renderQuality), 1);
-	this->renderHeight = std::max(static_cast<int32_t>(screenHeight * renderQuality), 1);
+	this->renderWidth = std::max(static_cast<int>(screenWidth * renderQuality), 1);
+	this->renderHeight = std::max(static_cast<int>(screenHeight * renderQuality), 1);
 
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;
 	this->worldDepth = worldDepth;
 
 	// Create the local output pixel buffer.
-	const int32_t renderPixelCount = this->renderWidth * this->renderHeight;
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	this->outputData = std::vector<char>(sizeof(cl_int) * renderPixelCount);
 	
 	// Create streaming texture to be used as the game world frame buffer.	
@@ -497,7 +497,7 @@ void CLProgram::makeTestWorld()
 	// It does nothing with sprites and lights yet.
 
 	// Lambda for creating a vector of rectangles for a particular voxel.
-	auto makeBlock = [](int32_t cellX, int32_t cellY, int32_t cellZ)
+	auto makeBlock = [](int cellX, int cellY, int cellZ)
 	{
 		float x = static_cast<float>(cellX);
 		float y = static_cast<float>(cellY);
@@ -544,7 +544,7 @@ void CLProgram::makeTestWorld()
 	};
 
 	// Write some rectangles to a rectangle buffer.
-	const int32_t maxRectanglesPerVoxel = 6;
+	const int maxRectanglesPerVoxel = 6;
 	size_t rectangleBufferSize = SIZEOF_RECTANGLE * maxRectanglesPerVoxel *
 		this->worldWidth * this->worldHeight * this->worldDepth;
 	std::vector<char> rectangleBuffer(rectangleBufferSize);
@@ -553,7 +553,7 @@ void CLProgram::makeTestWorld()
 	// Lambda for writing rectangle data to the local buffer.
 	// - NOTE: using texture index here assumes that all textures are 64x64.
 	auto writeRectangle = [this, maxRectanglesPerVoxel, recPtr](const Rect3D &rect,
-		int32_t cellX, int32_t cellY, int32_t cellZ, int32_t rectangleOffset, int32_t textureIndex)
+		int cellX, int cellY, int cellZ, int rectangleOffset, int textureIndex)
 	{
 		assert(cellX >= 0);
 		assert(cellY >= 0);
@@ -623,7 +623,7 @@ void CLProgram::makeTestWorld()
 	// when using the naive rectangle array storage (i.e., *every* voxel has 6 
 	// rectangle slots). Consider making the offset based on the number of rectangles
 	// written, instead of an arbitrary XYZ coordinate.
-	auto writeVoxelRef = [this, voxPtr](int32_t cellX, int32_t cellY, int32_t cellZ, int32_t count)
+	auto writeVoxelRef = [this, voxPtr](int cellX, int cellY, int cellZ, int count)
 	{
 		assert(cellX >= 0);
 		assert(cellY >= 0);
@@ -638,7 +638,7 @@ void CLProgram::makeTestWorld()
 			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
 
 		// Number of rectangles to skip in the rectangles array.
-		int32_t offset = 6 * (cellX + (cellY * this->worldWidth) +
+		int offset = 6 * (cellX + (cellY * this->worldWidth) +
 			(cellZ * this->worldWidth * this->worldHeight));
 
 		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr);
@@ -659,30 +659,30 @@ void CLProgram::makeTestWorld()
 		this->textureManager.getSurface("T_GARDEN.IMG").getSurface(),
 	};
 
-	const int32_t textureCount = static_cast<int32_t>(textures.size());
-	const int32_t textureWidth = 64;
-	const int32_t textureHeight = 64;
+	const int textureCount = static_cast<int>(textures.size());
+	const int textureWidth = 64;
+	const int textureHeight = 64;
 	size_t textureBufferSize = sizeof(cl_float4) * textureWidth * 
 		textureHeight * textureCount;
 	std::vector<char> textureBuffer(textureBufferSize);
 	cl_char *texPtr = reinterpret_cast<cl_char*>(textureBuffer.data());
 	
 	// Pack the texture data into the local buffer.
-	for (int32_t i = 0; i < textureCount; ++i)
+	for (int i = 0; i < textureCount; ++i)
 	{
 		const SDL_Surface *texture = textures.at(i);
 		const uint32_t *pixels = static_cast<uint32_t*>(texture->pixels);
 
-		int32_t pixelOffset = sizeof(cl_float4) * textureWidth * textureHeight * i;
+		int pixelOffset = sizeof(cl_float4) * textureWidth * textureHeight * i;
 		cl_float4 *pixelPtr = reinterpret_cast<cl_float4*>(texPtr + pixelOffset);
 
-		for (int32_t y = 0; y < texture->h; ++y)
+		for (int y = 0; y < texture->h; ++y)
 		{
-			for (int32_t x = 0; x < texture->w; ++x)
+			for (int x = 0; x < texture->w; ++x)
 			{
-				int32_t index = x + (y * texture->w);
+				int index = x + (y * texture->w);
 
-				// Convert from ARGB int32_t to RGBA float4.
+				// Convert from ARGB int to RGBA float4.
 				Float4f color = Float4f::fromARGB(pixels[index]);
 
 				cl_float *colorPtr = reinterpret_cast<cl_float*>(pixelPtr + index);
@@ -697,11 +697,11 @@ void CLProgram::makeTestWorld()
 	}
 
 	// Zero out all the voxel references to start.
-	for (int32_t k = 0; k < this->worldDepth; ++k)
+	for (int k = 0; k < this->worldDepth; ++k)
 	{
-		for (int32_t j = 0; j < this->worldHeight; ++j)
+		for (int j = 0; j < this->worldHeight; ++j)
 		{
-			for (int32_t i = 0; i < this->worldWidth; ++i)
+			for (int i = 0; i < this->worldWidth; ++i)
 			{
 				writeVoxelRef(i, j, k, 0);
 			}
@@ -712,15 +712,15 @@ void CLProgram::makeTestWorld()
 	Random random(2);
 
 	// Make the ground.
-	for (int32_t k = 0; k < this->worldDepth; ++k)
+	for (int k = 0; k < this->worldDepth; ++k)
 	{
-		for (int32_t i = 0; i < this->worldWidth; ++i)
+		for (int i = 0; i < this->worldWidth; ++i)
 		{
 			std::vector<Rect3D> block = makeBlock(i, 0, k);
-			int32_t rectangleCount = static_cast<int32_t>(block.size());
+			int rectangleCount = static_cast<int>(block.size());
 
-			int32_t textureIndex = 1 + random.next(3);
-			for (int32_t index = 0; index < rectangleCount; ++index)
+			int textureIndex = 1 + random.next(3);
+			for (int index = 0; index < rectangleCount; ++index)
 			{
 				writeRectangle(block.at(index), i, 0, k, index, textureIndex);
 			}
@@ -730,20 +730,20 @@ void CLProgram::makeTestWorld()
 	}
 
 	// Make the near X and far X walls.
-	for (int32_t j = 1; j < this->worldHeight; ++j)
+	for (int j = 1; j < this->worldHeight; ++j)
 	{
-		for (int32_t k = 0; k < this->worldDepth; ++k)
+		for (int k = 0; k < this->worldDepth; ++k)
 		{
 			std::vector<Rect3D> block = makeBlock(0, j, k);
-			int32_t rectangleCount = static_cast<int32_t>(block.size());
+			int rectangleCount = static_cast<int>(block.size());
 
-			for (int32_t index = 0; index < rectangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
 				writeRectangle(block.at(index), 0, j, k, index, 0);
 			}
 
 			block = makeBlock(this->worldWidth - 1, j, k);
-			for (int32_t index = 0; index < rectangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
 				writeRectangle(block.at(index), this->worldWidth - 1, j, k, index, 0);
 			}
@@ -754,20 +754,20 @@ void CLProgram::makeTestWorld()
 	}
 
 	// Make the near Z and far Z walls (ignoring existing corners).
-	for (int32_t j = 1; j < this->worldHeight; ++j)
+	for (int j = 1; j < this->worldHeight; ++j)
 	{
-		for (int32_t i = 1; i < (this->worldWidth - 1); ++i)
+		for (int i = 1; i < (this->worldWidth - 1); ++i)
 		{
 			std::vector<Rect3D> block = makeBlock(i, j, 0);
-			int32_t rectangleCount = static_cast<int32_t>(block.size());
+			int rectangleCount = static_cast<int>(block.size());
 
-			for (int32_t index = 0; index < rectangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
 				writeRectangle(block.at(index), i, j, 0, index, 0);
 			}
 
 			block = makeBlock(i, j, this->worldDepth - 1);
-			for (int32_t index = 0; index < rectangleCount; ++index)
+			for (int index = 0; index < rectangleCount; ++index)
 			{
 				writeRectangle(block.at(index), i, j, this->worldDepth - 1, index, 0);
 			}
@@ -778,16 +778,16 @@ void CLProgram::makeTestWorld()
 	}
 
 	// Add some random blocks around.
-	for (int32_t count = 0; count < 32; ++count)
+	for (int count = 0; count < 32; ++count)
 	{
-		int32_t x = 1 + random.next(this->worldWidth - 2);
-		int32_t y = 1;
-		int32_t z = 1 + random.next(this->worldDepth - 2);
+		int x = 1 + random.next(this->worldWidth - 2);
+		int y = 1;
+		int z = 1 + random.next(this->worldDepth - 2);
 
 		std::vector<Rect3D> block = makeBlock(x, y, z);
-		int32_t rectangleCount = static_cast<int32_t>(block.size());
+		int rectangleCount = static_cast<int>(block.size());
 
-		for (int32_t index = 0; index < rectangleCount; ++index)
+		for (int index = 0; index < rectangleCount; ++index)
 		{
 			writeRectangle(block.at(index), x, y, z, index, 4);
 		}
@@ -896,14 +896,14 @@ void CLProgram::render(Renderer &renderer)
 
 	// Copy the output buffer into the destination pixel buffer.
 	void *outputDataPtr = static_cast<void*>(this->outputData.data());
-	const int32_t renderPixelCount = this->renderWidth * this->renderHeight;
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
 		static_cast<cl::size_type>(sizeof(cl_int) * renderPixelCount),
 		outputDataPtr, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 
 	// Update the frame buffer texture and draw to the renderer.
-	const int32_t pitch = this->renderWidth * sizeof(cl_int);
+	const int pitch = this->renderWidth * sizeof(cl_int);
 	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, pitch);
 	renderer.fillNative(this->texture);
 }

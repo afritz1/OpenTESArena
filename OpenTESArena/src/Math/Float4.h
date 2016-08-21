@@ -1,7 +1,6 @@
 #ifndef FLOAT4_H
 #define FLOAT4_H
 
-#include <cstdint>
 #include <string>
 #include <type_traits>
 
@@ -23,7 +22,7 @@ public:
 	Float4();
 	~Float4();
 
-	static Float4 fromARGB(uint32_t argb);
+	static Float4 fromARGB(unsigned int argb);
 	static Float4 fromColor(const Color &c);
 
 	Float4 operator +(const Float4 &v) const;
@@ -37,7 +36,7 @@ public:
 	Float3<T> getXYZ() const;
 
 	std::string toString() const;
-	uint32_t toARGB() const;
+	unsigned int toARGB() const;
 	Color toColor() const;
 };
 

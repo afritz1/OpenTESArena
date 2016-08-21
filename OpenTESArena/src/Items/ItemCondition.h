@@ -1,7 +1,6 @@
 #ifndef ITEM_CONDITION_H
 #define ITEM_CONDITION_H
 
-#include <cstdint>
 #include <string>
 
 // The specifics for "item condition" aren't in the manual, so I think they should
@@ -22,7 +21,7 @@ enum class WeaponType;
 class ItemCondition
 {
 private:
-	int32_t currentCondition, maxCondition, degradeRate;
+	int currentCondition, maxCondition, degradeRate;
 public:
 	// Item condition for a piece of armor of the given type.
 	ItemCondition(BodyPartName partName, const ArmorMaterial &material);

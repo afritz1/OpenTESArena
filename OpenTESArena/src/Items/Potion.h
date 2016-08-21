@@ -22,7 +22,7 @@ public:
 	virtual double getWeight() const override;
 
 	// The gold value is based on the effect.
-	virtual int32_t getGoldValue() const override;
+	virtual int getGoldValue() const override;
 
 	// The display name is based on the effect.
 	virtual std::string getDisplayName() const override;

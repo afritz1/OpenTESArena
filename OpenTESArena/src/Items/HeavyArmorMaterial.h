@@ -17,8 +17,8 @@ public:
 	virtual std::unique_ptr<ArmorMaterial> clone() const override;
 
 	virtual ArmorMaterialType getMaterialType() const override;
-	virtual int32_t getArmorRating() const override;
-	virtual int32_t getConditionMultiplier() const override;
+	virtual int getArmorRating() const override;
+	virtual int getConditionMultiplier() const override;
 	virtual double getWeightMultiplier() const override;
 	virtual bool isEnchantable() const override;
 	virtual std::string toString() const override;

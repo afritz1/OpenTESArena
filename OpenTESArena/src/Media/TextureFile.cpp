@@ -1,5 +1,4 @@
 #include <cassert>
-#include <cstdint>
 #include <map>
 
 #include "TextureFile.h"
@@ -180,12 +179,12 @@ const std::string &TextureFile::fromName(TextureName textureName)
 std::vector<std::string> TextureFile::fromName(TextureSequenceName sequenceName)
 {
 	const auto &filename = TextureSequenceFilenames.at(sequenceName);
-	const int32_t count = TextureSequenceCounts.at(sequenceName);
+	const int count = TextureSequenceCounts.at(sequenceName);
 
 	std::vector<std::string> filenames;
 
 	// Generate the list of filenames to load from file later.
-	for (int32_t i = 0; i < count; ++i)
+	for (int i = 0; i < count; ++i)
 	{
 		auto countString = "-" + std::to_string(i + 1);
 		filenames.push_back(filename + countString);

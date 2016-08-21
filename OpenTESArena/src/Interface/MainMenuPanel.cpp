@@ -27,8 +27,8 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 	this->loadButton = []()
 	{
 		Int2 center(168, 58);
-		int32_t width = 150;
-		int32_t height = 20;
+		int width = 150;
+		int height = 20;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
@@ -40,8 +40,8 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 	this->newButton = []()
 	{
 		Int2 center(168, 112);
-		int32_t width = 150;
-		int32_t height = 20;
+		int width = 150;
+		int height = 20;
 		auto function = [](GameState *gameState)
 		{
 			// Link together the opening scroll, intro cinematic, and character creation.
@@ -78,8 +78,8 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 	this->exitButton = []()
 	{
 		Int2 center(168, 158);
-		int32_t width = 45;
-		int32_t height = 20;
+		int width = 45;
+		int height = 20;
 		auto function = [](GameState *gameState)
 		{
             SDL_Event evt;
@@ -130,8 +130,8 @@ void MainMenuPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 
@@ -204,6 +204,6 @@ void MainMenuPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

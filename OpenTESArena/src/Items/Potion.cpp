@@ -21,9 +21,9 @@ double Potion::getWeight() const
 	return weight;
 }
 
-int32_t Potion::getGoldValue() const
+int Potion::getGoldValue() const
 {
-	int32_t baseValue = 0;
+	int baseValue = 0;
 	return baseValue;
 }
 

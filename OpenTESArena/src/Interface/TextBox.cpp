@@ -17,7 +17,7 @@
 // The Surface constructor is given (1, 1) for width and height because the text box
 // dimensions are calculated in the TextBox constructor, and a surface cannot have
 // width and height of zero. They are placeholder values, essentially.
-TextBox::TextBox(int32_t x, int32_t y, const Color &textColor, const std::string &text,
+TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	FontName fontName, TextureManager &textureManager, Renderer &renderer)
 	: Surface(x, y, 1, 1)
 {
@@ -40,9 +40,9 @@ TextBox::TextBox(int32_t x, int32_t y, const Color &textColor, const std::string
 	}
 
 	// Calculate the proper dimensions of the new text box surface.
-	int32_t width = this->getMaxWidth(lineSurfaces);
-	int32_t height = this->getNewLineHeight(textureManager) *
-		static_cast<int32_t>(lineSurfaces.size());
+	int width = this->getMaxWidth(lineSurfaces);
+	int height = this->getNewLineHeight(textureManager) *
+		static_cast<int>(lineSurfaces.size());
 
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
@@ -56,7 +56,7 @@ TextBox::TextBox(int32_t x, int32_t y, const Color &textColor, const std::string
 	this->setTransparentColor(Color::Magenta);
 
 	// Copy each line surface to the parent surface.
-	int32_t yOffset = 0;
+	int yOffset = 0;
 	for (const auto &lineSurface : lineSurfaces)
 	{
 		lineSurface->blit(*this, Int2(0, yOffset));
@@ -64,8 +64,8 @@ TextBox::TextBox(int32_t x, int32_t y, const Color &textColor, const std::string
 	}
 
 	// Set the text to the text color.
-	auto *pixels = static_cast<uint32_t*>(this->surface->pixels);
-	for (int32_t i = 0; i < (this->getWidth() * this->getHeight()); ++i)
+	auto *pixels = static_cast<unsigned int*>(this->surface->pixels);
+	for (int i = 0; i < (this->getWidth() * this->getHeight()); ++i)
 	{
 		auto pixelColor = Color::fromRGB(pixels[i]);
 		if (pixelColor != Color::Magenta)
@@ -101,9 +101,9 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 	}
 
 	// Calculate the proper dimensions of the new text box surface.
-	int32_t width = this->getMaxWidth(lineSurfaces);
-	int32_t height = this->getNewLineHeight(textureManager) *
-		static_cast<int32_t>(lineSurfaces.size());
+	int width = this->getMaxWidth(lineSurfaces);
+	int height = this->getNewLineHeight(textureManager) *
+		static_cast<int>(lineSurfaces.size());
 
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
@@ -120,17 +120,17 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 	this->setTransparentColor(Color::Magenta);
 
 	// Copy each line surface to the parent surface.
-	int32_t yOffset = 0;
+	int yOffset = 0;
 	for (const auto &lineSurface : lineSurfaces)
 	{
-		int32_t xOffset = (width / 2) - (lineSurface->getWidth() / 2);
+		int xOffset = (width / 2) - (lineSurface->getWidth() / 2);
 		lineSurface->blit(*this, Int2(xOffset, yOffset));
 		yOffset += lineSurface->getHeight();
 	}
 
 	// Set the text to the text color.
-	auto *pixels = static_cast<uint32_t*>(this->surface->pixels);
-	for (int32_t i = 0; i < (this->getWidth() * this->getHeight()); ++i)
+	auto *pixels = static_cast<unsigned int*>(this->surface->pixels);
+	for (int i = 0; i < (this->getWidth() * this->getHeight()); ++i)
 	{
 		auto pixelColor = Color::fromRGB(pixels[i]);
 		if (pixelColor != Color::Magenta)
@@ -145,18 +145,18 @@ TextBox::~TextBox()
 
 }
 
-int32_t TextBox::getNewLineHeight(TextureManager &textureManager) const
+int TextBox::getNewLineHeight(TextureManager &textureManager) const
 {
 	Font font(this->getFontName());
 	const auto &surface = textureManager.getSurface(
 		TextureFile::fromName(font.getFontTextureName()));
-	int32_t height = surface.getHeight() / 3;
+	int height = surface.getHeight() / 3;
 	return height;
 }
 
-int32_t TextBox::getMaxWidth(const std::vector<std::unique_ptr<Surface>> &surfaces)
+int TextBox::getMaxWidth(const std::vector<std::unique_ptr<Surface>> &surfaces)
 {
-	int32_t maxWidth = 0;
+	int maxWidth = 0;
 	for (const auto &surface : surfaces)
 	{
 		maxWidth = std::max(maxWidth, surface->getWidth());
@@ -173,7 +173,7 @@ std::vector<std::string> TextBox::textToLines(const std::string &text) const
 	lines.push_back(std::string());
 
 	const char newLine = '\n';
-	int32_t textLineIndex = 0;
+	int textLineIndex = 0;
 	for (const auto c : text)
 	{
 		if (c == newLine)
@@ -196,7 +196,7 @@ std::vector<std::string> TextBox::textToLines(const std::string &text) const
 std::unique_ptr<Surface> TextBox::combineSurfaces(
 	const std::vector<std::unique_ptr<Surface>> &letterSurfaces)
 {
-	int32_t totalWidth = 0;
+	int totalWidth = 0;
 
 	// Get the sum of all the surfaces' widths.
 	for (const auto &surface : letterSurfaces)
@@ -204,13 +204,13 @@ std::unique_ptr<Surface> TextBox::combineSurfaces(
 		totalWidth += surface->getWidth();
 	}
 
-	int32_t totalHeight = letterSurfaces.at(0)->getHeight();
+	int totalHeight = letterSurfaces.at(0)->getHeight();
 
 	// Make the big surface.
 	std::unique_ptr<Surface> combinedSurface(new Surface(totalWidth, totalHeight));
 
 	// Copy each little surface to the big one.
-	int32_t offset = 0;
+	int offset = 0;
 	for (const auto &surface : letterSurfaces)
 	{
 		surface->blit(*combinedSurface.get(), Int2(offset, 0));
@@ -243,20 +243,20 @@ std::vector<std::unique_ptr<Surface>> TextBox::lineToSurfaces(const std::string 
 	return surfaces;
 }
 
-std::unique_ptr<Surface> TextBox::getTrimmedLetter(uint8_t c,
+std::unique_ptr<Surface> TextBox::getTrimmedLetter(unsigned char c,
 	TextureManager &textureManager) const
 {
 	// Get the font and its associated texture.
 	const Font font(this->fontName);
 	const auto &fontTexture = textureManager.getSurface(
 		TextureFile::fromName(font.getFontTextureName()));
-	const auto *fontPixels = static_cast<uint32_t*>(fontTexture.getSurface()->pixels);
+	const auto *fontPixels = static_cast<unsigned int*>(fontTexture.getSurface()->pixels);
 
 	// Get the font properties. "Space" is a special case because it is completely
 	// whitespace (i.e., can't be trimmed), so it needs an arbitrary width.
-	const int32_t letterHeight = this->getNewLineHeight(textureManager);
-	const int32_t rightPadding = font.getRightPadding();
-	const int32_t spaceWidth = font.getSpaceWidth();
+	const int letterHeight = this->getNewLineHeight(textureManager);
+	const int rightPadding = font.getRightPadding();
+	const int spaceWidth = font.getSpaceWidth();
 	const auto cellDimensions = font.getCellDimensions();
 	const char space = ' ';
 
@@ -272,14 +272,14 @@ std::unique_ptr<Surface> TextBox::getTrimmedLetter(uint8_t c,
 
 		// Calculate the letter's trimmed width by walking columns from right to left
 		// in the font texture until a text pixel is hit.
-		int32_t letterWidth = cellDimensions.getX();
+		int letterWidth = cellDimensions.getX();
 		for (bool textPixelHit = false; (!textPixelHit) && (letterWidth > 0); --letterWidth)
 		{
-			for (int32_t j = 0; j < letterHeight; ++j)
+			for (int j = 0; j < letterHeight; ++j)
 			{
-				int32_t x = corner.getX() + (letterWidth - 1);
-				int32_t y = corner.getY() + j;
-				int32_t pixelIndex = x + (y * fontTexture.getWidth());
+				int x = corner.getX() + (letterWidth - 1);
+				int y = corner.getY() + j;
+				int pixelIndex = x + (y * fontTexture.getWidth());
 
 				auto pixelColor = Color::fromRGB(fontPixels[pixelIndex]);
 				if (pixelColor != Color::Magenta)

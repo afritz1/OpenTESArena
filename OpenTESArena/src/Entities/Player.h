@@ -25,7 +25,7 @@ private:
 	CharacterGenderName gender;
 	CharacterRaceName raceName;
 	std::string displayName;
-	int32_t portraitID;
+	int portraitID;
 	// Attributes can be put in an inherited class.
 	// Other stats...
 
@@ -35,7 +35,7 @@ private:
 public:
 	// Default constructor.
 	Player(const std::string &displayName, CharacterGenderName gender,
-		CharacterRaceName raceName, const CharacterClass &charClass, int32_t portraitID,
+		CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 		const Float3d &position, const Float3d &direction, const Float3d &velocity, 
 		double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager);
 
@@ -46,7 +46,7 @@ public:
 
 	const std::string &getDisplayName() const;
 	std::string getFirstName() const;
-	int32_t getPortraitID() const;
+	int getPortraitID() const;
 	CharacterGenderName getGenderName() const;
 	CharacterRaceName getRaceName() const;
 	const CharacterClass &getCharacterClass() const;

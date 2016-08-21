@@ -18,7 +18,7 @@ const std::map<MetalType, std::string> MetalTypeDisplayNames =
 };
 
 // Negate the modifiers for armor rating if the 2nd edition D&D rules are being used.
-const std::map<MetalType, int32_t> MetalRatingModifiers =
+const std::map<MetalType, int> MetalRatingModifiers =
 {
 	{ MetalType::Iron, -1 },
 	{ MetalType::Steel, 0 },
@@ -32,7 +32,7 @@ const std::map<MetalType, int32_t> MetalRatingModifiers =
 
 // Multiplier for extra metal strength. From this table, an ebony item lasts
 // three times longer than its equivalent iron, steel, or silver item.
-const std::map<MetalType, int32_t> MetalConditionMultipliers =
+const std::map<MetalType, int> MetalConditionMultipliers =
 {
 	{ MetalType::Iron, 1 },
 	{ MetalType::Steel, 1 },
@@ -73,15 +73,15 @@ MetalType Metal::getMetalType() const
 	return this->metalType;
 }
 
-int32_t Metal::getRatingModifier() const
+int Metal::getRatingModifier() const
 {
-	int32_t modifier = MetalRatingModifiers.at(this->getMetalType());
+	int modifier = MetalRatingModifiers.at(this->getMetalType());
 	return modifier;
 }
 
-int32_t Metal::getConditionMultiplier() const
+int Metal::getConditionMultiplier() const
 {
-	int32_t multiplier = MetalConditionMultipliers.at(this->getMetalType());
+	int multiplier = MetalConditionMultipliers.at(this->getMetalType());
 	return multiplier;
 }
 

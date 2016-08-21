@@ -14,12 +14,12 @@
 #include "../Media/TextureName.h"
 #include "../Utilities/Debug.h"
 
-const int32_t Renderer::DEFAULT_COLOR_BITS_PER_PIXEL = 32;
+const int Renderer::DEFAULT_COLOR_BITS_PER_PIXEL = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
-const int32_t Renderer::ORIGINAL_WIDTH = 320;
-const int32_t Renderer::ORIGINAL_HEIGHT = 200;
+const int Renderer::ORIGINAL_WIDTH = 320;
+const int Renderer::ORIGINAL_HEIGHT = 200;
 
-Renderer::Renderer(int32_t width, int32_t height, bool fullscreen, double letterboxAspect)
+Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
 {
 	Debug::mention("Renderer", "Initializing.");
 
@@ -61,7 +61,7 @@ Renderer::Renderer(int32_t width, int32_t height, bool fullscreen, double letter
 	this->useTransparencyBlending(false);
 }
 
-Renderer::Renderer(int32_t width, int32_t height, bool fullscreen)
+Renderer::Renderer(int width, int height, bool fullscreen)
 	: Renderer(width, height, fullscreen, static_cast<double>(Renderer::ORIGINAL_WIDTH) /
 		static_cast<double>(Renderer::ORIGINAL_HEIGHT)) { }
 
@@ -78,7 +78,7 @@ Renderer::~Renderer()
 SDL_Renderer *Renderer::createRenderer()
 {
 	// Automatically choose the best driver.
-	const int32_t bestDriver = -1;
+	const int bestDriver = -1;
 
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(
 		this->window, bestDriver, SDL_RENDERER_ACCELERATED);
@@ -156,7 +156,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	else if (nativeAspect > this->letterboxAspect)
 	{
 		// Native window is wider = empty left and right.
-		int32_t subWidth = static_cast<int32_t>(std::ceil(
+		int subWidth = static_cast<int>(std::ceil(
 			static_cast<double>(nativeSurface->h) * this->letterboxAspect));
 		SDL_Rect rect;
 		rect.x = (nativeSurface->w - subWidth) / 2;
@@ -168,7 +168,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	else
 	{
 		// Native window is taller = empty top and bottom.
-		int32_t subHeight = static_cast<int32_t>(std::ceil(
+		int subHeight = static_cast<int>(std::ceil(
 			static_cast<double>(nativeSurface->w) / this->letterboxAspect));
 		SDL_Rect rect;
 		rect.x = 0;
@@ -179,7 +179,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	}
 }
 
-uint32_t Renderer::getFormattedARGB(const Color &color) const
+unsigned int Renderer::getFormattedARGB(const Color &color) const
 {
 	return SDL_MapRGBA(this->getFormat(), color.getR(), color.getG(),
 		color.getB(), color.getA());
@@ -237,7 +237,7 @@ bool Renderer::letterboxContains(const Int2 &nativePoint) const
 	return rectangle.contains(nativePoint);
 }
 
-SDL_Texture *Renderer::createTexture(uint32_t format, int32_t access, int32_t w, int32_t h)
+SDL_Texture *Renderer::createTexture(unsigned int format, int access, int w, int h)
 {
 	return SDL_CreateTexture(this->renderer, format, access, w, h);
 }
@@ -252,7 +252,7 @@ SDL_Texture *Renderer::createTextureFromSurface(const Surface &surface)
 	return this->createTextureFromSurface(surface.getSurface());
 }
 
-void Renderer::resize(int32_t width, int32_t height)
+void Renderer::resize(int width, int height)
 {
 	// The window's dimensions are resized automatically. The renderer's are not.
 	const auto *nativeSurface = this->getWindowSurface();
@@ -277,7 +277,7 @@ void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
 
 void Renderer::useTransparencyBlending(bool blend)
 {
-	int32_t status = SDL_SetTextureBlendMode(this->originalTexture,
+	int status = SDL_SetTextureBlendMode(this->originalTexture,
 		blend ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
 	Debug::check(status == 0, "Renderer", "Couldn't set blending mode, " +
 		std::string(SDL_GetError()));
@@ -309,7 +309,7 @@ void Renderer::clearOriginal()
 	this->clearOriginal(Color::Transparent);
 }
 
-void Renderer::drawToNative(SDL_Texture *texture, int32_t x, int32_t y, int32_t w, int32_t h)
+void Renderer::drawToNative(SDL_Texture *texture, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 
@@ -322,9 +322,9 @@ void Renderer::drawToNative(SDL_Texture *texture, int32_t x, int32_t y, int32_t 
 	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 }
 
-void Renderer::drawToNative(SDL_Texture *texture, int32_t x, int32_t y)
+void Renderer::drawToNative(SDL_Texture *texture, int x, int y)
 {
-	int32_t width, height;
+	int width, height;
 	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
 
 	this->drawToNative(texture, x, y, width, height);
@@ -335,14 +335,14 @@ void Renderer::drawToNative(SDL_Texture *texture)
 	this->drawToNative(texture, 0, 0);
 }
 
-void Renderer::drawToNative(SDL_Surface *surface, int32_t x, int32_t y, int32_t w, int32_t h)
+void Renderer::drawToNative(SDL_Surface *surface, int x, int y, int w, int h)
 {
 	SDL_Texture *texture = this->createTextureFromSurface(surface);
 	this->drawToNative(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
 }
 
-void Renderer::drawToNative(SDL_Surface *surface, int32_t x, int32_t y)
+void Renderer::drawToNative(SDL_Surface *surface, int x, int y)
 {
 	this->drawToNative(surface, x, y, surface->w, surface->h);
 }
@@ -352,7 +352,7 @@ void Renderer::drawToNative(SDL_Surface *surface)
 	this->drawToNative(surface, 0, 0);
 }
 
-void Renderer::drawToOriginal(SDL_Texture *texture, int32_t x, int32_t y, int32_t w, int32_t h)
+void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->originalTexture);
 
@@ -365,9 +365,9 @@ void Renderer::drawToOriginal(SDL_Texture *texture, int32_t x, int32_t y, int32_
 	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 }
 
-void Renderer::drawToOriginal(SDL_Texture *texture, int32_t x, int32_t y)
+void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y)
 {
-	int32_t width, height;
+	int width, height;
 	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
 
 	this->drawToOriginal(texture, x, y, width, height);
@@ -378,14 +378,14 @@ void Renderer::drawToOriginal(SDL_Texture *texture)
 	this->drawToOriginal(texture, 0, 0);
 }
 
-void Renderer::drawToOriginal(SDL_Surface *surface, int32_t x, int32_t y, int32_t w, int32_t h)
+void Renderer::drawToOriginal(SDL_Surface *surface, int x, int y, int w, int h)
 {
 	SDL_Texture *texture = this->createTextureFromSurface(surface);
 	this->drawToOriginal(texture, x, y, w, h);
 	SDL_DestroyTexture(texture);
 }
 
-void Renderer::drawToOriginal(SDL_Surface *surface, int32_t x, int32_t y)
+void Renderer::drawToOriginal(SDL_Surface *surface, int x, int y)
 {
 	this->drawToOriginal(surface, x, y, surface->w, surface->h);
 }

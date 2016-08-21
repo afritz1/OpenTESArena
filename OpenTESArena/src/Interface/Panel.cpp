@@ -112,7 +112,7 @@ double Panel::getCursorScale() const
 
 Int2 Panel::getMousePosition() const
 {
-	int32_t x, y;
+	int x, y;
 	SDL_GetMouseState(&x, &y);
 	return Int2(x, y);
 }

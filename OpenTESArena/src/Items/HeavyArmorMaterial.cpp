@@ -27,12 +27,12 @@ ArmorMaterialType HeavyArmorMaterial::getMaterialType() const
 	return ArmorMaterialType::Plate;
 }
 
-int32_t HeavyArmorMaterial::getArmorRating() const
+int HeavyArmorMaterial::getArmorRating() const
 {
 	return 9 + this->getMetal().getRatingModifier();
 }
 
-int32_t HeavyArmorMaterial::getConditionMultiplier() const
+int HeavyArmorMaterial::getConditionMultiplier() const
 {
 	// Add the 3 to compensate for the metal condition multiplier only being 
 	// relative to weapons. Now it is relative to armor.

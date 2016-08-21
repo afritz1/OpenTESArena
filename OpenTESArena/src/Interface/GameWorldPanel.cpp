@@ -40,8 +40,8 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 
 	this->playerNameTextBox = [gameState]()
 	{
-		int32_t x = 17;
-		int32_t y = 154;
+		int x = 17;
+		int y = 154;
 		Color color(215, 121, 8);
 		std::string text = gameState->getGameData()->getPlayer().getFirstName();
 		auto fontName = FontName::Char;
@@ -128,8 +128,8 @@ void GameWorldPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -186,7 +186,7 @@ void GameWorldPanel::handleMouse(double dt)
 	static_cast<void>(dt);
 
 	// Make the camera look around.
-	int32_t dx, dy;
+	int dx, dy;
 	const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
 
 	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
@@ -311,7 +311,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw game world interface.
 	auto *gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	int32_t gameInterfaceHeight;
+	int gameInterfaceHeight;
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
 	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
@@ -353,8 +353,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 
 	// Set the transparency blending back to normal (off).
 	renderer.useTransparencyBlending(false);

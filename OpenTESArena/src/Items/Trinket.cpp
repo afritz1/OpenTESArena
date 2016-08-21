@@ -55,9 +55,9 @@ double Trinket::getWeight() const
 	return weight;
 }
 
-int32_t Trinket::getGoldValue() const
+int Trinket::getGoldValue() const
 {
-	int32_t baseValue = TrinketGoldValues.at(this->getTrinketType());
+	int baseValue = TrinketGoldValues.at(this->getTrinketType());
 	return baseValue;
 }
 
@@ -72,8 +72,8 @@ TrinketType Trinket::getTrinketType() const
 	return this->trinketType;
 }
 
-int32_t Trinket::getMaxEquipCount() const
+int Trinket::getMaxEquipCount() const
 {
-	int32_t maxCount = TrinketMaxEquipCounts.at(this->getTrinketType());
+	int maxCount = TrinketMaxEquipCounts.at(this->getTrinketType());
 	return maxCount;
 }

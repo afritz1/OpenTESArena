@@ -97,8 +97,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->doneButton = [this, charClass, name, gender, raceName]()
 	{
 		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
-		int32_t width = 21;
-		int32_t height = 12;
+		int width = 21;
+		int height = 12;
 
 		auto gameDataFunction = [this, charClass, name, gender, raceName](GameState *gameState)
 		{
@@ -120,9 +120,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
 
 			// Some arbitrary test dimensions.
-			int32_t worldWidth = 32;
-			int32_t worldHeight = 5;
-			int32_t worldDepth = 32;
+			int worldWidth = 32;
+			int worldHeight = 5;
+			int worldDepth = 32;
 
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
 				worldWidth, worldHeight, worldDepth,
@@ -210,8 +210,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->incrementPortraitButton = [this]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
-		int32_t width = 60;
-		int32_t height = 42;
+		int width = 60;
+		int height = 42;
 		auto function = [this](GameState *gameState)
 		{
 			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
@@ -222,8 +222,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	this->decrementPortraitButton = [this]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
-		int32_t width = 60;
-		int32_t height = 42;
+		int width = 60;
+		int height = 42;
 		auto function = [this](GameState *gameState)
 		{
 			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
@@ -264,8 +264,8 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -338,7 +338,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	// Draw the current portrait.
 	auto *portrait = textureManager.getTexture(
 		portraitStrings.at(this->portraitIndex));
-	int32_t portraitWidth, portraitHeight;
+	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
 	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
@@ -361,6 +361,6 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -60,9 +60,9 @@ HolidayName Holiday::getHolidayName() const
 	return this->holidayName;
 }
 
-int32_t Holiday::getDayNumber() const
+int Holiday::getDayNumber() const
 {
-	int32_t dayNumber = HolidayDates.at(this->getHolidayName()).second;
+	int dayNumber = HolidayDates.at(this->getHolidayName()).second;
 
 	assert(dayNumber >= 1);
 	assert(dayNumber <= 30);

@@ -1,7 +1,6 @@
 #ifndef MONTH_H
 #define MONTH_H
 
-#include <cstdint>
 #include <string>
 
 enum class MonthName;
@@ -14,7 +13,7 @@ public:
 	Month(MonthName monthName);
 	~Month();
 
-	static const int32_t DAYS_PER_MONTH;
+	static const int DAYS_PER_MONTH;
 
 	MonthName getMonthName() const;
 

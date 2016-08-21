@@ -18,7 +18,7 @@ Entity::~Entity()
 
 }
 
-int32_t Entity::getID() const
+int Entity::getID() const
 {
 	return this->id;
 }

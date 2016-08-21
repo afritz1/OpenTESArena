@@ -109,7 +109,7 @@ TextureManager &GameState::getTextureManager() const
 	return *this->textureManager.get();
 }
 
-void GameState::resizeWindow(int32_t width, int32_t height)
+void GameState::resizeWindow(int width, int height)
 {
 	this->renderer->resize(width, height);
 	

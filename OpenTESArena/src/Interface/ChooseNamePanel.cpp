@@ -21,7 +21,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
-const int32_t ChooseNamePanel::MAX_NAME_LENGTH = 25;
+const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
 ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &charClass)
 	: Panel(gameState)
@@ -112,8 +112,8 @@ void ChooseNamePanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -261,8 +261,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 
 	const double parchmentXScale = 1.5;
 	const double parchmentYScale = 1.65;
-	const int32_t parchmentWidth = static_cast<int32_t>(this->parchment->getWidth() * parchmentXScale);
-	const int32_t parchmentHeight = static_cast<int32_t>(this->parchment->getHeight() * parchmentYScale);
+	const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
+	const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
 
 	renderer.drawToOriginal(this->parchment->getSurface(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
@@ -287,6 +287,6 @@ void ChooseNamePanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

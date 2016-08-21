@@ -1,8 +1,6 @@
 #ifndef VOXEL_REFERENCE_H
 #define VOXEL_REFERENCE_H
 
-#include <cstdint>
-
 // A voxel reference has an offset for how many rectangles to skip in the global
 // geometry array for rendering, and the count tells how many rectangles to use at that
 // offset. This class is intended for use with managing the kernel's more static geometry.
@@ -20,13 +18,13 @@
 class VoxelReference
 {
 private:
-	int32_t offset, count;
+	int offset, count;
 public:
-	VoxelReference(int32_t offset, int32_t count);
+	VoxelReference(int offset, int count);
 	~VoxelReference();
 
-	int32_t getOffset() const;
-	int32_t getRectangleCount() const;
+	int getOffset() const;
+	int getRectangleCount() const;
 };
 
 #endif

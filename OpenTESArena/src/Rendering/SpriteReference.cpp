@@ -1,6 +1,6 @@
 #include "SpriteReference.h"
 
-SpriteReference::SpriteReference(int32_t offset, int32_t count)
+SpriteReference::SpriteReference(int offset, int count)
 {
 	this->offset = offset;
 	this->count = count;
@@ -11,12 +11,12 @@ SpriteReference::~SpriteReference()
 
 }
 
-int32_t SpriteReference::getOffset() const
+int SpriteReference::getOffset() const
 {
 	return this->offset;
 }
 
-int32_t SpriteReference::getRectangleCount() const
+int SpriteReference::getRectangleCount() const
 {
 	return this->count;
 }

@@ -16,7 +16,7 @@ public:
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const = 0;
-	virtual int32_t getGoldValue() const = 0;
+	virtual int getGoldValue() const = 0;
 	virtual std::string getDisplayName() const = 0;
 
 	virtual ConsumableType getConsumableType() const = 0;

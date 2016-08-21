@@ -76,7 +76,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 		}
 
 		// Get the display name.
-		int32_t index = 0;
+		int index = 0;
 		while (line.at(index) != comma)
 		{
 			++index;
@@ -86,7 +86,7 @@ std::vector<std::unique_ptr<Location>> LocationParser::parse()
 
 		// Get the province name.
 		index += 2;
-		int32_t oldIndex = index;
+		int oldIndex = index;
 		while (line.at(index) != comma)
 		{
 			++index;

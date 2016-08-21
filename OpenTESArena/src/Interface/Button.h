@@ -14,9 +14,9 @@ class Button : public Surface
 private:
 	std::function<void(GameState*)> function;
 public:
-	Button(int32_t x, int32_t y, int32_t width, int32_t height, 
+	Button(int x, int y, int width, int height, 
 		const std::function<void(GameState*)> &function);
-	Button(const Int2 &center, int32_t width, int32_t height,
+	Button(const Int2 &center, int width, int height,
 		const std::function<void(GameState*)> &function);
 
 	// "Hidden" button for hotkeys. It is not intended to be drawn anywhere.

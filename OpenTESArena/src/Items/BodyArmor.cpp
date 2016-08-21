@@ -84,13 +84,13 @@ double BodyArmor::getWeight() const
 	return weight;
 }
 
-int32_t BodyArmor::getGoldValue() const
+int BodyArmor::getGoldValue() const
 {
 	// Refine this method.
-	int32_t baseValue = BodyArmorGoldValues.at(this->getPartName());
-	int32_t ratingModifier = this->getArmorRating();
+	int baseValue = BodyArmorGoldValues.at(this->getPartName());
+	int ratingModifier = this->getArmorRating();
 	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
-	int32_t value = static_cast<int32_t>(static_cast<double>(baseValue + ratingModifier) *
+	int value = static_cast<int>(static_cast<double>(baseValue + ratingModifier) *
 		metalMultiplier);
 	return value;
 }
@@ -139,7 +139,7 @@ std::vector<BodyPartName> BodyArmor::getProtectedBodyParts() const
 	return partNames;
 }
 
-int32_t BodyArmor::getArmorRating() const
+int BodyArmor::getArmorRating() const
 {
 	// I think body armor ratings are actually just bound to the material in the original.
 	// That makes okay sense, because with the (supposedly) weighted hit model with the

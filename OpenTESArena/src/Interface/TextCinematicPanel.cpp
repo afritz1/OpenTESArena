@@ -34,19 +34,19 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT - 12);
 
 		// Count new lines.
-		int32_t newLineCount = static_cast<int32_t>(std::count(text.begin(), text.end(), '\n'));
+		int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
 		
 		// Split text into lines.
 		std::vector<std::string> textLines = String::split(text, '\n');
 
 		// Group up to three text lines per text box.
 		std::vector<std::unique_ptr<TextBox>> textBoxes;
-		int32_t textBoxesToMake = static_cast<int32_t>(std::ceil(newLineCount / 3)) + 1;
-		for (int32_t i = 0; i < textBoxesToMake; ++i)
+		int textBoxesToMake = static_cast<int>(std::ceil(newLineCount / 3)) + 1;
+		for (int i = 0; i < textBoxesToMake; ++i)
 		{
 			std::string textBoxText;
-			int32_t linesToUse = std::min(newLineCount - (i * 3), 3);
-			for (int32_t j = 0; j < linesToUse; ++j)
+			int linesToUse = std::min(newLineCount - (i * 3), 3);
+			for (int j = 0; j < linesToUse; ++j)
 			{
 				textBoxText.append(textLines.at(j + (i * 3)));
 				textBoxText.append("\n");
@@ -101,8 +101,8 @@ void TextCinematicPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -123,7 +123,7 @@ void TextCinematicPanel::handleEvents(bool &running)
 			this->textIndex++;
 			
 			// If done with the last text box, then prepare for the next panel.
-			int32_t textBoxCount = static_cast<int32_t>(this->textBoxes.size());
+			int textBoxCount = static_cast<int>(this->textBoxes.size());
 			if (this->textIndex >= textBoxCount)
 			{
 				this->textIndex = textBoxCount - 1;
@@ -157,7 +157,7 @@ void TextCinematicPanel::tick(double dt, bool &running)
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
 		auto imageFilenames = TextureFile::fromName(this->sequenceName);
-		int32_t imageFilenameCount = static_cast<int32_t>(imageFilenames.size());
+		int imageFilenameCount = static_cast<int>(imageFilenames.size());
 		if (this->imageIndex == imageFilenameCount)
 		{
 			this->imageIndex = 0;

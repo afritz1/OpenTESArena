@@ -29,7 +29,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
-const int32_t ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
+const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
 ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	: Panel(gameState)
@@ -46,8 +46,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->titleTextBox = [gameState]()
 	{
-		int32_t x = 89;
-		int32_t y = 32;
+		int x = 89;
+		int y = 32;
 		Color color(211, 211, 211);
 		std::string text = "Choose thy class...";
 		auto fontName = FontName::C;
@@ -63,11 +63,11 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->classesListBox = [this, gameState]()
 	{
-		int32_t x = 85;
-		int32_t y = 46;
+		int x = 85;
+		int y = 46;
 		auto fontName = FontName::A;
 		Color color(85, 44, 20);
-		int32_t maxElements = 6;
+		int maxElements = 6;
 		std::vector<std::string> elements;
 
 		// This depends on the character classes being already sorted.
@@ -100,8 +100,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	this->upButton = [this]
 	{
 		Int2 center(68, 22);
-		int32_t w = 8;
-		int32_t h = 8;
+		int w = 8;
+		int h = 8;
 		auto function = [this](GameState *gameState)
 		{
 			// Scroll the list box up one if able.
@@ -116,8 +116,8 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	this->downButton = [this]
 	{
 		Int2 center(68, 117);
-		int32_t w = 8;
-		int32_t h = 8;
+		int w = 8;
+		int h = 8;
 		auto function = [this](GameState *gameState)
 		{
 			// Scroll the list box down one if able.
@@ -179,8 +179,8 @@ void ChooseClassPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -202,7 +202,7 @@ void ChooseClassPanel::handleEvents(bool &running)
 			if (leftClick)
 			{
 				// Verify that the clicked index is valid. If so, use that character class.
-				int32_t index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+				int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 				if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 				{
 					this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
@@ -249,7 +249,7 @@ void ChooseClassPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 }
 
-void ChooseClassPanel::createTooltip(int32_t tooltipIndex, Renderer &renderer)
+void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 {
 	const auto &characterClass = *this->charClasses.at(tooltipIndex).get();
 
@@ -270,9 +270,9 @@ void ChooseClassPanel::createTooltip(int32_t tooltipIndex, Renderer &renderer)
 		this->getGameState()->getTextureManager(),
 		this->getGameState()->getRenderer()));
 
-	const int32_t width = tooltipTextBox->getWidth();
-	const int32_t height = tooltipTextBox->getHeight();
-	const int32_t padding = 3;
+	const int width = tooltipTextBox->getWidth();
+	const int height = tooltipTextBox->getHeight();
+	const int padding = 3;
 
 	Surface tooltip(width, height + padding);
 	tooltip.fill(Color(32, 32, 32));
@@ -288,8 +288,8 @@ void ChooseClassPanel::createTooltip(int32_t tooltipIndex, Renderer &renderer)
 
 std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
 {
-	int32_t lengthCounter = 0;
-	const int32_t armorCount = static_cast<int32_t>(characterClass.getAllowedArmors().size());
+	int lengthCounter = 0;
+	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
 
 	// Sort as they are listed in the CharacterClassParser.
 	auto allowedArmors = characterClass.getAllowedArmors();
@@ -305,11 +305,11 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 	else
 	{
 		// Collect all allowed armor display names for the class.
-		for (int32_t i = 0; i < armorCount; ++i)
+		for (int i = 0; i < armorCount; ++i)
 		{
 			const auto materialType = allowedArmors.at(i);
 			auto materialString = ArmorMaterial::typeToString(materialType);
-			lengthCounter += static_cast<int32_t>(materialString.size());
+			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
 			// If not the last element, add a comma.
@@ -334,8 +334,8 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 
 std::string ChooseClassPanel::getClassShields(const CharacterClass &characterClass) const
 {
-	int32_t lengthCounter = 0;
-	const int32_t shieldCount = static_cast<int32_t>(characterClass.getAllowedShields().size());
+	int lengthCounter = 0;
+	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
 
 	// Sort as they are listed in the CharacterClassParser.
 	auto allowedShields = characterClass.getAllowedShields();
@@ -351,12 +351,12 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 	else
 	{
 		// Collect all allowed shield display names for the class.
-		for (int32_t i = 0; i < shieldCount; ++i)
+		for (int i = 0; i < shieldCount; ++i)
 		{
 			const auto shieldType = allowedShields.at(i);
 			auto dummyMetal = MetalType::Iron;
 			auto typeString = Shield(shieldType, dummyMetal).typeToString();
-			lengthCounter += static_cast<int32_t>(typeString.size());
+			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
 			// If not the last element, add a comma.
@@ -381,8 +381,8 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 
 std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
 {
-	int32_t lengthCounter = 0;
-	const int32_t weaponCount = static_cast<int32_t>(characterClass.getAllowedWeapons().size());
+	int lengthCounter = 0;
+	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
 
 	// Sort as they are listed in the CharacterClassParser.
 	auto allowedWeapons = characterClass.getAllowedWeapons();
@@ -399,12 +399,12 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	else
 	{
 		// Collect all allowed weapon display names for the class.
-		for (int32_t i = 0; i < weaponCount; ++i)
+		for (int i = 0; i < weaponCount; ++i)
 		{
 			const auto weaponType = allowedWeapons.at(i);
 			const auto dummyMetal = MetalType::Iron;
 			auto typeString = Weapon(weaponType, dummyMetal).typeToString();
-			lengthCounter += static_cast<int32_t>(typeString.size());
+			lengthCounter += static_cast<int>(typeString.size());
 			weaponsString.append(typeString);
 
 			// If not the the last element, add a comma.
@@ -427,7 +427,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
-void ChooseClassPanel::drawClassTooltip(int32_t tooltipIndex, Renderer &renderer)
+void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 {
 	auto mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());
@@ -439,15 +439,15 @@ void ChooseClassPanel::drawClassTooltip(int32_t tooltipIndex, Renderer &renderer
 	}
 
 	SDL_Texture *tooltipTexture = this->tooltipTextures.at(tooltipIndex);
-	int32_t tooltipWidth, tooltipHeight;
+	int tooltipWidth, tooltipHeight;
 	SDL_QueryTexture(tooltipTexture, nullptr, nullptr, &tooltipWidth, &tooltipHeight);
 
 	// Calculate the top left corner, given the mouse position.
-	const int32_t mouseX = mouseOriginalPoint.getX();
-	const int32_t mouseY = mouseOriginalPoint.getY();
-	const int32_t x = ((mouseX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
+	const int mouseX = mouseOriginalPoint.getX();
+	const int mouseY = mouseOriginalPoint.getY();
+	const int x = ((mouseX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltipWidth);
-	const int32_t y = ((mouseY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((mouseY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltipHeight);
 
 	renderer.drawToOriginal(tooltipTexture, x, y, tooltipWidth, tooltipHeight);
@@ -475,7 +475,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::PopUp2), 
 		PaletteFile::fromName(PaletteName::CharSheet));
 
-	int32_t listWidth, listHeight;
+	int listWidth, listHeight;
 	SDL_QueryTexture(listPopUp, nullptr, nullptr, &listWidth, &listHeight);
 	renderer.drawToOriginal(listPopUp,
 		55,
@@ -495,7 +495,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	if (this->classesListBox->containsPoint(mouseOriginalPoint))
 	{
-		int32_t index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 		{
 			this->drawClassTooltip(index, renderer);
@@ -513,6 +513,6 @@ void ChooseClassPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

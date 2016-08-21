@@ -22,8 +22,8 @@ AutomapPanel::AutomapPanel(GameState *gameState)
 	this->backToGameButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 57, Renderer::ORIGINAL_HEIGHT - 29);
-		int32_t width = 38;
-		int32_t height = 13;
+		int width = 38;
+		int height = 13;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
@@ -61,8 +61,8 @@ void AutomapPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed || nPressed)
@@ -121,7 +121,7 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Prepare the cursor color key.
-	uint32_t colorKey = renderer.getFormattedARGB(Color::Black);
+	unsigned int colorKey = renderer.getFormattedARGB(Color::Black);
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
@@ -131,12 +131,12 @@ void AutomapPanel::render(Renderer &renderer)
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::QuillCursor)/*, AUTOMAP.IMG*/);
 	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE, colorKey);
-	const int32_t cursorYOffset = static_cast<int32_t>(
+	const int cursorYOffset = static_cast<int>(
 		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(),
 		mousePosition.getY() - cursorYOffset,
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

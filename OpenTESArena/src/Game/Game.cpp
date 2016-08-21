@@ -8,8 +8,8 @@
 
 #include "GameState.h"
 
-const int32_t Game::MIN_FPS = 15;
-const int32_t Game::DEFAULT_FPS = 60;
+const int Game::MIN_FPS = 15;
+const int Game::DEFAULT_FPS = 60;
 
 Game::Game()
 {
@@ -22,7 +22,7 @@ Game::~Game()
 
 }
 
-void Game::delay(int32_t ms)
+void Game::delay(int ms)
 {
 	assert(ms >= 0);
 	SDL_Delay(static_cast<Uint32>(ms));
@@ -33,17 +33,17 @@ void Game::loop()
 	// This loop doesn't check for SDL events itself. The current panel does that,
 	// because most events like pressing "Esc" are context-sensitive.
 
-    const int32_t minimumMS = 1000 / Game::MIN_FPS;
-    const int32_t maximumMS = 1000 / this->targetFPS;
-    int32_t thisTime = SDL_GetTicks();
-    int32_t lastTime = thisTime;
+    const int minimumMS = 1000 / Game::MIN_FPS;
+    const int maximumMS = 1000 / this->targetFPS;
+    int thisTime = SDL_GetTicks();
+    int lastTime = thisTime;
 
 	while (this->gameState->isRunning())
 	{
         lastTime = thisTime;
         thisTime = SDL_GetTicks();
 
-        int32_t frameTime = thisTime - lastTime;
+        int frameTime = thisTime - lastTime;
         if(frameTime < maximumMS)
         {
             this->delay(maximumMS - frameTime);

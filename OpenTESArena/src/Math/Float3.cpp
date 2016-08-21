@@ -57,12 +57,12 @@ Float3<T> Float3<T>::randomPointInCuboid(const Float3 &center, T width, T height
 }
 
 template<typename T>
-Float3<T> Float3<T>::fromRGB(uint32_t rgb)
+Float3<T> Float3<T>::fromRGB(unsigned int rgb)
 {
 	return Float3(
-		static_cast<T>(static_cast<uint8_t>(rgb >> 16) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgb >> 8) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgb) / 255.0));
+		static_cast<T>(static_cast<unsigned char>(rgb >> 16) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(rgb >> 8) / 255.0),
+		static_cast<T>(static_cast<unsigned char>(rgb) / 255.0));
 }
 
 template<typename T>
@@ -132,20 +132,20 @@ std::string Float3<T>::toString() const
 }
 
 template<typename T>
-uint32_t Float3<T>::toRGB() const
+unsigned int Float3<T>::toRGB() const
 {
-	return static_cast<uint32_t>(
-		((static_cast<uint8_t>(this->x * 255.0)) << 16) |
-		((static_cast<uint8_t>(this->y * 255.0)) << 8) |
-		((static_cast<uint8_t>(this->z * 255.0))));
+	return static_cast<unsigned int>(
+		((static_cast<unsigned char>(this->x * 255.0)) << 16) |
+		((static_cast<unsigned char>(this->y * 255.0)) << 8) |
+		((static_cast<unsigned char>(this->z * 255.0))));
 }
 
 template<typename T>
 Color Float3<T>::toColor() const
 {
-	uint8_t r = static_cast<uint8_t>(this->x * 255.0);
-	uint8_t g = static_cast<uint8_t>(this->y * 255.0);
-	uint8_t b = static_cast<uint8_t>(this->z * 255.0);
+	unsigned char r = static_cast<unsigned char>(this->x * 255.0);
+	unsigned char g = static_cast<unsigned char>(this->y * 255.0);
+	unsigned char b = static_cast<unsigned char>(this->z * 255.0);
 	return Color(r, g, b);
 }
 

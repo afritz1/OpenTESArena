@@ -15,7 +15,7 @@
 #include "../Utilities/String.h"
 
 Player::Player(const std::string &displayName, CharacterGenderName gender,
-	CharacterRaceName raceName, const CharacterClass &charClass, int32_t portraitID,
+	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 	const Float3d &position, const Float3d &direction, const Float3d &velocity,
 	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
 	: Entity(EntityType::Player, position, entityManager), Directable(direction),
@@ -60,7 +60,7 @@ std::string Player::getFirstName() const
 	return nameTokens.at(0);
 }
 
-int32_t Player::getPortraitID() const
+int Player::getPortraitID() const
 {
 	return this->portraitID;
 }

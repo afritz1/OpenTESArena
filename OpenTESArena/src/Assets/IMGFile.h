@@ -16,7 +16,7 @@ enum class PaletteName;
 class IMGFile
 {
 private:
-	int32_t w, h;
+	int w, h;
 	std::unique_ptr<uint32_t> pixels;
 public:
 	// Loads an IMG from file. Uses the given palette unless the palette name is
@@ -28,8 +28,8 @@ public:
 	// reference. Causes an error if the IMG file doesn't have a palette.
 	static void extractPalette(Palette &palette, const std::string &filename);
 
-	int32_t getWidth() const;
-	int32_t getHeight() const;
+	int getWidth() const;
+	int getHeight() const;
 	uint32_t *getPixels() const;
 };
 

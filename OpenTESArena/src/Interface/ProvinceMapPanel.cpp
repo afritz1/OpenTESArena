@@ -58,10 +58,10 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 	this->searchButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Search);
-		int32_t x = clickArea.getLeft();
-		int32_t y = clickArea.getTop();
-		int32_t width = clickArea.getWidth();
-		int32_t height = clickArea.getHeight();
+		int x = clickArea.getLeft();
+		int y = clickArea.getTop();
+		int width = clickArea.getWidth();
+		int height = clickArea.getHeight();
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -72,10 +72,10 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 	this->travelButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Travel);
-		int32_t x = clickArea.getLeft();
-		int32_t y = clickArea.getTop();
-		int32_t width = clickArea.getWidth();
-		int32_t height = clickArea.getHeight();
+		int x = clickArea.getLeft();
+		int y = clickArea.getTop();
+		int width = clickArea.getWidth();
+		int height = clickArea.getHeight();
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -86,10 +86,10 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 	this->backToWorldMapButton = []()
 	{
 		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::BackToWorldMap);
-		int32_t x = clickArea.getLeft();
-		int32_t y = clickArea.getTop();
-		int32_t width = clickArea.getWidth();
-		int32_t height = clickArea.getHeight();
+		int x = clickArea.getLeft();
+		int y = clickArea.getTop();
+		int width = clickArea.getWidth();
+		int height = clickArea.getHeight();
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(gameState));
@@ -127,8 +127,8 @@ void ProvinceMapPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int32_t width = e.window.data1;
-			int32_t height = e.window.data2;
+			int width = e.window.data1;
+			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -203,13 +203,13 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
-	const int32_t tooltipX = tooltip->getX();
-	const int32_t tooltipY = tooltip->getY();
-	const int32_t width = tooltip->getWidth();
-	const int32_t height = tooltip->getHeight();
-	const int32_t x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
+	const int tooltipX = tooltip->getX();
+	const int tooltipY = tooltip->getY();
+	const int width = tooltip->getWidth();
+	const int height = tooltip->getHeight();
+	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
 		(tooltipX + 8) : (tooltipX - width);
-	const int32_t y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
 		tooltipY : (tooltipY - height);
 
 	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
@@ -262,6 +262,6 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

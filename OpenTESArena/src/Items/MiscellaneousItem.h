@@ -29,7 +29,7 @@ public:
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const override;
-	virtual int32_t getGoldValue() const override;
+	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
 	MiscellaneousItemType getMiscellaneousItemType() const;

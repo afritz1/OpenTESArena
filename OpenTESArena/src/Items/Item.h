@@ -27,7 +27,7 @@ public:
 
 	virtual ItemType getItemType() const = 0;
 	virtual double getWeight() const = 0;
-	virtual int32_t getGoldValue() const = 0;
+	virtual int getGoldValue() const = 0;
 	virtual std::string getDisplayName() const = 0;
 
 	// getTooltip()? How would it be split into colored sentences? Maybe a vector 

@@ -6,7 +6,7 @@
 
 #include "Int2.h"
 
-Rect::Rect(int32_t x, int32_t y, int32_t width, int32_t height)
+Rect::Rect(int x, int y, int width, int height)
 {
 	assert(width >= 0);
 	assert(height >= 0);
@@ -18,7 +18,7 @@ Rect::Rect(int32_t x, int32_t y, int32_t width, int32_t height)
 	this->rect->h = height;
 }
 
-Rect::Rect(int32_t width, int32_t height)
+Rect::Rect(int width, int height)
 	: Rect(0, 0, width, height) { }
 
 Rect::Rect()
@@ -32,32 +32,32 @@ Rect::~Rect()
 
 }
 
-int32_t Rect::getWidth() const
+int Rect::getWidth() const
 {
 	return this->rect->w;
 }
 
-int32_t Rect::getHeight() const
+int Rect::getHeight() const
 {
 	return this->rect->h;
 }
 
-int32_t Rect::getLeft() const
+int Rect::getLeft() const
 {
 	return this->rect->x;
 }
 
-int32_t Rect::getRight() const
+int Rect::getRight() const
 {
 	return this->getLeft() + this->getWidth();
 }
 
-int32_t Rect::getTop() const
+int Rect::getTop() const
 {
 	return this->rect->y;
 }
 
-int32_t Rect::getBottom() const
+int Rect::getBottom() const
 {
 	return this->getTop() + this->getHeight();
 }
@@ -99,22 +99,22 @@ const SDL_Rect *Rect::getRect() const
 	return this->isEmpty() ? nullptr : this->rect.get();
 }
 
-void Rect::setX(int32_t x)
+void Rect::setX(int x)
 {
 	this->rect->x = x;
 }
 
-void Rect::setY(int32_t y)
+void Rect::setY(int y)
 {
 	this->rect->y = y;
 }
 
-void Rect::setWidth(int32_t width)
+void Rect::setWidth(int width)
 {
 	this->rect->w = width;
 }
 
-void Rect::setHeight(int32_t height)
+void Rect::setHeight(int height)
 {
 	this->rect->h = height;
 }

@@ -25,7 +25,7 @@ const std::map<MiscellaneousItemType, double> MiscellaneousItemWeights =
 };
 
 // These values are made up.
-const std::map<MiscellaneousItemType, int32_t> MiscellaneousItemGoldValues =
+const std::map<MiscellaneousItemType, int> MiscellaneousItemGoldValues =
 {
 	{ MiscellaneousItemType::Book, 0 },
 	{ MiscellaneousItemType::Key, 0 },
@@ -69,9 +69,9 @@ double MiscellaneousItem::getWeight() const
 	return weight;
 }
 
-int32_t MiscellaneousItem::getGoldValue() const
+int MiscellaneousItem::getGoldValue() const
 {
-	int32_t baseValue = MiscellaneousItemGoldValues.at(this->getMiscellaneousItemType());
+	int baseValue = MiscellaneousItemGoldValues.at(this->getMiscellaneousItemType());
 	return baseValue;
 }
 

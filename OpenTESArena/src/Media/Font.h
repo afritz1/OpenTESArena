@@ -1,8 +1,6 @@
 #ifndef FONT_H
 #define FONT_H
 
-#include <cstdint>
-
 // Made some changes to this class during the text box redesign. No more character
 // widths and heights for each font. All letters have their right side whitespace
 // trimmed until the number of whitespace columns for padding is reached.
@@ -20,7 +18,7 @@ public:
 	Font(FontName fontName);
 	~Font();
 
-	static Int2 getCellPosition(uint8_t c);
+	static Int2 getCellPosition(unsigned char c);
 
 	FontName getFontName() const;
 	TextureName getFontTextureName() const;
@@ -30,10 +28,10 @@ public:
 	Int2 getCellDimensions() const;
 
 	// The number of columns of whitespace to have on the right side of each letter.
-	int32_t getRightPadding() const;
+	int getRightPadding() const;
 
 	// The number of columns of whitespace a space is.
-	int32_t getSpaceWidth() const;
+	int getSpaceWidth() const;
 };
 
 #endif

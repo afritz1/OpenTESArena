@@ -24,12 +24,12 @@ ArmorMaterialType LightArmorMaterial::getMaterialType() const
 	return ArmorMaterialType::Leather;
 }
 
-int32_t LightArmorMaterial::getArmorRating() const
+int LightArmorMaterial::getArmorRating() const
 {
 	return 3;
 }
 
-int32_t LightArmorMaterial::getConditionMultiplier() const
+int LightArmorMaterial::getConditionMultiplier() const
 {
 	return 1;
 }

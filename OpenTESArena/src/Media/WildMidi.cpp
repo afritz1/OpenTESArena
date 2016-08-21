@@ -15,7 +15,7 @@
 namespace
 {
 
-	int32_t sInitState = -1;
+	int sInitState = -1;
 
 
 	class WildMidiSong : public MidiSong {
@@ -25,7 +25,7 @@ namespace
 		WildMidiSong(midi *song);
 		virtual ~WildMidiSong();
 
-		virtual void getFormat(int32_t *sampleRate) override;
+		virtual void getFormat(int *sampleRate) override;
 
 		virtual size_t read(char *buffer, size_t count) override;
 
@@ -42,7 +42,7 @@ namespace
 		WildMidi_Close(mSong);
 	}
 
-	void WildMidiSong::getFormat(int32_t *sampleRate)
+	void WildMidiSong::getFormat(int *sampleRate)
 	{
 		/* Currently always outputs 16-bit stereo 48khz */
 		*sampleRate = 48000;
@@ -113,7 +113,7 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 	}
 
 	midi *song = WildMidi_OpenBuffer(
-		reinterpret_cast<uint8_t*>(midibuf.data()), 
+		reinterpret_cast<unsigned char*>(midibuf.data()), 
 		static_cast<unsigned long>(midibuf.size()));
 
 	if (song)
