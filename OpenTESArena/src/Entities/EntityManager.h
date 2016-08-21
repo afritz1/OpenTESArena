@@ -12,25 +12,25 @@ enum class EntityType;
 class EntityManager
 {
 private:
-	std::map<int, std::unique_ptr<Entity>> entities;
+	std::map<int32_t, std::unique_ptr<Entity>> entities;
 public:
 	EntityManager();
 	~EntityManager();
 
 	// Gets an entity pointer, given their ID. Returns null if no ID matches.
-	Entity *at(int id) const;
+	Entity *at(int32_t id) const;
 
 	// Gets all entities of the given type.
 	std::vector<Entity*> getEntities(EntityType entityType) const;
 
 	// Obtains an available ID to be assigned to a new entity.
-	int nextID();
+	int32_t nextID();
 	
 	// Adds an entity. The entity must get their ID from "nextID()" beforehand.
 	void add(std::unique_ptr<Entity> entity);
 
 	// Deletes an entity.
-	void remove(int id);
+	void remove(int32_t id);
 };
 
 #endif

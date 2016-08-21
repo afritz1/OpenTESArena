@@ -27,8 +27,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 {
 	this->playerNameTextBox = [gameState]()
 	{
-		int x = 10;
-		int y = 8;
+		int32_t x = 10;
+		int32_t y = 8;
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getDisplayName();
 		auto fontName = FontName::Arena;
@@ -44,8 +44,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 
 	this->playerRaceTextBox = [gameState]()
 	{
-		int x = 10;
-		int y = 17;
+		int32_t x = 10;
+		int32_t y = 17;
 		Color color(199, 199, 199);
 		std::string text = CharacterRace(gameState->getGameData()->getPlayer()
 			.getRaceName()).toString();
@@ -62,8 +62,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 
 	this->playerClassTextBox = [gameState]()
 	{
-		int x = 10;
-		int y = 26;
+		int32_t x = 10;
+		int32_t y = 26;
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getCharacterClass()
 			.getDisplayName();
@@ -80,10 +80,10 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 
 	this->backToStatsButton = []()
 	{
-		int x = 0;
-		int y = 188;
-		int width = 47;
-		int height = 12;
+		int32_t x = 0;
+		int32_t y = 188;
+		int32_t width = 47;
+		int32_t height = 12;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> characterPanel(new CharacterPanel(gameState));
@@ -94,10 +94,10 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 
 	this->spellbookButton = []()
 	{
-		int x = 47;
-		int y = 188;
-		int width = 76;
-		int height = 12;
+		int32_t x = 47;
+		int32_t y = 188;
+		int32_t width = 76;
+		int32_t height = 12;
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -107,10 +107,10 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 
 	this->dropButton = []()
 	{
-		int x = 123;
-		int y = 188;
-		int width = 48;
-		int height = 12;
+		int32_t x = 123;
+		int32_t y = 188;
+		int32_t width = 48;
+		int32_t height = 12;
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -121,8 +121,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 	this->scrollDownButton = []()
 	{
 		Int2 center(16, 131);
-		int width = 9;
-		int height = 9;
+		int32_t width = 9;
+		int32_t height = 9;
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -133,8 +133,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 	this->scrollUpButton = []()
 	{
 		Int2 center(152, 131);
-		int width = 9;
-		int height = 9;
+		int32_t width = 9;
+		int32_t height = 9;
 		auto function = [](GameState *gameState)
 		{
 			// Nothing yet.
@@ -171,8 +171,8 @@ void CharacterEquipmentPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed || tabPressed)
@@ -252,7 +252,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	// Draw the player's portrait.
 	auto *portrait = textureManager.getTexture(
 		portraitStrings.at(player.getPortraitID()));
-	int portraitWidth, portraitHeight;
+	int32_t portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
 	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
@@ -275,6 +275,6 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

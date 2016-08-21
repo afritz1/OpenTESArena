@@ -102,7 +102,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		}
 
 		// Get the display name.
-		int index = 0;
+		int32_t index = 0;
 		while (line.at(index) != comma)
 		{
 			++index;
@@ -112,7 +112,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 
 		// Get the category name.
 		index += 2;
-		int oldIndex = index;
+		int32_t oldIndex = index;
 		while (line.at(index) != comma)
 		{
 			++index;
@@ -218,8 +218,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		// Convert the strings to recognized types.
 		auto categoryName = CharacterClassParserCategories.at(category);
 		bool castsMagic = CharacterClassParserMagicBooleans.at(magicBoolean);
-		int startingHealth = std::stoi(health);
-		int healthDice = std::stoi(dice);
+		int32_t startingHealth = std::stoi(health);
+		int32_t healthDice = std::stoi(dice);
 
 		std::vector<ArmorMaterialType> allowedArmors;
 		for (const auto &armor : armorTokens)

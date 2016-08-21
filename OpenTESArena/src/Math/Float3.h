@@ -1,6 +1,7 @@
 #ifndef FLOAT3_H
 #define FLOAT3_H
 
+#include <cstdint>
 #include <string>
 #include <type_traits>
 
@@ -22,7 +23,7 @@ public:
 	static Float3 randomPointInSphere(const Float3 &center, T radius, Random &random);
 	static Float3 randomPointInCuboid(const Float3 &center, T width, T height, T depth,
 		Random &random);
-	static Float3 fromRGB(unsigned int rgb);
+	static Float3 fromRGB(uint32_t rgb);
 	static Float3 fromColor(const Color &c);
 
 	Float3 operator +(const Float3 &v) const;
@@ -36,7 +37,7 @@ public:
 	T getZ() const;
 
 	std::string toString() const;
-	unsigned int toRGB() const;
+	uint32_t toRGB() const;
 	Color toColor() const;
 	T lengthSquared() const;
 	T length() const;

@@ -36,7 +36,7 @@ public:
 	virtual std::unique_ptr<Item> clone() const override;
 
 	virtual double getWeight() const override;
-	virtual int getGoldValue() const override;
+	virtual int32_t getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
 	BodyPartName getPartName() const;
@@ -45,7 +45,7 @@ public:
 	virtual ArmorType getArmorType() const override;
 	virtual const ArmorMaterial *getArmorMaterial() const override;
 	virtual std::vector<BodyPartName> getProtectedBodyParts() const override;
-	virtual int getArmorRating() const override;
+	virtual int32_t getArmorRating() const override;
 };
 
 #endif

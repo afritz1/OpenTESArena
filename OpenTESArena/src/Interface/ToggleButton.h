@@ -14,16 +14,16 @@ private:
 	bool on;
 public:
 	// Default toggle button constructor.
-	ToggleButton(int x, int y, int width, int height, bool on);
+	ToggleButton(int32_t x, int32_t y, int32_t width, int32_t height, bool on);
 
 	// Toggle button constructor set to off.
-	ToggleButton(int x, int y, int width, int height);
+	ToggleButton(int32_t x, int32_t y, int32_t width, int32_t height);
 
 	// Centered toggle button constructor.
-	ToggleButton(const Int2 &center, int width, int height, bool on);
+	ToggleButton(const Int2 &center, int32_t width, int32_t height, bool on);
 
 	// Centered toggle button constructor set to off.
-	ToggleButton(const Int2 &center, int width, int height);
+	ToggleButton(const Int2 &center, int32_t width, int32_t height);
 
 	virtual ~ToggleButton();
 

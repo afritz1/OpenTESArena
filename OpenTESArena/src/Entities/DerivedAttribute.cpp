@@ -13,7 +13,7 @@ const std::map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 	{ DerivedAttributeName::Stamina, "Stamina" }
 };
 
-DerivedAttribute::DerivedAttribute(DerivedAttributeName attributeName, int baseMaximum)
+DerivedAttribute::DerivedAttribute(DerivedAttributeName attributeName, int32_t baseMaximum)
 {
 	assert(baseMaximum > 0);
 
@@ -27,12 +27,12 @@ DerivedAttribute::~DerivedAttribute()
 
 }
 
-int DerivedAttribute::getCurrent() const
+int32_t DerivedAttribute::getCurrent() const
 {
 	return std::min(this->current, this->getMaximum());
 }
 
-int DerivedAttribute::getMaximum() const
+int32_t DerivedAttribute::getMaximum() const
 {
 	assert(this->maximum > 0);
 
@@ -50,12 +50,12 @@ std::string DerivedAttribute::toString() const
 	return displayName;
 }
 
-void DerivedAttribute::setCurrent(int value)
+void DerivedAttribute::setCurrent(int32_t value)
 {
 	this->current = value;
 }
 
-void DerivedAttribute::setMaximum(int value)
+void DerivedAttribute::setMaximum(int32_t value)
 {
 	// The maximum for a derived attribute shouldn't be set to zero. Set
 	// the current value instead.

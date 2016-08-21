@@ -15,7 +15,7 @@ EntityManager::~EntityManager()
 	
 }
 
-Entity *EntityManager::at(int id) const
+Entity *EntityManager::at(int32_t id) const
 {
 	return (this->entities.find(id) != this->entities.end()) ?
 		this->entities.at(id).get() : nullptr;
@@ -37,10 +37,10 @@ std::vector<Entity*> EntityManager::getEntities(EntityType entityType) const
 	return entityPtrs;
 }
 
-int EntityManager::nextID()
+int32_t EntityManager::nextID()
 {
 	// Iterate through IDs from 0 to infinity until one is available.
-	int id = 0;
+	int32_t id = 0;
 	while (this->entities.find(id) != this->entities.end())
 	{
 		++id;
@@ -57,11 +57,11 @@ void EntityManager::add(std::unique_ptr<Entity> entity)
 	assert(this->entities.find(entity->getID()) == this->entities.end());
 
 	// Add the pair to the entities map.
-	int entityID = entity->getID();
+	int32_t entityID = entity->getID();
 	this->entities.insert(std::make_pair(entityID, std::move(entity)));
 }
 
-void EntityManager::remove(int id)
+void EntityManager::remove(int32_t id)
 {
 	this->entities.erase(id);
 }

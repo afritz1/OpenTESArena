@@ -12,14 +12,14 @@ class GameState;
 class Game
 {
 private:
-    static const int MIN_FPS;
-	static const int DEFAULT_FPS;
+    static const int32_t MIN_FPS;
+	static const int32_t DEFAULT_FPS;
 
 	std::unique_ptr<GameState> gameState;
-	int targetFPS;
+	int32_t targetFPS;
 
 	// Waits the given number of milliseconds.
-	void delay(int ms);
+	void delay(int32_t ms);
 public:
 	Game();
 	~Game();

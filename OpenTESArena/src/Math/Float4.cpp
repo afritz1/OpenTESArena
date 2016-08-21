@@ -31,13 +31,13 @@ Float4<T>::~Float4()
 }
 
 template<typename T>
-Float4<T> Float4<T>::fromARGB(unsigned int argb)
+Float4<T> Float4<T>::fromARGB(uint32_t argb)
 {
 	return Float4(
-		static_cast<T>(static_cast<unsigned char>(argb >> 16) / 255.0),
-		static_cast<T>(static_cast<unsigned char>(argb >> 8) / 255.0),
-		static_cast<T>(static_cast<unsigned char>(argb) / 255.0),
-		static_cast<T>(static_cast<unsigned char>(argb >> 24) / 255.0));
+		static_cast<T>(static_cast<uint8_t>(argb >> 16) / 255.0),
+		static_cast<T>(static_cast<uint8_t>(argb >> 8) / 255.0),
+		static_cast<T>(static_cast<uint8_t>(argb) / 255.0),
+		static_cast<T>(static_cast<uint8_t>(argb >> 24) / 255.0));
 }
 
 template<typename T>
@@ -109,22 +109,22 @@ std::string Float4<T>::toString() const
 }
 
 template<typename T>
-unsigned int Float4<T>::toARGB() const
+uint32_t Float4<T>::toARGB() const
 {
-	return static_cast<unsigned int>(
-		((static_cast<unsigned char>(this->x * 255.0)) << 16) |
-		((static_cast<unsigned char>(this->y * 255.0)) << 8) |
-		((static_cast<unsigned char>(this->z * 255.0))) |
-		((static_cast<unsigned char>(this->w * 255.0)) << 24));
+	return static_cast<uint32_t>(
+		((static_cast<uint8_t>(this->x * 255.0)) << 16) |
+		((static_cast<uint8_t>(this->y * 255.0)) << 8) |
+		((static_cast<uint8_t>(this->z * 255.0))) |
+		((static_cast<uint8_t>(this->w * 255.0)) << 24));
 }
 
 template<typename T>
 Color Float4<T>::toColor() const
 {
-	unsigned char r = static_cast<unsigned char>(this->x * 255.0);
-	unsigned char g = static_cast<unsigned char>(this->y * 255.0);
-	unsigned char b = static_cast<unsigned char>(this->z * 255.0);
-	unsigned char a = static_cast<unsigned char>(this->w * 255.0);
+	uint8_t r = static_cast<uint8_t>(this->x * 255.0);
+	uint8_t g = static_cast<uint8_t>(this->y * 255.0);
+	uint8_t b = static_cast<uint8_t>(this->z * 255.0);
+	uint8_t a = static_cast<uint8_t>(this->w * 255.0);
 	return Color(r, g, b, a);
 }
 

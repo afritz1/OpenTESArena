@@ -1,6 +1,7 @@
 #ifndef TEXT_MAP_H
 #define TEXT_MAP_H
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -23,7 +24,7 @@ public:
 	~KvpTextMap();
 
 	bool getBoolean(const std::string &key) const;
-	int getInteger(const std::string &key) const;
+	int32_t getInteger(const std::string &key) const;
 	double getDouble(const std::string &key) const;
 	std::string getString(const std::string &key) const;
 };

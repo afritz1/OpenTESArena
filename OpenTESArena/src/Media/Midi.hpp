@@ -14,7 +14,7 @@ public:
      * have the same count, and different sample types can have the same number
      * of bits).
      */
-    virtual void getFormat(int *sampleRate) = 0;
+    virtual void getFormat(int32_t *sampleRate) = 0;
 
     /* Read and return size is in sample frames. */
     virtual size_t read(char *buffer, size_t count) = 0;

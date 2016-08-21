@@ -1,6 +1,7 @@
 #ifndef HOLIDAY_H
 #define HOLIDAY_H
 
+#include <cstdint>
 #include <string>
 
 enum class HolidayName;
@@ -17,7 +18,7 @@ public:
 	HolidayName getHolidayName() const;
 
 	// These two methods together tell when a holiday is.
-	int getDayNumber() const;
+	int32_t getDayNumber() const;
 	MonthName getMonthName() const;
 
 	std::string toString() const;

@@ -244,7 +244,7 @@ class OpenALStream {
 	std::thread mThread;
 
 	/* Playback source and buffer queue. */
-	static const int sBufferFrames = 16384;
+	static const int32_t sBufferFrames = 16384;
 	ALuint mSource;
 	std::array<ALuint, 4> mBuffers;
 	ALuint mBufferIdx;
@@ -467,7 +467,7 @@ public:
 		if (alGetError() != AL_NO_ERROR)
 			return false;
 
-		int srate;
+		int32_t srate;
 		mSong->getFormat(&srate);
 
 		/* Currently hard-coded to 16-bit stereo. */
@@ -529,7 +529,7 @@ void AudioManagerImpl::init(const Options &options)
 
 	double musicVolume = options.getMusicVolume();
 	double soundVolume = options.getSoundVolume();
-	int maxChannels = options.getSoundChannelCount();
+	int32_t maxChannels = options.getSoundChannelCount();
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
@@ -557,7 +557,7 @@ void AudioManagerImpl::playMusic(MusicName musicName)
 	if (music == MusicFilenames.end())
 	{
 		Debug::mention("Audio Manager", "Failed to lookup music ID " +
-			std::to_string(static_cast<int>(musicName)) + ".");
+			std::to_string(static_cast<int32_t>(musicName)) + ".");
 		mCurrentSong = nullptr;
 	}
 	else if (!mFreeSources.empty())

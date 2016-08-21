@@ -73,8 +73,8 @@ void OptionsPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -136,6 +136,6 @@ void OptionsPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

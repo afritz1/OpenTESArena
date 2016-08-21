@@ -22,7 +22,7 @@ private:
 	PaletteName paletteName;
 	TextureSequenceName sequenceName;
 	double secondsPerImage, currentSeconds;
-	int imageIndex;
+	int32_t imageIndex;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

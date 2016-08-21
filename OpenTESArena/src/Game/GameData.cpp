@@ -10,7 +10,7 @@
 GameData::GameData(std::unique_ptr<Player> player, 
 	std::unique_ptr<EntityManager> entityManager,
 	std::unique_ptr<CLProgram> clProgram, double gameTime,
-	int worldWidth, int worldHeight, int worldDepth)
+	int32_t worldWidth, int32_t worldHeight, int32_t worldDepth)
 {
 	Debug::mention("GameData", "Initializing.");
 
@@ -48,17 +48,17 @@ double GameData::getGameTime() const
 	return this->gameTime;
 }
 
-int GameData::getWorldWidth() const
+int32_t GameData::getWorldWidth() const
 {
 	return this->worldWidth;
 }
 
-int GameData::getWorldHeight() const
+int32_t GameData::getWorldHeight() const
 {
 	return this->worldHeight;
 }
 
-int GameData::getWorldDepth() const
+int32_t GameData::getWorldDepth() const
 {
 	return this->worldDepth;
 }

@@ -68,9 +68,9 @@ Weapon *CharacterEquipment::getWeapon() const
 	return this->weapon;
 }
 
-int CharacterEquipment::getAccessoryCount(AccessoryType accessoryType) const
+int32_t CharacterEquipment::getAccessoryCount(AccessoryType accessoryType) const
 {
-	int count = 0;
+	int32_t count = 0;
 	for (const auto &accessory : this->accessories)
 	{
 		if (accessory->getAccessoryType() == accessoryType)
@@ -82,9 +82,9 @@ int CharacterEquipment::getAccessoryCount(AccessoryType accessoryType) const
 	return count;
 }
 
-int CharacterEquipment::getTrinketCount(TrinketType trinketType) const
+int32_t CharacterEquipment::getTrinketCount(TrinketType trinketType) const
 {
-	int count = 0;
+	int32_t count = 0;
 	for (const auto &trinket : this->trinkets)
 	{
 		if (trinket->getTrinketType() == trinketType)
@@ -101,7 +101,7 @@ bool CharacterEquipment::equipAccessory(Accessory *accessory)
 	assert(accessory != nullptr);
 
 	// Count how many similar accessories (i.e., rings) are already equipped.
-	int similarCount = this->getAccessoryCount(accessory->getAccessoryType());
+	int32_t similarCount = this->getAccessoryCount(accessory->getAccessoryType());
 	bool success = similarCount < accessory->getMaxEquipCount();
 
 	if (success)
@@ -140,7 +140,7 @@ bool CharacterEquipment::equipTrinket(Trinket *trinket)
 	assert(trinket != nullptr);
 
 	// Count how many similar trinkets (i.e., marks) are already equipped.
-	int similarCount = this->getTrinketCount(trinket->getTrinketType());
+	int32_t similarCount = this->getTrinketCount(trinket->getTrinketType());
 	bool success = similarCount < trinket->getMaxEquipCount();
 
 	if (success)
@@ -158,10 +158,10 @@ void CharacterEquipment::equipWeapon(Weapon *weapon)
 	this->weapon = weapon;
 }
 
-void CharacterEquipment::removeAccessory(int index)
+void CharacterEquipment::removeAccessory(int32_t index)
 {
 	assert(index >= 0);
-	assert(index < static_cast<int>(this->accessories.size()));
+	assert(index < static_cast<int32_t>(this->accessories.size()));
 
 	this->accessories.erase(this->accessories.begin() + index);
 }
@@ -178,10 +178,10 @@ void CharacterEquipment::removeShield()
 	assert(this->shield == nullptr);
 }
 
-void CharacterEquipment::removeTrinket(int index)
+void CharacterEquipment::removeTrinket(int32_t index)
 {
 	assert(index >= 0);
-	assert(index < static_cast<int>(this->trinkets.size()));
+	assert(index < static_cast<int32_t>(this->trinkets.size()));
 
 	this->trinkets.erase(this->trinkets.begin() + index);
 }

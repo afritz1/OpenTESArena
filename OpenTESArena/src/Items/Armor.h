@@ -24,7 +24,7 @@ public:
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const = 0;
-	virtual int getGoldValue() const = 0;
+	virtual int32_t getGoldValue() const = 0;
 	virtual std::string getDisplayName() const = 0;
 
 	virtual ArmorType getArmorType() const = 0;
@@ -36,7 +36,7 @@ public:
 	// A list of the body parts a piece of armor protects.
 	virtual std::vector<BodyPartName> getProtectedBodyParts() const = 0;
 
-	virtual int getArmorRating() const = 0;
+	virtual int32_t getArmorRating() const = 0;
 };
 
 #endif

@@ -30,7 +30,7 @@ private:
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
 	std::string name;
-	int portraitIndex;
+	int32_t portraitIndex;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

@@ -1,7 +1,10 @@
 #ifndef PRIMARY_ATTRIBUTE_SET_H
 #define PRIMARY_ATTRIBUTE_SET_H
 
+#include <cstdint>
 #include <map>
+
+// To do: maybe remove this class?
 
 // This class has a concrete collection of the eight distinct primary attributes.
 
@@ -25,7 +28,7 @@ public:
 	~PrimaryAttributeSet();
 
 	const PrimaryAttribute &get(PrimaryAttributeName attributeName) const;
-	void set(PrimaryAttributeName attributeName, int value);
+	void set(PrimaryAttributeName attributeName, int32_t value);
 };
 
 #endif

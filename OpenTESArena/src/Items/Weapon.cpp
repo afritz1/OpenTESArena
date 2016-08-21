@@ -199,13 +199,13 @@ double Weapon::getWeight() const
 	return weight;
 }
 
-int Weapon::getGoldValue() const
+int32_t Weapon::getGoldValue() const
 {
 	// Refine this method.
-	int baseValue = WeaponTypeGoldValues.at(this->getWeaponType());
-	int ratingMultiplier = this->getMetal().getRatingModifier();
+	int32_t baseValue = WeaponTypeGoldValues.at(this->getWeaponType());
+	int32_t ratingMultiplier = this->getMetal().getRatingModifier();
 	double weightMultiplier = this->getMetal().getWeightMultiplier();
-	int goldValue = static_cast<int>(static_cast<double>(baseValue + ratingMultiplier) * 
+	int32_t goldValue = static_cast<int32_t>(static_cast<double>(baseValue + ratingMultiplier) * 
 		weightMultiplier);
 	return goldValue;
 }
@@ -232,15 +232,15 @@ WeaponRangeName Weapon::getWeaponRangeName() const
 	return rangeName;
 }
 
-int Weapon::getBaseMinDamage() const
+int32_t Weapon::getBaseMinDamage() const
 {
-	int minDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).first;
+	int32_t minDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).first;
 	return minDamage;
 }
 
-int Weapon::getBaseMaxDamage() const
+int32_t Weapon::getBaseMaxDamage() const
 {
-	int maxDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).second;
+	int32_t maxDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).second;
 	return maxDamage;
 }
 

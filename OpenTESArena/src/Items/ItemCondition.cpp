@@ -29,7 +29,7 @@ const std::map<ItemConditionName, std::string> ItemConditionDisplayNames =
 
 // Theoretically, a very poor piece of armor will break in only a couple hundred
 // hits, while a very nice piece of armor will last thousands of hits.
-const std::map<BodyPartName, int> ItemConditionArmorMaxConditions =
+const std::map<BodyPartName, int32_t> ItemConditionArmorMaxConditions =
 {
 	{ BodyPartName::Head, 300 },
 	{ BodyPartName::RightShoulder, 320 },
@@ -40,7 +40,7 @@ const std::map<BodyPartName, int> ItemConditionArmorMaxConditions =
 	{ BodyPartName::Feet, 320 }
 };
 
-const std::map<ShieldType, int> ItemConditionShieldMaxConditions =
+const std::map<ShieldType, int32_t> ItemConditionShieldMaxConditions =
 {
 	{ ShieldType::Buckler, 400 },
 	{ ShieldType::Round, 600 },
@@ -50,7 +50,7 @@ const std::map<ShieldType, int> ItemConditionShieldMaxConditions =
 
 // The relative number of strikes a weapon can make before breaking, before
 // any material multipliers.
-const std::map<WeaponType, int> ItemConditionWeaponMaxConditions =
+const std::map<WeaponType, int32_t> ItemConditionWeaponMaxConditions =
 {
 	{ WeaponType::BattleAxe, 600 },
 	{ WeaponType::Broadsword, 500 },
@@ -76,7 +76,7 @@ const std::map<WeaponType, int> ItemConditionWeaponMaxConditions =
 // Rates for how quick each item receives degradation per "degrade". The majority
 // of these rates will be 1, since that's how the max conditions are designed,
 // though fists cannot degrade at all, so their rate is 0.
-const std::map<BodyPartName, int> ItemConditionArmorDegradeRates =
+const std::map<BodyPartName, int32_t> ItemConditionArmorDegradeRates =
 {
 	{ BodyPartName::Head, 1 },
 	{ BodyPartName::RightShoulder, 1 },
@@ -87,7 +87,7 @@ const std::map<BodyPartName, int> ItemConditionArmorDegradeRates =
 	{ BodyPartName::Feet, 1 }
 };
 
-const std::map<ShieldType, int> ItemConditionShieldDegradeRates =
+const std::map<ShieldType, int32_t> ItemConditionShieldDegradeRates =
 {
 	{ ShieldType::Buckler, 1 },
 	{ ShieldType::Round, 1 },
@@ -95,7 +95,7 @@ const std::map<ShieldType, int> ItemConditionShieldDegradeRates =
 	{ ShieldType::Tower, 1 }
 };
 
-const std::map<WeaponType, int> ItemConditionWeaponDegradeRates =
+const std::map<WeaponType, int32_t> ItemConditionWeaponDegradeRates =
 {
 	{ WeaponType::BattleAxe, 1 },
 	{ WeaponType::Broadsword, 1 },
@@ -120,11 +120,11 @@ const std::map<WeaponType, int> ItemConditionWeaponDegradeRates =
 
 ItemCondition::ItemCondition(BodyPartName partName, const ArmorMaterial &material)
 {
-	const int &maxArmorCondition = ItemConditionArmorMaxConditions.at(partName);
+	const int32_t &maxArmorCondition = ItemConditionArmorMaxConditions.at(partName);
 
 	// I rolled the material multiplier (leather, chain, plate) in with the metal 
 	// multiplier (iron, steel, etc.), so no special type data is needed.
-	int materialMultiplier = material.getConditionMultiplier();
+	int32_t materialMultiplier = material.getConditionMultiplier();
 
 	this->maxCondition = maxArmorCondition * materialMultiplier;
 	this->currentCondition = this->maxCondition;
@@ -136,8 +136,8 @@ ItemCondition::ItemCondition(BodyPartName partName, const ArmorMaterial &materia
 
 ItemCondition::ItemCondition(ShieldType shieldType, const Metal &metal)
 {
-	const int &maxShieldCondition = ItemConditionShieldMaxConditions.at(shieldType);
-	int metalMultiplier = metal.getConditionMultiplier();
+	const int32_t &maxShieldCondition = ItemConditionShieldMaxConditions.at(shieldType);
+	int32_t metalMultiplier = metal.getConditionMultiplier();
 
 	this->maxCondition = maxShieldCondition * metalMultiplier;
 	this->currentCondition = this->maxCondition;
@@ -149,8 +149,8 @@ ItemCondition::ItemCondition(ShieldType shieldType, const Metal &metal)
 
 ItemCondition::ItemCondition(WeaponType weaponType, const Metal &metal)
 {
-	const int &maxWeaponCondition = ItemConditionWeaponMaxConditions.at(weaponType);
-	int metalMultiplier = metal.getConditionMultiplier();
+	const int32_t &maxWeaponCondition = ItemConditionWeaponMaxConditions.at(weaponType);
+	int32_t metalMultiplier = metal.getConditionMultiplier();
 
 	this->maxCondition = maxWeaponCondition * metalMultiplier;
 	this->currentCondition = this->maxCondition;

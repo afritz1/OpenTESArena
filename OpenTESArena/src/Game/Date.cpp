@@ -6,7 +6,7 @@
 #include "Weekday.h"
 #include "Year.h"
 
-Date::Date(int day, WeekdayName weekdayName, MonthName monthName, const Year &year)
+Date::Date(int32_t day, WeekdayName weekdayName, MonthName monthName, const Year &year)
 {
 	// Programmer error if the day is ever out of range.
 	assert(day >= 1);
@@ -28,7 +28,7 @@ Date::~Date()
 
 }
 
-int Date::getDayNumber() const
+int32_t Date::getDayNumber() const
 {
 	return this->day;
 }
@@ -54,8 +54,8 @@ std::string Date::getOrdinalDay() const
 	assert(this->day >= 1);
 	assert(this->day <= 30);
 
-	int dayNumber = this->getDayNumber();
-	int ordinalDay = dayNumber % 10;
+	int32_t dayNumber = this->getDayNumber();
+	int32_t ordinalDay = dayNumber % 10;
 
 	auto dayString = std::to_string(dayNumber);
 	if (ordinalDay == 1)

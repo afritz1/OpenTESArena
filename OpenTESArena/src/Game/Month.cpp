@@ -53,7 +53,7 @@ const std::map<MonthName, MonthName> MonthNexts =
 	{ MonthName::MorningStar, MonthName::SunsDawn }
 };
 
-const int Month::DAYS_PER_MONTH = 30;
+const int32_t Month::DAYS_PER_MONTH = 30;
 
 Month::Month(MonthName monthName)
 {

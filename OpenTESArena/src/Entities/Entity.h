@@ -30,7 +30,7 @@ enum class EntityType;
 class Entity
 {
 private:
-	int id;
+	int32_t id;
 	EntityType entityType;
 protected:
 	Float3d position;
@@ -40,7 +40,7 @@ public:
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	
-	int getID() const;
+	int32_t getID() const;
 	const Float3d &getPosition() const;
 	virtual EntityType getEntityType() const = 0;
 

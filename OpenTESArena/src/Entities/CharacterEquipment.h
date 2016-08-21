@@ -1,6 +1,7 @@
 #ifndef CHARACTER_EQUIPMENT_H
 #define CHARACTER_EQUIPMENT_H
 
+#include <cstdint>
 #include <map>
 #include <vector>
 
@@ -55,8 +56,8 @@ public:
 	// Count methods, for determining how many of a given type are already equipped.
 	// These are only required for accessories and trinkets, because they might be
 	// plural.
-	int getAccessoryCount(AccessoryType accessoryType) const;
-	int getTrinketCount(TrinketType trinketType) const;
+	int32_t getAccessoryCount(AccessoryType accessoryType) const;
+	int32_t getTrinketCount(TrinketType trinketType) const;
 
 	// Equip methods. All of these assume that the character's class is allowed to 
 	// equip the item. Each method that returns a boolean is returning whether there
@@ -70,10 +71,10 @@ public:
 
 	// Remove item. For methods using an index, this assumes that the caller knows 
 	// how to find the index of the item they wish to remove.
-	void removeAccessory(int index);
+	void removeAccessory(int32_t index);
 	void removeBodyArmor(BodyPartName partName);
 	void removeShield();
-	void removeTrinket(int index);
+	void removeTrinket(int32_t index);
 	void removeWeapon();
 };
 

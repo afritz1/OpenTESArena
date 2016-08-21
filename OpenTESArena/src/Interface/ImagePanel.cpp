@@ -49,8 +49,8 @@ void ImagePanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 

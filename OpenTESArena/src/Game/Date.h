@@ -17,7 +17,7 @@ private:
 	std::unique_ptr<Year> year;
 	std::unique_ptr<Month> month;
 	std::unique_ptr<Weekday> weekday;
-	int day;
+	int32_t day;
 	// Seconds? Minutes? Maybe put that in a "TimeOfDay" class.
 
 	// These increment methods are private so that the user doesn't accidentally make
@@ -27,11 +27,11 @@ private:
 	void incrementYear();
 public:
 	// Date constructor for a fully defined date.
-	Date(int day, WeekdayName weekdayName, MonthName monthName, const Year &year);
+	Date(int32_t day, WeekdayName weekdayName, MonthName monthName, const Year &year);
 	Date(const Date &date);
 	~Date();
 
-	int getDayNumber() const;
+	int32_t getDayNumber() const;
 	const Weekday &getWeekday() const;
 	const Month &getMonth() const;
 	const Year &getYear() const;

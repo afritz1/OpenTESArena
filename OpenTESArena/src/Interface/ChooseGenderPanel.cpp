@@ -142,8 +142,8 @@ void ChooseGenderPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -205,8 +205,8 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	// Draw parchments: title, male, and female.
 	this->parchment->setTransparentColor(Color::Magenta);
 
-	int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
-	int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
+	int32_t parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
+	int32_t parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY);
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 40);
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);
@@ -230,6 +230,6 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

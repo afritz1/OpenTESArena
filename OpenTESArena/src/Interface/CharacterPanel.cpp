@@ -80,8 +80,8 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 	this->doneButton = []()
 	{
 		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
-		int width = 21;
-		int height = 13;
+		int32_t width = 21;
+		int32_t height = 13;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
@@ -92,10 +92,10 @@ CharacterPanel::CharacterPanel(GameState *gameState)
 
 	this->nextPageButton = []()
 	{
-		int x = 108;
-		int y = 179;
-		int width = 49;
-		int height = 13;
+		int32_t x = 108;
+		int32_t y = 179;
+		int32_t width = 49;
+		int32_t height = 13;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(gameState));
@@ -133,8 +133,8 @@ void CharacterPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed || tabPressed)
@@ -208,7 +208,7 @@ void CharacterPanel::render(Renderer &renderer)
 	// Draw the player's portrait.
 	auto *portrait = textureManager.getTexture(
 		portraitStrings.at(player.getPortraitID()));
-	int portraitWidth, portraitHeight;
+	int32_t portraitWidth, portraitHeight;
 	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
 	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
@@ -231,6 +231,6 @@ void CharacterPanel::render(Renderer &renderer)
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdint>
 #include <map>
 
 #include "PortraitFile.h"
@@ -52,7 +53,7 @@ std::vector<std::string> PortraitFile::getGroup(CharacterGenderName gender,
 	std::vector<std::string> fileStrings;
 
 	// Currently only ten images can be used for each triplet of options.
-	for (int i = 0; i < 10; ++i)
+	for (int32_t i = 0; i < 10; ++i)
 	{
 		fileStrings.push_back(fileString + std::to_string(i + 1));
 	}

@@ -1,6 +1,7 @@
 #ifndef METAL_H
 #define METAL_H
 
+#include <cstdint>
 #include <string>
 
 enum class MetalType;
@@ -17,10 +18,10 @@ public:
 
 	// The modifier is the same but with different signs for armor and damage.
 	// If higher (positive) armor rating was better, that would work out nicely.
-	int getRatingModifier() const;
+	int32_t getRatingModifier() const;
 
 	// Stronger metals have higher condition multipliers.
-	int getConditionMultiplier() const;
+	int32_t getConditionMultiplier() const;
 
 	// Some metals are heavier than others.
 	double getWeightMultiplier() const;

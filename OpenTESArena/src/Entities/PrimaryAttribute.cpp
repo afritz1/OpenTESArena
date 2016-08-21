@@ -31,10 +31,10 @@ const std::map<PrimaryAttributeName, std::vector<AttributeModifierName>> Primary
 	{ PrimaryAttributeName::Luck, { } }
 };
 
-const int PrimaryAttribute::MIN_VALUE = 0;
-const int PrimaryAttribute::MAX_VALUE = 100;
+const int32_t PrimaryAttribute::MIN_VALUE = 0;
+const int32_t PrimaryAttribute::MAX_VALUE = 100;
 
-PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue)
+PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int32_t baseValue)
 {
 	assert(baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(baseValue <= PrimaryAttribute::MAX_VALUE);
@@ -48,7 +48,7 @@ PrimaryAttribute::~PrimaryAttribute()
 
 }
 
-int PrimaryAttribute::get() const
+int32_t PrimaryAttribute::get() const
 {
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
@@ -67,13 +67,13 @@ std::vector<AttributeModifierName> PrimaryAttribute::getModifierNames() const
 	return modifierNames;
 }
 
-int PrimaryAttribute::getModifier() const
+int32_t PrimaryAttribute::getModifier() const
 {
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);
 	assert(this->baseValue <= PrimaryAttribute::MAX_VALUE);
 
 	// This value is exactly right. Try some more experiments.
-	int modifierValue = (this->baseValue - 50) / 10;
+	int32_t modifierValue = (this->baseValue - 50) / 10;
 	return modifierValue;
 }
 
@@ -83,7 +83,7 @@ std::string PrimaryAttribute::toString() const
 	return displayName;
 }
 
-void PrimaryAttribute::set(int value)
+void PrimaryAttribute::set(int32_t value)
 {
 	// The caller shouldn't try to set the value to a bad value. If only this was Ada!
 	// Ada has automatic bounds checking on numeric types, like "percent is 0.0...100.0"

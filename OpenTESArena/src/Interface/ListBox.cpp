@@ -14,7 +14,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/String.h"
 
-ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
+ListBox::ListBox(int32_t x, int32_t y, FontName fontName, const Color &textColor, int32_t maxDisplayed,
 	const std::vector<std::string> &elements, TextureManager &textureManager,
 	Renderer &renderer)
 	: Surface(x, y, 1, 1), textureManagerRef(textureManager), rendererRef(renderer)
@@ -39,8 +39,8 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	}
 
 	// Calculate the proper dimensions of the list box surface.
-	int width = this->getMaxWidth(textBoxes);
-	int height = this->getTotalHeight();
+	int32_t width = this->getMaxWidth(textBoxes);
+	int32_t height = this->getTotalHeight();
 
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
@@ -60,22 +60,22 @@ ListBox::~ListBox()
 
 }
 
-int ListBox::getScrollIndex() const
+int32_t ListBox::getScrollIndex() const
 {
 	return this->scrollIndex;
 }
 
-int ListBox::getElementCount() const
+int32_t ListBox::getElementCount() const
 {
-	return static_cast<int>(this->elements.size());
+	return static_cast<int32_t>(this->elements.size());
 }
 
-int ListBox::maxDisplayedElements() const
+int32_t ListBox::maxDisplayedElements() const
 {
 	return this->maxDisplayed;
 }
 
-int ListBox::getClickedIndex(const Int2 &point) const
+int32_t ListBox::getClickedIndex(const Int2 &point) const
 {
 	// The point is given in original dimensions relative to the letterbox.
 	// The caller should not call this method if the point is outside the list box.
@@ -86,19 +86,19 @@ int ListBox::getClickedIndex(const Int2 &point) const
 	assert(point.getY() >= this->getY());
 	assert(point.getY() < (this->getY() + this->getHeight()));
 
-	const int lineHeight = Font(this->fontName).getCellDimensions().getY();
+	const int32_t lineHeight = Font(this->fontName).getCellDimensions().getY();
 
 	// Only the Y component really matters here.
-	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
+	int32_t index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
 
 	// The caller should always check the returned index before using it (just in
 	// case it's out of bounds).
 	return index;
 }
 
-int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const
+int32_t ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const
 {
-	int maxWidth = 0;
+	int32_t maxWidth = 0;
 
 	for (const auto &textBox : textBoxes)
 	{
@@ -111,9 +111,9 @@ int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes)
 	return maxWidth;
 }
 
-int ListBox::getTotalHeight() const
+int32_t ListBox::getTotalHeight() const
 {
-	int totalHeight = Font(this->fontName).getCellDimensions().getY() * this->maxDisplayed;
+	int32_t totalHeight = Font(this->fontName).getCellDimensions().getY() * this->maxDisplayed;
 	return totalHeight;
 }
 
@@ -124,9 +124,9 @@ void ListBox::updateDisplayText()
 	this->setTransparentColor(Color::Magenta);
 
 	// Draw the relevant text boxes according to scroll index.
-	const int totalElements = static_cast<int>(this->elements.size());
-	const int indexEnd = std::min(this->scrollIndex + this->maxDisplayed, totalElements);
-	for (int i = this->scrollIndex; i < indexEnd; ++i)
+	const int32_t totalElements = static_cast<int32_t>(this->elements.size());
+	const int32_t indexEnd = std::min(this->scrollIndex + this->maxDisplayed, totalElements);
+	for (int32_t i = this->scrollIndex; i < indexEnd; ++i)
 	{
 		const auto &element = this->elements.at(i);
 		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, *this->textColor.get(),

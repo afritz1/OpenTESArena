@@ -10,7 +10,7 @@
 // This gives the logical location of each character, independent of font resolution.
 // Multiplication by character width and height will be needed afterwards to get the
 // size and location of the actual letter in the font surface.
-const std::map<unsigned char, Int2> FontCharacterCells =
+const std::map<uint8_t, Int2> FontCharacterCells =
 {
 	{ '!', Int2(0, 0) },
 	{ '\"', Int2(1, 0) },
@@ -171,7 +171,7 @@ Font::~Font()
 
 }
 
-Int2 Font::getCellPosition(unsigned char c)
+Int2 Font::getCellPosition(uint8_t c)
 {
 	auto cell = FontCharacterCells.at(c);
 	return cell;
@@ -194,14 +194,14 @@ Int2 Font::getCellDimensions() const
 	return dimensions;
 }
 
-int Font::getRightPadding() const
+int32_t Font::getRightPadding() const
 {
-	int padding = FontRightPaddings.at(this->getFontName());
+	int32_t padding = FontRightPaddings.at(this->getFontName());
 	return padding;
 }
 
-int Font::getSpaceWidth() const
+int32_t Font::getSpaceWidth() const
 {
-	int width = FontSpaceWidths.at(this->getFontName());
+	int32_t width = FontSpaceWidths.at(this->getFontName());
 	return width;
 }

@@ -33,8 +33,8 @@ std::unique_ptr<Options> OptionsParser::parse()
 	KvpTextMap textMap(fullPath);
 	
 	// Graphics.
-	int screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);
-	int screenHeight = textMap.getInteger(OptionsParser::SCREEN_HEIGHT_KEY);
+	int32_t screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);
+	int32_t screenHeight = textMap.getInteger(OptionsParser::SCREEN_HEIGHT_KEY);
 	bool fullscreen = textMap.getBoolean(OptionsParser::FULLSCREEN_KEY);
 	double renderQuality = textMap.getDouble(OptionsParser::RENDER_QUALITY_KEY);
 	double verticalFOV = textMap.getDouble(OptionsParser::VERTICAL_FOV_KEY);
@@ -49,7 +49,7 @@ std::unique_ptr<Options> OptionsParser::parse()
     double musicVolume = textMap.getDouble(OptionsParser::MUSIC_VOLUME_KEY);
     double soundVolume = textMap.getDouble(OptionsParser::SOUND_VOLUME_KEY);
 	std::string soundfont = textMap.getString(OptionsParser::SOUNDFONT_KEY);
-    int soundChannels = textMap.getInteger(OptionsParser::SOUND_CHANNELS_KEY);
+    int32_t soundChannels = textMap.getInteger(OptionsParser::SOUND_CHANNELS_KEY);
 
 	// Miscellaneous.
 	std::string arenaPath = textMap.getString(OptionsParser::ARENA_PATH_KEY);

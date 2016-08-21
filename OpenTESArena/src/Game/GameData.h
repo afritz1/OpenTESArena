@@ -22,7 +22,7 @@ private:
 	std::unique_ptr<EntityManager> entityManager;
 	std::unique_ptr<CLProgram> clProgram;
 	double gameTime;
-	int worldWidth, worldHeight, worldDepth;
+	int32_t worldWidth, worldHeight, worldDepth;
 	// province... location... voxels... weather...
 	// sprites...
 	// date...
@@ -30,16 +30,16 @@ public:
 	GameData(std::unique_ptr<Player> player,
 		std::unique_ptr<EntityManager> entityManager,
 		std::unique_ptr<CLProgram> clProgram, double gameTime,
-		int worldWidth, int worldHeight, int worldDepth);
+		int32_t worldWidth, int32_t worldHeight, int32_t worldDepth);
 	~GameData();
 
 	Player &getPlayer() const;
 	EntityManager &getEntityManager() const;
 	CLProgram &getCLProgram() const;
 	double getGameTime() const;
-	int getWorldWidth() const;
-	int getWorldHeight() const;
-	int getWorldDepth() const;
+	int32_t getWorldWidth() const;
+	int32_t getWorldHeight() const;
+	int32_t getWorldDepth() const;
 
 	void incrementGameTime(double dt);
 

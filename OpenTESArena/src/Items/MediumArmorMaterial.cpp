@@ -24,12 +24,12 @@ ArmorMaterialType MediumArmorMaterial::getMaterialType() const
 	return ArmorMaterialType::Chain;
 }
 
-int MediumArmorMaterial::getArmorRating() const
+int32_t MediumArmorMaterial::getArmorRating() const
 {
 	return 6;
 }
 
-int MediumArmorMaterial::getConditionMultiplier() const
+int32_t MediumArmorMaterial::getConditionMultiplier() const
 {
 	return 2;
 }

@@ -22,7 +22,7 @@ struct SDL_Texture;
 class ChooseClassPanel : public Panel
 {
 private:
-	static const int MAX_TOOLTIP_LINE_LENGTH;
+	static const int32_t MAX_TOOLTIP_LINE_LENGTH;
 
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
@@ -35,8 +35,8 @@ private:
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
 
-	void createTooltip(int tooltipIndex, Renderer &renderer);
-	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
+	void createTooltip(int32_t tooltipIndex, Renderer &renderer);
+	void drawClassTooltip(int32_t tooltipIndex, Renderer &renderer);
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

@@ -51,7 +51,7 @@ public:
 	Renderer &getRenderer() const;
 	TextureManager &getTextureManager() const;
 
-	void resizeWindow(int width, int height);
+	void resizeWindow(int32_t width, int32_t height);
 
 	// Set the next panel at the next tick.
 	void setPanel(std::unique_ptr<Panel> nextPanel);

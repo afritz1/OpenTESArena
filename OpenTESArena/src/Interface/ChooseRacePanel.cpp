@@ -104,8 +104,8 @@ void ChooseRacePanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 
@@ -201,13 +201,13 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &r
 		tooltip->getWidth(), tooltip->getHeight());
 	tooltipBackground.fill(Color(32, 32, 32));
 
-	const int tooltipX = tooltip->getX();
-	const int tooltipY = tooltip->getY();
-	const int width = tooltip->getWidth();
-	const int height = tooltip->getHeight();
-	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
+	const int32_t tooltipX = tooltip->getX();
+	const int32_t tooltipY = tooltip->getY();
+	const int32_t width = tooltip->getWidth();
+	const int32_t height = tooltip->getHeight();
+	const int32_t x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
 		(tooltipX + 8) : (tooltipX - width);
-	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
+	const int32_t y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
 		tooltipY : (tooltipY - height);
 
 	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
@@ -236,8 +236,8 @@ void ChooseRacePanel::render(Renderer &renderer)
 	this->parchment->setTransparentColor(Color::Magenta);
 	if (this->initialTextBox->isVisible())
 	{
-		const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * 1.35);
-		const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * 1.65);
+		const int32_t parchmentWidth = static_cast<int32_t>(this->parchment->getWidth() * 1.35);
+		const int32_t parchmentHeight = static_cast<int32_t>(this->parchment->getHeight() * 1.65);
 
 		renderer.drawToOriginal(this->parchment->getSurface(),
 			(Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
@@ -281,6 +281,6 @@ void ChooseRacePanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -33,8 +33,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 {
 	this->playerNameTextBox = [gameState]()
 	{
-		int x = 17;
-		int y = 154;
+		int32_t x = 17;
+		int32_t y = 154;
 		Color color(215, 121, 8);
 		std::string text = gameState->getGameData()->getPlayer().getFirstName();
 		auto fontName = FontName::Char;
@@ -52,7 +52,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		Int2 center(127, 96);
 		Color color(12, 73, 16);
-		std::string text = std::to_string(static_cast<int>(
+		std::string text = std::to_string(static_cast<int32_t>(
 			std::round(gameState->getOptions().getMusicVolume() * 100.0)));
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -68,7 +68,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		Int2 center(54, 96);
 		Color color(12, 73, 16);
-		std::string text = std::to_string(static_cast<int>(
+		std::string text = std::to_string(static_cast<int32_t>(
 			std::round(gameState->getOptions().getSoundVolume() * 100.0)));
 		auto fontName = FontName::Arena;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -82,8 +82,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->loadButton = []()
 	{
-		int x = 65;
-		int y = 118;
+		int32_t x = 65;
+		int32_t y = 118;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
@@ -94,8 +94,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->exitButton = []()
 	{
-		int x = 193;
-		int y = 118;
+		int32_t x = 193;
+		int32_t y = 118;
 		auto function = [](GameState *gameState)
 		{
 			SDL_Event evt;
@@ -108,8 +108,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->newButton = []()
 	{
-		int x = 0;
-		int y = 118;
+		int32_t x = 0;
+		int32_t y = 118;
 		auto function = [](GameState *gameState)
 		{
 			gameState->setGameData(nullptr);
@@ -123,8 +123,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->saveButton = []()
 	{
-		int x = 129;
-		int y = 118;
+		int32_t x = 129;
+		int32_t y = 118;
 		auto function = [](GameState *gameState)
 		{
 			// SaveGamePanel...
@@ -136,8 +136,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->resumeButton = []()
 	{
-		int x = 257;
-		int y = 118;
+		int32_t x = 257;
+		int32_t y = 118;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
@@ -148,8 +148,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->musicUpButton = [this]()
 	{
-		int x = 119;
-		int y = 79;
+		int32_t x = 119;
+		int32_t y = 79;
 		auto function = [this](GameState *gameState)
 		{
 			Options &options = gameState->getOptions();
@@ -166,8 +166,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->musicDownButton = [this]()
 	{
-		int x = 119;
-		int y = 104;
+		int32_t x = 119;
+		int32_t y = 104;
 		auto function = [this](GameState *gameState)
 		{
 			Options &options = gameState->getOptions();
@@ -184,8 +184,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->soundUpButton = [this]()
 	{
-		int x = 46;
-		int y = 79;
+		int32_t x = 46;
+		int32_t y = 79;
 		auto function = [this](GameState *gameState)
 		{
 			Options &options = gameState->getOptions();
@@ -202,8 +202,8 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	this->soundDownButton = [this]()
 	{
-		int x = 46;
-		int y = 104;
+		int32_t x = 46;
+		int32_t y = 104;
 		auto function = [this](GameState *gameState)
 		{
 			Options &options = gameState->getOptions();
@@ -229,7 +229,7 @@ void PauseMenuPanel::updateMusicText(double volume)
 	// Update the displayed music volume.
 	this->musicTextBox = [this, volume]()
 	{
-		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+		int32_t displayedVolume = static_cast<int32_t>(std::round(volume * 100.0));
 
 		Int2 center(127, 96);
 		Color color(12, 73, 16);
@@ -250,7 +250,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 	// Update the displayed sound volume.
 	this->soundTextBox = [this, volume]()
 	{
-		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+		int32_t displayedVolume = static_cast<int32_t>(std::round(volume * 100.0));
 
 		Int2 center(54, 96);
 		Color color(12, 73, 16);
@@ -287,8 +287,8 @@ void PauseMenuPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed)
@@ -377,7 +377,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw game world interface below the pause menu.
 	auto *gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	int gameInterfaceHeight;
+	int32_t gameInterfaceHeight;
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
 	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
@@ -400,6 +400,6 @@ void PauseMenuPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

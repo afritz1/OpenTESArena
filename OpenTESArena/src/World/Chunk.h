@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include <array>
+#include <cstdint>
 
 #include "Voxel.h"
 
@@ -12,10 +13,10 @@
 class Chunk
 {
 private:
-	static const int Width = 8;
-	static const int Height = 4;
-	static const int Depth = 8;
-	static const int MaxVolume = Chunk::Width * Chunk::Height * Chunk::Depth;
+	static const int32_t Width = 8;
+	static const int32_t Height = 4;
+	static const int32_t Depth = 8;
+	static const int32_t MaxVolume = Chunk::Width * Chunk::Height * Chunk::Depth;
 
 	std::array<Voxel, Chunk::MaxVolume> voxels;
 public:
@@ -26,8 +27,8 @@ public:
 	Chunk();
 	~Chunk();
 
-	const Voxel &get(int x, int y, int z);
-	void set(int x, int y, int z, const Voxel &voxel);
+	const Voxel &get(int32_t x, int32_t y, int32_t z);
+	void set(int32_t x, int32_t y, int32_t z, const Voxel &voxel);
 };
 
 #endif

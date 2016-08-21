@@ -26,8 +26,8 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 	this->backToGameButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 22, Renderer::ORIGINAL_HEIGHT - 7);
-		int width = 36;
-		int height = 9;
+		int32_t width = 36;
+		int32_t height = 9;
 		auto function = [](GameState *gameState)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
@@ -77,8 +77,8 @@ void WorldMapPanel::handleEvents(bool &running)
 		}
 		if (resized)
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
+			int32_t width = e.window.data1;
+			int32_t height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
 		}
 		if (escapePressed || mPressed)
@@ -162,6 +162,6 @@ void WorldMapPanel::render(Renderer &renderer)
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int32_t>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int32_t>(cursor.getHeight() * this->getCursorScale()));
 }

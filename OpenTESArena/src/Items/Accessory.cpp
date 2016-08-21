@@ -33,7 +33,7 @@ const std::map<AccessoryType, double> AccessoryWeights =
 };
 
 // These values are made up, and are based on iron.
-const std::map<AccessoryType, int> AccessoryGoldValues =
+const std::map<AccessoryType, int32_t> AccessoryGoldValues =
 {
 	{ AccessoryType::Amulet, 150 },
 	{ AccessoryType::Belt, 30 },
@@ -46,7 +46,7 @@ const std::map<AccessoryType, int> AccessoryGoldValues =
 // Max allowed number of accessories per slot. The original game says only one
 // bracelet and one ring, but I think it would make sense to have a bracelet
 // "on each arm", and at least two rings realistically.
-const std::map<AccessoryType, int> AccessoryMaxEquipCounts =
+const std::map<AccessoryType, int32_t> AccessoryMaxEquipCounts =
 {
 	{ AccessoryType::Amulet, 1 },
 	{ AccessoryType::Belt, 1 },
@@ -94,9 +94,9 @@ double Accessory::getWeight() const
 	return weight;
 }
 
-int Accessory::getGoldValue() const
+int32_t Accessory::getGoldValue() const
 {
-	int baseValue = AccessoryGoldValues.at(this->getAccessoryType());
+	int32_t baseValue = AccessoryGoldValues.at(this->getAccessoryType());
 	return baseValue;
 }
 
@@ -113,8 +113,8 @@ AccessoryType Accessory::getAccessoryType() const
 	return this->accessoryType;
 }
 
-int Accessory::getMaxEquipCount() const
+int32_t Accessory::getMaxEquipCount() const
 {
-	int maxCount = AccessoryMaxEquipCounts.at(this->getAccessoryType());
+	int32_t maxCount = AccessoryMaxEquipCounts.at(this->getAccessoryType());
 	return maxCount;
 }

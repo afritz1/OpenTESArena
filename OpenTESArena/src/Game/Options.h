@@ -1,6 +1,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <cstdint>
 #include <string>
 
 // Settings found in the options menu are saved in this object, which should live in
@@ -10,7 +11,7 @@ class Options
 {
 private:
 	// Graphics.
-	int screenWidth, screenHeight;
+	int32_t screenWidth, screenHeight;
 	bool fullscreen;
 	double renderQuality; // Percent.
 	double verticalFOV; // In degrees.
@@ -23,20 +24,20 @@ private:
     // Sound.
     std::string soundfont; // .cfg file.
     double musicVolume, soundVolume;
-    int soundChannels;
+    int32_t soundChannels;
 
 	// Miscellaneous.
 	std::string arenaPath; // "ARENA" data path.
 	bool skipIntro;
 public:
-	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
+	Options(std::string &&arenaPath, int32_t screenWidth, int32_t screenHeight, bool fullscreen,
         double renderQuality, double verticalFOV, double zetterboxAspect, double cursorScale, 
 		double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
-		double soundVolume, int soundChannels, bool skipIntro);
+		double soundVolume, int32_t soundChannels, bool skipIntro);
 	~Options();
 
-	int getScreenWidth() const;
-	int getScreenHeight() const;
+	int32_t getScreenWidth() const;
+	int32_t getScreenHeight() const;
 	bool isFullscreen() const;
 	double getRenderQuality() const;
 	double getVerticalFOV() const;
@@ -47,12 +48,12 @@ public:
 	const std::string &getSoundfont() const;
 	double getMusicVolume() const;
 	double getSoundVolume() const;
-	int getSoundChannelCount() const;
+	int32_t getSoundChannelCount() const;
 	const std::string &getArenaPath() const;
 	bool introIsSkipped() const;
 
-	void setScreenWidth(int width);
-	void setScreenHeight(int height);
+	void setScreenWidth(int32_t width);
+	void setScreenHeight(int32_t height);
 	void setFullscreen(bool fullscreen);
 	void setRenderQuality(double percent);
 	void setVerticalFOV(double fov);
@@ -63,7 +64,7 @@ public:
     void setSoundfont(std::string sfont);
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
-	void setSoundChannelCount(int count);
+	void setSoundChannelCount(int32_t count);
 	void setArenaPath(std::string path);
 	void setSkipIntro(bool skip);
 };

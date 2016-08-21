@@ -47,7 +47,7 @@ const PrimaryAttribute &PrimaryAttributeSet::get(PrimaryAttributeName attributeN
 	return attribute;
 }
 
-void PrimaryAttributeSet::set(PrimaryAttributeName attributeName, int value)
+void PrimaryAttributeSet::set(PrimaryAttributeName attributeName, int32_t value)
 {
 	auto &attribute = this->primaryAttributes.at(attributeName);
 

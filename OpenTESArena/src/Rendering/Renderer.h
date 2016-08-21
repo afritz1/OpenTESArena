@@ -23,7 +23,7 @@ struct SDL_Window;
 class Renderer
 {
 private:
-	static const int DEFAULT_COLOR_BITS_PER_PIXEL;
+	static const int32_t DEFAULT_COLOR_BITS_PER_PIXEL;
 	static const std::string DEFAULT_RENDER_SCALE_QUALITY;
 
 	SDL_Window *window;
@@ -37,13 +37,13 @@ private:
 	// For use with window dimensions, etc.. No longer used for rendering.
 	SDL_Surface *getWindowSurface() const;
 public:
-	Renderer(int width, int height, bool fullscreen, double letterboxAspect);
-	Renderer(int width, int height, bool fullscreen);
+	Renderer(int32_t width, int32_t height, bool fullscreen, double letterboxAspect);
+	Renderer(int32_t width, int32_t height, bool fullscreen);
 	~Renderer();
 
 	// Original screen dimensions.
-	static const int ORIGINAL_WIDTH;
-	static const int ORIGINAL_HEIGHT;
+	static const int32_t ORIGINAL_WIDTH;
+	static const int32_t ORIGINAL_HEIGHT;
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
@@ -55,7 +55,7 @@ public:
 	// using the given letterbox aspect.
 	SDL_Rect getLetterboxDimensions() const;
 
-	unsigned int getFormattedARGB(const Color &color) const;
+	uint32_t getFormattedARGB(const Color &color) const;
 
 	// Transforms a native window (i.e., 1920x1080) point to an original (320x200) 
 	// point. Points outside the letterbox will either be negative or outside the 
@@ -69,11 +69,11 @@ public:
 	bool letterboxContains(const Int2 &nativePoint) const;
 
 	// Wrapper methods for SDL_CreateTexture.
-	SDL_Texture *createTexture(unsigned int format, int access, int w, int h);
+	SDL_Texture *createTexture(uint32_t format, int32_t access, int32_t w, int32_t h);
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
 	SDL_Texture *createTextureFromSurface(const Surface &surface);
 
-	void resize(int width, int height);
+	void resize(int32_t width, int32_t height);
 	void setWindowIcon(TextureName name, TextureManager &textureManager);
 
 	// Tells the original frame buffer whether to blend with transparency when 
@@ -89,17 +89,17 @@ public:
 
 	// Draw methods for the native and original frame buffers. Remove the SDL_Surface
 	// methods once all panels are using textures exclusively.
-	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);
-	void drawToNative(SDL_Texture *texture, int x, int y);
+	void drawToNative(SDL_Texture *texture, int32_t x, int32_t y, int32_t w, int32_t h);
+	void drawToNative(SDL_Texture *texture, int32_t x, int32_t y);
 	void drawToNative(SDL_Texture *texture);
-	void drawToNative(SDL_Surface *surface, int x, int y, int w, int h);
-	void drawToNative(SDL_Surface *surface, int x, int y);
+	void drawToNative(SDL_Surface *surface, int32_t x, int32_t y, int32_t w, int32_t h);
+	void drawToNative(SDL_Surface *surface, int32_t x, int32_t y);
 	void drawToNative(SDL_Surface *surface);
-	void drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h);
-	void drawToOriginal(SDL_Texture *texture, int x, int y);
+	void drawToOriginal(SDL_Texture *texture, int32_t x, int32_t y, int32_t w, int32_t h);
+	void drawToOriginal(SDL_Texture *texture, int32_t x, int32_t y);
 	void drawToOriginal(SDL_Texture *texture);
-	void drawToOriginal(SDL_Surface *surface, int x, int y, int w, int h);
-	void drawToOriginal(SDL_Surface *surface, int x, int y);
+	void drawToOriginal(SDL_Surface *surface, int32_t x, int32_t y, int32_t w, int32_t h);
+	void drawToOriginal(SDL_Surface *surface, int32_t x, int32_t y);
 	void drawToOriginal(SDL_Surface *surface);
 
 	// Stretches a texture over the entire native frame buffer.

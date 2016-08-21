@@ -23,7 +23,7 @@ class TextBox;
 class ChooseNamePanel : public Panel
 {
 private:
-	static const int MAX_NAME_LENGTH;
+	static const int32_t MAX_NAME_LENGTH;
 
 	std::unique_ptr<Surface> parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
