@@ -29,6 +29,9 @@ public:
 	// Gets the right-most extension from a string, i.e., ".txt".
 	static std::string getExtension(const std::string &str);
 
+	// Creates a new string with all 'a' characters replaced by 'b' characters.
+	static std::string replace(const std::string &str, char a, char b);
+
 	// Turns an integral value into a hex string.
 	template <typename T>
 	static std::string toHexString(T val)

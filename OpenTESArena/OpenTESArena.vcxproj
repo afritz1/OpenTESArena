@@ -263,6 +263,7 @@
     <ClCompile Include="src\Interface\ToggleButton.cpp" />
     <ClCompile Include="src\Utilities\KvpTextMap.cpp" />
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
+    <ClCompile Include="src\Assets\TextAssets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Assets\FontFile.h" />
@@ -433,6 +434,7 @@
     <ClInclude Include="src\Interface\ToggleButton.h" />
     <ClInclude Include="src\Utilities\KvpTextMap.h" />
     <ClInclude Include="src\Interface\WorldMapPanel.h" />
+    <ClInclude Include="src\Assets\TextAssets.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

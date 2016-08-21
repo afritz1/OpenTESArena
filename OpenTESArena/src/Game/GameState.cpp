@@ -7,6 +7,7 @@
 #include "GameData.h"
 #include "Options.h"
 #include "OptionsParser.h"
+#include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
@@ -26,7 +27,7 @@ GameState::GameState()
 	// Load options from file.
 	this->options = OptionsParser::parse();
 
-	// Initialize virtual file system using the data path in the options file.
+	// Initialize virtual file system using the Arena path in the options file.
 	VFS::Manager::get().initialize(std::string(this->options->getArenaPath()));
 
 	// Set the panel and music for the next tick. Don't use "this->panel" yet.
@@ -50,6 +51,9 @@ GameState::GameState()
 	// cinematics otherwise load their frames one at a time while playing.
 	// (Remove this functionality if actual videos will be used instead.)
 	this->textureManager->preloadSequences();
+
+	// Load various plain text assets.
+	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
 
 	// Set window icon.
 	this->renderer->setWindowIcon(TextureName::Icon, *this->textureManager.get());
@@ -107,6 +111,11 @@ Renderer &GameState::getRenderer() const
 TextureManager &GameState::getTextureManager() const
 {
 	return *this->textureManager.get();
+}
+
+TextAssets &GameState::getTextAssets() const
+{
+	return *this->textAssets.get();
 }
 
 void GameState::resizeWindow(int width, int height)

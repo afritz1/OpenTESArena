@@ -125,6 +125,7 @@
     <ClCompile Include="src\Rendering\VoxelReference.cpp" />
     <ClCompile Include="src\Rendering\SpriteReference.cpp" />
     <ClCompile Include="src\Assets\FontFile.cpp" />
+    <ClCompile Include="src\Assets\TextAssets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -295,6 +296,7 @@
     <ClInclude Include="src\Rendering\VoxelReference.h" />
     <ClInclude Include="src\Rendering\SpriteReference.h" />
     <ClInclude Include="src\Assets\FontFile.h" />
+    <ClInclude Include="src\Assets\TextAssets.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

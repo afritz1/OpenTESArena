@@ -19,6 +19,7 @@ class Options;
 class Panel;
 class Renderer;
 class TextureManager;
+class TextAssets;
 
 enum class MusicName;
 
@@ -32,6 +33,7 @@ private:
 	std::unique_ptr<Panel> panel, nextPanel;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
+	std::unique_ptr<TextAssets> textAssets;
 	bool running;
 public:
 	GameState();
@@ -50,6 +52,7 @@ public:
 	Options &getOptions() const;
 	Renderer &getRenderer() const;
 	TextureManager &getTextureManager() const;
+	TextAssets &getTextAssets() const;
 
 	void resizeWindow(int width, int height);
 

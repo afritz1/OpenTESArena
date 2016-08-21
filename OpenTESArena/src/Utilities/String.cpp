@@ -71,3 +71,18 @@ std::string String::getExtension(const std::string &str)
 	const bool hasDot = (dotPos < str.length()) && (dotPos != std::string::npos);
 	return hasDot ? std::string(str.begin() + dotPos, str.end()) : std::string();
 }
+
+std::string String::replace(const std::string &str, char a, char b)
+{
+	std::string newStr(str);
+
+	for (char &c : newStr)
+	{
+		if (c == a)
+		{
+			c = b;
+		}
+	}
+
+	return newStr;
+}
