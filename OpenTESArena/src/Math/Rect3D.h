@@ -5,8 +5,6 @@
 
 // Intended for use with the OpenCL kernel. I thought of this optimization since
 // all surfaces in Arena can be represented as rectangles (no need for triangles).
-// It hasn't been tested yet but I assume this will be a leap forward in performance
-// and memory savings.
 
 // There's no need for explicit UV coordinates; they can be inferred relative to points
 // and used as constants in the kernel. In this design, it would go counter-clockwise 
