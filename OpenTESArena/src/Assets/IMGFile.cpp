@@ -8,7 +8,7 @@
 #include "../Media/PaletteName.h"
 #include "../Utilities/Debug.h"
 
-#include "components\vfs\manager.hpp"
+#include "components/vfs/manager.hpp"
 
 namespace
 {

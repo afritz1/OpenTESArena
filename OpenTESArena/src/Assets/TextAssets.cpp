@@ -7,7 +7,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-#include "components\vfs\manager.hpp"
+#include "components/vfs/manager.hpp"
 
 TextAssets::TextAssets()
 	: templateDat()

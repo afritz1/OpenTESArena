@@ -4,8 +4,10 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Palette.h"
+#include "../Interface/Surface.h"
 
 // Find a way to map original wall and sprite filenames to unique integer IDs 
 // (probably depending on the order they were parsed). Or perhaps the ID could 
