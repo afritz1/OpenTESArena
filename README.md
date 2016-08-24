@@ -1,5 +1,5 @@
 # OpenTESArena
-### A free open-source project for "The Elder Scrolls I: Arena"
+### A free open-source project for "The Elder Scrolls: Arena"
 
 ## Current status
 
@@ -19,7 +19,7 @@ I'm currently trying to catch back up to the state of the world shown in these [
 
 ## Project Details
 
-This open-source project aims to be a modern reimplementation of "The Elder Scrolls I: Arena" by Bethesda Softworks. It is being written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
+This open-source project aims to be a modern reimplementation of "The Elder Scrolls: Arena" by Bethesda Softworks. It is being written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
@@ -89,7 +89,6 @@ Later:
 - Load artifact data (to replace artifacts.txt)
 - Load class data (to replace classes.txt)
 - Load locations data (to replace locations.txt)
-- More sprite detail (various clothes/hair/skin colors)
 - Random test cities and dungeons
 
 Outside scope (until later):
@@ -103,7 +102,10 @@ Outside scope (until later):
 - Modding
 - (new) New kinds of stores
 - Original city/dungeon data
+- Pickpocketing
+- Services (bartender, priest, shopkeeper, wizard)
 - Spells
+- Sprite variation (clothes/hair/skin colors)
 - (new) UI scale
 - Wandering people
 - Wilderness
