@@ -9,6 +9,7 @@
 #include "PaletteFile.h"
 #include "PaletteName.h"
 #include "TextureFile.h"
+#include "../Assets/COLFile.h"
 #include "../Assets/Compression.h"
 #include "../Assets/IMGFile.h"
 #include "../Math/Int2.h"
@@ -22,7 +23,7 @@
 const std::string TextureManager::PATH = "data/textures/";
 
 TextureManager::TextureManager(Renderer &renderer)
-	: renderer(renderer), palettes(), surfaces(), textures(), 
+	: renderer(renderer), palettes(), surfaces(), textures(),
 	surfaceSets(), textureSets()
 {
 	Debug::mention("Texture Manager", "Initializing.");
@@ -87,87 +88,15 @@ SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
 
 void TextureManager::loadCOLPalette(const std::string &colName)
 {
-	bool failed = false;
-	std::array<uint8_t, 776> rawpal;
-	VFS::IStreamPtr stream = VFS::Manager::get().open(colName.c_str());
-
-	if (!stream)
-	{
-		Debug::mention("Texture Manager",
-			"Failed to open palette \"" + colName + "\".");
-		failed = true;
-	}
-	else
-	{
-		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
-		if (stream->gcount() != static_cast<std::streamsize>(rawpal.size()))
-		{
-			Debug::mention("Texture Manager", "Failed to read palette \"" +
-				colName + "\", got " + std::to_string(stream->gcount()) + " bytes.");
-			failed = true;
-		}
-	}
-	if (!failed)
-	{
-		uint32_t len = Compression::getLE32(rawpal.data());
-		uint32_t ver = Compression::getLE32(rawpal.data() + 4);
-		if (len != 776)
-		{
-			Debug::mention("Texture Manager", "Invalid length for palette \"" +
-				colName + "\" (" + std::to_string(len) + " bytes).");
-			failed = true;
-		}
-		else if (ver != 0xB123)
-		{
-			Debug::mention("Texture Manager", "Invalid version for palette \"" +
-				colName + "\", 0x" + String::toHexString(ver) + ".");
-			failed = true;
-		}
-	}
-
-	// The palette to write new colors into and then place in the palettes map.
-	Palette palette;
-
-	if (!failed)
-	{
-		auto iter = rawpal.begin() + 8;
-
-		/* First palette entry is transparent in 8-bit modes, so give it 0 alpha. */
-		uint8_t r = *(iter++);
-		uint8_t g = *(iter++);
-		uint8_t b = *(iter++);
-		palette[0] = Color(r, g, b, 0);
-
-		/* Remaining are solid, so give them 255 alpha. */
-		std::generate(palette.begin() + 1, palette.end(),
-			[&iter]() -> Color
-		{
-			uint8_t r = *(iter++);
-			uint8_t g = *(iter++);
-			uint8_t b = *(iter++);
-			return Color(r, g, b, 255);
-		});
-	}
-	if (failed)
-	{
-		// Generate a monochrome palette. Entry 0 is filled with 0 already, so skip it.
-		uint8_t count = 0;
-		std::generate(palette.begin() + 1, palette.end(),
-			[&count]() -> Color
-		{
-			uint8_t c = ++count;
-			return Color(c, c, c, 255);
-		});
-	}
-
-	// Add the new palette into the palettes map.
-	this->palettes.emplace(std::make_pair(colName, palette));
+	Palette dstPalette;
+	COLFile::toPalette(colName, dstPalette);
+	this->palettes.emplace(std::make_pair(colName, dstPalette));
 }
 
 void TextureManager::loadIMGPalette(const std::string &imgName)
 {
 	Palette dstPalette;
-	IMGFile::extractPalette(dstPalette, imgName);
+	IMGFile::extractPalette(imgName, dstPalette);
 	this->palettes.emplace(std::make_pair(imgName, dstPalette));
 }
 
@@ -225,7 +154,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		// Otherwise, use the given palette name (i.e., PAL.COL).
 		this->loadPalette(useBuiltInPalette ? filename : paletteName);
 	}
-	
+
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension is used (every texture should have an
 	// extension, so the "dot position" might be unnecessary once PNGs are no
@@ -297,10 +226,10 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename,
 	// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
 	const Surface &surface = this->getSurface(filename, paletteName);
 	SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
-		
+
 	// Add the new texture and return it.
 	auto iter = this->textures.emplace(std::make_pair(fullName, texture)).first;
-	return iter->second;	
+	return iter->second;
 }
 
 SDL_Texture *TextureManager::getTexture(const std::string &filename)
@@ -308,7 +237,7 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename)
 	return this->getTexture(filename, this->activePalette);
 }
 
-const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename, 
+const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename,
 	const std::string &paletteName)
 {
 	// I would like this method to deal with the animations and movies, so it'll 
@@ -323,7 +252,7 @@ const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filen
 	return this->getSurfaces(filename, this->activePalette);
 }
 
-const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename, 
+const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename,
 	const std::string &paletteName)
 {
 	// This method will just take the surfaces from getSurfaces() and turn them into 

@@ -14,7 +14,6 @@
 // be their offset in GLOBAL.BSA.
 
 class Renderer;
-class Surface;
 
 struct SDL_PixelFormat;
 struct SDL_Surface;

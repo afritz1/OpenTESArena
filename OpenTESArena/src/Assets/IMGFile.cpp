@@ -5,7 +5,6 @@
 
 #include "Compression.h"
 #include "../Math/Int2.h"
-#include "../Media/PaletteName.h"
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"
@@ -223,7 +222,7 @@ IMGFile::~IMGFile()
 
 }
 
-void IMGFile::extractPalette(Palette &dstPalette, const std::string &filename)
+void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 {
 	// This is still experimental. It might need some correction.
 

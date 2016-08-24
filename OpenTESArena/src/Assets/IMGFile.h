@@ -11,8 +11,6 @@
 // properties, or without a header (either raw or a wall). Some IMGs also have a
 // built-in palette, which they may or may not use eventually.
 
-enum class PaletteName;
-
 class IMGFile
 {
 private:
@@ -26,7 +24,7 @@ public:
 
 	// Extracts the palette from an IMG file and writes it into the given palette
 	// reference. Causes an error if the IMG file doesn't have a palette.
-	static void extractPalette(Palette &palette, const std::string &filename);
+	static void extractPalette(const std::string &filename, Palette &dstPalette);
 
 	int getWidth() const;
 	int getHeight() const;

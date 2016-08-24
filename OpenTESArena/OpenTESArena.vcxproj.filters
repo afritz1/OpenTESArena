@@ -127,6 +127,7 @@
     <ClCompile Include="src\Assets\FontFile.cpp" />
     <ClCompile Include="src\Assets\TextAssets.cpp" />
     <ClCompile Include="src\World\Sprite.cpp" />
+    <ClCompile Include="src\Assets\COLFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -299,6 +300,7 @@
     <ClInclude Include="src\Assets\FontFile.h" />
     <ClInclude Include="src\Assets\TextAssets.h" />
     <ClInclude Include="src\World\Sprite.h" />
+    <ClInclude Include="src\Assets\COLFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
