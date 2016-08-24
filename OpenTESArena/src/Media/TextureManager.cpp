@@ -11,7 +11,6 @@
 #include "TextureFile.h"
 #include "../Assets/Compression.h"
 #include "../Assets/IMGFile.h"
-#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
