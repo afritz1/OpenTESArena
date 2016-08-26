@@ -15,9 +15,9 @@
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
-CinematicPanel::CinematicPanel(GameState *gameState, PaletteName paletteName, 
-	TextureSequenceName name, double secondsPerImage, 
-	const std::function<void(GameState*)> &endingAction)
+CinematicPanel::CinematicPanel(GameState *gameState, 
+	const std::string &paletteName, TextureSequenceName sequenceName, 
+	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
 	this->skipButton = [&endingAction]()
@@ -26,7 +26,7 @@ CinematicPanel::CinematicPanel(GameState *gameState, PaletteName paletteName,
 	}();
 
 	this->paletteName = paletteName;
-	this->sequenceName = name;
+	this->sequenceName = sequenceName;
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
@@ -114,8 +114,7 @@ void CinematicPanel::render(Renderer &renderer)
 
 	// Draw image.
 	auto *image = textureManager.getTexture(
-		filenames.at(this->imageIndex), 
-		PaletteFile::fromName(this->paletteName));
+		filenames.at(this->imageIndex), this->paletteName);
 	renderer.drawToOriginal(image);
 
 	// Scale the original frame buffer onto the native one.

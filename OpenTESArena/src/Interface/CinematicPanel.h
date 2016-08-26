@@ -12,14 +12,13 @@ class Button;
 class GameState;
 class Renderer;
 
-enum class PaletteName;
 enum class TextureSequenceName;
 
 class CinematicPanel : public Panel
 {
 private:
 	std::unique_ptr<Button> skipButton;
-	PaletteName paletteName;
+	std::string paletteName;
 	TextureSequenceName sequenceName;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
@@ -28,8 +27,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	CinematicPanel(GameState *gameState, PaletteName paletteName, 
-		TextureSequenceName name, double secondsPerImage, 
+	CinematicPanel(GameState *gameState, const std::string &paletteName, 
+		TextureSequenceName sequenceName, double secondsPerImage,
 		const std::function<void(GameState*)> &endingAction);
 	virtual ~CinematicPanel();
 

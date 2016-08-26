@@ -56,7 +56,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 			{
 				std::unique_ptr<Panel> newGameStoryPanel(new CinematicPanel(
 					gameState,
-					PaletteName::Default,
+					PaletteFile::fromName(PaletteName::Default),
 					TextureSequenceName::NewGameStory,
 					5.0,
 					changeToCharCreation));
@@ -65,7 +65,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 
 			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
 				gameState,
-				PaletteName::Default,
+				PaletteFile::fromName(PaletteName::Default),
 				TextureSequenceName::OpeningScroll,
 				CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
 				changeToNewGameStory));
