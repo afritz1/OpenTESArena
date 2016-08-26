@@ -30,11 +30,10 @@ private:
 	// maps. I.e., "EQUIPMEN.IMG" and "PAL.COL" become "EQUIPMEN.IMGPAL.COL".
 	std::unordered_map<std::string, Surface> surfaces;
 	std::unordered_map<std::string, SDL_Texture*> textures;
-	std::unordered_map<std::string, std::vector<Surface>> surfaceSets;
 	std::unordered_map<std::string, std::vector<SDL_Texture*>> textureSets;
 	Renderer &renderer;
 	std::string activePalette;
-		
+
 	SDL_Surface *loadPNG(const std::string &fullPath);
 
 	// Specialty method for loading a COL file into the palettes map.
@@ -45,6 +44,9 @@ private:
 
 	// Helper method for loading a palette file into the palettes map.
 	void loadPalette(const std::string &paletteName);
+
+	// Returns whether the given palette name is "built-in" or not.
+	bool paletteIsBuiltIn(const std::string &paletteName) const;
 public:
 	TextureManager(Renderer &renderer);
 	~TextureManager();
@@ -59,16 +61,10 @@ public:
 	// Similar to getSurface(), only now for hardware-accelerated textures.
 	SDL_Texture *getTexture(const std::string &filename, const std::string &paletteName);
 	SDL_Texture *getTexture(const std::string &filename);
-
-	// Gets a set of surfaces from a file. This is intended for animations and movies,
-	// where the filename essentially points to several images. When no palette name is
-	// given, the active one is used.
-	const std::vector<Surface> &getSurfaces(const std::string &filename,
-		const std::string &paletteName);
-	const std::vector<Surface> &getSurfaces(const std::string &filename);
-
-	// Similar to getSurfaces(), only now for a series of hardware-accelerated textures.
-	// When no palette name is given, the active one is used.
+	
+	// Gets a set of textures from a file. This is intended for animations and movies, 
+	// where the filename essentially points to several images. When no palette name 
+	// is given, the active one is used.
 	const std::vector<SDL_Texture*> &getTextures(const std::string &filename,
 		const std::string &paletteName);
 	const std::vector<SDL_Texture*> &getTextures(const std::string &filename);

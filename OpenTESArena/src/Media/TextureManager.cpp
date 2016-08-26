@@ -12,6 +12,7 @@
 #include "../Assets/COLFile.h"
 #include "../Assets/Compression.h"
 #include "../Assets/IMGFile.h"
+#include "../Assets/SETFile.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
@@ -23,8 +24,7 @@
 const std::string TextureManager::PATH = "data/textures/";
 
 TextureManager::TextureManager(Renderer &renderer)
-	: renderer(renderer), palettes(), surfaces(), textures(),
-	surfaceSets(), textureSets()
+	: renderer(renderer), palettes(), surfaces(), textures(), textureSets()
 {
 	Debug::mention("Texture Manager", "Initializing.");
 
@@ -62,7 +62,6 @@ TextureManager &TextureManager::operator=(TextureManager &&textureManager)
 	this->palettes = std::move(textureManager.palettes);
 	this->surfaces = std::move(textureManager.surfaces);
 	this->textures = std::move(textureManager.textures);
-	this->surfaceSets = std::move(textureManager.surfaceSets);
 	this->textureSets = std::move(textureManager.textureSets);
 	this->renderer = textureManager.renderer;
 	this->activePalette = textureManager.activePalette;
@@ -128,6 +127,12 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	assert(this->palettes.find(paletteName) != this->palettes.end());
 }
 
+bool TextureManager::paletteIsBuiltIn(const std::string &paletteName) const
+{
+	const std::string &builtInName = PaletteFile::fromName(PaletteName::BuiltIn);
+	return paletteName.compare(builtInName) == 0;
+}
+
 const Surface &TextureManager::getSurface(const std::string &filename,
 	const std::string &paletteName)
 {
@@ -143,8 +148,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 
 	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = paletteName.compare(
-		PaletteFile::fromName(PaletteName::BuiltIn)) == 0;
+	const bool useBuiltInPalette = this->paletteIsBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
 	if ((!useBuiltInPalette && (this->palettes.find(paletteName) == this->palettes.end())) ||
@@ -237,32 +241,69 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename)
 	return this->getTexture(filename, this->activePalette);
 }
 
-const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename,
-	const std::string &paletteName)
+const std::vector<SDL_Texture*> &TextureManager::getTextures(
+	const std::string &filename, const std::string &paletteName)
 {
-	// I would like this method to deal with the animations and movies, so it'll 
-	// check filenames for ".CFA", ".CIF", ".DFA", ".FLC", etc..
+	// This method deals with animations and movies, so it will check filenames 
+	// for ".CFA", ".CIF", ".DFA", ".FLC", ".SET", etc..
 
-	Debug::crash("Texture Manager", "getSurfaces() not implemented.");
-	return this->surfaceSets.at(""); // Dummy placeholder.
-}
+	// Use this name when interfacing with the texture sets map.
+	const std::string fullName = filename + paletteName;
 
-const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename)
-{
-	return this->getSurfaces(filename, this->activePalette);
-}
+	// See if the file has already been loaded with the palette.
+	auto setIter = this->textureSets.find(fullName);
+	if (setIter != this->textureSets.end())
+	{
+		// The requested texture set exists.
+		return setIter->second;
+	}
 
-const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename,
-	const std::string &paletteName)
-{
-	// This method will just take the surfaces from getSurfaces() and turn them into 
-	// SDL_Textures if not already loaded. I'm not too worried about memory consumption 
-	// and unused surfaces at this point. A fullscreen (320x200) uncompressed 32-bit 
-	// image is only 256KB, and with all the movies and animations combined, that's 
-	// like... 450MB? I think an "unloadTexture()" method is a bit too far ahead right now.
+	// Do not use a built-in palette for texture sets.
+	Debug::check(!this->paletteIsBuiltIn(paletteName), "Texture Manager",
+		"Texture sets (i.e., .SET files) do not have built-in palettes.");
+	
+	// See if the palette hasn't already been loaded.
+	if (this->palettes.find(paletteName) == this->palettes.end())
+	{
+		this->loadPalette(paletteName);
+	}
 
-	Debug::crash("Texture Manager", "getTextures() not implemented.");
-	return this->textureSets.at(""); // Dummy placeholder.
+	// The file hasn't been loaded with the palette yet, so make a new entry.
+	auto iter = this->textureSets.emplace(std::make_pair(
+		fullName, std::vector<SDL_Texture*>())).first;
+
+	std::vector<SDL_Texture*> &textureSet = iter->second;
+	const Palette &palette = this->palettes.at(paletteName);
+
+	const std::string extension = String::getExtension(filename);
+	const bool isSET = extension.compare(".SET") == 0;
+
+	if (isSET)
+	{
+		// Load the SET file.
+		SETFile setFile(filename, palette);
+
+		// Create an SDL_Texture for each image in the SET.
+		const int imageCount = setFile.getCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			SDL_Texture *texture = this->renderer.createTexture(
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
+
+			const uint32_t *pixels = setFile.getPixels(i);
+			SDL_UpdateTexture(texture, nullptr, pixels, 
+				SETFile::CHUNK_WIDTH * sizeof(*pixels));
+
+			textureSet.push_back(texture);
+		}
+	}
+	else
+	{
+		Debug::crash("Texture Manager", "Unrecognized image list \"" + filename + "\".");
+	}
+	
+	return textureSet;
 }
 
 const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename)
