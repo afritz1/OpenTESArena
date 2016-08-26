@@ -17,9 +17,9 @@ private:
 	int w, h;
 	std::unique_ptr<uint32_t> pixels;
 public:
-	// Loads an IMG from file. Uses the given palette unless the palette name is
-	// "built-in", then it refers to the IMG's palette instead.
-	IMGFile(const std::string &filename, Palette *palette);
+	// Loads an IMG from file. Uses the given palette unless it is null, then it 
+	// refers to the IMG's built-in palette instead if it has one.
+	IMGFile(const std::string &filename, const Palette *palette);
 	~IMGFile();
 
 	// Extracts the palette from an IMG file and writes it into the given palette

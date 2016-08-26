@@ -32,7 +32,7 @@ namespace
 	};
 }
 
-IMGFile::IMGFile(const std::string &filename, Palette *palette)
+IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
