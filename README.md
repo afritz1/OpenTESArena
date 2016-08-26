@@ -23,7 +23,7 @@ This open-source project aims to be a modern reimplementation of "The Elder Scro
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
-Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and that is what this project currently uses.
+Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
 It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
 
@@ -69,7 +69,7 @@ Current priority:
 - Load character faces (.CIF, to replace PNGs)
 - Load font files (.DAT, to replace PNGs)
 - Load frames from videos (.FLC/.CEL, to replace PNGs)
-- Load original textures (.CFA, .CIF, .DFA, .IMG, etc.)
+- Load original textures (.CFA, .CIF, .DFA, .IMG, .SET, etc.)
 - Sprites
 
 Next priority:
