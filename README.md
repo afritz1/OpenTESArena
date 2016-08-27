@@ -3,11 +3,11 @@
 
 ## Current status
 
-August 19th, 2016:
+August 27th, 2016:
 
 This project is early in development.
 
-The game world is currently a barebones test city with some textured blocks, stone arches, and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation.
+The game world is currently a barebones test city with some buildings and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation. The game interface icons (attack, magic, etc.) do nothing yet.
 
 Here are some hotkeys in the game world:
 - Tab - character sheet and inventory
@@ -15,7 +15,14 @@ Here are some hotkeys in the game world:
 - L - logbook
 - N - automap
 
-I'm currently trying to catch back up to the state of the world shown in these [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now aiming to use original data exclusively instead of tool-extracted images from applications like WinArena. The graphics engine is in development and is only partially implemented here.
+This is a preview of how the test world looks now:
+<br/>
+<br/>
+![Preview](https://github.com/afritz1/OpenTESArena/blob/master/Preview.PNG)
+<br/>
+<br/>
+
+I'm currently catching back up to the state of the world shown in these other [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now aiming to use original data exclusively instead of tool-extracted images from applications like WinArena. The graphics engine is in development and is only partially implemented here.
 
 ## Project Details
 
@@ -31,7 +38,7 @@ Open a pull request if you'd like to contribute.
 
 ## Instructions
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 10th). The program's dependency on the `data` folder will mostly be removed once the original assets are being loaded exclusively.
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 27th). The program's dependency on the `data` folder will mostly be removed once the original assets are being loaded exclusively.
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.

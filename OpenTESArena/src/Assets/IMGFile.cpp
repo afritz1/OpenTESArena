@@ -116,7 +116,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 			"\"" + filename + "\" does not have a built-in palette.");
 	}
 
-	const Palette &paletteRef = (hasBuiltInPalette && useBuiltInPalette) ? 
+	const Palette &paletteRef = (hasBuiltInPalette && useBuiltInPalette) ?
 		custompal : (*palette);
 
 	if ((flags & 0x00FF) == 0x0000)
@@ -185,14 +185,10 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		// just *happen* to match the built-in palette flags).
 
 		// Reorganize these if statements so both the uncompressed IMG and wall images 
-		// fall under the same flag condition.
+		// fall under the same flag condition. Maybe check if byteCount == 4096?
 
 		// There are no flags, so the header is essentially garbage (just whatever 
 		// the texture's colors are).
-
-		// There should be a "loadSET()" method. It would be easy to make. It just
-		// involves either two or three (maybe four?) 64x64 wall textures packed 
-		// together vertically.
 
 		width = 64;
 		height = 64;
@@ -243,7 +239,7 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	width = Compression::getLE16(imgHeader.data() + 4);
 	height = Compression::getLE16(imgHeader.data() + 6);
 	flags = Compression::getLE16(imgHeader.data() + 8);
-	srclen = Compression::getLE16(imgHeader.data() + 10);	
+	srclen = Compression::getLE16(imgHeader.data() + 10);
 
 	const bool hasBuiltInPalette = (flags & 0x0100) == 0x0100;
 

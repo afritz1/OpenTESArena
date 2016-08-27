@@ -30,6 +30,7 @@ private:
 	// maps. I.e., "EQUIPMEN.IMG" and "PAL.COL" become "EQUIPMEN.IMGPAL.COL".
 	std::unordered_map<std::string, Surface> surfaces;
 	std::unordered_map<std::string, SDL_Texture*> textures;
+	std::unordered_map<std::string, std::vector<SDL_Surface*>> surfaceSets;
 	std::unordered_map<std::string, std::vector<SDL_Texture*>> textureSets;
 	Renderer &renderer;
 	std::string activePalette;
@@ -62,6 +63,13 @@ public:
 	SDL_Texture *getTexture(const std::string &filename, const std::string &paletteName);
 	SDL_Texture *getTexture(const std::string &filename);
 	
+	// Gets a set of surfaces from a file. Intended only for obtaining pixel data for use 
+	// with the OpenCL buffers. TextureManager::getTextures() should be used instead for 
+	// any 2D interface objects.
+	const std::vector<SDL_Surface*> &getSurfaces(const std::string &filename,
+		const std::string &paletteName);
+	const std::vector<SDL_Surface*> &getSurfaces(const std::string &filename);
+
 	// Gets a set of textures from a file. This is intended for animations and movies, 
 	// where the filename essentially points to several images. When no palette name 
 	// is given, the active one is used.

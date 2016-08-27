@@ -648,15 +648,56 @@ void CLProgram::makeTestWorld()
 		*(countPtr + 0) = count;
 	};
 
-	// Prepare some textures for a local float4 buffer.	
+	// Prepare some textures for a local float4 buffer.
 	this->textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 	std::vector<const SDL_Surface*> textures =
 	{
-		this->textureManager.getSurface("T_CITYWL.IMG").getSurface(),
-		this->textureManager.getSurface("T_NGRASS.IMG").getSurface(),
-		this->textureManager.getSurface("T_NROAD.IMG").getSurface(),
-		this->textureManager.getSurface("T_NSDWLK.IMG").getSurface(),
-		this->textureManager.getSurface("T_GARDEN.IMG").getSurface(),
+		// Texture indices:
+		// 0: city wall
+		this->textureManager.getSurface("CITYWALL.IMG").getSurface(),
+
+		// 1-3: grounds
+		this->textureManager.getSurfaces("NORM1.SET").at(0),
+		this->textureManager.getSurfaces("NORM1.SET").at(1),
+		this->textureManager.getSurfaces("NORM1.SET").at(2),
+
+		// 4-5: gates
+		this->textureManager.getSurface("DLGT.IMG").getSurface(),
+		this->textureManager.getSurface("DRGT.IMG").getSurface(),
+
+		// 6-9: tavern + door
+		this->textureManager.getSurfaces("MTAVERN.SET").at(0),
+		this->textureManager.getSurfaces("MTAVERN.SET").at(1),
+		this->textureManager.getSurfaces("MTAVERN.SET").at(2),
+		this->textureManager.getSurface("DTAV.IMG").getSurface(),
+
+		// 10-15: temple + door
+		this->textureManager.getSurfaces("MTEMPLE.SET").at(0),
+		this->textureManager.getSurfaces("MTEMPLE.SET").at(1),
+		this->textureManager.getSurfaces("MTEMPLE.SET").at(2),
+		this->textureManager.getSurfaces("MTEMPLE.SET").at(3),
+		this->textureManager.getSurfaces("MTEMPLE.SET").at(4),
+		this->textureManager.getSurface("DTEP.IMG").getSurface(),
+
+		// 16-21: Mages' Guild + door
+		this->textureManager.getSurfaces("MMUGUILD.SET").at(0),
+		this->textureManager.getSurfaces("MMUGUILD.SET").at(1),
+		this->textureManager.getSurfaces("MMUGUILD.SET").at(2),
+		this->textureManager.getSurfaces("MMUGUILD.SET").at(3),
+		this->textureManager.getSurfaces("MMUGUILD.SET").at(4),
+		this->textureManager.getSurface("DMU.IMG").getSurface(),
+
+		// 22-25: Equipment store + door
+		this->textureManager.getSurfaces("MEQUIP.SET").at(0),
+		this->textureManager.getSurfaces("MEQUIP.SET").at(1),
+		this->textureManager.getSurfaces("MEQUIP.SET").at(2),
+		this->textureManager.getSurface("DEQ.IMG").getSurface(),
+
+		// 26-29: Noble house + door
+		this->textureManager.getSurfaces("MNOBLE.SET").at(0),
+		this->textureManager.getSurfaces("MNOBLE.SET").at(1),
+		this->textureManager.getSurfaces("MNOBLE.SET").at(2),
+		this->textureManager.getSurface("DNB1.IMG").getSurface(),
 	};
 
 	const int textureCount = static_cast<int>(textures.size());
@@ -777,23 +818,75 @@ void CLProgram::makeTestWorld()
 		}
 	}
 
-	// Add some random blocks around.
-	for (int count = 0; count < 32; ++count)
+	// Lambda for adding some simple cube buildings.
+	auto makeBuilding = [&](int cellX, int cellZ, int width, int height, int depth,
+		const std::vector<int> &textureIndices)
 	{
-		int x = 1 + random.next(this->worldWidth - 2);
-		int y = 1;
-		int z = 1 + random.next(this->worldDepth - 2);
+		const int cellY = 1;
 
-		std::vector<Rect3D> block = makeBlock(x, y, z);
-		int rectangleCount = static_cast<int>(block.size());
-
-		for (int index = 0; index < rectangleCount; ++index)
+		for (int k = 0; k < depth; ++k)
 		{
-			writeRectangle(block.at(index), x, y, z, index, 4);
-		}
+			for (int j = 0; j < height; ++j)
+			{
+				for (int i = 0; i < width; ++i)
+				{
+					const int x = cellX + i;
+					const int y = cellY + j;
+					const int z = cellZ + k;
 
-		writeVoxelRef(x, y, z, 6);
-	}
+					const std::vector<Rect3D> block = makeBlock(x, y, z);
+					const int rectangleCount = static_cast<int>(block.size());
+
+					const int textureIndex = textureIndices.at(random.next(
+						static_cast<int>(textureIndices.size())));
+
+					for (int index = 0; index < rectangleCount; ++index)
+					{
+						writeRectangle(block.at(index), x, y, z, index, textureIndex);
+					}
+
+					writeVoxelRef(x, y, z, 6);
+				}
+			}
+		}
+	};
+
+	// Add some simple buildings around. This data should come from a "World" or 
+	// "CityData" class sometime.
+
+	// Tavern #1
+	makeBuilding(3, 5, 5, 2, 6, { 6, 7, 8 });
+	makeBuilding(3, 6, 1, 1, 1, { 9 });
+
+	// Tavern #2
+	makeBuilding(3, 13, 7, 1, 5, { 6, 7, 8 });
+	makeBuilding(6, 13, 1, 1, 1, { 9 });
+
+	// Temple #1
+	makeBuilding(11, 4, 6, 2, 5, { 10, 11, 12, 13, 14 });
+	makeBuilding(11, 6, 1, 1, 1, { 15 });
+
+	// Mage's Guild #1
+	makeBuilding(12, 12, 5, 2, 4, { 16, 17, 18, 19, 20 });
+	makeBuilding(15, 12, 1, 1, 1, { 21 });
+
+	// Equipment store #1
+	makeBuilding(20, 4, 5, 1, 7, { 22, 23, 24 });
+	makeBuilding(20, 8, 1, 1, 1, { 25 });
+
+	// Equipment store #2
+	makeBuilding(11, 19, 6, 2, 6, { 22, 23, 24 });
+	makeBuilding(13, 19, 1, 1, 1, { 25 });
+
+	// Noble house #1
+	makeBuilding(21, 15, 6, 2, 8, { 26, 27, 28 });
+	makeBuilding(21, 17, 1, 1, 1, { 29 });
+
+	// Add a city gate with some walls.
+	makeBuilding(8, 0, 1, 1, 1, { 4 });
+	makeBuilding(9, 0, 1, 1, 1, { 5 });
+	makeBuilding(1, 1, 7, this->worldHeight - 1, 1, { 0 });
+	makeBuilding(10, 1, 3, this->worldHeight - 1, 1, { 0 });
 
 	// Write the rectangle buffer to device memory.
 	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,

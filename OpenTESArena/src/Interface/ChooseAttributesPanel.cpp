@@ -107,7 +107,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// menu has settings for the CLProgram.
 			std::unique_ptr<EntityManager> entityManager(new EntityManager());
 
-			Float3d position = Float3d(1.50, 1.70, 1.50); // Arbitrary player height.
+			Float3d position = Float3d(1.50, 1.70, 2.50); // Arbitrary player height.
 			Float3d direction = Float3d(1.0, 0.0, 1.0).normalized();
 			Float3d velocity = Float3d(0.0, 0.0, 0.0);
 
