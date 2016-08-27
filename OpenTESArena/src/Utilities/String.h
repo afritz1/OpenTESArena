@@ -32,6 +32,10 @@ public:
 	// Creates a new string with all 'a' characters replaced by 'b' characters.
 	static std::string replace(const std::string &str, char a, char b);
 
+	// Creates a new string with all "a" substrings replaced by "b" strings.
+	static std::string replace(const std::string &str, const std::string &a, 
+		const std::string &b);
+
 	// Turns an integral value into a hex string.
 	template <typename T>
 	static std::string toHexString(T val)

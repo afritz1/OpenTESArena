@@ -51,6 +51,20 @@ void TextAssets::parseTemplateDat()
 			// some texts in TEMPLATE.DAT, so it's important to skip existing ones.
 			if (this->templateDat.find(key) == this->templateDat.end())
 			{
+				// Clean up the text first so the caller has to do less.
+				value = String::replace(value, '\r', '\n');
+
+				while ((value.size() > 0) && (value.at(value.size() - 1) == '\n'))
+				{
+					value.pop_back();
+				}
+
+				// Remove the annoying ampersand at the end of most texts.
+				if ((value.size() > 0) && (value.at(value.size() - 1) == '&'))
+				{
+					value.pop_back();
+				}
+
 				this->templateDat.insert(std::make_pair(key, value));
 			}
 

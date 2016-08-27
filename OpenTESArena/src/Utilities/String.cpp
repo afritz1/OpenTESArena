@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "String.h"
 
 std::vector<std::string> String::split(const std::string &line, char separator)
@@ -32,7 +34,7 @@ std::vector<std::string> String::split(const std::string &line)
 
 std::string String::trim(const std::string &line)
 {
-	const auto space = ' ';
+	const char space = ' ';
 
 	std::string trimmed;
 
@@ -49,12 +51,12 @@ std::string String::trim(const std::string &line)
 
 std::string String::trimLines(const std::string &line)
 {
-	const auto carriageReturn = '\r';
-	const auto newLine = '\n';
+	const char carriageReturn = '\r';
+	const char newLine = '\n';
 
 	std::string trimmed;
 
-	for (const auto c : line)
+	for (const char c : line)
 	{
 		if ((c != carriageReturn) && (c != newLine))
 		{
@@ -83,6 +85,15 @@ std::string String::replace(const std::string &str, char a, char b)
 			c = b;
 		}
 	}
+
+	return newStr;
+}
+
+std::string String::replace(const std::string &str, const std::string &a, 
+	const std::string &b)
+{
+	// Replace all instances of "a" with "b".
+	std::string newStr = std::regex_replace(str, std::regex("\\" + a), b);
 
 	return newStr;
 }

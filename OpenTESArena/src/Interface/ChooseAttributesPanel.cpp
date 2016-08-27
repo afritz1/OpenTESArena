@@ -9,6 +9,7 @@
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
+#include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
 #include "../Entities/EntityManager.h"
@@ -29,6 +30,8 @@
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
+#include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
@@ -154,44 +157,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// too long. For example, it causes "listen to me" to go down one line and 
 			// "Imperial Battle" to go onto the next screen, which then pushes the text
 			// for every subsequent screen forward by a little bit.
-			std::string silmaneText;
 
-			// Use the player's first name.
-			std::string playerName = gameState->getGameData()->getPlayer().getFirstName();
+			// Read Ria Silmane's text from TEMPLATE.DAT.
+			std::string silmaneText = gameState->getTextAssets().getTemplateDatText("#1400");
+			silmaneText.append("\n");
 
-			// Load this text from the original data eventually. It's at #1400 in TEMPLATE.DAT.
-			// Do a string replace of the %pcf identifier with the player's name.
-			silmaneText.append("Do not fear for it is I, Ria Silmane. " + playerName + ", listen to me,\n");
-			silmaneText.append("there are no others left to carry on this fight. You have\n");
-			silmaneText.append("been left in this cell to die. Jagar Tharn, Imperial Battle\n");
-			silmaneText.append("Mage of Tamriel has taken on the guise of the true Emperor.\n");
-			silmaneText.append("He does not see you as a threat, being only a minor part of\n");
-			silmaneText.append("the Imperial Court. In that act of arrogance, he has made\n");
-			silmaneText.append("his first mistake. Look to the north wall of this cell. You\n");
-			silmaneText.append("will find a ruby key which will unlock the door. Take it and\n");
-			silmaneText.append("make your escape. The passages here were once used by Tharn\n");
-			silmaneText.append("to hide treasures he had stolen from the Emperor's coffers.\n");
-			silmaneText.append("If you wish, you can gather enough to support yourself away\n");
-			silmaneText.append("from the Imperial Seat. Be careful, there are many creatures\n");
-			silmaneText.append("which inhabit the sewers now, vile rats and goblins. It is\n");
-			silmaneText.append("too late for me, for I am already dead. Only my powers as a\n");
-			silmaneText.append("Sorceress keep me between this life and the next. That power\n");
-			silmaneText.append("however is waning. Do not succumb to greed or you may find\n");
-			silmaneText.append("these tunnels to be your final resting place as well. I can\n");
-			silmaneText.append("still work my magic to a certain extent. If you travel west\n");
-			silmaneText.append("from this cell, then south, you will find a Shift Gate. It\n");
-			silmaneText.append("will transport you far enough from the center of the Empire\n");
-			silmaneText.append("that you should be safe. If you survive these sewers you\n");
-			silmaneText.append("will see me again. Remember, " + playerName + ", Tharn has taken on the\n");
-			silmaneText.append("guise of the Emperor. No one will gainsay his word for\n");
-			silmaneText.append("yours. I will come to you again in your dreams, so it is\n");
-			silmaneText.append("imperative that you rest from time to time. In that way I\n");
-			silmaneText.append("will be able to communicate with you and lend my aid. You\n");
-			silmaneText.append("are entering a dangerous arena, my friend, one in which the\n");
-			silmaneText.append("players are beings beyond your mortal comprehension. I do\n");
-			silmaneText.append("not envy your role. There is however a power within you as\n");
-			silmaneText.append("yet untapped. Look for me when you have gained experience in\n");
-			silmaneText.append("the world. You are my last and best hope...\n");
+			// Replace all instances of %pcf with the player's first name.
+			const std::string playerName =
+				gameState->getGameData()->getPlayer().getFirstName();
+			silmaneText = String::replace(silmaneText, "%pcf", playerName);
+
+			// Some more formatting should be done in the future so the text wraps nicer.
+			// That is, replace all new lines with spaces and redistribute new lines given
+			// some max line length value.
 
 			std::unique_ptr<Panel> cinematicPanel(new TextCinematicPanel(
 				gameState,

@@ -22,7 +22,7 @@
 const double TextCinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 7.0;
 
 TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName name,
-	const std::string &text, double secondsPerImage, 
+	const std::string &text, double secondsPerImage,
 	const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
@@ -35,7 +35,7 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 
 		// Count new lines.
 		int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
-		
+
 		// Split text into lines.
 		std::vector<std::string> textLines = String::split(text, '\n');
 
@@ -48,11 +48,18 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 			int linesToUse = std::min(newLineCount - (i * 3), 3);
 			for (int j = 0; j < linesToUse; ++j)
 			{
-				textBoxText.append(textLines.at(j + (i * 3)));
+				const std::string &textLine = textLines.at(j + (i * 3));
+				textBoxText.append(textLine);
 				textBoxText.append("\n");
 			}
+			
+			// Avoid adding empty text boxes.
+			if (textBoxText.size() == 0)
+			{
+				continue;
+			}
 
-			// Use a different color for Tharn cinematics.
+			// Eventually use a different color for other cinematics (Tharn, Emperor, etc.).
 			Color textColor(105, 174, 207);
 			std::unique_ptr<TextBox> textBox(new TextBox(
 				center,
@@ -115,13 +122,13 @@ void TextCinematicPanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			((e.key.keysym.sym == SDLK_SPACE) ||
-				(e.key.keysym.sym == SDLK_RETURN) ||
+			(e.key.keysym.sym == SDLK_RETURN) ||
 				(e.key.keysym.sym == SDLK_KP_ENTER));
 
 		if (leftClick || skipHotkeyPressed)
 		{
 			this->textIndex++;
-			
+
 			// If done with the last text box, then prepare for the next panel.
 			int textBoxCount = static_cast<int>(this->textBoxes.size());
 			if (this->textIndex >= textBoxCount)
@@ -148,7 +155,7 @@ void TextCinematicPanel::tick(double dt, bool &running)
 	this->handleEvents(running);
 
 	this->currentImageSeconds += dt;
-	
+
 	while (this->currentImageSeconds > this->secondsPerImage)
 	{
 		this->currentImageSeconds -= this->secondsPerImage;
@@ -187,7 +194,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Draw text.
 	renderer.drawToOriginal(textBox->getSurface(), textBox->getX(), textBox->getY());
-	
+
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 }
