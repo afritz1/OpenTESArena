@@ -52,7 +52,7 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 				textBoxText.append(textLine);
 				textBoxText.append("\n");
 			}
-			
+
 			// Avoid adding empty text boxes.
 			if (textBoxText.size() == 0)
 			{

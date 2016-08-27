@@ -275,6 +275,11 @@ void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
 	SDL_SetWindowIcon(this->window, icon.getSurface());
 }
 
+void Renderer::warpMouse(int x, int y)
+{
+	SDL_WarpMouseInWindow(this->window, x, y);
+}
+
 void Renderer::useTransparencyBlending(bool blend)
 {
 	int status = SDL_SetTextureBlendMode(this->originalTexture,

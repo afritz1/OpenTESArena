@@ -33,6 +33,9 @@ public:
 
 	static std::unique_ptr<Panel> defaultPanel(GameState *gameState);
 
+	// Sets whether the mouse should move during motion events (for player camera).
+	void setRelativeMouseMode(bool active);
+
 	virtual void tick(double dt, bool &running) = 0;
 	virtual void render(Renderer &renderer) = 0;
 };

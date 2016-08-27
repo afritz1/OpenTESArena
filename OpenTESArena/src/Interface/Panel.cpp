@@ -118,3 +118,9 @@ Int2 Panel::getMousePosition() const
 	SDL_GetMouseState(&x, &y);
 	return Int2(x, y);
 }
+
+void Panel::setRelativeMouseMode(bool active)
+{
+	SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
+	SDL_SetRelativeMouseMode(enabled);
+}

@@ -76,6 +76,9 @@ public:
 	void resize(int width, int height);
 	void setWindowIcon(TextureName name, TextureManager &textureManager);
 
+	// Teleports the mouse to a location in the window.
+	void warpMouse(int x, int y);
+
 	// Tells the original frame buffer whether to blend with transparency when 
 	// copying to the native frame buffer. This might be an expensive operation,
 	// so only set it to true when the original frame buffer needs transparency.
