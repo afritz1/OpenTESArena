@@ -38,7 +38,7 @@ function(_FIND_OPENCL_VERSION)
   set(CMAKE_REQUIRED_QUIET ${OpenCL_FIND_QUIETLY})
 
   CMAKE_PUSH_CHECK_STATE()
-  foreach(VERSION "2_0" "1_2" "1_1" "1_0")
+  foreach(VERSION "1_2" "1_1" "1_0")
     set(CMAKE_REQUIRED_INCLUDES "${OpenCL_INCLUDE_DIR}")
 
     if(APPLE)
@@ -90,42 +90,29 @@ find_path(OpenCL_INCLUDE_DIR
 
 _FIND_OPENCL_VERSION()
 
-if(WIN32)
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    find_library(OpenCL_LIBRARY
-      NAMES OpenCL
-      PATHS
-        ENV "PROGRAMFILES(X86)"
-        ENV AMDAPPSDKROOT
-        ENV INTELOCLSDKROOT
-        ENV CUDA_PATH
-        ENV NVSDKCOMPUTE_ROOT
-        ENV ATISTREAMSDKROOT
-      PATH_SUFFIXES
-        "AMD APP/lib/x86"
-        lib/x86
-        lib/Win32
-        OpenCL/common/lib/Win32)
-  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    find_library(OpenCL_LIBRARY
-      NAMES OpenCL
-      PATHS
-        ENV "PROGRAMFILES(X86)"
-        ENV AMDAPPSDKROOT
-        ENV INTELOCLSDKROOT
-        ENV CUDA_PATH
-        ENV NVSDKCOMPUTE_ROOT
-        ENV ATISTREAMSDKROOT
-      PATH_SUFFIXES
-        "AMD APP/lib/x86_64"
-        lib/x86_64
-        lib/x64
-        OpenCL/common/lib/x64)
-  endif()
-else()
-  find_library(OpenCL_LIBRARY
-    NAMES OpenCL)
-endif()
+# We add a library suffix because some OpenCL packages won't provide a softlink without any, like: http://packages.ubuntu.com/trusty/amd64/nvidia-libopencl1-331/filelist
+# So hopefully .so.1 matches those cases
+list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES .so.1)
+
+# We just search the directory prefixes regardless of architecture; really only the proper one should ever appear anyway and otherwise it can easily be overridden in cmake-gui
+find_library(OpenCL_LIBRARY
+  NAMES OpenCL
+  PATHS
+    ENV "PROGRAMFILES(X86)"
+    ENV "PROGRAMFILES(X86)"
+    ENV AMDAPPSDKROOT
+    ENV INTELOCLSDKROOT
+    ENV CUDA_PATH
+    ENV NVSDKCOMPUTE_ROOT
+    ENV ATISTREAMSDKROOT
+  PATH_SUFFIXES
+    "AMD APP/lib/x86"
+    lib/x86
+    lib/Win32
+
+    /usr/lib/x86_64-linux-gnu
+    /usr/lib/i386-linux-gnu
+    OpenCL/common/lib/Win32)
 
 set(OpenCL_LIBRARIES ${OpenCL_LIBRARY})
 set(OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
