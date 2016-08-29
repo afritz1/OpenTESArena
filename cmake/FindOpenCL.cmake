@@ -75,7 +75,7 @@ endfunction()
 
 find_path(OpenCL_INCLUDE_DIR
   NAMES
-    CL/cl.h OpenCL/cl.h
+    cl.h
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -83,6 +83,8 @@ find_path(OpenCL_INCLUDE_DIR
     ENV NVSDKCOMPUTE_ROOT
     ENV CUDA_PATH
     ENV ATISTREAMSDKROOT
+    
+    /usr/include/CL
   PATH_SUFFIXES
     include
     OpenCL/common/inc
@@ -93,7 +95,7 @@ _FIND_OPENCL_VERSION()
 # Once we have a working include directory, try looking specifically for cl2.hpp
 find_path(OpenCL_CL2_INCLUDE_DIR
   NAMES
-    CL/cl2.hpp OpenCL/cl2.hpp
+    cl2.hpp cl2.hpp
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -101,6 +103,9 @@ find_path(OpenCL_CL2_INCLUDE_DIR
     ENV NVSDKCOMPUTE_ROOT
     ENV CUDA_PATH
     ENV ATISTREAMSDKROOT
+    
+    /usr/include/CL
+    ${OpenCL_INCLUDE_DIR}
   PATH_SUFFIXES
     include
     OpenCL/common/inc
@@ -121,13 +126,14 @@ find_library(OpenCL_LIBRARY
     ENV CUDA_PATH
     ENV NVSDKCOMPUTE_ROOT
     ENV ATISTREAMSDKROOT
+    
+    /usr/lib/x86_64-linux-gnu
+    /usr/lib/i386-linux-gnu
   PATH_SUFFIXES
     "AMD APP/lib/x86"
     lib/x86
     lib/Win32
 
-    /usr/lib/x86_64-linux-gnu
-    /usr/lib/i386-linux-gnu
     OpenCL/common/lib/Win32)
 
 set(OpenCL_LIBRARIES ${OpenCL_LIBRARY})
@@ -144,4 +150,5 @@ find_package_handle_standard_args(
 
 mark_as_advanced(
   OpenCL_INCLUDE_DIR
+  OpenCL_CL2_INCLUDE_DIR
   OpenCL_LIBRARY)
