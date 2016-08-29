@@ -75,7 +75,7 @@ endfunction()
 
 find_path(OpenCL_INCLUDE_DIR
   NAMES
-    cl.h cl.h
+    cl.h
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
