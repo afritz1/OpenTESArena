@@ -38,7 +38,7 @@ function(_FIND_OPENCL_VERSION)
   set(CMAKE_REQUIRED_QUIET ${OpenCL_FIND_QUIETLY})
 
   CMAKE_PUSH_CHECK_STATE()
-  foreach(VERSION "2_0" "1_2" "1_1" "1_0")
+  foreach(VERSION "1_2" "1_1" "1_0")
     set(CMAKE_REQUIRED_INCLUDES "${OpenCL_INCLUDE_DIR}")
 
     if(APPLE)
@@ -75,7 +75,7 @@ endfunction()
 
 find_path(OpenCL_INCLUDE_DIR
   NAMES
-    CL/cl.h OpenCL/cl.h
+    cl.h
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -83,49 +83,58 @@ find_path(OpenCL_INCLUDE_DIR
     ENV NVSDKCOMPUTE_ROOT
     ENV CUDA_PATH
     ENV ATISTREAMSDKROOT
+    
+    /usr/include/CL
   PATH_SUFFIXES
     include
     OpenCL/common/inc
     "AMD APP/include")
-
+    
 _FIND_OPENCL_VERSION()
 
-if(WIN32)
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    find_library(OpenCL_LIBRARY
-      NAMES OpenCL
-      PATHS
-        ENV "PROGRAMFILES(X86)"
-        ENV AMDAPPSDKROOT
-        ENV INTELOCLSDKROOT
-        ENV CUDA_PATH
-        ENV NVSDKCOMPUTE_ROOT
-        ENV ATISTREAMSDKROOT
-      PATH_SUFFIXES
-        "AMD APP/lib/x86"
-        lib/x86
-        lib/Win32
-        OpenCL/common/lib/Win32)
-  elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    find_library(OpenCL_LIBRARY
-      NAMES OpenCL
-      PATHS
-        ENV "PROGRAMFILES(X86)"
-        ENV AMDAPPSDKROOT
-        ENV INTELOCLSDKROOT
-        ENV CUDA_PATH
-        ENV NVSDKCOMPUTE_ROOT
-        ENV ATISTREAMSDKROOT
-      PATH_SUFFIXES
-        "AMD APP/lib/x86_64"
-        lib/x86_64
-        lib/x64
-        OpenCL/common/lib/x64)
-  endif()
-else()
-  find_library(OpenCL_LIBRARY
-    NAMES OpenCL)
-endif()
+# Once we have a working include directory, try looking specifically for cl2.hpp
+find_path(OpenCL_CL2_INCLUDE_DIR
+  NAMES
+    cl2.hpp cl2.hpp
+  PATHS
+    ENV "PROGRAMFILES(X86)"
+    ENV AMDAPPSDKROOT
+    ENV INTELOCLSDKROOT
+    ENV NVSDKCOMPUTE_ROOT
+    ENV CUDA_PATH
+    ENV ATISTREAMSDKROOT
+    
+    /usr/include/CL
+    ${OpenCL_INCLUDE_DIR}
+  PATH_SUFFIXES
+    include
+    OpenCL/common/inc
+    "AMD APP/include")
+    
+# We add a library suffix because some OpenCL packages won't provide a softlink without any, like: http://packages.ubuntu.com/trusty/amd64/nvidia-libopencl1-331/filelist
+# So hopefully .so.1 matches those cases
+list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES .so.1)
+
+# We just search the directory prefixes regardless of architecture; really only the proper one should ever appear anyway and otherwise it can easily be overridden in cmake-gui
+find_library(OpenCL_LIBRARY
+  NAMES OpenCL
+  PATHS
+    ENV "PROGRAMFILES(X86)"
+    ENV "PROGRAMFILES(X86)"
+    ENV AMDAPPSDKROOT
+    ENV INTELOCLSDKROOT
+    ENV CUDA_PATH
+    ENV NVSDKCOMPUTE_ROOT
+    ENV ATISTREAMSDKROOT
+    
+    /usr/lib/x86_64-linux-gnu
+    /usr/lib/i386-linux-gnu
+  PATH_SUFFIXES
+    "AMD APP/lib/x86"
+    lib/x86
+    lib/Win32
+
+    OpenCL/common/lib/Win32)
 
 set(OpenCL_LIBRARIES ${OpenCL_LIBRARY})
 set(OpenCL_INCLUDE_DIRS ${OpenCL_INCLUDE_DIR})
@@ -136,9 +145,10 @@ include(FindPackageHandleStandardArgs)
 # at a later date.
 find_package_handle_standard_args(
   OpenCL
-  REQUIRED_VARS OpenCL_LIBRARY OpenCL_INCLUDE_DIR
+  REQUIRED_VARS OpenCL_LIBRARY OpenCL_INCLUDE_DIR OpenCL_CL2_INCLUDE_DIR
   VERSION_VAR OpenCL_VERSION_STRING)
 
 mark_as_advanced(
   OpenCL_INCLUDE_DIR
+  OpenCL_CL2_INCLUDE_DIR
   OpenCL_LIBRARY)
