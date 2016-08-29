@@ -75,7 +75,7 @@ endfunction()
 
 find_path(OpenCL_INCLUDE_DIR
   NAMES
-    cl.h
+    CL/cl.h OpenCL/cl.h
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -84,7 +84,6 @@ find_path(OpenCL_INCLUDE_DIR
     ENV CUDA_PATH
     ENV ATISTREAMSDKROOT
     
-    /usr/include/CL
   PATH_SUFFIXES
     include
     OpenCL/common/inc
