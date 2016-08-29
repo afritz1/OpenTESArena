@@ -3,6 +3,7 @@ sudo: required
 dist: trusty
 os: linux
 compiler: gcc
+group: stable
 
 before_install:    
 - sudo apt-get install libsdl2-dev
