@@ -87,9 +87,25 @@ find_path(OpenCL_INCLUDE_DIR
     include
     OpenCL/common/inc
     "AMD APP/include")
-
+    
 _FIND_OPENCL_VERSION()
 
+# Once we have a working include directory, try looking specifically for cl2.hpp
+find_path(OpenCL_CL2_INCLUDE_DIR
+  NAMES
+    CL/cl2.hpp OpenCL/cl2.hpp
+  PATHS
+    ENV "PROGRAMFILES(X86)"
+    ENV AMDAPPSDKROOT
+    ENV INTELOCLSDKROOT
+    ENV NVSDKCOMPUTE_ROOT
+    ENV CUDA_PATH
+    ENV ATISTREAMSDKROOT
+  PATH_SUFFIXES
+    include
+    OpenCL/common/inc
+    "AMD APP/include")
+    
 # We add a library suffix because some OpenCL packages won't provide a softlink without any, like: http://packages.ubuntu.com/trusty/amd64/nvidia-libopencl1-331/filelist
 # So hopefully .so.1 matches those cases
 list(APPEND CMAKE_FIND_LIBRARY_SUFFIXES .so.1)
@@ -123,7 +139,7 @@ include(FindPackageHandleStandardArgs)
 # at a later date.
 find_package_handle_standard_args(
   OpenCL
-  REQUIRED_VARS OpenCL_LIBRARY OpenCL_INCLUDE_DIR
+  REQUIRED_VARS OpenCL_LIBRARY OpenCL_INCLUDE_DIR OpenCL_CL2_INCLUDE_DIR
   VERSION_VAR OpenCL_VERSION_STRING)
 
 mark_as_advanced(
