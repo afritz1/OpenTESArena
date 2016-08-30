@@ -1,7 +1,7 @@
 # OpenTESArena
 ### A free open-source project for "The Elder Scrolls: Arena"
 
-## Current status ![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)
+## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
 August 29th, 2016:
 
