@@ -1,13 +1,13 @@
 # OpenTESArena
 ### A free open-source project for "The Elder Scrolls: Arena"
 
-## Current status
+## Current status ![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)
 
-August 27th, 2016:
+August 29th, 2016:
 
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation. The game interface icons (attack, magic, etc.) do nothing yet.
+The game world is currently a barebones test city with some buildings and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation. The game interface icons (attack, magic, etc.) don't do anything yet.
 
 Here are some hotkeys in the game world:
 - Tab - character sheet and inventory
@@ -19,7 +19,6 @@ This is a preview of how the test world looks now:
 <br/>
 <br/>
 ![Preview](https://github.com/afritz1/OpenTESArena/blob/master/Preview.PNG)
-<br/>
 <br/>
 
 I'm currently catching back up to the state of the world shown in these other [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now aiming to use original data exclusively instead of tool-extracted images from applications like WinArena. The graphics engine is in development and is only partially implemented here.
@@ -38,7 +37,7 @@ Open a pull request if you'd like to contribute.
 
 ## Instructions
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 27th). The program's dependency on the `data` folder will mostly be removed once the original assets are being loaded exclusively.
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated August 29th). The program's dependency on the `data` folder will mostly be removed once the original assets are being loaded exclusively.
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
@@ -54,7 +53,7 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 
 #### Obtaining the developer libraries:
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
-- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use cl2.hpp header from OpenCL 2.0
+- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use [cl2.hpp](https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp) header from OpenCL 2.0.
 - [SDL2 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [SDL2_image 2.0.1](https://www.libsdl.org/projects/SDL_image/) (this dependency will be removed eventually)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases)
@@ -93,9 +92,9 @@ Later:
 - Enemies
 - Inventory and containers
 - Levels and experience
-- Load artifact data (to replace artifacts.txt)
+- Load artifact data
 - Load class data (to replace classes.txt)
-- Load locations data (to replace locations.txt)
+- Load locations data
 - Random test cities and dungeons
 
 Outside scope (until later):
