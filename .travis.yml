@@ -6,17 +6,22 @@ compiler: gcc
 group: stable
 
 before_install:    
-- sudo apt-get install libsdl2-dev
-- sudo apt-get install libsdl2-image-dev
-- sudo apt-get install libopenal-dev
-- sudo apt-get install opencl-headers
-- sudo apt-get install ocl-icd-libopencl1
-- wget https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp
-- sudo mv cl2.hpp /usr/include/CL/
-- sudo apt-get install wildmidi
+  - sudo apt-get install libsdl2-dev
+  - sudo apt-get install libsdl2-image-dev
+  - sudo apt-get install libopenal-dev
+  - sudo apt-get install opencl-headers
+  - sudo apt-get install ocl-icd-libopencl1
+  - wget https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp
+  - sudo mv cl2.hpp /usr/include/CL/
+  - sudo apt-get install wildmidi
+
+install:
+  - wget https://github.com/Mindwerks/wildmidi/archive/wildmidi-0.4.0.tar.gz
+  - tar -xzvf wildmidi-0.4.0.tar.gz
+  - pushd wildmidi-wildmidi-0.4.0 && mkdir build && pushd build && cmake .. && make && sudo make install && popd && popd
 
 script:
-- mkdir build
-- cd build
-- cmake ..
-- make
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make
