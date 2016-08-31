@@ -12,6 +12,7 @@
 #include "../Assets/COLFile.h"
 #include "../Assets/Compression.h"
 #include "../Assets/IMGFile.h"
+#include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
@@ -288,6 +289,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 	const std::string extension = String::getExtension(filename);
 	const bool isSET = extension.compare(".SET") == 0;
+	const bool isRCI = extension.compare(".RCI") == 0;
 
 	if (isSET)
 	{
@@ -303,7 +305,28 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, Surface::DEFAULT_BPP,
 				sizeof(*pixels) * SETFile::CHUNK_WIDTH, 0, 0, 0, 0);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface, 
+			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
+				this->renderer.getFormat(), 0);
+			SDL_FreeSurface(surface);
+
+			surfaceSet.push_back(optSurface);
+		}
+	}
+	else if (isRCI)
+	{
+		// Load the RCI file.
+		RCIFile rciFile(filename, palette);
+
+		// Create an SDL_Surface for each image in the RCI.
+		const int imageCount = rciFile.getCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			uint32_t *pixels = rciFile.getPixels(i);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
+				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT, Surface::DEFAULT_BPP,
+				sizeof(*pixels) * RCIFile::FRAME_WIDTH, 0, 0, 0, 0);
+
+			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
 				this->renderer.getFormat(), 0);
 			SDL_FreeSurface(surface);
 
@@ -359,6 +382,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 
 	const std::string extension = String::getExtension(filename);
 	const bool isSET = extension.compare(".SET") == 0;
+	const bool isRCI = extension.compare(".RCI") == 0;
 
 	if (isSET)
 	{
@@ -376,6 +400,27 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			const uint32_t *pixels = setFile.getPixels(i);
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				SETFile::CHUNK_WIDTH * sizeof(*pixels));
+
+			textureSet.push_back(texture);
+		}
+	}
+
+	else if (isRCI)
+	{
+		// Load the RCI file.
+		RCIFile rciFile(filename, palette);
+
+		// Create an SDL_Texture for each image in the RCI.
+		const int imageCount = rciFile.getCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			SDL_Texture *texture = this->renderer.createTexture(
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT);
+
+			const uint32_t *pixels = rciFile.getPixels(i);
+			SDL_UpdateTexture(texture, nullptr, pixels,
+				RCIFile::FRAME_WIDTH * sizeof(*pixels));
 
 			textureSet.push_back(texture);
 		}
