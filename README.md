@@ -3,7 +3,7 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-August 29th, 2016:
+September 2nd, 2016:
 
 This project is early in development.
 
@@ -72,6 +72,7 @@ If there is a bug or technical problem in the program, check out the issues tab!
 ## Scope
 
 Current priority:
+- Geometry management (uniform grid, voxel + sprite references)
 - Load character faces (.CIF, to replace PNGs)
 - Load font files (.DAT, to replace PNGs)
 - Load frames from videos (.FLC/.CEL, to replace PNGs)
@@ -79,6 +80,7 @@ Current priority:
 - Sprites
 
 Next priority:
+- Adaptive super-sampling
 - Character creation questions
 - Collision detection
 - Game interface/buttons (some hotkeys already work)
@@ -92,12 +94,15 @@ Later:
 - Enemies
 - Inventory and containers
 - Levels and experience
+- Lights (street lamps, etc.)
 - Load artifact data
 - Load class data (to replace classes.txt)
 - Load locations data
 - Random test cities and dungeons
+- Redesigned water and lava (to replace vanilla screen animations)
+- Reflections in windows and water
 
-Outside scope (until later):
+Outside scope (until much later):
 - (new) Custom class creation
 - (new) Followers
 - (new) Imperial race
@@ -114,11 +119,15 @@ Outside scope (until later):
 - Sprite variation (clothes/hair/skin colors)
 - (new) UI scale
 - Wandering people
-- Wilderness
+- Wilderness (seed-based chunk generation)
 
 ## Graphics
 
-The 3D graphics are being done with a ray tracer I am writing in OpenCL. As it is fairly experimental, I can't guarantee that the graphics engine will run well either on low-end computers or in CPU mode unless the render resolution is low. I suggest using a modern GPU. I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+The 3D graphics are being done with a ray tracer I am writing in OpenCL. As it is fairly experimental, I suggest using a modern GPU. If you do not have a graphics card, then the engine switches to the (less desirable) CPU mode automatically. I would like to add a user option for this at some point.
+
+I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+
+I have a design for adaptive super-sampling that I'd really like to implement sometime. It's a form of anti-aliasing that's slightly faster than super-sampling because it only does extra work on pixels that need it. Other features like bloom and soft shadows from the sun might make it in sometime as well.
 
 ## Resources
 
