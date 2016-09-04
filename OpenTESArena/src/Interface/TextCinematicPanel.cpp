@@ -6,9 +6,11 @@
 #include "TextCinematicPanel.h"
 
 #include "Button.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -65,8 +67,8 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 				center,
 				textColor,
 				textBoxText,
-				FontName::Arena,
-				gameState->getTextureManager(),
+				gameState->getFontManager().getFont(FontName::Arena),
+				TextAlignment::Center,
 				gameState->getRenderer()));
 			textBoxes.push_back(std::move(textBox));
 		}
@@ -193,7 +195,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 	const auto &textBox = this->textBoxes.at(this->textIndex);
 
 	// Draw text.
-	renderer.drawToOriginal(textBox->getSurface(), textBox->getX(), textBox->getY());
+	renderer.drawToOriginal(textBox->getTexture(), textBox->getX(), textBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

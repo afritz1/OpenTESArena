@@ -1,37 +1,38 @@
 #ifndef FONT_H
 #define FONT_H
 
-// Made some changes to this class during the text box redesign. No more character
-// widths and heights for each font. All letters have their right side whitespace
-// trimmed until the number of whitespace columns for padding is reached.
+#include <string>
+#include <vector>
 
-class Int2;
+// Redesigned for use with Arena assets.
 
 enum class FontName;
-enum class TextureName;
+
+struct SDL_PixelFormat;
+struct SDL_Surface;
 
 class Font
 {
 private:
-	FontName fontName;
+	// ASCII character-indexed surfaces, where space (ASCII 32) is index 0.
+	std::vector<SDL_Surface*> characters;
+	int characterHeight;
 public:
-	Font(FontName fontName);
+	// Constructs a group of characters using an image of bits from a font file.
+	Font(FontName fontName, const SDL_PixelFormat *format);
+	Font(Font &&font);
 	~Font();
 
-	static Int2 getCellPosition(unsigned char c);
+	Font &operator=(Font &&font);
 
-	FontName getFontName() const;
-	TextureName getFontTextureName() const;
+	// Gets the filename for a given font name.
+	static const std::string &fromName(FontName fontName);
 
-	// Get the width and height of each of a font's cells in pixels. This tells how
-	// much to copy at each cell position.
-	Int2 getCellDimensions() const;
+	// Gets the height in pixels for all characters in the font.
+	int getCharacterHeight() const;
 
-	// The number of columns of whitespace to have on the right side of each letter.
-	int getRightPadding() const;
-
-	// The number of columns of whitespace a space is.
-	int getSpaceWidth() const;
+	// Gets the surface for a given character.
+	SDL_Surface *getSurface(char c) const;
 };
 
 #endif

@@ -14,6 +14,7 @@
 // Game state members should be public (through a method) so panels can access them.
 
 class GameData;
+class FontManager;
 class Int2;
 class Options;
 class Panel;
@@ -27,6 +28,7 @@ class GameState
 {
 private:
 	AudioManager audioManager;
+	std::unique_ptr<FontManager> fontManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<MusicName> nextMusic;
 	std::unique_ptr<Options> options;
@@ -44,6 +46,8 @@ public:
 	// This boolean determines if a session is currently running. This should be 
 	// true when in the game world or in some form of pause menu or conversation.
 	bool gameDataIsActive() const;
+
+	FontManager &getFontManager() const;
 	
 	// This might be null, so it returns a pointer instead of a reference for safety.
 	GameData *getGameData() const;

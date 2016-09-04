@@ -7,11 +7,13 @@
 
 #include "Button.h"
 #include "ProvinceButtonName.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -196,24 +198,28 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 		mouseOriginalPosition.getY(),
 		Color::White,
 		ProvinceButtonTooltips.at(buttonName),
-		FontName::D,
-		this->getGameState()->getTextureManager(),
+		this->getGameState()->getFontManager().getFont(FontName::D),
+		TextAlignment::Left,
 		this->getGameState()->getRenderer()));
+
+	int tooltipWidth, tooltipHeight;
+	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr, 
+		&tooltipWidth, &tooltipHeight);
+
 	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
-		tooltip->getWidth(), tooltip->getHeight());
+		tooltipWidth, tooltipHeight);
 	tooltipBackground.fill(Color(32, 32, 32));
 
 	const int tooltipX = tooltip->getX();
 	const int tooltipY = tooltip->getY();
-	const int width = tooltip->getWidth();
-	const int height = tooltip->getHeight();
-	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
-		(tooltipX + 8) : (tooltipX - width);
-	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
-		tooltipY : (tooltipY - height);
+	const int x = ((tooltipX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
+		(tooltipX + 8) : (tooltipX - tooltipWidth);
+	const int y = ((tooltipY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
+		tooltipY : (tooltipY - tooltipHeight);
 
-	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
-	renderer.drawToOriginal(tooltip->getSurface(), x, y, width, height);
+	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, 
+		tooltipWidth, tooltipHeight + 2);
+	renderer.drawToOriginal(tooltip->getTexture(), x, y, tooltipWidth, tooltipHeight);
 }
 
 void ProvinceMapPanel::render(Renderer &renderer)

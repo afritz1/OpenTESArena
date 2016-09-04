@@ -11,6 +11,7 @@
 #include "../Interface/Panel.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
+#include "../Media/FontManager.h"
 #include "../Media/MusicName.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -46,6 +47,10 @@ GameState::GameState()
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
 		*this->renderer.get()));
+
+	// Initialize the font manager. Fonts (i.e., FONT_A.DAT) are loaded on demand.
+	this->fontManager = std::unique_ptr<FontManager>(new FontManager(
+		this->renderer->getFormat()));
 
 	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
 	// cinematics otherwise load their frames one at a time while playing.
@@ -86,6 +91,11 @@ bool GameState::isRunning() const
 bool GameState::gameDataIsActive() const
 {
 	return this->gameData.get() != nullptr;
+}
+
+FontManager &GameState::getFontManager() const
+{
+	return *this->fontManager.get();
 }
 
 GameData *GameState::getGameData() const

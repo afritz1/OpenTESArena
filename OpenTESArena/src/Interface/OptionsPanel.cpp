@@ -6,10 +6,12 @@
 
 #include "Button.h"
 #include "PauseMenuPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -26,13 +28,14 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 		Int2 center(160, 30);
 		auto color = Color::White;
 		std::string text = "Options";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -122,7 +125,7 @@ void OptionsPanel::render(Renderer &renderer)
 
 
 	// Draw text: title.
-	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

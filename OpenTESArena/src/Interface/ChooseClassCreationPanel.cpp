@@ -7,10 +7,12 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -35,13 +37,14 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text = std::string("How do you wish\nto select your class?");
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -50,13 +53,14 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text = std::string("Generate\n(not implemented)");
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -65,13 +69,14 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text = std::string("Select");
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -207,11 +212,11 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);
 
 	// Draw text: title, generate, select.
-	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->generateTextBox->getSurface(),
+	renderer.drawToOriginal(this->generateTextBox->getTexture(),
 		this->generateTextBox->getX(), this->generateTextBox->getY());
-	renderer.drawToOriginal(this->selectTextBox->getSurface(),
+	renderer.drawToOriginal(this->selectTextBox->getTexture(),
 		this->selectTextBox->getX(), this->selectTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

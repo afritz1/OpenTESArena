@@ -40,17 +40,6 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::MaleMagicShirt, "MRSHIRT.IMG" },
 	{ TextureName::MalePants, "MPANTS.IMG" },
 
-	// Fonts.
-	{ TextureName::FontA, "fonts/font_a" },
-	{ TextureName::FontArena, "fonts/arena_font" },
-	{ TextureName::FontB, "fonts/font_b" },
-	{ TextureName::FontC, "fonts/font_c" },
-	{ TextureName::FontChar, "fonts/char_font" },
-	{ TextureName::FontD, "fonts/font_d" },
-	{ TextureName::FontFour, "fonts/font_4" },
-	{ TextureName::FontS, "fonts/font_s" },
-	{ TextureName::FontTeeny, "fonts/teeny_font" },
-
 	// Interface.
 	{ TextureName::AcceptReject, "ACCPREJT.IMG" },
 	{ TextureName::AcceptCounterReject, "NEGOTBUT.IMG" },

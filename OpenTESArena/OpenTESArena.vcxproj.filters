@@ -128,6 +128,7 @@
     <ClCompile Include="src\Assets\TextAssets.cpp" />
     <ClCompile Include="src\World\Sprite.cpp" />
     <ClCompile Include="src\Assets\COLFile.cpp" />
+    <ClCompile Include="src\Media\FontManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -144,7 +145,6 @@
     <ClInclude Include="src\Media\TextureManager.h" />
     <ClInclude Include="src\Media\TextureName.h" />
     <ClInclude Include="src\Media\MusicFormat.h" />
-    <ClInclude Include="src\Media\FontName.h" />
     <ClInclude Include="src\Game\CardinalDirection.h" />
     <ClInclude Include="src\Entities\Entity.h" />
     <ClInclude Include="src\Entities\EntityType.h" />
@@ -301,6 +301,9 @@
     <ClInclude Include="src\Assets\TextAssets.h" />
     <ClInclude Include="src\World\Sprite.h" />
     <ClInclude Include="src\Assets\COLFile.h" />
+    <ClInclude Include="src\Media\FontManager.h" />
+    <ClInclude Include="src\Media\FontName.h" />
+    <ClInclude Include="src\Interface\TextAlignment.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

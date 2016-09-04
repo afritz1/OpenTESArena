@@ -9,6 +9,7 @@
 #include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
 #include "ListBox.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterClassCategory.h"
@@ -21,6 +22,7 @@
 #include "../Items/Weapon.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -50,14 +52,15 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		int y = 32;
 		Color color(211, 211, 211);
 		std::string text = "Choose thy class...";
-		auto fontName = FontName::C;
+		auto &font = gameState->getFontManager().getFont(FontName::C);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -65,7 +68,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	{
 		int x = 85;
 		int y = 46;
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
 		Color color(85, 44, 20);
 		int maxElements = 6;
 		std::vector<std::string> elements;
@@ -79,11 +82,10 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<ListBox>(new ListBox(
 			x,
 			y,
-			fontName,
+			font,
 			color,
 			maxElements,
 			elements,
-			gameState->getTextureManager(),
 			gameState->getRenderer()));
 	}();
 
@@ -266,22 +268,33 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 		0, 0,
 		Color::White,
 		tooltipText,
-		FontName::D,
-		this->getGameState()->getTextureManager(),
+		this->getGameState()->getFontManager().getFont(FontName::D),
+		TextAlignment::Left,
 		this->getGameState()->getRenderer()));
 
-	const int width = tooltipTextBox->getWidth();
-	const int height = tooltipTextBox->getHeight();
+	int tooltipTextBoxWidth, tooltipTextBoxHeight;
+	SDL_QueryTexture(tooltipTextBox->getTexture(), nullptr, nullptr,
+		&tooltipTextBoxWidth, &tooltipTextBoxHeight);
+
 	const int padding = 3;
 
-	Surface tooltip(width, height + padding);
+	Surface tooltip(tooltipTextBoxWidth, tooltipTextBoxHeight + padding);
 	tooltip.fill(Color(32, 32, 32));
-	tooltipTextBox->blit(tooltip, Int2(0, 1));
-		
+
+	SDL_Surface *tooltipTextBoxSurface = tooltipTextBox->getSurface();
+
+	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 1;
+	rect.w = tooltipTextBoxWidth;
+	rect.h = tooltipTextBoxHeight;
+
+	SDL_BlitSurface(tooltipTextBoxSurface, nullptr, tooltip.getSurface(), &rect);
+
 	SDL_Texture *texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STATIC, tooltip.getWidth(), tooltip.getHeight());
 	SDL_UpdateTexture(texture, nullptr, tooltip.getSurface()->pixels,
-		tooltip.getWidth() * (Surface::DEFAULT_BPP / 8));
+		tooltip.getWidth() * (Renderer::DEFAULT_BPP / 8));
 
 	this->tooltipTextures.insert(std::make_pair(tooltipIndex, texture));
 }
@@ -464,7 +477,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto *background = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterCreation), 
+		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(background);
 
@@ -472,7 +485,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// To do: change the palette to "STARTGAM.MNU" once the palette extraction 
 	// is corrected.
 	auto *listPopUp = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PopUp2), 
+		TextureFile::fromName(TextureName::PopUp2),
 		PaletteFile::fromName(PaletteName::CharSheet));
 
 	int listWidth, listHeight;
@@ -484,11 +497,11 @@ void ChooseClassPanel::render(Renderer &renderer)
 		listHeight);
 
 	// Draw text: title, list.
-	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawToOriginal(this->classesListBox->getSurface(),
 		this->classesListBox->getX(), this->classesListBox->getY());
-	
+
 	// Draw tooltip if over a valid element in the list box.
 	auto mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());

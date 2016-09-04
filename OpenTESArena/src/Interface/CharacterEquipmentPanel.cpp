@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "CharacterPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
@@ -13,6 +14,7 @@
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -31,14 +33,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 		int y = 8;
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getDisplayName();
-		auto fontName = FontName::Arena;
+		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -49,14 +52,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 		Color color(199, 199, 199);
 		std::string text = CharacterRace(gameState->getGameData()->getPlayer()
 			.getRaceName()).toString();
-		auto fontName = FontName::Arena;
+		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -67,14 +71,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 		Color color(199, 199, 199);
 		std::string text = gameState->getGameData()->getPlayer().getCharacterClass()
 			.getDisplayName();
-		auto fontName = FontName::Arena;
+		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -257,11 +262,11 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
+	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawToOriginal(this->playerRaceTextBox->getSurface(),
+	renderer.drawToOriginal(this->playerRaceTextBox->getTexture(),
 		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
-	renderer.drawToOriginal(this->playerClassTextBox->getSurface(),
+	renderer.drawToOriginal(this->playerClassTextBox->getTexture(),
 		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

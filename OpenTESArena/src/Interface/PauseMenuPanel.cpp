@@ -11,6 +11,7 @@
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
@@ -19,6 +20,7 @@
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -37,14 +39,15 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		int y = 154;
 		Color color(215, 121, 8);
 		std::string text = gameState->getGameData()->getPlayer().getFirstName();
-		auto fontName = FontName::Char;
+		auto &font = gameState->getFontManager().getFont(FontName::Char);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -54,13 +57,14 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		Color color(12, 73, 16);
 		std::string text = std::to_string(static_cast<int>(
 			std::round(gameState->getOptions().getMusicVolume() * 100.0)));
-		auto fontName = FontName::Arena;
+		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -70,13 +74,14 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		Color color(12, 73, 16);
 		std::string text = std::to_string(static_cast<int>(
 			std::round(gameState->getOptions().getSoundVolume() * 100.0)));
-		auto fontName = FontName::Arena;
+		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -234,13 +239,14 @@ void PauseMenuPanel::updateMusicText(double volume)
 		Int2 center(127, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(displayedVolume);
-		auto fontName = FontName::Arena;
+		auto &font = this->getGameState()->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			this->getGameState()->getTextureManager(),
+			font,
+			alignment,
 			this->getGameState()->getRenderer()));
 	}();
 }
@@ -255,13 +261,14 @@ void PauseMenuPanel::updateSoundText(double volume)
 		Int2 center(54, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(displayedVolume);
-		auto fontName = FontName::Arena;
+		auto &font = this->getGameState()->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			this->getGameState()->getTextureManager(),
+			font,
+			alignment,
 			this->getGameState()->getRenderer()));
 	}();
 }
@@ -382,11 +389,11 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
 	// Draw text: player's name, music volume, sound volume.
-	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
+	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawToOriginal(this->musicTextBox->getSurface(),
+	renderer.drawToOriginal(this->musicTextBox->getTexture(),
 		this->musicTextBox->getX(), this->musicTextBox->getY());
-	renderer.drawToOriginal(this->soundTextBox->getSurface(),
+	renderer.drawToOriginal(this->soundTextBox->getTexture(),
 		this->soundTextBox->getX(), this->soundTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

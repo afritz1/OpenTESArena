@@ -29,6 +29,7 @@ private:
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName; // Null until a province is clicked.
 	std::string name;
+	bool initialTextBoxVisible;
 
 	void drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer);
 protected:

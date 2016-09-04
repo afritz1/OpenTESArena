@@ -191,7 +191,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 
 		// Create an unoptimized SDL surface from the IMG.
 		SDL_Surface *unoptSurface = SDL_CreateRGBSurfaceFrom(
-			img.getPixels(), img.getWidth(), img.getHeight(), Surface::DEFAULT_BPP,
+			img.getPixels(), img.getWidth(), img.getHeight(), Renderer::DEFAULT_BPP,
 			img.getWidth() * sizeof(uint32_t),
 			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
@@ -302,7 +302,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		{
 			uint32_t *pixels = setFile.getPixels(i);
 			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, Surface::DEFAULT_BPP,
+				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, Renderer::DEFAULT_BPP,
 				sizeof(*pixels) * SETFile::CHUNK_WIDTH, 0, 0, 0, 0);
 
 			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
@@ -323,7 +323,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		{
 			uint32_t *pixels = rciFile.getPixels(i);
 			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT, Surface::DEFAULT_BPP,
+				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT, Renderer::DEFAULT_BPP,
 				sizeof(*pixels) * RCIFile::FRAME_WIDTH, 0, 0, 0, 0);
 
 			SDL_Surface *optSurface = SDL_ConvertSurface(surface,

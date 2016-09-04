@@ -8,11 +8,13 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -38,13 +40,14 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 90);
 		Color color(48, 12, 12);
 		std::string text = "What will be thy name,\n" + charClass.getDisplayName() + "?";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -53,13 +56,14 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 112);
 		Color color(48, 12, 12);
 		std::string text = "";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -216,8 +220,8 @@ void ChooseNamePanel::handleEvents(bool &running)
 					Int2(Renderer::ORIGINAL_WIDTH / 2, 112),
 					Color(48, 12, 12),
 					this->name,
-					FontName::A,
-					this->getGameState()->getTextureManager(),
+					this->getGameState()->getFontManager().getFont(FontName::A),
+					TextAlignment::Center,
 					this->getGameState()->getRenderer()));
 			}();
 		}
@@ -271,9 +275,9 @@ void ChooseNamePanel::render(Renderer &renderer)
 		parchmentHeight);
 	
 	// Draw text: title, name.
-	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->nameTextBox->getSurface(),
+	renderer.drawToOriginal(this->nameTextBox->getTexture(),
 		this->nameTextBox->getX(), this->nameTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

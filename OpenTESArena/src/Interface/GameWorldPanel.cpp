@@ -9,6 +9,7 @@
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Entities/Player.h"
@@ -21,6 +22,7 @@
 #include "../Math/Rect.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -44,14 +46,15 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		int y = 154;
 		Color color(215, 121, 8);
 		std::string text = gameState->getGameData()->getPlayer().getFirstName();
-		auto fontName = FontName::Char;
+		auto &font = gameState->getFontManager().getFont(FontName::Char);
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
 			y,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -336,7 +339,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
 	// Draw text: player name.
-	renderer.drawToOriginal(this->playerNameTextBox->getSurface(),
+	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

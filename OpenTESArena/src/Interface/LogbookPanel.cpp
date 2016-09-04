@@ -6,10 +6,12 @@
 
 #include "Button.h"
 #include "GameWorldPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -26,13 +28,14 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
 		Color color(255, 207, 12);
 		std::string text = "Your logbook is empty.";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -128,7 +131,7 @@ void LogbookPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(logbookBackground);
 
 	// Draw text: title.
-	renderer.drawToOriginal(this->titleTextBox->getSurface(),
+	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

@@ -14,10 +14,10 @@
 #include "../Media/TextureName.h"
 #include "../Utilities/Debug.h"
 
-const int Renderer::DEFAULT_COLOR_BITS_PER_PIXEL = 32;
 const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
+const int Renderer::DEFAULT_BPP = 32;
 
 Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
 {

@@ -5,24 +5,24 @@
 
 #include "ListBox.h"
 
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/String.h"
 
-ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
-	const std::vector<std::string> &elements, TextureManager &textureManager,
-	Renderer &renderer)
-	: Surface(x, y, 1, 1), textureManagerRef(textureManager), rendererRef(renderer)
+ListBox::ListBox(int x, int y, const Font &font, const Color &textColor, int maxDisplayed,
+	const std::vector<std::string> &elements, Renderer &renderer)
+	: Surface(x, y, 1, 1), fontRef(font), rendererRef(renderer)
 {
 	assert(maxDisplayed > 0);
 
 	this->elements = elements;
-	this->fontName = fontName;
 	this->textColor = std::unique_ptr<Color>(new Color(textColor));
 	this->maxDisplayed = maxDisplayed;
 	this->scrollIndex = 0;
@@ -34,7 +34,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 		// Remove any new lines.
 		auto trimmedElement = String::trimLines(element);
 		std::unique_ptr<TextBox> textBox(new TextBox(
-			0, 0, textColor, trimmedElement, fontName, textureManager, renderer));
+			0, 0, textColor, trimmedElement, font, TextAlignment::Left, renderer));
 		textBoxes.push_back(std::move(textBox));
 	}
 
@@ -45,7 +45,7 @@ ListBox::ListBox(int x, int y, FontName fontName, const Color &textColor, int ma
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP,
 		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	this->optimize(renderer.getFormat());
 
@@ -86,7 +86,7 @@ int ListBox::getClickedIndex(const Int2 &point) const
 	assert(point.getY() >= this->getY());
 	assert(point.getY() < (this->getY() + this->getHeight()));
 
-	const int lineHeight = Font(this->fontName).getCellDimensions().getY();
+	const int lineHeight = this->fontRef.getCharacterHeight();
 
 	// Only the Y component really matters here.
 	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
@@ -102,9 +102,12 @@ int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes)
 
 	for (const auto &textBox : textBoxes)
 	{
-		if (textBox->getWidth() > maxWidth)
+		int textBoxWidth;
+		SDL_QueryTexture(textBox->getTexture(), nullptr, nullptr, &textBoxWidth, nullptr);
+
+		if (textBoxWidth > maxWidth)
 		{
-			maxWidth = textBox->getWidth();
+			maxWidth = textBoxWidth;
 		}
 	}
 
@@ -113,7 +116,7 @@ int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes)
 
 int ListBox::getTotalHeight() const
 {
-	int totalHeight = Font(this->fontName).getCellDimensions().getY() * this->maxDisplayed;
+	int totalHeight = this->fontRef.getCharacterHeight() * this->maxDisplayed;
 	return totalHeight;
 }
 
@@ -130,10 +133,18 @@ void ListBox::updateDisplayText()
 	{
 		const auto &element = this->elements.at(i);
 		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, *this->textColor.get(),
-			element, this->fontName, this->textureManagerRef, this->rendererRef));
+			element, this->fontRef, TextAlignment::Left, this->rendererRef));
 
 		// Blit the text box onto the parent surface at the correct height offset.
-		textBox->blit(*this, Int2(0, (i - this->scrollIndex) * textBox->getHeight()));
+		SDL_Surface *textBoxSurface = textBox->getSurface();
+
+		SDL_Rect rect;
+		rect.x = 0;
+		rect.y = (i - this->scrollIndex) * textBoxSurface->h;
+		rect.w = textBoxSurface->w;
+		rect.h = textBoxSurface->h;
+
+		SDL_BlitSurface(textBoxSurface, nullptr, this->getSurface(), &rect);
 	}
 }
 

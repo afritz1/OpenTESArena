@@ -7,6 +7,7 @@
 #include "Button.h"
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
@@ -15,6 +16,7 @@
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -42,13 +44,14 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		Color color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -78,6 +81,7 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 	this->name = name;
 	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
 	this->raceName = nullptr;
+	this->initialTextBoxVisible = true;
 }
 
 ChooseRacePanel::~ChooseRacePanel()
@@ -123,7 +127,8 @@ void ChooseRacePanel::handleEvents(bool &running)
 			(e.key.keysym.sym == SDLK_SPACE);
 
 		// Interact with the pop-up text box if visible.
-		if (this->initialTextBox->isVisible())
+		// To do: find a better way to do this (via a queue of pop-ups?).
+		if (this->initialTextBoxVisible)
 		{
 			bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
 				spacePressed || escapePressed;
@@ -131,7 +136,7 @@ void ChooseRacePanel::handleEvents(bool &running)
 			if (hideInitialPopUp)
 			{
 				// Hide the initial text box.
-				this->initialTextBox->setVisibility(false);
+				this->initialTextBoxVisible = false;
 			}
 
 			continue;
@@ -194,24 +199,28 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &r
 		mouseOriginalPosition.getY(),
 		Color::White,
 		"Land of the " + raceName,
-		FontName::D,
-		this->getGameState()->getTextureManager(),
+		this->getGameState()->getFontManager().getFont(FontName::D),
+		TextAlignment::Left,
 		this->getGameState()->getRenderer()));
+
+	int tooltipWidth, tooltipHeight;
+	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr,
+		&tooltipWidth, &tooltipHeight);
+
 	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
-		tooltip->getWidth(), tooltip->getHeight());
+		tooltipWidth, tooltipHeight);
 	tooltipBackground.fill(Color(32, 32, 32));
 
 	const int tooltipX = tooltip->getX();
 	const int tooltipY = tooltip->getY();
-	const int width = tooltip->getWidth();
-	const int height = tooltip->getHeight();
-	const int x = ((tooltipX + 8 + width) < Renderer::ORIGINAL_WIDTH) ?
-		(tooltipX + 8) : (tooltipX - width);
-	const int y = ((tooltipY + height) < Renderer::ORIGINAL_HEIGHT) ?
-		tooltipY : (tooltipY - height);
+	const int x = ((tooltipX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
+		(tooltipX + 8) : (tooltipX - tooltipWidth);
+	const int y = ((tooltipY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
+		tooltipY : (tooltipY - tooltipHeight);
 
-	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, width, height + 2);
-	renderer.drawToOriginal(tooltip->getSurface(), x, y, width, height);
+	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, 
+		tooltipWidth, tooltipHeight + 2);
+	renderer.drawToOriginal(tooltip->getSurface(), x, y, tooltipWidth, tooltipHeight);
 }
 
 void ChooseRacePanel::render(Renderer &renderer)
@@ -234,7 +243,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Draw visible parchments and text.
 	this->parchment->setTransparentColor(Color::Magenta);
-	if (this->initialTextBox->isVisible())
+	if (this->initialTextBoxVisible)
 	{
 		const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * 1.35);
 		const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * 1.65);
@@ -245,12 +254,12 @@ void ChooseRacePanel::render(Renderer &renderer)
 			parchmentWidth,
 			parchmentHeight);
 
-		renderer.drawToOriginal(this->initialTextBox->getSurface(),
+		renderer.drawToOriginal(this->initialTextBox->getTexture(),
 			this->initialTextBox->getX(), this->initialTextBox->getY());
 	}
 
 	// Draw hovered province tooltip.
-	if (!this->initialTextBox->isVisible())
+	if (!this->initialTextBoxVisible)
 	{
 		auto mouseOriginalPosition = this->getGameState()->getRenderer()
 			.nativePointToOriginal(this->getMousePosition());

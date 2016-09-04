@@ -7,10 +7,12 @@
 #include "Button.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -28,13 +30,14 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 170);
 		auto color = Color::White;
 		std::string text = "Under construction!";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -128,7 +131,7 @@ void LoadGamePanel::render(Renderer &renderer)
 
 	// Draw temp text. The load game design is unclear at this point, but it should
 	// have up/down arrows and buttons.
-	renderer.drawToOriginal(this->underConstructionTextBox->getSurface(),
+	renderer.drawToOriginal(this->underConstructionTextBox->getTexture(),
 		this->underConstructionTextBox->getX(), this->underConstructionTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

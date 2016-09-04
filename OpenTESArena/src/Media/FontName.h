@@ -1,8 +1,11 @@
 #ifndef FONT_NAME_H
 #define FONT_NAME_H
 
-// A unique identifier for each font. These font surfaces are stored in images
-// that are indexed by a Font object.
+// A unique identifier for each font. 
+
+// Each character in a font is stored in an image. Each font is contained in the 
+// font manager.
+
 enum class FontName
 {
 	A,

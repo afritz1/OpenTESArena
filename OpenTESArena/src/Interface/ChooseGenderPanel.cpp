@@ -7,12 +7,14 @@
 #include "Button.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
+#include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -38,13 +40,14 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text = "Choose thy gender...";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -53,13 +56,14 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text = "Male";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -68,13 +72,14 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text = "Female";
-		auto fontName = FontName::A;
+		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
 			text,
-			fontName,
-			gameState->getTextureManager(),
+			font,
+			alignment,
 			gameState->getRenderer()));
 	}();
 
@@ -212,11 +217,11 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);
 
 	// Draw text: title, male, and female.
-	renderer.drawToOriginal(this->genderTextBox->getSurface(),
+	renderer.drawToOriginal(this->genderTextBox->getTexture(),
 		this->genderTextBox->getX(), this->genderTextBox->getY());
-	renderer.drawToOriginal(this->maleTextBox->getSurface(),
+	renderer.drawToOriginal(this->maleTextBox->getTexture(),
 		this->maleTextBox->getX(), this->maleTextBox->getY());
-	renderer.drawToOriginal(this->femaleTextBox->getSurface(),
+	renderer.drawToOriginal(this->femaleTextBox->getTexture(),
 		this->femaleTextBox->getX(), this->femaleTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.

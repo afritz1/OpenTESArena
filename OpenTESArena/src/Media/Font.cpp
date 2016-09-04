@@ -1,207 +1,109 @@
 #include <cassert>
 #include <map>
 
+#include "SDL.h"
+
 #include "Font.h"
 
 #include "FontName.h"
-#include "TextureName.h"
-#include "../Math/Int2.h"
+#include "../Assets/FontFile.h"
+#include "../Rendering/Renderer.h"
+#include "../Utilities/Debug.h"
 
-// This gives the logical location of each character, independent of font resolution.
-// Multiplication by character width and height will be needed afterwards to get the
-// size and location of the actual letter in the font surface.
-const std::map<unsigned char, Int2> FontCharacterCells =
+namespace
 {
-	{ '!', Int2(0, 0) },
-	{ '\"', Int2(1, 0) },
-	{ '#', Int2(2, 0) },
-	{ '$', Int2(3, 0) },
-	{ '%', Int2(4, 0) },
-	{ '&', Int2(5, 0) },
-	{ '\'', Int2(6, 0) },
-	{ '(', Int2(7, 0) },
-	{ ')', Int2(8, 0) },
-	{ '*', Int2(9, 0) },
-	{ '+', Int2(10, 0) },
-	{ ',', Int2(11, 0) },
-	{ '-', Int2(12, 0) },
-	{ '.', Int2(13, 0) },
-	{ '/', Int2(14, 0) },
-	{ '0', Int2(15, 0) },
-	{ '1', Int2(16, 0) },
-	{ '2', Int2(17, 0) },
-	{ '3', Int2(18, 0) },
-	{ '4', Int2(19, 0) },
-	{ '5', Int2(20, 0) },
-	{ '6', Int2(21, 0) },
-	{ '7', Int2(22, 0) },
-	{ '8', Int2(23, 0) },
-	{ '9', Int2(24, 0) },
-	{ ':', Int2(25, 0) },
-	{ ';', Int2(26, 0) },
-	{ '<', Int2(27, 0) },
-	{ '=', Int2(28, 0) },
-	{ '>', Int2(29, 0) },
-	{ '?', Int2(30, 0) },
-	{ '@', Int2(31, 0) },
-	{ 'A', Int2(0, 1) },
-	{ 'B', Int2(1, 1) },
-	{ 'C', Int2(2, 1) },
-	{ 'D', Int2(3, 1) },
-	{ 'E', Int2(4, 1) },
-	{ 'F', Int2(5, 1) },
-	{ 'G', Int2(6, 1) },
-	{ 'H', Int2(7, 1) },
-	{ 'I', Int2(8, 1) },
-	{ 'J', Int2(9, 1) },
-	{ 'K', Int2(10, 1) },
-	{ 'L', Int2(11, 1) },
-	{ 'M', Int2(12, 1) },
-	{ 'N', Int2(13, 1) },
-	{ 'O', Int2(14, 1) },
-	{ 'P', Int2(15, 1) },
-	{ 'Q', Int2(16, 1) },
-	{ 'R', Int2(17, 1) },
-	{ 'S', Int2(18, 1) },
-	{ 'T', Int2(19, 1) },
-	{ 'U', Int2(20, 1) },
-	{ 'V', Int2(21, 1) },
-	{ 'W', Int2(22, 1) },
-	{ 'X', Int2(23, 1) },
-	{ 'Y', Int2(24, 1) },
-	{ 'Z', Int2(25, 1) },
-	{ '[', Int2(26, 1) },
-	{ '\\', Int2(27, 1) },
-	{ ']', Int2(28, 1) },
-	{ '^', Int2(29, 1) },
-	{ '_', Int2(30, 1) },
-	{ 'a', Int2(0, 2) },
-	{ 'b', Int2(1, 2) },
-	{ 'c', Int2(2, 2) },
-	{ 'd', Int2(3, 2) },
-	{ 'e', Int2(4, 2) },
-	{ 'f', Int2(5, 2) },
-	{ 'g', Int2(6, 2) },
-	{ 'h', Int2(7, 2) },
-	{ 'i', Int2(8, 2) },
-	{ 'j', Int2(9, 2) },
-	{ 'k', Int2(10, 2) },
-	{ 'l', Int2(11, 2) },
-	{ 'm', Int2(12, 2) },
-	{ 'n', Int2(13, 2) },
-	{ 'o', Int2(14, 2) },
-	{ 'p', Int2(15, 2) },
-	{ 'q', Int2(16, 2) },
-	{ 'r', Int2(17, 2) },
-	{ 's', Int2(18, 2) },
-	{ 't', Int2(19, 2) },
-	{ 'u', Int2(20, 2) },
-	{ 'v', Int2(21, 2) },
-	{ 'w', Int2(22, 2) },
-	{ 'x', Int2(23, 2) },
-	{ 'y', Int2(24, 2) },
-	{ 'z', Int2(25, 2) },
-	{ '{', Int2(26, 2) },
-	{ '|', Int2(27, 2) },
-	{ '}', Int2(28, 2) },
-	{ ' ', Int2(30, 2) }
-};
+	const std::map<FontName, std::string> FontFilenames =
+	{
+		{ FontName::A, "FONT_A.DAT" },
+		{ FontName::Arena, "ARENAFNT.DAT" },
+		{ FontName::B, "FONT_B.DAT" },
+		{ FontName::C, "FONT_C.DAT" },
+		{ FontName::Char, "CHARFNT.DAT" },
+		{ FontName::D, "FONT_D.DAT" },
+		{ FontName::Four, "FONT4.DAT" },
+		{ FontName::S, "FONT_S.DAT" },
+		{ FontName::Teeny, "TEENYFNT.DAT" }
+	};
+}
 
-const std::map<FontName, Int2> FontCellDimensions =
+Font::Font(FontName fontName, const SDL_PixelFormat *format)
+	: characters()
 {
-	{ FontName::A, Int2(16, 11) },
-	{ FontName::Arena, Int2(16, 9) },
-	{ FontName::B, Int2(16, 6) },
-	{ FontName::C, Int2(16, 14) },
-	{ FontName::Char, Int2(16, 8) },
-	{ FontName::D, Int2(16, 7) },
-	{ FontName::Four, Int2(16, 7) },
-	{ FontName::S, Int2(16, 5) },
-	{ FontName::Teeny, Int2(16, 8) }
-};
+	// Load the font file for this font name.
+	const std::string &filename = FontFilenames.at(fontName);
+	FontFile fontFile(filename);
 
-// Number of columns of whitespace on the right of each letter.
-const std::map<FontName, int> FontRightPaddings =
-{
-	{ FontName::A, 1 },
-	{ FontName::Arena, 1 },
-	{ FontName::B, 1 },
-	{ FontName::C, 1 },
-	{ FontName::Char, 1 },
-	{ FontName::D, 1 },
-	{ FontName::Four, 1 },
-	{ FontName::S, 1 },
-	{ FontName::Teeny, 1 }
-};
+	const int elementHeight = fontFile.getHeight();
+	this->characterHeight = elementHeight;
 
-// Number of columns of whitespace a space is.
-const std::map<FontName, int> FontSpaceWidths =
-{
-	{ FontName::A, 5 },
-	{ FontName::Arena, 3 },
-	{ FontName::B, 3 },
-	{ FontName::C, 4 },
-	{ FontName::Char, 3 },
-	{ FontName::D, 3 },
-	{ FontName::Four, 3 },
-	{ FontName::S, 3 },
-	{ FontName::Teeny, 2 }
-};
+	// There are 95 characters, plus space.
+	this->characters.resize(96);
 
-const std::map<FontName, TextureName> FontTextureNames =
-{
-	{ FontName::A, TextureName::FontA },
-	{ FontName::Arena, TextureName::FontArena },
-	{ FontName::B, TextureName::FontB },
-	{ FontName::C, TextureName::FontC },
-	{ FontName::Char, TextureName::FontChar },
-	{ FontName::D, TextureName::FontD },
-	{ FontName::Four, TextureName::FontFour },
-	{ FontName::S, TextureName::FontS },
-	{ FontName::Teeny, TextureName::FontTeeny }
-};
+	// Create an SDL surface for each character image. Start with space (ASCII 32), 
+	// and end with delete (ASCII 127).
+	for (int i = 0; i < 96; ++i)
+	{
+		const char c = i + 32;
+		const int elementWidth = fontFile.getWidth(c);
+		const uint32_t *elementPixels = fontFile.getPixels(c);
 
-Font::Font(FontName fontName)
+		SDL_Surface *unOptSurface = SDL_CreateRGBSurface(0, elementWidth, elementHeight,
+			Renderer::DEFAULT_BPP, 0, 0, 0, 0);
+		SDL_Surface *optSurface = SDL_ConvertSurface(unOptSurface,
+			format, unOptSurface->flags);
+		SDL_FreeSurface(unOptSurface);
+
+		uint32_t *pixels = static_cast<uint32_t*>(optSurface->pixels);
+		const int pixelCount = optSurface->w * optSurface->h;
+
+		for (int index = 0; index < pixelCount; ++index)
+		{
+			pixels[index] = elementPixels[index];
+		}
+
+		this->characters.at(i) = optSurface;
+	}
+}
+
+Font::Font(Font &&font)
 {
-	this->fontName = fontName;
+	this->characters = std::move(font.characters);
+	this->characterHeight = font.characterHeight;
 }
 
 Font::~Font()
 {
-
+	for (auto *surface : this->characters)
+	{
+		SDL_FreeSurface(surface);
+	}
 }
 
-Int2 Font::getCellPosition(unsigned char c)
+Font &Font::operator=(Font &&font)
 {
-	auto cell = FontCharacterCells.at(c);
-	return cell;
+	this->characters = std::move(font.characters);
+	this->characterHeight = font.characterHeight;
+
+	return *this;
 }
 
-FontName Font::getFontName() const
+const std::string &Font::fromName(FontName fontName)
 {
-	return this->fontName;
+	const std::string &filename = FontFilenames.at(fontName);
+	return filename;
 }
 
-TextureName Font::getFontTextureName() const
+int Font::getCharacterHeight() const
 {
-	auto textureName = FontTextureNames.at(this->getFontName());
-	return textureName;
+	return this->characterHeight;
 }
 
-Int2 Font::getCellDimensions() const
+SDL_Surface *Font::getSurface(char c) const
 {
-	auto dimensions = FontCellDimensions.at(this->getFontName());
-	return dimensions;
-}
+	Debug::check((c >= 32) && (c <= 127), "Font", "Character value \"" +
+		std::to_string(c) + "\" out of range (must be ASCII 32-127).");
 
-int Font::getRightPadding() const
-{
-	int padding = FontRightPaddings.at(this->getFontName());
-	return padding;
-}
-
-int Font::getSpaceWidth() const
-{
-	int width = FontSpaceWidths.at(this->getFontName());
-	return width;
+	// Space (ASCII 32) is at index 0.
+	SDL_Surface *surface = this->characters.at(c - 32);
+	return surface;
 }

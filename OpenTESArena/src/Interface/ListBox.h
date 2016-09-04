@@ -10,10 +10,10 @@
 // for the update display text method.
 
 class Color;
+class Font;
 class Int2;
 class Renderer;
 class TextBox;
-class TextureManager;
 
 enum class FontName;
 
@@ -21,10 +21,9 @@ class ListBox : public Surface
 {
 private:
 	std::vector<std::string> elements;
-	std::unique_ptr<Color> textColor;	
-	TextureManager &textureManagerRef;
+	std::unique_ptr<Color> textColor;
 	Renderer &rendererRef;
-	FontName fontName;
+	const Font &fontRef;
 	int scrollIndex, maxDisplayed;
 
 	int getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const;
@@ -32,9 +31,8 @@ private:
 	void updateDisplayText();
 public:
 	// No "center" constructor, because a list box is intended to be left-aligned.
-	ListBox(int x, int y, FontName fontName, const Color &textColor, int maxDisplayed,
-		const std::vector<std::string> &elements, TextureManager &textureManager,
-		Renderer &renderer);
+	ListBox(int x, int y, const Font &font, const Color &textColor, int maxDisplayed,
+		const std::vector<std::string> &elements, Renderer &renderer);
 	virtual ~ListBox();
 
 	// Index of the top-most displayed element.

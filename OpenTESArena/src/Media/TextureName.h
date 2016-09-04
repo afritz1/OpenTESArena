@@ -43,17 +43,6 @@ enum class TextureName
 	MaleMagicShirt,
 	MalePants,
 
-	// Fonts.
-	FontA,
-	FontArena,
-	FontB,
-	FontC,
-	FontChar,
-	FontD,
-	FontFour,
-	FontS,
-	FontTeeny,
-
 	// Interface.
 	AcceptReject, // Accept/Reject for bartering.
 	AcceptCounterReject, // Accept/Counter/Reject for bartering.

@@ -28,8 +28,6 @@ public:
 	Surface(const Surface &surface);
 	virtual ~Surface();
 
-	static const int DEFAULT_BPP;
-
 	static Surface randomNoise(int width, int height, Random &random);
 
 	int getX() const;

@@ -9,16 +9,15 @@
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
-
-const int Surface::DEFAULT_BPP = 32;
 
 Surface::Surface(int x, int y, int width, int height)
 {
 	assert(width > 0);
 	assert(height > 0);
 
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP, 0, 0, 0, 0);
+	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP, 0, 0, 0, 0);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, int, int).");
 
@@ -32,13 +31,13 @@ Surface::Surface(int width, int height)
 Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
 	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
-		Surface::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
+		Renderer::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
 		surface->format->Bmask, surface->format->Amask);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, const SDL_Surface*).");
 
 	std::memcpy(this->surface->pixels, surface->pixels,
-		surface->w * surface->h * (Surface::DEFAULT_BPP / 8));
+		surface->w * surface->h * (Renderer::DEFAULT_BPP / 8));
 
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
@@ -48,7 +47,7 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 {
 	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
 	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Surface::DEFAULT_BPP,
+	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP,
 		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
 		surface->format->Amask);
 	Debug::check(this->surface != nullptr, "Surface",

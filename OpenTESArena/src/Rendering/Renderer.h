@@ -23,7 +23,6 @@ struct SDL_Window;
 class Renderer
 {
 private:
-	static const int DEFAULT_COLOR_BITS_PER_PIXEL;
 	static const std::string DEFAULT_RENDER_SCALE_QUALITY;
 
 	SDL_Window *window;
@@ -44,6 +43,9 @@ public:
 	// Original screen dimensions.
 	static const int ORIGINAL_WIDTH;
 	static const int ORIGINAL_HEIGHT;
+
+	// Default bits per pixel.
+	static const int DEFAULT_BPP;
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;

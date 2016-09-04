@@ -1,19 +1,30 @@
 #ifndef FONT_FILE_H
 #define FONT_FILE_H
 
+#include <cstdint>
+#include <memory>
 #include <string>
+#include <vector>
 
-// This class will load .DAT files containing font information, and return them 
-// each in the form of an image. Each cell in the image would hold a particular 
-// character, symbol, or empty space.
-
-// This will eventually replace the "Font" class in the Media folder.
+// This class loads a .DAT file containing font information. Each character is put
+// into its own black and white image. White pixels are part of a character, while
+// black pixels are part of the background (transparent).
 
 class FontFile
 {
+private:
+	// One entry per character from ASCII 32 to 127 inclusive, with space (ASCII 32)
+	// at index 0. Each pair has the width of its letter in pixels with its black 
+	// and white pixel data.
+	std::vector<std::pair<int, std::unique_ptr<uint32_t>>> characters;
+	int characterHeight;
 public:
 	FontFile(const std::string &filename);
 	~FontFile();
+
+	int getWidth(char c) const;
+	int getHeight() const;
+	uint32_t *getPixels(char c) const;
 };
 
 #endif
