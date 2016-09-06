@@ -1,11 +1,11 @@
 #ifndef TEXT_MAP_H
 #define TEXT_MAP_H
 
-#include <map>
 #include <string>
+#include <unordered_map>
 
 // A KvpTextMap reads in a key-value pair file that uses the "key=value" syntax.
-// The parser ignores lines where the first column is '#'.
+// The parser ignores lines where the first character is '#'.
 
 // Pairs can be listed in the file in any order.
 
@@ -13,7 +13,7 @@ class KvpTextMap
 {
 	static const char COMMENT;
 
-	std::map<std::string, std::string> pairs;
+	std::unordered_map<std::string, std::string> pairs;
 
 	// Use this method to access the pairs, since it does error checking.
 	const std::string &getValue(const std::string &key) const;
