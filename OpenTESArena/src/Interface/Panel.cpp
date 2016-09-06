@@ -19,6 +19,8 @@
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 
+#include "components/vfs/manager.hpp"
+
 Panel::Panel(GameState *gameState)
 {
 	this->gameStatePtr = gameState;
@@ -92,13 +94,39 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 			changeToQuote));
 		gameState->setPanel(std::move(titlePanel));
 	};
+	
+	// Decide how the game starts up. If only the floppy disk data is available,
+	// then go to the Arena splash screen. Otherwise, load the intro book video.	
+	auto makeIntroBookPanel = [changeToTitle, gameState]()
+	{
+		std::unique_ptr<Panel> introBook(new CinematicPanel(
+			gameState,
+			PaletteFile::fromName(PaletteName::Default),
+			TextureSequenceName::IntroBook,
+			0.142 /* roughly 7fps */,
+			changeToTitle));
+		return std::move(introBook);
+	};
 
-	return std::unique_ptr<Panel>(new CinematicPanel(
-		gameState,
-		PaletteFile::fromName(PaletteName::Default),
-		TextureSequenceName::IntroBook, 
-		0.142 /* roughly 7fps */,
-		changeToTitle));
+	auto makeIntroTitlePanel = [changeToQuote, gameState]()
+	{
+		std::unique_ptr<Panel> titlePanel(new ImagePanel(
+			gameState,
+			PaletteFile::fromName(PaletteName::BuiltIn),
+			TextureFile::fromName(TextureName::IntroTitle),
+			5.0,
+			changeToQuote));
+		return std::move(titlePanel);
+	};
+
+	// Just skip the intro book check for now.
+	return makeIntroTitlePanel();
+
+	// Check if "INTRO.FLC" is available (only available in CD version).
+	//VFS::IStreamPtr stream = VFS::Manager::get().open("INTRO.FLC");
+
+	// Once all texture sequences are available as FLCFile loads, uncomment this.
+	//return (stream != nullptr) ? makeIntroBookPanel() : makeIntroTitlePanel();
 }
 
 GameState *Panel::getGameState() const
