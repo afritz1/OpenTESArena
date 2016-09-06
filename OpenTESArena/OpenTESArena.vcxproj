@@ -139,6 +139,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Utilities\Bytes.cpp" />
     <ClCompile Include="src\Media\FontManager.cpp" />
     <ClCompile Include="src\Assets\COLFile.cpp" />
     <ClCompile Include="src\World\Sprite.cpp" />
@@ -269,6 +270,7 @@
     <ClCompile Include="src\Assets\TextAssets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Utilities\Bytes.h" />
     <ClInclude Include="src\Interface\TextAlignment.h" />
     <ClInclude Include="src\Media\FontManager.h" />
     <ClInclude Include="src\Assets\COLFile.h" />

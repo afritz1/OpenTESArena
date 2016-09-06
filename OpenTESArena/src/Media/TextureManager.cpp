@@ -11,6 +11,7 @@
 #include "TextureFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/Compression.h"
+#include "../Assets/FLCFile.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
@@ -288,10 +289,32 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
+	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isSET = extension.compare(".SET") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
 
-	if (isSET)
+	if (isFLC)
+	{
+		// Load the FLC file.
+		FLCFile flcFile(filename);
+
+		// Create an SDL_Surface for each frame in the FLC.
+		const int imageCount = flcFile.getFrameCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			uint32_t *pixels = flcFile.getPixels(i);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
+				flcFile.getWidth(), flcFile.getHeight(), Renderer::DEFAULT_BPP,
+				sizeof(*pixels) * flcFile.getWidth(), 0, 0, 0, 0);
+
+			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
+				this->renderer.getFormat(), 0);
+			SDL_FreeSurface(surface);
+
+			surfaceSet.push_back(optSurface);
+		}
+	}
+	else if (isSET)
 	{
 		// Load the SET file.
 		SETFile setFile(filename, palette);
@@ -381,10 +404,31 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
+	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isSET = extension.compare(".SET") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
 
-	if (isSET)
+	if (isFLC)
+	{
+		// Load the FLC file.
+		FLCFile flcFile(filename);
+
+		// Create an SDL_Texture for each frame in the FLC.
+		const int imageCount = flcFile.getFrameCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			SDL_Texture *texture = this->renderer.createTexture(
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				flcFile.getWidth(), flcFile.getHeight());
+
+			const uint32_t *pixels = flcFile.getPixels(i);
+			SDL_UpdateTexture(texture, nullptr, pixels,
+				flcFile.getWidth() * sizeof(*pixels));
+
+			textureSet.push_back(texture);
+		}
+	}
+	else if (isSET)
 	{
 		// Load the SET file.
 		SETFile setFile(filename, palette);

@@ -2,7 +2,7 @@
 
 #include "COLFile.h"
 
-#include "Compression.h"
+#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -31,8 +31,8 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 	}
 	if (!failed)
 	{
-		uint32_t len = Compression::getLE32(rawpal.data());
-		uint32_t ver = Compression::getLE32(rawpal.data() + 4);
+		uint32_t len = Bytes::getLE32(rawpal.data());
+		uint32_t ver = Bytes::getLE32(rawpal.data() + 4);
 		if (len != 776)
 		{
 			Debug::mention("COLFile", "Invalid length for palette \"" +

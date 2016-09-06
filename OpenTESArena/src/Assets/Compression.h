@@ -10,8 +10,7 @@
 #include "../Utilities/Debug.h"
 
 // There are a few different methods used for compressing textures in Arena.
-// The decompression algorithms, as well as some miscellaneous utility functions, 
-// will be kept in this class.
+// The reusable decompression algorithms will be kept in this class.
 
 class Compression
 {
@@ -19,9 +18,6 @@ class Compression
 	Compression(const Compression&) = delete;
 	~Compression() = delete;
 public:
-	static uint16_t getLE16(const uint8_t *buf);
-	static uint32_t getLE32(const uint8_t *buf);
-
 	template <typename T>
 	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
 	{

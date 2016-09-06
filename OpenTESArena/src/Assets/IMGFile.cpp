@@ -5,6 +5,7 @@
 
 #include "Compression.h"
 #include "../Math/Int2.h"
+#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"
@@ -56,12 +57,12 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		Debug::check(stream->gcount() == static_cast<std::streamsize>(imghdr.size()),
 			"IMGFile", "Could not read \"" + filename + "\" header.");
 
-		xoff = Compression::getLE16(imghdr.data());
-		yoff = Compression::getLE16(imghdr.data() + 2);
-		width = Compression::getLE16(imghdr.data() + 4);
-		height = Compression::getLE16(imghdr.data() + 6);
-		flags = Compression::getLE16(imghdr.data() + 8);
-		srclen = Compression::getLE16(imghdr.data() + 10);
+		xoff = Bytes::getLE16(imghdr.data());
+		yoff = Bytes::getLE16(imghdr.data() + 2);
+		width = Bytes::getLE16(imghdr.data() + 4);
+		height = Bytes::getLE16(imghdr.data() + 6);
+		flags = Bytes::getLE16(imghdr.data() + 8);
+		srclen = Bytes::getLE16(imghdr.data() + 10);
 	}
 
 	std::vector<uint8_t> srcdata(srclen);
@@ -154,7 +155,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	}
 	else if ((flags & 0x00FF) == 0x0008)
 	{
-		uint16_t decomplen = Compression::getLE16(srcdata.data());
+		uint16_t decomplen = Bytes::getLE16(srcdata.data());
 		assert(decomplen == (width * height));
 
 		// Type 08 compression.
@@ -234,12 +235,12 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	Debug::check(stream->gcount() == static_cast<std::streamsize>(imgHeader.size()),
 		"IMGFile", "Could not read \"" + filename + "\" header.");
 
-	xoff = Compression::getLE16(imgHeader.data());
-	yoff = Compression::getLE16(imgHeader.data() + 2);
-	width = Compression::getLE16(imgHeader.data() + 4);
-	height = Compression::getLE16(imgHeader.data() + 6);
-	flags = Compression::getLE16(imgHeader.data() + 8);
-	srclen = Compression::getLE16(imgHeader.data() + 10);
+	xoff = Bytes::getLE16(imgHeader.data());
+	yoff = Bytes::getLE16(imgHeader.data() + 2);
+	width = Bytes::getLE16(imgHeader.data() + 4);
+	height = Bytes::getLE16(imgHeader.data() + 6);
+	flags = Bytes::getLE16(imgHeader.data() + 8);
+	srclen = Bytes::getLE16(imgHeader.data() + 10);
 
 	const bool hasBuiltInPalette = (flags & 0x0100) == 0x0100;
 
