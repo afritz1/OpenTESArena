@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "../Media/Palette.h"
+
 // An FLC file is a video file. The CEL files can be used with this class since they 
 // are identical to FLC, though with an extra chunk of header data. As a baseline, 
 // the file should be converted to a vector of independent frames (in case it uses 
@@ -30,6 +32,8 @@ private:
 	std::vector<std::unique_ptr<uint32_t>> pixels;
 	int width;
 	int height;
+
+	void readPaletteData(const uint8_t *data, Palette &dstPalette);
 public:
 	FLCFile(const std::string &filename);
 	~FLCFile();
