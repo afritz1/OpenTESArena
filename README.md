@@ -3,7 +3,9 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-September 5th, 2016:
+September 9th, 2016:
+
+I'm on vacation right now! I'll be back later in September.
 
 This project is early in development.
 
