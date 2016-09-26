@@ -3,9 +3,7 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-September 9th, 2016:
-
-I'm on vacation right now! I'll be back later in September.
+September 25th, 2016:
 
 This project is early in development.
 
@@ -119,6 +117,7 @@ Outside scope (until much later):
 - Spells
 - Sprite variation (clothes/hair/skin colors)
 - (new) UI scale
+- Vulkan (to replace OpenCL)
 - Wandering people
 - Wilderness (seed-based chunk generation)
 

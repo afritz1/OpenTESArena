@@ -100,6 +100,7 @@ FLCFile::FLCFile(const std::string &filename)
 	Debug::check(header.type == static_cast<int>(FileType::FLC_TYPE), "FLCFile",
 		"Unsupported type \"" + std::to_string(header.type) + "\".");
 
+	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
 	this->width = header.width;
 	this->height = header.height;
 
@@ -135,7 +136,7 @@ FLCFile::FLCFile(const std::string &filename)
 			// Ignore the delay override (frameData + 8).
 			const uint16_t frameChunks = Bytes::getLE16(frameData + 6);
 
-			Debug::mention("FLCFile", "- Frame type. Frame chunks " + 
+			Debug::mention("FLCFile", "- Frame type. Frame chunks " +
 				std::to_string(frameChunks));
 
 			uint32_t chunkDataOffset = 0;
@@ -220,6 +221,11 @@ void FLCFile::readPaletteData(const uint8_t *data, Palette &dstPalette)
 int FLCFile::getFrameCount() const
 {
 	return static_cast<int>(this->pixels.size());
+}
+
+double FLCFile::getFrameDuration() const
+{
+	return this->frameDuration;
 }
 
 int FLCFile::getWidth() const

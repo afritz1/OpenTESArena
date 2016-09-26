@@ -30,6 +30,7 @@ class FLCFile
 private:
 	// One unique_ptr for each frame.
 	std::vector<std::unique_ptr<uint32_t>> pixels;
+	double frameDuration;
 	int width;
 	int height;
 
@@ -40,6 +41,9 @@ public:
 
 	// Gets the number of frames in the FLC file.
 	int getFrameCount() const;
+
+	// Gets the duration of each frame in seconds in the FLC file.
+	double getFrameDuration() const;
 
 	// Gets the width of each frame in the FLC file.
 	int getWidth() const;
