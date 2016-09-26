@@ -59,7 +59,8 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 
 	// Read header data if it is not a raw file.
 	const auto rawOverride = RawCifOverride.find(filename);
-	if (rawOverride != RawCifOverride.end())
+	const bool isRaw = rawOverride != RawCifOverride.end();
+	if (isRaw)
 	{
 		xoff = 0;
 		yoff = 0;
@@ -88,9 +89,24 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	{
 		Debug::crash("CIFFile", "Type 4 not implemented.");
 	}
+	else if (isRaw)
+	{
+		// Uncompressed raw CIF.
+		this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+		this->dimensions.push_back(Int2(width, height));
+
+		const uint8_t *imagePixels = srcData.data();
+		uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+
+		std::transform(imagePixels, imagePixels + len, dstPixels,
+			[&palette](uint8_t col) -> uint32_t
+		{
+			return palette[col].toARGB();
+		});
+	}
 	else if (flags == 0x0000)
 	{
-		// Uncompressed CIF.
+		// Uncompressed CIF with headers.
 		int offset = 0;
 
 		// Read uncompressed images until the end of the file.
