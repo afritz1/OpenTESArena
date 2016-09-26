@@ -128,9 +128,7 @@ const std::map<TextureSequenceName, std::string> TextureSequenceFilenames =
 {
 	// Interface.
 	{ TextureSequenceName::IntroBook, "interface/intro/intro" },
-	{ TextureSequenceName::IntroStory, "interface/intro_story/intro_story" },
 	{ TextureSequenceName::OpeningScroll, "interface/scroll/scroll" },
-	{ TextureSequenceName::NewGameStory, "interface/new_game_story/new_game_story" },
 	{ TextureSequenceName::Silmane, "interface/silmane/silmane" },
 };
 
@@ -142,10 +140,8 @@ const std::map<TextureSequenceName, int> TextureSequenceCounts =
 {
 	// Interface.
 	{ TextureSequenceName::IntroBook, 75 },
-	{ TextureSequenceName::IntroStory, 3 },
 	{ TextureSequenceName::OpeningScroll, 49 },
-	{ TextureSequenceName::NewGameStory, 9 },
-	{ TextureSequenceName::Silmane, 19 },
+	{ TextureSequenceName::Silmane, 19 }
 };
 
 std::vector<TextureSequenceName> TextureFile::getSequenceNames()

@@ -1,8 +1,11 @@
+#include <vector>
+
 #include "SDL.h"
 
 #include "Panel.h"
 
 #include "CinematicPanel.h"
+#include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
 #include "Surface.h"
@@ -38,7 +41,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	{
 		return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
 	}
-	
+
 	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
 	auto changeToMainMenu = [](GameState *gameState)
@@ -49,14 +52,30 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	auto changeToIntroStory = [changeToMainMenu](GameState *gameState)
 	{
-		// Lots of text to read, so give each image extra time.
-		double secondsPerImage = 14.0;
-		std::unique_ptr<Panel> introStoryPanel(new CinematicPanel(
+		std::vector<std::string> paletteNames
+		{
+			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG"
+		};
+
+		std::vector<std::string> textureNames
+		{
+			"SCROLL01.IMG", "SCROLL02.IMG", "SCROLL03.IMG"
+		};
+
+		// In the original game, the last frame ("...hope flies on death's wings...")
+		// seems to be a bit shorter.
+		std::vector<double> imageDurations
+		{
+			13.0, 13.0, 10.0
+		};
+
+		std::unique_ptr<Panel> introStoryPanel(new ImageSequencePanel(
 			gameState,
-			PaletteFile::fromName(PaletteName::Default),
-			TextureSequenceName::IntroStory,
-			secondsPerImage,
+			paletteNames,
+			textureNames,
+			imageDurations,
 			changeToMainMenu));
+
 		gameState->setPanel(std::move(introStoryPanel));
 	};
 
@@ -73,7 +92,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 	auto changeToQuote = [changeToScrolling](GameState *gameState)
 	{
-		double secondsToDisplay = 5.0;
+		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> quotePanel(new ImagePanel(
 			gameState,
 			PaletteFile::fromName(PaletteName::BuiltIn),
@@ -83,41 +102,37 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(quotePanel));
 	};
 
-	auto changeToTitle = [changeToQuote](GameState *gameState)
+	auto makeIntroTitlePanel = [changeToQuote, gameState]()
 	{
-		double secondsToDisplay = 5.0;
+		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> titlePanel(new ImagePanel(
 			gameState,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroTitle),
 			secondsToDisplay,
 			changeToQuote));
+		return std::move(titlePanel);
+	};
+
+	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](GameState *gameState)
+	{
+		std::unique_ptr<Panel> titlePanel = makeIntroTitlePanel();
 		gameState->setPanel(std::move(titlePanel));
 	};
-	
-	// Decide how the game starts up. If only the floppy disk data is available,
-	// then go to the Arena splash screen. Otherwise, load the intro book video.	
+
 	auto makeIntroBookPanel = [changeToTitle, gameState]()
 	{
 		std::unique_ptr<Panel> introBook(new CinematicPanel(
 			gameState,
 			PaletteFile::fromName(PaletteName::Default),
 			TextureSequenceName::IntroBook,
-			0.142 /* roughly 7fps */,
+			0.142 /* Roughly 7 fps. */,
 			changeToTitle));
 		return std::move(introBook);
 	};
 
-	auto makeIntroTitlePanel = [changeToQuote, gameState]()
-	{
-		std::unique_ptr<Panel> titlePanel(new ImagePanel(
-			gameState,
-			PaletteFile::fromName(PaletteName::BuiltIn),
-			TextureFile::fromName(TextureName::IntroTitle),
-			5.0,
-			changeToQuote));
-		return std::move(titlePanel);
-	};
+	// Decide how the game starts up. If only the floppy disk data is available,
+	// then go to the Arena splash screen. Otherwise, load the intro book video.	
 
 	// Just skip the intro book check for now.
 	return makeIntroTitlePanel();

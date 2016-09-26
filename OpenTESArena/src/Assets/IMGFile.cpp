@@ -226,33 +226,28 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
 
-	uint16_t xoff, yoff, width, height, flags, srclen;
+	stream->seekg(0, std::ios::end);
+	const auto fileSize = stream->tellg();
+	stream->seekg(0, std::ios::beg);
+
+	std::vector<uint8_t> srcData(fileSize);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// No need to check for raw override. All given filenames should point to IMGs
-	// with "built-in" palettes, and none of those IMGs are in the raw override.
-	std::array<uint8_t, 12> imgHeader;
-	stream->read(reinterpret_cast<char*>(imgHeader.data()), imgHeader.size());
-	Debug::check(stream->gcount() == static_cast<std::streamsize>(imgHeader.size()),
-		"IMGFile", "Could not read \"" + filename + "\" header.");
-
-	xoff = Bytes::getLE16(imgHeader.data());
-	yoff = Bytes::getLE16(imgHeader.data() + 2);
-	width = Bytes::getLE16(imgHeader.data() + 4);
-	height = Bytes::getLE16(imgHeader.data() + 6);
-	flags = Bytes::getLE16(imgHeader.data() + 8);
-	srclen = Bytes::getLE16(imgHeader.data() + 10);
+	// with "built-in" palettes, and none of those IMGs are in the raw override.	
+	uint16_t xoff = Bytes::getLE16(srcData.data());
+	uint16_t yoff = Bytes::getLE16(srcData.data() + 2);
+	uint16_t width = Bytes::getLE16(srcData.data() + 4);
+	uint16_t height = Bytes::getLE16(srcData.data() + 6);
+	uint16_t flags = Bytes::getLE16(srcData.data() + 8);
+	uint16_t len = Bytes::getLE16(srcData.data() + 10); // Unused?
 
 	const bool hasBuiltInPalette = (flags & 0x0100) == 0x0100;
 
 	if (hasBuiltInPalette)
 	{
-		std::array<uint8_t, 768> rawpal;
-		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
-
-		Debug::check(stream->gcount() == static_cast<std::streamsize>(rawpal.size()),
-			"IMGFile", "Could not read texture \"" + filename + "\" palette.");
-
-		auto iter = rawpal.begin();
+		// The palette data is 768 bytes, starting at byte 12.
+		auto iter = srcData.begin() + 12;
 
 		/* Unlike COL files, embedded palettes are stored with components in
 		* the range of 0...63 rather than 0...255 (this was because old VGA

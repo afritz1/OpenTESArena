@@ -1,4 +1,5 @@
 #include <cassert>
+#include <vector>
 
 #include "SDL.h"
 
@@ -7,6 +8,7 @@
 #include "Button.h"
 #include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
+#include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
 #include "Surface.h"
 #include "../Game/GameState.h"
@@ -54,12 +56,32 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 
 			auto changeToNewGameStory = [changeToCharCreation](GameState *gameState)
 			{
-				std::unique_ptr<Panel> newGameStoryPanel(new CinematicPanel(
+				std::vector<std::string> paletteNames
+				{
+					"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
+					"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
+					"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG"
+				};
+
+				std::vector<std::string> textureNames
+				{
+					"INTRO01.IMG", "INTRO02.IMG", "INTRO03.IMG",
+					"INTRO04.IMG", "INTRO05.IMG", "INTRO06.IMG",
+					"INTRO07.IMG", "INTRO08.IMG", "INTRO09.IMG"
+				};
+
+				std::vector<double> imageDurations
+				{
+					5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0
+				};
+
+				std::unique_ptr<Panel> newGameStoryPanel(new ImageSequencePanel(
 					gameState,
-					PaletteFile::fromName(PaletteName::Default),
-					TextureSequenceName::NewGameStory,
-					5.0,
+					paletteNames,
+					textureNames,
+					imageDurations,
 					changeToCharCreation));
+
 				gameState->setPanel(std::move(newGameStoryPanel));
 			};
 
