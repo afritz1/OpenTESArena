@@ -3,6 +3,7 @@
 
 #include "CIFFile.h"
 
+#include "Compression.h"
 #include "../Math/Int2.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
@@ -83,11 +84,52 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 
 	if (flags == 0x0802)
 	{		
-		Debug::crash("CIFFile", "Type 2 not implemented.");
+		// Type 2 CIF.
+		int offset = 0;
+
+		while ((srcData.begin() + offset) < srcData.end())
+		{
+			const uint8_t *header = srcData.data() + offset;
+			xoff = Bytes::getLE16(header);
+			yoff = Bytes::getLE16(header + 2);
+			width = Bytes::getLE16(header + 4);
+			height = Bytes::getLE16(header + 6);
+			flags = Bytes::getLE16(header + 8);
+			len = Bytes::getLE16(header + 10);
+
+			std::vector<uint8_t> decomp(width * height);
+
+			// The second iterator is incorrect. I'm not sure how to fix it because 
+			// sometimes the compressed length (len) is bigger than the uncompressed 
+			// length (width * height)!
+			const auto srcPixels = srcData.begin() + offset + headerSize;
+			const auto srcPixelsEnd = srcPixels + std::min(static_cast<int>(len), width * height);
+			Compression::decodeRLE(srcPixels, srcPixelsEnd, decomp);
+
+			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->dimensions.push_back(Int2(width, height));
+
+			const uint8_t *imagePixels = decomp.data();
+			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+
+			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
+				[&palette](uint8_t col) -> uint32_t
+			{
+				return palette[col].toARGB();
+			});
+
+			offset += (headerSize + len);
+		}
 	}
 	else if (flags == 0x0804)
 	{
+		// Type 4 CIF.
 		Debug::crash("CIFFile", "Type 4 not implemented.");
+	}
+	else if (flags == 0x0808)
+	{
+		// Type 8 CIF.
+		Debug::crash("CIFFile", "Type 8 not implemented.");
 	}
 	else if (isRaw)
 	{

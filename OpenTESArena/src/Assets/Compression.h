@@ -18,6 +18,10 @@ class Compression
 	Compression(const Compression&) = delete;
 	~Compression() = delete;
 public:
+	// Uncompresses an RLE run of bytes.
+	static void decodeRLE(const std::vector<uint8_t>::iterator src,
+		const std::vector<uint8_t>::iterator srcEnd, std::vector<uint8_t> &out);
+
 	template <typename T>
 	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
 	{
