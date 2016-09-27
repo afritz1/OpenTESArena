@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <cassert>
 
 #include "SDL.h"
@@ -348,16 +350,56 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Fix this eventually... again.
 	renderer.drawOriginalToNative();
 
-	// Draw cursor.
-	const auto &cursor = textureManager.getSurface(
-		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
-	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor.getSurface(),
-		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+	// Draw cursor, depending on its position on the screen.
+	const Int2 screenDimensions = renderer.getWindowDimensions();
+	const Int2 mousePosition = this->getMousePosition();
+	const int cursorIndex = [&screenDimensions, &mousePosition]()
+	{
+		const int width = screenDimensions.getX();
+		const int height = screenDimensions.getY();
+		const int mouseX = mousePosition.getX();
+		const int mouseY = mousePosition.getY();
+
+		// Split screen into three rows and columns.
+		const int widthThird = width / 3;
+		const int heightThird = height / 3;
+
+		// Find which row and column the cursor is in.
+		const bool inLeftColumn = (mouseX >= 0) && (mouseX < widthThird);
+		const bool inMiddleColumn = (mouseX >= widthThird) && (mouseX < (2 * widthThird));
+		const bool inRightColumn = mouseX >= (2 * widthThird);
+
+		const bool inTopRow = (mouseY >= 0) && (mouseY < heightThird);
+		const bool inMiddleRow = (mouseY >= heightThird) && (mouseY < (2 * heightThird));
+		const bool inBottomRow = mouseY >= (2 * heightThird);
+
+		// One of the booleans in this array will be true. Use its index as
+		// the return value.
+		const std::array<bool, 9> squares =
+		{
+			inLeftColumn && inTopRow,
+			inMiddleColumn && inTopRow,
+			inRightColumn && inTopRow,
+			inLeftColumn && inMiddleRow,
+			inMiddleColumn && inMiddleRow,
+			inRightColumn && inMiddleRow,
+			inLeftColumn && inBottomRow,
+			inMiddleColumn && inBottomRow,
+			inRightColumn && inBottomRow
+		};
+
+		const auto index = std::find(squares.begin(), squares.end(), true) - squares.begin();
+		return static_cast<int>(index);
+	}();
+
+	const auto &cursors = textureManager.getSurfaces(
+		TextureFile::fromName(TextureName::ArrowCursors));
+
+	auto *cursor = cursors.at(cursorIndex);
+	SDL_SetColorKey(cursor, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	renderer.drawToNative(cursor, mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor->w * this->getCursorScale()),
+		static_cast<int>(cursor->h * this->getCursorScale()));
 
 	// Set the transparency blending back to normal (off).
 	renderer.useTransparencyBlending(false);

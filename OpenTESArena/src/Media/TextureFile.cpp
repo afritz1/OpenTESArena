@@ -28,6 +28,7 @@ const std::map<TextureName, std::string> TextureFilenames =
 	{ TextureName::MaleWoodElfBackground, "CHARBK05.IMG" },
 
 	// Cursors.
+	{ TextureName::ArrowCursors, "ARROWS.CIF" },
 	{ TextureName::QuillCursor, "POINTER.IMG" },
 	{ TextureName::SwordCursor, "ARENARW.IMG" },
 

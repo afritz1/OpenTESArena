@@ -32,6 +32,7 @@ enum class TextureName
 	MaleWoodElfBackground,
 
 	// Cursors.
+	ArrowCursors,
 	QuillCursor,
 	SwordCursor,
 
