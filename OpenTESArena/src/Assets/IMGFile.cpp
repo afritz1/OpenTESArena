@@ -221,8 +221,6 @@ IMGFile::~IMGFile()
 
 void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 {
-	// This is still experimental. It might need some correction.
-
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
 
@@ -240,14 +238,14 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	uint16_t width = Bytes::getLE16(srcData.data() + 4);
 	uint16_t height = Bytes::getLE16(srcData.data() + 6);
 	uint16_t flags = Bytes::getLE16(srcData.data() + 8);
-	uint16_t len = Bytes::getLE16(srcData.data() + 10); // Unused?
+	uint16_t len = Bytes::getLE16(srcData.data() + 10);
 
 	const bool hasBuiltInPalette = (flags & 0x0100) == 0x0100;
 
 	if (hasBuiltInPalette)
 	{
-		// The palette data is 768 bytes, starting at byte 12.
-		auto iter = srcData.begin() + 12;
+		// The palette data is 768 bytes, starting after the pixel data ends.
+		auto iter = srcData.begin() + 12 + len;
 
 		/* Unlike COL files, embedded palettes are stored with components in
 		* the range of 0...63 rather than 0...255 (this was because old VGA

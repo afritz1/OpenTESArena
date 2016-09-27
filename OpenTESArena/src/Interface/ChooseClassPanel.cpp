@@ -482,11 +482,9 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background);
 
 	// Draw list pop-up.
-	// To do: change the palette to "STARTGAM.MNU" once the palette extraction 
-	// is corrected.
 	auto *listPopUp = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PopUp2),
-		PaletteFile::fromName(PaletteName::CharSheet));
+		TextureFile::fromName(TextureName::PopUp2), 
+		TextureFile::fromName(TextureName::CharacterCreation));
 
 	int listWidth, listHeight;
 	SDL_QueryTexture(listPopUp, nullptr, nullptr, &listWidth, &listHeight);
