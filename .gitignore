@@ -23,6 +23,7 @@
 *.exe
 *.out
 *.app
+TESArena
 
 # Unnecessary Visual C++ files
 ipch/
@@ -59,3 +60,9 @@ options/
 *.tar.gz
 *.zip
 *.7z
+
+# Cmake artifacts
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
