@@ -6,6 +6,29 @@
 #include "TextureName.h"
 #include "TextureSequenceName.h"
 
+namespace std
+{
+	// Hash specializations, since GCC doesn't support enum classes used as keys
+	// in unordered_maps.
+	template <>
+	struct hash<TextureName>
+	{
+		size_t operator()(const TextureName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+
+	template <>
+	struct hash<TextureSequenceName>
+	{
+		size_t operator()(const TextureSequenceName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	// The filename of each TextureName, by type.

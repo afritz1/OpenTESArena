@@ -309,21 +309,34 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
+	// Get the filenames for the portrait and clothes.
+	const std::string &bodyFilename = PortraitFile::getBody(
+		*this->gender.get(), *this->raceName.get());
+	const std::string &shirtFilename = PortraitFile::getShirt(
+		*this->gender.get(), this->charClass->canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(*this->gender.get());
+
+	// Get pixel offsets for each clothes texture.
+	const Int2 &shirtOffset = PortraitFile::getShirtOffset(
+		*this->gender.get(), this->charClass->canCastMagic());
+	const Int2 &pantsOffset = PortraitFile::getPantsOffset(*this->gender.get());
+
+	// Draw the current portrait and clothes.
+	auto *body = textureManager.getTexture(bodyFilename);
+	auto &shirt = textureManager.getSurface(shirtFilename);
+	auto &pants = textureManager.getSurface(pantsFilename);
+	int portraitWidth, portraitHeight;
+	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	SDL_SetColorKey(shirt.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	SDL_SetColorKey(pants.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
+	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(shirt.getSurface(), shirtOffset.getX(), shirtOffset.getY());
+
 	// Draw attributes texture.
 	auto *attributesBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterStats));
 	renderer.drawToOriginal(attributesBackground);
-
-	// Get the filenames for the portraits.
-	auto portraitStrings = PortraitFile::getGroup(*this->gender.get(),
-		*this->raceName.get(), this->charClass->canCastMagic());
-
-	// Draw the current portrait.
-	auto *portrait = textureManager.getTexture(
-		portraitStrings.at(this->portraitIndex));
-	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->nameTextBox->getTexture(),

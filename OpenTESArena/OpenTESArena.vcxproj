@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Interface\ImageSequencePanel.cpp" />
+    <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Utilities\Bytes.cpp" />
     <ClCompile Include="src\Media\FontManager.cpp" />
     <ClCompile Include="src\Assets\COLFile.cpp" />
@@ -163,7 +164,6 @@
     <ClCompile Include="src\Interface\ProvinceMapPanel.cpp" />
     <ClCompile Include="src\Interface\ChooseClassCreationPanel.cpp" />
     <ClCompile Include="src\Interface\ListBox.cpp" />
-    <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Game\OptionsParser.cpp" />
     <ClCompile Include="src\Game\Options.cpp" />
     <ClCompile Include="src\Math\CoordinateFrame.cpp" />
@@ -272,6 +272,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Interface\ImageSequencePanel.h" />
+    <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Utilities\Bytes.h" />
     <ClInclude Include="src\Interface\TextAlignment.h" />
     <ClInclude Include="src\Media\FontManager.h" />
@@ -300,7 +301,6 @@
     <ClInclude Include="src\Media\Midi.hpp" />
     <ClInclude Include="src\Media\Palette.h" />
     <ClInclude Include="src\Media\PaletteName.h" />
-    <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Game\OptionsParser.h" />
     <ClInclude Include="src\Game\Options.h" />
     <ClInclude Include="src\Math\CoordinateFrame.h" />

@@ -242,24 +242,37 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
+	// Get a reference to the active player data.
+	const auto &player = this->getGameState()->getGameData()->getPlayer();
+
+	// Get the filenames for the portrait and clothes.
+	const std::string &bodyFilename = PortraitFile::getBody(
+		player.getGenderName(), player.getRaceName());
+	const std::string &shirtFilename = PortraitFile::getShirt(
+		player.getGenderName(), player.getCharacterClass().canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(player.getGenderName());
+
+	// Get pixel offsets for each clothes texture.
+	const Int2 &shirtOffset = PortraitFile::getShirtOffset(
+		player.getGenderName(), player.getCharacterClass().canCastMagic());
+	const Int2 &pantsOffset = PortraitFile::getPantsOffset(player.getGenderName());
+
+	// Draw the current portrait and clothes.
+	auto *body = textureManager.getTexture(bodyFilename);
+	auto &shirt = textureManager.getSurface(shirtFilename);
+	auto &pants = textureManager.getSurface(pantsFilename);
+	int portraitWidth, portraitHeight;
+	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	SDL_SetColorKey(shirt.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	SDL_SetColorKey(pants.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
+	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(shirt.getSurface(), shirtOffset.getX(), shirtOffset.getY());
+
 	// Draw character equipment background.
 	auto *equipmentBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterEquipment));
 	renderer.drawToOriginal(equipmentBackground);
-
-	// Get a reference to the active player data.
-	const auto &player = this->getGameState()->getGameData()->getPlayer();
-
-	// Get the filenames for the portraits.
-	auto portraitStrings = PortraitFile::getGroup(player.getGenderName(),
-		player.getRaceName(), player.getCharacterClass().canCastMagic());
-
-	// Draw the player's portrait.
-	auto *portrait = textureManager.getTexture(
-		portraitStrings.at(player.getPortraitID()));
-	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(portrait, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(portrait, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
