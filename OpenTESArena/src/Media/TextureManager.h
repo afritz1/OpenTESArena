@@ -81,12 +81,6 @@ public:
 	// from a loose .COL file, or can be built into an IMG. If the IMG does not have a 
 	// built-in palette, an error occurs.
 	void setPalette(const std::string &filename);
-
-	// To do: remove this method once FLC movies can be loaded through "getTextures()".
-	// Since cinematics are now loaded image by image instead of all at the same time,
-	// there may be some stuttering that occurs. This method loads all of the sequences
-	// into memory at the same time to compensate.
-	void preloadSequences();
 };
 
 #endif

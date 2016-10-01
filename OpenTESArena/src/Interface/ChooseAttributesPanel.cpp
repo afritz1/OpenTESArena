@@ -154,7 +154,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			gameState->setMusic(MusicName::Overcast);
 		};
 
-		auto cinematicFunction = [gameFunction, gameDataFunction](GameState *gameState)
+		auto cinematicFunction = [gameDataFunction, gameFunction](GameState *gameState)
 		{
 			gameDataFunction(gameState);
 
@@ -178,7 +178,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 			std::unique_ptr<Panel> cinematicPanel(new TextCinematicPanel(
 				gameState,
-				TextureSequenceName::Silmane,
+				TextureFile::fromName(TextureSequenceName::Silmane),
 				silmaneText,
 				TextCinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
 				gameFunction));

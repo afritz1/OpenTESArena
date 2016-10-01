@@ -23,9 +23,9 @@
 
 const double TextCinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 7.0;
 
-TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName name,
-	const std::string &text, double secondsPerImage,
-	const std::function<void(GameState*)> &endingAction)
+TextCinematicPanel::TextCinematicPanel(GameState *gameState, 
+	const std::string &sequenceName, const std::string &text, 
+	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
 	// Text cannot be empty.
@@ -81,7 +81,7 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState, TextureSequenceName
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
-	this->sequenceName = name;
+	this->sequenceName = sequenceName;
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
 	this->imageIndex = 0;
@@ -163,11 +163,13 @@ void TextCinematicPanel::tick(double dt, bool &running)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->imageIndex++;
 
+		auto &textureManager = this->getGameState()->getTextureManager();
+
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
-		auto imageFilenames = TextureFile::fromName(this->sequenceName);
-		int imageFilenameCount = static_cast<int>(imageFilenames.size());
-		if (this->imageIndex == imageFilenameCount)
+		const auto &textures = textureManager.getTextures(this->sequenceName);
+		const int textureCount = static_cast<int>(textures.size());
+		if (this->imageIndex == textureCount)
 		{
 			this->imageIndex = 0;
 		}
@@ -183,13 +185,12 @@ void TextCinematicPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGameState()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
-	// Get all of the image filenames relevant to the sequence.
-	auto imageFilenames = TextureFile::fromName(this->sequenceName);
+	// Get a reference to all relevant textures.
+	const auto &textures = textureManager.getTextures(this->sequenceName);
 
 	// Draw animation.
-	auto *image = textureManager.getTexture(
-		imageFilenames.at(this->imageIndex));
-	renderer.drawToOriginal(image);
+	auto *texture = textures.at(this->imageIndex);
+	renderer.drawToOriginal(texture);
 
 	// Get the relevant text box.
 	const auto &textBox = this->textBoxes.at(this->textIndex);

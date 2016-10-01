@@ -2,6 +2,7 @@
 #define CINEMATIC_PANEL_H
 
 #include <functional>
+#include <string>
 
 #include "Panel.h"
 
@@ -12,14 +13,12 @@ class Button;
 class GameState;
 class Renderer;
 
-enum class TextureSequenceName;
-
 class CinematicPanel : public Panel
 {
 private:
 	std::unique_ptr<Button> skipButton;
 	std::string paletteName;
-	TextureSequenceName sequenceName;
+	std::string sequenceName;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
 protected:
@@ -27,8 +26,8 @@ protected:
 	virtual void handleMouse(double dt) override;
 	virtual void handleKeyboard(double dt) override;
 public:
-	CinematicPanel(GameState *gameState, const std::string &paletteName, 
-		TextureSequenceName sequenceName, double secondsPerImage,
+	CinematicPanel(GameState *gameState, const std::string &paletteName,
+		const std::string &sequenceName, double secondsPerImage,
 		const std::function<void(GameState*)> &endingAction);
 	virtual ~CinematicPanel();
 

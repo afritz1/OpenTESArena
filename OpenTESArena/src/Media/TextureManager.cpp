@@ -536,27 +536,3 @@ void TextureManager::setPalette(const std::string &paletteName)
 
 	this->activePalette = paletteName;
 }
-
-void TextureManager::preloadSequences()
-{
-	// This method will be deprecated once all necessary texture sequences are 
-	// loaded with the FLCFile class.
-
-	Debug::mention("Texture Manager", "Preloading sequences.");
-
-	for (const auto name : TextureFile::getSequenceNames())
-	{
-		// Skip the intro book sequence (not available in floppy version).
-		// Check in the Panel class once FLCs are loaded exclusively.
-		if (name == TextureSequenceName::IntroBook)
-		{
-			continue;
-		}
-
-		std::vector<std::string> filenames = TextureFile::fromName(name);
-		for (const auto &filename : filenames)
-		{
-			this->getTexture(filename);
-		}
-	}
-}

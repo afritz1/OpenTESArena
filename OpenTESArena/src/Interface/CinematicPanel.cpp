@@ -6,17 +6,13 @@
 
 #include "Button.h"
 #include "../Game/GameState.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
 CinematicPanel::CinematicPanel(GameState *gameState, 
-	const std::string &paletteName, TextureSequenceName sequenceName, 
+	const std::string &sequenceName, const std::string &paletteName,
 	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
 {
@@ -86,11 +82,25 @@ void CinematicPanel::tick(double dt, bool &running)
 {
 	this->handleEvents(running);
 
+	// See if it's time for the next image.
 	this->currentSeconds += dt;
 	while (this->currentSeconds > this->secondsPerImage)
 	{
 		this->currentSeconds -= this->secondsPerImage;
 		this->imageIndex++;
+	}
+
+	auto &textureManager = this->getGameState()->getTextureManager();
+
+	// Get a reference to all images in the sequence.
+	const auto &textures = textureManager.getTextures(
+		this->sequenceName, this->paletteName);
+
+	// If at the end, then prepare for the next panel.
+	if (this->imageIndex >= textures.size())
+	{
+		this->imageIndex = static_cast<int>(textures.size() - 1);
+		this->skipButton->click(this->getGameState());
 	}
 }
 
@@ -99,23 +109,15 @@ void CinematicPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clearNative();
 
-	// Get all of the image filenames relevant to the sequence.
-	std::vector<std::string> filenames = TextureFile::fromName(this->sequenceName);
-
-	// If at the end, then prepare for the next panel.
-	// This should be checked in "tick()" instead.
-	if (this->imageIndex >= filenames.size())
-	{
-		this->imageIndex = static_cast<int>(filenames.size() - 1);
-		this->skipButton->click(this->getGameState());
-	}
-
 	auto &textureManager = this->getGameState()->getTextureManager();
 
+	// Get a reference to all images in the sequence.
+	const auto &textures = textureManager.getTextures(
+		this->sequenceName, this->paletteName);
+
 	// Draw image.
-	auto *image = textureManager.getTexture(
-		filenames.at(this->imageIndex), this->paletteName);
-	renderer.drawToOriginal(image);
+	auto *texture = textures.at(this->imageIndex);
+	renderer.drawToOriginal(texture);
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

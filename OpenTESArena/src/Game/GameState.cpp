@@ -52,11 +52,6 @@ GameState::GameState()
 	this->fontManager = std::unique_ptr<FontManager>(new FontManager(
 		this->renderer->getFormat()));
 
-	// Preload sequences, so that cinematic stuttering doesn't occur. It's because
-	// cinematics otherwise load their frames one at a time while playing.
-	// (Remove this functionality if actual videos will be used instead.)
-	this->textureManager->preloadSequences();
-
 	// Load various plain text assets.
 	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
 

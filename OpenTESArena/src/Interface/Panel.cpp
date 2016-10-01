@@ -83,8 +83,8 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			gameState,
+			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			PaletteFile::fromName(PaletteName::Default),
-			TextureSequenceName::OpeningScroll,
 			CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
 			changeToIntroStory));
 		gameState->setPanel(std::move(scrollingPanel));
@@ -120,16 +120,16 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		gameState->setPanel(std::move(titlePanel));
 	};
 
-	auto makeIntroBookPanel = [changeToTitle, gameState]()
+	/*auto makeIntroBookPanel = [changeToTitle, gameState]()
 	{
 		std::unique_ptr<Panel> introBook(new CinematicPanel(
 			gameState,
+			TextureFile::fromName(TextureSequenceName::IntroBook),
 			PaletteFile::fromName(PaletteName::Default),
-			TextureSequenceName::IntroBook,
-			0.142 /* Roughly 7 fps. */,
+			0.142, // Roughly 7 fps.
 			changeToTitle));
 		return std::move(introBook);
-	};
+	};*/
 
 	// Decide how the game starts up. If only the floppy disk data is available,
 	// then go to the Arena splash screen. Otherwise, load the intro book video.	

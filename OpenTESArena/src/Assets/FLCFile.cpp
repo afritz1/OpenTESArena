@@ -86,7 +86,7 @@ FLCFile::FLCFile(const std::string &filename)
 	header.flags = Bytes::getLE16(srcData.data() + 14);
 	header.speed = Bytes::getLE32(srcData.data() + 16);
 
-	Debug::mention("FLCFile", "\"" + filename + "\" header data:\n" +
+	/*Debug::mention("FLCFile", "\"" + filename + "\" header data:\n" +
 		"- Size: " + std::to_string(header.size) + "\n" +
 		"- Type: " + std::to_string(header.type) + "\n" +
 		"- Frames: " + std::to_string(header.frames) + "\n" +
@@ -94,7 +94,7 @@ FLCFile::FLCFile(const std::string &filename)
 		"- Height: " + std::to_string(header.height) + "\n" +
 		"- Depth: " + std::to_string(header.depth) + "\n" +
 		"- Flags: " + std::to_string(header.flags) + "\n" +
-		"- Speed: " + std::to_string(header.speed));
+		"- Speed: " + std::to_string(header.speed));*/
 
 	// This class will only support the format used by Arena (0xAF12) for now.
 	Debug::check(header.type == static_cast<int>(FileType::FLC_TYPE), "FLCFile",
@@ -125,19 +125,19 @@ FLCFile::FLCFile(const std::string &filename)
 		const uint32_t frameSize = Bytes::getLE32(frameData);
 		const uint16_t frameType = Bytes::getLE16(frameData + 4);
 
-		Debug::mention("FLCFile", "Reading... frame size " + std::to_string(frameSize) +
-			", frame type " + std::to_string(frameType));
+		/*Debug::mention("FLCFile", "Reading... frame size " + std::to_string(frameSize) +
+			", frame type " + std::to_string(frameType));*/
 
 		const bool isFrameType = frameType == static_cast<uint16_t>(FrameType::FRAME_TYPE);
 		const bool isPrefixChunk = frameType == static_cast<uint16_t>(FrameType::PREFIX_CHUNK);
 
 		if (isFrameType)
 		{
-			// Ignore the delay override (frameData + 8).
+			// Ignore the delay override (at frameData + 8).
 			const uint16_t frameChunks = Bytes::getLE16(frameData + 6);
 
-			Debug::mention("FLCFile", "- Frame type. Frame chunks " +
-				std::to_string(frameChunks));
+			/*Debug::mention("FLCFile", "- Frame type. Frame chunks " +
+				std::to_string(frameChunks));*/
 
 			uint32_t chunkDataOffset = 0;
 
@@ -150,31 +150,45 @@ FLCFile::FLCFile(const std::string &filename)
 
 				if (chunkType == static_cast<uint16_t>(ChunkType::COLOR_256))
 				{
-					Debug::mention("FLCFile", "-> Color palette (256)");
+					// Color palette for determining the subsequent frames' colors.
+					//Debug::mention("FLCFile", "-> Color palette (256)");
 
 					this->readPaletteData(chunkData + 6, palette);
 				}
 				else if (chunkType == static_cast<uint16_t>(ChunkType::FLI_SS2))
 				{
-					Debug::mention("FLCFile", "-> FLI_SS2 (DELTA_FLC)");
+					// Delta frame indicating which pixels to change.
+					//Debug::mention("FLCFile", "-> FLI_SS2 (DELTA_FLC)");
+
+					// To do: replace this with actual pixels.
+					this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+					uint32_t *pixels = this->pixels.at(this->pixels.size() - 1).get();
+					std::fill(pixels, pixels + (width * height), 0);
 				}
 				else if (chunkType == static_cast<uint16_t>(ChunkType::EIGHTEEN))
 				{
-					Debug::mention("FLCFile", "-> 18");
+					// Unknown chunk type.
+					//Debug::mention("FLCFile", "-> 18");
 				}
 				else if (chunkType == static_cast<uint16_t>(ChunkType::BLACK))
 				{
 					// No data in this chunk, so skip.
-					Debug::mention("FLCFile", "-> Black");
+					//Debug::mention("FLCFile", "-> Black");
 				}
 				else if (chunkType == static_cast<uint16_t>(ChunkType::FLI_BRUN))
 				{
-					Debug::mention("FLCFile", "-> FLI_BRUN (BYTE_RUN)");
+					// Fullscreen frame.
+					//Debug::mention("FLCFile", "-> FLI_BRUN (BYTE_RUN)");
+
+					// To do: replace this with actual pixels.
+					this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+					uint32_t *pixels = this->pixels.at(this->pixels.size() - 1).get();
+					std::fill(pixels, pixels + (width * height), 0);
 				}
 				else
 				{
-					Debug::crash("FLCFile", "Unrecognized chunk type \"" +
-						std::to_string(chunkType) + "\".");
+					/*Debug::crash("FLCFile", "Unrecognized chunk type \"" +
+						std::to_string(chunkType) + "\".");*/
 				}
 
 				chunkDataOffset += chunkSize;
@@ -183,7 +197,7 @@ FLCFile::FLCFile(const std::string &filename)
 		else if (isPrefixChunk)
 		{
 			// For .CEL files?
-			Debug::mention("FLCFile", "- Prefix chunk");
+			//Debug::mention("FLCFile", "- Prefix chunk");
 		}
 		else
 		{
@@ -194,7 +208,10 @@ FLCFile::FLCFile(const std::string &filename)
 		frameDataOffset += frameSize;
 	}
 
-	Debug::crash("FLCFile", "Not implemented.");
+	// The frame decoding functionality is unfinished for now, but the interface with
+	// the program is done. That means the program can act like the videos are playing 
+	// correctly.
+	//Debug::crash("FLCFile", "Not implemented.");
 }
 
 FLCFile::~FLCFile()
