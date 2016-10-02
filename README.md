@@ -76,8 +76,8 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 Current priority:
 - Geometry management (uniform grid, voxel + sprite references)
-- Load character faces (.CIF, to replace PNGs)
-- Load frames from videos (.FLC/.CEL, to replace PNGs)
+- Load character faces (.CIF)
+- Load frames from videos (.FLC/.CEL)
 - Load original textures (.CFA, .CIF, .DFA, .IMG, .SET, etc.)
 - Sprites
 
