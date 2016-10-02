@@ -76,7 +76,9 @@ public:
 	SDL_Texture *createTextureFromSurface(const Surface &surface);
 
 	void resize(int width, int height);
-	void setWindowIcon(TextureName name, TextureManager &textureManager);
+
+	// Sets the window icon to be the given surface.
+	void setWindowIcon(SDL_Surface *icon);
 
 	// Teleports the mouse to a location in the window.
 	void warpMouse(int x, int y);

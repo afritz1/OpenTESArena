@@ -30,9 +30,18 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 {
 	this->parchment = [gameState]()
 	{
-		auto *surface = gameState->getTextureManager().getSurface(
-			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		return std::unique_ptr<Surface>(new Surface(surface));
+		auto &renderer = gameState->getRenderer();
+
+		// Create placeholder parchment.
+		auto *unOptSurface = SDL_CreateRGBSurface(0, 180, 40, Renderer::DEFAULT_BPP,
+			0, 0, 0, 0);
+		auto *surface = SDL_ConvertSurface(unOptSurface, renderer.getFormat(), 0);
+		SDL_FreeSurface(unOptSurface);
+		SDL_FillRect(surface, nullptr, SDL_MapRGB(renderer.getFormat(), 166, 125, 81));
+		auto *texture = renderer.createTextureFromSurface(surface);
+		SDL_FreeSurface(surface);
+
+		return texture;
 	}();
 
 	this->titleTextBox = [gameState, charClass]()
@@ -94,7 +103,7 @@ ChooseNamePanel::ChooseNamePanel(GameState *gameState, const CharacterClass &cha
 
 ChooseNamePanel::~ChooseNamePanel()
 {
-
+	SDL_DestroyTexture(this->parchment);
 }
 
 void ChooseNamePanel::handleEvents(bool &running)
@@ -261,18 +270,18 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background);
 
 	// Draw parchment: title.
-	this->parchment->setTransparentColor(Color::Magenta);
-
+	int parchmentWidth, parchmentHeight;
+	SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
 	const double parchmentXScale = 1.5;
 	const double parchmentYScale = 1.65;
-	const int parchmentWidth = static_cast<int>(this->parchment->getWidth() * parchmentXScale);
-	const int parchmentHeight = static_cast<int>(this->parchment->getHeight() * parchmentYScale);
+	const int parchmentNewWidth = static_cast<int>(parchmentWidth * parchmentXScale);
+	const int parchmentNewHeight = static_cast<int>(parchmentHeight * parchmentYScale);
 
-	renderer.drawToOriginal(this->parchment->getSurface(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2),
-		(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2),
-		parchmentWidth,
-		parchmentHeight);
+	renderer.drawToOriginal(this->parchment,
+		(Renderer::ORIGINAL_WIDTH / 2) - (parchmentNewWidth / 2),
+		(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentNewHeight / 2),
+		parchmentNewWidth,
+		parchmentNewHeight);
 	
 	// Draw text: title, name.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),

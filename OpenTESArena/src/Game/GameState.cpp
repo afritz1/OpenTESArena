@@ -13,6 +13,7 @@
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
 #include "../Media/MusicName.h"
+#include "../Media/PPMFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
@@ -56,7 +57,15 @@ GameState::GameState()
 	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
 
 	// Set window icon.
-	this->renderer->setWindowIcon(TextureName::Icon, *this->textureManager.get());
+	int iconWidth, iconHeight;
+	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
+	SDL_Surface *unOptIcon = SDL_CreateRGBSurfaceFrom(iconPixels.get(), iconWidth,
+		iconHeight, Renderer::DEFAULT_BPP, sizeof(*iconPixels.get()) * iconWidth,
+		0, 0, 0, 0);
+	SDL_Surface *icon = SDL_ConvertSurface(unOptIcon, this->renderer->getFormat(), 0);
+	SDL_FreeSurface(unOptIcon);
+	this->renderer->setWindowIcon(icon);
+	SDL_FreeSurface(icon);
 
 	// Leave some things null for now. 
 	this->gameData = nullptr;
@@ -126,7 +135,7 @@ TextAssets &GameState::getTextAssets() const
 void GameState::resizeWindow(int width, int height)
 {
 	this->renderer->resize(width, height);
-	
+
 	if (this->gameDataIsActive())
 	{
 		// Rebuild OpenCL program with new dimensions.		

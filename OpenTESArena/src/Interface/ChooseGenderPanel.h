@@ -8,13 +8,14 @@
 class Button;
 class CharacterClass;
 class Renderer;
-class Surface;
 class TextBox;
+
+struct SDL_Texture;
 
 class ChooseGenderPanel : public Panel
 {
 private:
-	std::unique_ptr<Surface> parchment;
+	SDL_Texture *parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
 	std::unique_ptr<Button> backToNameButton, maleButton, femaleButton;
 	std::unique_ptr<CharacterClass> charClass;

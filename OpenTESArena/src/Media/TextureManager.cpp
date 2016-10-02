@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "SDL.h"
-#include "SDL_image.h"
 
 #include "TextureManager.h"
 
@@ -24,9 +23,6 @@
 
 #include "components/vfs/manager.hpp"
 
-// This path should be removed once using original Arena files exclusively.
-const std::string TextureManager::PATH = "data/textures/";
-
 TextureManager::TextureManager(Renderer &renderer)
 	: renderer(renderer), palettes(), surfaces(), textures(),
 	surfaceSets(), textureSets()
@@ -35,11 +31,6 @@ TextureManager::TextureManager(Renderer &renderer)
 
 	// Load default palette.
 	this->setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Intialize PNG file loading (remove this code once PNGs are no longer used).
-	int imgFlags = IMG_INIT_PNG;
-	Debug::check((IMG_Init(imgFlags) & imgFlags) != SDL_FALSE, "Texture Manager",
-		"Couldn't initialize texture loader, " + std::string(IMG_GetError()));
 }
 
 TextureManager::~TextureManager()
@@ -67,8 +58,6 @@ TextureManager::~TextureManager()
 			SDL_DestroyTexture(texture);
 		}
 	}
-
-	IMG_Quit();
 }
 
 TextureManager &TextureManager::operator=(TextureManager &&textureManager)
@@ -82,22 +71,6 @@ TextureManager &TextureManager::operator=(TextureManager &&textureManager)
 	this->activePalette = textureManager.activePalette;
 
 	return *this;
-}
-
-SDL_Surface *TextureManager::loadPNG(const std::string &fullPath)
-{
-	// Load the SDL_Surface from file.
-	auto *unOptSurface = IMG_Load(fullPath.c_str());
-	Debug::check(unOptSurface != nullptr, "Texture Manager",
-		"Could not open texture \"" + fullPath + "\".");
-
-	// Try to optimize the SDL_Surface.
-	auto *optSurface = SDL_ConvertSurface(unOptSurface, this->renderer.getFormat(), 0);
-	SDL_FreeSurface(unOptSurface);
-	Debug::check(optSurface != nullptr, "Texture Manager",
-		"Could not optimize texture \"" + fullPath + "\".");
-
-	return optSurface;
 }
 
 void TextureManager::loadCOLPalette(const std::string &colName)
@@ -195,8 +168,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		// Create an unoptimized SDL surface from the IMG.
 		SDL_Surface *unoptSurface = SDL_CreateRGBSurfaceFrom(
 			img.getPixels(), img.getWidth(), img.getHeight(), Renderer::DEFAULT_BPP,
-			img.getWidth() * sizeof(uint32_t),
-			0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+			img.getWidth() * sizeof(*img.getPixels()), 0, 0, 0, 0);
 
 		// Optimize the surface.
 		optSurface = SDL_ConvertSurface(unoptSurface, this->renderer.getFormat(), 0);
@@ -204,12 +176,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 	else
 	{
-		// Assume PNG for now.
-		// Remove this once PNGs aren't needed anymore.
-		optSurface = this->loadPNG(TextureManager::PATH + filename + ".png");
-
-		// Uncomment this once PNGs are gone.
-		//Debug::crash("Texture Manager", "Unrecognized image \"" + filename + "\".");
+		Debug::crash("Texture Manager", "Unrecognized surface format \"" + filename + "\".");
 	}
 
 	// Create surface from optimized SDL_Surface.
@@ -382,7 +349,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized image list \"" + filename + "\".");
+		Debug::crash("Texture Manager", "Unrecognized surface list \"" + filename + "\".");
 	}
 
 	return surfaceSet;
@@ -515,7 +482,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized image list \"" + filename + "\".");
+		Debug::crash("Texture Manager", "Unrecognized texture list \"" + filename + "\".");
 	}
 
 	return textureSet;

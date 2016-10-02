@@ -269,10 +269,9 @@ void Renderer::resize(int width, int height)
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
 }
 
-void Renderer::setWindowIcon(TextureName name, TextureManager &textureManager)
+void Renderer::setWindowIcon(SDL_Surface *icon)
 {
-	const auto &icon = textureManager.getSurface(TextureFile::fromName(name));
-	SDL_SetWindowIcon(this->window, icon.getSurface());
+	SDL_SetWindowIcon(this->window, icon);
 }
 
 void Renderer::warpMouse(int x, int y)

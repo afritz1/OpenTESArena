@@ -78,7 +78,6 @@ namespace
 		{ TextureName::CompassFrame, "COMPASS.IMG" },
 		{ TextureName::CompassSlider, "SLIDER.IMG" },
 		{ TextureName::GameWorldInterface, "P1.IMG" }, // The portrait gradients might be in STATUS.CIF.
-		{ TextureName::Icon, "icon" }, // A PNG file.
 		{ TextureName::IntroTitle, "TITLE.IMG" },
 		{ TextureName::IntroQuote, "QUOTE.IMG" },
 		{ TextureName::LoadSave, "LOADSAVE.IMG" },
@@ -86,7 +85,7 @@ namespace
 		{ TextureName::MainMenu, "MENU.IMG" },
 		{ TextureName::NextPage, "PAGE2.IMG" },
 		{ TextureName::ParchmentBig, "PARCH.IMG" },
-		{ TextureName::ParchmentPopup, "interface/parchment/parchment_popup" }, // This should be a generated texture.
+		{ TextureName::ParchmentCorner, "PARCH.CIF" },
 		{ TextureName::PauseBackground, "OP.IMG" },
 		{ TextureName::PopUp, "POPUP.IMG" },
 		{ TextureName::PopUp2, "POPUP2.IMG" },

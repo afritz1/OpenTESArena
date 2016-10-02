@@ -56,7 +56,6 @@ enum class TextureName
 	CompassFrame, // Compass border with "gargoyle-like" object.
 	CompassSlider, // Actual compass headings.
 	GameWorldInterface, // Portrait, stat bars, buttons in game world.
-	Icon, // Custom window icon for the program.
 	IntroTitle, // Arena copyright, etc..
 	IntroQuote, // "The best techniques...".
 	LoadSave, // Slots for loading and saving.
@@ -64,7 +63,7 @@ enum class TextureName
 	MainMenu, // Load, New, Exit.
 	NextPage, // Next page button in character stats.
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
-	ParchmentPopup, // For text boxes.
+	ParchmentCorner, // Helps with parchment generation.
 	PauseBackground, // Arena logo with sound/music/detail and buttons
 	PopUp,
 	PopUp2, // For character creation classes.

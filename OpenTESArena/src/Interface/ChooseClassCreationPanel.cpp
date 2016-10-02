@@ -27,9 +27,18 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 {
 	this->parchment = [gameState]()
 	{
-		auto *surface = gameState->getTextureManager().getSurface(
-			TextureFile::fromName(TextureName::ParchmentPopup)).getSurface();
-		return std::unique_ptr<Surface>(new Surface(surface));
+		auto &renderer = gameState->getRenderer();
+
+		// Create placeholder parchment.
+		auto *unOptSurface = SDL_CreateRGBSurface(0, 180, 40, Renderer::DEFAULT_BPP, 
+			0, 0, 0, 0);
+		auto *surface = SDL_ConvertSurface(unOptSurface, renderer.getFormat(), 0);
+		SDL_FreeSurface(unOptSurface);
+		SDL_FillRect(surface, nullptr, SDL_MapRGB(renderer.getFormat(), 166, 125, 81));
+		auto *texture = renderer.createTextureFromSurface(surface);
+		SDL_FreeSurface(surface);
+
+		return texture;
 	}();
 
 	this->titleTextBox = [gameState]()
@@ -117,7 +126,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 
 ChooseClassCreationPanel::~ChooseClassCreationPanel()
 {
-
+	SDL_DestroyTexture(this->parchment);
 }
 
 void ChooseClassCreationPanel::handleEvents(bool &running)
@@ -202,14 +211,14 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background);
 
 	// Draw parchments: title, generate, select.
-	this->parchment->setTransparentColor(Color::Magenta);
+	int parchmentWidth, parchmentHeight;
+	SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2) - 20;
 
-	int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2);
-	int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 20;
-
-	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY);
-	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 40);
-	renderer.drawToOriginal(this->parchment->getSurface(), parchmentX, parchmentY + 80);
+	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY);
+	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 40);
+	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 80);
 
 	// Draw text: title, generate, select.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),

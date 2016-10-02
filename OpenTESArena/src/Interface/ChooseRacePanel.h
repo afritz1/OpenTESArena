@@ -1,7 +1,7 @@
 #ifndef CHOOSE_RACE_PANEL_H
 #define CHOOSE_RACE_PANEL_H
 
-#include <map>
+#include <memory>
 #include <string>
 
 #include "Panel.h"
@@ -12,17 +12,18 @@
 class Button;
 class CharacterClass;
 class Renderer;
-class Surface;
 class TextBox;
 
 enum class CharacterGenderName;
 enum class CharacterRaceName;
 enum class ProvinceName;
 
+struct SDL_Texture;
+
 class ChooseRacePanel : public Panel
 {
 private:
-	std::unique_ptr<Surface> parchment;
+	SDL_Texture *parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToGenderButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;
