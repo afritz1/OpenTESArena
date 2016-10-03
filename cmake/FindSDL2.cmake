@@ -91,14 +91,6 @@ FIND_LIBRARY(SDL2_LIBRARY_TEMP
   PATHS ${SDL2_SEARCH_PATHS}
 )
 
-FIND_LIBRARY(SDL2_IMAGE_LIBRARY_TEMP
-  NAMES SDL2_image
-  HINTS
-  $ENV{SDL2DIR}
-  PATH_SUFFIXES lib64 lib
-  PATHS ${SDL2_SEARCH_PATHS}
-)
-
 IF(NOT SDL2_BUILDING_LIBRARY)
   IF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
     # Non-OS X framework versions expect you to also dynamically link to
@@ -113,13 +105,6 @@ IF(NOT SDL2_BUILDING_LIBRARY)
       PATHS ${SDL2_SEARCH_PATHS}
     )
 
-    FIND_LIBRARY(SDL2_IMAGE_LIBRARY
-      NAMES SDL2_image
-      HINTS
-      $ENV{SDL2DIR}
-      PATH_SUFFIXES lib64 lib
-      PATHS ${SDL2_SEARCH_PATHS}
-    )
   ENDIF(NOT ${SDL2_INCLUDE_DIR} MATCHES ".framework")
 ENDIF(NOT SDL2_BUILDING_LIBRARY)
 
@@ -170,8 +155,6 @@ IF(SDL2_LIBRARY_TEMP)
 
   # Set the final string here so the GUI reflects the final state.
   SET(SDL2_LIBRARY ${SDL2_LIBRARY_TEMP} CACHE STRING "Where the SDL2 Library can be found")
-
-  SET(SDL2_IMAGE_LIBRARY ${SDL2_IMAGE_LIBRARY_TEMP})
 
   # Set the temp variable to INTERNAL so it is not seen in the CMake GUI
   SET(SDL2_LIBRARY_TEMP "${SDL2_LIBRARY_TEMP}" CACHE INTERNAL "")
