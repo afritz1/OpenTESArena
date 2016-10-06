@@ -257,8 +257,5 @@ int FLCFile::getHeight() const
 
 uint32_t *FLCFile::getPixels(int index) const
 {
-	Debug::check((index >= 0) && (index < this->getFrameCount()), "FLCFile",
-		"Frame index (" + std::to_string(index) + ") out of range.");
-
-	return this->pixels[index].get();
+	return this->pixels.at(index).get();
 }

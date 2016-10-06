@@ -1,9 +1,26 @@
+#include <algorithm>
+
 #include "CFAFile.h"
 
 #include "../Utilities/Debug.h"
 
-CFAFile::CFAFile(const std::string &filename)
+#include "components/vfs/manager.hpp"
+
+CFAFile::CFAFile(const std::string &filename, const Palette &palette)
+	: pixels()
 {
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	Debug::check(stream != nullptr, "CFAFile", "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	const auto fileSize = stream->tellg();
+	stream->seekg(0, std::ios::beg);
+
+	std::vector<uint8_t> srcData(fileSize);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+	// To do...
+
 	Debug::crash("CFAFile", "Not implemented.");
 }
 
@@ -12,12 +29,22 @@ CFAFile::~CFAFile()
 
 }
 
-/*std::vector<SDL_Surface*> TextureManager::loadCFA(const std::string &filename,
-	PaletteName paletteName)
+int CFAFile::getImageCount() const
 {
-	// Enemy sprite animations (goblin, orc, skeleton, ...), as well as
-	// spell animations, are CFA.
+	return static_cast<int>(this->pixels.size());
+}
 
-	Debug::crash("Texture Manager", "loadCFA not implemented.");
-	return std::vector<SDL_Surface*>();
-}*/
+int CFAFile::getWidth() const
+{
+	return this->width;
+}
+
+int CFAFile::getHeight() const
+{
+	return this->height;
+}
+
+uint32_t *CFAFile::getPixels(int index) const
+{
+	return this->pixels.at(index).get();
+}
