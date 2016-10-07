@@ -48,17 +48,12 @@ SETFile::~SETFile()
 
 }
 
-int SETFile::getCount() const
+int SETFile::getImageCount() const
 {
 	return static_cast<int>(this->chunks.size());
 }
 
 uint32_t *SETFile::getPixels(int index) const
 {
-	// No need for this object to store its filename; it can be found somewhere
-	// in the texture manager stack in debug mode.
-	Debug::check((index >= 0) && (index < this->getCount()), "SETFile",
-		"Chunk index (" + std::to_string(index) + ") out of range.");
-
-	return this->chunks[index].get();
+	return this->chunks.at(index).get();
 }

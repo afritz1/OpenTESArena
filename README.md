@@ -7,7 +7,7 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 2nd, 2016:
+October 7th, 2016:
 
 This project is early in development.
 
@@ -19,13 +19,13 @@ Here are some hotkeys in the game world:
 - L - logbook
 - N - automap
 
-This is a preview of how the test world looks now:
+This is how the test world looks now:
 <br/>
 <br/>
 ![Preview](https://github.com/afritz1/OpenTESArena/blob/master/Preview.PNG)
 <br/>
 
-I'm currently catching back up to the state of the world shown in these other [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now aiming to use original data exclusively instead of tool-extracted images from applications like WinArena. The graphics engine is in development and is only partially implemented here.
+I'm currently catching back up to the state of the world shown in these other [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now using original Arena data exclusively. The graphics engine is in development.
 
 ## Project Details
 
@@ -37,7 +37,7 @@ Note that there are two versions of Arena: the floppy disk version and the CD ve
 
 It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
 
-Open a pull request if you'd like to contribute.
+Check out the Projects tab to see what's currently on the to-do list. Open a pull request if you'd like to contribute.
 
 ## Instructions
 
@@ -75,10 +75,8 @@ If there is a bug or technical problem in the program, check out the issues tab!
 ## Scope
 
 Current priority:
-- Geometry management (uniform grid, voxel + sprite references)
-- Load character faces (.CIF)
-- Load frames from videos (.FLC/.CEL)
-- Load original textures (.CFA, .CIF, .DFA, .IMG, .SET, etc.)
+- Geometry management
+- Load original texture formats
 - Sprites
 
 Next priority:

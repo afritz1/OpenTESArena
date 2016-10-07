@@ -378,7 +378,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		SETFile setFile(filename, palette);
 
 		// Create an SDL_Surface for each image in the SET.
-		const int imageCount = setFile.getCount();
+		const int imageCount = setFile.getImageCount();
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = setFile.getPixels(i);
@@ -554,7 +554,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		SETFile setFile(filename, palette);
 
 		// Create an SDL_Texture for each image in the SET.
-		const int imageCount = setFile.getCount();
+		const int imageCount = setFile.getImageCount();
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
