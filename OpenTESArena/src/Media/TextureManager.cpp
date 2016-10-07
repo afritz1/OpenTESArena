@@ -9,9 +9,11 @@
 #include "PaletteName.h"
 #include "TextureFile.h"
 #include "TextureSequenceName.h"
+#include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/Compression.h"
+#include "../Assets/DFAFile.h"
 #include "../Assets/FLCFile.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/RCIFile.h"
@@ -258,12 +260,35 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
+	const bool isCFA = extension.compare(".CFA") == 0;
 	const bool isCIF = extension.compare(".CIF") == 0;
+	const bool isDFA = extension.compare(".DFA") == 0;
 	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
 	const bool isSET = extension.compare(".SET") == 0;
 
-	if (isCIF)
+	if (isCFA)
+	{
+		// Load the CFA file.
+		CFAFile cfaFile(filename, palette);
+
+		// Create an SDL_Surface for each image in the CFA.
+		const int imageCount = cfaFile.getImageCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			uint32_t *pixels = cfaFile.getPixels(i);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
+				cfaFile.getWidth(), cfaFile.getHeight(), Renderer::DEFAULT_BPP,
+				sizeof(*pixels) * cfaFile.getWidth(), 0, 0, 0, 0);
+
+			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
+				this->renderer.getFormat(), 0);
+			SDL_FreeSurface(surface);
+
+			surfaceSet.push_back(optSurface);
+		}
+	}
+	else if (isCIF)
 	{
 		// Load the CIF file.
 		CIFFile cifFile(filename, palette);
@@ -276,6 +301,27 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
 				cifFile.getWidth(i), cifFile.getHeight(i), Renderer::DEFAULT_BPP,
 				sizeof(*pixels) * cifFile.getWidth(i), 0, 0, 0, 0);
+
+			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
+				this->renderer.getFormat(), 0);
+			SDL_FreeSurface(surface);
+
+			surfaceSet.push_back(optSurface);
+		}
+	}
+	else if (isDFA)
+	{
+		// Load the DFA file.
+		DFAFile dfaFile(filename, palette);
+
+		// Create an SDL_Surface for each image in the DFA.
+		const int imageCount = dfaFile.getImageCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			uint32_t *pixels = dfaFile.getPixels(i);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
+				dfaFile.getWidth(), dfaFile.getHeight(), Renderer::DEFAULT_BPP,
+				sizeof(*pixels) * dfaFile.getWidth(), 0, 0, 0, 0);
 
 			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
 				this->renderer.getFormat(), 0);
@@ -395,12 +441,34 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
+	const bool isCFA = extension.compare(".CFA") == 0;
 	const bool isCIF = extension.compare(".CIF") == 0;
+	const bool isDFA = extension.compare(".DFA") == 0;
 	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
 	const bool isSET = extension.compare(".SET") == 0;
 
-	if (isCIF)
+	if (isCFA)
+	{
+		// Load the CFA file.
+		CFAFile cfaFile(filename, palette);
+
+		// Create an SDL_Texture for each image in the CFA.
+		const int imageCount = cfaFile.getImageCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			SDL_Texture *texture = this->renderer.createTexture(
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				cfaFile.getWidth(), cfaFile.getHeight());
+
+			const uint32_t *pixels = cfaFile.getPixels(i);
+			SDL_UpdateTexture(texture, nullptr, pixels,
+				cfaFile.getWidth() * sizeof(*pixels));
+
+			textureSet.push_back(texture);
+		}
+	}
+	else if (isCIF)
 	{
 		// Load the CIF file.
 		CIFFile cifFile(filename, palette);
@@ -416,6 +484,26 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			const uint32_t *pixels = cifFile.getPixels(i);
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				cifFile.getWidth(i) * sizeof(*pixels));
+
+			textureSet.push_back(texture);
+		}
+	}
+	else if (isDFA)
+	{
+		// Load the DFA file.
+		DFAFile dfaFile(filename, palette);
+
+		// Create an SDL_Texture for each image in the DFA.
+		const int imageCount = dfaFile.getImageCount();
+		for (int i = 0; i < imageCount; ++i)
+		{
+			SDL_Texture *texture = this->renderer.createTexture(
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				dfaFile.getWidth(), dfaFile.getHeight());
+
+			const uint32_t *pixels = dfaFile.getPixels(i);
+			SDL_UpdateTexture(texture, nullptr, pixels,
+				dfaFile.getWidth() * sizeof(*pixels));
 
 			textureSet.push_back(texture);
 		}
