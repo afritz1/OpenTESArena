@@ -98,13 +98,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			len = Bytes::getLE16(header + 10);
 
 			std::vector<uint8_t> decomp(width * height);
-
-			// The second iterator is incorrect. I'm not sure how to fix it because 
-			// sometimes the compressed length (len) is bigger than the uncompressed 
-			// length (width * height)!
-			const auto srcPixels = srcData.begin() + offset + headerSize;
-			const auto srcPixelsEnd = srcPixels + std::min(static_cast<int>(len), width * height);
-			Compression::decodeRLE(srcPixels, srcPixelsEnd, decomp);
+			Compression::decodeRLE(header + 12, width * height, decomp);
 
 			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
 			this->dimensions.push_back(Int2(width, height));

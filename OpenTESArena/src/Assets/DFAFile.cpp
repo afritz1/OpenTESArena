@@ -34,8 +34,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 
 	// Uncompress the initial frame.
 	std::vector<uint8_t> decomp(width * height);
-	Compression::decodeRLE(srcData.begin() + 12, 
-		srcData.begin() + 12 + compressedLength, decomp);
+	Compression::decodeRLE(srcData.data() + 12, width * height, decomp);
 
 	// Write the pixel data to the first output frame.
 	this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));

@@ -19,9 +19,10 @@ class Compression
 	~Compression() = delete;
 public:
 	// Uncompresses an RLE run of bytes.
-	static void decodeRLE(const std::vector<uint8_t>::iterator src,
-		const std::vector<uint8_t>::iterator srcEnd, std::vector<uint8_t> &out);
+	static void decodeRLE(const uint8_t *src, uint32_t count, 
+		std::vector<uint8_t> &out);
 
+	// To do: see if this also works with .CIF type 4, or just exclusive to IMG.
 	template <typename T>
 	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
 	{
@@ -94,6 +95,7 @@ public:
 		std::fill(dst, out.end(), 0);
 	}
 
+	// To do: see if this also works with .CIF type 8, or just exclusive to IMG.
 	template <typename T>
 	static void decodeType08(T src, T srcend, std::vector<uint8_t> &out)
 	{
