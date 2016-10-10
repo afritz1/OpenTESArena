@@ -82,7 +82,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 
 	const int headerSize = 12;
 
-	if (flags == 0x0802)
+	if ((flags & 0x00FF) == 0x0002)
 	{		
 		// Type 2 CIF.
 		int offset = 0;
@@ -115,12 +115,12 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			offset += (headerSize + len);
 		}
 	}
-	else if (flags == 0x0804)
+	else if ((flags & 0x00FF) == 0x0004)
 	{
 		// Type 4 CIF.
 		Debug::crash("CIFFile", "Type 4 not implemented.");
 	}
-	else if (flags == 0x0808)
+	else if ((flags & 0x00FF) == 0x0008)
 	{
 		// Type 8 CIF.
 		Debug::crash("CIFFile", "Type 8 not implemented.");
@@ -140,7 +140,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			return palette[col].toARGB();
 		});
 	}
-	else if (flags == 0x0000)
+	else if ((flags & 0x00FF) == 0)
 	{
 		// Uncompressed CIF with headers.
 		int offset = 0;
