@@ -71,8 +71,7 @@ FLCFile::FLCFile(const std::string &filename)
 	stream->seekg(0, std::ios::beg);
 
 	std::vector<uint8_t> srcData(fileSize);
-	const int32_t srcLen = static_cast<int32_t>(srcData.size());
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcLen);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Get the header data. Some of it is just miscellaneous (last updated, etc.),
 	// or only used in later versions with the EGI modifications.
@@ -86,16 +85,6 @@ FLCFile::FLCFile(const std::string &filename)
 	header.flags = Bytes::getLE16(srcData.data() + 14);
 	header.speed = Bytes::getLE32(srcData.data() + 16);
 
-	/*Debug::mention("FLCFile", "\"" + filename + "\" header data:\n" +
-		"- Size: " + std::to_string(header.size) + "\n" +
-		"- Type: " + std::to_string(header.type) + "\n" +
-		"- Frames: " + std::to_string(header.frames) + "\n" +
-		"- Width: " + std::to_string(header.width) + "\n" +
-		"- Height: " + std::to_string(header.height) + "\n" +
-		"- Depth: " + std::to_string(header.depth) + "\n" +
-		"- Flags: " + std::to_string(header.flags) + "\n" +
-		"- Speed: " + std::to_string(header.speed));*/
-
 	// This class will only support the format used by Arena (0xAF12) for now.
 	Debug::check(header.type == static_cast<int>(FileType::FLC_TYPE), "FLCFile",
 		"Unsupported type \"" + std::to_string(header.type) + "\".");
@@ -104,108 +93,70 @@ FLCFile::FLCFile(const std::string &filename)
 	this->width = header.width;
 	this->height = header.height;
 
-	// Start decoding frames. The data starts at byte 128.
-	uint32_t frameDataOffset = 0;
+	// Palette which is constructed by one of the FLC palette chunks.
 	Palette palette;
 
-	// Current state of the frame's palette indices. Completely updated by byte runs,
+	// Current state of the frame's palette indices. Completely updated by byte runs
 	// and partially updated by delta frames.
 	std::vector<uint8_t> framePixels(this->width * this->height);
 	std::fill(framePixels.begin(), framePixels.end(), 0);
 
-	while (true)
+	// Start decoding frames. The data starts after the header (at 128, not sizeof(FLICHeader)?).
+	uint32_t dataOffset = 128;
+	while ((srcData.begin() + dataOffset) < srcData.end())
 	{
-		const uint8_t *frameData = srcData.data() + 128 + frameDataOffset;
+		const uint8_t *frameHeader = srcData.data() + dataOffset;
+		const uint32_t frameSize = Bytes::getLE32(frameHeader);
+		const FrameType frameType = static_cast<FrameType>(Bytes::getLE16(frameHeader + 4));
 
-		if ((frameData - srcData.data()) >= srcLen)
+		if (frameType == FrameType::FRAME_TYPE)
 		{
-			break;
-		}
+			// Get the number of chunks in the frame. 
+			// Ignore the delay override at frameData + 8.
+			const uint16_t frameChunks = Bytes::getLE16(frameHeader + 6);
 
-		const uint32_t frameSize = Bytes::getLE32(frameData);
-		const uint16_t frameType = Bytes::getLE16(frameData + 4);
-
-		/*Debug::mention("FLCFile", "Reading... frame size " + std::to_string(frameSize) +
-			", frame type " + std::to_string(frameType));*/
-
-		const bool isFrameType = frameType == static_cast<uint16_t>(FrameType::FRAME_TYPE);
-		const bool isPrefixChunk = frameType == static_cast<uint16_t>(FrameType::PREFIX_CHUNK);
-
-		if (isFrameType)
-		{
-			// Ignore the delay override (at frameData + 8).
-			const uint16_t frameChunks = Bytes::getLE16(frameData + 6);
-
-			/*Debug::mention("FLCFile", "- Frame type. Frame chunks " +
-				std::to_string(frameChunks));*/
-
-			uint32_t chunkDataOffset = 0;
-
-			// Find what type each chunk in the frame is and deal with them accordingly.
+			// Check each chunk's frame type and decode its data if relevant.
+			uint32_t chunkOffset = 16;
 			for (uint16_t i = 0; i < frameChunks; ++i)
 			{
-				const uint8_t *chunkData = frameData + 16 + chunkDataOffset;
-				const uint32_t chunkSize = Bytes::getLE32(chunkData);
-				const uint16_t chunkType = Bytes::getLE16(chunkData + 4);
+				const uint8_t *chunkHeader = frameHeader + chunkOffset;
+				const uint32_t chunkSize = Bytes::getLE32(chunkHeader);
+				const ChunkType chunkType = static_cast<ChunkType>(Bytes::getLE16(chunkHeader + 4));
+				const uint8_t *chunkData = chunkHeader + 6;
 
-				if (chunkType == static_cast<uint16_t>(ChunkType::COLOR_256))
+				// Just concerned with palettes, full frames, and delta frames.
+				if (chunkType == ChunkType::COLOR_256)
 				{
-					// Color palette for determining the subsequent frames' colors.
-					//Debug::mention("FLCFile", "-> Color palette (256)");
-
-					this->readPaletteData(chunkData + 6, palette);
+					// Palette chunk.
+					this->readPaletteData(chunkData, palette);
 				}
-				else if (chunkType == static_cast<uint16_t>(ChunkType::FLI_SS2))
+				else if (chunkType == ChunkType::FLI_BRUN)
 				{
-					// Delta frame indicating which pixels to change.
-					//Debug::mention("FLCFile", "-> FLI_SS2 (DELTA_FLC)");
-
-					// To do: replace this with actual pixels.
-					this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
-					uint32_t *pixels = this->pixels.at(this->pixels.size() - 1).get();
-					std::fill(pixels, pixels + (width * height), 0);
+					// Full frame chunk.
+					auto frame = this->decodeFullFrame(chunkData, chunkSize, palette, framePixels);
+					this->pixels.push_back(std::move(frame));
 				}
-				else if (chunkType == static_cast<uint16_t>(ChunkType::EIGHTEEN))
+				else if (chunkType == ChunkType::FLI_SS2)
 				{
-					// Unknown chunk type.
-					//Debug::mention("FLCFile", "-> 18");
-				}
-				else if (chunkType == static_cast<uint16_t>(ChunkType::BLACK))
-				{
-					// No data in this chunk, so skip.
-					//Debug::mention("FLCFile", "-> Black");
-				}
-				else if (chunkType == static_cast<uint16_t>(ChunkType::FLI_BRUN))
-				{
-					// Fullscreen frame.
-					//Debug::mention("FLCFile", "-> FLI_BRUN (BYTE_RUN)");
-
-					// To do: replace this with actual pixels.
-					this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
-					uint32_t *pixels = this->pixels.at(this->pixels.size() - 1).get();
-					std::fill(pixels, pixels + (width * height), 0);
-				}
-				else
-				{
-					/*Debug::crash("FLCFile", "Unrecognized chunk type \"" +
-						std::to_string(chunkType) + "\".");*/
+					// Delta frame chunk.
+					auto frame = this->decodeDeltaFrame(chunkData, chunkSize, palette, framePixels);
+					this->pixels.push_back(std::move(frame));
 				}
 
-				chunkDataOffset += chunkSize;
+				chunkOffset += chunkSize;
 			}
 		}
-		else if (isPrefixChunk)
+		else if (frameType == FrameType::PREFIX_CHUNK)
 		{
-			// For .CEL files?
-			//Debug::mention("FLCFile", "- Prefix chunk");
+			// Prefix chunk (associated with .CEL files).
 		}
 		else
 		{
 			Debug::crash("FLCFile", "Unrecognized frame type \"" +
-				std::to_string(frameType) + "\".");
+				std::to_string(static_cast<int>(frameType)) + "\".");
 		}
 
-		frameDataOffset += frameSize;
+		dataOffset += frameSize;
 	}
 
 	// The frame decoding functionality is unfinished for now, but the interface with
@@ -219,9 +170,9 @@ FLCFile::~FLCFile()
 
 }
 
-void FLCFile::readPaletteData(const uint8_t *data, Palette &dstPalette)
+void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 {
-	const uint8_t *colorPtr = data + 2;
+	const uint8_t *colorPtr = chunkData + 2;
 
 	// For simplicity, assume there is one color packet, and it is 768 bytes long.
 	// This may or may not work for all FLC files.
@@ -233,6 +184,56 @@ void FLCFile::readPaletteData(const uint8_t *data, Palette &dstPalette)
 		const uint8_t b = *(ptr + 2);
 		dstPalette.at(i) = Color(r, g, b);
 	}
+}
+
+std::unique_ptr<uint32_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
+	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
+{
+	// Decode a fullscreen image chunk. Most likely the first image in the FLC.
+	std::vector<uint8_t> decomp(this->width * this->height);
+	
+	// Cannot use Compression::decodeRLE() because FLCs use a different RLE method.
+	// Maybe have a vector of vectors indicating each RLE-decompressed line of pixels?
+	// To do: use actual byte decompression here.
+	std::copy(chunkData, chunkData + chunkSize, decomp.data());
+
+	// Write to initial frame...?
+
+	const uint8_t *decompPixels = decomp.data();
+	std::unique_ptr<uint32_t> image(new uint32_t[this->width * this->height]);
+
+	std::transform(decompPixels, decompPixels + decomp.size(), image.get(),
+		[&palette](uint8_t col) -> uint32_t
+	{
+		return palette[col].toARGB();
+	});
+
+	return std::move(image);
+}
+
+std::unique_ptr<uint32_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
+	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
+{
+	// Decode a delta frame chunk. The majority of FLC frames are this format.
+	std::vector<uint8_t> decomp(this->width * this->height);
+
+	// Cannot use Compression::decodeRLE() because FLCs use a different RLE method.
+	// Maybe have a vector of vectors indicating each RLE-decompressed line of pixels?
+	// To do: use actual byte decompression here.
+	std::copy(chunkData, chunkData + chunkSize, decomp.data());
+
+	// Write to initial frame...?
+
+	const uint8_t *decompPixels = decomp.data();
+	std::unique_ptr<uint32_t> image(new uint32_t[this->width * this->height]);
+
+	std::transform(decompPixels, decompPixels + decomp.size(), image.get(),
+		[&palette](uint8_t col) -> uint32_t
+	{
+		return palette[col].toARGB();
+	});
+
+	return std::move(image);
 }
 
 int FLCFile::getFrameCount() const

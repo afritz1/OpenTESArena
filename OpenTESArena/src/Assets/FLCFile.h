@@ -34,7 +34,18 @@ private:
 	int width;
 	int height;
 
-	void readPaletteData(const uint8_t *data, Palette &dstPalette);
+	// Reads a palette chunk and writes the results to the given palette reference.
+	void readPaletteData(const uint8_t *chunkData, Palette &dstPalette);
+
+	// Decodes a fullscreen FLC chunk by updating the initial frame indices and
+	// returning a complete frame.
+	std::unique_ptr<uint32_t> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
+		const Palette &palette, std::vector<uint8_t> &initialFrame);
+
+	// Decodes a delta FLC chunk by partially updating the initial frame indices and
+	// returning a complete frame.
+	std::unique_ptr<uint32_t> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
+		const Palette &palette, std::vector<uint8_t> &initialFrame);
 public:
 	FLCFile(const std::string &filename);
 	~FLCFile();
