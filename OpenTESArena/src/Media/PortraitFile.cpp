@@ -53,6 +53,54 @@ namespace std
 
 namespace
 {
+	// Pairings of genders and races to portrait head filenames designed for the
+	// character sheet.
+	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
+		TextureName> HeadTextureNames =
+	{
+		{ { CharacterGenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfHeads },
+
+		{ { CharacterGenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfHeads }
+	};
+
+	// Pairings of genders and races to portrait head filenames designed for 
+	// the in-game interface.
+	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
+		TextureName> TrimmedHeadTextureNames =
+	{
+		{ { CharacterGenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardTrimmedHeads },
+		{ { CharacterGenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfTrimmedHeads },
+
+		{ { CharacterGenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardTrimmedHeads },
+		{ { CharacterGenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfTrimmedHeads }
+	};
+
 	// Pairings of genders and races to portrait background filenames.
 	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
 		TextureName> BodyTextureNames =
@@ -93,6 +141,16 @@ namespace
 	};
 }
 
+const std::string &PortraitFile::getHeads(CharacterGenderName gender, 
+	CharacterRaceName race, bool trimmed)
+{
+	const TextureName textureName = trimmed ?
+		TrimmedHeadTextureNames.at(std::make_pair(gender, race)) :
+		HeadTextureNames.at(std::make_pair(gender, race));
+	const std::string &filename = TextureFile::fromName(textureName);
+	return filename;
+}
+
 const std::string &PortraitFile::getBody(CharacterGenderName gender, CharacterRaceName race)
 {
 	const TextureName textureName = BodyTextureNames.at(std::make_pair(gender, race));
@@ -122,6 +180,14 @@ const std::string &PortraitFile::getPants(CharacterGenderName gender)
 {
 	const TextureName textureName = (gender == CharacterGenderName::Female) ?
 		TextureName::FemalePants : TextureName::MalePants;
+	const std::string &filename = TextureFile::fromName(textureName);
+	return filename;
+}
+
+const std::string &PortraitFile::getEquipment(CharacterGenderName gender)
+{
+	const TextureName textureName = (gender == CharacterGenderName::Female) ?
+		TextureName::FemaleEquipment : TextureName::MaleEquipment;
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }

@@ -43,7 +43,7 @@ namespace
 }
 
 CIFFile::CIFFile(const std::string &filename, const Palette &palette)
-	: pixels(), dimensions()
+	: pixels(), offsets(), dimensions()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	Debug::check(stream != nullptr, "CIFFile", "Could not open \"" + filename + "\".");
@@ -101,6 +101,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			Compression::decodeRLE(header + 12, width * height, decomp);
 
 			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = decomp.data();
@@ -118,17 +119,79 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	else if ((flags & 0x00FF) == 0x0004)
 	{
 		// Type 4 CIF.
-		Debug::crash("CIFFile", "Type 4 not implemented.");
+		int offset = 0;
+
+		while ((srcData.begin() + offset) < srcData.end())
+		{
+			const uint8_t *header = srcData.data() + offset;
+			xoff = Bytes::getLE16(header);
+			yoff = Bytes::getLE16(header + 2);
+			width = Bytes::getLE16(header + 4);
+			height = Bytes::getLE16(header + 6);
+			flags = Bytes::getLE16(header + 8);
+			len = Bytes::getLE16(header + 10);
+
+			std::vector<uint8_t> decomp(width * height);
+			Compression::decodeType04(header + 12, header + 12 + len, decomp);
+
+			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->offsets.push_back(Int2(xoff, yoff));
+			this->dimensions.push_back(Int2(width, height));
+
+			const uint8_t *imagePixels = decomp.data();
+			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+
+			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
+				[&palette](uint8_t col) -> uint32_t
+			{
+				return palette[col].toARGB();
+			});
+
+			offset += (headerSize + len);
+		}
 	}
 	else if ((flags & 0x00FF) == 0x0008)
 	{
 		// Type 8 CIF.
-		Debug::crash("CIFFile", "Type 8 not implemented.");
+		int offset = 0;
+
+		while ((srcData.begin() + offset) < srcData.end())
+		{
+			const uint8_t *header = srcData.data() + offset;
+			xoff = Bytes::getLE16(header);
+			yoff = Bytes::getLE16(header + 2);
+			width = Bytes::getLE16(header + 4);
+			height = Bytes::getLE16(header + 6);
+			flags = Bytes::getLE16(header + 8);
+			len = Bytes::getLE16(header + 10);
+
+			std::vector<uint8_t> decomp(width * height);
+
+			// Contains a 2 byte decompressed length after the header, so skip that 
+			// (should be equivalent to width * height).
+			Compression::decodeType08(header + 12 + 2, header + 12 + len, decomp);
+
+			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->offsets.push_back(Int2(xoff, yoff));
+			this->dimensions.push_back(Int2(width, height));
+
+			const uint8_t *imagePixels = decomp.data();
+			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+
+			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
+				[&palette](uint8_t col) -> uint32_t
+			{
+				return palette[col].toARGB();
+			});
+
+			offset += (headerSize + len);
+		}
 	}
 	else if (isRaw)
 	{
 		// Uncompressed raw CIF.
 		this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+		this->offsets.push_back(Int2(xoff, yoff));
 		this->dimensions.push_back(Int2(width, height));
 
 		const uint8_t *imagePixels = srcData.data();
@@ -157,6 +220,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			len = Bytes::getLE16(header + 10);
 
 			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = header + headerSize;
@@ -186,6 +250,16 @@ CIFFile::~CIFFile()
 int CIFFile::getImageCount() const
 {
 	return static_cast<int>(this->pixels.size());
+}
+
+int CIFFile::getXOffset(int index) const
+{
+	return this->offsets.at(index).getX();
+}
+
+int CIFFile::getYOffset(int index) const
+{
+	return this->offsets.at(index).getY();
 }
 
 int CIFFile::getWidth(int index) const

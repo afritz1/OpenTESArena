@@ -8,6 +8,7 @@
 #include "CharacterPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/CIFFile.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
 #include "../Entities/Player.h"
@@ -25,7 +26,7 @@
 #include "../Rendering/Renderer.h"
 
 CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
-	: Panel(gameState)
+	: Panel(gameState), headOffsets()
 {
 	this->playerNameTextBox = [gameState]()
 	{
@@ -146,6 +147,17 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
+
+	// Get pixel offsets for each head.
+	const auto &player = this->getGameState()->getGameData()->getPlayer();
+	const std::string &headsFilename = PortraitFile::getHeads(
+		player.getGenderName(), player.getRaceName(), false);
+	CIFFile cifFile(headsFilename, Palette());
+
+	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	{
+		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
+	}
 }
 
 CharacterEquipmentPanel::~CharacterEquipmentPanel()
@@ -246,6 +258,8 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto &player = this->getGameState()->getGameData()->getPlayer();
 
 	// Get the filenames for the portrait and clothes.
+	const std::string &headsFilename = PortraitFile::getHeads(
+		player.getGenderName(), player.getRaceName(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
 		player.getGenderName(), player.getRaceName());
 	const std::string &shirtFilename = PortraitFile::getShirt(
@@ -258,15 +272,20 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const Int2 &pantsOffset = PortraitFile::getPantsOffset(player.getGenderName());
 
 	// Draw the current portrait and clothes.
+	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
+	auto *head = textureManager.getSurfaces(headsFilename,
+		PaletteFile::fromName(PaletteName::CharSheet)).at(player.getPortraitID());
 	auto *body = textureManager.getTexture(bodyFilename);
 	auto &shirt = textureManager.getSurface(shirtFilename);
 	auto &pants = textureManager.getSurface(pantsFilename);
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	SDL_SetColorKey(head, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	SDL_SetColorKey(shirt.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	SDL_SetColorKey(pants.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(head, headOffset.getX(), headOffset.getY());
 	renderer.drawToOriginal(shirt.getSurface(), shirtOffset.getX(), shirtOffset.getY());
 
 	// Draw character equipment background.

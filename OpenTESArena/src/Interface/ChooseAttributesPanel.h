@@ -2,6 +2,7 @@
 #define CHOOSE_ATTRIBUTES_PANEL_H
 
 #include <string>
+#include <vector>
 
 #include "Panel.h"
 
@@ -14,6 +15,7 @@
 
 class Button;
 class CharacterClass;
+class Int2;
 class Renderer;
 class TextBox;
 
@@ -26,6 +28,7 @@ private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
 	std::unique_ptr<Button> backToRaceButton, doneButton, incrementPortraitButton, 
 		decrementPortraitButton;
+	std::vector<Int2> headOffsets;
 	std::unique_ptr<CharacterClass> charClass;
 	std::unique_ptr<CharacterGenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;

@@ -22,7 +22,7 @@ public:
 	static void decodeRLE(const uint8_t *src, uint32_t count, 
 		std::vector<uint8_t> &out);
 
-	// To do: see if this also works with .CIF type 4, or just exclusive to IMG.
+	// Works with .IMG and .CIF type 4 files.
 	template <typename T>
 	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
 	{
@@ -95,7 +95,7 @@ public:
 		std::fill(dst, out.end(), 0);
 	}
 
-	// To do: see if this also works with .CIF type 8, or just exclusive to IMG.
+	// Works with .IMG and .CIF type 8 files.
 	template <typename T>
 	static void decodeType08(T src, T srcend, std::vector<uint8_t> &out)
 	{

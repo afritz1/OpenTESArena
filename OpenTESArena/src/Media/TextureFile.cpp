@@ -34,6 +34,42 @@ namespace
 	// The filename of each TextureName, by type.
 	const std::unordered_map<TextureName, std::string> TextureFilenames =
 	{
+		// Character heads for the character sheet.	
+		{ TextureName::FemaleArgonianHeads, "FACESF17.CIF" },
+		{ TextureName::FemaleBretonHeads, "FACESF10.CIF" },
+		{ TextureName::FemaleDarkElfHeads, "FACESF13.CIF" },
+		{ TextureName::FemaleHighElfHeads, "FACESF14.CIF" },
+		{ TextureName::FemaleKhajiitHeads, "FACESF16.CIF" },
+		{ TextureName::FemaleNordHeads, "FACESF12.CIF" },
+		{ TextureName::FemaleRedguardHeads, "FACESF11.CIF" },
+		{ TextureName::FemaleWoodElfHeads, "FACESF15.CIF" },
+		{ TextureName::MaleArgonianHeads, "FACES17.CIF" },
+		{ TextureName::MaleBretonHeads, "FACES10.CIF" },
+		{ TextureName::MaleDarkElfHeads, "FACES13.CIF" },
+		{ TextureName::MaleHighElfHeads, "FACES14.CIF" },
+		{ TextureName::MaleKhajiitHeads, "FACES16.CIF" },
+		{ TextureName::MaleNordHeads, "FACES12.CIF" },
+		{ TextureName::MaleRedguardHeads, "FACES11.CIF" },
+		{ TextureName::MaleWoodElfHeads, "FACES15.CIF" },
+
+		// Character heads for the in-game interface.
+		{ TextureName::FemaleArgonianTrimmedHeads, "FACESF07.CIF" },
+		{ TextureName::FemaleBretonTrimmedHeads, "FACESF00.CIF" },
+		{ TextureName::FemaleDarkElfTrimmedHeads, "FACESF03.CIF" },
+		{ TextureName::FemaleHighElfTrimmedHeads, "FACESF04.CIF" },
+		{ TextureName::FemaleKhajiitTrimmedHeads, "FACESF06.CIF" },
+		{ TextureName::FemaleNordTrimmedHeads, "FACESF02.CIF" },
+		{ TextureName::FemaleRedguardTrimmedHeads, "FACESF01.CIF" },
+		{ TextureName::FemaleWoodElfTrimmedHeads, "FACESF05.CIF" },
+		{ TextureName::MaleArgonianTrimmedHeads, "FACES07.CIF" },
+		{ TextureName::MaleBretonTrimmedHeads, "FACES00.CIF" },
+		{ TextureName::MaleDarkElfTrimmedHeads, "FACES03.CIF" },
+		{ TextureName::MaleHighElfTrimmedHeads, "FACES04.CIF" },
+		{ TextureName::MaleKhajiitTrimmedHeads, "FACES06.CIF" },
+		{ TextureName::MaleNordTrimmedHeads, "FACES02.CIF" },
+		{ TextureName::MaleRedguardTrimmedHeads, "FACES01.CIF" },
+		{ TextureName::MaleWoodElfTrimmedHeads, "FACES05.CIF" },
+
 		// Character backgrounds (without clothes).
 		{ TextureName::FemaleArgonianBackground, "CHRBKF07.IMG" },
 		{ TextureName::FemaleBretonBackground, "CHRBKF00.IMG" },
@@ -57,11 +93,15 @@ namespace
 		{ TextureName::QuillCursor, "POINTER.IMG" },
 		{ TextureName::SwordCursor, "ARENARW.IMG" },
 
-		// Equipment overlays. "TOP.IMG" was used in a demo image, I think.
-		// 0ARGHELM.IMG and 1ARGHELM.IMG seem to be helmets.
+		// Equipment overlays.
+		{ TextureName::FemaleEquipment, "1EQUIP.CIF" },
+		{ TextureName::FemaleHelmet, "1ARGHELM.IMG" },
 		{ TextureName::FemaleNonMagicShirt, "FSSHIRT.IMG" },
 		{ TextureName::FemaleMagicShirt, "FRSHIRT.IMG" },
+		{ TextureName::FemaleDemoTop, "TOP.IMG" },
 		{ TextureName::FemalePants, "FPANTS.IMG" },
+		{ TextureName::MaleEquipment, "0EQUIP.CIF" },
+		{ TextureName::MaleHelmet, "0ARGHELM.IMG" },
 		{ TextureName::MaleNonMagicShirt, "MSSHIRT.IMG" },
 		{ TextureName::MaleMagicShirt, "MRSHIRT.IMG" },
 		{ TextureName::MalePants, "MPANTS.IMG" },
@@ -77,7 +117,7 @@ namespace
 		{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 		{ TextureName::CompassFrame, "COMPASS.IMG" },
 		{ TextureName::CompassSlider, "SLIDER.IMG" },
-		{ TextureName::GameWorldInterface, "P1.IMG" }, // The portrait gradients might be in STATUS.CIF.
+		{ TextureName::GameWorldInterface, "P1.IMG" },
 		{ TextureName::IntroTitle, "TITLE.IMG" },
 		{ TextureName::IntroQuote, "QUOTE.IMG" },
 		{ TextureName::LoadSave, "LOADSAVE.IMG" },
@@ -92,6 +132,7 @@ namespace
 		{ TextureName::PopUp11, "POPUP11.IMG" },
 		{ TextureName::RaceSelect, "TAMRIEL.IMG" },
 		{ TextureName::SpellbookText, "SPELLBK.IMG" },
+		{ TextureName::StatusGradients, "STATUS.CIF" },
 		{ TextureName::UpDown, "UPDOWN.IMG" },
 		{ TextureName::YesNoCancel, "YESNO.IMG" },
 

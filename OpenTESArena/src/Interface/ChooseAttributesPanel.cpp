@@ -10,6 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
+#include "../Assets/CIFFile.h"
 #include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
@@ -38,7 +39,7 @@
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
 	CharacterRaceName raceName)
-	: Panel(gameState)
+	: Panel(gameState), headOffsets()
 {
 	this->nameTextBox = [gameState, name]()
 	{
@@ -214,6 +215,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
+	// Get pixel offsets for each head.
+	const std::string &headsFilename = PortraitFile::getHeads(gender, raceName, false);
+	CIFFile cifFile(headsFilename, Palette());
+
+	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	{
+		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
+	}
+
 	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
@@ -310,6 +320,8 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Get the filenames for the portrait and clothes.
+	const std::string &headsFilename = PortraitFile::getHeads(
+		*this->gender.get(), *this->raceName.get(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
 		*this->gender.get(), *this->raceName.get());
 	const std::string &shirtFilename = PortraitFile::getShirt(
@@ -322,15 +334,20 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const Int2 &pantsOffset = PortraitFile::getPantsOffset(*this->gender.get());
 
 	// Draw the current portrait and clothes.
+	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
+	auto *head = textureManager.getSurfaces(headsFilename,
+		PaletteFile::fromName(PaletteName::CharSheet)).at(this->portraitIndex);
 	auto *body = textureManager.getTexture(bodyFilename);
 	auto &shirt = textureManager.getSurface(shirtFilename);
 	auto &pants = textureManager.getSurface(pantsFilename);
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
+	SDL_SetColorKey(head, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	SDL_SetColorKey(shirt.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	SDL_SetColorKey(pants.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(head, headOffset.getX(), headOffset.getY());
 	renderer.drawToOriginal(shirt.getSurface(), shirtOffset.getX(), shirtOffset.getY());
 
 	// Draw attributes texture.

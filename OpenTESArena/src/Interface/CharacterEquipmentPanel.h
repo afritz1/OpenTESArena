@@ -1,10 +1,13 @@
 #ifndef CHARACTER_EQUIPMENT_PANEL_H
 #define CHARACTER_EQUIPMENT_PANEL_H
 
+#include <vector>
+
 #include "Panel.h"
 
 class Button;
 class CharacterClass;
+class Int2;
 class Renderer;
 class TextBox;
 
@@ -18,6 +21,7 @@ private:
 		playerClassTextBox;
 	std::unique_ptr<Button> backToStatsButton, spellbookButton, dropButton,
 		scrollDownButton, scrollUpButton;
+	std::vector<Int2> headOffsets;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

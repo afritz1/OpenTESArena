@@ -13,6 +13,42 @@
 
 enum class TextureName
 {
+	// Character heads for the character sheet.
+	FemaleArgonianHeads,
+	FemaleBretonHeads,
+	FemaleDarkElfHeads,
+	FemaleHighElfHeads,
+	FemaleKhajiitHeads,
+	FemaleNordHeads,
+	FemaleRedguardHeads,
+	FemaleWoodElfHeads,
+	MaleArgonianHeads,
+	MaleBretonHeads,
+	MaleDarkElfHeads,
+	MaleHighElfHeads,
+	MaleKhajiitHeads,
+	MaleNordHeads,
+	MaleRedguardHeads,
+	MaleWoodElfHeads,
+
+	// Character heads for the in-game interface.
+	FemaleArgonianTrimmedHeads,
+	FemaleBretonTrimmedHeads,
+	FemaleDarkElfTrimmedHeads,
+	FemaleHighElfTrimmedHeads,
+	FemaleKhajiitTrimmedHeads,
+	FemaleNordTrimmedHeads,
+	FemaleRedguardTrimmedHeads,
+	FemaleWoodElfTrimmedHeads,
+	MaleArgonianTrimmedHeads,
+	MaleBretonTrimmedHeads,
+	MaleDarkElfTrimmedHeads,
+	MaleHighElfTrimmedHeads,
+	MaleKhajiitTrimmedHeads,
+	MaleNordTrimmedHeads,
+	MaleRedguardTrimmedHeads,
+	MaleWoodElfTrimmedHeads,
+
 	// Character backgrounds (without clothes).
 	FemaleArgonianBackground,
 	FemaleBretonBackground,
@@ -37,9 +73,14 @@ enum class TextureName
 	SwordCursor,
 
 	// Equipment overlays.
+	FemaleEquipment,
+	FemaleHelmet, // Unused in original.
 	FemaleNonMagicShirt,
 	FemaleMagicShirt,
+	FemaleDemoTop, // Used in Arena demo image.
 	FemalePants,
+	MaleEquipment,
+	MaleHelmet, // Unused in original.
 	MaleNonMagicShirt,
 	MaleMagicShirt,
 	MalePants,
@@ -70,6 +111,7 @@ enum class TextureName
 	PopUp11, // For items, etc..
 	RaceSelect, // World map with location dots and no exit text.
 	SpellbookText, // Text that covers up "Equipment" in player's inventory.
+	StatusGradients, // Colored gradients behind player portrait.
 	UpDown, // Scroll arrows.
 	YesNoCancel, // Yes/No/Cancel texture for bartering.
 

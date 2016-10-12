@@ -1,6 +1,8 @@
 #ifndef CHARACTER_PANEL_H
 #define CHARACTER_PANEL_H
 
+#include <vector>
+
 #include "Panel.h"
 
 // Maybe rename this to "CharacterStatsPanel"?
@@ -10,6 +12,7 @@
 
 class Button;
 class CharacterClass;
+class Int2;
 class Renderer;
 class TextBox;
 
@@ -22,6 +25,7 @@ private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
 	std::unique_ptr<Button> doneButton, nextPageButton;
+	std::vector<Int2> headOffsets;
 protected:
 	virtual void handleEvents(bool &running) override;
 	virtual void handleMouse(double dt) override;

@@ -17,6 +17,11 @@ private:
 	PortraitFile(const PortraitFile&) = delete;
 	~PortraitFile() = delete;
 public:
+	// Gets the heads filename for a given gender, race, and whether the heads
+	// are for the character sheet (not trimmed) or the game interface (trimmed).
+	static const std::string &getHeads(CharacterGenderName gender, 
+		CharacterRaceName race, bool trimmed);
+
 	// Gets the unclothed character background filename for a given gender and race.
 	static const std::string &getBody(CharacterGenderName gender, CharacterRaceName race);
 
@@ -26,7 +31,8 @@ public:
 	// Gets the pants image filename for a given gender.
 	static const std::string &getPants(CharacterGenderName gender);
 
-	// Weapons and armor...?
+	// Gets the equipment images filename for a given gender.
+	static const std::string &getEquipment(CharacterGenderName gender);
 
 	// Gets the pixel offset for drawing a shirt texture in the equipment screen.
 	static const Int2 &getShirtOffset(CharacterGenderName gender, bool magic);

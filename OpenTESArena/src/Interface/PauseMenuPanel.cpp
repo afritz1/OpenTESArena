@@ -25,6 +25,7 @@
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
+#include "../Media/PortraitFile.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -387,6 +388,33 @@ void PauseMenuPanel::render(Renderer &renderer)
 	int gameInterfaceHeight;
 	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
 	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
+
+	// Draw player portrait.
+	auto &player = this->getGameState()->getGameData()->getPlayer();
+	const auto &headsFilename = PortraitFile::getHeads(
+		player.getGenderName(), player.getRaceName(), true);
+	auto *portrait = textureManager.getSurfaces(headsFilename,
+		PaletteFile::fromName(PaletteName::Default)).at(player.getPortraitID());
+	SDL_SetColorKey(portrait, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
+	auto *status = textureManager.getSurfaces(
+		TextureFile::fromName(TextureName::StatusGradients),
+		PaletteFile::fromName(PaletteName::Default)).at(0);
+	SDL_Surface* combinedPortrait = [this, portrait, status]()
+	{
+		// Currently a hack because the portrait transparency causes the green status 
+		// gradient to become transparent. Find a way to draw onto the game interface directly
+		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
+		SDL_Surface *unoptStatusTemp = SDL_CreateRGBSurfaceFrom(status->pixels, status->w,
+			status->h, Renderer::DEFAULT_BPP, status->w * sizeof(uint32_t), 0, 0, 0, 0);
+		SDL_Surface *optStatusTemp = SDL_ConvertSurface(unoptStatusTemp,
+			this->getGameState()->getRenderer().getFormat(), 0);
+		SDL_FreeSurface(unoptStatusTemp);
+		SDL_BlitSurface(portrait, nullptr, optStatusTemp, nullptr);
+		return optStatusTemp;
+	}();
+
+	renderer.drawToOriginal(combinedPortrait, 14, 166);
+	SDL_FreeSurface(combinedPortrait);
 
 	// Draw text: player's name, music volume, sound volume.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
