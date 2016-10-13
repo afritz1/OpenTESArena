@@ -191,13 +191,67 @@ void GameWorldPanel::handleMouse(double dt)
 {
 	static_cast<void>(dt);
 
+	auto &renderer = this->getGameState()->getRenderer();
+
+	const auto mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
+	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+
+	if (leftClick)
+	{
+		// Horizontal camera movement rough draft.
+		// I tested this out for a minute and it feels really awkward. The original
+		// camera controls for Arena are bad! I can't wait until I add back modern 
+		// 3D camera support (like Daggerfall) as an option.
+		const Int2 screenDimensions = renderer.getWindowDimensions();
+		const Int2 mousePosition = this->getMousePosition();
+		const int mouseX = mousePosition.getX();
+
+		// Strength of turning is determined by proximity of the mouse cursor to
+		// the left or right screen edge.
+		const double dx = [mouseX, &screenDimensions]()
+		{
+			const int widthThird = screenDimensions.getX() / 3;
+
+			// Find which row and column the cursor is in.
+			const bool inLeftColumn = (mouseX >= 0) && (mouseX < widthThird);
+			const bool inRightColumn = mouseX >= (2 * widthThird);
+
+			double percent = 0.0;
+			if (inLeftColumn)
+			{
+				percent = -1.0 + (static_cast<double>(mouseX) / widthThird);
+			}
+			else if (inRightColumn)
+			{
+				percent = static_cast<double>(mouseX - (2 * widthThird)) / widthThird;
+			}
+
+			// Reduce the magnitude by a lot. Sensitivity needs to be tweaked.
+			percent *= 0.010;
+
+			// No NaNs or infinities allowed.
+			return std::isfinite(percent) ? percent : 0.0;
+		}();
+
+		auto &player = this->getGameState()->getGameData()->getPlayer();
+		const auto &options = this->getGameState()->getOptions();
+
+		// Yaw the camera left or right. No vertical movement in classic camera mode.
+		player.rotate(dx, 0.0, options.getHorizontalSensitivity(),
+			options.getVerticalSensitivity(), options.getVerticalFOV());
+	}
+
+	// Later in development, a 3D camera would be fun (more like Daggerfall), but 
+	// for now the objective is to more closely resemble the original game, so the
+	// rough draft 3D camera code below is commented out.
+
 	// Make the camera look around.
-	int dx, dy;
+	/*int dx, dy;
 	const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
 
 	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
 	bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-	bool turning = ((dx != 0) || (dy != 0)) && (leftClick || rightClick);
+	bool turning = ((dx != 0) || (dy != 0)) && leftClick;
 
 	if (turning)
 	{
@@ -210,7 +264,7 @@ void GameWorldPanel::handleMouse(double dt)
 		this->getGameState()->getGameData()->getPlayer().rotate(dxx, -dyy,
 			options.getHorizontalSensitivity(), options.getVerticalSensitivity(),
 			options.getVerticalFOV());
-	}
+	}*/
 }
 
 void GameWorldPanel::handleKeyboard(double dt)
@@ -264,7 +318,7 @@ void GameWorldPanel::handleKeyboard(double dt)
 		// Set the magnitude of the acceleration to some arbitrary numbers. These values 
 		// are independent of max speed. The original game didn't have sprinting, but it 
 		// seems like something relevant to do anyway (at least in testing).
-		double accelMagnitude = isRunning ? 35.0 : 10.0;
+		double accelMagnitude = isRunning ? 30.0 : 10.0;
 
 		// Change the player's velocity if valid.
 		if (std::isfinite(accelDirection.length()))
