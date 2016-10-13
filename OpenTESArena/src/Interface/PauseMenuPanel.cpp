@@ -223,6 +223,13 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
 	}();
+
+	// Store these because of the order game data is deleted when going
+	// to the main menu.
+	auto &player = gameState->getGameData()->getPlayer();
+	this->headsFilename = PortraitFile::getHeads(
+		player.getGenderName(), player.getRaceName(), true);
+	this->portraitID = player.getPortraitID();
 }
 
 PauseMenuPanel::~PauseMenuPanel()
@@ -390,16 +397,13 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
 
 	// Draw player portrait.
-	auto &player = this->getGameState()->getGameData()->getPlayer();
-	const auto &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceName(), true);
-	auto *portrait = textureManager.getSurfaces(headsFilename,
-		PaletteFile::fromName(PaletteName::Default)).at(player.getPortraitID());
+	auto *portrait = textureManager.getSurfaces(this->headsFilename,
+		PaletteFile::fromName(PaletteName::Default)).at(this->portraitID);
 	SDL_SetColorKey(portrait, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	auto *status = textureManager.getSurfaces(
 		TextureFile::fromName(TextureName::StatusGradients),
 		PaletteFile::fromName(PaletteName::Default)).at(0);
-	SDL_Surface* combinedPortrait = [this, portrait, status]()
+	SDL_Surface *combinedPortrait = [this, portrait, status]()
 	{
 		// Currently a hack because the portrait transparency causes the green status 
 		// gradient to become transparent. Find a way to draw onto the game interface directly
