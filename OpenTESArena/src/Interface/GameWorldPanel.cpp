@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <array>
 #include <cassert>
 
 #include "SDL.h"
@@ -37,6 +36,39 @@
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
+
+namespace
+{
+	// Original arrow cursor rectangles for each part of the letterbox. Their
+	// components can be multiplied by the ratio of the native and the original
+	// resolution so they're flexible with most resolutions.
+	const Rect TopLeftRegion(0, 0, 141, 49);
+	const Rect TopMiddleRegion(141, 0, 38, 49);
+	const Rect TopRightRegion(179, 0, 141, 49);
+	const Rect MiddleLeftRegion(0, 49, 90, 70);
+	const Rect MiddleRegion(90, 49, 140, 70);
+	const Rect MiddleRightRegion(230, 49, 90, 70);
+	const Rect BottomLeftRegion(0, 119, 141, 28);
+	const Rect BottomMiddleRegion(141, 119, 38, 28);
+	const Rect BottomRightRegion(179, 119, 141, 28);
+	const Rect UiBottomRegion(0, 147, 320, 53);
+
+	// UI button regions.
+	const Rect PortraitRegion(14, 166, 40, 29);
+	const Rect DrawWeaponRegion(88, 151, 29, 22);
+	const Rect MapRegion(118, 151, 29, 22);
+	const Rect ThievingRegion(147, 151, 29, 22);
+	const Rect StatusRegion(177, 151, 29, 22);
+	const Rect MagicRegion(88, 175, 29, 22);
+	const Rect JournalRegion(118, 175, 29, 22);
+	const Rect UseItemRegion(147, 175, 29, 22);
+	const Rect RestRegion(177, 175, 29, 22);
+
+	// Magic and use item scroll buttons, relative to the top left of the interface 
+	// (not programmed until later).
+	const Rect ScrollUpRegion(208, 3, 9, 9);
+	const Rect ScrollDownRegion(208, 42, 9, 9);
+}
 
 GameWorldPanel::GameWorldPanel(GameState *gameState)
 	: Panel(gameState)
@@ -110,6 +142,10 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
+
+	// Set all of the cursor regions relative to the current window.
+	const Int2 screenDims = gameState->getRenderer().getWindowDimensions();
+	this->updateCursorRegions(screenDims.getX(), screenDims.getY());
 }
 
 GameWorldPanel::~GameWorldPanel()
@@ -137,6 +173,7 @@ void GameWorldPanel::handleEvents(bool &running)
 			int width = e.window.data1;
 			int height = e.window.data2;
 			this->getGameState()->resizeWindow(width, height);
+			this->updateCursorRegions(width, height);
 		}
 		if (escapePressed)
 		{
@@ -328,6 +365,51 @@ void GameWorldPanel::handleKeyboard(double dt)
 	}
 }
 
+Float2d GameWorldPanel::getMotionMagnitudes(const Int2 &nativePoint)
+{
+	// To do...
+	return Float2d();
+}
+
+void GameWorldPanel::updateCursorRegions(int width, int height)
+{
+	// Scale ratios.
+	const double xScale = static_cast<double>(width) /
+		static_cast<double>(Renderer::ORIGINAL_WIDTH);
+	const double yScale = static_cast<double>(height) /
+		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+
+	// Lambda for making a cursor region that scales to the current resolution.
+	auto scaleRect = [xScale, yScale](const Rect &rect)
+	{
+		const int x = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getLeft()) * xScale));
+		const int y = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getTop()) * yScale));
+		const int width = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getWidth()) * xScale));
+		const int height = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getHeight()) * yScale));
+
+		return std::unique_ptr<Rect>(new Rect(x, y, width, height));
+	};
+
+	// Top row.
+	this->nativeCursorRegions.at(0) = scaleRect(TopLeftRegion);
+	this->nativeCursorRegions.at(1) = scaleRect(TopMiddleRegion);
+	this->nativeCursorRegions.at(2) = scaleRect(TopRightRegion);
+
+	// Middle row.
+	this->nativeCursorRegions.at(3) = scaleRect(MiddleLeftRegion);
+	this->nativeCursorRegions.at(4) = scaleRect(MiddleRegion);
+	this->nativeCursorRegions.at(5) = scaleRect(MiddleRightRegion);
+
+	// Bottom row.
+	this->nativeCursorRegions.at(6) = scaleRect(BottomLeftRegion);
+	this->nativeCursorRegions.at(7) = scaleRect(BottomMiddleRegion);
+	this->nativeCursorRegions.at(8) = scaleRect(BottomRightRegion);
+}
+
 void GameWorldPanel::tick(double dt, bool &running)
 {
 	assert(this->getGameState()->gameDataIsActive());
@@ -392,7 +474,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
 		SDL_Surface *unoptStatusTemp = SDL_CreateRGBSurfaceFrom(status->pixels, status->w,
 			status->h, Renderer::DEFAULT_BPP, status->w * sizeof(uint32_t), 0, 0, 0, 0);
-		SDL_Surface *optStatusTemp = SDL_ConvertSurface(unoptStatusTemp, 
+		SDL_Surface *optStatusTemp = SDL_ConvertSurface(unoptStatusTemp,
 			this->getGameState()->getRenderer().getFormat(), 0);
 		SDL_FreeSurface(unoptStatusTemp);
 		SDL_BlitSurface(portrait, nullptr, optStatusTemp, nullptr);
@@ -433,51 +515,25 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor, depending on its position on the screen.
-	const Int2 screenDimensions = renderer.getWindowDimensions();
 	const Int2 mousePosition = this->getMousePosition();
-	const int cursorIndex = [&screenDimensions, &mousePosition]()
+
+	SDL_Surface *cursor = [this, &mousePosition, &textureManager]()
 	{
-		const int width = screenDimensions.getX();
-		const int height = screenDimensions.getY();
-		const int mouseX = mousePosition.getX();
-		const int mouseY = mousePosition.getY();
-
-		// Split screen into three rows and columns.
-		const int widthThird = width / 3;
-		const int heightThird = height / 3;
-
-		// Find which row and column the cursor is in.
-		const bool inLeftColumn = (mouseX >= 0) && (mouseX < widthThird);
-		const bool inMiddleColumn = (mouseX >= widthThird) && (mouseX < (2 * widthThird));
-		const bool inRightColumn = mouseX >= (2 * widthThird);
-
-		const bool inTopRow = (mouseY >= 0) && (mouseY < heightThird);
-		const bool inMiddleRow = (mouseY >= heightThird) && (mouseY < (2 * heightThird));
-		const bool inBottomRow = mouseY >= (2 * heightThird);
-
-		// One of the booleans in this array will be true. Use its index as
-		// the return value.
-		const std::array<bool, 9> squares =
+		// See which arrow cursor region the native mouse is in.
+		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
 		{
-			inLeftColumn && inTopRow,
-			inMiddleColumn && inTopRow,
-			inRightColumn && inTopRow,
-			inLeftColumn && inMiddleRow,
-			inMiddleColumn && inMiddleRow,
-			inRightColumn && inMiddleRow,
-			inLeftColumn && inBottomRow,
-			inMiddleColumn && inBottomRow,
-			inRightColumn && inBottomRow
-		};
+			if (this->nativeCursorRegions.at(i)->contains(mousePosition))
+			{
+				return textureManager.getSurfaces(
+					TextureFile::fromName(TextureName::ArrowCursors)).at(i);
+			}
+		}
 
-		const auto index = std::find(squares.begin(), squares.end(), true) - squares.begin();
-		return static_cast<int>(index);
+		// If not in any of the arrow regions, use the default sword cursor.
+		return textureManager.getSurface(
+			TextureFile::fromName(TextureName::SwordCursor)).getSurface();
 	}();
 
-	const auto &cursors = textureManager.getSurfaces(
-		TextureFile::fromName(TextureName::ArrowCursors));
-
-	auto *cursor = cursors.at(cursorIndex);
 	SDL_SetColorKey(cursor, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	renderer.drawToNative(cursor, mousePosition.getX(), mousePosition.getY(),
 		static_cast<int>(cursor->w * this->getCursorScale()),
