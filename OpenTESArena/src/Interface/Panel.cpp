@@ -85,7 +85,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 			gameState,
 			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			PaletteFile::fromName(PaletteName::Default),
-			CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
+			0.042,
 			changeToIntroStory));
 		gameState->setPanel(std::move(scrollingPanel));
 	};

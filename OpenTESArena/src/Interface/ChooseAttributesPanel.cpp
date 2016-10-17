@@ -181,7 +181,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				gameState,
 				TextureFile::fromName(TextureSequenceName::Silmane),
 				silmaneText,
-				TextCinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
+				0.171,
 				gameFunction));
 
 			gameState->setPanel(std::move(cinematicPanel));

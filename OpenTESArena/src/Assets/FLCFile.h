@@ -22,8 +22,9 @@
 // - KING.FLC was initially created on Tuesday, Oct. 19th, 1993.
 // - VISION.FLC was initially created a month before that, on Monday, Sept. 13th 1993.
 
-// This website has some good information on the FLIC format:
-// - http://www.compuphase.com/flic.htm (fortunately it's fairly well documented)
+// These websites have some information on the FLIC format:
+// - http://www.compuphase.com/flic.htm
+// - http://www.fileformat.info/format/fli/egff.htm
 
 class FLCFile
 {

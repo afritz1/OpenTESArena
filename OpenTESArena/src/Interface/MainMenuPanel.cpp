@@ -89,7 +89,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 				gameState,
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				PaletteFile::fromName(PaletteName::Default),
-				CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE,
+				0.042,
 				changeToNewGameStory));
 			gameState->setPanel(std::move(cinematicPanel));
 			gameState->setMusic(MusicName::EvilIntro);
