@@ -88,7 +88,7 @@ private:
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
-		TextureManager &textureManager, Renderer &renderer, double renderQuality);
+		TextureManager &textureManager, Renderer &renderer, double resolutionScale);
 	~CLProgram();
 
 	CLProgram &operator=(CLProgram &&clProgram);

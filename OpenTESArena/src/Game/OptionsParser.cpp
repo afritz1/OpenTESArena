@@ -11,7 +11,7 @@ const std::string OptionsParser::FILENAME = "options.txt";
 const std::string OptionsParser::SCREEN_WIDTH_KEY = "ScreenWidth";
 const std::string OptionsParser::SCREEN_HEIGHT_KEY = "ScreenHeight";
 const std::string OptionsParser::FULLSCREEN_KEY = "Fullscreen";
-const std::string OptionsParser::RENDER_QUALITY_KEY = "RenderQuality";
+const std::string OptionsParser::RESOLUTION_SCALE_KEY = "ResolutionScale";
 const std::string OptionsParser::VERTICAL_FOV_KEY = "VerticalFieldOfView";
 const std::string OptionsParser::LETTERBOX_ASPECT_KEY = "LetterboxAspect";
 const std::string OptionsParser::CURSOR_SCALE_KEY = "CursorScale";
@@ -36,7 +36,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 	int screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);
 	int screenHeight = textMap.getInteger(OptionsParser::SCREEN_HEIGHT_KEY);
 	bool fullscreen = textMap.getBoolean(OptionsParser::FULLSCREEN_KEY);
-	double renderQuality = textMap.getDouble(OptionsParser::RENDER_QUALITY_KEY);
+	double resolutionScale = textMap.getDouble(OptionsParser::RESOLUTION_SCALE_KEY);
 	double verticalFOV = textMap.getDouble(OptionsParser::VERTICAL_FOV_KEY);
 	double letterboxAspect = textMap.getDouble(OptionsParser::LETTERBOX_ASPECT_KEY);
 	double cursorScale = textMap.getDouble(OptionsParser::CURSOR_SCALE_KEY);
@@ -56,7 +56,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 	bool skipIntro = textMap.getBoolean(OptionsParser::SKIP_INTRO_KEY);
 	
 	return std::unique_ptr<Options>(new Options(std::move(arenaPath),
-		screenWidth, screenHeight, fullscreen, renderQuality, verticalFOV, 
+		screenWidth, screenHeight, fullscreen, resolutionScale, verticalFOV,
 		letterboxAspect, cursorScale, hSensitivity, vSensitivity, std::move(soundfont), 
 		musicVolume, soundVolume, soundChannels, skipIntro));
 }

@@ -5,7 +5,7 @@
 #include "../Utilities/Debug.h"
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
-    double renderQuality, double verticalFOV, double letterboxAspect, double cursorScale, 
+    double resolutionScale, double verticalFOV, double letterboxAspect, double cursorScale,
 	double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
 	double soundVolume, int soundChannels, bool skipIntro)
     : arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
@@ -13,8 +13,8 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	// Make sure each of the values is in a valid range.
 	Debug::check(screenWidth > 0, "Options", "Screen width must be positive.");
 	Debug::check(screenHeight > 0, "Options", "Screen height must be positive.");
-	Debug::check((renderQuality >= 0.25) && (renderQuality <= 1.0), "Options", 
-		"Render quality must be between 0.25 and 1.0.");
+	Debug::check((resolutionScale >= 0.25) && (resolutionScale <= 1.0), "Options",
+		"Resolution scale must be between 0.25 and 1.0.");
 	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options", 
 		"Field of view must be between 0.0 and 180.0 exclusive.");
 	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
@@ -30,7 +30,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
 	this->fullscreen = fullscreen;
-	this->renderQuality = renderQuality;
+	this->resolutionScale = resolutionScale;
 	this->verticalFOV = verticalFOV;
 	this->letterboxAspect = letterboxAspect;
 	this->cursorScale = cursorScale;
@@ -62,9 +62,9 @@ bool Options::isFullscreen() const
 	return this->fullscreen;
 }
 
-double Options::getRenderQuality() const
+double Options::getResolutionScale() const
 {
-	return this->renderQuality;
+	return this->resolutionScale;
 }
 
 double Options::getVerticalFOV() const
@@ -141,9 +141,9 @@ void Options::setFullscreen(bool fullscreen)
 	this->fullscreen = fullscreen;
 }
 
-void Options::setRenderQuality(double percent)
+void Options::setResolutionScale(double percent)
 {
-	this->renderQuality = percent;
+	this->resolutionScale = percent;
 }
 
 void Options::setVerticalFOV(double fov)

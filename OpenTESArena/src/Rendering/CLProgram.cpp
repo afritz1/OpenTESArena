@@ -44,7 +44,7 @@ const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
-	TextureManager &textureManager, Renderer &renderer, double renderQuality)
+	TextureManager &textureManager, Renderer &renderer, double resolutionScale)
 	: textureManager(textureManager)
 {
 	assert(worldWidth > 0);
@@ -58,8 +58,8 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	// Render dimensions for ray tracing. To prevent issues when the user shrinks
 	// the window down too far, clamp them to at least 1.
-	this->renderWidth = std::max(static_cast<int>(screenWidth * renderQuality), 1);
-	this->renderHeight = std::max(static_cast<int>(screenHeight * renderQuality), 1);
+	this->renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
+	this->renderHeight = std::max(static_cast<int>(screenHeight * resolutionScale), 1);
 
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;

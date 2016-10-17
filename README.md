@@ -7,7 +7,7 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 7th, 2016:
+October 17th, 2016:
 
 This project is early in development.
 
@@ -41,7 +41,7 @@ Check out the Projects tab to see what's currently on the to-do list. Open a pul
 
 ## Instructions
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 2nd).
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 17th).
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.

@@ -12,7 +12,7 @@ private:
 	// Graphics.
 	int screenWidth, screenHeight;
 	bool fullscreen;
-	double renderQuality; // Percent.
+	double resolutionScale; // Percent.
 	double verticalFOV; // In degrees.
 	double letterboxAspect;
 	double cursorScale;
@@ -30,7 +30,7 @@ private:
 	bool skipIntro;
 public:
 	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
-        double renderQuality, double verticalFOV, double zetterboxAspect, double cursorScale, 
+        double resolutionScale, double verticalFOV, double zetterboxAspect, double cursorScale,
 		double hSensitivity, double vSensitivity, std::string &&soundfont, double musicVolume, 
 		double soundVolume, int soundChannels, bool skipIntro);
 	~Options();
@@ -38,7 +38,7 @@ public:
 	int getScreenWidth() const;
 	int getScreenHeight() const;
 	bool isFullscreen() const;
-	double getRenderQuality() const;
+	double getResolutionScale() const;
 	double getVerticalFOV() const;
 	double getLetterboxAspect() const;
 	double getCursorScale() const;
@@ -54,7 +54,7 @@ public:
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
 	void setFullscreen(bool fullscreen);
-	void setRenderQuality(double percent);
+	void setResolutionScale(double percent);
 	void setVerticalFOV(double fov);
 	void setLetterboxAspect(double aspect);
 	void setCursorScale(double cursorScale);

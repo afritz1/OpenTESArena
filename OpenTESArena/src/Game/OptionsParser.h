@@ -18,7 +18,7 @@ private:
 	static const std::string SCREEN_WIDTH_KEY;
 	static const std::string SCREEN_HEIGHT_KEY;
 	static const std::string FULLSCREEN_KEY;
-	static const std::string RENDER_QUALITY_KEY;
+	static const std::string RESOLUTION_SCALE_KEY;
 	static const std::string VERTICAL_FOV_KEY;
 	static const std::string LETTERBOX_ASPECT_KEY;
 	static const std::string CURSOR_SCALE_KEY;
