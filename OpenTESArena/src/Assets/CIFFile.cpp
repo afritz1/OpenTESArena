@@ -22,24 +22,6 @@ namespace
 		{ "PARCH.CIF", { 20, 20 } },
 		{ "SCROLL.CIF", { 20, 20 } }
 	};
-
-	// The method for finding how many images are in a CIF is currently unknown,
-	// so they are hardcoded from experimental data for now. If the image count
-	// is not found, assume it is 1.
-	/*const std::unordered_map<std::string, int> CifImageCounts =
-	{
-		{ "ARROWS.CIF", 9 },
-		{ "AXE.CIF", 33 },
-		{ "CHAIN.CIF", 33 },
-		{ "HAMMER.CIF", 33 },
-		{ "HAND.CIF", 13 },
-		{ "KEYS.CIF", 12 },
-		{ "MACE.CIF", 33 },
-		{ "PLATE.CIF", 33 },
-		{ "STAFF.CIF", 33 },
-		{ "STAR.CIF", 33 },
-		{ "SWORD.CIF", 33 }
-	};*/
 }
 
 CIFFile::CIFFile(const std::string &filename, const Palette &palette)
