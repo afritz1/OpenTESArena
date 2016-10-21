@@ -60,7 +60,7 @@ namespace
 	const Rect ThievingRegion(147, 151, 29, 22);
 	const Rect StatusRegion(177, 151, 29, 22);
 	const Rect MagicRegion(88, 175, 29, 22);
-	const Rect JournalRegion(118, 175, 29, 22);
+	const Rect LogbookRegion(118, 175, 29, 22);
 	const Rect UseItemRegion(147, 175, 29, 22);
 	const Rect RestRegion(177, 175, 29, 22);
 
@@ -182,6 +182,65 @@ void GameWorldPanel::handleEvents(bool &running)
 
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
+		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+			(e.button.button == SDL_BUTTON_RIGHT);
+
+		const auto &renderer = this->getGameState()->getRenderer();
+
+		// Get mouse position relative to letterbox coordinates.
+		const Int2 originalPosition = renderer.nativePointToOriginal(
+			this->getMousePosition());
+
+		if (leftClick)
+		{
+			// Was an interface button clicked?
+			if (PortraitRegion.contains(originalPosition))
+			{
+				this->characterSheetButton->click(this->getGameState());
+			}
+			else if (DrawWeaponRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Draw weapon.");
+			}
+			else if (MapRegion.contains(originalPosition))
+			{
+				this->automapButton->click(this->getGameState());
+			}
+			else if (ThievingRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Thieving.");
+			}
+			else if (StatusRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Status.");
+			}
+			else if (MagicRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Magic.");
+			}
+			else if (LogbookRegion.contains(originalPosition))
+			{
+				this->logbookButton->click(this->getGameState());
+			}
+			else if (UseItemRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Use item.");
+			}
+			else if (RestRegion.contains(originalPosition))
+			{
+				Debug::mention("Game", "Rest.");
+			}
+
+			// Later... any entities in the world clicked?
+		}
+		else if (rightClick)
+		{
+			if (MapRegion.contains(originalPosition))
+			{
+				this->worldMapButton->click(this->getGameState());
+			}
+		}
+
 		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_e);
 		bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
@@ -193,32 +252,24 @@ void GameWorldPanel::handleEvents(bool &running)
 		bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_m);
 
-		if (leftClick)
-		{
-			// Interface buttons? Entities in the world?
-		}
 		if (activateHotkeyPressed)
 		{
 			// Activate whatever is looked at.
 		}
 		else if (automapHotkeyPressed)
 		{
-			// Go to the automap.
 			this->automapButton->click(this->getGameState());
 		}
 		else if (logbookHotkeyPressed)
 		{
-			// Go to the logbook.
 			this->logbookButton->click(this->getGameState());
 		}
 		else if (sheetHotkeyPressed)
 		{
-			// Go to the character screen.
 			this->characterSheetButton->click(this->getGameState());
 		}
 		else if (worldMapHotkeyPressed)
 		{
-			// Go to the world map.
 			this->worldMapButton->click(this->getGameState());
 		}
 	}
@@ -228,42 +279,43 @@ void GameWorldPanel::handleMouse(double dt)
 {
 	static_cast<void>(dt);
 
-	auto &renderer = this->getGameState()->getRenderer();
+	const auto &renderer = this->getGameState()->getRenderer();
 
-	const auto mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
-	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+	const uint32_t mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
+	const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
 
 	if (leftClick)
 	{
-		// Horizontal camera movement rough draft.
-		// I tested this out for a minute and it feels really awkward. The original
-		// camera controls for Arena are bad! I can't wait until I add back modern 
+		// Horizontal camera movement rough draft. The original camera controls for 
+		// Arena are bad, but I am simulating them before thinking of adding modern 
 		// 3D camera support (like Daggerfall) as an option.
 		const Int2 screenDimensions = renderer.getWindowDimensions();
 		const Int2 mousePosition = this->getMousePosition();
-		const int mouseX = mousePosition.getX();
 
 		// Strength of turning is determined by proximity of the mouse cursor to
 		// the left or right screen edge.
-		const double dx = [mouseX, &screenDimensions]()
+		const double dx = [this, &mousePosition, &screenDimensions]()
 		{
-			const int widthThird = screenDimensions.getX() / 3;
+			const int mouseX = mousePosition.getX();
 
-			// Find which row and column the cursor is in.
-			const bool inLeftColumn = (mouseX >= 0) && (mouseX < widthThird);
-			const bool inRightColumn = mouseX >= (2 * widthThird);
+			// Native cursor regions (scaled to the current window).
+			const Rect &middleLeft = *this->nativeCursorRegions.at(3).get();
+			const Rect &middleRight = *this->nativeCursorRegions.at(5).get();
 
+			// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
 			double percent = 0.0;
-			if (inLeftColumn)
+			if (middleLeft.contains(mousePosition))
 			{
-				percent = -1.0 + (static_cast<double>(mouseX) / widthThird);
+				percent = -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
 			}
-			else if (inRightColumn)
+			else if (middleRight.contains(mousePosition))
 			{
-				percent = static_cast<double>(mouseX - (2 * widthThird)) / widthThird;
+				percent = static_cast<double>(mouseX - middleRight.getLeft()) /
+					middleRight.getWidth();
 			}
 
-			// Reduce the magnitude by a lot. Sensitivity needs to be tweaked.
+			// Reduce the magnitude by a lot as a baseline. Sensitivity can be 
+			// tweaked in the options.
 			percent *= 0.010;
 
 			// No NaNs or infinities allowed.
@@ -280,7 +332,7 @@ void GameWorldPanel::handleMouse(double dt)
 
 	// Later in development, a 3D camera would be fun (more like Daggerfall), but 
 	// for now the objective is to more closely resemble the original game, so the
-	// rough draft 3D camera code below is commented out.
+	// rough draft 3D camera code below is commented out as a result.
 
 	// Make the camera look around.
 	/*int dx, dy;

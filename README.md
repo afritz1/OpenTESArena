@@ -7,11 +7,11 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 17th, 2016:
+October 20th, 2016:
 
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings and day/night cycles. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation. The game interface icons (attack, magic, etc.) don't do anything yet.
+The game world is currently a barebones test city with some buildings and a day/night cycle. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation, and some of the game interface icons have some basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
 - Tab - character sheet and inventory
