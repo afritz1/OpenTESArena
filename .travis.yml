@@ -5,7 +5,14 @@ os: linux
 compiler: gcc
 group: stable
 
-before_install:    
+before_install:
+  - sudo apt-get install mercurial
+  - hg clone http://hg.libsdl.org/SDL -r release-2.0.5
+  - mkdir SDL/out
+  - cd SDL/out
+  - cmake .. -DVIDEO_MIR=0
+  - make && sudo make install
+  - cd ../../
   - sudo apt-get install libsdl2-dev
   - sudo apt-get install libsdl2-image-dev
   - sudo apt-get install libopenal-dev
