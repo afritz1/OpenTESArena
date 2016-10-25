@@ -1,5 +1,5 @@
 #include <cassert>
-#include <cstring>
+#include <cstdint>
 
 #include "SDL.h"
 
@@ -17,7 +17,8 @@ Surface::Surface(int x, int y, int width, int height)
 	assert(width > 0);
 	assert(height > 0);
 
-	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP, 0, 0, 0, 0);
+	this->surface = SDL_CreateRGBSurfaceWithFormat(0, width, height,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, int, int).");
 
@@ -30,14 +31,12 @@ Surface::Surface(int width, int height)
 
 Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
-	this->surface = SDL_CreateRGBSurface(surface->flags, surface->w, surface->h,
-		Renderer::DEFAULT_BPP, surface->format->Rmask, surface->format->Gmask,
-		surface->format->Bmask, surface->format->Amask);
+	this->surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, const SDL_Surface*).");
 
-	std::memcpy(this->surface->pixels, surface->pixels,
-		surface->w * surface->h * (Renderer::DEFAULT_BPP / 8));
+	SDL_memcpy(this->surface->pixels, surface->pixels, surface->pitch * surface->h);
 
 	this->point = std::unique_ptr<Int2>(new Int2(x, y));
 	this->visible = true;
@@ -47,13 +46,14 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 {
 	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
 	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP,
-		surface->format->Rmask, surface->format->Gmask, surface->format->Bmask,
-		surface->format->Amask);
+	this->surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(const SDL_Surface*, double).");
 
 	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 0;
 	rect.w = width;
 	rect.h = height;
 	SDL_BlitScaled(const_cast<SDL_Surface*>(surface), nullptr, this->surface, &rect);
@@ -145,6 +145,9 @@ void Surface::setVisibility(bool visible)
 
 void Surface::optimize(const SDL_PixelFormat *format)
 {
+	// This method should be obsolete now. All surface formats should be ARGB8888
+	// unless being converted to renderer format for being blitted to the screen
+	// (which is not done here anymore).
 	auto *optSurface = SDL_ConvertSurface(this->surface, format, this->surface->flags);
 	Debug::check(optSurface != nullptr, "Surface", "Could not optimize surface.");
 
@@ -156,8 +159,8 @@ void Surface::optimize(const SDL_PixelFormat *format)
 
 void Surface::setTransparentColor(const Color &color)
 {
-	auto mappedColor = SDL_MapRGBA(this->surface->format, color.getR(), color.getG(),
-		color.getB(), color.getA());
+	uint32_t mappedColor = SDL_MapRGBA(this->surface->format, color.getR(), 
+		color.getG(), color.getB(), color.getA());
 	SDL_SetColorKey(this->surface, SDL_TRUE, mappedColor);
 }
 

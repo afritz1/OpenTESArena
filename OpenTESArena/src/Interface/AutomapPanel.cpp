@@ -120,15 +120,11 @@ void AutomapPanel::render(Renderer &renderer)
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 
-	// Prepare the cursor color key.
-	unsigned int colorKey = renderer.getFormattedARGB(Color::Black);
-
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE, colorKey);
 	const int cursorYOffset = static_cast<int>(
 		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
 	const auto mousePosition = this->getMousePosition();

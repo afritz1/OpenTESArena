@@ -291,7 +291,7 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 
 	SDL_BlitSurface(tooltipTextBoxSurface, nullptr, tooltip.getSurface(), &rect);
 
-	SDL_Texture *texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
+	SDL_Texture *texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STATIC, tooltip.getWidth(), tooltip.getHeight());
 	SDL_UpdateTexture(texture, nullptr, tooltip.getSurface()->pixels,
 		tooltip.getWidth() * (Renderer::DEFAULT_BPP / 8));
@@ -519,8 +519,6 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),

@@ -81,14 +81,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.4\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.5\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.4\lib\x64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.5\lib\x64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;components.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -118,7 +118,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.4\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\include;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.5\include;C:\Program Files (x86)\OpenAL 1.1 SDK\include;$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <PreprocessorDefinitions>HAVE_WILDMIDI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -127,7 +127,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.4\lib\x64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\AMD APP SDK\3.0\lib\x86_64;C:\Program Files (x86)\OpenAL 1.1 SDK\libs\Win64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\SDL2-2.0.5\lib\x64;C:\Users\Aaron\Documents\Visual Studio 2015\Projects\Libraries\wildmidi-0.4.0\msvc;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>OpenAL32.lib;OpenCL.lib;SDL2.lib;SDL2main.lib;components.lib;wildmidi_dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>

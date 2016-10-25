@@ -166,15 +166,11 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 
 		// Load the IMG file.
 		IMGFile img(filename, palette);
-
-		// Create an unoptimized SDL surface from the IMG.
-		SDL_Surface *unoptSurface = SDL_CreateRGBSurfaceFrom(
-			img.getPixels(), img.getWidth(), img.getHeight(), Renderer::DEFAULT_BPP,
-			img.getWidth() * sizeof(*img.getPixels()), 0, 0, 0, 0);
-
-		// Optimize the surface.
-		optSurface = SDL_ConvertSurface(unoptSurface, this->renderer.getFormat(), 0);
-		SDL_FreeSurface(unoptSurface);
+		
+		// Create a surface from the IMG.
+		optSurface = SDL_CreateRGBSurfaceWithFormat(0, img.getWidth(), img.getHeight(), 
+			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_memcpy(optSurface->pixels, img.getPixels(), optSurface->pitch * optSurface->h);
 	}
 	else
 	{
@@ -277,15 +273,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = cfaFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				cfaFile.getWidth(), cfaFile.getHeight(), Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * cfaFile.getWidth(), 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, cfaFile.getWidth(), cfaFile.getHeight(),
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else if (isCIF)
@@ -298,15 +291,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = cifFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				cifFile.getWidth(i), cifFile.getHeight(i), Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * cifFile.getWidth(i), 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, cifFile.getWidth(i), cifFile.getHeight(i),
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else if (isDFA)
@@ -319,15 +309,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = dfaFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				dfaFile.getWidth(), dfaFile.getHeight(), Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * dfaFile.getWidth(), 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, dfaFile.getWidth(), dfaFile.getHeight(),
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else if (isFLC)
@@ -340,15 +327,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = flcFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				flcFile.getWidth(), flcFile.getHeight(), Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * flcFile.getWidth(), 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, flcFile.getWidth(), flcFile.getHeight(),
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else if (isRCI)
@@ -361,15 +345,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = rciFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT, Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * RCIFile::FRAME_WIDTH, 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT,
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else if (isSET)
@@ -382,15 +363,12 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = setFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(pixels,
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, Renderer::DEFAULT_BPP,
-				sizeof(*pixels) * SETFile::CHUNK_WIDTH, 0, 0, 0, 0);
+			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
+				0, SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT,
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			SDL_Surface *optSurface = SDL_ConvertSurface(surface,
-				this->renderer.getFormat(), 0);
-			SDL_FreeSurface(surface);
-
-			surfaceSet.push_back(optSurface);
+			surfaceSet.push_back(surface);
 		}
 	}
 	else
@@ -458,7 +436,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				cfaFile.getWidth(), cfaFile.getHeight());
 
 			const uint32_t *pixels = cfaFile.getPixels(i);
@@ -478,7 +456,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				cifFile.getWidth(i), cifFile.getHeight(i));
 
 			const uint32_t *pixels = cifFile.getPixels(i);
@@ -498,7 +476,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				dfaFile.getWidth(), dfaFile.getHeight());
 
 			const uint32_t *pixels = dfaFile.getPixels(i);
@@ -518,7 +496,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				flcFile.getWidth(), flcFile.getHeight());
 
 			const uint32_t *pixels = flcFile.getPixels(i);
@@ -538,7 +516,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT);
 
 			const uint32_t *pixels = rciFile.getPixels(i);
@@ -558,7 +536,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
-				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC,
+				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
 
 			const uint32_t *pixels = setFile.getPixels(i);

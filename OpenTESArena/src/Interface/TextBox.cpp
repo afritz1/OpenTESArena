@@ -78,19 +78,11 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	// before changing all non-black pixels to the desired text color.
 	this->surface = [textureWidth, textureHeight, &renderer]()
 	{
-		const SDL_PixelFormat *format = renderer.getFormat();
-		SDL_Surface *unOptSurface = SDL_CreateRGBSurface(0, textureWidth, textureHeight,
-			Renderer::DEFAULT_BPP, 0, 0, 0, 0);
-		SDL_Surface *optSurface = SDL_ConvertSurface(unOptSurface, format, 0);
+		SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, textureWidth,
+			textureHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
 
-		const uint32_t color = SDL_MapRGBA(format, 0, 0, 0, 0);
-		SDL_FillRect(optSurface, nullptr, color);
-		SDL_FreeSurface(unOptSurface);
-
-		// Set the color key (black pixels are transparent).
-		SDL_SetColorKey(optSurface, SDL_TRUE, color);
-
-		return optSurface;
+		return surface;
 	}();
 
 	// Lambda for drawing a surface onto another surface.
@@ -150,8 +142,8 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	// text color.
 	uint32_t *pixels = static_cast<uint32_t*>(this->surface->pixels);
 	const int pixelCount = textureWidth * textureHeight;
-	const uint32_t black = SDL_MapRGBA(renderer.getFormat(), 0, 0, 0, 0);
-	const uint32_t desiredColor = SDL_MapRGBA(renderer.getFormat(), textColor.getR(),
+	const uint32_t black = SDL_MapRGBA(this->surface->format, 0, 0, 0, 0);
+	const uint32_t desiredColor = SDL_MapRGBA(this->surface->format, textColor.getR(),
 		textColor.getG(), textColor.getB(), textColor.getA());
 
 	for (int i = 0; i < pixelCount; ++i)

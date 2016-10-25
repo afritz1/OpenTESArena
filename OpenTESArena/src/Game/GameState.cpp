@@ -50,8 +50,7 @@ GameState::GameState()
 		*this->renderer.get()));
 
 	// Initialize the font manager. Fonts (i.e., FONT_A.DAT) are loaded on demand.
-	this->fontManager = std::unique_ptr<FontManager>(new FontManager(
-		this->renderer->getFormat()));
+	this->fontManager = std::unique_ptr<FontManager>(new FontManager());
 
 	// Load various plain text assets.
 	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
@@ -59,11 +58,9 @@ GameState::GameState()
 	// Set window icon.
 	int iconWidth, iconHeight;
 	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
-	SDL_Surface *unOptIcon = SDL_CreateRGBSurfaceFrom(iconPixels.get(), iconWidth,
-		iconHeight, Renderer::DEFAULT_BPP, sizeof(*iconPixels.get()) * iconWidth,
-		0, 0, 0, 0);
-	SDL_Surface *icon = SDL_ConvertSurface(unOptIcon, this->renderer->getFormat(), 0);
-	SDL_FreeSurface(unOptIcon);
+	SDL_Surface *icon = SDL_CreateRGBSurfaceWithFormatFrom(iconPixels.get(),
+		iconWidth, iconHeight, Renderer::DEFAULT_BPP, 
+		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
 	this->renderer->setWindowIcon(icon);
 	SDL_FreeSurface(icon);
 

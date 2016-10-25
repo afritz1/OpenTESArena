@@ -399,7 +399,6 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw player portrait.
 	auto *portrait = textureManager.getSurfaces(this->headsFilename,
 		PaletteFile::fromName(PaletteName::Default)).at(this->portraitID);
-	SDL_SetColorKey(portrait, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	auto *status = textureManager.getSurfaces(
 		TextureFile::fromName(TextureName::StatusGradients),
 		PaletteFile::fromName(PaletteName::Default)).at(0);
@@ -408,13 +407,11 @@ void PauseMenuPanel::render(Renderer &renderer)
 		// Currently a hack because the portrait transparency causes the green status 
 		// gradient to become transparent. Find a way to draw onto the game interface directly
 		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
-		SDL_Surface *unoptStatusTemp = SDL_CreateRGBSurfaceFrom(status->pixels, status->w,
-			status->h, Renderer::DEFAULT_BPP, status->w * sizeof(uint32_t), 0, 0, 0, 0);
-		SDL_Surface *optStatusTemp = SDL_ConvertSurface(unoptStatusTemp,
-			this->getGameState()->getRenderer().getFormat(), 0);
-		SDL_FreeSurface(unoptStatusTemp);
-		SDL_BlitSurface(portrait, nullptr, optStatusTemp, nullptr);
-		return optStatusTemp;
+		SDL_Surface *statusTemp = SDL_CreateRGBSurfaceWithFormat(0, status->w, 
+			status->h, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_memcpy(statusTemp->pixels, status->pixels, statusTemp->pitch * statusTemp->h);
+		SDL_BlitSurface(portrait, nullptr, statusTemp, nullptr);
+		return statusTemp;
 	}();
 
 	renderer.drawToOriginal(combinedPortrait, 14, 166);
@@ -434,8 +431,6 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),

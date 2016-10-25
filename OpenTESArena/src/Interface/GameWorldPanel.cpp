@@ -515,7 +515,6 @@ void GameWorldPanel::render(Renderer &renderer)
 		player.getGenderName(), player.getRaceName(), true);
 	auto *portrait = textureManager.getSurfaces(headsFilename,
 		PaletteFile::fromName(PaletteName::Default)).at(player.getPortraitID());
-	SDL_SetColorKey(portrait, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	auto *status = textureManager.getSurfaces(
 		TextureFile::fromName(TextureName::StatusGradients),
 		PaletteFile::fromName(PaletteName::Default)).at(0);
@@ -524,13 +523,11 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Currently a hack because the portrait transparency causes the green status 
 		// gradient to become transparent. Find a way to draw onto the game interface directly
 		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
-		SDL_Surface *unoptStatusTemp = SDL_CreateRGBSurfaceFrom(status->pixels, status->w,
-			status->h, Renderer::DEFAULT_BPP, status->w * sizeof(uint32_t), 0, 0, 0, 0);
-		SDL_Surface *optStatusTemp = SDL_ConvertSurface(unoptStatusTemp,
-			this->getGameState()->getRenderer().getFormat(), 0);
-		SDL_FreeSurface(unoptStatusTemp);
-		SDL_BlitSurface(portrait, nullptr, optStatusTemp, nullptr);
-		return optStatusTemp;
+		SDL_Surface *statusTemp = SDL_CreateRGBSurfaceWithFormat(0, status->w, 
+			status->h, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_memcpy(statusTemp->pixels, status->pixels, statusTemp->pitch * statusTemp->h);
+		SDL_BlitSurface(portrait, nullptr, statusTemp, nullptr);
+		return statusTemp;
 	}();
 
 	renderer.drawToOriginal(combinedPortrait, 14, 166);
@@ -551,8 +548,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw compass frame over the headings.
 	const auto &compassFrame = textureManager.getSurface(
 		TextureFile::fromName(TextureName::CompassFrame));
-	SDL_SetColorKey(compassFrame.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	renderer.drawToOriginal(compassFrame.getSurface(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
@@ -586,7 +581,6 @@ void GameWorldPanel::render(Renderer &renderer)
 			TextureFile::fromName(TextureName::SwordCursor)).getSurface();
 	}();
 
-	SDL_SetColorKey(cursor, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	renderer.drawToNative(cursor, mousePosition.getX(), mousePosition.getY(),
 		static_cast<int>(cursor->w * this->getCursorScale()),
 		static_cast<int>(cursor->h * this->getCursorScale()));

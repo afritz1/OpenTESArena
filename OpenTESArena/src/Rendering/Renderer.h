@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <cstdint>
 #include <string>
 
 // Acts as an SDL_Renderer wrapper.
@@ -43,6 +44,9 @@ public:
 	// Original screen dimensions.
 	static const int ORIGINAL_WIDTH;
 	static const int ORIGINAL_HEIGHT;
+
+	// The default pixel format for all software surfaces, ARGB8888.
+	static const uint32_t DEFAULT_PIXELFORMAT;
 
 	// Default bits per pixel.
 	static const int DEFAULT_BPP;

@@ -3,10 +3,10 @@
 #include "Font.h"
 #include "FontName.h"
 
-FontManager::FontManager(const SDL_PixelFormat *format)
+FontManager::FontManager()
 	: fonts()
 {
-	this->format = format;
+	
 }
 
 FontManager::~FontManager()
@@ -24,7 +24,7 @@ const Font &FontManager::getFont(FontName fontName)
 	}
 	else
 	{
-		Font font(fontName, this->format);
+		Font font(fontName);
 
 		// Load the font object and insert it into the font manager map.
 		fontIter = this->fonts.emplace(std::make_pair(fontName, std::move(font))).first;

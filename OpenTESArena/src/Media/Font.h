@@ -8,7 +8,6 @@
 
 enum class FontName;
 
-struct SDL_PixelFormat;
 struct SDL_Surface;
 
 class Font
@@ -19,7 +18,7 @@ private:
 	int characterHeight;
 public:
 	// Constructs a group of characters using an image of bits from a font file.
-	Font(FontName fontName, const SDL_PixelFormat *format);
+	Font(FontName fontName);
 	Font(Font &&font);
 	~Font();
 

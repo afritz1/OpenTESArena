@@ -10,15 +10,12 @@ class Font;
 
 enum class FontName;
 
-struct SDL_PixelFormat;
-
 class FontManager
 {
 private:
 	std::map<FontName, Font> fonts;
-	const SDL_PixelFormat *format;
 public:
-	FontManager(const SDL_PixelFormat *format);
+	FontManager();
 	~FontManager();
 
 	// Gets a font object using one of the Arena font assets.

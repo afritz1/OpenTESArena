@@ -70,7 +70,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	this->outputData = std::vector<char>(sizeof(cl_int) * renderPixelCount);
 	
 	// Create streaming texture to be used as the game world frame buffer.	
-	this->texture = renderer.createTexture(SDL_PIXELFORMAT_ARGB8888,
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
 	Debug::check(this->texture != nullptr, "CLProgram", "SDL_CreateTexture");
 

@@ -157,8 +157,6 @@ void WorldMapPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),

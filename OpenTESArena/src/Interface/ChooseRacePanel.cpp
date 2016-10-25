@@ -36,12 +36,11 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		auto &renderer = gameState->getRenderer();
 
 		// Create placeholder parchment.
-		auto *unOptSurface = SDL_CreateRGBSurface(0, 180, 40, Renderer::DEFAULT_BPP,
-			0, 0, 0, 0);
-		auto *surface = SDL_ConvertSurface(unOptSurface, renderer.getFormat(), 0);
-		SDL_FreeSurface(unOptSurface);
-		SDL_FillRect(surface, nullptr, SDL_MapRGB(renderer.getFormat(), 166, 125, 81));
-		auto *texture = renderer.createTextureFromSurface(surface);
+		SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, 180, 40,
+			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
+
+		SDL_Texture *texture = renderer.createTextureFromSurface(surface);
 		SDL_FreeSurface(surface);
 
 		return texture;
@@ -295,8 +294,6 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),

@@ -18,6 +18,7 @@ const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
+const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
 Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
 {
@@ -48,13 +49,13 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	Int2 windowDimensions = this->getWindowDimensions();
 
 	// Initialize native frame buffer.
-	this->nativeTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.getX(), windowDimensions.getY());
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
 	// Initialize 320x200 frame buffer.
-	this->originalTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
+	this->originalTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, Renderer::ORIGINAL_WIDTH, Renderer::ORIGINAL_HEIGHT);
 
 	// Set the original frame buffer to not use transparency by default.
@@ -263,7 +264,7 @@ void Renderer::resize(int width, int height)
 
 	// Reinitialize native frame buffer.
 	SDL_DestroyTexture(this->nativeTexture);
-	this->nativeTexture = this->createTexture(SDL_PIXELFORMAT_ARGB8888,
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, width, height);
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));

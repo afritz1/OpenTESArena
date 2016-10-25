@@ -26,7 +26,7 @@ namespace
 	};
 }
 
-Font::Font(FontName fontName, const SDL_PixelFormat *format)
+Font::Font(FontName fontName)
 	: characters()
 {
 	// Load the font file for this font name.
@@ -47,21 +47,18 @@ Font::Font(FontName fontName, const SDL_PixelFormat *format)
 		const int elementWidth = fontFile.getWidth(c);
 		const uint32_t *elementPixels = fontFile.getPixels(c);
 
-		SDL_Surface *unOptSurface = SDL_CreateRGBSurface(0, elementWidth, elementHeight,
-			Renderer::DEFAULT_BPP, 0, 0, 0, 0);
-		SDL_Surface *optSurface = SDL_ConvertSurface(unOptSurface,
-			format, unOptSurface->flags);
-		SDL_FreeSurface(unOptSurface);
+		SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, elementWidth,
+			elementHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-		uint32_t *pixels = static_cast<uint32_t*>(optSurface->pixels);
-		const int pixelCount = optSurface->w * optSurface->h;
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		const int pixelCount = surface->w * surface->h;
 
 		for (int index = 0; index < pixelCount; ++index)
 		{
 			pixels[index] = elementPixels[index];
 		}
 
-		this->characters.at(i) = optSurface;
+		this->characters.at(i) = surface;
 	}
 }
 

@@ -45,12 +45,10 @@ ListBox::ListBox(int x, int y, const Font &font, const Color &textColor, int max
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurface(0, width, height, Renderer::DEFAULT_BPP,
-		0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-	this->optimize(renderer.getFormat());
+	this->surface = SDL_CreateRGBSurfaceWithFormat(0, width, height,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	// It's okay for there to be zero elements. Just be blank, then!
-
 	// Draw the text boxes to the parent surface.
 	this->updateDisplayText();
 }
@@ -123,8 +121,8 @@ int ListBox::getTotalHeight() const
 void ListBox::updateDisplayText()
 {
 	// Erase the parent surface's pixels. Don't resize it.
-	this->fill(Color::Magenta);
-	this->setTransparentColor(Color::Magenta);
+	this->fill(Color::Transparent);
+	this->setTransparentColor(Color::Transparent);
 
 	// Draw the relevant text boxes according to scroll index.
 	const int totalElements = static_cast<int>(this->elements.size());

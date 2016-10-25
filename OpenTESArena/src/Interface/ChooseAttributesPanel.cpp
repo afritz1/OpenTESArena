@@ -342,9 +342,6 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	auto &pants = textureManager.getSurface(pantsFilename);
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	SDL_SetColorKey(head, SDL_TRUE, renderer.getFormattedARGB(Color::Black));
-	SDL_SetColorKey(shirt.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
-	SDL_SetColorKey(pants.getSurface(), SDL_TRUE, renderer.getFormattedARGB(Color::Black));
 	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
 	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
 	renderer.drawToOriginal(head, headOffset.getX(), headOffset.getY());
@@ -369,8 +366,6 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
-	SDL_SetColorKey(cursor.getSurface(), SDL_TRUE,
-		renderer.getFormattedARGB(Color::Black));
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.getSurface(),
 		mousePosition.getX(), mousePosition.getY(),
