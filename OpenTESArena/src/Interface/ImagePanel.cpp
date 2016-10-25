@@ -93,6 +93,7 @@ void ImagePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
 	renderer.clearNative();
+	renderer.clearOriginal();
 
 	auto &textureManager = this->getGameState()->getTextureManager();
 

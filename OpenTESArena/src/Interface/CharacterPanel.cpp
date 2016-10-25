@@ -200,6 +200,7 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Clear full screen.
 	renderer.clearNative();
+	renderer.clearOriginal();
 
 	// Set palette.
 	auto &textureManager = this->getGameState()->getTextureManager();
