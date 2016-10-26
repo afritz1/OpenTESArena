@@ -141,8 +141,10 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	const bool useBuiltInPalette = this->paletteIsBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
-	if ((!useBuiltInPalette && (this->palettes.find(paletteName) == this->palettes.end())) ||
-		(useBuiltInPalette && (this->palettes.find(filename) == this->palettes.end())))
+	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
+	const bool imagePaletteIsLoaded = this->palettes.find(filename) != this->palettes.end();
+	if ((!useBuiltInPalette && !paletteIsLoaded) ||
+		(useBuiltInPalette && !imagePaletteIsLoaded))
 	{
 		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
 		// Otherwise, use the given palette name (i.e., PAL.COL).
@@ -150,9 +152,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 
 	// The image hasn't been loaded with the palette yet, so make a new entry.
-	// Check what kind of file extension is used (every texture should have an
-	// extension, so the "dot position" might be unnecessary once PNGs are no
-	// longer used).
+	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
 	const bool isIMG = extension.compare(".IMG") == 0;
 	const bool isMNU = extension.compare(".MNU") == 0;
@@ -162,7 +162,8 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	if (isIMG || isMNU)
 	{
 		// Decide if the IMG will use its own palette or not.
-		Palette *palette = useBuiltInPalette ? nullptr : &this->palettes.at(paletteName);
+		const Palette *palette = useBuiltInPalette ? nullptr : 
+			&this->palettes.at(paletteName);
 
 		// Load the IMG file.
 		IMGFile img(filename, palette);
@@ -204,12 +205,51 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename,
 		// The requested texture exists.
 		return textureIter->second;
 	}
+	// Attempt to use the image's built-in palette if requested.
+	const bool useBuiltInPalette = this->paletteIsBuiltIn(paletteName);
+
+	// See if the palette hasn't already been loaded.
+	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
+	const bool imagePaletteIsLoaded = this->palettes.find(filename) != this->palettes.end();
+	if ((!useBuiltInPalette && !paletteIsLoaded) || 
+		(useBuiltInPalette && !imagePaletteIsLoaded))
+	{
+		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
+		// Otherwise, use the given palette name (i.e., PAL.COL).
+		this->loadPalette(useBuiltInPalette ? filename : paletteName);
+	}
 
 	// The image hasn't been loaded with the palette yet, so make a new entry.
-	// Make a texture from the surface. It's okay if the surface isn't used except
-	// for, say, texture dimensions (instead of doing SDL_QueryTexture()).
-	const Surface &surface = this->getSurface(filename, paletteName);
-	SDL_Texture *texture = this->renderer.createTextureFromSurface(surface);
+	// Check what kind of file extension the filename has.
+	const std::string extension = String::getExtension(filename);
+	const bool isIMG = extension.compare(".IMG") == 0;
+	const bool isMNU = extension.compare(".MNU") == 0;
+
+	SDL_Texture *texture = nullptr;
+
+	if (isIMG || isMNU)
+	{
+		// Decide if the IMG will use its own palette or not.
+		const Palette *palette = useBuiltInPalette ? nullptr : 
+			&this->palettes.at(paletteName);
+
+		// Load the IMG file.
+		IMGFile img(filename, palette);
+
+		// Create a texture from the IMG.
+		texture = this->renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+			SDL_TEXTUREACCESS_STATIC, img.getWidth(), img.getHeight());
+
+		uint32_t *pixels = img.getPixels();
+		SDL_UpdateTexture(texture, nullptr, pixels, img.getWidth() * sizeof(*pixels));
+
+		// Set alpha transparency on.
+		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+	}
+	else
+	{
+		Debug::crash("Texture Manager", "Unrecognized texture format \"" + filename + "\".");
+	}
 
 	// Add the new texture and return it.
 	auto iter = this->textures.emplace(std::make_pair(fullName, texture)).first;
@@ -549,6 +589,12 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 	else
 	{
 		Debug::crash("Texture Manager", "Unrecognized texture list \"" + filename + "\".");
+	}
+
+	// Set alpha transparency on for each texture.
+	for (auto *texture : textureSet)
+	{
+		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
 	}
 
 	return textureSet;
