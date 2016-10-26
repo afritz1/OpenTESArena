@@ -7,7 +7,7 @@
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 20th, 2016:
+October 26th, 2016:
 
 This project is early in development.
 
@@ -41,7 +41,7 @@ Check out the Projects tab to see what's currently on the to-do list. Open a pul
 
 ## Instructions
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 17th).
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 26th).
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
@@ -52,7 +52,7 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 
 #### Obtaining a MIDI sound patches library:
 - Suggested: [eawpats12_full.tar.gz](http://distfiles.gentoo.org/distfiles/eawpats12_full.tar.gz) (I use [7-Zip](http://www.7-zip.org/) for extracting it on Windows).
-- Copy `timidity.cfg` from `eawpats\winconfig` on Windows or `eawpats\linuxconfig` on Linux up one folder into `eawpats`.
+- Copy `timidity.cfg` from `eawpats/winconfig` on Windows or `eawpats/linuxconfig` on Linux up one folder into `eawpats`.
 - The lines with `dir` in `timidity.cfg` may need to be ignored for the right directories to be used (for example, `dir c:\timidity` becomes `#dir c:\timidity` and `dir c:\eawpats` becomes `#dir c:\eawpats`).
 
 #### Obtaining the developer libraries:
@@ -68,7 +68,7 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 
 #### Running the executable:
 - Put the `data` and `options` folders, as well as any dependencies (SDL2.dll, wildmidi_dynamic.dll, etc.), in the executable directory.
-- Verify that `Soundfont` and `ArenaPath` in `options\options.txt` point to valid locations on your computer (i.e., `data\eawpats\timidity.cfg` and `data\ARENA` respectively).
+- Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
 
