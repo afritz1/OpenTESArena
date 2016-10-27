@@ -94,7 +94,7 @@ SDL_Surface *Surface::createSurfaceWithFormat(int width, int height,
 #endif
 }
 
-SDL_Surface *Surface::createSurfaceWithFormatFrom(const uint32_t *pixels, 
+SDL_Surface *Surface::createSurfaceWithFormatFrom(void *pixels, 
 	int width, int height, int depth, int pitch, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)

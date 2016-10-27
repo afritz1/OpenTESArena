@@ -36,7 +36,7 @@ public:
 
 	// Wrapper function for SDL 2.0.5 "SDL_CreateRGBSurfaceWithFormatFrom()".
 	// Remove this function once the project is using 2.0.5 again.
-	static SDL_Surface *createSurfaceWithFormatFrom(const uint32_t *pixels,
+	static SDL_Surface *createSurfaceWithFormatFrom(void *pixels,
 		int width, int height, int depth, int pitch, uint32_t format);
 
 	static Surface randomNoise(int width, int height, Random &random);
