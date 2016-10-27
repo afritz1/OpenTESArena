@@ -22,10 +22,10 @@ Here are some hotkeys in the game world:
 This is how the test world looks now:
 <br/>
 <br/>
-![Preview](https://github.com/afritz1/OpenTESArena/blob/master/Preview.PNG)
+![Preview](Preview.PNG)
 <br/>
 
-I'm currently catching back up to the state of the world shown in these other [preview images](https://github.com/afritz1/OpenTESArena/tree/master/samples), since the project is now using original Arena data exclusively. The graphics engine is in development.
+I'm currently catching back up to the state of the world shown in these other [preview images](samples), since the project is now using original Arena data exclusively. The graphics engine is in development.
 
 ## Project Details
 
