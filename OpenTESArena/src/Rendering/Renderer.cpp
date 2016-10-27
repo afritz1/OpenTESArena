@@ -183,7 +183,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 SDL_Surface *Renderer::getScreenshot() const
 {
 	const Int2 dimensions = this->getWindowDimensions();
-	SDL_Surface *screenshot = SDL_CreateRGBSurfaceWithFormat(0,
+	SDL_Surface *screenshot = Surface::createSurfaceWithFormat(
 		dimensions.getX(), dimensions.getY(),
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 

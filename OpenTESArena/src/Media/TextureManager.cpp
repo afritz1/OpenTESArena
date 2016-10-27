@@ -169,7 +169,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		IMGFile img(filename, palette);
 		
 		// Create a surface from the IMG.
-		optSurface = SDL_CreateRGBSurfaceWithFormat(0, img.getWidth(), img.getHeight(), 
+		optSurface = Surface::createSurfaceWithFormat(img.getWidth(), img.getHeight(), 
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_memcpy(optSurface->pixels, img.getPixels(), optSurface->pitch * optSurface->h);
 	}
@@ -313,8 +313,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = cfaFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, cfaFile.getWidth(), cfaFile.getHeight(),
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				cfaFile.getWidth(), cfaFile.getHeight(),
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
@@ -331,8 +331,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = cifFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, cifFile.getWidth(i), cifFile.getHeight(i),
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				cifFile.getWidth(i), cifFile.getHeight(i),
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
@@ -349,8 +349,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = dfaFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, dfaFile.getWidth(), dfaFile.getHeight(),
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				dfaFile.getWidth(), dfaFile.getHeight(),
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
@@ -367,8 +367,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = flcFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, flcFile.getWidth(), flcFile.getHeight(),
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				flcFile.getWidth(), flcFile.getHeight(),
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
@@ -385,8 +385,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = rciFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT,
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT,
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
@@ -403,8 +403,8 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 		for (int i = 0; i < imageCount; ++i)
 		{
 			uint32_t *pixels = setFile.getPixels(i);
-			SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(
-				0, SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT,
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT,
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 

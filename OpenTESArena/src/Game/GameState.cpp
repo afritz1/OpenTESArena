@@ -58,7 +58,7 @@ GameState::GameState()
 	// Set window icon.
 	int iconWidth, iconHeight;
 	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
-	SDL_Surface *icon = SDL_CreateRGBSurfaceWithFormatFrom(iconPixels.get(),
+	SDL_Surface *icon = Surface::createSurfaceWithFormatFrom(iconPixels.get(),
 		iconWidth, iconHeight, Renderer::DEFAULT_BPP, 
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
 	this->renderer->setWindowIcon(icon);

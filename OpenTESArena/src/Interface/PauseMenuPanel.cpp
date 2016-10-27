@@ -408,7 +408,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		// Currently a hack because the portrait transparency causes the green status 
 		// gradient to become transparent. Find a way to draw onto the game interface directly
 		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
-		SDL_Surface *statusTemp = SDL_CreateRGBSurfaceWithFormat(0, status->w, 
+		SDL_Surface *statusTemp = Surface::createSurfaceWithFormat(status->w, 
 			status->h, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_memcpy(statusTemp->pixels, status->pixels, statusTemp->pitch * statusTemp->h);
 		SDL_BlitSurface(portrait, nullptr, statusTemp, nullptr);

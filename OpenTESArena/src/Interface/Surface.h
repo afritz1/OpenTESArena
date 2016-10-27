@@ -1,6 +1,7 @@
 #ifndef SURFACE_H
 #define SURFACE_H
 
+#include <cstdint>
 #include <memory>
 
 // Acts as an SDL_Surface wrapper.
@@ -27,6 +28,16 @@ public:
 	Surface(const SDL_Surface *surface);
 	Surface(const Surface &surface);
 	virtual ~Surface();
+
+	// Wrapper function for SDL 2.0.5 "SDL_CreateRGBSurfaceWithFormat()".
+	// Remove this function once the project is using 2.0.5 again.
+	static SDL_Surface *createSurfaceWithFormat(int width, int height, 
+		int depth, uint32_t format);
+
+	// Wrapper function for SDL 2.0.5 "SDL_CreateRGBSurfaceWithFormatFrom()".
+	// Remove this function once the project is using 2.0.5 again.
+	static SDL_Surface *createSurfaceWithFormatFrom(const uint32_t *pixels,
+		int width, int height, int depth, int pitch, uint32_t format);
 
 	static Surface randomNoise(int width, int height, Random &random);
 

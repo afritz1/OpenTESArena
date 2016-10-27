@@ -17,7 +17,7 @@ Surface::Surface(int x, int y, int width, int height)
 	assert(width > 0);
 	assert(height > 0);
 
-	this->surface = SDL_CreateRGBSurfaceWithFormat(0, width, height,
+	this->surface = Surface::createSurfaceWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, int, int).");
@@ -31,7 +31,7 @@ Surface::Surface(int width, int height)
 
 Surface::Surface(int x, int y, const SDL_Surface *surface)
 {
-	this->surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h,
+	this->surface = Surface::createSurfaceWithFormat(surface->w, surface->h,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(int, int, const SDL_Surface*).");
@@ -46,7 +46,7 @@ Surface::Surface(const SDL_Surface *surface, double scale)
 {
 	int width = static_cast<int>(static_cast<double>(surface->w) * scale);
 	int height = static_cast<int>(static_cast<double>(surface->h) * scale);
-	this->surface = SDL_CreateRGBSurfaceWithFormat(0, surface->w, surface->h,
+	this->surface = Surface::createSurfaceWithFormat(surface->w, surface->h,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	Debug::check(this->surface != nullptr, "Surface",
 		"Insufficient memory in Surface(const SDL_Surface*, double).");
@@ -71,6 +71,40 @@ Surface::Surface(const Surface &surface)
 Surface::~Surface()
 {
 	SDL_FreeSurface(this->surface);
+}
+
+SDL_Surface *Surface::createSurfaceWithFormat(int width, int height, 
+	int depth, uint32_t format)
+{
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+	return SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format);
+#else
+	SDL_Surface *unoptSurface = SDL_CreateRGBSurface(0, width, height, 
+		depth, 0, 0, 0, 0);
+	SDL_Surface *optSurface = SDL_ConvertSurfaceFormat(unoptSurface, format, 0);
+	SDL_FreeSurface(unoptSurface);
+
+	// Surfaces with alpha are set up for blending by default.
+	if (optSurface->format->Amask != 0)
+	{
+		SDL_SetSurfaceBlendMode(optSurface, SDL_BLENDMODE_BLEND);
+	}
+
+	return optSurface;
+#endif
+}
+
+SDL_Surface *Surface::createSurfaceWithFormatFrom(const uint32_t *pixels, 
+	int width, int height, int depth, int pitch, uint32_t format)
+{
+#if SDL_VERSION_ATLEAST(2, 0, 5)
+	return SDL_CreateRGBSurfaceWithFormatFrom(pixels, width, height, 
+		depth, pitch, format);
+#else
+	SDL_Surface *surface = Surface::createSurfaceWithFormat(width, height, depth, format);
+	SDL_memcpy(surface->pixels, pixels, height * pitch);
+	return surface;
+#endif
 }
 
 Surface Surface::randomNoise(int width, int height, Random &random)

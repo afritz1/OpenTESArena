@@ -30,7 +30,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		auto &renderer = gameState->getRenderer();
 
 		// Create placeholder parchment.
-		SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, 180, 40,
+		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
 

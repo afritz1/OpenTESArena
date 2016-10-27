@@ -3,6 +3,7 @@
 #include "TextBox.h"
 
 #include "TextAlignment.h"
+#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
@@ -78,7 +79,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	// before changing all non-black pixels to the desired text color.
 	this->surface = [textureWidth, textureHeight, &renderer]()
 	{
-		SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, textureWidth,
+		SDL_Surface *surface = Surface::createSurfaceWithFormat(textureWidth,
 			textureHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
 

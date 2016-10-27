@@ -45,7 +45,7 @@ ListBox::ListBox(int x, int y, const Font &font, const Color &textColor, int max
 	// Replace the old SDL surface. It was just a placeholder until now.
 	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
 	SDL_FreeSurface(this->surface);
-	this->surface = SDL_CreateRGBSurfaceWithFormat(0, width, height,
+	this->surface = Surface::createSurfaceWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	// It's okay for there to be zero elements. Just be blank, then!
