@@ -180,10 +180,27 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	}
 }
 
-unsigned int Renderer::getFormattedARGB(const Color &color) const
+SDL_Surface *Renderer::getScreenshot() const
 {
-	return SDL_MapRGBA(this->getFormat(), color.getR(), color.getG(),
-		color.getB(), color.getA());
+	const Int2 dimensions = this->getWindowDimensions();
+	SDL_Surface *screenshot = SDL_CreateRGBSurfaceWithFormat(0,
+		dimensions.getX(), dimensions.getY(),
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+
+	int status = SDL_RenderReadPixels(this->renderer, nullptr,
+		screenshot->format->format, screenshot->pixels, screenshot->pitch);
+
+	if (status == 0)
+	{
+		Debug::mention("Renderer", "Screenshot taken.");
+	}
+	else
+	{
+		Debug::crash("Renderer", "Couldn't take screenshot, " +
+			std::string(SDL_GetError()));
+	}
+
+	return screenshot;
 }
 
 Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const

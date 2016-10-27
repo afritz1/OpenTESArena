@@ -61,7 +61,9 @@ public:
 	// using the given letterbox aspect.
 	SDL_Rect getLetterboxDimensions() const;
 
-	unsigned int getFormattedARGB(const Color &color) const;
+	// Gets a screenshot of the current window. The returned surface should be freed
+	// by the caller with SDL_FreeSurface() when finished.
+	SDL_Surface *getScreenshot() const;
 
 	// Transforms a native window (i.e., 1920x1080) point to an original (320x200) 
 	// point. Points outside the letterbox will either be negative or outside the 

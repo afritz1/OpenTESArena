@@ -180,6 +180,17 @@ void GameWorldPanel::handleEvents(bool &running)
 			this->pauseButton->click(this->getGameState());
 		}
 
+		bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_PRINTSCREEN);
+
+		if (takeScreenshot)
+		{
+			auto &renderer = this->getGameState()->getRenderer();
+			SDL_Surface *screenshot = renderer.getScreenshot();
+			SDL_SaveBMP(screenshot, "out.bmp");
+			SDL_FreeSurface(screenshot);
+		}
+
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);
 		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
