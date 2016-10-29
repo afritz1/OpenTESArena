@@ -178,7 +178,6 @@
     <ClCompile Include="src\Entities\EntityManager.cpp" />
     <ClCompile Include="src\Game\GameData.cpp" />
     <ClCompile Include="src\Items\ItemParser.cpp" />
-    <ClCompile Include="src\World\LocationParser.cpp" />
     <ClCompile Include="src\Utilities\File.cpp" />
     <ClCompile Include="src\Items\ArtifactParser.cpp" />
     <ClCompile Include="src\Items\ArmorArtifactData.cpp" />
@@ -317,7 +316,6 @@
     <ClInclude Include="src\Entities\EntityManager.h" />
     <ClInclude Include="src\Game\GameData.h" />
     <ClInclude Include="src\Items\ItemParser.h" />
-    <ClInclude Include="src\World\LocationParser.h" />
     <ClInclude Include="src\Utilities\File.h" />
     <ClInclude Include="src\Items\ArtifactParser.h" />
     <ClInclude Include="src\Items\ArmorArtifactData.h" />

@@ -3,6 +3,14 @@
 
 #include <string>
 
+// Each instance of a location points to a unique city, town, village, or dungeon.
+
+// There are a couple locations with duplicate names, so to get a unique location, 
+// it must be paired with a province name.
+
+// Later this might also have a unique seed ID, so if a location is a city, town, 
+// or village, its voxel data can be regenerated.
+
 enum class ClimateName;
 enum class LocationType;
 enum class ProvinceName;
