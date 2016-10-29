@@ -1,17 +1,18 @@
 # OpenTESArena
-### A free open-source project for "The Elder Scrolls: Arena"
 
-- Version: n/a
+This open-source project aims to be a modern engine reimplementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
+
+- Version: 0.1.0
 - License: MIT
 - IRC: #opentesarena on irc.freenode.net
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 26th, 2016:
+October 29th, 2016:
 
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings and a day/night cycle. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including most of character creation, and some of the game interface icons have some basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+The game world is currently a barebones test city with some buildings and a day/night cycle. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
 - Tab - character sheet and inventory
@@ -29,19 +30,17 @@ I'm currently catching back up to the state of the world shown in these other [p
 
 ## Project Details
 
-This open-source project aims to be a modern reimplementation of "The Elder Scrolls: Arena" by Bethesda Softworks. It is being written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
-
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
-It's named OpenTESArena so there's less confusion with the Quake III-based [OpenArena](https://github.com/OpenArena).
+It's named OpenTESArena and is not to be confused with the Quake III-based [OpenArena](https://github.com/OpenArena).
 
 Check out the Projects tab to see what's currently on the to-do list. Open a pull request if you'd like to contribute.
 
-## Instructions
+## Installation
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 26th).
+The most recent builds can be found in the [releases](https://github.com/afritz1/OpenTESArena/releases) tab. The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find where the MIDI config and game files are.
 
 #### Installing the Arena game data (Windows, Linux + WINE):
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
@@ -49,11 +48,17 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 - Run Arena106.exe.
 - Pick a destination folder anywhere.
 - Install.
+- Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
 
 #### Obtaining a MIDI sound patches library:
 - Suggested: [eawpats12_full.tar.gz](http://distfiles.gentoo.org/distfiles/eawpats12_full.tar.gz) (I use [7-Zip](http://www.7-zip.org/) for extracting it on Windows).
 - Copy `timidity.cfg` from `eawpats/winconfig` on Windows or `eawpats/linuxconfig` on Linux up one folder into `eawpats`.
 - The lines with `dir` in `timidity.cfg` may need to be ignored for the right directories to be used (for example, `dir c:\timidity` becomes `#dir c:\timidity` and `dir c:\eawpats` becomes `#dir c:\eawpats`).
+- Point `Soundfont` in `options/options.txt` to the `timidity.cfg` file.
+
+## Building from source
+
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 26th).
 
 #### Obtaining the developer libraries:
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
@@ -61,10 +66,13 @@ Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases)
 
-#### Building the executable:
+#### Building the executable (Windows):
 - Build the components static library (i.e., `components.lib`) separately using the files in the `components` folder.
 - If necessary, edit the Visual Studio project's include and library directories to fit your computer.
 - Link to the developer libraries and components library and build the executable.
+
+#### Building the executable (Linux):
+- CMake should allow you to build the project.
 
 #### Running the executable:
 - Put the `data` and `options` folders, as well as any dependencies (SDL2.dll, wildmidi_dynamic.dll, etc.), in the executable directory.
@@ -80,17 +88,17 @@ Current priority:
 - Sprites
 
 Next priority:
-- Adaptive super-sampling
 - Character creation questions
+- Click to move and turn
 - Collision detection
 - Game interface/buttons (some hotkeys already work)
 - Options menu
 - Weapon attacks (hold RMB to swing)
 
 Later:
+- Adaptive super-sampling
 - Automap
 - Class rules and traits
-- Click to move and turn
 - Enemies
 - Inventory and containers
 - Levels and experience
