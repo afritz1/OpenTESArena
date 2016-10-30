@@ -6,15 +6,7 @@ compiler: gcc
 group: stable
 
 before_install:
-  - sudo apt-get install mercurial
-  - hg clone http://hg.libsdl.org/SDL -r release-2.0.5
-  - mkdir SDL/out
-  - cd SDL/out
-  - cmake .. -DVIDEO_MIR=0
-  - make && sudo make install
-  - cd ../../
   - sudo apt-get install libsdl2-dev
-  - sudo apt-get install libsdl2-image-dev
   - sudo apt-get install libopenal-dev
   - sudo apt-get install opencl-headers
   - sudo apt-get install ocl-icd-libopencl1
@@ -27,13 +19,8 @@ install:
   - tar -xzvf wildmidi-0.4.0.tar.gz
   - pushd wildmidi-wildmidi-0.4.0 && mkdir build && pushd build && cmake .. && make && sudo make install && popd && popd
 
-install:
-  - wget https://github.com/Mindwerks/wildmidi/archive/wildmidi-0.4.0.tar.gz
-  - tar -xzvf wildmidi-0.4.0.tar.gz
-  - pushd wildmidi-wildmidi-0.4.0 && mkdir build && pushd build && cmake .. && make && sudo make install && popd && popd
-
 script:
   - mkdir build
   - cd build
   - cmake ..
-  - make
+  - make -j4
