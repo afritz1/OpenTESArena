@@ -51,10 +51,8 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 - Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
 
 #### Obtaining a MIDI sound patches library:
-- Suggested: [eawpats12_full.tar.gz](http://distfiles.gentoo.org/distfiles/eawpats12_full.tar.gz) (I use [7-Zip](http://www.7-zip.org/) for extracting it on Windows).
-- Copy `timidity.cfg` from `eawpats/winconfig` on Windows or `eawpats/linuxconfig` on Linux up one folder into `eawpats`.
-- The lines with `dir` in `timidity.cfg` may need to be ignored for the right directories to be used (for example, `dir c:\timidity` becomes `#dir c:\timidity` and `dir c:\eawpats` becomes `#dir c:\eawpats`).
-- Point `Soundfont` in `options/options.txt` to the `timidity.cfg` file.
+- The easiest way is to download one of the eawpats packages from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab and place the extracted eawpats folder into your `data` folder.
+- If you would like to use a different sound patches library, simply edit `Soundfont` in `options/options.txt` to point to another existing MIDI `.cfg` file.
 
 ## Building from source
 
