@@ -55,10 +55,5 @@ int RCIFile::getCount() const
 
 uint32_t *RCIFile::getPixels(int index) const
 {
-	// No need for this object to store its filename; it can be found somewhere
-	// in the texture manager stack in debug mode.
-	Debug::check((index >= 0) && (index < this->getCount()), "RCIFile",
-		"Frame index (" + std::to_string(index) + ") out of range.");
-
-	return this->frames[index].get();
+	return this->frames.at(index).get();
 }
