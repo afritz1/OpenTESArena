@@ -1,5 +1,3 @@
-#include <regex>
-
 #include "String.h"
 
 std::vector<std::string> String::split(const std::string &line, char separator)
@@ -93,7 +91,13 @@ std::string String::replace(const std::string &str, const std::string &a,
 	const std::string &b)
 {
 	// Replace all instances of "a" with "b".
-	std::string newStr = std::regex_replace(str, std::regex("\\" + a), b);
+	std::string newStr(str);
+	for (size_t index = newStr.find(a); index != std::string::npos; 
+		index = newStr.find(a, index))
+	{
+		newStr.replace(index, a.size(), b);
+		index += b.size();
+	}
 
 	return newStr;
 }
