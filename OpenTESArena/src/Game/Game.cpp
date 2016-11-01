@@ -7,12 +7,15 @@
 #include "Game.h"
 
 #include "GameState.h"
+#include "../Utilities/Debug.h"
 
 const int Game::MIN_FPS = 15;
 const int Game::DEFAULT_FPS = 60;
 
 Game::Game()
 {
+	Debug::mention("Game", "Platform is " + std::string(SDL_GetPlatform()) + ".");
+
 	this->gameState = std::unique_ptr<GameState>(new GameState());
 	this->targetFPS = Game::DEFAULT_FPS;
 }
