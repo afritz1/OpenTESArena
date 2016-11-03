@@ -53,6 +53,7 @@
 
 class Rect3D;
 class Renderer;
+class TextureReference;
 
 struct SDL_Texture;
 
@@ -76,6 +77,7 @@ private:
 		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer, 
 		colorBuffer, outputBuffer;
 	std::vector<cl_char> outputData; // For receiving pixels from the device's output buffer.
+	std::vector<TextureReference> textureRefs;
 	SDL_Texture *texture; // Streaming render texture for outputData to update.
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
@@ -110,14 +112,9 @@ public:
 	// any additive "double -> cl_float" error.
 	void updateGameTime(double gameTime);
 
-	// Updates a texture's pixels in device memory. Currently restricted to up to 64 
-	// textures, each with 64x64 dimensions. Later I think there should be an 
-	// "addTexture(pixels, width, height)" method instead, and that new method would 
-	// return an index. Offset and dimensions of each texture would be kept in a linked 
-	// list behind the scenes, and the index would be used to obtain that texture 
-	// reference when adding geometry (also behind the scenes). Should be an easy change, 
-	// and would also require increasing texture buffer size as needed.
-	void updateTexture(int index, uint32_t *pixels, int width, int height);
+	// Creates a new texture in device memory and returns the texture index for when 
+	// adding new geometry data. Pixel data is expected to be in ARGB8888 format.
+	int addTexture(uint32_t *pixels, int width, int height);
 
 	// Updates a voxel's geometry in device memory. Currently restricted to up to 6 
 	// rectangles, and all rectangles must be updated at the same time.

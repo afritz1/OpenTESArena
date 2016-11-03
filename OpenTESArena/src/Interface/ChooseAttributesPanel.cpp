@@ -197,11 +197,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				textureManager.getSurface("DNB1.IMG").getSurface()
 			};
 
+			std::vector<int> textureIndices;
+
 			for (int i = 0; i < static_cast<int>(surfaces.size()); ++i)
 			{
 				const SDL_Surface *surface = surfaces.at(i);
-				clProgram->updateTexture(i, static_cast<uint32_t*>(surface->pixels), 
-					surface->w, surface->h);
+				int textureIndex = clProgram->addTexture(
+					static_cast<uint32_t*>(surface->pixels), surface->w, surface->h);
+
+				textureIndices.push_back(textureIndex);
 			}
 
 			// Arbitrary random seed for texture indices.
@@ -213,7 +217,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				for (int i = 0; i < worldWidth; ++i)
 				{
 					Rect3D rect = VoxelBuilder::makeCeiling(i, 0, k);
-					int textureIndex = 1 + random.next(3);
+					int textureIndex = textureIndices.at(1 + random.next(3));
 					clProgram->updateVoxel(i, 0, k, 
 						std::vector<Rect3D>{ rect }, textureIndex);
 				}
@@ -222,7 +226,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// Near X and far X walls.
 			for (int j = 1; j < worldHeight; ++j)
 			{
-				int textureIndex = 0;
+				int textureIndex = textureIndices.at(0);
 				for (int k = 0; k < worldDepth; ++k)
 				{
 					std::vector<Rect3D> block = VoxelBuilder::makeBlock(0, j, k);
@@ -236,7 +240,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// Near Z and far Z walls (ignoring existing corners).
 			for (int j = 1; j < worldHeight; ++j)
 			{
-				int textureIndex = 0;
+				int textureIndex = textureIndices.at(0);
 				for (int i = 1; i < (worldWidth - 1); ++i)
 				{
 					std::vector<Rect3D> block = VoxelBuilder::makeBlock(i, j, 0);
@@ -248,8 +252,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			}
 
 			// Lambda for adding simple voxel buildings.
-			auto makeBuilding = [&clProgram, &random](int cellX, int cellZ, int width, 
-				int height, int depth, const std::vector<int> &textureIndices)
+			auto makeBuilding = [&clProgram, &random, &textureIndices](int cellX, 
+				int cellZ, int width, int height, int depth, const std::vector<int> &indices)
 			{
 				const int cellY = 1;
 
@@ -264,8 +268,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 							const int z = cellZ + k;
 
 							const std::vector<Rect3D> block = VoxelBuilder::makeBlock(x, y, z);
-							const int textureIndex = textureIndices.at(random.next(
-								static_cast<int>(textureIndices.size())));
+							const int textureIndex = textureIndices.at(indices.at(random.next(
+								static_cast<int>(indices.size()))));
 
 							clProgram->updateVoxel(x, y, z, block, textureIndex);
 						}

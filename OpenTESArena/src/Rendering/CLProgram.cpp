@@ -6,6 +6,7 @@
 
 #include "CLProgram.h"
 
+#include "TextureReference.h"
 #include "../Entities/Directable.h"
 #include "../Math/Constants.h"
 #include "../Math/Float3.h"
@@ -30,9 +31,6 @@ namespace
 
 	// Some arbitrary limits until the code is more advanced.
 	const int MAX_RECTS_PER_VOXEL = 6;
-	const int TEXTURE_WIDTH = 64;
-	const int TEXTURE_HEIGHT = 64;
-	const int MAX_TEXTURE_COUNT = 64;
 }
 
 const std::string CLProgram::PATH = "data/kernels/";
@@ -177,8 +175,8 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		sizeof(cl_float4) * TEXTURE_WIDTH * TEXTURE_HEIGHT * MAX_TEXTURE_COUNT
-		/* Placeholder size, 32 textures with strictly 64x64 dimensions */, nullptr, &status);
+		static_cast<cl::size_type>(1 << 16) /* 65536 bytes; resized as necessary. */,
+		nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -217,7 +215,9 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 		sizeof(cl_int) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer outputBuffer.");
 
-	// Tell the intersect kernel arguments where their buffers live.
+	// Tell the intersect kernel arguments where their buffers live. Don't forget 
+	// that many of these are also refreshed in CLProgram::resize() and
+	// CLProgram::addTexture().
 	status = this->intersectKernel.setArg(0, this->cameraBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg intersectKernel cameraBuffer.");
@@ -706,24 +706,21 @@ void CLProgram::updateGameTime(double gameTime)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateGameTime");
 }
 
-void CLProgram::updateTexture(int index, uint32_t *pixels, int width, int height)
+int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 {
-	assert(index >= 0);
-	assert(index < MAX_TEXTURE_COUNT);
 	assert(pixels != nullptr);
-
-	// All textures are 64x64 for now.
-	Debug::check((width == TEXTURE_WIDTH) && (height == TEXTURE_HEIGHT), "CLProgram",
-		"Texture dims are currently restricted to 64x64 (given " +
-		std::to_string(width) + "x" + std::to_string(height) + ").");
+	assert(width > 0);
+	assert(height > 0);
 
 	std::vector<cl_char> buffer(sizeof(cl_float4) * width * height);
 	cl_char *bufPtr = buffer.data();
 
-	// Convert each pixel to float4 format. Assume pixel format is ARGB8888.
+	// Convert each pixel to float4 format (16 bytes per pixel); fast for rendering 
+	// at the expense of memory.
 	const int pixelCount = width * height;
 	for (int i = 0; i < pixelCount; ++i)
 	{
+		// Input pixel format is ARGB8888.
 		const uint32_t pixel = pixels[i];
 		const uint8_t a = static_cast<uint8_t>(pixel >> 24);
 		const uint8_t r = static_cast<uint8_t>(pixel >> 16);
@@ -738,11 +735,84 @@ void CLProgram::updateTexture(int index, uint32_t *pixels, int width, int height
 		pixPtr[3] = static_cast<cl_float>(static_cast<float>(a) / 255.0f);
 	}
 
-	// Write the buffer to device memory.
-	const cl::size_type bufferOffset = sizeof(cl_float4) * TEXTURE_WIDTH * TEXTURE_HEIGHT * index;
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer,
-		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateTexture");
+	// Number of pixels to skip to access the new texture when rendering.
+	const int pixelOffset = [this]()
+	{
+		int offset = 0;
+		for (auto &textureRef : this->textureRefs)
+		{
+			offset += textureRef.getWidth() * textureRef.getHeight();
+		}
+
+		return offset;
+	}();
+
+	// Offset in texture memory where the new texture should be written.
+	const size_t byteOffset = sizeof(cl_float4) * pixelOffset;
+
+	// Size of the existing texture buffer in bytes.
+	cl_int status = CL_SUCCESS;
+	const size_t textureBufferSize = this->textureBuffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addTexture.");
+
+	// Minimum size of texture memory required including the new texture.
+	const size_t requiredSize = byteOffset + buffer.size();
+
+	// See if the texture buffer needs to be resized.
+	if (requiredSize > textureBufferSize)
+	{
+		const size_t newSize = [requiredSize, textureBufferSize]()
+		{
+			// Make sure size is at least 1 before doubling.
+			size_t size = std::max(textureBufferSize, static_cast<size_t>(1));
+			while (size < requiredSize)
+			{
+				size *= 2;
+			}
+			return size;
+		}();
+
+		Debug::mention("CLProgram", "Resizing texture memory from " +
+			std::to_string(textureBufferSize) + " to " + std::to_string(newSize) + " bytes.");
+
+		// Read the existing texture memory into a temp data buffer.
+		std::vector<cl_char> oldData(textureBufferSize);
+		status = this->commandQueue.enqueueReadBuffer(this->textureBuffer, CL_TRUE, 0,
+			textureBufferSize, static_cast<void*>(oldData.data()), nullptr, nullptr);
+		Debug::check(status == CL_SUCCESS, "CLProgram",
+			"cl::enqueueReadBuffer addTexture oldData.");
+
+		// Allocate a new buffer in device memory, erasing the old one.
+		this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+			newSize, nullptr, &status);
+		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer addTexture.");
+
+		// Write the old data into the bigger texture buffer.
+		status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer, CL_TRUE, 0,
+			textureBufferSize, static_cast<const void*>(oldData.data()), nullptr, nullptr);
+		Debug::check(status == CL_SUCCESS, "CLProgram",
+			"cl::enqueueWriteBuffer addTexture oldData.");
+
+		// Tell the kernels where to find the new texture buffer.
+		status = this->intersectKernel.setArg(4, this->textureBuffer);
+		Debug::check(status == CL_SUCCESS, "CLProgram",
+			"cl::Kernel::setArg addTexture intersectKernel.");
+
+		status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+		Debug::check(status == CL_SUCCESS, "CLProgram",
+			"cl::Kernel::setArg addTexture rayTraceKernel.");
+	}
+
+	// Write the new texture into device memory.
+	status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer, CL_TRUE,
+		byteOffset, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer addTexture.");
+
+	// Add a new texture reference so rectangles can refer to this texture.
+	this->textureRefs.push_back(TextureReference(pixelOffset, width, height));
+
+	// Return the index to the texture reference just added.
+	return static_cast<int>(this->textureRefs.size() - 1);
 }
 
 void CLProgram::updateVoxelRef(int x, int y, int z, int count)
@@ -804,7 +874,7 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	for (size_t i = 0; i < rects.size(); ++i)
 	{
 		const Rect3D &rect = rects.at(i);
-		int textureIndex = textureIndices.at(i);
+		const TextureReference &textureRef = this->textureRefs.at(textureIndices.at(i));
 
 		cl_char *recPtr = bufPtr + (SIZEOF_RECTANGLE * i);
 
@@ -843,12 +913,12 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 
 		// Texture reference data.
 		cl_int *offsetPtr = reinterpret_cast<cl_int*>(recPtr + (sizeof(cl_float3) * 6));
-		offsetPtr[0] = static_cast<cl_int>(TEXTURE_WIDTH * TEXTURE_HEIGHT * textureIndex);
+		offsetPtr[0] = static_cast<cl_int>(textureRef.getOffset());
 
 		cl_short *dimPtr = reinterpret_cast<cl_short*>(recPtr +
 			(sizeof(cl_float3) * 6) + sizeof(cl_int));
-		dimPtr[0] = static_cast<cl_short>(TEXTURE_WIDTH);
-		dimPtr[1] = static_cast<cl_short>(TEXTURE_HEIGHT);
+		dimPtr[0] = static_cast<cl_short>(textureRef.getWidth());
+		dimPtr[1] = static_cast<cl_short>(textureRef.getHeight());
 	}
 
 	// Write the buffer to device memory. Currently using naive rectangle buffer size.
