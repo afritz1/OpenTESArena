@@ -135,14 +135,10 @@ void GameState::resizeWindow(int width, int height)
 
 	if (this->gameDataIsActive())
 	{
-		// Rebuild OpenCL program with new dimensions.		
-		this->gameData->getCLProgram() = std::move(CLProgram(
-			this->gameData->getWorldWidth(),
-			this->gameData->getWorldHeight(),
-			this->gameData->getWorldDepth(),
-			this->getTextureManager(),
-			this->getRenderer(),
-			this->getOptions().getResolutionScale()));
+		// Rebuild OpenCL program with new dimensions.
+		auto &clProgram = this->gameData->getCLProgram();
+		clProgram.resize(*this->renderer.get(), 
+			this->getOptions().getResolutionScale());
 	}
 }
 

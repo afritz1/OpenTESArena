@@ -20,6 +20,8 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
+#include "../Math/Random.h"
+#include "../Math/Rect3D.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -35,6 +37,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/VoxelBuilder.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
@@ -135,9 +138,176 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 			std::unique_ptr<CLProgram> clProgram(new CLProgram(
 				worldWidth, worldHeight, worldDepth,
-				gameState->getTextureManager(),
 				gameState->getRenderer(),
 				gameState->getOptions().getResolutionScale()));
+
+			// Send some textures and test geometry to CL device memory. Eventually
+			// this will be moved out to another data class, maybe stored in the game
+			// data object.
+			auto &textureManager = gameState->getTextureManager();
+			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
+
+			std::vector<const SDL_Surface*> surfaces =
+			{
+				// Texture indices:
+				// 0: city wall
+				textureManager.getSurface("CITYWALL.IMG").getSurface(),
+
+				// 1-3: grounds
+				textureManager.getSurfaces("NORM1.SET").at(0),
+				textureManager.getSurfaces("NORM1.SET").at(1),
+				textureManager.getSurfaces("NORM1.SET").at(2),
+
+				// 4-5: gates
+				textureManager.getSurface("DLGT.IMG").getSurface(),
+				textureManager.getSurface("DRGT.IMG").getSurface(),
+
+				// 6-9: tavern + door
+				textureManager.getSurfaces("MTAVERN.SET").at(0),
+				textureManager.getSurfaces("MTAVERN.SET").at(1),
+				textureManager.getSurfaces("MTAVERN.SET").at(2),
+				textureManager.getSurface("DTAV.IMG").getSurface(),
+
+				// 10-15: temple + door
+				textureManager.getSurfaces("MTEMPLE.SET").at(0),
+				textureManager.getSurfaces("MTEMPLE.SET").at(1),
+				textureManager.getSurfaces("MTEMPLE.SET").at(2),
+				textureManager.getSurfaces("MTEMPLE.SET").at(3),
+				textureManager.getSurfaces("MTEMPLE.SET").at(4),
+				textureManager.getSurface("DTEP.IMG").getSurface(),
+
+				// 16-21: Mages' Guild + door
+				textureManager.getSurfaces("MMUGUILD.SET").at(0),
+				textureManager.getSurfaces("MMUGUILD.SET").at(1),
+				textureManager.getSurfaces("MMUGUILD.SET").at(2),
+				textureManager.getSurfaces("MMUGUILD.SET").at(3),
+				textureManager.getSurfaces("MMUGUILD.SET").at(4),
+				textureManager.getSurface("DMU.IMG").getSurface(),
+
+				// 22-25: Equipment store + door
+				textureManager.getSurfaces("MEQUIP.SET").at(0),
+				textureManager.getSurfaces("MEQUIP.SET").at(1),
+				textureManager.getSurfaces("MEQUIP.SET").at(2),
+				textureManager.getSurface("DEQ.IMG").getSurface(),
+
+				// 26-29: Noble house + door
+				textureManager.getSurfaces("MNOBLE.SET").at(0),
+				textureManager.getSurfaces("MNOBLE.SET").at(1),
+				textureManager.getSurfaces("MNOBLE.SET").at(2),
+				textureManager.getSurface("DNB1.IMG").getSurface()
+			};
+
+			for (int i = 0; i < static_cast<int>(surfaces.size()); ++i)
+			{
+				const SDL_Surface *surface = surfaces.at(i);
+				clProgram->updateTexture(i, static_cast<uint32_t*>(surface->pixels), 
+					surface->w, surface->h);
+			}
+
+			// Arbitrary random seed for texture indices.
+			Random random(2);
+			
+			// Ground.
+			for (int k = 0; k < worldDepth; ++k)
+			{
+				for (int i = 0; i < worldWidth; ++i)
+				{
+					Rect3D rect = VoxelBuilder::makeCeiling(i, 0, k);
+					int textureIndex = 1 + random.next(3);
+					clProgram->updateVoxel(i, 0, k, 
+						std::vector<Rect3D>{ rect }, textureIndex);
+				}
+			}
+
+			// Near X and far X walls.
+			for (int j = 1; j < worldHeight; ++j)
+			{
+				int textureIndex = 0;
+				for (int k = 0; k < worldDepth; ++k)
+				{
+					std::vector<Rect3D> block = VoxelBuilder::makeBlock(0, j, k);
+					clProgram->updateVoxel(0, j, k, block, textureIndex);
+
+					block = VoxelBuilder::makeBlock(worldWidth - 1, j, k);
+					clProgram->updateVoxel(worldWidth - 1, j, k, block, textureIndex);
+				}
+			}
+
+			// Near Z and far Z walls (ignoring existing corners).
+			for (int j = 1; j < worldHeight; ++j)
+			{
+				int textureIndex = 0;
+				for (int i = 1; i < (worldWidth - 1); ++i)
+				{
+					std::vector<Rect3D> block = VoxelBuilder::makeBlock(i, j, 0);
+					clProgram->updateVoxel(i, j, 0, block, textureIndex);
+
+					block = VoxelBuilder::makeBlock(i, j, worldDepth - 1);
+					clProgram->updateVoxel(i, j, worldDepth - 1, block, textureIndex);
+				}
+			}
+
+			// Lambda for adding simple voxel buildings.
+			auto makeBuilding = [&clProgram, &random](int cellX, int cellZ, int width, 
+				int height, int depth, const std::vector<int> &textureIndices)
+			{
+				const int cellY = 1;
+
+				for (int k = 0; k < depth; ++k)
+				{
+					for (int j = 0; j < height; ++j)
+					{
+						for (int i = 0; i < width; ++i)
+						{
+							const int x = cellX + i;
+							const int y = cellY + j;
+							const int z = cellZ + k;
+
+							const std::vector<Rect3D> block = VoxelBuilder::makeBlock(x, y, z);
+							const int textureIndex = textureIndices.at(random.next(
+								static_cast<int>(textureIndices.size())));
+
+							clProgram->updateVoxel(x, y, z, block, textureIndex);
+						}
+					}
+				}
+			};
+
+			// Add some simple buildings around. This data should come from a "World" or 
+			// "CityData" class sometime.
+			// Tavern #1
+			makeBuilding(3, 5, 5, 2, 6, { 6, 7, 8 });
+			makeBuilding(3, 6, 1, 1, 1, { 9 });
+
+			// Tavern #2
+			makeBuilding(3, 13, 7, 1, 5, { 6, 7, 8 });
+			makeBuilding(6, 13, 1, 1, 1, { 9 });
+
+			// Temple #1
+			makeBuilding(11, 4, 6, 2, 5, { 10, 11, 12, 13, 14 });
+			makeBuilding(11, 6, 1, 1, 1, { 15 });
+
+			// Mage's Guild #1
+			makeBuilding(12, 12, 5, 2, 4, { 16, 17, 18, 19, 20 });
+			makeBuilding(15, 12, 1, 1, 1, { 21 });
+
+			// Equipment store #1
+			makeBuilding(20, 4, 5, 1, 7, { 22, 23, 24 });
+			makeBuilding(20, 8, 1, 1, 1, { 25 });
+
+			// Equipment store #2
+			makeBuilding(11, 19, 6, 2, 6, { 22, 23, 24 });
+			makeBuilding(13, 19, 1, 1, 1, { 25 });
+
+			// Noble house #1
+			makeBuilding(21, 15, 6, 2, 8, { 26, 27, 28 });
+			makeBuilding(21, 17, 1, 1, 1, { 29 });
+
+			// Add a city gate with some walls.
+			makeBuilding(8, 0, 1, 1, 1, { 4 });
+			makeBuilding(9, 0, 1, 1, 1, { 5 });
+			makeBuilding(1, 1, 7, worldHeight - 1, 1, { 0 });
+			makeBuilding(10, 1, 3, worldHeight - 1, 1, { 0 });
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(

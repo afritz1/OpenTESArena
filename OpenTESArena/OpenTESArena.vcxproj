@@ -283,6 +283,7 @@
     <ClCompile Include="src\Utilities\KvpTextMap.cpp" />
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
     <ClCompile Include="src\Assets\TextAssets.cpp" />
+    <ClCompile Include="src\World\VoxelBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Media\PPMFile.h" />
@@ -460,6 +461,7 @@
     <ClInclude Include="src\Utilities\KvpTextMap.h" />
     <ClInclude Include="src\Interface\WorldMapPanel.h" />
     <ClInclude Include="src\Assets\TextAssets.h" />
+    <ClInclude Include="src\World\VoxelBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

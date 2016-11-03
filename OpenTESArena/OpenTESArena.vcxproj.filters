@@ -131,6 +131,7 @@
     <ClCompile Include="src\Interface\ImageSequencePanel.cpp" />
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Media\PPMFile.cpp" />
+    <ClCompile Include="src\World\VoxelBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -308,6 +309,7 @@
     <ClInclude Include="src\Interface\ImageSequencePanel.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Media\PPMFile.h" />
+    <ClInclude Include="src\World\VoxelBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

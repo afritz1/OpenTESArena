@@ -7,17 +7,10 @@
 #include "CLProgram.h"
 
 #include "../Entities/Directable.h"
-#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
-#include "../Math/Float2.h"
 #include "../Math/Float3.h"
-#include "../Math/Float4.h"
 #include "../Math/Int2.h"
-#include "../Math/Random.h"
 #include "../Math/Rect3D.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
@@ -34,6 +27,12 @@ namespace
 	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
 	const cl::size_type SIZEOF_RECTANGLE = (sizeof(cl_float3) * 6) + SIZEOF_TEXTURE_REF + 8;
 	const cl::size_type SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
+
+	// Some arbitrary limits until the code is more advanced.
+	const int MAX_RECTS_PER_VOXEL = 6;
+	const int TEXTURE_WIDTH = 64;
+	const int TEXTURE_HEIGHT = 64;
+	const int MAX_TEXTURE_COUNT = 64;
 }
 
 const std::string CLProgram::PATH = "data/kernels/";
@@ -43,9 +42,8 @@ const std::string CLProgram::RAY_TRACE_KERNEL = "rayTrace";
 const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
-CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth, 
-	TextureManager &textureManager, Renderer &renderer, double resolutionScale)
-	: textureManager(textureManager)
+CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
+	Renderer &renderer, double resolutionScale)
 {
 	assert(worldWidth > 0);
 	assert(worldHeight > 0);
@@ -67,8 +65,8 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	// Create the local output pixel buffer.
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
-	this->outputData = std::vector<char>(sizeof(cl_int) * renderPixelCount);
-	
+	this->outputData = std::vector<cl_char>(sizeof(cl_int) * renderPixelCount);
+
 	// Create streaming texture to be used as the game world frame buffer.	
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
@@ -117,12 +115,11 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	std::string source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
 
 	// Make some #defines to add to the kernel source.
-	std::string defines = std::string("#define RENDER_WIDTH ") + std::to_string(this->renderWidth) +
-		std::string("\n") + std::string("#define RENDER_HEIGHT ") +
-		std::to_string(this->renderHeight) + std::string("\n") +
-		std::string("#define WORLD_WIDTH ") + std::to_string(worldWidth) + std::string("\n") +
-		std::string("#define WORLD_HEIGHT ") + std::to_string(worldHeight) + std::string("\n") +
-		std::string("#define WORLD_DEPTH ") + std::to_string(worldDepth) + std::string("\n");
+	std::string defines("#define RENDER_WIDTH " + std::to_string(this->renderWidth) +
+		"\n" + "#define RENDER_HEIGHT " + std::to_string(this->renderHeight) + "\n" +
+		"#define WORLD_WIDTH " + std::to_string(worldWidth) + "\n" +
+		"#define WORLD_HEIGHT " + std::to_string(worldHeight) + "\n" +
+		"#define WORLD_DEPTH " + std::to_string(worldDepth) + "\n");
 
 	// Put the kernel source in a program object within the OpenCL context.
 	this->program = cl::Program(this->context, defines + source, false, &status);
@@ -168,9 +165,10 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
 	this->rectangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_RECTANGLE * 6 * worldWidth * worldHeight * worldDepth
+		SIZEOF_RECTANGLE * MAX_RECTS_PER_VOXEL * worldWidth * worldHeight * worldDepth
 		/* This buffer size is actually very naive. Much of it will just be air.
-		Make a mapping of 3D cell coordinates to rectangles at some point to help. */,
+		Make a mapping of 3D cell coordinates to rect counts. Buffer resizing will
+		also need to be figured out. */,
 		nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
@@ -179,7 +177,8 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		sizeof(cl_float4) * 64 * 64 * 32 /* Placeholder size, 32 textures */, nullptr, &status);
+		sizeof(cl_float4) * TEXTURE_WIDTH * TEXTURE_HEIGHT * MAX_TEXTURE_COUNT
+		/* Placeholder size, 32 textures with strictly 64x64 dimensions */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -328,13 +327,6 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	status = this->convertToRGBKernel.setArg(1, this->outputBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg convertToRGBKernel outputBuffer.");
-
-	// --- TESTING PURPOSES ---
-	// The following code is for testing. Remove it once using actual world data.
-
-	this->makeTestWorld();
-
-	// --- END TESTING ---
 }
 
 CLProgram::~CLProgram()
@@ -342,47 +334,6 @@ CLProgram::~CLProgram()
 	// Destroy the game world frame buffer.
 	// The SDL_Renderer destroys this itself with SDL_DestroyRenderer(), too.
 	SDL_DestroyTexture(this->texture);
-}
-
-CLProgram &CLProgram::operator=(CLProgram &&clProgram)
-{
-	// Is there a better way to do this?
-	this->device = clProgram.device;
-	this->context = clProgram.context;
-	this->commandQueue = clProgram.commandQueue;
-	this->program = clProgram.program;
-	this->intersectKernel = clProgram.intersectKernel;
-	this->rayTraceKernel = clProgram.rayTraceKernel;
-	this->convertToRGBKernel = clProgram.convertToRGBKernel;
-	this->cameraBuffer = clProgram.cameraBuffer;
-	this->voxelRefBuffer = clProgram.voxelRefBuffer;
-	this->spriteRefBuffer = clProgram.spriteRefBuffer;
-	this->lightRefBuffer = clProgram.lightRefBuffer;
-	this->rectangleBuffer = clProgram.rectangleBuffer;
-	this->lightBuffer = clProgram.lightBuffer;
-	this->textureBuffer = clProgram.textureBuffer;
-	this->gameTimeBuffer = clProgram.gameTimeBuffer;
-	this->depthBuffer = clProgram.depthBuffer;
-	this->normalBuffer = clProgram.normalBuffer;
-	this->viewBuffer = clProgram.viewBuffer;
-	this->pointBuffer = clProgram.pointBuffer;
-	this->uvBuffer = clProgram.uvBuffer;
-	this->rectangleIndexBuffer = clProgram.rectangleIndexBuffer;
-	this->colorBuffer = clProgram.colorBuffer;
-	this->outputBuffer = clProgram.outputBuffer;
-	this->outputData = clProgram.outputData;
-	this->textureManager = std::move(clProgram.textureManager);
-	this->renderWidth = clProgram.renderWidth;
-	this->renderHeight = clProgram.renderHeight;
-	this->worldWidth = clProgram.worldWidth;
-	this->worldHeight = clProgram.worldHeight;
-	this->worldDepth = clProgram.worldDepth;
-
-	SDL_DestroyTexture(this->texture);
-	this->texture = clProgram.texture;
-	clProgram.texture = nullptr;
-
-	return *this;
 }
 
 std::vector<cl::Platform> CLProgram::getPlatforms()
@@ -403,6 +354,213 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 		"CLProgram", "CLProgram::getDevices.");
 
 	return devices;
+}
+
+void CLProgram::resize(Renderer &renderer, double resolutionScale)
+{
+	// Since the CL program is tightly coupled with the render resolution, nearly all
+	// of the memory objects need to be refreshed. However, buffers with world data
+	// just need to be referenced by the new kernels.
+
+	// I don't really like this solution because it's basically 3/4 of the CLProgram
+	// constructor, but I couldn't do this cleanly using the move assignment operator. 
+	// There's probably a better way to do this, though.
+
+	const int screenWidth = renderer.getWindowDimensions().getX();
+	const int screenHeight = renderer.getWindowDimensions().getY();
+
+	this->renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
+	this->renderHeight = std::max(static_cast<int>(screenHeight * resolutionScale), 1);
+
+	// Recreate the local output pixel buffer.
+	const int renderPixelCount = this->renderWidth * this->renderHeight;
+	this->outputData = std::vector<cl_char>(sizeof(cl_int) * renderPixelCount);
+
+	// Recreate streaming texture for the frame buffer.
+	SDL_DestroyTexture(this->texture);
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
+	Debug::check(this->texture != nullptr, "CLProgram", "resize SDL_CreateTexture");
+
+	// Read the kernel source from file.
+	std::string source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
+
+	// Make some #defines to add to the kernel source.
+	std::string defines("#define RENDER_WIDTH " + std::to_string(this->renderWidth) +
+		"\n" + "#define RENDER_HEIGHT " + std::to_string(this->renderHeight) + "\n" +
+		"#define WORLD_WIDTH " + std::to_string(worldWidth) + "\n" +
+		"#define WORLD_HEIGHT " + std::to_string(worldHeight) + "\n" +
+		"#define WORLD_DEPTH " + std::to_string(worldDepth) + "\n");
+
+	// Put the kernel source in a program object within the OpenCL context.
+	cl_int status = CL_SUCCESS;
+	this->program = cl::Program(this->context, defines + source, false, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "resize cl::Program.");
+
+	// Add some kernel compilation switches.
+	std::string options("-cl-fast-relaxed-math -cl-strict-aliasing");
+
+	// Rebuild the program.
+	status = this->program.build(std::vector<cl::Device>{ this->device }, options.c_str());
+	Debug::check(status == CL_SUCCESS, "CLProgram", "resize cl::Program::build (" +
+		this->getErrorString(status) + ").");
+
+	// Recreate the kernels.
+	this->intersectKernel = cl::Kernel(
+		this->program, CLProgram::INTERSECT_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel resize intersectKernel.");
+
+	this->rayTraceKernel = cl::Kernel(
+		this->program, CLProgram::RAY_TRACE_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel resize rayTraceKernel.");
+
+	this->convertToRGBKernel = cl::Kernel(
+		this->program, CLProgram::CONVERT_TO_RGB_KERNEL.c_str(), &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Kernel resize convertToRGBKernel.");
+
+	// Recreate the buffers dependent on render resolution.
+	this->depthBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize depthBuffer.");
+
+	this->normalBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize normalBuffer.");
+
+	this->viewBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize viewBuffer.");
+
+	this->pointBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize pointBuffer.");
+
+	this->uvBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float2) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize uvBuffer.");
+
+	this->rectangleIndexBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_int) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize rectangleIndexBuffer.");
+
+	this->colorBuffer = cl::Buffer(this->context, CL_MEM_READ_WRITE,
+		sizeof(cl_float3) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize colorBuffer.");
+
+	this->outputBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
+		sizeof(cl_int) * renderPixelCount, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resize outputBuffer.");
+
+	// Tell the intersect kernel arguments where their buffers live.
+	status = this->intersectKernel.setArg(0, this->cameraBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize cameraBuffer.");
+
+	status = this->intersectKernel.setArg(1, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize voxelRefBuffer.");
+
+	status = this->intersectKernel.setArg(2, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize spriteRefBuffer.");
+
+	status = this->intersectKernel.setArg(3, this->rectangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize rectangleBuffer.");
+
+	status = this->intersectKernel.setArg(4, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize textureBuffer.");
+
+	status = this->intersectKernel.setArg(5, this->depthBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize depthBuffer.");
+
+	status = this->intersectKernel.setArg(6, this->normalBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize normalBuffer.");
+
+	status = this->intersectKernel.setArg(7, this->viewBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize viewBuffer.");
+
+	status = this->intersectKernel.setArg(8, this->pointBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize pointBuffer.");
+
+	status = this->intersectKernel.setArg(9, this->uvBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize uvBuffer.");
+
+	status = this->intersectKernel.setArg(10, this->rectangleIndexBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg intersectKernel resize rectangleIndexBuffer.");
+
+	// Tell the rayTrace kernel arguments where their buffers live.
+	status = this->rayTraceKernel.setArg(0, this->voxelRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize voxelRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(1, this->spriteRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize spriteRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(2, this->lightRefBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize lightRefBuffer.");
+
+	status = this->rayTraceKernel.setArg(3, this->rectangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize rectangleBuffer.");
+
+	status = this->rayTraceKernel.setArg(4, this->lightBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize lightBuffer.");
+
+	status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize textureBuffer.");
+
+	status = this->rayTraceKernel.setArg(6, this->gameTimeBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize gameTimeBuffer.");
+
+	status = this->rayTraceKernel.setArg(7, this->depthBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize depthBuffer.");
+
+	status = this->rayTraceKernel.setArg(8, this->normalBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize normalBuffer.");
+
+	status = this->rayTraceKernel.setArg(9, this->viewBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize viewBuffer.");
+
+	status = this->rayTraceKernel.setArg(10, this->pointBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize pointBuffer.");
+
+	status = this->rayTraceKernel.setArg(11, this->uvBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize uvBuffer.");
+
+	status = this->rayTraceKernel.setArg(12, this->rectangleIndexBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize rectangleIndexBuffer.");
+
+	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize colorBuffer.");
+
+	// Tell the convertToRGB kernel arguments where their buffers live.
+	status = this->convertToRGBKernel.setArg(0, this->colorBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg convertToRGBKernel resize colorBuffer.");
+
+	status = this->convertToRGBKernel.setArg(1, this->outputBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg convertToRGBKernel resize outputBuffer.");
 }
 
 std::string CLProgram::getBuildReport() const
@@ -489,458 +647,42 @@ std::string CLProgram::getErrorString(cl_int error) const
 	}
 }
 
-void CLProgram::makeTestWorld()
-{
-	Debug::mention("CLProgram", "Making test world.");
-
-	// This method builds a simple test city with some blocks around.
-	// It does nothing with sprites and lights yet.
-
-	// Lambda for creating a vector of rectangles for a particular voxel.
-	auto makeBlock = [](int cellX, int cellY, int cellZ)
-	{
-		float x = static_cast<float>(cellX);
-		float y = static_cast<float>(cellY);
-		float z = static_cast<float>(cellZ);
-		const float sideLength = 1.0f;
-
-		// Front.
-		Rect3D r1(
-			Float3f(x + sideLength, y + sideLength, z),
-			Float3f(x + sideLength, y, z),
-			Float3f(x, y, z));
-
-		// Back.
-		Rect3D r2(
-			Float3f(x, y + sideLength, z + sideLength),
-			Float3f(x, y, z + sideLength),
-			Float3f(x + sideLength, y, z + sideLength));
-
-		// Top.
-		Rect3D r3(
-			Float3f(x + sideLength, y + sideLength, z + sideLength),
-			Float3f(x + sideLength, y + sideLength, z),
-			Float3f(x, y + sideLength, z));
-
-		// Bottom.
-		Rect3D r4(
-			Float3f(x + sideLength, y, z),
-			Float3f(x + sideLength, y, z + sideLength),
-			Float3f(x, y, z + sideLength));
-
-		// Right.
-		Rect3D r5(
-			Float3f(x, y + sideLength, z),
-			Float3f(x, y, z),
-			Float3f(x, y, z + sideLength));
-
-		// Left.
-		Rect3D r6(
-			Float3f(x + sideLength, y + sideLength, z + sideLength),
-			Float3f(x + sideLength, y, z + sideLength),
-			Float3f(x + sideLength, y, z));
-
-		return std::vector<Rect3D>{ r1, r2, r3, r4, r5, r6 };
-	};
-
-	// Write some rectangles to a rectangle buffer.
-	const int maxRectanglesPerVoxel = 6;
-	size_t rectangleBufferSize = SIZEOF_RECTANGLE * maxRectanglesPerVoxel *
-		this->worldWidth * this->worldHeight * this->worldDepth;
-	std::vector<char> rectangleBuffer(rectangleBufferSize);
-	cl_char *recPtr = reinterpret_cast<cl_char*>(rectangleBuffer.data());
-
-	// Lambda for writing rectangle data to the local buffer.
-	// - NOTE: using texture index here assumes that all textures are 64x64.
-	auto writeRectangle = [this, maxRectanglesPerVoxel, recPtr](const Rect3D &rect,
-		int cellX, int cellY, int cellZ, int rectangleOffset, int textureIndex)
-	{
-		assert(cellX >= 0);
-		assert(cellY >= 0);
-		assert(cellZ >= 0);
-		assert(cellX < this->worldWidth);
-		assert(cellY < this->worldHeight);
-		assert(cellZ < this->worldDepth);
-
-		// Only 6 rectangles max per block for now.
-		assert(rectangleOffset < maxRectanglesPerVoxel);
-
-		// Offset in the local buffer.
-		cl_char *ptr = recPtr + (cellX * SIZEOF_RECTANGLE * maxRectanglesPerVoxel) +
-			((cellY * this->worldWidth) * SIZEOF_RECTANGLE * maxRectanglesPerVoxel) +
-			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_RECTANGLE *
-				maxRectanglesPerVoxel) + (rectangleOffset * SIZEOF_RECTANGLE);
-
-		cl_float *p1Ptr = reinterpret_cast<cl_float*>(ptr);
-		*(p1Ptr + 0) = static_cast<cl_float>(rect.getP1().getX());
-		*(p1Ptr + 1) = static_cast<cl_float>(rect.getP1().getY());
-		*(p1Ptr + 2) = static_cast<cl_float>(rect.getP1().getZ());
-
-		cl_float *p2Ptr = reinterpret_cast<cl_float*>(ptr + sizeof(cl_float3));
-		*(p2Ptr + 0) = static_cast<cl_float>(rect.getP2().getX());
-		*(p2Ptr + 1) = static_cast<cl_float>(rect.getP2().getY());
-		*(p2Ptr + 2) = static_cast<cl_float>(rect.getP2().getZ());
-
-		cl_float *p3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 2));
-		*(p3Ptr + 0) = static_cast<cl_float>(rect.getP3().getX());
-		*(p3Ptr + 1) = static_cast<cl_float>(rect.getP3().getY());
-		*(p3Ptr + 2) = static_cast<cl_float>(rect.getP3().getZ());
-
-		const Float3f p1p2 = rect.getP2() - rect.getP1();
-		cl_float *p1p2Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 3));
-		*(p1p2Ptr + 0) = static_cast<cl_float>(p1p2.getX());
-		*(p1p2Ptr + 1) = static_cast<cl_float>(p1p2.getY());
-		*(p1p2Ptr + 2) = static_cast<cl_float>(p1p2.getZ());
-
-		const Float3f p2p3 = rect.getP3() - rect.getP2();
-		cl_float *p2p3Ptr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 4));
-		*(p2p3Ptr + 0) = static_cast<cl_float>(p2p3.getX());
-		*(p2p3Ptr + 1) = static_cast<cl_float>(p2p3.getY());
-		*(p2p3Ptr + 2) = static_cast<cl_float>(p2p3.getZ());
-
-		const Float3f normal = rect.getNormal();
-		cl_float *normalPtr = reinterpret_cast<cl_float*>(ptr + (sizeof(cl_float3) * 5));
-		*(normalPtr + 0) = static_cast<cl_float>(normal.getX());
-		*(normalPtr + 1) = static_cast<cl_float>(normal.getY());
-		*(normalPtr + 2) = static_cast<cl_float>(normal.getZ());
-
-		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr + (sizeof(cl_float3) * 6));
-		*(offsetPtr + 0) = 64 * 64 * textureIndex; // Number of float4's to skip.
-
-		cl_short *dimPtr = reinterpret_cast<cl_short*>(ptr + (sizeof(cl_float3) * 6) +
-			sizeof(cl_int));
-		*(dimPtr + 0) = 64;
-		*(dimPtr + 1) = 64;
-	};
-
-	// Fill a voxel reference buffer with references to those rectangles.
-	size_t voxelRefBufferSize = SIZEOF_VOXEL_REF * this->worldWidth * 
-		this->worldHeight * this->worldDepth;
-	std::vector<char> voxelRefBuffer(voxelRefBufferSize);
-	cl_char *voxPtr = reinterpret_cast<cl_char*>(voxelRefBuffer.data());
-
-	// Lambda for writing a voxel reference into the local buffer. This only works 
-	// when using the naive rectangle array storage (i.e., *every* voxel has 6 
-	// rectangle slots). Consider making the offset based on the number of rectangles
-	// written, instead of an arbitrary XYZ coordinate.
-	auto writeVoxelRef = [this, voxPtr](int cellX, int cellY, int cellZ, int count)
-	{
-		assert(cellX >= 0);
-		assert(cellY >= 0);
-		assert(cellZ >= 0);
-		assert(cellX < this->worldWidth);
-		assert(cellY < this->worldHeight);
-		assert(cellZ < this->worldDepth);
-		assert(count >= 0);
-
-		cl_char *ptr = voxPtr + (cellX * SIZEOF_VOXEL_REF) +
-			((cellY * this->worldWidth) * SIZEOF_VOXEL_REF) +
-			((cellZ * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
-
-		// Number of rectangles to skip in the rectangles array.
-		int offset = 6 * (cellX + (cellY * this->worldWidth) +
-			(cellZ * this->worldWidth * this->worldHeight));
-
-		cl_int *offsetPtr = reinterpret_cast<cl_int*>(ptr);
-		*(offsetPtr + 0) = offset;
-
-		cl_int *countPtr = reinterpret_cast<cl_int*>(ptr + sizeof(cl_int));
-		*(countPtr + 0) = count;
-	};
-
-	// Prepare some textures for a local float4 buffer.
-	this->textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-	std::vector<const SDL_Surface*> textures =
-	{
-		// Texture indices:
-		// 0: city wall
-		this->textureManager.getSurface("CITYWALL.IMG").getSurface(),
-
-		// 1-3: grounds
-		this->textureManager.getSurfaces("NORM1.SET").at(0),
-		this->textureManager.getSurfaces("NORM1.SET").at(1),
-		this->textureManager.getSurfaces("NORM1.SET").at(2),
-
-		// 4-5: gates
-		this->textureManager.getSurface("DLGT.IMG").getSurface(),
-		this->textureManager.getSurface("DRGT.IMG").getSurface(),
-
-		// 6-9: tavern + door
-		this->textureManager.getSurfaces("MTAVERN.SET").at(0),
-		this->textureManager.getSurfaces("MTAVERN.SET").at(1),
-		this->textureManager.getSurfaces("MTAVERN.SET").at(2),
-		this->textureManager.getSurface("DTAV.IMG").getSurface(),
-
-		// 10-15: temple + door
-		this->textureManager.getSurfaces("MTEMPLE.SET").at(0),
-		this->textureManager.getSurfaces("MTEMPLE.SET").at(1),
-		this->textureManager.getSurfaces("MTEMPLE.SET").at(2),
-		this->textureManager.getSurfaces("MTEMPLE.SET").at(3),
-		this->textureManager.getSurfaces("MTEMPLE.SET").at(4),
-		this->textureManager.getSurface("DTEP.IMG").getSurface(),
-
-		// 16-21: Mages' Guild + door
-		this->textureManager.getSurfaces("MMUGUILD.SET").at(0),
-		this->textureManager.getSurfaces("MMUGUILD.SET").at(1),
-		this->textureManager.getSurfaces("MMUGUILD.SET").at(2),
-		this->textureManager.getSurfaces("MMUGUILD.SET").at(3),
-		this->textureManager.getSurfaces("MMUGUILD.SET").at(4),
-		this->textureManager.getSurface("DMU.IMG").getSurface(),
-
-		// 22-25: Equipment store + door
-		this->textureManager.getSurfaces("MEQUIP.SET").at(0),
-		this->textureManager.getSurfaces("MEQUIP.SET").at(1),
-		this->textureManager.getSurfaces("MEQUIP.SET").at(2),
-		this->textureManager.getSurface("DEQ.IMG").getSurface(),
-
-		// 26-29: Noble house + door
-		this->textureManager.getSurfaces("MNOBLE.SET").at(0),
-		this->textureManager.getSurfaces("MNOBLE.SET").at(1),
-		this->textureManager.getSurfaces("MNOBLE.SET").at(2),
-		this->textureManager.getSurface("DNB1.IMG").getSurface(),
-	};
-
-	const int textureCount = static_cast<int>(textures.size());
-	const int textureWidth = 64;
-	const int textureHeight = 64;
-	size_t textureBufferSize = sizeof(cl_float4) * textureWidth * 
-		textureHeight * textureCount;
-	std::vector<char> textureBuffer(textureBufferSize);
-	cl_char *texPtr = reinterpret_cast<cl_char*>(textureBuffer.data());
-	
-	// Pack the texture data into the local buffer.
-	for (int i = 0; i < textureCount; ++i)
-	{
-		const SDL_Surface *texture = textures.at(i);
-		const uint32_t *pixels = static_cast<uint32_t*>(texture->pixels);
-
-		int pixelOffset = sizeof(cl_float4) * textureWidth * textureHeight * i;
-		cl_float4 *pixelPtr = reinterpret_cast<cl_float4*>(texPtr + pixelOffset);
-
-		for (int y = 0; y < texture->h; ++y)
-		{
-			for (int x = 0; x < texture->w; ++x)
-			{
-				int index = x + (y * texture->w);
-
-				// Convert from ARGB int to RGBA float4.
-				Float4f color = Float4f::fromARGB(pixels[index]);
-
-				cl_float *colorPtr = reinterpret_cast<cl_float*>(pixelPtr + index);
-				*(colorPtr + 0) = static_cast<cl_float>(color.getX());
-				*(colorPtr + 1) = static_cast<cl_float>(color.getY());
-				*(colorPtr + 2) = static_cast<cl_float>(color.getZ());
-
-				// Transparency depends on whether the pixel is black.
-				*(colorPtr + 3) = static_cast<cl_float>(pixels[index] == 0 ? 0.0f : 1.0f);
-			}
-		}
-	}
-
-	// Zero out all the voxel references to start.
-	for (int k = 0; k < this->worldDepth; ++k)
-	{
-		for (int j = 0; j < this->worldHeight; ++j)
-		{
-			for (int i = 0; i < this->worldWidth; ++i)
-			{
-				writeVoxelRef(i, j, k, 0);
-			}
-		}
-	}
-
-	// Use the same seed so it's not a new city on every screen resize.
-	Random random(2);
-
-	// Make the ground.
-	for (int k = 0; k < this->worldDepth; ++k)
-	{
-		for (int i = 0; i < this->worldWidth; ++i)
-		{
-			std::vector<Rect3D> block = makeBlock(i, 0, k);
-			int rectangleCount = static_cast<int>(block.size());
-
-			int textureIndex = 1 + random.next(3);
-			for (int index = 0; index < rectangleCount; ++index)
-			{
-				writeRectangle(block.at(index), i, 0, k, index, textureIndex);
-			}
-
-			writeVoxelRef(i, 0, k, 6);
-		}
-	}
-
-	// Make the near X and far X walls.
-	for (int j = 1; j < this->worldHeight; ++j)
-	{
-		for (int k = 0; k < this->worldDepth; ++k)
-		{
-			std::vector<Rect3D> block = makeBlock(0, j, k);
-			int rectangleCount = static_cast<int>(block.size());
-
-			for (int index = 0; index < rectangleCount; ++index)
-			{
-				writeRectangle(block.at(index), 0, j, k, index, 0);
-			}
-
-			block = makeBlock(this->worldWidth - 1, j, k);
-			for (int index = 0; index < rectangleCount; ++index)
-			{
-				writeRectangle(block.at(index), this->worldWidth - 1, j, k, index, 0);
-			}
-
-			writeVoxelRef(0, j, k, 6);
-			writeVoxelRef(this->worldWidth - 1, j, k, 6);
-		}
-	}
-
-	// Make the near Z and far Z walls (ignoring existing corners).
-	for (int j = 1; j < this->worldHeight; ++j)
-	{
-		for (int i = 1; i < (this->worldWidth - 1); ++i)
-		{
-			std::vector<Rect3D> block = makeBlock(i, j, 0);
-			int rectangleCount = static_cast<int>(block.size());
-
-			for (int index = 0; index < rectangleCount; ++index)
-			{
-				writeRectangle(block.at(index), i, j, 0, index, 0);
-			}
-
-			block = makeBlock(i, j, this->worldDepth - 1);
-			for (int index = 0; index < rectangleCount; ++index)
-			{
-				writeRectangle(block.at(index), i, j, this->worldDepth - 1, index, 0);
-			}
-
-			writeVoxelRef(i, j, 0, 6);
-			writeVoxelRef(i, j, this->worldDepth - 1, 6);
-		}
-	}
-
-	// Lambda for adding some simple cube buildings.
-	auto makeBuilding = [&](int cellX, int cellZ, int width, int height, int depth,
-		const std::vector<int> &textureIndices)
-	{
-		const int cellY = 1;
-
-		for (int k = 0; k < depth; ++k)
-		{
-			for (int j = 0; j < height; ++j)
-			{
-				for (int i = 0; i < width; ++i)
-				{
-					const int x = cellX + i;
-					const int y = cellY + j;
-					const int z = cellZ + k;
-
-					const std::vector<Rect3D> block = makeBlock(x, y, z);
-					const int rectangleCount = static_cast<int>(block.size());
-
-					const int textureIndex = textureIndices.at(random.next(
-						static_cast<int>(textureIndices.size())));
-
-					for (int index = 0; index < rectangleCount; ++index)
-					{
-						writeRectangle(block.at(index), x, y, z, index, textureIndex);
-					}
-
-					writeVoxelRef(x, y, z, 6);
-				}
-			}
-		}
-	};
-
-	// Add some simple buildings around. This data should come from a "World" or 
-	// "CityData" class sometime.
-
-	// Tavern #1
-	makeBuilding(3, 5, 5, 2, 6, { 6, 7, 8 });
-	makeBuilding(3, 6, 1, 1, 1, { 9 });
-
-	// Tavern #2
-	makeBuilding(3, 13, 7, 1, 5, { 6, 7, 8 });
-	makeBuilding(6, 13, 1, 1, 1, { 9 });
-
-	// Temple #1
-	makeBuilding(11, 4, 6, 2, 5, { 10, 11, 12, 13, 14 });
-	makeBuilding(11, 6, 1, 1, 1, { 15 });
-
-	// Mage's Guild #1
-	makeBuilding(12, 12, 5, 2, 4, { 16, 17, 18, 19, 20 });
-	makeBuilding(15, 12, 1, 1, 1, { 21 });
-
-	// Equipment store #1
-	makeBuilding(20, 4, 5, 1, 7, { 22, 23, 24 });
-	makeBuilding(20, 8, 1, 1, 1, { 25 });
-
-	// Equipment store #2
-	makeBuilding(11, 19, 6, 2, 6, { 22, 23, 24 });
-	makeBuilding(13, 19, 1, 1, 1, { 25 });
-
-	// Noble house #1
-	makeBuilding(21, 15, 6, 2, 8, { 26, 27, 28 });
-	makeBuilding(21, 17, 1, 1, 1, { 29 });
-
-	// Add a city gate with some walls.
-	makeBuilding(8, 0, 1, 1, 1, { 4 });
-	makeBuilding(9, 0, 1, 1, 1, { 5 });
-	makeBuilding(1, 1, 7, this->worldHeight - 1, 1, { 0 });
-	makeBuilding(10, 1, 3, this->worldHeight - 1, 1, { 0 });
-
-	// Write the rectangle buffer to device memory.
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
-		CL_TRUE, 0, rectangleBufferSize, static_cast<const void*>(recPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test rectangleBuffer");
-
-	// Write the voxel reference buffer to device memory.
-	status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
-		CL_TRUE, 0, voxelRefBufferSize, static_cast<const void*>(voxPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test voxelRefBuffer");
-
-	// Write the texture buffer to device memory.
-	status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer,
-		CL_TRUE, 0, textureBufferSize, static_cast<const void*>(texPtr), nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer test textureBuffer");
-}
-
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
 	// Do not scale the direction beforehand.
 	assert(direction.isNormalized());
 
-	std::vector<char> buffer(SIZEOF_CAMERA);
-
-	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+	std::vector<cl_char> buffer(SIZEOF_CAMERA);
+	cl_char *bufPtr = buffer.data();
 
 	// Write the components of the camera to the local buffer.
 	// Correct spacing is very important.
 	auto *eyePtr = reinterpret_cast<cl_float*>(bufPtr);
-	*(eyePtr + 0) = static_cast<cl_float>(eye.getX());
-	*(eyePtr + 1) = static_cast<cl_float>(eye.getY());
-	*(eyePtr + 2) = static_cast<cl_float>(eye.getZ());
+	eyePtr[0] = static_cast<cl_float>(eye.getX());
+	eyePtr[1] = static_cast<cl_float>(eye.getY());
+	eyePtr[2] = static_cast<cl_float>(eye.getZ());
 
 	auto *forwardPtr = reinterpret_cast<cl_float*>(bufPtr + sizeof(cl_float3));
-	*(forwardPtr + 0) = static_cast<cl_float>(direction.getX());
-	*(forwardPtr + 1) = static_cast<cl_float>(direction.getY());
-	*(forwardPtr + 2) = static_cast<cl_float>(direction.getZ());
+	forwardPtr[0] = static_cast<cl_float>(direction.getX());
+	forwardPtr[1] = static_cast<cl_float>(direction.getY());
+	forwardPtr[2] = static_cast<cl_float>(direction.getZ());
 
 	auto right = direction.cross(Directable::getGlobalUp()).normalized();
 	auto *rightPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 2));
-	*(rightPtr + 0) = static_cast<cl_float>(right.getX());
-	*(rightPtr + 1) = static_cast<cl_float>(right.getY());
-	*(rightPtr + 2) = static_cast<cl_float>(right.getZ());
+	rightPtr[0] = static_cast<cl_float>(right.getX());
+	rightPtr[1] = static_cast<cl_float>(right.getY());
+	rightPtr[2] = static_cast<cl_float>(right.getZ());
 
 	auto up = right.cross(direction).normalized();
 	auto *upPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 3));
-	*(upPtr + 0) = static_cast<cl_float>(up.getX());
-	*(upPtr + 1) = static_cast<cl_float>(up.getY());
-	*(upPtr + 2) = static_cast<cl_float>(up.getZ());
+	upPtr[0] = static_cast<cl_float>(up.getX());
+	upPtr[1] = static_cast<cl_float>(up.getY());
+	upPtr[2] = static_cast<cl_float>(up.getZ());
 
 	// Zoom is a function of field of view.
 	double zoom = 1.0 / std::tan(fovY * 0.5 * DEG_TO_RAD);
 	auto *zoomPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float3) * 4));
-	*zoomPtr = static_cast<cl_float>(zoom);
+	zoomPtr[0] = static_cast<cl_float>(zoom);
 
 	// Write the buffer to device memory.
 	cl_int status = this->commandQueue.enqueueWriteBuffer(this->cameraBuffer,
@@ -952,17 +694,191 @@ void CLProgram::updateGameTime(double gameTime)
 {
 	assert(gameTime >= 0.0);
 
-	std::vector<char> buffer(sizeof(cl_float));
-
-	cl_char *bufPtr = reinterpret_cast<cl_char*>(buffer.data());
+	std::vector<cl_char> buffer(sizeof(cl_float));
+	cl_char *bufPtr = buffer.data();
 
 	auto *timePtr = reinterpret_cast<cl_float*>(bufPtr);
-	*timePtr = static_cast<cl_float>(gameTime);
+	timePtr[0] = static_cast<cl_float>(gameTime);
 
 	// Write the buffer to device memory.
 	cl_int status = this->commandQueue.enqueueWriteBuffer(this->gameTimeBuffer,
 		CL_TRUE, 0, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateGameTime");
+}
+
+void CLProgram::updateTexture(int index, uint32_t *pixels, int width, int height)
+{
+	assert(index >= 0);
+	assert(index < MAX_TEXTURE_COUNT);
+	assert(pixels != nullptr);
+
+	// All textures are 64x64 for now.
+	Debug::check((width == TEXTURE_WIDTH) && (height == TEXTURE_HEIGHT), "CLProgram",
+		"Texture dims are currently restricted to 64x64 (given " +
+		std::to_string(width) + "x" + std::to_string(height) + ").");
+
+	std::vector<cl_char> buffer(sizeof(cl_float4) * width * height);
+	cl_char *bufPtr = buffer.data();
+
+	// Convert each pixel to float4 format. Assume pixel format is ARGB8888.
+	const int pixelCount = width * height;
+	for (int i = 0; i < pixelCount; ++i)
+	{
+		const uint32_t pixel = pixels[i];
+		const uint8_t a = static_cast<uint8_t>(pixel >> 24);
+		const uint8_t r = static_cast<uint8_t>(pixel >> 16);
+		const uint8_t g = static_cast<uint8_t>(pixel >> 8);
+		const uint8_t b = static_cast<uint8_t>(pixel);
+
+		// The kernel uses RGBA format, so move the components accordingly.
+		cl_float *pixPtr = reinterpret_cast<cl_float*>(bufPtr + (sizeof(cl_float4) * i));
+		pixPtr[0] = static_cast<cl_float>(static_cast<float>(r) / 255.0f);
+		pixPtr[1] = static_cast<cl_float>(static_cast<float>(g) / 255.0f);
+		pixPtr[2] = static_cast<cl_float>(static_cast<float>(b) / 255.0f);
+		pixPtr[3] = static_cast<cl_float>(static_cast<float>(a) / 255.0f);
+	}
+
+	// Write the buffer to device memory.
+	const cl::size_type bufferOffset = sizeof(cl_float4) * TEXTURE_WIDTH * TEXTURE_HEIGHT * index;
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer,
+		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateTexture");
+}
+
+void CLProgram::updateVoxelRef(int x, int y, int z, int count)
+{
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(z >= 0);
+	assert(x < this->worldWidth);
+	assert(y < this->worldHeight);
+	assert(z < this->worldDepth);
+	assert(count >= 0);
+
+	// Up to 6 rectangles may currently be in a voxel.
+	assert(count <= MAX_RECTS_PER_VOXEL);
+
+	std::vector<cl_char> buffer(SIZEOF_VOXEL_REF);
+	cl_char *bufPtr = buffer.data();
+
+	// Offset is the number of rectangles to skip. Currently relative to naive 
+	// rectangle buffer size.
+	const int offset = MAX_RECTS_PER_VOXEL * (x + (y * this->worldWidth) +
+		(z * this->worldWidth * this->worldHeight));
+
+	cl_int *offPtr = reinterpret_cast<cl_int*>(bufPtr);
+	offPtr[0] = static_cast<cl_int>(offset);
+	offPtr[1] = static_cast<cl_int>(count);
+
+	// Write the buffer to device memory.
+	const cl::size_type bufferOffset = (x * SIZEOF_VOXEL_REF) +
+		((y * this->worldWidth) * SIZEOF_VOXEL_REF) +
+		((z * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
+		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxelRef");
+}
+
+void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+	const std::vector<int> &textureIndices)
+{
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(z >= 0);
+	assert(x < this->worldWidth);
+	assert(y < this->worldHeight);
+	assert(z < this->worldDepth);
+
+	// Up to 6 rectangles may currently be in a voxel.
+	assert(rects.size() <= MAX_RECTS_PER_VOXEL);
+	assert(textureIndices.size() == rects.size());
+
+	// No need to zero out the buffer in case of there being fewer than the max 
+	// rectangles given since the voxel reference will never allow the device to 
+	// read garbage rectangles.
+	std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rects.size());
+	cl_char *bufPtr = buffer.data();
+
+	// Write each rectangle with its texture index to the buffer.
+	for (size_t i = 0; i < rects.size(); ++i)
+	{
+		const Rect3D &rect = rects.at(i);
+		int textureIndex = textureIndices.at(i);
+
+		cl_char *recPtr = bufPtr + (SIZEOF_RECTANGLE * i);
+
+		cl_float *p1Ptr = reinterpret_cast<cl_float*>(recPtr);
+		p1Ptr[0] = static_cast<cl_float>(rect.getP1().getX());
+		p1Ptr[1] = static_cast<cl_float>(rect.getP1().getY());
+		p1Ptr[2] = static_cast<cl_float>(rect.getP1().getZ());
+
+		cl_float *p2Ptr = reinterpret_cast<cl_float*>(recPtr + sizeof(cl_float3));
+		p2Ptr[0] = static_cast<cl_float>(rect.getP2().getX());
+		p2Ptr[1] = static_cast<cl_float>(rect.getP2().getY());
+		p2Ptr[2] = static_cast<cl_float>(rect.getP2().getZ());
+
+		cl_float *p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 2));
+		p3Ptr[0] = static_cast<cl_float>(rect.getP3().getX());
+		p3Ptr[1] = static_cast<cl_float>(rect.getP3().getY());
+		p3Ptr[2] = static_cast<cl_float>(rect.getP3().getZ());
+
+		const Float3f p1p2 = rect.getP2() - rect.getP1();
+		cl_float *p1p2Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 3));
+		p1p2Ptr[0] = static_cast<cl_float>(p1p2.getX());
+		p1p2Ptr[1] = static_cast<cl_float>(p1p2.getY());
+		p1p2Ptr[2] = static_cast<cl_float>(p1p2.getZ());
+
+		const Float3f p2p3 = rect.getP3() - rect.getP2();
+		cl_float *p2p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 4));
+		p2p3Ptr[0] = static_cast<cl_float>(p2p3.getX());
+		p2p3Ptr[1] = static_cast<cl_float>(p2p3.getY());
+		p2p3Ptr[2] = static_cast<cl_float>(p2p3.getZ());
+
+		const Float3f normal = rect.getNormal();
+		cl_float *normalPtr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 5));
+		normalPtr[0] = static_cast<cl_float>(normal.getX());
+		normalPtr[1] = static_cast<cl_float>(normal.getY());
+		normalPtr[2] = static_cast<cl_float>(normal.getZ());
+
+		// Texture reference data.
+		cl_int *offsetPtr = reinterpret_cast<cl_int*>(recPtr + (sizeof(cl_float3) * 6));
+		offsetPtr[0] = static_cast<cl_int>(TEXTURE_WIDTH * TEXTURE_HEIGHT * textureIndex);
+
+		cl_short *dimPtr = reinterpret_cast<cl_short*>(recPtr +
+			(sizeof(cl_float3) * 6) + sizeof(cl_int));
+		dimPtr[0] = static_cast<cl_short>(TEXTURE_WIDTH);
+		dimPtr[1] = static_cast<cl_short>(TEXTURE_HEIGHT);
+	}
+
+	// Write the buffer to device memory. Currently using naive rectangle buffer size.
+	const int bytesPerVoxel = SIZEOF_RECTANGLE * MAX_RECTS_PER_VOXEL;
+	const cl::size_type bufferOffset = (x * bytesPerVoxel) +
+		((y * this->worldWidth) * bytesPerVoxel) +
+		((z * this->worldWidth * this->worldHeight) * bytesPerVoxel);
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
+		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxel");
+
+	// Update the voxel reference at the given coordinate.
+	this->updateVoxelRef(x, y, z, static_cast<int>(rects.size()));
+}
+
+void CLProgram::updateVoxel(int x, int y, int z,
+	const std::vector<Rect3D> &rects, int textureIndex)
+{
+	// Blocks in Arena almost always share the same texture index on all sides, 
+	// but there are some exceptions, so a vector of indices must be given. This
+	// method is here for convenience.
+	std::vector<int> textureIndices(rects.size());
+
+	for (auto &index : textureIndices)
+	{
+		index = textureIndex;
+	}
+
+	this->updateVoxel(x, y, z, rects, textureIndices);
 }
 
 void CLProgram::render(Renderer &renderer)

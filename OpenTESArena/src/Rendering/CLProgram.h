@@ -51,8 +51,8 @@
 // The more I think about sprite management, the more it feels like a heap manager. I'll
 // probably need to draw this on paper to see how it really works out.
 
+class Rect3D;
 class Renderer;
-class TextureManager;
 
 struct SDL_Texture;
 
@@ -75,23 +75,23 @@ private:
 		rectangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer,
 		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer, 
 		colorBuffer, outputBuffer;
-	std::vector<char> outputData; // For receiving pixels from the device's output buffer.
+	std::vector<cl_char> outputData; // For receiving pixels from the device's output buffer.
 	SDL_Texture *texture; // Streaming render texture for outputData to update.
-	TextureManager &textureManager;
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
 
-	// For testing purposes before using actual world data.
-	void makeTestWorld();
+	// Updates a voxel reference's offset and count in device memory. The rectangle
+	// buffer offset can be inferred based on other data.
+	void updateVoxelRef(int x, int y, int z, int count);
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
-		TextureManager &textureManager, Renderer &renderer, double resolutionScale);
+		Renderer &renderer, double resolutionScale);
 	~CLProgram();
 
-	CLProgram &operator=(CLProgram &&clProgram);
+	CLProgram &operator=(CLProgram &&clProgram) = delete;
 
 	// These are public in case the options menu is going to need to list them.
 	// There should be a constructor that also takes a platform and device, then.
@@ -99,12 +99,35 @@ public:
 	static std::vector<cl::Device> getDevices(const cl::Platform &platform,
 		cl_device_type type);
 
+	// Updates the render dimensions.
+	void resize(Renderer &renderer, double resolutionScale);
+
+	// Updates the camera data in device memory.
 	void updateCamera(const Float3d &eye, const Float3d &direction, double fovY);
 
-	// Give this method total ticks instead of delta time so the constructor doesn't
-	// need a "start time". Also, this prevents any additive "double -> float" error.
+	// Updates the game time in device memory. Give this method total ticks instead of 
+	// delta time so the constructor doesn't need a "start time". Also, this prevents 
+	// any additive "double -> cl_float" error.
 	void updateGameTime(double gameTime);
 
+	// Updates a texture's pixels in device memory. Currently restricted to up to 64 
+	// textures, each with 64x64 dimensions. Later I think there should be an 
+	// "addTexture(pixels, width, height)" method instead, and that new method would 
+	// return an index. Offset and dimensions of each texture would be kept in a linked 
+	// list behind the scenes, and the index would be used to obtain that texture 
+	// reference when adding geometry (also behind the scenes). Should be an easy change, 
+	// and would also require increasing texture buffer size as needed.
+	void updateTexture(int index, uint32_t *pixels, int width, int height);
+
+	// Updates a voxel's geometry in device memory. Currently restricted to up to 6 
+	// rectangles, and all rectangles must be updated at the same time.
+	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+		const std::vector<int> &textureIndices);
+	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+		int textureIndex);
+
+	// Run the OpenCL program and draw to the output frame buffer. Later this should
+	// return a pointer to the color data which is then given to an SDL_Texture.
 	void render(Renderer &renderer);
 };
 
