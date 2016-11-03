@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "IMGFile.h"
@@ -47,7 +46,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 
 	uint16_t xoff, yoff, width, height, flags, len;
 
-	// Read header data if not raw (this does not include walls).
+	// Read header data if not raw. Wall IMGs have no header and are 4096 bytes.
 	const auto rawOverride = RawImgOverride.find(filename);
 	const bool isRaw = rawOverride != RawImgOverride.end();
 	if (isRaw)
@@ -59,8 +58,21 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		flags = 0;
 		len = width * height;
 	}
+	else if (srcData.size() == 4096)
+	{
+		// Some wall IMGs have rows of black (transparent) pixels near the 
+		// beginning, so the header would just be zeroes. This is a guess to 
+		// try and fix that issue as well as cover all other wall IMGs.
+		xoff = 0;
+		yoff = 0;
+		width = 64;
+		height = 64;
+		flags = 0;
+		len = width * height;
+	}
 	else
 	{
+		// Read header data.
 		xoff = Bytes::getLE16(srcData.data());
 		yoff = Bytes::getLE16(srcData.data() + 2);
 		width = Bytes::getLE16(srcData.data() + 4);
@@ -103,15 +115,20 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		});
 	};
 
-	// Decide how to use the data based on whether the IMG uses a raw override.
+	// Decide how to use the pixel data.
 	if (isRaw)
 	{
-		// Uncompressed IMG with no header (does not include walls).
+		// Uncompressed IMG with no header (excluding walls).
 		makeImage(width, height, srcData.data());
+	}
+	else if ((srcData.size() == 4096) && (width == 64) && (height == 64))
+	{
+		// Wall texture (the flags variable is garbage).
+		makeImage(64, 64, srcData.data());
 	}
 	else
 	{
-		// Decode the pixel data according to the IMG type.
+		// Decode the pixel data according to the IMG flags.
 		if ((flags & 0x00FF) == 0)
 		{
 			// Uncompressed IMG with header.
@@ -140,8 +157,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		}
 		else
 		{
-			// Wall texture (the flags variable is garbage).
-			makeImage(64, 64, srcData.data());
+			Debug::crash("IMGFile", "Unrecognized IMG \"" + filename + "\".");
 		}
 	}
 }
