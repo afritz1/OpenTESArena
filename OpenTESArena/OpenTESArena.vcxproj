@@ -153,6 +153,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
     <ClCompile Include="src\Media\PPMFile.cpp" />
     <ClCompile Include="src\Interface\ImageSequencePanel.cpp" />
     <ClCompile Include="src\Media\PortraitFile.cpp" />
@@ -286,6 +287,7 @@
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Assets\ExeUnpacker.h" />
     <ClInclude Include="src\Media\PPMFile.h" />
     <ClInclude Include="src\Interface\ImageSequencePanel.h" />
     <ClInclude Include="src\Media\PortraitFile.h" />

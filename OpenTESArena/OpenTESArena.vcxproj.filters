@@ -132,6 +132,7 @@
     <ClCompile Include="src\Media\PortraitFile.cpp" />
     <ClCompile Include="src\Media\PPMFile.cpp" />
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
+    <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -310,6 +311,7 @@
     <ClInclude Include="src\Media\PortraitFile.h" />
     <ClInclude Include="src\Media\PPMFile.h" />
     <ClInclude Include="src\World\VoxelBuilder.h" />
+    <ClInclude Include="src\Assets\ExeUnpacker.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
