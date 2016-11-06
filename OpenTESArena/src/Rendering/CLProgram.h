@@ -1,6 +1,7 @@
 #ifndef CL_PROGRAM_H
 #define CL_PROGRAM_H
 
+#include <cstdint>
 #include <vector>
 
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
@@ -52,10 +53,7 @@
 // probably need to draw this on paper to see how it really works out.
 
 class Rect3D;
-class Renderer;
 class TextureReference;
-
-struct SDL_Texture;
 
 class CLProgram
 {
@@ -74,11 +72,10 @@ private:
 	cl::Kernel intersectKernel, rayTraceKernel, convertToRGBKernel;
 	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer,
 		rectangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer,
-		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer, 
+		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer,
 		colorBuffer, outputBuffer;
-	std::vector<cl_char> outputData; // For receiving pixels from the device's output buffer.
+	std::vector<uint8_t> outputData; // For receiving pixels from the device's output buffer.
 	std::vector<TextureReference> textureRefs;
-	SDL_Texture *texture; // Streaming render texture for outputData to update.
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
@@ -90,10 +87,12 @@ private:
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
-		Renderer &renderer, double resolutionScale);
+		int renderWidth, int renderHeight);
 	~CLProgram();
 
-	CLProgram &operator=(CLProgram &&clProgram) = delete;
+	CLProgram(const CLProgram&) = delete;
+	CLProgram &operator=(const CLProgram&) = delete;
+	CLProgram &operator=(CLProgram&&) = delete;
 
 	// These are public in case the options menu is going to need to list them.
 	// There should be a constructor that also takes a platform and device, then.
@@ -102,7 +101,7 @@ public:
 		cl_device_type type);
 
 	// Updates the render dimensions.
-	void resize(Renderer &renderer, double resolutionScale);
+	void resize(int renderWidth, int renderHeight);
 
 	// Updates the camera data in device memory.
 	void updateCamera(const Float3d &eye, const Float3d &direction, double fovY);
@@ -123,9 +122,8 @@ public:
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 		int textureIndex);
 
-	// Run the OpenCL program and draw to the output frame buffer. Later this should
-	// return a pointer to the color data which is then given to an SDL_Texture.
-	void render(Renderer &renderer);
+	// Runs the OpenCL program and returns a pointer to the resulting frame buffer.
+	const void *render();
 };
 
 #endif

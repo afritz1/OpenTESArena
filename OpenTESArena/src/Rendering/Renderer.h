@@ -2,22 +2,27 @@
 #define RENDERER_H
 
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <vector>
 
-// Acts as an SDL_Renderer wrapper.
+#include "../Math/Float3.h"
+#include "../Math/Rect3D.h"
+
+// Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
 
 // The format for all textures is ARGB8888.
 
+class CLProgram;
 class Color;
 class Int2;
-class Surface;
-class TextureManager;
 
 enum class TextureName;
 
 struct SDL_PixelFormat;
 struct SDL_Rect;
 struct SDL_Renderer;
+struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
@@ -26,10 +31,12 @@ class Renderer
 private:
 	static const std::string DEFAULT_RENDER_SCALE_QUALITY;
 
+	std::unique_ptr<CLProgram> clProgram;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	SDL_Texture *nativeTexture, *originalTexture; // Frame buffers.
+	SDL_Texture *nativeTexture, *originalTexture, *gameWorldTexture; // Frame buffers.
 	double letterboxAspect;
+	bool fullGameWindow; // Determines height of 3D frame buffer.
 
 	// Helper method for making a renderer context.
 	SDL_Renderer *createRenderer();
@@ -53,6 +60,11 @@ public:
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
+
+	// The "view height" is the height in pixels for the visible game world. This 
+	// depends on whether the whole screen is rendered or just the portion above 
+	// the interface. The game interface is 53 pixels tall in 320x200.
+	int getViewHeight() const;
 
 	// For converting surfaces to the correct ARGB8888 format.
 	SDL_PixelFormat *getFormat() const;
@@ -79,9 +91,10 @@ public:
 	// Wrapper methods for SDL_CreateTexture.
 	SDL_Texture *createTexture(unsigned int format, int access, int w, int h);
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
-	SDL_Texture *createTextureFromSurface(const Surface &surface);
 
-	void resize(int width, int height);
+	// Resizes the renderer dimensions, and rebuilds the render program if it is
+	// initialized.
+	void resize(int width, int height, double resolutionScale);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(SDL_Surface *icon);
@@ -94,11 +107,31 @@ public:
 	// so only set it to true when the original frame buffer needs transparency.
 	void useTransparencyBlending(bool blend);
 
+	// Initialize the OpenCL program for rendering the game world. The "renderFullWindow"
+	// argument determines whether to render a "fullscreen" 3D image or just the part
+	// above the game interface. If there is an existing OpenCL program in memory, it 
+	// will be overwritten with the new one.
+	void initializeWorldRendering(int worldWidth, int worldHeight, int worldDepth,
+		double resolutionScale, bool renderFullWindow);
+
+	// Helper methods for interacting with OpenCL device memory.
+	void updateCamera(const Float3d &eye, const Float3d &direction, double fovY);
+	void updateGameTime(double gameTime);
+	int addTexture(uint32_t *pixels, int width, int height);
+	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+		const std::vector<int> &textureIndices);
+	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+		int textureIndex);
+
 	// Fills the desired frame buffer with the draw color, or default black/transparent.
 	void clearNative(const Color &color);
 	void clearNative();
 	void clearOriginal(const Color &color);
 	void clearOriginal();
+
+	// Runs the rendering program which draws the world onto the native frame buffer.
+	// If the rendering program is uninitialized, this causes a crash.
+	void renderWorld();
 
 	// Draw methods for the native and original frame buffers. Remove the SDL_Surface
 	// methods once all panels are using textures exclusively.

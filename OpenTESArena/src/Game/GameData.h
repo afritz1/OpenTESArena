@@ -11,7 +11,6 @@
 // the character resources). Whichever entry points into the "game" there are, they
 // need to load data into the game data object.
 
-class CLProgram;
 class EntityManager;
 class Player;
 
@@ -20,7 +19,6 @@ class GameData
 private:
 	std::unique_ptr<Player> player;
 	std::unique_ptr<EntityManager> entityManager;
-	std::unique_ptr<CLProgram> clProgram;
 	double gameTime;
 	int worldWidth, worldHeight, worldDepth;
 	// province... location... voxels... weather...
@@ -29,13 +27,11 @@ private:
 public:
 	GameData(std::unique_ptr<Player> player,
 		std::unique_ptr<EntityManager> entityManager,
-		std::unique_ptr<CLProgram> clProgram, double gameTime,
-		int worldWidth, int worldHeight, int worldDepth);
+		double gameTime, int worldWidth, int worldHeight, int worldDepth);
 	~GameData();
 
 	Player &getPlayer() const;
 	EntityManager &getEntityManager() const;
-	CLProgram &getCLProgram() const;
 	double getGameTime() const;
 	int getWorldWidth() const;
 	int getWorldHeight() const;

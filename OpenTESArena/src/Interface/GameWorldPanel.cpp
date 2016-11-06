@@ -491,20 +491,21 @@ void GameWorldPanel::tick(double dt, bool &running)
 
 	// Update CLProgram members that are refreshed each frame.
 	double verticalFOV = this->getGameState()->getOptions().getVerticalFOV();
-	auto &clProgram = gameData->getCLProgram();
-	clProgram.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
-	clProgram.updateGameTime(gameData->getGameTime());
+	auto &renderer = this->getGameState()->getRenderer();
+	renderer.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
+	renderer.updateGameTime(gameData->getGameTime());
 }
 
 void GameWorldPanel::render(Renderer &renderer)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
-	// Clear original frame buffer.
+	// Clear full screen.
+	renderer.clearNative();
 	renderer.clearOriginal();
 
-	// Draw game world using OpenCL rendering.
-	this->getGameState()->getGameData()->getCLProgram().render(renderer);
+	// Draw game world onto the native frame buffer.
+	renderer.renderWorld();
 
 	// Set screen palette.
 	auto &textureManager = this->getGameState()->getTextureManager();

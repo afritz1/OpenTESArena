@@ -136,10 +136,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			int worldHeight = 5;
 			int worldDepth = 32;
 
-			std::unique_ptr<CLProgram> clProgram(new CLProgram(
-				worldWidth, worldHeight, worldDepth,
-				gameState->getRenderer(),
-				gameState->getOptions().getResolutionScale()));
+			// Initialize 3D rendering program.
+			auto &renderer = gameState->getRenderer();
+			renderer.initializeWorldRendering(
+				worldWidth, worldHeight, worldDepth, 
+				gameState->getOptions().getResolutionScale(), false);
 
 			// Send some textures and test geometry to CL device memory. Eventually
 			// this will be moved out to another data class, maybe stored in the game
@@ -202,7 +203,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			for (int i = 0; i < static_cast<int>(surfaces.size()); ++i)
 			{
 				const SDL_Surface *surface = surfaces.at(i);
-				int textureIndex = clProgram->addTexture(
+				int textureIndex = renderer.addTexture(
 					static_cast<uint32_t*>(surface->pixels), surface->w, surface->h);
 
 				textureIndices.push_back(textureIndex);
@@ -218,7 +219,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				{
 					Rect3D rect = VoxelBuilder::makeCeiling(i, 0, k);
 					int textureIndex = textureIndices.at(1 + random.next(3));
-					clProgram->updateVoxel(i, 0, k, 
+					renderer.updateVoxel(i, 0, k,
 						std::vector<Rect3D>{ rect }, textureIndex);
 				}
 			}
@@ -230,10 +231,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				for (int k = 0; k < worldDepth; ++k)
 				{
 					std::vector<Rect3D> block = VoxelBuilder::makeBlock(0, j, k);
-					clProgram->updateVoxel(0, j, k, block, textureIndex);
+					renderer.updateVoxel(0, j, k, block, textureIndex);
 
 					block = VoxelBuilder::makeBlock(worldWidth - 1, j, k);
-					clProgram->updateVoxel(worldWidth - 1, j, k, block, textureIndex);
+					renderer.updateVoxel(worldWidth - 1, j, k, block, textureIndex);
 				}
 			}
 
@@ -244,15 +245,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				for (int i = 1; i < (worldWidth - 1); ++i)
 				{
 					std::vector<Rect3D> block = VoxelBuilder::makeBlock(i, j, 0);
-					clProgram->updateVoxel(i, j, 0, block, textureIndex);
+					renderer.updateVoxel(i, j, 0, block, textureIndex);
 
 					block = VoxelBuilder::makeBlock(i, j, worldDepth - 1);
-					clProgram->updateVoxel(i, j, worldDepth - 1, block, textureIndex);
+					renderer.updateVoxel(i, j, worldDepth - 1, block, textureIndex);
 				}
 			}
 
 			// Lambda for adding simple voxel buildings.
-			auto makeBuilding = [&clProgram, &random, &textureIndices](int cellX, 
+			auto makeBuilding = [&renderer, &random, &textureIndices](int cellX,
 				int cellZ, int width, int height, int depth, const std::vector<int> &indices)
 			{
 				const int cellY = 1;
@@ -271,7 +272,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 							const int textureIndex = textureIndices.at(indices.at(random.next(
 								static_cast<int>(indices.size()))));
 
-							clProgram->updateVoxel(x, y, z, block, textureIndex);
+							renderer.updateVoxel(x, y, z, block, textureIndex);
 						}
 					}
 				}
@@ -315,8 +316,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(
-				std::move(player), std::move(entityManager), std::move(clProgram),
-				gameTime, worldWidth, worldHeight, worldDepth));
+				std::move(player), std::move(entityManager), gameTime, 
+				worldWidth, worldHeight, worldDepth));
 
 			// Set the game data before constructing the game world panel.
 			gameState->setGameData(std::move(gameData));

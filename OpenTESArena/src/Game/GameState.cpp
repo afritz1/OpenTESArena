@@ -131,15 +131,8 @@ TextAssets &GameState::getTextAssets() const
 
 void GameState::resizeWindow(int width, int height)
 {
-	this->renderer->resize(width, height);
-
-	if (this->gameDataIsActive())
-	{
-		// Rebuild OpenCL program with new dimensions.
-		auto &clProgram = this->gameData->getCLProgram();
-		clProgram.resize(*this->renderer.get(), 
-			this->getOptions().getResolutionScale());
-	}
+	// Resize the window, and the 3D renderer if initialized.
+	this->renderer->resize(width, height, this->getOptions().getResolutionScale());
 }
 
 void GameState::setPanel(std::unique_ptr<Panel> nextPanel)

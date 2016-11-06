@@ -2,8 +2,6 @@
 #include <cassert>
 #include <cmath>
 
-#include "SDL.h"
-
 #include "CLProgram.h"
 
 #include "TextureReference.h"
@@ -41,7 +39,7 @@ const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
-	Renderer &renderer, double resolutionScale)
+	int renderWidth, int renderHeight)
 {
 	assert(worldWidth > 0);
 	assert(worldHeight > 0);
@@ -49,13 +47,10 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	Debug::mention("CLProgram", "Initializing.");
 
-	const int screenWidth = renderer.getWindowDimensions().getX();
-	const int screenHeight = renderer.getWindowDimensions().getY();
-
 	// Render dimensions for ray tracing. To prevent issues when the user shrinks
 	// the window down too far, clamp them to at least 1.
-	this->renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
-	this->renderHeight = std::max(static_cast<int>(screenHeight * resolutionScale), 1);
+	this->renderWidth = renderWidth;
+	this->renderHeight = renderHeight;
 
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;
@@ -63,12 +58,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	// Create the local output pixel buffer.
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
-	this->outputData = std::vector<cl_char>(sizeof(cl_int) * renderPixelCount);
-
-	// Create streaming texture to be used as the game world frame buffer.	
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
-	Debug::check(this->texture != nullptr, "CLProgram", "SDL_CreateTexture");
+	this->outputData = std::vector<uint8_t>(sizeof(cl_int) * renderPixelCount);
 
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
@@ -331,9 +321,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 CLProgram::~CLProgram()
 {
-	// Destroy the game world frame buffer.
-	// The SDL_Renderer destroys this itself with SDL_DestroyRenderer(), too.
-	SDL_DestroyTexture(this->texture);
+
 }
 
 std::vector<cl::Platform> CLProgram::getPlatforms()
@@ -356,7 +344,7 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 	return devices;
 }
 
-void CLProgram::resize(Renderer &renderer, double resolutionScale)
+void CLProgram::resize(int renderWidth, int renderHeight)
 {
 	// Since the CL program is tightly coupled with the render resolution, nearly all
 	// of the memory objects need to be refreshed. However, buffers with world data
@@ -366,21 +354,12 @@ void CLProgram::resize(Renderer &renderer, double resolutionScale)
 	// constructor, but I couldn't do this cleanly using the move assignment operator. 
 	// There's probably a better way to do this, though.
 
-	const int screenWidth = renderer.getWindowDimensions().getX();
-	const int screenHeight = renderer.getWindowDimensions().getY();
-
-	this->renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
-	this->renderHeight = std::max(static_cast<int>(screenHeight * resolutionScale), 1);
+	this->renderWidth = renderWidth;
+	this->renderHeight = renderHeight;
 
 	// Recreate the local output pixel buffer.
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
-	this->outputData = std::vector<cl_char>(sizeof(cl_int) * renderPixelCount);
-
-	// Recreate streaming texture for the frame buffer.
-	SDL_DestroyTexture(this->texture);
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, this->renderWidth, this->renderHeight);
-	Debug::check(this->texture != nullptr, "CLProgram", "resize SDL_CreateTexture");
+	this->outputData = std::vector<uint8_t>(sizeof(cl_int) * renderPixelCount);
 
 	// Read the kernel source from file.
 	std::string source = File::toString(CLProgram::PATH + CLProgram::FILENAME);
@@ -951,7 +930,7 @@ void CLProgram::updateVoxel(int x, int y, int z,
 	this->updateVoxel(x, y, z, rects, textureIndices);
 }
 
-void CLProgram::render(Renderer &renderer)
+const void *CLProgram::render()
 {
 	cl::NDRange workDims(this->renderWidth, this->renderHeight);
 
@@ -981,8 +960,5 @@ void CLProgram::render(Renderer &renderer)
 		outputDataPtr, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
 
-	// Update the frame buffer texture and draw to the renderer.
-	const int pitch = this->renderWidth * sizeof(cl_int);
-	SDL_UpdateTexture(this->texture, nullptr, outputDataPtr, pitch);
-	renderer.fillNative(this->texture);
+	return outputDataPtr;
 }

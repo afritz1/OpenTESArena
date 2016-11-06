@@ -62,19 +62,6 @@ TextureManager::~TextureManager()
 	}
 }
 
-TextureManager &TextureManager::operator=(TextureManager &&textureManager)
-{
-	this->palettes = std::move(textureManager.palettes);
-	this->surfaces = std::move(textureManager.surfaces);
-	this->textures = std::move(textureManager.textures);
-	this->surfaceSets = std::move(textureManager.surfaceSets);
-	this->textureSets = std::move(textureManager.textureSets);
-	this->renderer = textureManager.renderer;
-	this->activePalette = textureManager.activePalette;
-
-	return *this;
-}
-
 void TextureManager::loadCOLPalette(const std::string &colName)
 {
 	Palette dstPalette;

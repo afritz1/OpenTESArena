@@ -48,7 +48,7 @@ public:
 	TextureManager(Renderer &renderer);
 	~TextureManager();
 
-	TextureManager &operator =(TextureManager &&textureManager);
+	TextureManager &operator=(TextureManager &&textureManager) = delete;
 
 	// Gets a surface from file. It will be loaded if not already stored with the 
 	// requested palette. A valid filename might be something like "TAMRIEL.IMG".
