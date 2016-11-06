@@ -433,6 +433,37 @@ void Renderer::clearOriginal()
 	this->clearOriginal(Color::Transparent);
 }
 
+void Renderer::drawPixel(const Color &color, int x, int y)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(), 
+		color.getB(), color.getA());
+	SDL_RenderDrawPoint(this->renderer, x, y);
+}
+
+void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
+}
+
+void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
+
+	SDL_RenderDrawRect(this->renderer, &rect);
+}
+
 void Renderer::renderWorld()
 {
 	// The 3D rendering program must be initialized.
