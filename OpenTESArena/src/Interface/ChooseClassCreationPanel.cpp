@@ -45,7 +45,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
-		std::string text = std::string("How do you wish\nto select your class?");
+		std::string text("How do you wish\nto select your class?");
 		auto &font = gameState->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -61,7 +61,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
-		std::string text = std::string("Generate\n(not implemented)");
+		std::string text("Generate\n(not implemented)");
 		auto &font = gameState->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -77,7 +77,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
-		std::string text = std::string("Select");
+		std::string text("Select");
 		auto &font = gameState->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
