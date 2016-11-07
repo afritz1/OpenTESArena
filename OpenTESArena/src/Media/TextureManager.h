@@ -6,13 +6,13 @@
 #include <vector>
 
 #include "Palette.h"
+#include "../Rendering/Texture.h"
 
 // Find a way to map original wall and sprite filenames to unique integer IDs 
 // (probably depending on the order they were parsed). Or perhaps the ID could 
 // be their offset in GLOBAL.BSA.
 
 class Renderer;
-class Texture;
 
 struct SDL_PixelFormat;
 struct SDL_Surface;

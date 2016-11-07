@@ -21,7 +21,6 @@
 #include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
