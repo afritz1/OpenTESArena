@@ -8,7 +8,6 @@
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
     <ClCompile Include="src\Interface\TextBox.cpp" />
-    <ClCompile Include="src\Interface\Surface.cpp" />
     <ClCompile Include="src\Media\TextureManager.cpp" />
     <ClCompile Include="src\Game\CardinalDirection.cpp" />
     <ClCompile Include="src\Entities\Entity.cpp" />
@@ -133,6 +132,7 @@
     <ClCompile Include="src\Media\PPMFile.cpp" />
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
     <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
+    <ClCompile Include="src\Interface\Surface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -145,7 +145,6 @@
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\Voxel.h" />
     <ClInclude Include="src\Interface\TextBox.h" />
-    <ClInclude Include="src\Interface\Surface.h" />
     <ClInclude Include="src\Media\TextureManager.h" />
     <ClInclude Include="src\Media\TextureName.h" />
     <ClInclude Include="src\Media\MusicFormat.h" />
@@ -312,6 +311,7 @@
     <ClInclude Include="src\Media\PPMFile.h" />
     <ClInclude Include="src\World\VoxelBuilder.h" />
     <ClInclude Include="src\Assets\ExeUnpacker.h" />
+    <ClInclude Include="src\Interface\Surface.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

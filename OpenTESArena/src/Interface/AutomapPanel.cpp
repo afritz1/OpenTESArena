@@ -123,15 +123,15 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
-	const auto &cursor = textureManager.getSurface(
+	auto *cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap));
 	const int cursorYOffset = static_cast<int>(
-		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
+		static_cast<double>(cursor->h) * this->getCursorScale());
 	const auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor.getSurface(),
+	renderer.drawToNative(cursor,
 		mousePosition.getX(),
 		mousePosition.getY() - cursorYOffset,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor->w * this->getCursorScale()),
+		static_cast<int>(cursor->h * this->getCursorScale()));
 }

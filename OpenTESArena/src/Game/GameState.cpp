@@ -9,6 +9,7 @@
 #include "OptionsParser.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
+#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"

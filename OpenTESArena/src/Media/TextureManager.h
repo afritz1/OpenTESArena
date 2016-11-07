@@ -1,13 +1,11 @@
 #ifndef TEXTURE_MANAGER_H
 #define TEXTURE_MANAGER_H
 
-#include <map>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "Palette.h"
-#include "../Interface/Surface.h"
 
 // Find a way to map original wall and sprite filenames to unique integer IDs 
 // (probably depending on the order they were parsed). Or perhaps the ID could 
@@ -26,7 +24,7 @@ private:
 
 	// The filename and palette name are concatenated when mapping to avoid using two 
 	// maps. I.e., "EQUIPMEN.IMG" and "PAL.COL" become "EQUIPMEN.IMGPAL.COL".
-	std::unordered_map<std::string, Surface> surfaces;
+	std::unordered_map<std::string, SDL_Surface*> surfaces;
 	std::unordered_map<std::string, SDL_Texture*> textures;
 	std::unordered_map<std::string, std::vector<SDL_Surface*>> surfaceSets;
 	std::unordered_map<std::string, std::vector<SDL_Texture*>> textureSets;
@@ -52,8 +50,8 @@ public:
 
 	// Gets a surface from file. It will be loaded if not already stored with the 
 	// requested palette. A valid filename might be something like "TAMRIEL.IMG".
-	const Surface &getSurface(const std::string &filename, const std::string &paletteName);
-	const Surface &getSurface(const std::string &filename);
+	SDL_Surface *getSurface(const std::string &filename, const std::string &paletteName);
+	SDL_Surface *getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
 	SDL_Texture *getTexture(const std::string &filename, const std::string &paletteName);

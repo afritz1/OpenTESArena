@@ -277,14 +277,14 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	auto *head = textureManager.getSurfaces(headsFilename,
 		PaletteFile::fromName(PaletteName::CharSheet)).at(player.getPortraitID());
 	auto *body = textureManager.getTexture(bodyFilename);
-	auto &shirt = textureManager.getSurface(shirtFilename);
-	auto &pants = textureManager.getSurface(pantsFilename);
+	auto *shirt = textureManager.getSurface(shirtFilename);
+	auto *pants = textureManager.getSurface(pantsFilename);
 	int portraitWidth, portraitHeight;
 	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
 	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
-	renderer.drawToOriginal(pants.getSurface(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(pants, pantsOffset.getX(), pantsOffset.getY());
 	renderer.drawToOriginal(head, headOffset.getX(), headOffset.getY());
-	renderer.drawToOriginal(shirt.getSurface(), shirtOffset.getX(), shirtOffset.getY());
+	renderer.drawToOriginal(shirt, shirtOffset.getX(), shirtOffset.getY());
 
 	// Draw character equipment background.
 	auto *equipmentBackground = textureManager.getTexture(
@@ -306,8 +306,8 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto &cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
 	const auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor.getSurface(),
+	renderer.drawToNative(cursor,
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor->w * this->getCursorScale()),
+		static_cast<int>(cursor->h * this->getCursorScale()));
 }

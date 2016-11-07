@@ -18,6 +18,7 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
+#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
@@ -38,6 +39,11 @@ TextureManager::TextureManager(Renderer &renderer)
 TextureManager::~TextureManager()
 {
 	// Release the SDL_Surfaces.
+	for (auto &pair : this->surfaces)
+	{
+		SDL_FreeSurface(pair.second);
+	}
+
 	for (auto &pair : this->surfaceSets)
 	{
 		for (auto *surface : pair.second)
@@ -110,7 +116,7 @@ bool TextureManager::paletteIsBuiltIn(const std::string &paletteName) const
 	return paletteName.compare(builtInName) == 0;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename,
+SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	const std::string &paletteName)
 {
 	// Use this name when interfacing with the surfaces map.
@@ -144,7 +150,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	const bool isIMG = extension.compare(".IMG") == 0;
 	const bool isMNU = extension.compare(".MNU") == 0;
 
-	SDL_Surface *optSurface = nullptr;
+	SDL_Surface *surface = nullptr;
 
 	if (isIMG || isMNU)
 	{
@@ -156,25 +162,21 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		IMGFile img(filename, palette);
 		
 		// Create a surface from the IMG.
-		optSurface = Surface::createSurfaceWithFormat(img.getWidth(), img.getHeight(), 
+		surface = Surface::createSurfaceWithFormat(img.getWidth(), img.getHeight(),
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_memcpy(optSurface->pixels, img.getPixels(), optSurface->pitch * optSurface->h);
+		SDL_memcpy(surface->pixels, img.getPixels(), surface->pitch * surface->h);
 	}
 	else
 	{
 		Debug::crash("Texture Manager", "Unrecognized surface format \"" + filename + "\".");
 	}
 
-	// Create surface from optimized SDL_Surface.
-	Surface surface(optSurface);
-	SDL_FreeSurface(optSurface);
-
 	// Add the new surface and return it.
 	auto iter = this->surfaces.emplace(std::make_pair(fullName, surface)).first;
 	return iter->second;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename)
+SDL_Surface *TextureManager::getSurface(const std::string &filename)
 {
 	return this->getSurface(filename, this->activePalette);
 }

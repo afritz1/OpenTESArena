@@ -232,11 +232,11 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	const auto &cursor = textureManager.getSurface(
+	auto *cursor = textureManager.getSurface(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor.getSurface(),
+	renderer.drawToNative(cursor,
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor->w * this->getCursorScale()),
+		static_cast<int>(cursor->h * this->getCursorScale()));
 }

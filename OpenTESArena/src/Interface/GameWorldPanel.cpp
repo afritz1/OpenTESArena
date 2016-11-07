@@ -547,21 +547,35 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Draw compass slider (the actual headings). +X is north, +Z is east.
 	// Should do some sin() and cos() functions to get the pixel offset.
-	const auto &compassSlider = textureManager.getSurface(
+	auto *compassSlider = textureManager.getSurface(
 		TextureFile::fromName(TextureName::CompassSlider));
 
-	Surface compassSliderSegment(32, 7);
-	compassSlider.blit(compassSliderSegment, Int2(), Rect(60, 0,
-		compassSliderSegment.getWidth(), compassSliderSegment.getHeight()));
-	renderer.drawToOriginal(compassSliderSegment.getSurface(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
-		compassSliderSegment.getHeight());
+	SDL_Surface *compassSliderSegment = [&compassSlider]()
+	{
+		SDL_Surface *segmentTemp = Surface::createSurfaceWithFormat(32, 7,
+			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+
+		SDL_Rect clipRect;
+		clipRect.x = 60; // Arbitrary offset until compass rotation works.
+		clipRect.y = 0;
+		clipRect.w = segmentTemp->w;
+		clipRect.h = segmentTemp->h;
+
+		SDL_BlitSurface(compassSlider, &clipRect, segmentTemp, nullptr);
+
+		return segmentTemp;
+	}();
+
+	renderer.drawToOriginal(compassSliderSegment,
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment->w / 2),
+		compassSliderSegment->h);
+	SDL_FreeSurface(compassSliderSegment);
 
 	// Draw compass frame over the headings.
-	const auto &compassFrame = textureManager.getSurface(
+	auto *compassFrame = textureManager.getSurface(
 		TextureFile::fromName(TextureName::CompassFrame));
-	renderer.drawToOriginal(compassFrame.getSurface(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+	renderer.drawToOriginal(compassFrame,
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame->w / 2), 0);
 
 	// Draw text: player name.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
@@ -590,7 +604,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		// If not in any of the arrow regions, use the default sword cursor.
 		return textureManager.getSurface(
-			TextureFile::fromName(TextureName::SwordCursor)).getSurface();
+			TextureFile::fromName(TextureName::SwordCursor));
 	}();
 
 	renderer.drawToNative(cursor, mousePosition.getX(), mousePosition.getY(),
