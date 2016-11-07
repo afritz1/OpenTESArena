@@ -26,6 +26,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 CharacterPanel::CharacterPanel(GameState *gameState)
 	: Panel(gameState), headOffsets()
@@ -225,27 +226,25 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
-	auto *head = textureManager.getSurfaces(headsFilename,
+	const auto &head = textureManager.getTextures(headsFilename,
 		PaletteFile::fromName(PaletteName::CharSheet)).at(player.getPortraitID());
-	auto *body = textureManager.getTexture(bodyFilename);
-	auto *shirt = textureManager.getSurface(shirtFilename);
-	auto *pants = textureManager.getSurface(pantsFilename);
-	int portraitWidth, portraitHeight;
-	SDL_QueryTexture(body, nullptr, nullptr, &portraitWidth, &portraitHeight);
-	renderer.drawToOriginal(body, Renderer::ORIGINAL_WIDTH - portraitWidth, 0);
-	renderer.drawToOriginal(pants, pantsOffset.getX(), pantsOffset.getY());
-	renderer.drawToOriginal(head, headOffset.getX(), headOffset.getY());
-	renderer.drawToOriginal(shirt, shirtOffset.getX(), shirtOffset.getY());
+	const auto &body = textureManager.getTexture(bodyFilename);
+	const auto &shirt = textureManager.getTexture(shirtFilename);
+	const auto &pants = textureManager.getTexture(pantsFilename);
+	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
+	renderer.drawToOriginal(pants.get(), pantsOffset.getX(), pantsOffset.getY());
+	renderer.drawToOriginal(head.get(), headOffset.getX(), headOffset.getY());
+	renderer.drawToOriginal(shirt.get(), shirtOffset.getX(), shirtOffset.getY());
 
 	// Draw character stats background.
-	auto *statsBackground = textureManager.getTexture(
+	const auto &statsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterStats));
-	renderer.drawToOriginal(statsBackground);
+	renderer.drawToOriginal(statsBackground.get());
 
 	// Draw "Next Page" texture.
-	auto *nextPageTexture = textureManager.getTexture(
+	const auto &nextPageTexture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::NextPage));
-	renderer.drawToOriginal(nextPageTexture, 108, 179);
+	renderer.drawToOriginal(nextPageTexture.get(), 108, 179);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
@@ -259,11 +258,11 @@ void CharacterPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	const auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

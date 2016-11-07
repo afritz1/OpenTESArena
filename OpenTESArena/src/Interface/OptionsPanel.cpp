@@ -19,6 +19,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 OptionsPanel::OptionsPanel(GameState *gameState)
 	: Panel(gameState)
@@ -133,11 +134,11 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

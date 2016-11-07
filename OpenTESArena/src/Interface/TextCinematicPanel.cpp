@@ -18,6 +18,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -190,8 +191,8 @@ void TextCinematicPanel::render(Renderer &renderer)
 	const auto &textures = textureManager.getTextures(this->sequenceName);
 
 	// Draw animation.
-	auto *texture = textures.at(this->imageIndex);
-	renderer.drawToOriginal(texture);
+	const auto &texture = textures.at(this->imageIndex);
+	renderer.drawToOriginal(texture.get());
 
 	// Get the relevant text box.
 	const auto &textBox = this->textBoxes.at(this->textIndex);

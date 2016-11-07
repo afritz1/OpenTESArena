@@ -17,6 +17,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -147,20 +148,20 @@ void WorldMapPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw world map background. This one has "Exit" at the bottom right.
-	auto *mapBackground = textureManager.getTexture(
+	const auto &mapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::WorldMap), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mapBackground);
+	renderer.drawToOriginal(mapBackground.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

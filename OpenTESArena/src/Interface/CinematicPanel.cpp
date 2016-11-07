@@ -8,6 +8,7 @@
 #include "../Game/GameState.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
 
@@ -117,8 +118,8 @@ void CinematicPanel::render(Renderer &renderer)
 		this->sequenceName, this->paletteName);
 
 	// Draw image.
-	auto *texture = textures.at(this->imageIndex);
-	renderer.drawToOriginal(texture);
+	const auto &texture = textures.at(this->imageIndex);
+	renderer.drawToOriginal(texture.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

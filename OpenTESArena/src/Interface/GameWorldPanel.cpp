@@ -35,6 +35,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 
 namespace
@@ -515,11 +516,10 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.useTransparencyBlending(true);
 
 	// Draw game world interface.
-	auto *gameInterface = textureManager.getTexture(
+	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	int gameInterfaceHeight;
-	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
-	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
+	renderer.drawToOriginal(gameInterface.get(), 0, 
+		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
 	auto &player = this->getGameState()->getGameData()->getPlayer();
@@ -590,26 +590,27 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw cursor, depending on its position on the screen.
 	const Int2 mousePosition = this->getMousePosition();
 
-	SDL_Surface *cursor = [this, &mousePosition, &textureManager]()
+	const Texture &cursor = [this, &mousePosition, &textureManager]()
+		-> const Texture& // Interesting how this return type isn't deduced in MSVC.
 	{
 		// See which arrow cursor region the native mouse is in.
 		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
 		{
 			if (this->nativeCursorRegions.at(i)->contains(mousePosition))
 			{
-				return textureManager.getSurfaces(
+				return textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors)).at(i);
 			}
 		}
 
 		// If not in any of the arrow regions, use the default sword cursor.
-		return textureManager.getSurface(
+		return textureManager.getTexture(
 			TextureFile::fromName(TextureName::SwordCursor));
 	}();
 
-	renderer.drawToNative(cursor, mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+	renderer.drawToNative(cursor.get(), mousePosition.getX(), mousePosition.getY(),
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 
 	// Set the transparency blending back to normal (off).
 	renderer.useTransparencyBlending(false);

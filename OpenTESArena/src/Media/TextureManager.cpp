@@ -21,6 +21,7 @@
 #include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -49,21 +50,6 @@ TextureManager::~TextureManager()
 		for (auto *surface : pair.second)
 		{
 			SDL_FreeSurface(surface);
-		}
-	}
-
-	// Release the SDL_Textures.
-	// The SDL_Renderer destroys these itself with SDL_DestroyRenderer(), too.
-	for (auto &pair : this->textures)
-	{
-		SDL_DestroyTexture(pair.second);
-	}
-
-	for (auto &pair : this->textureSets)
-	{
-		for (auto *texture : pair.second)
-		{
-			SDL_DestroyTexture(texture);
 		}
 	}
 }
@@ -181,7 +167,7 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename)
 	return this->getSurface(filename, this->activePalette);
 }
 
-SDL_Texture *TextureManager::getTexture(const std::string &filename,
+const Texture &TextureManager::getTexture(const std::string &filename,
 	const std::string &paletteName)
 {
 	// Use this name when interfacing with the textures map.
@@ -241,11 +227,11 @@ SDL_Texture *TextureManager::getTexture(const std::string &filename,
 	}
 
 	// Add the new texture and return it.
-	auto iter = this->textures.emplace(std::make_pair(fullName, texture)).first;
+	auto iter = this->textures.emplace(std::make_pair(fullName, Texture(texture))).first;
 	return iter->second;
 }
 
-SDL_Texture *TextureManager::getTexture(const std::string &filename)
+const Texture &TextureManager::getTexture(const std::string &filename)
 {
 	return this->getTexture(filename, this->activePalette);
 }
@@ -413,7 +399,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(const std::string &
 	return this->getSurfaces(filename, this->activePalette);
 }
 
-const std::vector<SDL_Texture*> &TextureManager::getTextures(
+const std::vector<Texture> &TextureManager::getTextures(
 	const std::string &filename, const std::string &paletteName)
 {
 	// This method deals with animations and movies, so it will check filenames 
@@ -442,9 +428,9 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 
 	// The file hasn't been loaded with the palette yet, so make a new entry.
 	auto iter = this->textureSets.emplace(std::make_pair(
-		fullName, std::vector<SDL_Texture*>())).first;
+		fullName, std::vector<Texture>())).first;
 
-	std::vector<SDL_Texture*> &textureSet = iter->second;
+	std::vector<Texture> &textureSet = iter->second;
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
@@ -472,7 +458,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				cfaFile.getWidth() * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else if (isCIF)
@@ -492,7 +478,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				cifFile.getWidth(i) * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else if (isDFA)
@@ -512,7 +498,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				dfaFile.getWidth() * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else if (isFLC)
@@ -532,7 +518,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				flcFile.getWidth() * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else if (isRCI)
@@ -552,7 +538,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				RCIFile::FRAME_WIDTH * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else if (isSET)
@@ -572,7 +558,7 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				SETFile::CHUNK_WIDTH * sizeof(*pixels));
 
-			textureSet.push_back(texture);
+			textureSet.push_back(Texture(texture));
 		}
 	}
 	else
@@ -581,15 +567,15 @@ const std::vector<SDL_Texture*> &TextureManager::getTextures(
 	}
 
 	// Set alpha transparency on for each texture.
-	for (auto *texture : textureSet)
+	for (auto &texture : textureSet)
 	{
-		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+		SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND);
 	}
 
 	return textureSet;
 }
 
-const std::vector<SDL_Texture*> &TextureManager::getTextures(const std::string &filename)
+const std::vector<Texture> &TextureManager::getTextures(const std::string &filename)
 {
 	return this->getTextures(filename, this->activePalette);
 }

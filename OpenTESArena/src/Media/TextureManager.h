@@ -12,6 +12,7 @@
 // be their offset in GLOBAL.BSA.
 
 class Renderer;
+class Texture;
 
 struct SDL_PixelFormat;
 struct SDL_Surface;
@@ -25,9 +26,9 @@ private:
 	// The filename and palette name are concatenated when mapping to avoid using two 
 	// maps. I.e., "EQUIPMEN.IMG" and "PAL.COL" become "EQUIPMEN.IMGPAL.COL".
 	std::unordered_map<std::string, SDL_Surface*> surfaces;
-	std::unordered_map<std::string, SDL_Texture*> textures;
+	std::unordered_map<std::string, Texture> textures;
 	std::unordered_map<std::string, std::vector<SDL_Surface*>> surfaceSets;
-	std::unordered_map<std::string, std::vector<SDL_Texture*>> textureSets;
+	std::unordered_map<std::string, std::vector<Texture>> textureSets;
 	Renderer &renderer;
 	std::string activePalette;
 
@@ -54,8 +55,8 @@ public:
 	SDL_Surface *getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
-	SDL_Texture *getTexture(const std::string &filename, const std::string &paletteName);
-	SDL_Texture *getTexture(const std::string &filename);
+	const Texture &getTexture(const std::string &filename, const std::string &paletteName);
+	const Texture &getTexture(const std::string &filename);
 	
 	// Gets a set of surfaces from a file. Intended only for obtaining pixel data for use 
 	// with the OpenCL buffers. TextureManager::getTextures() should be used instead for 
@@ -67,9 +68,9 @@ public:
 	// Gets a set of textures from a file. This is intended for animations and movies, 
 	// where the filename essentially points to several images. When no palette name 
 	// is given, the active one is used.
-	const std::vector<SDL_Texture*> &getTextures(const std::string &filename,
+	const std::vector<Texture> &getTextures(const std::string &filename,
 		const std::string &paletteName);
-	const std::vector<SDL_Texture*> &getTextures(const std::string &filename);
+	const std::vector<Texture> &getTextures(const std::string &filename);
 
 	// Sets the palette to use for subsequent images. The source of the palette can be
 	// from a loose .COL file, or can be built into an IMG. If the IMG does not have a 

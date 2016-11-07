@@ -22,6 +22,7 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 MainMenuPanel::MainMenuPanel(GameState *gameState)
 	: Panel(gameState)
@@ -211,20 +212,20 @@ void MainMenuPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw main menu.
-	auto *mainMenu = textureManager.getTexture(
+	const auto &mainMenu = textureManager.getTexture(
 		TextureFile::fromName(TextureName::MainMenu), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mainMenu);
+	renderer.drawToOriginal(mainMenu.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

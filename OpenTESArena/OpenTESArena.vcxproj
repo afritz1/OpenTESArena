@@ -285,6 +285,7 @@
     <ClCompile Include="src\Interface\WorldMapPanel.cpp" />
     <ClCompile Include="src\Assets\TextAssets.cpp" />
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
+    <ClCompile Include="src\Rendering\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Assets\ExeUnpacker.h" />
@@ -464,6 +465,7 @@
     <ClInclude Include="src\Interface\WorldMapPanel.h" />
     <ClInclude Include="src\Assets\TextAssets.h" />
     <ClInclude Include="src\World\VoxelBuilder.h" />
+    <ClInclude Include="src\Rendering\Texture.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

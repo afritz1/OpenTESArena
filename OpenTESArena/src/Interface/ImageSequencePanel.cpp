@@ -13,6 +13,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 ImageSequencePanel::ImageSequencePanel(GameState *gameState,
 	const std::vector<std::string> &paletteNames,
@@ -136,10 +137,10 @@ void ImageSequencePanel::render(Renderer &renderer)
 	auto &textureManager = this->getGameState()->getTextureManager();
 
 	// Draw image.
-	auto *image = textureManager.getTexture(
+	const auto &image = textureManager.getTexture(
 		this->textureNames.at(this->imageIndex),
 		this->paletteNames.at(this->imageIndex));
-	renderer.drawToOriginal(image);
+	renderer.drawToOriginal(image.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

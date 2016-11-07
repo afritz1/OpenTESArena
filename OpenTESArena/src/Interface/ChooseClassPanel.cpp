@@ -30,6 +30,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
@@ -477,23 +478,17 @@ void ChooseClassPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
-	auto *background = textureManager.getTexture(
+	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background);
+	renderer.drawToOriginal(background.get());
 
 	// Draw list pop-up.
-	auto *listPopUp = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PopUp2), 
+	const auto &listPopUp = textureManager.getTexture(
+		TextureFile::fromName(TextureName::PopUp2),
 		TextureFile::fromName(TextureName::CharacterCreation));
-
-	int listWidth, listHeight;
-	SDL_QueryTexture(listPopUp, nullptr, nullptr, &listWidth, &listHeight);
-	renderer.drawToOriginal(listPopUp,
-		55,
-		9,
-		listWidth,
-		listHeight);
+	renderer.drawToOriginal(listPopUp.get(), 55, 9,
+		listPopUp.getWidth(), listPopUp.getHeight());
 
 	// Draw text: title, list.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
@@ -518,11 +513,11 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

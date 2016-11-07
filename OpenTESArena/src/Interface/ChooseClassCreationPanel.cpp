@@ -21,6 +21,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	: Panel(gameState)
@@ -205,10 +206,10 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
-	auto *background = textureManager.getTexture(
+	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background);
+	renderer.drawToOriginal(background.get());
 
 	// Draw parchments: title, generate, select.
 	int parchmentWidth, parchmentHeight;
@@ -232,11 +233,11 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

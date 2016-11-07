@@ -21,6 +21,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -239,10 +240,10 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		this->province->getProvinceName());	
 
 	// Draw province map background.
-	auto *mapBackground = textureManager.getTexture(
+	const auto &mapBackground = textureManager.getTexture(
 		TextureFile::fromName(provinceTextureName), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mapBackground);
+	renderer.drawToOriginal(mapBackground.get());
 
 	// Draw tooltip if the mouse is over a button.
 	auto mouseOriginalPosition = this->getGameState()->getRenderer()
@@ -262,11 +263,11 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

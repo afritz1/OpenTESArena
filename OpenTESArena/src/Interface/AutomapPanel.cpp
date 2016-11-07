@@ -15,6 +15,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 AutomapPanel::AutomapPanel(GameState *gameState)
 	: Panel(gameState)
@@ -113,25 +114,25 @@ void AutomapPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw automap background.
-	auto *automapBackground = textureManager.getTexture(
+	const auto &automapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Automap),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(automapBackground);
+	renderer.drawToOriginal(automapBackground.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 
 	// Draw quill cursor. This one uses a different point for blitting because 
 	// the tip of the cursor is at the bottom left, not the top left.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap));
 	const int cursorYOffset = static_cast<int>(
-		static_cast<double>(cursor->h) * this->getCursorScale());
+		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
 	const auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(),
 		mousePosition.getY() - cursorYOffset,
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -12,6 +12,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 ImagePanel::ImagePanel(GameState *gameState, const std::string &paletteName, 
 	const std::string &textureName, double secondsToDisplay,
@@ -98,9 +99,9 @@ void ImagePanel::render(Renderer &renderer)
 	auto &textureManager = this->getGameState()->getTextureManager();
 
 	// Draw image.
-	auto *image = textureManager.getTexture(
+	const auto &image = textureManager.getTexture(
 		this->textureName, this->paletteName);
-	renderer.drawToOriginal(image);
+	renderer.drawToOriginal(image.get());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

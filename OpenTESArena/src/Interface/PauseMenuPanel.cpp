@@ -30,6 +30,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 
 PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	: Panel(gameState)
@@ -386,16 +387,15 @@ void PauseMenuPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw pause background.
-	auto *pauseBackground = textureManager.getTexture(
+	const auto &pauseBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PauseBackground));
-	renderer.drawToOriginal(pauseBackground);
+	renderer.drawToOriginal(pauseBackground.get());
 
 	// Draw game world interface below the pause menu.
-	auto *gameInterface = textureManager.getTexture(
+	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	int gameInterfaceHeight;
-	SDL_QueryTexture(gameInterface, nullptr, nullptr, nullptr, &gameInterfaceHeight);
-	renderer.drawToOriginal(gameInterface, 0, Renderer::ORIGINAL_HEIGHT - gameInterfaceHeight);
+	renderer.drawToOriginal(gameInterface.get(), 0, 
+		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
 	auto *portrait = textureManager.getSurfaces(this->headsFilename,
@@ -430,11 +430,11 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

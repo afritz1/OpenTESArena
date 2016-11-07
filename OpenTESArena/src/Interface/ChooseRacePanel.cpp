@@ -24,6 +24,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Texture.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
@@ -242,10 +243,10 @@ void ChooseRacePanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background map.
-	auto *raceSelectMap = textureManager.getTexture(
+	const auto &raceSelectMap = textureManager.getTexture(
 		TextureFile::fromName(TextureName::RaceSelect), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(raceSelectMap);
+	renderer.drawToOriginal(raceSelectMap.get());
 
 	// Don't worry about the yellow dots for now. Whatever the original game is doing
 	// to cover them up should be figured out sometime.
@@ -293,11 +294,11 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
-	auto *cursor = textureManager.getSurface(
+	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
-	renderer.drawToNative(cursor,
+	renderer.drawToNative(cursor.get(),
 		mousePosition.getX(), mousePosition.getY(),
-		static_cast<int>(cursor->w * this->getCursorScale()),
-		static_cast<int>(cursor->h * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
+		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }
