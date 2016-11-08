@@ -1,50 +1,65 @@
 #ifndef LIST_BOX_H
 #define LIST_BOX_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include "Surface.h"
+#include "../Math/Int2.h"
+#include "../Media/Color.h"
 
-// The text color and texture manager need to be accessible so they can be remembered 
-// for the update display text method.
+// This class defines a list of displayed text boxes. The index of a clicked text 
+// box can be obtained, and the list can be scrolled up and down. A list box is
+// intended to only be left-aligned.
 
-class Color;
+// Though the index of a selected item can be obtained, this class is not intended
+// for holding data about those selected items. It is simply a view for the text.
+
 class Font;
-class Int2;
 class Renderer;
 class TextBox;
 
-enum class FontName;
+struct SDL_Surface;
+struct SDL_Texture;
 
-class ListBox : public Surface
+class ListBox
 {
 private:
-	std::vector<std::string> elements;
-	std::unique_ptr<Color> textColor;
-	Renderer &rendererRef;
-	const Font &fontRef;
-	int scrollIndex, maxDisplayed;
+	std::vector<std::unique_ptr<TextBox>> textBoxes;
+	Color textColor;
+	Int2 point;
+	const Font &font;
+	SDL_Surface *clearSurface; // For clearing the texture upon updating.
+	SDL_Texture *texture;
+	int scrollIndex;
 
-	int getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const;
-	int getTotalHeight() const;
-	void updateDisplayText();
+	// Updates the texture to show the currently visible text boxes.
+	void updateDisplay();
 public:
-	// No "center" constructor, because a list box is intended to be left-aligned.
-	ListBox(int x, int y, const Font &font, const Color &textColor, int maxDisplayed,
-		const std::vector<std::string> &elements, Renderer &renderer);
-	virtual ~ListBox();
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
+		const Font &font, int maxDisplayed, Renderer &renderer);
+	~ListBox();
 
-	// Index of the top-most displayed element.
+	// Gets the index of the top-most displayed element.
 	int getScrollIndex() const;
 
-	// Number of elements in the list box (side note: can't return an int cast by reference).
+	// Gets the total number of text boxes (elements) in the list box.
 	int getElementCount() const;
 
-	// Maximum number of visible lines (this determines the box size).
-	int maxDisplayedElements() const;
+	// Gets the max number of displayed text boxes.
+	int getMaxDisplayedCount() const;
 
-	// Get the index of a clicked element.
+	// Gets the top left corner of the list box.
+	const Int2 &getPoint() const;
+
+	// Gets the texture for drawing to the screen.
+	SDL_Texture *getTexture() const;
+
+	// Returns whether the given point is within the bounds of the list box.
+	bool contains(const Int2 &point);
+
+	// Gets the index of a clicked element. ListBox::contains() should be called 
+	// beforehand to make sure the given point is within the list box's bounds.
 	int getClickedIndex(const Int2 &point) const;
 
 	// Decrement the scroll index by one. Without bounds checking on the caller's behalf,
@@ -55,8 +70,7 @@ public:
 	// it can keep scrolling down for a really long time.
 	void scrollDown();
 
-	// Maybe add a "remove(int index)" method sometime, for containers and things...
-	// or just remake the list box each time.
+	// Instead of a remove() method, just recreate the list box.
 };
 
 #endif

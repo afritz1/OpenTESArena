@@ -7,55 +7,77 @@
 
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
-#include "../Media/FontManager.h"
-#include "../Media/FontName.h"
-#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/String.h"
 
-ListBox::ListBox(int x, int y, const Font &font, const Color &textColor, int maxDisplayed,
-	const std::vector<std::string> &elements, Renderer &renderer)
-	: Surface(x, y, 1, 1), fontRef(font), rendererRef(renderer)
+ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+	const Font &font, int maxDisplayed, Renderer &renderer)
+	: textColor(textColor), point(x, y), font(font)
 {
 	assert(maxDisplayed > 0);
 
-	this->elements = elements;
-	this->textColor = std::unique_ptr<Color>(new Color(textColor));
-	this->maxDisplayed = maxDisplayed;
 	this->scrollIndex = 0;
 
-	// Temporary text boxes for getting list box dimensions.
-	std::vector<std::unique_ptr<TextBox>> textBoxes;
+	// Make text boxes for getting list box dimensions now and drawing later.
+	// It's okay for there to be zero elements. Just be blank, then!
 	for (const auto &element : elements)
 	{
 		// Remove any new lines.
-		auto trimmedElement = String::trimLines(element);
-		std::unique_ptr<TextBox> textBox(new TextBox(
-			0, 0, textColor, trimmedElement, font, TextAlignment::Left, renderer));
-		textBoxes.push_back(std::move(textBox));
+		std::string trimmedElement = String::trimLines(element);
+
+		// Store the text box for later.
+		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, textColor, 
+			trimmedElement, font, TextAlignment::Left, renderer));
+		this->textBoxes.push_back(std::move(textBox));
 	}
 
-	// Calculate the proper dimensions of the list box surface.
-	int width = this->getMaxWidth(textBoxes);
-	int height = this->getTotalHeight();
+	// Calculate the dimensions of the displayed list box area.
+	const int width = [this]()
+	{
+		int maxWidth = 0;
+		for (const auto &textBox : this->textBoxes)
+		{
+			int textBoxWidth;
+			SDL_QueryTexture(textBox->getTexture(), nullptr, nullptr, &textBoxWidth, nullptr);
 
-	// Replace the old SDL surface. It was just a placeholder until now.
-	// Surface::optimize() can be avoided by just giving the ARGB masks instead.
-	SDL_FreeSurface(this->surface);
-	this->surface = Surface::createSurfaceWithFormat(width, height,
+			if (textBoxWidth > maxWidth)
+			{
+				maxWidth = textBoxWidth;
+			}
+		}
+
+		return maxWidth;
+	}();
+
+	const int height = font.getCharacterHeight() * maxDisplayed;
+
+	// Create the clear surface. This exists because the text box surfaces can't
+	// currently have an arbitrary size (otherwise they could extend to the end of 
+	// each row), and because SDL_UpdateTexture requires pixels (so this avoids an 
+	// allocation each time the update method is called).
+	this->clearSurface = Surface::createSurfaceWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	SDL_FillRect(this->clearSurface, nullptr, 
+		SDL_MapRGBA(clearSurface->format, 0, 0, 0, 0));
 
-	// It's okay for there to be zero elements. Just be blank, then!
-	// Draw the text boxes to the parent surface.
-	this->updateDisplayText();
+	// Create the visible texture. This will be updated when scrolling the list box.
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, width, height);
+	SDL_SetTextureBlendMode(this->texture, SDL_BLENDMODE_BLEND);
+
+	// Draw the text boxes to the texture.
+	this->updateDisplay();
 }
 
 ListBox::~ListBox()
 {
-
+	SDL_FreeSurface(this->clearSurface);
+	SDL_DestroyTexture(this->texture);
 }
 
 int ListBox::getScrollIndex() const
@@ -65,95 +87,78 @@ int ListBox::getScrollIndex() const
 
 int ListBox::getElementCount() const
 {
-	return static_cast<int>(this->elements.size());
+	return static_cast<int>(this->textBoxes.size());
 }
 
-int ListBox::maxDisplayedElements() const
+int ListBox::getMaxDisplayedCount() const
 {
-	return this->maxDisplayed;
+	int height;
+	SDL_QueryTexture(this->getTexture(), nullptr, nullptr, nullptr, &height);
+
+	return height / this->font.getCharacterHeight();
+}
+
+const Int2 &ListBox::getPoint() const
+{
+	return this->point;
+}
+
+SDL_Texture *ListBox::getTexture() const
+{
+	return this->texture;
+}
+
+bool ListBox::contains(const Int2 &point)
+{
+	int width, height;
+	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, &height);
+
+	Rect rect(this->point.getX(), this->point.getY(), width, height);
+	return rect.contains(point);
 }
 
 int ListBox::getClickedIndex(const Int2 &point) const
 {
-	// The point is given in original dimensions relative to the letterbox.
-	// The caller should not call this method if the point is outside the list box.
-	// Therefore, "Surface::containsPoint()" should be called before to make sure.
-
-	assert(point.getX() >= this->getX());
-	assert(point.getX() < (this->getX() + this->getWidth()));
-	assert(point.getY() >= this->getY());
-	assert(point.getY() < (this->getY() + this->getHeight()));
-
-	const int lineHeight = this->fontRef.getCharacterHeight();
-
-	// Only the Y component really matters here.
-	int index = this->scrollIndex + ((point.getY() - this->getY()) / lineHeight);
-
-	// The caller should always check the returned index before using it (just in
-	// case it's out of bounds).
+	// Only the Y component of the point really matters here.
+	const int index = this->scrollIndex + 
+		((point.getY() - this->point.getY()) / this->font.getCharacterHeight());
 	return index;
 }
 
-int ListBox::getMaxWidth(const std::vector<std::unique_ptr<TextBox>> &textBoxes) const
+void ListBox::updateDisplay()
 {
-	int maxWidth = 0;
+	// Clear the display texture. Otherwise, remnants of previous text might be left over.
+	SDL_UpdateTexture(this->texture, nullptr, clearSurface->pixels, clearSurface->pitch);
 
-	for (const auto &textBox : textBoxes)
-	{
-		int textBoxWidth;
-		SDL_QueryTexture(textBox->getTexture(), nullptr, nullptr, &textBoxWidth, nullptr);
-
-		if (textBoxWidth > maxWidth)
-		{
-			maxWidth = textBoxWidth;
-		}
-	}
-
-	return maxWidth;
-}
-
-int ListBox::getTotalHeight() const
-{
-	int totalHeight = this->fontRef.getCharacterHeight() * this->maxDisplayed;
-	return totalHeight;
-}
-
-void ListBox::updateDisplayText()
-{
-	// Erase the parent surface's pixels. Don't resize it.
-	this->fill(Color::Transparent);
-	this->setTransparentColor(Color::Transparent);
+	// Prepare the range of text boxes that will be displayed.
+	const int totalElements = static_cast<int>(this->textBoxes.size());
+	const int maxDisplayed = this->getMaxDisplayedCount();
+	const int indexEnd = std::min(this->scrollIndex + maxDisplayed, totalElements);
 
 	// Draw the relevant text boxes according to scroll index.
-	const int totalElements = static_cast<int>(this->elements.size());
-	const int indexEnd = std::min(this->scrollIndex + this->maxDisplayed, totalElements);
 	for (int i = this->scrollIndex; i < indexEnd; ++i)
 	{
-		const auto &element = this->elements.at(i);
-		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, *this->textColor.get(),
-			element, this->fontRef, TextAlignment::Left, this->rendererRef));
-
-		// Blit the text box onto the parent surface at the correct height offset.
-		SDL_Surface *textBoxSurface = textBox->getSurface();
+		const SDL_Surface *surface = this->textBoxes.at(i)->getSurface();
 
 		SDL_Rect rect;
 		rect.x = 0;
-		rect.y = (i - this->scrollIndex) * textBoxSurface->h;
-		rect.w = textBoxSurface->w;
-		rect.h = textBoxSurface->h;
+		rect.y = (i - this->scrollIndex) * surface->h;
+		rect.w = surface->w;
+		rect.h = surface->h;
 
-		SDL_BlitSurface(textBoxSurface, nullptr, this->getSurface(), &rect);
+		// Update the texture's pixels at the correct height offset.
+		SDL_UpdateTexture(this->texture, &rect, surface->pixels, surface->pitch);
 	}
 }
 
 void ListBox::scrollUp()
 {
 	this->scrollIndex -= 1;
-	this->updateDisplayText();
+	this->updateDisplay();
 }
 
 void ListBox::scrollDown()
 {
 	this->scrollIndex += 1;
-	this->updateDisplayText();
+	this->updateDisplay();
 }

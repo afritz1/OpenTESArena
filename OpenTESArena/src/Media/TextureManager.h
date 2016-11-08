@@ -14,9 +14,7 @@
 
 class Renderer;
 
-struct SDL_PixelFormat;
 struct SDL_Surface;
-struct SDL_Texture;
 
 class TextureManager
 {

@@ -37,6 +37,7 @@ const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 	: Panel(gameState)
 {
+	// Read in character classes.
 	this->charClasses = CharacterClassParser::parse();
 	assert(this->charClasses.size() > 0);
 
@@ -71,7 +72,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		int y = 46;
 		auto &font = gameState->getFontManager().getFont(FontName::A);
 		Color color(85, 44, 20);
-		int maxElements = 6;
+		int maxDisplayed = 6;
 		std::vector<std::string> elements;
 
 		// This depends on the character classes being already sorted.
@@ -83,10 +84,10 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return std::unique_ptr<ListBox>(new ListBox(
 			x,
 			y,
-			font,
 			color,
-			maxElements,
 			elements,
+			font,
+			maxDisplayed,
 			gameState->getRenderer()));
 	}();
 
@@ -126,7 +127,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			// Scroll the list box down one if able.
 			if (this->classesListBox->getScrollIndex() <
 				(this->classesListBox->getElementCount() -
-					this->classesListBox->maxDisplayedElements()))
+					this->classesListBox->getMaxDisplayedCount()))
 			{
 				this->classesListBox->scrollDown();
 			}
@@ -200,7 +201,7 @@ void ChooseClassPanel::handleEvents(bool &running)
 		bool scrollUpClick = leftClick && this->upButton->containsPoint(mouseOriginalPoint);
 		bool scrollDownClick = leftClick && this->downButton->containsPoint(mouseOriginalPoint);
 
-		if (this->classesListBox->containsPoint(mouseOriginalPoint))
+		if (this->classesListBox->contains(mouseOriginalPoint))
 		{
 			if (leftClick)
 			{
@@ -493,14 +494,15 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Draw text: title, list.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->classesListBox->getSurface(),
-		this->classesListBox->getX(), this->classesListBox->getY());
+	renderer.drawToOriginal(this->classesListBox->getTexture(),
+		this->classesListBox->getPoint().getX(), 
+		this->classesListBox->getPoint().getY());
 
 	// Draw tooltip if over a valid element in the list box.
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(this->getMousePosition());
+	auto mouseOriginalPoint = renderer.nativePointToOriginal(
+		this->getMousePosition());
 
-	if (this->classesListBox->containsPoint(mouseOriginalPoint))
+	if (this->classesListBox->contains(mouseOriginalPoint))
 	{
 		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
