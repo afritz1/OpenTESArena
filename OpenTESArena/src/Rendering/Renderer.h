@@ -138,20 +138,13 @@ public:
 	// If the rendering program is uninitialized, this causes a crash.
 	void renderWorld();
 
-	// Draw methods for the native and original frame buffers. Remove the SDL_Surface
-	// methods once all panels are using textures exclusively.
+	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);
 	void drawToNative(SDL_Texture *texture, int x, int y);
 	void drawToNative(SDL_Texture *texture);
-	void drawToNative(SDL_Surface *surface, int x, int y, int w, int h);
-	void drawToNative(SDL_Surface *surface, int x, int y);
-	void drawToNative(SDL_Surface *surface);
 	void drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h);
 	void drawToOriginal(SDL_Texture *texture, int x, int y);
 	void drawToOriginal(SDL_Texture *texture);
-	void drawToOriginal(SDL_Surface *surface, int x, int y, int w, int h);
-	void drawToOriginal(SDL_Surface *surface, int x, int y);
-	void drawToOriginal(SDL_Surface *surface);
 
 	// Stretches a texture over the entire native frame buffer.
 	void fillNative(SDL_Texture *texture);

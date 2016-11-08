@@ -207,9 +207,17 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr, 
 		&tooltipWidth, &tooltipHeight);
 
-	Surface tooltipBackground(tooltip->getX(), tooltip->getY(),
-		tooltipWidth, tooltipHeight);
-	tooltipBackground.fill(Color(32, 32, 32));
+	Texture tooltipBackground = [&renderer, &tooltip, tooltipWidth, tooltipHeight]()
+	{
+		SDL_Surface *temp = Surface::createSurfaceWithFormat(
+			tooltipWidth, tooltipHeight, Renderer::DEFAULT_BPP,
+			Renderer::DEFAULT_PIXELFORMAT);
+		SDL_FillRect(temp, nullptr, SDL_MapRGBA(temp->format, 32, 32, 32, 192));
+		SDL_Texture *background = renderer.createTextureFromSurface(temp);
+		SDL_SetTextureBlendMode(background, SDL_BLENDMODE_BLEND);
+		SDL_FreeSurface(temp);
+		return Texture(background);
+	}();
 
 	const int tooltipX = tooltip->getX();
 	const int tooltipY = tooltip->getY();
@@ -218,7 +226,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const int y = ((tooltipY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
 		tooltipY : (tooltipY - tooltipHeight);
 
-	renderer.drawToOriginal(tooltipBackground.getSurface(), x, y - 1, 
+	renderer.drawToOriginal(tooltipBackground.get(), x, y - 1, 
 		tooltipWidth, tooltipHeight + 2);
 	renderer.drawToOriginal(tooltip->getTexture(), x, y, tooltipWidth, tooltipHeight);
 }

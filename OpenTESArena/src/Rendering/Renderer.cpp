@@ -512,23 +512,6 @@ void Renderer::drawToNative(SDL_Texture *texture)
 	this->drawToNative(texture, 0, 0);
 }
 
-void Renderer::drawToNative(SDL_Surface *surface, int x, int y, int w, int h)
-{
-	SDL_Texture *texture = this->createTextureFromSurface(surface);
-	this->drawToNative(texture, x, y, w, h);
-	SDL_DestroyTexture(texture);
-}
-
-void Renderer::drawToNative(SDL_Surface *surface, int x, int y)
-{
-	this->drawToNative(surface, x, y, surface->w, surface->h);
-}
-
-void Renderer::drawToNative(SDL_Surface *surface)
-{
-	this->drawToNative(surface, 0, 0);
-}
-
 void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->originalTexture);
@@ -553,23 +536,6 @@ void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y)
 void Renderer::drawToOriginal(SDL_Texture *texture)
 {
 	this->drawToOriginal(texture, 0, 0);
-}
-
-void Renderer::drawToOriginal(SDL_Surface *surface, int x, int y, int w, int h)
-{
-	SDL_Texture *texture = this->createTextureFromSurface(surface);
-	this->drawToOriginal(texture, x, y, w, h);
-	SDL_DestroyTexture(texture);
-}
-
-void Renderer::drawToOriginal(SDL_Surface *surface, int x, int y)
-{
-	this->drawToOriginal(surface, x, y, surface->w, surface->h);
-}
-
-void Renderer::drawToOriginal(SDL_Surface *surface)
-{
-	this->drawToOriginal(surface, 0, 0);
 }
 
 void Renderer::fillNative(SDL_Texture *texture)

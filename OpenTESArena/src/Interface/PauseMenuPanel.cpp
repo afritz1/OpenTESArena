@@ -398,25 +398,12 @@ void PauseMenuPanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	auto *portrait = textureManager.getSurfaces(this->headsFilename,
-		PaletteFile::fromName(PaletteName::Default)).at(this->portraitID);
-	auto *status = textureManager.getSurfaces(
-		TextureFile::fromName(TextureName::StatusGradients),
-		PaletteFile::fromName(PaletteName::Default)).at(0);
-	SDL_Surface *combinedPortrait = [this, portrait, status]()
-	{
-		// Currently a hack because the portrait transparency causes the green status 
-		// gradient to become transparent. Find a way to draw onto the game interface directly
-		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
-		SDL_Surface *statusTemp = Surface::createSurfaceWithFormat(status->w, 
-			status->h, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_memcpy(statusTemp->pixels, status->pixels, statusTemp->pitch * statusTemp->h);
-		SDL_BlitSurface(portrait, nullptr, statusTemp, nullptr);
-		return statusTemp;
-	}();
-
-	renderer.drawToOriginal(combinedPortrait, 14, 166);
-	SDL_FreeSurface(combinedPortrait);
+	const auto &portrait = textureManager.getTextures(this->headsFilename)
+		.at(this->portraitID);
+	const auto &status = textureManager.getTextures(
+		TextureFile::fromName(TextureName::StatusGradients)).at(0);
+	renderer.drawToOriginal(status.get(), 14, 166);
+	renderer.drawToOriginal(portrait.get(), 14, 166);
 
 	// Draw text: player's name, music volume, sound volume.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),

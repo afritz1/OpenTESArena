@@ -505,7 +505,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.clearNative();
 	renderer.clearOriginal();
 
-	// Draw game world onto the native frame buffer.
+	// Draw game world onto the native frame buffer. The game world buffer
+	// might not completely fill up the native buffer (bottom corners), so 
+	// clearing the native buffer beforehand is still necessary.
 	renderer.renderWorld();
 
 	// Set screen palette.
@@ -525,32 +527,19 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &player = this->getGameState()->getGameData()->getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceName(), true);
-	auto *portrait = textureManager.getSurfaces(headsFilename,
-		PaletteFile::fromName(PaletteName::Default)).at(player.getPortraitID());
-	auto *status = textureManager.getSurfaces(
-		TextureFile::fromName(TextureName::StatusGradients),
-		PaletteFile::fromName(PaletteName::Default)).at(0);
-	SDL_Surface* combinedPortrait = [this, portrait, status]()
-	{
-		// Currently a hack because the portrait transparency causes the green status 
-		// gradient to become transparent. Find a way to draw onto the game interface directly
-		// (maybe through a renderer.drawToTexture(...) method? Maybe not).
-		SDL_Surface *statusTemp = Surface::createSurfaceWithFormat(status->w, 
-			status->h, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_memcpy(statusTemp->pixels, status->pixels, statusTemp->pitch * statusTemp->h);
-		SDL_BlitSurface(portrait, nullptr, statusTemp, nullptr);
-		return statusTemp;
-	}();
-
-	renderer.drawToOriginal(combinedPortrait, 14, 166);
-	SDL_FreeSurface(combinedPortrait);
+	const auto &portrait = textureManager.getTextures(headsFilename)
+		.at(player.getPortraitID());
+	const auto &status = textureManager.getTextures(
+		TextureFile::fromName(TextureName::StatusGradients)).at(0);
+	renderer.drawToOriginal(status.get(), 14, 166);
+	renderer.drawToOriginal(portrait.get(), 14, 166);
 
 	// Draw compass slider (the actual headings). +X is north, +Z is east.
 	// Should do some sin() and cos() functions to get the pixel offset.
 	auto *compassSlider = textureManager.getSurface(
 		TextureFile::fromName(TextureName::CompassSlider));
 
-	SDL_Surface *compassSliderSegment = [&compassSlider]()
+	Texture compassSliderSegment = [&renderer, &compassSlider]()
 	{
 		SDL_Surface *segmentTemp = Surface::createSurfaceWithFormat(32, 7,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
@@ -563,19 +552,21 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		SDL_BlitSurface(compassSlider, &clipRect, segmentTemp, nullptr);
 
-		return segmentTemp;
+		SDL_Texture *segment = renderer.createTextureFromSurface(segmentTemp);
+		SDL_FreeSurface(segmentTemp);
+
+		return Texture(segment);
 	}();
 
-	renderer.drawToOriginal(compassSliderSegment,
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment->w / 2),
-		compassSliderSegment->h);
-	SDL_FreeSurface(compassSliderSegment);
+	renderer.drawToOriginal(compassSliderSegment.get(),
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
+		compassSliderSegment.getHeight());
 
 	// Draw compass frame over the headings.
-	auto *compassFrame = textureManager.getSurface(
+	const auto &compassFrame = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CompassFrame));
-	renderer.drawToOriginal(compassFrame,
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame->w / 2), 0);
+	renderer.drawToOriginal(compassFrame.get(),
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
 	// Draw text: player name.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
