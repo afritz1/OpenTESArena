@@ -10,6 +10,7 @@
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"

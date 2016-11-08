@@ -319,39 +319,39 @@ void PauseMenuPanel::handleEvents(bool &running)
 		{
 			// See if any of the buttons are clicked.
 			// (This code is getting kind of bad now. Maybe use a vector?)
-			if (this->loadButton->containsPoint(mouseOriginalPoint))
+			if (this->loadButton->contains(mouseOriginalPoint))
 			{
 				this->loadButton->click(this->getGameState());
 			}
-			else if (this->exitButton->containsPoint(mouseOriginalPoint))
+			else if (this->exitButton->contains(mouseOriginalPoint))
 			{
 				this->exitButton->click(this->getGameState());
 			}
-			else if (this->newButton->containsPoint(mouseOriginalPoint))
+			else if (this->newButton->contains(mouseOriginalPoint))
 			{
 				this->newButton->click(this->getGameState());
 			}
-			else if (this->saveButton->containsPoint(mouseOriginalPoint))
+			else if (this->saveButton->contains(mouseOriginalPoint))
 			{
 				this->saveButton->click(this->getGameState());
 			}
-			else if (this->resumeButton->containsPoint(mouseOriginalPoint))
+			else if (this->resumeButton->contains(mouseOriginalPoint))
 			{
 				this->resumeButton->click(this->getGameState());
 			}
-			else if (this->musicUpButton->containsPoint(mouseOriginalPoint))
+			else if (this->musicUpButton->contains(mouseOriginalPoint))
 			{
 				this->musicUpButton->click(this->getGameState());
 			}
-			else if (this->musicDownButton->containsPoint(mouseOriginalPoint))
+			else if (this->musicDownButton->contains(mouseOriginalPoint))
 			{
 				this->musicDownButton->click(this->getGameState());
 			}
-			else if (this->soundUpButton->containsPoint(mouseOriginalPoint))
+			else if (this->soundUpButton->contains(mouseOriginalPoint))
 			{
 				this->soundUpButton->click(this->getGameState());
 			}
-			else if (this->soundDownButton->containsPoint(mouseOriginalPoint))
+			else if (this->soundDownButton->contains(mouseOriginalPoint))
 			{
 				this->soundDownButton->click(this->getGameState());
 			}

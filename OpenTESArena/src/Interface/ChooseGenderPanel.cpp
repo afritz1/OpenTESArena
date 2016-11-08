@@ -7,6 +7,7 @@
 #include "Button.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -168,9 +169,9 @@ void ChooseGenderPanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_LEFT);
 
 		bool maleClicked = leftClick &&
-			this->maleButton->containsPoint(mouseOriginalPoint);
+			this->maleButton->contains(mouseOriginalPoint);
 		bool femaleClicked = leftClick &&
-			this->femaleButton->containsPoint(mouseOriginalPoint);
+			this->femaleButton->contains(mouseOriginalPoint);
 
 		if (maleClicked)
 		{

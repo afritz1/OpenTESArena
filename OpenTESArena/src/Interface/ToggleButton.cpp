@@ -1,24 +1,26 @@
-#include <cassert>
-
 #include "ToggleButton.h"
 
 #include "../Math/Int2.h"
+#include "../Math/Rect.h"
 
-ToggleButton::ToggleButton(int x, int y, int width, int height, bool on)
-	: Surface(x, y, width, height)
+ToggleButton::ToggleButton(int x, int y, int width, int height, bool on, 
+	const std::function<void(GameState*)> &onFunction, 
+	const std::function<void(GameState*)> &offFunction)
 {
+	this->onFunction = onFunction;
+	this->offFunction = offFunction;
+	this->x = x;
+	this->y = y;
+	this->width = width;
+	this->height = height;
 	this->on = on;
 }
 
-ToggleButton::ToggleButton(int x, int y, int width, int height)
-	: ToggleButton(x, y, width, height, false) { }
-
-ToggleButton::ToggleButton(const Int2 &center, int width, int height, bool on)
+ToggleButton::ToggleButton(const Int2 &center, int width, int height, bool on,
+	const std::function<void(GameState*)> &onFunction,
+	const std::function<void(GameState*)> &offFunction)
 	: ToggleButton(center.getX() - (width / 2), center.getY() - (height / 2),
-		width, height, on) { }
-
-ToggleButton::ToggleButton(const Int2 &center, int width, int height)
-	: ToggleButton(center, width, height, false) { }
+		width, height, on, onFunction, offFunction) { }
 
 ToggleButton::~ToggleButton()
 {
@@ -30,7 +32,22 @@ bool ToggleButton::isOn() const
 	return this->on;
 }
 
-void ToggleButton::toggle()
+bool ToggleButton::contains(const Int2 &point)
 {
-	this->on = !this->isOn();
+	Rect rect(this->x, this->y, this->width, this->height);
+	return rect.contains(point);
+}
+
+void ToggleButton::toggle(GameState *gameState)
+{
+	this->on = !this->on;
+
+	if (this->on)
+	{
+		this->onFunction(gameState);
+	}
+	else
+	{
+		this->offFunction(gameState);
+	}
 }

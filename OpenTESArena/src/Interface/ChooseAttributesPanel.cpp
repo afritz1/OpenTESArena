@@ -449,11 +449,11 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			if (this->doneButton->containsPoint(mouseOriginalPoint))
+			if (this->doneButton->contains(mouseOriginalPoint))
 			{
 				this->doneButton->click(this->getGameState());
 			}
-			else if (this->incrementPortraitButton->containsPoint(mouseOriginalPoint))
+			else if (this->incrementPortraitButton->contains(mouseOriginalPoint))
 			{
 				this->incrementPortraitButton->click(this->getGameState());
 			}
@@ -461,7 +461,7 @@ void ChooseAttributesPanel::handleEvents(bool &running)
 
 		if (rightClick)
 		{
-			if (this->decrementPortraitButton->containsPoint(mouseOriginalPoint))
+			if (this->decrementPortraitButton->contains(mouseOriginalPoint))
 			{
 				this->decrementPortraitButton->click(this->getGameState());
 			}

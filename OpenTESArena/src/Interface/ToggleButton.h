@@ -1,35 +1,38 @@
 #ifndef TOGGLE_BUTTON_H
 #define TOGGLE_BUTTON_H
 
-#include "Surface.h"
+#include <functional>
 
-// A button for toggling between on and off. There is no change to the underlying
-// surface when toggled; it's the caller's job to render differently.
+// A button for toggling on and off. When the button is toggled, the 
+// function for the new toggle state is called.
 
-// This doesn't call a function when toggled. That's the caller's job, for now.
+class GameState;
+class Int2;
 
-class ToggleButton : public Surface
+class ToggleButton
 {
 private:
+	std::function<void(GameState*)> onFunction;
+	std::function<void(GameState*)> offFunction;
+	int x, y, width, height;
 	bool on;
 public:
-	// Default toggle button constructor.
-	ToggleButton(int x, int y, int width, int height, bool on);
-
-	// Toggle button constructor set to off.
-	ToggleButton(int x, int y, int width, int height);
-
-	// Centered toggle button constructor.
-	ToggleButton(const Int2 &center, int width, int height, bool on);
-
-	// Centered toggle button constructor set to off.
-	ToggleButton(const Int2 &center, int width, int height);
-
+	ToggleButton(int x, int y, int width, int height, bool on,
+		const std::function<void(GameState*)> &onFunction,
+		const std::function<void(GameState*)> &offFunction);
+	ToggleButton(const Int2 &center, int width, int height, bool on,
+		const std::function<void(GameState*)> &onFunction,
+		const std::function<void(GameState*)> &offFunction);
 	virtual ~ToggleButton();
 
+	// Returns whether the button is toggled on.
 	bool isOn() const;
 
-	void toggle();
+	// Returns whether the button's area contains the given point.
+	bool contains(const Int2 &point);
+
+	// Switches the toggle state of the button.
+	void toggle(GameState *gameState);
 };
 
 #endif

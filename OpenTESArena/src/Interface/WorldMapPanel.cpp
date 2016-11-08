@@ -92,7 +92,7 @@ void WorldMapPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			if (this->backToGameButton->containsPoint(mouseOriginalPoint))
+			if (this->backToGameButton->contains(mouseOriginalPoint))
 			{
 				this->backToGameButton->click(this->getGameState());
 			}

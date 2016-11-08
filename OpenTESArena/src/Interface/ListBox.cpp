@@ -5,9 +5,9 @@
 
 #include "ListBox.h"
 
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"

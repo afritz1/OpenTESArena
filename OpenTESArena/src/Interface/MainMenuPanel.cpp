@@ -165,9 +165,9 @@ void MainMenuPanel::handleEvents(bool &running)
 		bool newHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_s);
 		bool exitHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_e);
 
-		bool loadClicked = leftClick && this->loadButton->containsPoint(mouseOriginalPoint);
-		bool newClicked = leftClick && this->newButton->containsPoint(mouseOriginalPoint);
-		bool exitClicked = leftClick && this->exitButton->containsPoint(mouseOriginalPoint);
+		bool loadClicked = leftClick && this->loadButton->contains(mouseOriginalPoint);
+		bool newClicked = leftClick && this->newButton->contains(mouseOriginalPoint);
+		bool exitClicked = leftClick && this->exitButton->contains(mouseOriginalPoint);
 
 		if (loadHotkeyPressed || loadClicked)
 		{

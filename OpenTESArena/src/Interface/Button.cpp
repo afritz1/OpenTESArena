@@ -4,12 +4,16 @@
 
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
+#include "../Math/Rect.h"
 
 Button::Button(int x, int y, int width, int height, 
 	const std::function<void(GameState*)> &function)
-	: Surface(x, y, width, height)
 {
 	this->function = function;
+	this->x = x;
+	this->y = y;
+	this->width = width;
+	this->height = height;
 }
 
 Button::Button(const Int2 &center, int width, int height, 
@@ -23,6 +27,12 @@ Button::Button(const std::function<void(GameState*)> &function)
 Button::~Button()
 {
 
+}
+
+bool Button::contains(const Int2 &point)
+{
+	Rect rect(this->x, this->y, this->width, this->height);
+	return rect.contains(point);
 }
 
 void Button::click(GameState *gameState)

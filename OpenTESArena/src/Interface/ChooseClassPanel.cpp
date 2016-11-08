@@ -9,6 +9,7 @@
 #include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
 #include "ListBox.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -198,8 +199,8 @@ void ChooseClassPanel::handleEvents(bool &running)
 		bool mouseWheelUp = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
 		bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
 
-		bool scrollUpClick = leftClick && this->upButton->containsPoint(mouseOriginalPoint);
-		bool scrollDownClick = leftClick && this->downButton->containsPoint(mouseOriginalPoint);
+		bool scrollUpClick = leftClick && this->upButton->contains(mouseOriginalPoint);
+		bool scrollDownClick = leftClick && this->downButton->contains(mouseOriginalPoint);
 
 		if (this->classesListBox->contains(mouseOriginalPoint))
 		{

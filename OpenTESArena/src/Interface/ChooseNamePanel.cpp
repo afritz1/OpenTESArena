@@ -8,6 +8,7 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"

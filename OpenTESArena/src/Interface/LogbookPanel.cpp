@@ -92,7 +92,7 @@ void LogbookPanel::handleEvents(bool &running)
 		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 			(e.button.button == SDL_BUTTON_LEFT);		
 
-		if (leftClick && this->backButton->containsPoint(mouseOriginalPoint))
+		if (leftClick && this->backButton->contains(mouseOriginalPoint))
 		{
 			this->backButton->click(this->getGameState());
 		}

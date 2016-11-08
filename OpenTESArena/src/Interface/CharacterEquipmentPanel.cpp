@@ -203,23 +203,23 @@ void CharacterEquipmentPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			if (this->backToStatsButton->containsPoint(mouseOriginalPoint))
+			if (this->backToStatsButton->contains(mouseOriginalPoint))
 			{
 				this->backToStatsButton->click(this->getGameState());
 			}
-			else if (this->spellbookButton->containsPoint(mouseOriginalPoint))
+			else if (this->spellbookButton->contains(mouseOriginalPoint))
 			{
 				this->spellbookButton->click(this->getGameState());
 			}
-			else if (this->dropButton->containsPoint(mouseOriginalPoint))
+			else if (this->dropButton->contains(mouseOriginalPoint))
 			{
 				this->dropButton->click(this->getGameState());
 			}
-			else if (this->scrollUpButton->containsPoint(mouseOriginalPoint))
+			else if (this->scrollUpButton->contains(mouseOriginalPoint))
 			{
 				this->scrollUpButton->click(this->getGameState());
 			}
-			else if (this->scrollDownButton->containsPoint(mouseOriginalPoint))
+			else if (this->scrollDownButton->contains(mouseOriginalPoint))
 			{
 				this->scrollDownButton->click(this->getGameState());
 			}

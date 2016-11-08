@@ -7,6 +7,7 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
@@ -163,9 +164,9 @@ void ChooseClassCreationPanel::handleEvents(bool &running)
 			(e.button.button == SDL_BUTTON_LEFT);
 
 		bool generateClicked = leftClick &&
-			this->generateButton->containsPoint(mouseOriginalPoint);
+			this->generateButton->contains(mouseOriginalPoint);
 		bool selectClicked = leftClick &&
-			this->selectButton->containsPoint(mouseOriginalPoint);
+			this->selectButton->contains(mouseOriginalPoint);
 
 		if (generateClicked)
 		{

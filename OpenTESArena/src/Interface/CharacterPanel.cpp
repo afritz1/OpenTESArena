@@ -165,12 +165,12 @@ void CharacterPanel::handleEvents(bool &running)
 
 		if (leftClick)
 		{
-			if (this->doneButton->containsPoint(mouseOriginalPoint))
+			if (this->doneButton->contains(mouseOriginalPoint))
 			{
 				this->doneButton->click(this->getGameState());
 			}
 
-			else if (this->nextPageButton->containsPoint(mouseOriginalPoint))
+			else if (this->nextPageButton->contains(mouseOriginalPoint))
 			{
 				this->nextPageButton->click(this->getGameState());
 			}

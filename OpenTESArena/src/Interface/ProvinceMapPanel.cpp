@@ -7,6 +7,7 @@
 
 #include "Button.h"
 #include "ProvinceButtonName.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
@@ -152,17 +153,17 @@ void ProvinceMapPanel::handleEvents(bool &running)
 		}
 		else if (leftClick)
 		{
-			if (this->searchButton->containsPoint(mouseOriginalPoint))
+			if (this->searchButton->contains(mouseOriginalPoint))
 			{
 				this->searchButton->click(this->getGameState());
 			}
 
-			else if (this->travelButton->containsPoint(mouseOriginalPoint))
+			else if (this->travelButton->contains(mouseOriginalPoint))
 			{
 				this->travelButton->click(this->getGameState());
 			}
 
-			else if (this->backToWorldMapButton->containsPoint(mouseOriginalPoint))
+			else if (this->backToWorldMapButton->contains(mouseOriginalPoint))
 			{
 				this->backToWorldMapButton->click(this->getGameState());
 			}

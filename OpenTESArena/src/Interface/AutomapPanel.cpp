@@ -77,7 +77,7 @@ void AutomapPanel::handleEvents(bool &running)
 		if (leftClick)
 		{
 			// Check if "Exit" was clicked.
-			if (this->backToGameButton->containsPoint(mouseOriginalPoint))
+			if (this->backToGameButton->contains(mouseOriginalPoint))
 			{
 				this->backToGameButton->click(this->getGameState());
 			}
