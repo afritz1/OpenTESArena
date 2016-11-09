@@ -9,7 +9,6 @@
 #include "OptionsParser.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
-#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
@@ -17,8 +16,8 @@
 #include "../Media/PPMFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
-#include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"

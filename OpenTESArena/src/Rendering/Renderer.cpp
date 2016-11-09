@@ -7,7 +7,7 @@
 #include "Renderer.h"
 
 #include "CLProgram.h"
-#include "../Interface/Surface.h"
+#include "Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"

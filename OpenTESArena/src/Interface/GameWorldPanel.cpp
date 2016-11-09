@@ -10,7 +10,6 @@
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
@@ -36,6 +35,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 

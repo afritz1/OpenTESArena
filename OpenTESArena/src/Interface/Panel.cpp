@@ -8,7 +8,6 @@
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
-#include "Surface.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
@@ -21,6 +20,7 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 
 #include "components/vfs/manager.hpp"
 

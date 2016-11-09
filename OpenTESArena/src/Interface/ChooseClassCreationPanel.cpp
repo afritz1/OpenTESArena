@@ -7,7 +7,6 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/GameState.h"
@@ -22,6 +21,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
 ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)

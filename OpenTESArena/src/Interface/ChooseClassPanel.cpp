@@ -9,7 +9,6 @@
 #include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
 #include "ListBox.h"
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -31,6 +30,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
@@ -275,29 +275,29 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 		TextAlignment::Left,
 		this->getGameState()->getRenderer()));
 
-	int tooltipTextBoxWidth, tooltipTextBoxHeight;
-	SDL_QueryTexture(tooltipTextBox->getTexture(), nullptr, nullptr,
-		&tooltipTextBoxWidth, &tooltipTextBoxHeight);
+	SDL_Surface *tooltipTextBoxSurface = tooltipTextBox->getSurface();
 
 	const int padding = 3;
 
-	Surface tooltip(tooltipTextBoxWidth, tooltipTextBoxHeight + padding);
-	tooltip.fill(Color(32, 32, 32));
-
-	SDL_Surface *tooltipTextBoxSurface = tooltipTextBox->getSurface();
+	Surface tooltipSurface(Surface::createSurfaceWithFormat(
+		tooltipTextBoxSurface->w, tooltipTextBoxSurface->h + padding,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT));
+	SDL_FillRect(tooltipSurface.get(), nullptr,
+		SDL_MapRGBA(tooltipSurface.get()->format, 32, 32, 32, 192));
 
 	SDL_Rect rect;
 	rect.x = 0;
 	rect.y = 1;
-	rect.w = tooltipTextBoxWidth;
-	rect.h = tooltipTextBoxHeight;
+	rect.w = tooltipTextBoxSurface->w;
+	rect.h = tooltipTextBoxSurface->h;
 
-	SDL_BlitSurface(tooltipTextBoxSurface, nullptr, tooltip.getSurface(), &rect);
+	SDL_BlitSurface(tooltipTextBoxSurface, nullptr, tooltipSurface.get(), &rect);
 
 	SDL_Texture *texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STATIC, tooltip.getWidth(), tooltip.getHeight());
-	SDL_UpdateTexture(texture, nullptr, tooltip.getSurface()->pixels,
-		tooltip.getWidth() * (Renderer::DEFAULT_BPP / 8));
+		SDL_TEXTUREACCESS_STATIC, tooltipSurface.get()->w, tooltipSurface.get()->h);
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+	SDL_UpdateTexture(texture, nullptr, tooltipSurface.get()->pixels,
+		tooltipSurface.get()->pitch);
 
 	this->tooltipTextures.insert(std::make_pair(tooltipIndex, texture));
 }

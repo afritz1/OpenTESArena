@@ -8,7 +8,6 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -23,6 +22,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;

@@ -132,8 +132,8 @@
     <ClCompile Include="src\Media\PPMFile.cpp" />
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
     <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
-    <ClCompile Include="src\Interface\Surface.cpp" />
     <ClCompile Include="src\Rendering\Texture.cpp" />
+    <ClCompile Include="src\Rendering\Surface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -312,8 +312,8 @@
     <ClInclude Include="src\Media\PPMFile.h" />
     <ClInclude Include="src\World\VoxelBuilder.h" />
     <ClInclude Include="src\Assets\ExeUnpacker.h" />
-    <ClInclude Include="src\Interface\Surface.h" />
     <ClInclude Include="src\Rendering\Texture.h" />
+    <ClInclude Include="src\Rendering\Surface.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

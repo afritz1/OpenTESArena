@@ -2,13 +2,13 @@
 
 #include "TextBox.h"
 
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 

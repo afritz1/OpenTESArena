@@ -266,7 +266,7 @@
     <ClCompile Include="src\Math\Float3.cpp" />
     <ClCompile Include="src\Math\Float4.cpp" />
     <ClCompile Include="src\Rendering\TextureReference.cpp" />
-    <ClCompile Include="src\Interface\Surface.cpp" />
+    <ClCompile Include="src\Rendering\Surface.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
     <ClCompile Include="src\Interface\TextBox.cpp" />
     <ClCompile Include="src\Media\TextureManager.cpp" />
@@ -442,7 +442,7 @@
     <ClInclude Include="src\Media\MusicName.h" />
     <ClInclude Include="src\Media\MusicType.h" />
     <ClInclude Include="src\Rendering\TextureReference.h" />
-    <ClInclude Include="src\Interface\Surface.h" />
+    <ClInclude Include="src\Rendering\Surface.h" />
     <ClInclude Include="src\World\ClimateName.h" />
     <ClInclude Include="src\World\LocationType.h" />
     <ClInclude Include="src\World\ProvinceName.h" />

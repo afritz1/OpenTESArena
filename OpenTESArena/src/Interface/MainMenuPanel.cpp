@@ -10,7 +10,6 @@
 #include "CinematicPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
-#include "Surface.h"
 #include "../Game/GameState.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
@@ -22,6 +21,7 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
 MainMenuPanel::MainMenuPanel(GameState *gameState)

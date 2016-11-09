@@ -7,8 +7,8 @@
 
 #include "FontName.h"
 #include "../Assets/FontFile.h"
-#include "../Interface/Surface.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 
 namespace

@@ -4,11 +4,8 @@
 
 #include "TextureManager.h"
 
-#include "Color.h"
 #include "PaletteFile.h"
 #include "PaletteName.h"
-#include "TextureFile.h"
-#include "TextureSequenceName.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/COLFile.h"
@@ -18,9 +15,9 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
-#include "../Interface/Surface.h"
 #include "../Math/Int2.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 

@@ -7,7 +7,6 @@
 
 #include "Button.h"
 #include "ProvinceButtonName.h"
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
@@ -22,6 +21,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"

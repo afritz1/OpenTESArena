@@ -5,7 +5,6 @@
 
 #include "ListBox.h"
 
-#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Int2.h"
@@ -13,6 +12,7 @@
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
