@@ -103,6 +103,7 @@ enum class TextureName
 	Logbook, // Logbook background.
 	MainMenu, // Load, New, Exit.
 	NextPage, // Next page button in character stats.
+	NoSpell, // Darkened spell icon for non-spellcasters.
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
 	ParchmentCorner, // Helps with parchment generation.
 	PauseBackground, // Arena logo with sound/music/detail and buttons

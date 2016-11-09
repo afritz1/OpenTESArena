@@ -13,6 +13,7 @@
 #include "OptionsPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -404,6 +405,15 @@ void PauseMenuPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::StatusGradients)).at(0);
 	renderer.drawToOriginal(status.get(), 14, 166);
 	renderer.drawToOriginal(portrait.get(), 14, 166);
+
+	// If the player's class can't use magic, show the darkened spell icon.
+	const auto &player = this->getGameState()->getGameData()->getPlayer();
+	if (!player.getCharacterClass().canCastMagic())
+	{
+		const auto &nonMagicIcon = textureManager.getTexture(
+			TextureFile::fromName(TextureName::NoSpell));
+		renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
+	}
 
 	// Draw text: player's name, music volume, sound volume.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),

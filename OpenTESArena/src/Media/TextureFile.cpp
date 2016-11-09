@@ -124,6 +124,7 @@ namespace
 		{ TextureName::Logbook, "LOGBOOK.IMG" },
 		{ TextureName::MainMenu, "MENU.IMG" },
 		{ TextureName::NextPage, "PAGE2.IMG" },
+		{ TextureName::NoSpell, "NOSPELL.IMG" },
 		{ TextureName::ParchmentBig, "PARCH.IMG" },
 		{ TextureName::ParchmentCorner, "PARCH.CIF" },
 		{ TextureName::PauseBackground, "OP.IMG" },

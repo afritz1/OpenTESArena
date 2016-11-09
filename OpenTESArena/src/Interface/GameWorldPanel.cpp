@@ -13,6 +13,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/GameState.h"
@@ -525,7 +526,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	auto &player = this->getGameState()->getGameData()->getPlayer();
+	const auto &player = this->getGameState()->getGameData()->getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceName(), true);
 	const auto &portrait = textureManager.getTextures(headsFilename)
@@ -568,6 +569,14 @@ void GameWorldPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::CompassFrame));
 	renderer.drawToOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+
+	// If the player's class can't use magic, show the darkened spell icon.
+	if (!player.getCharacterClass().canCastMagic())
+	{
+		const auto &nonMagicIcon = textureManager.getTexture(
+			TextureFile::fromName(TextureName::NoSpell));
+		renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
+	}
 
 	// Draw text: player name.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
