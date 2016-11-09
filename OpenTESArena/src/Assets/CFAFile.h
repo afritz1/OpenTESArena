@@ -15,6 +15,17 @@ class CFAFile
 private:
 	std::vector<std::unique_ptr<uint32_t>> pixels;
 	int width, height;
+
+	// CFA files have their palette indices compressed into fewer bits depending
+	// on the total number of colors in the file. These demuxing functions
+	// uncompress those bits into bytes. Adapted from WinArena.
+	static void demux1(const uint8_t *src, uint8_t *dst);
+	static void demux2(const uint8_t *src, uint8_t *dst);
+	static void demux3(const uint8_t *src, uint8_t *dst);
+	static void demux4(const uint8_t *src, uint8_t *dst);
+	static void demux5(const uint8_t *src, uint8_t *dst);
+	static void demux6(const uint8_t *src, uint8_t *dst);
+	static void demux7(const uint8_t *src, uint8_t *dst);
 public:
 	CFAFile(const std::string &filename, const Palette &palette);
 	~CFAFile();
