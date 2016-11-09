@@ -8,8 +8,8 @@
 
 #include "../Media/Palette.h"
 
-// A DFA file contains animation frames for static entities, like the bartender
-// and various kinds of torches.
+// A DFA file contains images for entities that animate but don't move in the world, 
+// like shopkeepers, tavern folk, lamps, fountains, staff pieces, and torches.
 
 class DFAFile
 {
