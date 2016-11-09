@@ -8,7 +8,7 @@ This open-source project aims to be a modern engine reimplementation for "The El
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-October 29th, 2016:
+November 9th, 2016:
 
 This project is early in development.
 
@@ -26,7 +26,7 @@ This is how the test world looks now:
 ![Preview](Preview.PNG)
 <br/>
 
-I'm currently catching back up to the state of the world shown in these other [preview images](samples), since the project is now using original Arena data exclusively. The graphics engine is in development.
+I'm currently catching back up to the state of the world shown in these other [preview images](samples) because the sprite rendering portion of the graphics engine is being redesigned.
 
 ## Project Details
 
@@ -82,14 +82,12 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 Current priority:
 - Geometry management
-- Load original texture formats
 - Sprites
 
 Next priority:
 - Character creation questions
 - Click to move and turn
-- Collision detection
-- Game interface/buttons (some hotkeys already work)
+- Game interface button behavior
 - Options menu
 - Weapon attacks (hold RMB to swing)
 
@@ -97,6 +95,9 @@ Later:
 - Adaptive super-sampling
 - Automap
 - Class rules and traits
+- Clicking in game world
+- Collision detection
+- Doors and secret walls
 - Enemies
 - Inventory and containers
 - Levels and experience
@@ -104,6 +105,7 @@ Later:
 - Load artifact data
 - Load class data (to replace classes.txt)
 - Load locations data
+- Load strings from Arena executable
 - Random test cities and dungeons
 - Redesigned water and lava (to replace vanilla screen animations)
 - Reflections in windows and water
@@ -113,8 +115,7 @@ Outside scope (until much later):
 - (new) Followers
 - (new) Imperial race
 - (new) Journal tabs
-- (new) Left click to attack
-- Loading/saving
+- Loading/saving redesign
 - Main and side quests
 - Modding
 - (new) New kinds of stores
