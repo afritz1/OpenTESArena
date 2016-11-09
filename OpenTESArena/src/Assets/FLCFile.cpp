@@ -187,7 +187,7 @@ FLCFile::FLCFile(const std::string &filename)
 		}
 		else if (frameHeader.type == FrameType::PREFIX_CHUNK)
 		{
-			// Prefix chunk, can be skipped.
+			// CEL prefix chunk, can be skipped.
 		}
 		else
 		{

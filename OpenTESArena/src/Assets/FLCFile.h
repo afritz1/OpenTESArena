@@ -8,10 +8,8 @@
 
 #include "../Media/Palette.h"
 
-// An FLC file is a video file. The CEL files can be used with this class since they 
-// are identical to FLC, though with an extra chunk of header data. As a baseline, 
-// the file should be converted to a vector of independent frames (in case it uses 
-// a delta format for frame differences).
+// An FLC file is a video file. CEL files are nearly identical to FLCs, though with 
+// an extra chunk of header data (which can probably be skipped).
 
 // I'm fairly certain now after looking into it, that the Arena developers used the
 // "Autodesk Animator" program to make these FLC and CEL animations.

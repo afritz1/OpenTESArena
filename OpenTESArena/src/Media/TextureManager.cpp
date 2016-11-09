@@ -269,6 +269,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	const std::string extension = String::getExtension(filename);
 	const bool isCFA = extension.compare(".CFA") == 0;
 	const bool isCIF = extension.compare(".CIF") == 0;
+	const bool isCEL = extension.compare(".CEL") == 0;
 	const bool isDFA = extension.compare(".DFA") == 0;
 	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
@@ -328,9 +329,9 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 			surfaceSet.push_back(surface);
 		}
 	}
-	else if (isFLC)
+	else if (isFLC || isCEL)
 	{
-		// Load the FLC file.
+		// Load the FLC file. CELs are basically identical to FLCs.
 		FLCFile flcFile(filename);
 
 		// Create an SDL_Surface for each frame in the FLC.
@@ -432,6 +433,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	const std::string extension = String::getExtension(filename);
 	const bool isCFA = extension.compare(".CFA") == 0;
 	const bool isCIF = extension.compare(".CIF") == 0;
+	const bool isCEL = extension.compare(".CEL") == 0;
 	const bool isDFA = extension.compare(".DFA") == 0;
 	const bool isFLC = extension.compare(".FLC") == 0;
 	const bool isRCI = extension.compare(".RCI") == 0;
@@ -497,9 +499,9 @@ const std::vector<Texture> &TextureManager::getTextures(
 			textureSet.push_back(Texture(texture));
 		}
 	}
-	else if (isFLC)
+	else if (isFLC || isCEL)
 	{
-		// Load the FLC file.
+		// Load the FLC file. CELs are basically identical to FLCs.
 		FLCFile flcFile(filename);
 
 		// Create an SDL_Texture for each frame in the FLC.
