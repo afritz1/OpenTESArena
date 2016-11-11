@@ -66,9 +66,6 @@ public:
 	// the interface. The game interface is 53 pixels tall in 320x200.
 	int getViewHeight() const;
 
-	// For converting surfaces to the correct ARGB8888 format.
-	SDL_PixelFormat *getFormat() const;
-
 	// This is for the "letterbox" part of the screen, scaled to fit the window 
 	// using the given letterbox aspect.
 	SDL_Rect getLetterboxDimensions() const;

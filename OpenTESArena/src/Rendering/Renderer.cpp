@@ -152,11 +152,6 @@ int Renderer::getViewHeight() const
 	return viewHeight;
 }
 
-SDL_PixelFormat *Renderer::getFormat() const
-{
-	return this->getWindowSurface()->format;
-}
-
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
 	const auto *nativeSurface = this->getWindowSurface();
