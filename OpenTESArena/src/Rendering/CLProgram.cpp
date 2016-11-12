@@ -930,6 +930,48 @@ void CLProgram::updateVoxel(int x, int y, int z,
 	this->updateVoxel(x, y, z, rects, textureIndices);
 }
 
+void CLProgram::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
+{
+	// To do.
+	// if (spriteID exists) then get the change in touched voxels (compare Int3's), 
+	// and update the rect and texture index for each copy of the sprite in the rect 
+	// buffer, adding and removing rects in the rect buffer as necessary.
+	// Otherwise, make a mapping for the new spriteID and allocate rects in the rect 
+	// buffer with the texture index for each touched voxel. Keep the index of the 
+	// rect in each sprite reference easily available.
+	// - What if the sprite is outside the world? Then sprite references can't be
+	//   changed there. Just worry about the part touching a valid voxel.
+
+	// The CLProgram should maintain a std::unordered_map<int, std::vector<Int3>> for 
+	// the coordinates of the voxels that the sprite's rectangle touches, and another
+	// mapping for which rect index the rect is at in each sprite reference for those
+	// coordinates.
+	// - The container for coordinates (i.e., vector) will be:
+	// -> 1) Unordered
+	// -> 2) Inserted only at the end
+	// -> 3) Erased at any index
+	// -> 4) Randomly accessed (or only iterated through? Forward iterator?)
+
+	// The sprite ID is just the entity ID.
+
+	Debug::crash("CLProgram", "updateSprite() not implemented.");
+}
+
+void CLProgram::removeSprite(int spriteID)
+{
+	// To do.
+	// assert that the sprite ID exists in the renderer mapping.
+	// Remove all copies of the sprite in the rect buffer (using mapping to rect indices).
+	// Remove rects in sprite references and shift other sprite rects over in both
+	// device memory and host indices.
+	// Remove spriteID mappings.
+
+	// Don't shift over rects in the rect buffer. That defeats the purpose of the linked
+	// list aspect of the rect buffer's "heap manager"-like behavior.
+
+	Debug::crash("CLProgram", "removeSprite() not implemented.");
+}
+
 const void *CLProgram::render()
 {
 	cl::NDRange workDims(this->renderWidth, this->renderHeight);

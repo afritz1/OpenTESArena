@@ -122,6 +122,13 @@ public:
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 		int textureIndex);
 
+	// Updates a sprite in device memory if it exists, and adds the sprite if it 
+	// doesn't exist.
+	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
+
+	// Removes a sprite from device memory.
+	void removeSprite(int spriteID);
+
 	// Runs the OpenCL program and returns a pointer to the resulting frame buffer.
 	const void *render();
 };
