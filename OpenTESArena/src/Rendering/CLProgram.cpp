@@ -626,6 +626,38 @@ std::string CLProgram::getErrorString(cl_int error) const
 	}
 }
 
+void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
+{
+	cl_int status = CL_SUCCESS;
+
+	// Get the current size of the buffer.
+	const cl::size_type bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", 
+		"cl::Buffer::getInfo CL_MEM_SIZE resizeBuffer.");
+
+	// Read the existing buffer into a temp data buffer.
+	std::vector<cl_char> oldData(bufferSize);
+	status = this->commandQueue.enqueueReadBuffer(buffer, CL_TRUE, 0,
+		bufferSize, static_cast<void*>(oldData.data()), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueReadBuffer resizeBuffer.");
+
+	// Flags for the original buffer (read-only, read-write, etc.).
+	const cl_mem_flags bufferFlags = buffer.getInfo<CL_MEM_FLAGS>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Buffer::getInfo CL_MEM_FLAGS resizeBuffer.");
+
+	// Allocate a new buffer in device memory, erasing the old one.
+	buffer = cl::Buffer(this->context, bufferFlags, newSize, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer resizeBuffer.");
+
+	// Write the old data into the new buffer. If the new buffer is smaller, then
+	// truncate the old data.
+	const cl::size_type bytesToWrite = std::min(newSize, bufferSize);
+	status = this->commandQueue.enqueueWriteBuffer(buffer, CL_TRUE, 0,
+		bytesToWrite, static_cast<const void*>(oldData.data()), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer resizeBuffer.");
+}
+
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
 	// Do not scale the direction beforehand.
@@ -754,23 +786,8 @@ int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 		Debug::mention("CLProgram", "Resizing texture memory from " +
 			std::to_string(textureBufferSize) + " to " + std::to_string(newSize) + " bytes.");
 
-		// Read the existing texture memory into a temp data buffer.
-		std::vector<cl_char> oldData(textureBufferSize);
-		status = this->commandQueue.enqueueReadBuffer(this->textureBuffer, CL_TRUE, 0,
-			textureBufferSize, static_cast<void*>(oldData.data()), nullptr, nullptr);
-		Debug::check(status == CL_SUCCESS, "CLProgram",
-			"cl::enqueueReadBuffer addTexture oldData.");
-
-		// Allocate a new buffer in device memory, erasing the old one.
-		this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-			newSize, nullptr, &status);
-		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer addTexture.");
-
-		// Write the old data into the bigger texture buffer.
-		status = this->commandQueue.enqueueWriteBuffer(this->textureBuffer, CL_TRUE, 0,
-			textureBufferSize, static_cast<const void*>(oldData.data()), nullptr, nullptr);
-		Debug::check(status == CL_SUCCESS, "CLProgram",
-			"cl::enqueueWriteBuffer addTexture oldData.");
+		// Resize the texture buffer to the new size.
+		this->resizeBuffer(this->textureBuffer, newSize);
 
 		// Tell the kernels where to find the new texture buffer.
 		status = this->intersectKernel.setArg(4, this->textureBuffer);

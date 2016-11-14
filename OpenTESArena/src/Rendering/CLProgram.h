@@ -81,6 +81,11 @@ private:
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
 
+	// Reallocates a device buffer with the given size while retaining the previous data.
+	// If the new size is smaller, the previous data is truncated. Any kernel arguments
+	// using the buffer must be refreshed by the caller.
+	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
+
 	// Updates a voxel reference's offset and count in device memory. The rectangle
 	// buffer offset can be inferred based on other data.
 	void updateVoxelRef(int x, int y, int z, int count);
