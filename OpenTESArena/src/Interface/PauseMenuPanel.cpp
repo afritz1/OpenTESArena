@@ -232,6 +232,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	this->headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceName(), true);
 	this->portraitID = player.getPortraitID();
+	this->classCanCastMagic = player.getCharacterClass().canCastMagic();
 }
 
 PauseMenuPanel::~PauseMenuPanel()
@@ -407,8 +408,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(portrait.get(), 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
-	const auto &player = this->getGameState()->getGameData()->getPlayer();
-	if (!player.getCharacterClass().canCastMagic())
+	if (!this->classCanCastMagic)
 	{
 		const auto &nonMagicIcon = textureManager.getTexture(
 			TextureFile::fromName(TextureName::NoSpell));

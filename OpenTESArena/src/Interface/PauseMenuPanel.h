@@ -21,6 +21,7 @@ private:
 	// That... seems like a bad design to me.
 	std::string headsFilename;
 	int portraitID;
+	bool classCanCastMagic;
 
 	void updateMusicText(double volume);
 	void updateSoundText(double volume);
