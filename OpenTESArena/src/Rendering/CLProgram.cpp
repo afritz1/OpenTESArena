@@ -11,6 +11,7 @@
 #include "../Math/Int2.h"
 #include "../Math/Rect3D.h"
 #include "../Rendering/Renderer.h"
+#include "../Utilities/BufferView.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 
@@ -26,9 +27,6 @@ namespace
 	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
 	const cl::size_type SIZEOF_RECTANGLE = (sizeof(cl_float3) * 6) + SIZEOF_TEXTURE_REF + 8;
 	const cl::size_type SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
-
-	// Some arbitrary limits until the code is more advanced.
-	const int MAX_RECTS_PER_VOXEL = 6;
 }
 
 const std::string CLProgram::PATH = "data/kernels/";
@@ -59,6 +57,9 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	// Create the local output pixel buffer.
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	this->outputData = std::vector<uint8_t>(sizeof(cl_int) * renderPixelCount);
+
+	// Initialize rectangle buffer view to empty.
+	this->rectBufferView = std::unique_ptr<BufferView>(new BufferView());
 
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
@@ -153,10 +154,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
 	this->rectangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_RECTANGLE * MAX_RECTS_PER_VOXEL * worldWidth * worldHeight * worldDepth
-		/* This buffer size is actually very naive. Much of it will just be air.
-		Make a mapping of 3D cell coordinates to rect counts. Buffer resizing will
-		also need to be figured out. */,
+		static_cast<cl::size_type>(1 << 16) /* 65536 bytes; resized as necessary. */,
 		nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
@@ -811,7 +809,7 @@ int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 	return static_cast<int>(this->textureRefs.size() - 1);
 }
 
-void CLProgram::updateVoxelRef(int x, int y, int z, int count)
+void CLProgram::updateVoxelRef(int x, int y, int z, int offset, int count)
 {
 	assert(x >= 0);
 	assert(y >= 0);
@@ -819,18 +817,11 @@ void CLProgram::updateVoxelRef(int x, int y, int z, int count)
 	assert(x < this->worldWidth);
 	assert(y < this->worldHeight);
 	assert(z < this->worldDepth);
+	assert(offset >= 0);
 	assert(count >= 0);
-
-	// Up to 6 rectangles may currently be in a voxel.
-	assert(count <= MAX_RECTS_PER_VOXEL);
 
 	std::vector<cl_char> buffer(SIZEOF_VOXEL_REF);
 	cl_char *bufPtr = buffer.data();
-
-	// Offset is the number of rectangles to skip. Currently relative to naive 
-	// rectangle buffer size.
-	const int offset = MAX_RECTS_PER_VOXEL * (x + (y * this->worldWidth) +
-		(z * this->worldWidth * this->worldHeight));
 
 	cl_int *offPtr = reinterpret_cast<cl_int*>(bufPtr);
 	offPtr[0] = static_cast<cl_int>(offset);
@@ -855,14 +846,8 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	assert(x < this->worldWidth);
 	assert(y < this->worldHeight);
 	assert(z < this->worldDepth);
-
-	// Up to 6 rectangles may currently be in a voxel.
-	assert(rects.size() <= MAX_RECTS_PER_VOXEL);
 	assert(textureIndices.size() == rects.size());
 
-	// No need to zero out the buffer in case of there being fewer than the max 
-	// rectangles given since the voxel reference will never allow the device to 
-	// read garbage rectangles.
 	std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rects.size());
 	cl_char *bufPtr = buffer.data();
 
@@ -917,18 +902,83 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 		dimPtr[1] = static_cast<cl_short>(textureRef.getHeight());
 	}
 
-	// Write the buffer to device memory. Currently using naive rectangle buffer size.
-	const int bytesPerVoxel = SIZEOF_RECTANGLE * MAX_RECTS_PER_VOXEL;
-	const cl::size_type bufferOffset = (x * bytesPerVoxel) +
-		((y * this->worldWidth) * bytesPerVoxel) +
-		((z * this->worldWidth * this->worldHeight) * bytesPerVoxel);
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
-		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxel");
+	// Free the existing allocation for the voxel if there is one.
+	const Int3 voxelCoordinate(x, y, z);
+	auto offsetIter = this->voxelOffsets.find(voxelCoordinate);
+	if (offsetIter != this->voxelOffsets.end())
+	{
+		const size_t offset = offsetIter->second;
+		this->rectBufferView->deallocate(offset);
+	}
+	else
+	{
+		// Make a new voxel offset mapping if one doesn't exist.
+		offsetIter = this->voxelOffsets.emplace(std::make_pair(
+			voxelCoordinate, static_cast<size_t>(0))).first;
+	}
 
-	// Update the voxel reference at the given coordinate.
-	this->updateVoxelRef(x, y, z, static_cast<int>(rects.size()));
+	// If the new voxel has no rectangles, don't allocate anything. This means that
+	// the previous rectangles are untouched but are now considered garbage because
+	// no voxel reference should be pointing to them.
+	if (buffer.size() > 0)
+	{
+		// Allocate a region for the voxel's new rectangles.
+		const cl::size_type bufferOffset = this->rectBufferView->allocate(buffer.size());
+		offsetIter->second = bufferOffset;
+
+		// Size of the existing rectangle buffer.
+		cl_int status = CL_SUCCESS;
+		const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>();
+		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo updateVoxel.");
+
+		// Minimum size of geometry memory required for the new voxel geometry.
+		const cl::size_type requiredSize = bufferOffset + buffer.size();
+
+		if (requiredSize > rectBufferSize)
+		{
+			const size_t newSize = [requiredSize, rectBufferSize]()
+			{
+				// Make sure size is at least 1 before doubling.
+				size_t size = std::max(rectBufferSize, static_cast<size_t>(1));
+				while (size < requiredSize)
+				{
+					size *= 2;
+				}
+				return size;
+			}();
+
+			Debug::mention("CLProgram", "Resizing geometry memory from " +
+				std::to_string(rectBufferSize) + " to " + std::to_string(newSize) + " bytes.");
+
+			// Resize the rectangle buffer to the new size.
+			this->resizeBuffer(this->rectangleBuffer, newSize);
+
+			// Tell the kernels where to find the new rectangle buffer.
+			status = this->intersectKernel.setArg(3, this->rectangleBuffer);
+			Debug::check(status == CL_SUCCESS, "CLProgram",
+				"cl::Kernel::setArg updateVoxel intersectKernel.");
+
+			status = this->rayTraceKernel.setArg(3, this->rectangleBuffer);
+			Debug::check(status == CL_SUCCESS, "CLProgram",
+				"cl::Kernel::setArg updateVoxel rayTraceKernel.");
+		}
+
+		// Write the buffer to device memory.
+		status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
+			CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
+			nullptr, nullptr);
+		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxel");
+
+		// Update the voxel reference at the given coordinate. The offset should never
+		// be a fraction because only rectangles are allocated in the buffer view.
+		this->updateVoxelRef(x, y, z, static_cast<int>(bufferOffset / SIZEOF_RECTANGLE),
+			static_cast<int>(rects.size()));
+	}
+	else
+	{
+		// Set the voxel reference to empty.
+		this->updateVoxelRef(x, y, z, 0, 0);
+	}
 }
 
 void CLProgram::updateVoxel(int x, int y, int z,
@@ -1017,7 +1067,8 @@ const void *CLProgram::render()
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
 		static_cast<cl::size_type>(sizeof(cl_int) * renderPixelCount),
 		outputDataPtr, nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::CommandQueue::enqueueReadBuffer.");
+	Debug::check(status == CL_SUCCESS, "CLProgram", 
+		"cl::CommandQueue::enqueueReadBuffer " + this->getErrorString(status) + ".");
 
 	return outputDataPtr;
 }

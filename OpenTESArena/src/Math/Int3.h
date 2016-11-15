@@ -11,6 +11,7 @@ public:
 	Int3();
 	~Int3();
 
+	bool operator==(const Int3 &p) const;
 	Int3 operator +(const Int3 &p) const;
 	Int3 operator -(const Int3 &p) const;
 	Int3 operator *(double scale) const;
@@ -23,5 +24,21 @@ public:
 	void setY(int y);
 	void setZ(int z);
 };
+
+#include <unordered_map>
+
+// Hash definition for Int3.
+namespace std
+{
+	template <>
+	struct hash<Int3>
+	{
+		size_t operator()(const Int3 &x) const
+		{
+			// Multiply with some prime numbers before xor'ing.
+			return static_cast<size_t>(x.getX() ^ (x.getY() * 41) ^ (x.getZ() * 199));
+		}
+	};
+}
 
 #endif

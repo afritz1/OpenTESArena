@@ -2,7 +2,9 @@
 #define CL_PROGRAM_H
 
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
@@ -11,6 +13,7 @@
 #include <CL/cl2.hpp>
 
 #include "../Math/Float3.h"
+#include "../Math/Int3.h"
 
 // The CLProgram manages all interactions of the application with the 3D graphics
 // engine and the GPU compute schedule. It should be refreshed when the window is
@@ -30,6 +33,7 @@
 // The more I think about sprite management, the more it feels like a heap manager. I'll
 // probably need to draw this on paper to see how it really works out.
 
+class BufferView;
 class Rect3D;
 class TextureReference;
 
@@ -53,6 +57,8 @@ private:
 		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer,
 		colorBuffer, outputBuffer;
 	std::vector<uint8_t> outputData; // For receiving pixels from the device's output buffer.
+	std::unordered_map<Int3, size_t> voxelOffsets; // Byte offsets into rectBuffer for each voxel.
+	std::unique_ptr<BufferView> rectBufferView; // For managing allocations in rectBuffer.
 	std::vector<TextureReference> textureRefs;
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
@@ -64,16 +70,15 @@ private:
 	// using the buffer must be refreshed by the caller.
 	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
 
-	// Updates a voxel reference's offset and count in device memory. The rectangle
-	// buffer offset can be inferred based on other data.
-	void updateVoxelRef(int x, int y, int z, int count);
+	// Updates a voxel reference's offset and count in device memory.
+	void updateVoxelRef(int x, int y, int z, int offset, int count);
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
 		int renderWidth, int renderHeight);
+	CLProgram(const CLProgram&) = delete;
 	~CLProgram();
 
-	CLProgram(const CLProgram&) = delete;
 	CLProgram &operator=(const CLProgram&) = delete;
 	CLProgram &operator=(CLProgram&&) = delete;
 

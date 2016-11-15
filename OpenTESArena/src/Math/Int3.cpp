@@ -22,6 +22,11 @@ Int3::~Int3()
 
 }
 
+bool Int3::operator==(const Int3 &p) const
+{
+	return (this->x == p.x) && (this->y == p.y) && (this->z == p.z);
+}
+
 Int3 Int3::operator +(const Int3 &p) const
 {
 	return Int3(this->x + p.x, this->y + p.y, this->z + p.z);
