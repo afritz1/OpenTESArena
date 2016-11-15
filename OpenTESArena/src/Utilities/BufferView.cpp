@@ -18,6 +18,9 @@ BufferView::~BufferView()
 
 size_t BufferView::allocate(size_t size)
 {
+	// Allocation request must be at least 1 byte.
+	Debug::check(size > 0, "Buffer View", "Allocation size must be positive.");
+
 	// Offset in bytes to a suitable free block.
 	size_t offset = 0;
 
@@ -71,7 +74,7 @@ void BufferView::deallocate(size_t offset)
 	const auto nextFreeIter = [this, offset]()
 	{
 		auto it = this->blocks.begin();
-		while ((it->offset + it->size) <= offset)
+		while (it->offset <= offset)
 		{
 			it++;
 		}
@@ -79,42 +82,44 @@ void BufferView::deallocate(size_t offset)
 		return it;
 	}();
 
-	// See if there's a free block immediately to the right.
-	const bool rightBlockIsFree = this->sizes.find(offset + size) == this->sizes.end();
-	if (rightBlockIsFree)
+	// When coalescing, check if there are adjacent free blocks to the left and right
+	// of the allocated block.
+	const bool adjToFreeRight = (offset + size) == nextFreeIter->offset;
+	const bool adjToFreeLeft = [this, &nextFreeIter, offset]()
 	{
-		// Coalesce with the right block.
+		if (nextFreeIter != this->blocks.begin())
+		{
+			const auto prevFreeIter = std::prev(nextFreeIter);
+			return (prevFreeIter->offset + prevFreeIter->size) == offset;
+		}
+		else return false;
+	}();
+
+	if (adjToFreeLeft && adjToFreeRight)
+	{
+		// Free blocks on the left and right.
+		const auto prevFreeIter = std::prev(nextFreeIter);
+		prevFreeIter->size += size + nextFreeIter->size;
+
+		// Combine the left and right free blocks together.
+		this->blocks.erase(nextFreeIter);
+	}
+	else if (adjToFreeLeft && !adjToFreeRight)
+	{
+		// Free block on the left.
+		const auto prevFreeIter = std::prev(nextFreeIter);
+		prevFreeIter->size += size;
+	}
+	else if (!adjToFreeLeft && adjToFreeRight)
+	{
+		// Free block on the right.
 		nextFreeIter->offset -= size;
 		nextFreeIter->size += size;
 	}
-
-	// If the right block is not the first block, see if there's a free block 
-	// immediately to the left.
-	if (nextFreeIter != this->blocks.begin())
+	else
 	{
-		const auto prevFreeIter = std::prev(nextFreeIter);
-
-		if ((prevFreeIter->offset + prevFreeIter->size) == nextFreeIter->offset)
-		{
-			// Coalesce the combined (middle + right) block with the left block.
-			prevFreeIter->size += nextFreeIter->size;
-			this->blocks.erase(nextFreeIter);
-		}
-		else if ((prevFreeIter->offset + prevFreeIter->size) == offset)
-		{
-			// Coalesce the newly deallocated block with the left block.
-			prevFreeIter->size += size;
-		}
-		else
-		{
-			// Insert a new free block before the next free block.
-			this->blocks.insert(nextFreeIter, Block(offset, size));
-		}
-	}
-	else if (!rightBlockIsFree)
-	{
-		// If not adjacent to any free blocks, insert a new free block at the start.
-		this->blocks.insert(this->blocks.begin(), Block(offset, size));
+		// Not adjacent to any free blocks. Create a new free block.
+		this->blocks.insert(nextFreeIter, Block(offset, size));
 	}
 
 	// Remove the allocation's header.
