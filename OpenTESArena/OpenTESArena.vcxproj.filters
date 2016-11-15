@@ -134,6 +134,7 @@
     <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
     <ClCompile Include="src\Rendering\Texture.cpp" />
     <ClCompile Include="src\Rendering\Surface.cpp" />
+    <ClCompile Include="src\Utilities\BufferView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -314,6 +315,7 @@
     <ClInclude Include="src\Assets\ExeUnpacker.h" />
     <ClInclude Include="src\Rendering\Texture.h" />
     <ClInclude Include="src\Rendering\Surface.h" />
+    <ClInclude Include="src\Utilities\BufferView.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

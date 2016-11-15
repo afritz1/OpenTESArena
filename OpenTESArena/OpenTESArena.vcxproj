@@ -153,6 +153,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Utilities\BufferView.cpp" />
     <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
     <ClCompile Include="src\Media\PPMFile.cpp" />
     <ClCompile Include="src\Interface\ImageSequencePanel.cpp" />
@@ -288,6 +289,7 @@
     <ClCompile Include="src\Rendering\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Assets\ExeUnpacker.h" />
     <ClInclude Include="src\Media\PPMFile.h" />
     <ClInclude Include="src\Interface\ImageSequencePanel.h" />

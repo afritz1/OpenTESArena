@@ -2,6 +2,7 @@
 #define CL_PROGRAM_H
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
@@ -12,42 +13,19 @@
 #include "../Math/Float3.h"
 
 // The CLProgram manages all interactions of the application with the 3D graphics
-// engine and the GPU compute schedule. 
-
-// This object should be kept alive while the game data object is alive. Otherwise, 
-// it would reload the kernel whenever the game world panel was re-entered, which 
-// is unnecessary.
+// engine and the GPU compute schedule. It should be refreshed when the window is
+// resized or when the game world's dimensions change.
 
 // It is important to remember that cl_float3 and cl_float4 are structurally
-// equivalent.
-
-// When resizing buffers, the old data either needs to be copied to a temp buffer, 
-// or reloaded completely using the managed IDs to access data, etc..
-
-// To effectively manage sprites, the CLProgram must know:
-// - Sprite positions and directions.
-// - List of voxel coordinates per sprite rectangle.
-//   -> Order of rectangles per each sprite reference chunk does not matter.
-// - Changes in voxel coordinates per rectangle, per frame.
-//   -> If the compliment of the two lists' intersection is empty, then the sprite
-//      did not move or turn between two frames.
-// - Sizes of each sprite reference chunk (essentially, offset and count).
+// equivalent (cl_float * 4, or 16 bytes).
 
 // After theorizing some (see SpriteReference.h comments), it appears that having
 // single-indirection sprite references (i.e., offset + count -> rectangle) would be
-// a better design than double-indirection (i.e., offset + count -> index -> rectangle)
-// for rendering. Though single-indirection means having some duplicated geometry for
-// each chunk pointed to by a sprite reference, it preserves the cache and prevents 
-// global memory from being saturated with incoherent read requests.
-
-// To keep from resizing buffers (like the rectangle array) too often, they should only 
-// increase in size as needed. That is, no chunks in the buffer pointed to by a sprite 
-// reference are ever shrunk to fit. Each chunk of space in the array should probably get 
-// an arbitrary initial allowance of, say, room for two sprites. This chunk is expanded 
-// if more sprites occupy the same voxel at once, thus shifting over all the other 
-// rectangles in the rectangle array. The worst case would be when many sprites move 
-// quickly together through several voxels, especially in coordinates closer to (0, 0, 0),
-// though each resize would only happen once per voxel if all entities were in it.
+// faster than double-indirection (i.e., offset + count -> index -> rectangle) for 
+// rendering. Though single-indirection means having some duplicated geometry for each 
+// chunk pointed to by a sprite reference, it preserves the cache and prevents global 
+// memory from being saturated with incoherent read requests. Double-indirection would 
+// also mean passing another index buffer to the kernel.
 
 // The more I think about sprite management, the more it feels like a heap manager. I'll
 // probably need to draw this on paper to see how it really works out.
