@@ -656,6 +656,74 @@ void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer resizeBuffer.");
 }
 
+std::vector<Int3> CLProgram::getTouchedVoxels(const Rect3D &rect, bool clampBounds) const
+{
+	// Create an axis-aligned bounding box for the rectangle.
+	const Float3f &p1 = rect.getP1();
+	const Float3f &p2 = rect.getP2();
+	const Float3f &p3 = rect.getP3();
+	const Float3f p4 = p1 + (p3 - p2);
+	const Float3f boxMin(
+		std::min(p1.getX(), std::min(p2.getX(), std::min(p3.getX(), p4.getX()))),
+		std::min(p1.getY(), std::min(p2.getY(), std::min(p3.getY(), p4.getY()))),
+		std::min(p1.getZ(), std::min(p2.getZ(), std::min(p3.getZ(), p4.getZ()))));
+	const Float3f boxMax(
+		std::max(p1.getX(), std::max(p2.getX(), std::max(p3.getX(), p4.getX()))),
+		std::max(p1.getY(), std::max(p2.getY(), std::max(p3.getY(), p4.getY()))),
+		std::max(p1.getZ(), std::max(p2.getZ(), std::max(p3.getZ(), p4.getZ()))));
+
+	// Lambda to convert a 3D point to a voxel coordinate, optionally clamping
+	// within world bounds if requested.
+	auto getVoxelCoordinate = [this, clampBounds](const Float3f &point)
+	{
+		const int pX = static_cast<int>(point.getX());
+		const int pY = static_cast<int>(point.getY());
+		const int pZ = static_cast<int>(point.getZ());
+
+		if (clampBounds)
+		{
+			return Int3(
+				std::max(0, std::min(this->worldWidth - 1, pX)),
+				std::max(0, std::min(this->worldHeight - 1, pY)),
+				std::max(0, std::min(this->worldDepth - 1, pZ)));
+		}
+		else
+		{
+			return Int3(pX, pY, pZ);
+		}
+	};
+
+	// Voxel coordinates for the nearest and farthest corners from the origin.
+	const Int3 voxelMin = getVoxelCoordinate(boxMin);
+	const Int3 voxelMax = getVoxelCoordinate(boxMax);
+
+	// Insert a 3D coordinate for every voxel the bounding box touches.
+	std::vector<Int3> coordinates;
+	for (int k = voxelMin.getZ(); k <= voxelMax.getZ(); ++k)
+	{
+		for (int j = voxelMin.getY(); j <= voxelMax.getY(); ++j)
+		{
+			for (int i = voxelMin.getX(); i <= voxelMax.getX(); ++i)
+			{
+				coordinates.push_back(Int3(i, j, k));
+			}
+		}
+	}
+
+	return coordinates;
+
+	// This bounding box method sometimes gives false positives (resulting in 
+	// wasted time checking an unrelated voxel) because when a sprite covers three 
+	// voxels in an L, the bounding box will incorrectly cover a fourth voxel even 
+	// though the sprite itself isn't touching it. It won't result in incorrect
+	// behavior though; just less than optimal rectangle bounds.
+
+	// A smarter method would look at the sprite from above, treating it like
+	// a 2D line segment in the XZ plane and doing Bresenham's line algorithm,
+	// then extruding that line by the height of the sprite across the Y axis to 
+	// get all touched voxels.
+}
+
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
 	// Do not scale the direction beforehand.

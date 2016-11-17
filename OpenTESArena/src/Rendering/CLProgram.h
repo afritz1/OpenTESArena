@@ -70,6 +70,11 @@ private:
 	// using the buffer must be refreshed by the caller.
 	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
 
+	// Returns a vector of voxel coordinates for all voxels that a rectangle touches,
+	// with the option to only get voxels within the world bounds. Intended only for 
+	// sprites.
+	std::vector<Int3> getTouchedVoxels(const Rect3D &rect, bool clampBounds) const;
+
 	// Updates a voxel reference's offset and count in device memory.
 	void updateVoxelRef(int x, int y, int z, int offset, int count);
 public:
