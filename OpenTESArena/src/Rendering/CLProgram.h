@@ -65,6 +65,9 @@ private:
 	std::string getBuildReport() const;
 	std::string getErrorString(cl_int error) const;
 
+	// Sets a buffer's values to zero.
+	void zeroBuffer(cl::Buffer &buffer);
+
 	// Reallocates a device buffer with the given size while retaining the previous data.
 	// If the new size is smaller, the previous data is truncated. Any kernel arguments
 	// using the buffer must be refreshed by the caller.

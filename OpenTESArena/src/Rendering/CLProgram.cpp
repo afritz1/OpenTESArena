@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstring>
 
 #include "CLProgram.h"
 
@@ -202,6 +203,13 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	this->outputBuffer = cl::Buffer(this->context, CL_MEM_WRITE_ONLY,
 		sizeof(cl_int) * renderPixelCount, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer outputBuffer.");
+
+	// Make sure certain buffers are completely zeroed out. Some OpenCL implementations 
+	// (like Nvidia) do not do this automatically at initialization, and can cause
+	// out-of-bounds errors in the kernel if garbage values are read.
+	this->zeroBuffer(this->voxelRefBuffer);
+	this->zeroBuffer(this->spriteRefBuffer);
+	this->zeroBuffer(this->lightRefBuffer);
 
 	// Tell the intersect kernel arguments where their buffers live. Don't forget 
 	// that many of these are also refreshed in CLProgram::resize() and
@@ -622,6 +630,22 @@ std::string CLProgram::getErrorString(cl_int error) const
 	case -1005: return "CL_D3D10_RESOURCE_NOT_ACQUIRED_KHR";
 	default: return "Unknown OpenCL error \"" + std::to_string(error) + "\"";
 	}
+}
+
+void CLProgram::zeroBuffer(cl::Buffer &buffer)
+{
+	cl_int status = CL_SUCCESS;
+
+	// Get the current size of the buffer.
+	const cl::size_type bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Buffer::getInfo CL_MEM_SIZE resizeBuffer.");
+
+	std::vector<cl_char> zeroes(bufferSize);
+	std::memset(zeroes.data(), 0, zeroes.size());
+	status = this->commandQueue.enqueueWriteBuffer(buffer, CL_TRUE,
+		0, bufferSize, static_cast<const void*>(zeroes.data()), nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer zeroBuffer.");
 }
 
 void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
