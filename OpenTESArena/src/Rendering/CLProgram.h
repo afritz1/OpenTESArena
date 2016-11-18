@@ -14,6 +14,7 @@
 
 #include "../Math/Float3.h"
 #include "../Math/Int3.h"
+#include "../Math/Rect3D.h"
 
 // The CLProgram manages all interactions of the application with the 3D graphics
 // engine and the GPU compute schedule. It should be refreshed when the window is
@@ -34,7 +35,6 @@
 // probably need to draw this on paper to see how it really works out.
 
 class BufferView;
-class Rect3D;
 class TextureReference;
 
 class CLProgram
@@ -58,6 +58,10 @@ private:
 		colorBuffer, outputBuffer;
 	std::vector<uint8_t> outputData; // For receiving pixels from the device's output buffer.
 	std::unordered_map<Int3, size_t> voxelOffsets; // Byte offsets into rectBuffer for each voxel.
+	std::unordered_map<Int3, size_t> spriteOffsets; // Byte offsets into rectBuffer for each sprite group.
+	std::unordered_map<Int3, std::vector<int>> spriteRefIDs; // Sprite ID list for sprite references.
+	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels; // Coordinates of a sprite's touched voxels.
+	std::unordered_map<int, std::pair<Rect3D, int>> spriteRects; // A copy of each sprite's rect and texture.
 	std::unique_ptr<BufferView> rectBufferView; // For managing allocations in rectBuffer.
 	std::vector<TextureReference> textureRefs;
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
@@ -73,13 +77,33 @@ private:
 	// using the buffer must be refreshed by the caller.
 	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
 
+	// Helper method for resizing the rectangle buffer and setting arguments.
+	void resizeRectBuffer(cl::size_type requiredSize);
+
 	// Returns a vector of voxel coordinates for all voxels that a rectangle touches,
 	// with the option to only get voxels within the world bounds. Intended only for 
 	// sprites.
 	std::vector<Int3> getTouchedVoxels(const Rect3D &rect, bool clampBounds) const;
 
+	// Helper method for writing a rectangle and texture reference to a temp buffer.
+	void writeRect(const Rect3D &rect, const TextureReference &textureRef,
+		std::vector<cl_char> &buffer, size_t byteOffset) const;
+
+	// Helper method for adding a sprite to a sprite group in device memory.
+	void addSpriteToVoxel(int spriteID, const Int3 &voxel);
+
+	// Helper method for removing a sprite from a sprite group in device memory.
+	void removeSpriteFromVoxel(int spriteID, const Int3 &voxel);
+
+	// Helper method for updating a sprite's rectangle and texture reference in 
+	// a given voxel in device memory.
+	void updateSpriteInVoxel(int spriteID, const Int3 &voxel);
+
 	// Updates a voxel reference's offset and count in device memory.
 	void updateVoxelRef(int x, int y, int z, int offset, int count);
+
+	// Updates a sprite reference's offset and count in device memory.
+	void updateSpriteRef(int x, int y, int z, int offset, int count);
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,

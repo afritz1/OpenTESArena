@@ -8,9 +8,7 @@
 #include "TextureReference.h"
 #include "../Entities/Directable.h"
 #include "../Math/Constants.h"
-#include "../Math/Float3.h"
 #include "../Math/Int2.h"
-#include "../Math/Rect3D.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/BufferView.h"
 #include "../Utilities/Debug.h"
@@ -155,8 +153,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
 	this->rectangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(1 << 16) /* 65536 bytes; resized as necessary. */,
-		nullptr, &status);
+		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
 	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -164,8 +161,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(1 << 16) /* 65536 bytes; resized as necessary. */,
-		nullptr, &status);
+		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -654,7 +650,7 @@ void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
 
 	// Get the current size of the buffer.
 	const cl::size_type bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
-	Debug::check(status == CL_SUCCESS, "CLProgram", 
+	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Buffer::getInfo CL_MEM_SIZE resizeBuffer.");
 
 	// Read the existing buffer into a temp data buffer.
@@ -678,6 +674,39 @@ void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
 	status = this->commandQueue.enqueueWriteBuffer(buffer, CL_TRUE, 0,
 		bytesToWrite, static_cast<const void*>(oldData.data()), nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer resizeBuffer.");
+}
+
+void CLProgram::resizeRectBuffer(cl::size_type requiredSize)
+{
+	cl_int status = CL_SUCCESS;
+	const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo resizeRectBuffer.");
+
+	const size_t newSize = [requiredSize, rectBufferSize]()
+	{
+		// Make sure size is at least 1 before doubling.
+		size_t size = std::max(rectBufferSize, static_cast<size_t>(1));
+		while (size < requiredSize)
+		{
+			size *= 2;
+		}
+		return size;
+	}();
+
+	Debug::mention("CLProgram", "Resizing geometry memory from " +
+		std::to_string(rectBufferSize) + " to " + std::to_string(newSize) + " bytes.");
+
+	// Resize the rectangle buffer to the new size.
+	this->resizeBuffer(this->rectangleBuffer, newSize);
+
+	// Tell the kernels where to find the new rectangle buffer.
+	status = this->intersectKernel.setArg(3, this->rectangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg resizeRectBuffer intersectKernel.");
+
+	status = this->rayTraceKernel.setArg(3, this->rectangleBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg resizeRectBuffer rayTraceKernel.");
 }
 
 std::vector<Int3> CLProgram::getTouchedVoxels(const Rect3D &rect, bool clampBounds) const
@@ -746,6 +775,57 @@ std::vector<Int3> CLProgram::getTouchedVoxels(const Rect3D &rect, bool clampBoun
 	// a 2D line segment in the XZ plane and doing Bresenham's line algorithm,
 	// then extruding that line by the height of the sprite across the Y axis to 
 	// get all touched voxels.
+}
+
+void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef,
+	std::vector<cl_char> &buffer, size_t byteOffset) const
+{
+	cl_char *recPtr = buffer.data() + byteOffset;
+
+	const Float3f &p1 = rect.getP1();
+	cl_float *p1Ptr = reinterpret_cast<cl_float*>(recPtr);
+	p1Ptr[0] = static_cast<cl_float>(p1.getX());
+	p1Ptr[1] = static_cast<cl_float>(p1.getY());
+	p1Ptr[2] = static_cast<cl_float>(p1.getZ());
+
+	const Float3f &p2 = rect.getP2();
+	cl_float *p2Ptr = reinterpret_cast<cl_float*>(recPtr + sizeof(cl_float3));
+	p2Ptr[0] = static_cast<cl_float>(p2.getX());
+	p2Ptr[1] = static_cast<cl_float>(p2.getY());
+	p2Ptr[2] = static_cast<cl_float>(p2.getZ());
+
+	const Float3f &p3 = rect.getP3();
+	cl_float *p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 2));
+	p3Ptr[0] = static_cast<cl_float>(p3.getX());
+	p3Ptr[1] = static_cast<cl_float>(p3.getY());
+	p3Ptr[2] = static_cast<cl_float>(p3.getZ());
+
+	const Float3f p1p2 = p2 - p1;
+	cl_float *p1p2Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 3));
+	p1p2Ptr[0] = static_cast<cl_float>(p1p2.getX());
+	p1p2Ptr[1] = static_cast<cl_float>(p1p2.getY());
+	p1p2Ptr[2] = static_cast<cl_float>(p1p2.getZ());
+
+	const Float3f p2p3 = p3 - p2;
+	cl_float *p2p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 4));
+	p2p3Ptr[0] = static_cast<cl_float>(p2p3.getX());
+	p2p3Ptr[1] = static_cast<cl_float>(p2p3.getY());
+	p2p3Ptr[2] = static_cast<cl_float>(p2p3.getZ());
+
+	const Float3f normal = rect.getNormal();
+	cl_float *normalPtr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 5));
+	normalPtr[0] = static_cast<cl_float>(normal.getX());
+	normalPtr[1] = static_cast<cl_float>(normal.getY());
+	normalPtr[2] = static_cast<cl_float>(normal.getZ());
+
+	// Texture reference data.
+	cl_int *offsetPtr = reinterpret_cast<cl_int*>(recPtr + (sizeof(cl_float3) * 6));
+	offsetPtr[0] = static_cast<cl_int>(textureRef.getOffset());
+
+	cl_short *dimPtr = reinterpret_cast<cl_short*>(recPtr +
+		(sizeof(cl_float3) * 6) + sizeof(cl_int));
+	dimPtr[0] = static_cast<cl_short>(textureRef.getWidth());
+	dimPtr[1] = static_cast<cl_short>(textureRef.getHeight());
 }
 
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
@@ -929,6 +1009,34 @@ void CLProgram::updateVoxelRef(int x, int y, int z, int offset, int count)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxelRef");
 }
 
+void CLProgram::updateSpriteRef(int x, int y, int z, int offset, int count)
+{
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(z >= 0);
+	assert(x < this->worldWidth);
+	assert(y < this->worldHeight);
+	assert(z < this->worldDepth);
+	assert(offset >= 0);
+	assert(count >= 0);
+
+	std::vector<cl_char> buffer(SIZEOF_SPRITE_REF);
+	cl_char *bufPtr = buffer.data();
+
+	cl_int *offPtr = reinterpret_cast<cl_int*>(bufPtr);
+	offPtr[0] = static_cast<cl_int>(offset);
+	offPtr[1] = static_cast<cl_int>(count);
+
+	// Write the buffer to device memory.
+	const cl::size_type bufferOffset = (x * SIZEOF_SPRITE_REF) +
+		((y * this->worldWidth) * SIZEOF_SPRITE_REF) +
+		((z * this->worldWidth * this->worldHeight) * SIZEOF_SPRITE_REF);
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->spriteRefBuffer,
+		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateSpriteRef");
+}
+
 void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 	const std::vector<int> &textureIndices)
 {
@@ -940,60 +1048,6 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	assert(z < this->worldDepth);
 	assert(textureIndices.size() == rects.size());
 
-	std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rects.size());
-	cl_char *bufPtr = buffer.data();
-
-	// Write each rectangle with its texture index to the buffer.
-	for (size_t i = 0; i < rects.size(); ++i)
-	{
-		const Rect3D &rect = rects.at(i);
-		const TextureReference &textureRef = this->textureRefs.at(textureIndices.at(i));
-
-		cl_char *recPtr = bufPtr + (SIZEOF_RECTANGLE * i);
-
-		cl_float *p1Ptr = reinterpret_cast<cl_float*>(recPtr);
-		p1Ptr[0] = static_cast<cl_float>(rect.getP1().getX());
-		p1Ptr[1] = static_cast<cl_float>(rect.getP1().getY());
-		p1Ptr[2] = static_cast<cl_float>(rect.getP1().getZ());
-
-		cl_float *p2Ptr = reinterpret_cast<cl_float*>(recPtr + sizeof(cl_float3));
-		p2Ptr[0] = static_cast<cl_float>(rect.getP2().getX());
-		p2Ptr[1] = static_cast<cl_float>(rect.getP2().getY());
-		p2Ptr[2] = static_cast<cl_float>(rect.getP2().getZ());
-
-		cl_float *p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 2));
-		p3Ptr[0] = static_cast<cl_float>(rect.getP3().getX());
-		p3Ptr[1] = static_cast<cl_float>(rect.getP3().getY());
-		p3Ptr[2] = static_cast<cl_float>(rect.getP3().getZ());
-
-		const Float3f p1p2 = rect.getP2() - rect.getP1();
-		cl_float *p1p2Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 3));
-		p1p2Ptr[0] = static_cast<cl_float>(p1p2.getX());
-		p1p2Ptr[1] = static_cast<cl_float>(p1p2.getY());
-		p1p2Ptr[2] = static_cast<cl_float>(p1p2.getZ());
-
-		const Float3f p2p3 = rect.getP3() - rect.getP2();
-		cl_float *p2p3Ptr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 4));
-		p2p3Ptr[0] = static_cast<cl_float>(p2p3.getX());
-		p2p3Ptr[1] = static_cast<cl_float>(p2p3.getY());
-		p2p3Ptr[2] = static_cast<cl_float>(p2p3.getZ());
-
-		const Float3f normal = rect.getNormal();
-		cl_float *normalPtr = reinterpret_cast<cl_float*>(recPtr + (sizeof(cl_float3) * 5));
-		normalPtr[0] = static_cast<cl_float>(normal.getX());
-		normalPtr[1] = static_cast<cl_float>(normal.getY());
-		normalPtr[2] = static_cast<cl_float>(normal.getZ());
-
-		// Texture reference data.
-		cl_int *offsetPtr = reinterpret_cast<cl_int*>(recPtr + (sizeof(cl_float3) * 6));
-		offsetPtr[0] = static_cast<cl_int>(textureRef.getOffset());
-
-		cl_short *dimPtr = reinterpret_cast<cl_short*>(recPtr +
-			(sizeof(cl_float3) * 6) + sizeof(cl_int));
-		dimPtr[0] = static_cast<cl_short>(textureRef.getWidth());
-		dimPtr[1] = static_cast<cl_short>(textureRef.getHeight());
-	}
-
 	// Free the existing allocation for the voxel if there is one.
 	const Int3 voxelCoordinate(x, y, z);
 	auto offsetIter = this->voxelOffsets.find(voxelCoordinate);
@@ -1002,25 +1056,39 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 		const size_t offset = offsetIter->second;
 		this->rectBufferView->deallocate(offset);
 	}
-	else
-	{
-		// Make a new voxel offset mapping if one doesn't exist.
-		offsetIter = this->voxelOffsets.emplace(std::make_pair(
-			voxelCoordinate, static_cast<size_t>(0))).first;
-	}
 
 	// If the new voxel has no rectangles, don't allocate anything. This means that
 	// the previous rectangles are untouched but are now considered garbage because
 	// no voxel reference should be pointing to them.
-	if (buffer.size() > 0)
+	if (rects.size() > 0)
 	{
+		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rects.size());
+
+		// Write each rectangle with its texture index to the buffer.
+		for (size_t i = 0; i < rects.size(); ++i)
+		{
+			const Rect3D &rect = rects.at(i);
+			const TextureReference &textureRef = this->textureRefs.at(textureIndices.at(i));
+			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+		}
+
 		// Allocate a region for the voxel's new rectangles.
 		const cl::size_type bufferOffset = this->rectBufferView->allocate(buffer.size());
-		offsetIter->second = bufferOffset;
+
+		// Make a new voxel offset mapping if one doesn't exist.
+		if (offsetIter == this->voxelOffsets.end())
+		{
+			offsetIter = this->voxelOffsets.emplace(std::make_pair(
+				voxelCoordinate, bufferOffset)).first;
+		}
+		else
+		{
+			offsetIter->second = bufferOffset;
+		}
 
 		// Size of the existing rectangle buffer.
 		cl_int status = CL_SUCCESS;
-		const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>();
+		const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
 		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo updateVoxel.");
 
 		// Minimum size of geometry memory required for the new voxel geometry.
@@ -1028,36 +1096,13 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 
 		if (requiredSize > rectBufferSize)
 		{
-			const size_t newSize = [requiredSize, rectBufferSize]()
-			{
-				// Make sure size is at least 1 before doubling.
-				size_t size = std::max(rectBufferSize, static_cast<size_t>(1));
-				while (size < requiredSize)
-				{
-					size *= 2;
-				}
-				return size;
-			}();
-
-			Debug::mention("CLProgram", "Resizing geometry memory from " +
-				std::to_string(rectBufferSize) + " to " + std::to_string(newSize) + " bytes.");
-
-			// Resize the rectangle buffer to the new size.
-			this->resizeBuffer(this->rectangleBuffer, newSize);
-
-			// Tell the kernels where to find the new rectangle buffer.
-			status = this->intersectKernel.setArg(3, this->rectangleBuffer);
-			Debug::check(status == CL_SUCCESS, "CLProgram",
-				"cl::Kernel::setArg updateVoxel intersectKernel.");
-
-			status = this->rayTraceKernel.setArg(3, this->rectangleBuffer);
-			Debug::check(status == CL_SUCCESS, "CLProgram",
-				"cl::Kernel::setArg updateVoxel rayTraceKernel.");
+			// Resize the rectangle buffer and reset its associated kernel arguments.
+			this->resizeRectBuffer(requiredSize);
 		}
 
 		// Write the buffer to device memory.
-		status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer,
-			CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
+		status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE, 
+			bufferOffset, buffer.size(), static_cast<const void*>(buffer.data()),
 			nullptr, nullptr);
 		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxel");
 
@@ -1068,6 +1113,13 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	}
 	else
 	{
+		// No allocation is associated with the voxel reference, so erase the mapping.
+		// (This could be cleaner; might not be necessary with different checks above).
+		if (offsetIter != this->voxelOffsets.end())
+		{
+			this->voxelOffsets.erase(offsetIter);
+		}
+
 		// Set the voxel reference to empty.
 		this->updateVoxelRef(x, y, z, 0, 0);
 	}
@@ -1089,46 +1141,281 @@ void CLProgram::updateVoxel(int x, int y, int z,
 	this->updateVoxel(x, y, z, rects, textureIndices);
 }
 
+void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
+{
+	// Get the list of sprite IDs associated with the voxel if there is one.
+	auto refIter = this->spriteRefIDs.find(voxel);
+	if (refIter == this->spriteRefIDs.end())
+	{
+		// Add a mapping to a new empty ID list.
+		refIter = this->spriteRefIDs.emplace(std::make_pair(
+			voxel, std::vector<int>())).first;
+	}
+
+	std::vector<int> &spriteIDs = refIter->second;
+
+	// Make sure the sprite isn't already in the voxel.
+	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
+	Debug::check(idIter == spriteIDs.end(), "CLProgram",
+		"Can't add a duplicate sprite to the same voxel.");
+
+	// Add the new ID into the sprite group.
+	spriteIDs.push_back(spriteID);
+
+	std::vector<cl_char> buffer(SIZEOF_RECTANGLE * spriteIDs.size());
+
+	// Write each sprite's rectangle with its texture index to the buffer.
+	for (size_t i = 0; i < spriteIDs.size(); ++i)
+	{
+		// Get the rectangle + texture pair for the sprite.
+		const auto &pair = this->spriteRects.at(spriteIDs.at(i));
+		const Rect3D &rect = pair.first;
+		const TextureReference &textureRef = this->textureRefs.at(pair.second);
+
+		this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+	}
+
+	// Free the old sprite group allocation if there is one.
+	auto offsetIter = this->spriteOffsets.find(voxel);
+	if (offsetIter != this->spriteOffsets.end())
+	{
+		// Deallocate the old sprite group.
+		this->rectBufferView->deallocate(offsetIter->second);
+	}
+	else
+	{
+		// Make a new sprite offset mapping with a dummy offset.
+		offsetIter = this->spriteOffsets.emplace(std::make_pair(
+			voxel, static_cast<size_t>(0))).first;
+	}
+
+	// Allocate the new sprite group and get its byte offset in the rect buffer. 
+	// The voxel is guaranteed to have at least one sprite, so there's no need to 
+	// check for buffer.size() == 0 (unlike with voxel updating).
+	offsetIter->second = this->rectBufferView->allocate(buffer.size());
+
+	// Size of the existing rectangle buffer.
+	cl_int status = CL_SUCCESS;
+	const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addSpriteToVoxel.");
+
+	// Minimum size of geometry memory required for the new sprite geometry.
+	const cl::size_type requiredSize = offsetIter->second + buffer.size();
+
+	if (requiredSize > rectBufferSize)
+	{
+		// Resize the rectangle buffer and reset its associated kernel arguments.
+		this->resizeRectBuffer(requiredSize);
+	}
+
+	// Write the buffer to device memory.
+	status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE, 
+		offsetIter->second, buffer.size(), static_cast<const void*>(buffer.data()),
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer addSpriteToVoxel.");
+
+	// Update the sprite reference. The offset should never be a fraction because 
+	// only rectangles are allocated in the buffer view.
+	this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(),
+		static_cast<int>(offsetIter->second / SIZEOF_RECTANGLE),
+		static_cast<int>(spriteIDs.size()));
+}
+
+void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
+{
+	// Get the list of sprite IDs associated with the voxel.
+	const auto refIter = this->spriteRefIDs.find(voxel);
+	Debug::check(refIter != this->spriteRefIDs.end(), "CLProgram",
+		"Expected a sprite list for voxel [" + std::to_string(voxel.getX()) + 
+		", " + std::to_string(voxel.getY()) + ", " + std::to_string(voxel.getZ()) + "].");
+
+	std::vector<int> &spriteIDs = refIter->second;
+
+	// Make sure the sprite is in the voxel.
+	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
+	Debug::check(idIter != spriteIDs.end(), "CLProgram",
+		"Expected sprite ID " + std::to_string(spriteID) + " in voxel [" + 
+		std::to_string(voxel.getX()) + ", " + std::to_string(voxel.getY()) + ", " + 
+		std::to_string(voxel.getZ()) + "].");
+
+	// Erase the sprite ID from the sprite group.
+	spriteIDs.erase(idIter);
+
+	// Get the byte offset of the sprite group in the rect buffer.
+	const auto offsetIter = this->spriteOffsets.find(voxel);
+
+	// If there are still sprites in the voxel, reallocate the sprite group in the 
+	// rect buffer (this isn't entirely necessary; it's just done for correctness
+	// so a sprite group doesn't have unused memory).
+	if (spriteIDs.size() > 0)
+	{
+		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * spriteIDs.size());
+
+		for (size_t i = 0; i < spriteIDs.size(); ++i)
+		{
+			// Get the rectangle + texture pair for the sprite.
+			const auto &pair = this->spriteRects.at(spriteIDs.at(i));
+			const Rect3D &rect = pair.first;
+			const TextureReference &textureRef = this->textureRefs.at(pair.second);
+
+			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+		}
+
+		// Reallocate sprite group (no need to resize because the sprite group has shrunk;
+		// if it doesn't find a better fit, it will find the deallocated space again).
+		this->rectBufferView->deallocate(offsetIter->second);
+		offsetIter->second = this->rectBufferView->allocate(buffer.size());
+
+		// Write to rectBuffer.
+		cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE,
+			offsetIter->second, buffer.size(), static_cast<const void*>(buffer.data()),
+			nullptr, nullptr);
+		Debug::check(status == CL_SUCCESS, "CLProgram",
+			"cl::enqueueWriteBuffer removeSpriteFromVoxel.");
+
+		// Update the sprite reference. The offset should never be a fraction because 
+		// only rectangles are allocated in the buffer view.
+		this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(),
+			static_cast<int>(offsetIter->second / SIZEOF_RECTANGLE),
+			static_cast<int>(spriteIDs.size()));
+	}
+	else
+	{
+		// No more sprites in the voxel, so erase the associated mappings.
+		this->spriteRefIDs.erase(refIter);
+		this->spriteOffsets.erase(offsetIter);
+
+		// Set the sprite reference to zero.
+		this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(), 0, 0);
+	}
+}
+
+void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
+{
+	// Get the sprite's rectangle and texture index.
+	const auto &pair = this->spriteRects.at(spriteID);
+
+	std::vector<cl_char> buffer(SIZEOF_RECTANGLE);
+
+	// Write the new sprite rectangle and texture reference to the temp buffer.
+	const Rect3D &rect = pair.first;
+	const TextureReference &textureRef = this->textureRefs.at(pair.second);
+	this->writeRect(rect, textureRef, buffer, 0);
+
+	// Get the byte offset of the sprite group in the rect buffer.
+	const size_t offset = this->spriteOffsets.at(voxel);
+
+	// Get the index of the sprite in the sprite reference.
+	const std::vector<int> &spriteIDs = this->spriteRefIDs.at(voxel);
+	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
+	assert(idIter != spriteIDs.end());
+	const size_t index = idIter - spriteIDs.begin();
+
+	// Write the buffer to device memory.
+	const cl::size_type bufferOffset = offset + (SIZEOF_RECTANGLE * index);
+	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE,
+		bufferOffset, buffer.size(), static_cast<const void*>(buffer.data()),
+		nullptr, nullptr);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::enqueueWriteBuffer updateSpriteInVoxel.");
+}
+
 void CLProgram::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
 {
-	// To do.
-	// if (spriteID exists) then get the change in touched voxels (compare Int3's), 
-	// and update the rect and texture index for each copy of the sprite in the rect 
-	// buffer, adding and removing rects in the rect buffer as necessary.
-	// Otherwise, make a mapping for the new spriteID and allocate rects in the rect 
-	// buffer with the texture index for each touched voxel. Keep the index of the 
-	// rect in each sprite reference easily available.
-	// - What if the sprite is outside the world? Then sprite references can't be
-	//   changed there. Just worry about the part touching a valid voxel.
+	// See if the sprite already has a mapping for it.
+	const auto rectIter = this->spriteRects.find(spriteID);
+	if (rectIter != this->spriteRects.end())
+	{
+		// Sprite mapping exists, so overwrite its data.
+		rectIter->second = std::make_pair(rect, textureIndex);
 
-	// The CLProgram should maintain a std::unordered_map<int, std::vector<Int3>> for 
-	// the coordinates of the voxels that the sprite's rectangle touches, and another
-	// mapping for which rect index the rect is at in each sprite reference for those
-	// coordinates.
-	// - The container for coordinates (i.e., vector) will be:
-	// -> 1) Unordered
-	// -> 2) Inserted only at the end
-	// -> 3) Erased at any index
-	// -> 4) Randomly accessed (or only iterated through? Forward iterator?)
+		// Get previously touched voxels.
+		const auto touchedIter = this->spriteTouchedVoxels.find(spriteID);
+		const std::vector<Int3> &prevTouchedVoxels = touchedIter->second;
 
-	// The sprite ID is just the entity ID.
+		// Get new touched voxels.
+		std::vector<Int3> newTouchedVoxels = this->getTouchedVoxels(rect, true);
 
-	Debug::crash("CLProgram", "updateSprite() not implemented.");
+		// Update the rect and index for voxels that are in both lists.
+		for (const auto &voxel : prevTouchedVoxels)
+		{
+			const auto newVoxelsIter = std::find(
+				newTouchedVoxels.begin(), newTouchedVoxels.end(), voxel);
+
+			if (newVoxelsIter != newTouchedVoxels.end())
+			{
+				this->updateSpriteInVoxel(spriteID, voxel);
+			}
+		}
+
+		// Remove the sprite from voxels it's no longer touching.
+		for (const auto &voxel : prevTouchedVoxels)
+		{
+			const auto newVoxelsIter = std::find(
+				newTouchedVoxels.begin(), newTouchedVoxels.end(), voxel);
+
+			if (newVoxelsIter == newTouchedVoxels.end())
+			{
+				this->removeSpriteFromVoxel(spriteID, voxel);
+			}
+		}
+
+		// Add the sprite to voxels it's now touching.
+		for (const auto &voxel : newTouchedVoxels)
+		{
+			const auto oldVoxelsIter = std::find(
+				prevTouchedVoxels.begin(), prevTouchedVoxels.end(), voxel);
+
+			if (oldVoxelsIter == prevTouchedVoxels.end())
+			{
+				this->addSpriteToVoxel(spriteID, voxel);
+			}
+		}
+
+		// Overwrite the sprite's touched voxels.
+		touchedIter->second = newTouchedVoxels;
+	}
+	else
+	{
+		// No sprite mapping exists, so insert new sprite data.
+		this->spriteRects.emplace(std::make_pair(spriteID,
+			std::make_pair(rect, textureIndex)));
+
+		// Add the voxels that the sprite touches.
+		auto touchedIter = this->spriteTouchedVoxels.emplace(std::make_pair(
+			spriteID, this->getTouchedVoxels(rect, true))).first;
+		const std::vector<Int3> &touchedVoxels = touchedIter->second;
+
+		// Add the sprite to each voxel it's touching.
+		for (const auto &voxel : touchedVoxels)
+		{
+			this->addSpriteToVoxel(spriteID, voxel);
+		}
+	}
 }
 
 void CLProgram::removeSprite(int spriteID)
 {
-	// To do.
-	// assert that the sprite ID exists in the renderer mapping.
-	// Remove all copies of the sprite in the rect buffer (using mapping to rect indices).
-	// Remove rects in sprite references and shift other sprite rects over in both
-	// device memory and host indices.
-	// Remove spriteID mappings.
+	// Don't try to remove a sprite if it doesn't exist.
+	const auto pairIter = this->spriteRects.find(spriteID);
+	Debug::check(pairIter != this->spriteRects.end(), "CLProgram",
+		"Can't remove a non-existent sprite's data.");
 
-	// Don't shift over rects in the rect buffer. That defeats the purpose of the linked
-	// list aspect of the rect buffer's "heap manager"-like behavior.
+	// Remove the sprite's rectangle/texture mapping.
+	this->spriteRects.erase(pairIter);
 
-	Debug::crash("CLProgram", "removeSprite() not implemented.");
+	// Get the voxels touched by the sprite.
+	const auto touchedIter = this->spriteTouchedVoxels.find(spriteID);
+	const std::vector<Int3> &touchedVoxels = touchedIter->second;
+
+	// Remove the sprite from each voxel it touches.
+	for (const auto &voxel : touchedVoxels)
+	{
+		this->removeSpriteFromVoxel(spriteID, voxel);
+	}
+
+	// Remove the sprite's touched voxels mapping.
+	this->spriteTouchedVoxels.erase(touchedIter);
 }
 
 const void *CLProgram::render()
@@ -1159,7 +1446,7 @@ const void *CLProgram::render()
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
 		static_cast<cl::size_type>(sizeof(cl_int) * renderPixelCount),
 		outputDataPtr, nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", 
+	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::CommandQueue::enqueueReadBuffer " + this->getErrorString(status) + ".");
 
 	return outputDataPtr;
