@@ -1241,8 +1241,10 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 	// Erase the sprite ID from the sprite group.
 	spriteIDs.erase(idIter);
 
-	// Get the byte offset of the sprite group in the rect buffer.
+	// Get the byte offset of the sprite group in the rect buffer and 
+	// deallocate it.
 	const auto offsetIter = this->spriteOffsets.find(voxel);
+	this->rectBufferView->deallocate(offsetIter->second);
 
 	// If there are still sprites in the voxel, reallocate the sprite group in the 
 	// rect buffer (this isn't entirely necessary; it's just done for correctness
@@ -1263,7 +1265,6 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 
 		// Reallocate sprite group (no need to resize because the sprite group has shrunk;
 		// if it doesn't find a better fit, it will find the deallocated space again).
-		this->rectBufferView->deallocate(offsetIter->second);
 		offsetIter->second = this->rectBufferView->allocate(buffer.size());
 
 		// Write to rectBuffer.
