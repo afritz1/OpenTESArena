@@ -23,10 +23,6 @@ private:
 	std::vector<double> imageDurations;
 	double currentSeconds;
 	int imageIndex;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ImageSequencePanel(GameState *gameState,
 		const std::vector<std::string> &paletteNames,
@@ -35,7 +31,8 @@ public:
 		const std::function<void(GameState*)> &endingAction);
 	virtual ~ImageSequencePanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
+	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
 

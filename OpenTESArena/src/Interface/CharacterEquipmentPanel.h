@@ -22,15 +22,11 @@ private:
 	std::unique_ptr<Button> backToStatsButton, spellbookButton, dropButton,
 		scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	CharacterEquipmentPanel(GameState *gameState);
 	virtual ~CharacterEquipmentPanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

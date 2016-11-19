@@ -20,13 +20,12 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 
 #include "components/vfs/manager.hpp"
 
 Panel::Panel(GameState *gameState)
 {
-	this->gameStatePtr = gameState;
+	this->gameState = gameState;
 }
 
 Panel::~Panel()
@@ -146,7 +145,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 
 GameState *Panel::getGameState() const
 {
-	return this->gameStatePtr;
+	return this->gameState;
 }
 
 double Panel::getCursorScale() const
@@ -166,4 +165,10 @@ void Panel::setRelativeMouseMode(bool active)
 {
 	SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
 	SDL_SetRelativeMouseMode(enabled);
+}
+
+void Panel::tick(double dt)
+{
+	// Do nothing by default.
+	static_cast<void>(dt);
 }

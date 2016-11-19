@@ -10,9 +10,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-const double CinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 20.0;
-
-CinematicPanel::CinematicPanel(GameState *gameState, 
+CinematicPanel::CinematicPanel(GameState *gameState,
 	const std::string &sequenceName, const std::string &paletteName,
 	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
 	: Panel(gameState)
@@ -34,55 +32,30 @@ CinematicPanel::~CinematicPanel()
 
 }
 
-void CinematicPanel::handleEvents(bool &running)
+void CinematicPanel::handleEvent(const SDL_Event &e)
 {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool spacePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_SPACE);
+	bool returnPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_RETURN);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool numpadEnterPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_KP_ENTER);
+
+	bool skipHotkeyPressed = spacePressed || returnPressed || 
+		escapePressed || numpadEnterPressed;
+
+	if (leftClick || skipHotkeyPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) ||
-				(e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_ESCAPE) ||
-				(e.key.keysym.sym == SDLK_KP_ENTER));
-
-		if (leftClick || skipHotkeyPressed)
-		{
-			this->skipButton->click(this->getGameState());
-		}
+		this->skipButton->click(this->getGameState());
 	}
 }
 
-void CinematicPanel::handleMouse(double dt)
+void CinematicPanel::tick(double dt)
 {
-	static_cast<void>(dt);
-}
-
-void CinematicPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void CinematicPanel::tick(double dt, bool &running)
-{
-	this->handleEvents(running);
-
 	// See if it's time for the next image.
 	this->currentSeconds += dt;
 	while (this->currentSeconds > this->secondsPerImage)
@@ -91,9 +64,8 @@ void CinematicPanel::tick(double dt, bool &running)
 		this->imageIndex++;
 	}
 
-	auto &textureManager = this->getGameState()->getTextureManager();
-
 	// Get a reference to all images in the sequence.
+	auto &textureManager = this->getGameState()->getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 
@@ -111,9 +83,8 @@ void CinematicPanel::render(Renderer &renderer)
 	renderer.clearNative();
 	renderer.clearOriginal();
 
-	auto &textureManager = this->getGameState()->getTextureManager();
-
 	// Get a reference to all images in the sequence.
+	auto &textureManager = this->getGameState()->getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 

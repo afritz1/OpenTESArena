@@ -156,143 +156,129 @@ GameWorldPanel::~GameWorldPanel()
 
 }
 
-void GameWorldPanel::handleEvents(bool &running)
+void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	bool resized = (e.type == SDL_WINDOWEVENT) &&
+		(e.window.event == SDL_WINDOWEVENT_RESIZED);
+
+	if (resized)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
+		// Update the cursor's regions for camera motion.
+		int width = e.window.data1;
+		int height = e.window.data2;
+		this->updateCursorRegions(width, height);
+	}
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-			this->updateCursorRegions(width, height);
-		}
-		if (escapePressed)
-		{
-			this->pauseButton->click(this->getGameState());
-		}
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
 
-		bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_PRINTSCREEN);
+	if (escapePressed)
+	{
+		this->pauseButton->click(this->getGameState());
+	}
 
-		if (takeScreenshot)
-		{
-			auto &renderer = this->getGameState()->getRenderer();
-			SDL_Surface *screenshot = renderer.getScreenshot();
-			SDL_SaveBMP(screenshot, "out.bmp");
-			SDL_FreeSurface(screenshot);
-		}
+	bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_PRINTSCREEN);
 
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_RIGHT);
+	if (takeScreenshot)
+	{
+		// Save a screenshot to the local folder.
+		auto &renderer = this->getGameState()->getRenderer();
+		SDL_Surface *screenshot = renderer.getScreenshot();
+		SDL_SaveBMP(screenshot, "out.bmp");
+		SDL_FreeSurface(screenshot);
+	}
 
-		const auto &renderer = this->getGameState()->getRenderer();
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_RIGHT);
 
-		// Get mouse position relative to letterbox coordinates.
-		const Int2 originalPosition = renderer.nativePointToOriginal(
-			this->getMousePosition());
+	const auto &renderer = this->getGameState()->getRenderer();
 
-		if (leftClick)
-		{
-			// Was an interface button clicked?
-			if (PortraitRegion.contains(originalPosition))
-			{
-				this->characterSheetButton->click(this->getGameState());
-			}
-			else if (DrawWeaponRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Draw weapon.");
-			}
-			else if (MapRegion.contains(originalPosition))
-			{
-				this->automapButton->click(this->getGameState());
-			}
-			else if (ThievingRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Thieving.");
-			}
-			else if (StatusRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Status.");
-			}
-			else if (MagicRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Magic.");
-			}
-			else if (LogbookRegion.contains(originalPosition))
-			{
-				this->logbookButton->click(this->getGameState());
-			}
-			else if (UseItemRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Use item.");
-			}
-			else if (RestRegion.contains(originalPosition))
-			{
-				Debug::mention("Game", "Rest.");
-			}
+	// Get mouse position relative to letterbox coordinates.
+	const Int2 originalPosition = renderer.nativePointToOriginal(
+		this->getMousePosition());
 
-			// Later... any entities in the world clicked?
-		}
-		else if (rightClick)
-		{
-			if (MapRegion.contains(originalPosition))
-			{
-				this->worldMapButton->click(this->getGameState());
-			}
-		}
-
-		bool activateHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_e);
-		bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_n);
-		bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_l);
-		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_TAB);
-		bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_m);
-
-		if (activateHotkeyPressed)
-		{
-			// Activate whatever is looked at.
-		}
-		else if (automapHotkeyPressed)
-		{
-			this->automapButton->click(this->getGameState());
-		}
-		else if (logbookHotkeyPressed)
-		{
-			this->logbookButton->click(this->getGameState());
-		}
-		else if (sheetHotkeyPressed)
+	if (leftClick)
+	{
+		// Was an interface button clicked?
+		if (PortraitRegion.contains(originalPosition))
 		{
 			this->characterSheetButton->click(this->getGameState());
 		}
-		else if (worldMapHotkeyPressed)
+		else if (DrawWeaponRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Draw weapon.");
+		}
+		else if (MapRegion.contains(originalPosition))
+		{
+			this->automapButton->click(this->getGameState());
+		}
+		else if (ThievingRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Thieving.");
+		}
+		else if (StatusRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Status.");
+		}
+		else if (MagicRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Magic.");
+		}
+		else if (LogbookRegion.contains(originalPosition))
+		{
+			this->logbookButton->click(this->getGameState());
+		}
+		else if (UseItemRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Use item.");
+		}
+		else if (RestRegion.contains(originalPosition))
+		{
+			Debug::mention("Game", "Rest.");
+		}
+
+		// Later... any entities in the world clicked?
+	}
+	else if (rightClick)
+	{
+		if (MapRegion.contains(originalPosition))
 		{
 			this->worldMapButton->click(this->getGameState());
 		}
 	}
+
+	bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_n);
+	bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_l);
+	bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_TAB);
+	bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_m);
+
+	if (automapHotkeyPressed)
+	{
+		this->automapButton->click(this->getGameState());
+	}
+	else if (logbookHotkeyPressed)
+	{
+		this->logbookButton->click(this->getGameState());
+	}
+	else if (sheetHotkeyPressed)
+	{
+		this->characterSheetButton->click(this->getGameState());
+	}
+	else if (worldMapHotkeyPressed)
+	{
+		this->worldMapButton->click(this->getGameState());
+	}	
 }
 
 void GameWorldPanel::handleMouse(double dt)
 {
-	static_cast<void>(dt);
-
 	const auto &renderer = this->getGameState()->getRenderer();
 
 	const uint32_t mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
@@ -328,10 +314,6 @@ void GameWorldPanel::handleMouse(double dt)
 					middleRight.getWidth();
 			}
 
-			// Reduce the magnitude by a lot as a baseline. Sensitivity can be 
-			// tweaked in the options.
-			percent *= 0.010;
-
 			// No NaNs or infinities allowed.
 			return std::isfinite(percent) ? percent : 0.0;
 		}();
@@ -340,9 +322,14 @@ void GameWorldPanel::handleMouse(double dt)
 		const auto &options = this->getGameState()->getOptions();
 
 		// Yaw the camera left or right. No vertical movement in classic camera mode.
-		player.rotate(dx, 0.0, options.getHorizontalSensitivity(),
+		// Multiply turning speed by delta time so it behaves correctly with different
+		// frame rates.
+		player.rotate(dx * dt, 0.0, options.getHorizontalSensitivity(),
 			options.getVerticalSensitivity(), options.getVerticalFOV());
 	}
+
+	// If right click is held, weapon is out, and mouse motion is significant, then
+	// get the swing direction and swing.
 
 	// Later in development, a 3D camera would be fun (more like Daggerfall), but 
 	// for now the objective is to more closely resemble the original game, so the
@@ -476,15 +463,17 @@ void GameWorldPanel::updateCursorRegions(int width, int height)
 	this->nativeCursorRegions.at(8) = scaleRect(BottomRightRegion);
 }
 
-void GameWorldPanel::tick(double dt, bool &running)
+void GameWorldPanel::tick(double dt)
 {
 	assert(this->getGameState()->gameDataIsActive());
 
-	this->handleEvents(running);
+	// Handle mouse and keyboard for player motion.
 	this->handleMouse(dt);
 	this->handleKeyboard(dt);
 
 	// Animate the game world.
+	// - Later, this should be more explicit about what it's updating exactly.
+	// - Entity AI, spells flying, doors opening/closing, etc.
 	auto *gameData = this->getGameState()->getGameData();
 	gameData->incrementGameTime(dt);
 

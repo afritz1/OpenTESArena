@@ -57,63 +57,29 @@ LogbookPanel::~LogbookPanel()
 
 }
 
-void LogbookPanel::handleEvents(bool &running)
+void LogbookPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool lPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_l);
+
+	if (escapePressed || lPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-		bool lPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_l);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed || lPressed)
-		{
-			this->backButton->click(this->getGameState());
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);		
-
-		if (leftClick && this->backButton->contains(mouseOriginalPoint))
-		{
-			this->backButton->click(this->getGameState());
-		}
+		this->backButton->click(this->getGameState());
 	}
-}
 
-void LogbookPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);		
 
-void LogbookPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void LogbookPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+	if (leftClick && this->backButton->contains(mouseOriginalPoint))
+	{
+		this->backButton->click(this->getGameState());
+	}	
 }
 
 void LogbookPanel::render(Renderer &renderer)

@@ -35,54 +35,30 @@ ImagePanel::~ImagePanel()
 
 }
 
-void ImagePanel::handleEvents(bool &running)
+void ImagePanel::handleEvent(const SDL_Event &e)
 {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool spacePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_SPACE);
+	bool returnPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_RETURN);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool numpadEnterPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_KP_ENTER);
+
+	bool skipHotkeyPressed = spacePressed || returnPressed ||
+		escapePressed || numpadEnterPressed;
+
+	if (leftClick || skipHotkeyPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) ||
-				(e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_ESCAPE) ||
-				(e.key.keysym.sym == SDLK_KP_ENTER));
-
-		if (leftClick || skipHotkeyPressed)
-		{
-			this->skipButton->click(this->getGameState());
-		}
-	}
+		this->skipButton->click(this->getGameState());
+	}	
 }
 
-void ImagePanel::handleMouse(double dt)
+void ImagePanel::tick(double dt)
 {
-	static_cast<void>(dt);
-}
-
-void ImagePanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ImagePanel::tick(double dt, bool &running)
-{
-	this->handleEvents(running);
 	this->currentSeconds += dt;
 	if (this->currentSeconds > this->secondsToDisplay)
 	{

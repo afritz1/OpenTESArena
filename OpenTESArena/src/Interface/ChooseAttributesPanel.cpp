@@ -421,78 +421,44 @@ ChooseAttributesPanel::~ChooseAttributesPanel()
 
 }
 
-void ChooseAttributesPanel::handleEvents(bool &running)
+void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+
+	if (escapePressed)
+	{
+		this->backToRaceButton->click(this->getGameState());
+	}
+
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_RIGHT);
+		
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (leftClick)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-
-		if (applicationExit)
+		if (this->doneButton->contains(mouseOriginalPoint))
 		{
-			running = false;
+			this->doneButton->click(this->getGameState());
 		}
-		if (resized)
+		else if (this->incrementPortraitButton->contains(mouseOriginalPoint))
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed)
-		{
-			this->backToRaceButton->click(this->getGameState());
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_RIGHT);
-
-		if (leftClick)
-		{
-			if (this->doneButton->contains(mouseOriginalPoint))
-			{
-				this->doneButton->click(this->getGameState());
-			}
-			else if (this->incrementPortraitButton->contains(mouseOriginalPoint))
-			{
-				this->incrementPortraitButton->click(this->getGameState());
-			}
-		}
-
-		if (rightClick)
-		{
-			if (this->decrementPortraitButton->contains(mouseOriginalPoint))
-			{
-				this->decrementPortraitButton->click(this->getGameState());
-			}
+			this->incrementPortraitButton->click(this->getGameState());
 		}
 	}
-}
 
-void ChooseAttributesPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseAttributesPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseAttributesPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+	if (rightClick)
+	{
+		if (this->decrementPortraitButton->contains(mouseOriginalPoint))
+		{
+			this->decrementPortraitButton->click(this->getGameState());
+		}
+	}	
 }
 
 void ChooseAttributesPanel::render(Renderer &renderer)

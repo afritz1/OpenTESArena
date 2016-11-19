@@ -21,19 +21,14 @@ private:
 	std::string sequenceName;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	CinematicPanel(GameState *gameState, const std::string &paletteName,
 		const std::string &sequenceName, double secondsPerImage,
 		const std::function<void(GameState*)> &endingAction);
 	virtual ~CinematicPanel();
 
-	static const double DEFAULT_MOVIE_SECONDS_PER_IMAGE;
-
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
+	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
 

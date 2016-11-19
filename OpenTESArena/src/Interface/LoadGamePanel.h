@@ -14,17 +14,13 @@ private:
 	std::unique_ptr<TextBox> underConstructionTextBox;
 	std::unique_ptr<Button> backButton;
 	// up/down arrow buttons, saved game buttons...
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	// This could get the game data boolean from the game state itself to determine
 	// whether to return to the main menu or the pause menu.
 	LoadGamePanel(GameState *gameState);
 	virtual ~LoadGamePanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

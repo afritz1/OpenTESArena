@@ -105,10 +105,10 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		int height = 20;
 		auto function = [](GameState *gameState)
 		{
-            SDL_Event evt;
-            evt.quit.type = SDL_QUIT;
-            evt.quit.timestamp = 0;
-            SDL_PushEvent(&evt);
+            SDL_Event e;
+			e.quit.type = SDL_QUIT;
+			e.quit.timestamp = 0;
+            SDL_PushEvent(&e);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -122,83 +122,50 @@ MainMenuPanel::~MainMenuPanel()
 
 }
 
-void MainMenuPanel::handleEvents(bool &running)
+void MainMenuPanel::handleEvent(const SDL_Event &e)
 {
-	// The mouse will have different behavior when clicking out of the letterbox
-	// depending on each panel's implementation. It might indicate to cancel
-	// whatever is happening, or it might do nothing. Get the SDL mouse position
-	// in the native window and see if it's within the letterbox area in order to
-	// check which behavior to do.
+	bool lPressed = (e.type == SDL_KEYDOWN) && 
+		(e.key.keysym.sym == SDLK_l);
+	bool sPressed = (e.type == SDL_KEYDOWN) && 
+		(e.key.keysym.sym == SDLK_s);
+	bool ePressed = (e.type == SDL_KEYDOWN) && 
+		(e.key.keysym.sym == SDLK_e);
 
-	// If within the letterbox, subtract the letterbox origin from the mouse position
-	// and downscale it by the draw scale because interface dimensions should be
-	// constructed within the original sizes. Maybe there could be a
-	// Panel::nativePointToOriginalInt2(nativePoint) method?
-
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
-
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (lPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool escapePressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_ESCAPE);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
+		this->loadButton->click(this->getGameState());
+	}
+	else if (sPressed)
+	{
+		this->newButton->click(this->getGameState());
+	}
+	else if (ePressed)
+	{
+		this->exitButton->click(this->getGameState());
+	}
 
-		if (applicationExit || escapePressed)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
 
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
 
-		bool loadHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_l);
-		bool newHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_s);
-		bool exitHotkeyPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_e);
-
-		bool loadClicked = leftClick && this->loadButton->contains(mouseOriginalPoint);
-		bool newClicked = leftClick && this->newButton->contains(mouseOriginalPoint);
-		bool exitClicked = leftClick && this->exitButton->contains(mouseOriginalPoint);
-
-		if (loadHotkeyPressed || loadClicked)
+		if (this->loadButton->contains(mouseOriginalPoint))
 		{
 			this->loadButton->click(this->getGameState());
 		}
-		else if (newHotkeyPressed || newClicked)
+		else if (this->newButton->contains(mouseOriginalPoint))
 		{
 			this->newButton->click(this->getGameState());
 		}
-		else if (exitHotkeyPressed || exitClicked)
+		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
 			this->exitButton->click(this->getGameState());
 		}
 	}
-}
-
-void MainMenuPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void MainMenuPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void MainMenuPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
 }
 
 void MainMenuPanel::render(Renderer &renderer)

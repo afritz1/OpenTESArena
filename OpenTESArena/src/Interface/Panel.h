@@ -15,17 +15,15 @@ class GameState;
 class Int2;
 class Renderer;
 
+union SDL_Event;
+
 class Panel
 {
 private:
-	GameState *gameStatePtr;
+	GameState *gameState;
 protected:
-	virtual void handleEvents(bool &running) = 0;
-	virtual void handleMouse(double dt) = 0;
-	virtual void handleKeyboard(double dt) = 0;
-
 	GameState *getGameState() const;
-	double getCursorScale() const; // Should eventually be in the options.
+	double getCursorScale() const;
 	Int2 getMousePosition() const;
 public:
 	Panel(GameState *gameState);
@@ -36,7 +34,16 @@ public:
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
 
-	virtual void tick(double dt, bool &running) = 0;
+	// Handles panel-specific events. Application events like closing and resizing
+	// are handled by the game loop.
+	virtual void handleEvent(const SDL_Event &e) = 0;
+
+	// Animates the panel by delta time. Override this method if a panel animates
+	// in some form each frame without user input, or depends on things like a key
+	// or a mouse button being held down.
+	virtual void tick(double dt);
+
+	// Draws the panel's contents onto the display.
 	virtual void render(Renderer &renderer) = 0;
 };
 

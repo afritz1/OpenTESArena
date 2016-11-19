@@ -61,58 +61,27 @@ LoadGamePanel::~LoadGamePanel()
 
 }
 
-void LoadGamePanel::handleEvents(bool &running)
+void LoadGamePanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (escapePressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
+		this->backButton->click(this->getGameState());
+	}
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed)
-		{
-			this->backButton->click(this->getGameState());
-		}
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
 
-		/*bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);*/
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
 
 		// Listen for up/down arrow click, saved game click...
 	}
-}
-
-void LoadGamePanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void LoadGamePanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void LoadGamePanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
 }
 
 void LoadGamePanel::render(Renderer &renderer)

@@ -37,6 +37,8 @@ private:
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 	bool running;
+
+	void resizeWindow(int width, int height);
 public:
 	GameState();
 	~GameState();
@@ -57,8 +59,6 @@ public:
 	Renderer &getRenderer() const;
 	TextureManager &getTextureManager() const;
 	TextAssets &getTextAssets() const;
-
-	void resizeWindow(int width, int height);
 
 	// Set the next panel at the next tick.
 	void setPanel(std::unique_ptr<Panel> nextPanel);

@@ -48,6 +48,7 @@ WorldMapPanel::WorldMapPanel(GameState *gameState)
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
+	// Leave province name null until one is selected.
 	this->provinceName = nullptr;
 }
 
@@ -56,83 +57,49 @@ WorldMapPanel::~WorldMapPanel()
 
 }
 
-void WorldMapPanel::handleEvents(bool &running)
+void WorldMapPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
-	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-		bool mPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_m);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool mPressed = (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == SDLK_m);
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed || mPressed)
+	if (escapePressed || mPressed)
+	{
+		this->backToGameButton->click(this->getGameState());
+	}
+
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+
+	if (leftClick)
+	{
+		if (this->backToGameButton->contains(mouseOriginalPoint))
 		{
 			this->backToGameButton->click(this->getGameState());
 		}
 
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-
-		if (leftClick)
+		// Listen for map clicks.
+		for (const auto provinceName : Province::getAllProvinceNames())
 		{
-			if (this->backToGameButton->contains(mouseOriginalPoint))
+			Province province(provinceName);
+			const Rect &clickArea = province.getWorldMapClickArea();
+
+			if (clickArea.contains(mouseOriginalPoint))
 			{
-				this->backToGameButton->click(this->getGameState());
-			}
+				// Save the clicked province's name.
+				this->provinceName = std::unique_ptr<ProvinceName>(new ProvinceName(
+					provinceName));
 
-			// Listen for map clicks.
-			for (const auto provinceName : Province::getAllProvinceNames())
-			{
-				Province province(provinceName);
-				const Rect &clickArea = province.getWorldMapClickArea();
-
-				if (clickArea.contains(mouseOriginalPoint))
-				{
-					// Save the clicked province's name.
-					this->provinceName = std::unique_ptr<ProvinceName>(new ProvinceName(
-						provinceName));
-
-					// Go to the province panel.
-					this->provinceButton->click(this->getGameState());
-					break;
-				}
+				// Go to the province panel.
+				this->provinceButton->click(this->getGameState());
+				break;
 			}
 		}
-	}
-}
-
-void WorldMapPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void WorldMapPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void WorldMapPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+	}	
 }
 
 void WorldMapPanel::render(Renderer &renderer)

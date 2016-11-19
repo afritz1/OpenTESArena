@@ -128,71 +128,36 @@ CharacterPanel::~CharacterPanel()
 
 }
 
-void CharacterPanel::handleEvents(bool &running)
+void CharacterPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool tabPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_TAB);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (escapePressed || tabPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-		bool tabPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_TAB);
+		this->doneButton->click(this->getGameState());
+	}
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed || tabPressed)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
+
+		if (this->doneButton->contains(mouseOriginalPoint))
 		{
 			this->doneButton->click(this->getGameState());
 		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-
-		if (leftClick)
+		else if (this->nextPageButton->contains(mouseOriginalPoint))
 		{
-			if (this->doneButton->contains(mouseOriginalPoint))
-			{
-				this->doneButton->click(this->getGameState());
-			}
-
-			else if (this->nextPageButton->contains(mouseOriginalPoint))
-			{
-				this->nextPageButton->click(this->getGameState());
-			}
+			this->nextPageButton->click(this->getGameState());
 		}
 	}
-}
-
-void CharacterPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void CharacterPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void CharacterPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
 }
 
 void CharacterPanel::render(Renderer &renderer)

@@ -1,14 +1,14 @@
 #ifndef CHOOSE_CLASS_PANEL_H
 #define CHOOSE_CLASS_PANEL_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "Panel.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
 // list that says nothing about the classes (thus requiring the manual for 
-// information). I think it would be better to have tooltips.
+// information). I think it's better to have tooltips.
 
 class Button;
 class CharacterClass;
@@ -27,7 +27,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
 	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
-	std::map<int, SDL_Texture*> tooltipTextures;
+	std::unordered_map<int, SDL_Texture*> tooltipTextures;
 	std::vector<std::unique_ptr<CharacterClass>> charClasses;
 	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
 
@@ -37,15 +37,11 @@ private:
 
 	void createTooltip(int tooltipIndex, Renderer &renderer);
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseClassPanel(GameState *gameState);
 	virtual ~ChooseClassPanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

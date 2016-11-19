@@ -30,16 +30,12 @@ private:
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	std::unique_ptr<Button> backToClassButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;
-	std::string name;	
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
+	std::string name;
 public:
 	ChooseNamePanel(GameState *gameState, const CharacterClass &charClass);
 	virtual ~ChooseNamePanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

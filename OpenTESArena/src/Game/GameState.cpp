@@ -59,7 +59,7 @@ GameState::GameState()
 	int iconWidth, iconHeight;
 	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
 	SDL_Surface *icon = Surface::createSurfaceWithFormatFrom(iconPixels.get(),
-		iconWidth, iconHeight, Renderer::DEFAULT_BPP, 
+		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
 	this->renderer->setWindowIcon(icon);
 	SDL_FreeSurface(icon);
@@ -70,7 +70,7 @@ GameState::GameState()
 
 	this->running = true;
 
-	// Use a blitted surface as the cursor instead.
+	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
 	// GameData is initialized when the player enters the game world. 
@@ -165,8 +165,33 @@ void GameState::tick(double dt)
 		this->nextMusic = nullptr;
 	}
 
+	// Handle events for the current panel.
+	SDL_Event e;
+	while (SDL_PollEvent(&e) != 0)
+	{
+		// Application events and window resizes are handled here.
+		bool applicationExit = (e.type == SDL_QUIT);
+		bool resized = (e.type == SDL_WINDOWEVENT) &&
+			(e.window.event == SDL_WINDOWEVENT_RESIZED);
+
+		if (applicationExit)
+		{
+			this->running = false;
+		}
+
+		if (resized)
+		{
+			int width = e.window.data1;
+			int height = e.window.data2;
+			this->resizeWindow(width, height);
+		}
+
+		// Panel-specific events are handled by the panel.
+		this->panel->handleEvent(e);
+	}
+
 	// Tick the current panel by delta time.
-	this->panel->tick(dt, this->running);
+	this->panel->tick(dt);
 }
 
 void GameState::render()

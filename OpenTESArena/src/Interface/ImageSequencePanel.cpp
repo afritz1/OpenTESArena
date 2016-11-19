@@ -40,69 +40,38 @@ ImageSequencePanel::~ImageSequencePanel()
 
 }
 
-void ImageSequencePanel::handleEvents(bool &running)
+void ImageSequencePanel::handleEvent(const SDL_Event &e)
 {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool skipAllHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool skipOneHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		((e.key.keysym.sym == SDLK_SPACE) ||
+		(e.key.keysym.sym == SDLK_RETURN) ||
+			(e.key.keysym.sym == SDLK_KP_ENTER));
+
+	if (skipAllHotkeyPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
+		this->skipButton->click(this->getGameState());
+	}
+	else if (leftClick || skipOneHotkeyPressed)
+	{
+		this->currentSeconds = 0.0;
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
+		const int imageCount = static_cast<int>(this->textureNames.size());
 
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool skipAllHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-		bool skipOneHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) ||
-			(e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_KP_ENTER));
+		this->imageIndex = std::min(this->imageIndex + 1, imageCount);
 
-		if (skipAllHotkeyPressed)
+		if (this->imageIndex == imageCount)
 		{
 			this->skipButton->click(this->getGameState());
 		}
-		else if (leftClick || skipOneHotkeyPressed)
-		{
-			this->currentSeconds = 0.0;
-
-			const int imageCount = static_cast<int>(this->textureNames.size());
-
-			this->imageIndex = std::min(this->imageIndex + 1, imageCount);
-
-			if (this->imageIndex == imageCount)
-			{
-				this->skipButton->click(this->getGameState());
-			}
-		}
-	}
+	}	
 }
 
-void ImageSequencePanel::handleMouse(double dt)
+void ImageSequencePanel::tick(double dt)
 {
-	static_cast<void>(dt);
-}
-
-void ImageSequencePanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ImageSequencePanel::tick(double dt, bool &running)
-{
-	this->handleEvents(running);
-
 	const int imageCount = static_cast<int>(this->textureNames.size());
 
 	// Check if done iterating through images.

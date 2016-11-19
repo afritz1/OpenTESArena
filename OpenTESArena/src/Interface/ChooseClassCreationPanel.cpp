@@ -130,70 +130,34 @@ ChooseClassCreationPanel::~ChooseClassCreationPanel()
 	SDL_DestroyTexture(this->parchment);
 }
 
-void ChooseClassCreationPanel::handleEvents(bool &running)
+void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (escapePressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
+		this->backToMainMenuButton->click(this->getGameState());
+	}
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed)
-		{
-			this->backToMainMenuButton->click(this->getGameState());
-		}
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
 
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
 
-		bool generateClicked = leftClick &&
-			this->generateButton->contains(mouseOriginalPoint);
-		bool selectClicked = leftClick &&
-			this->selectButton->contains(mouseOriginalPoint);
-
-		if (generateClicked)
+		if (this->generateButton->contains(mouseOriginalPoint))
 		{
 			this->generateButton->click(this->getGameState());
 		}
-		else if (selectClicked)
+		else if (this->selectButton->contains(mouseOriginalPoint))
 		{
 			this->selectButton->click(this->getGameState());
 		}
 	}
-}
-
-void ChooseClassCreationPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseClassCreationPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseClassCreationPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
 }
 
 void ChooseClassCreationPanel::render(Renderer &renderer)
@@ -208,7 +172,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	// Draw background.
 	const auto &background = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterCreation), 
+		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(background.get());
 

@@ -1,7 +1,6 @@
 #ifndef CHOOSE_RACE_PANEL_H
 #define CHOOSE_RACE_PANEL_H
 
-#include <memory>
 #include <string>
 
 #include "Panel.h"
@@ -33,16 +32,12 @@ private:
 	bool initialTextBoxVisible;
 
 	void drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer);
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseRacePanel(GameState *gameState, const CharacterClass &charClass, 
 		const std::string &name, CharacterGenderName gender);
 	virtual ~ChooseRacePanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

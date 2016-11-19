@@ -34,16 +34,12 @@ private:
 	std::unique_ptr<CharacterRaceName> raceName;
 	std::string name;
 	int portraitIndex;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseAttributesPanel(GameState *gameState, const CharacterClass &charClass, 
 		const std::string &name, CharacterGenderName gender, CharacterRaceName raceName);
 	virtual ~ChooseAttributesPanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

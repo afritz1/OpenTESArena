@@ -163,95 +163,64 @@ ChooseClassPanel::~ChooseClassPanel()
 	}
 }
 
-void ChooseClassPanel::handleEvents(bool &running)
+void ChooseClassPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+	// Eventually handle mouse motion: if mouse is over scroll bar and
+	// LMB state is down, move scroll bar to that Y position.
+
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+
+	if (escapePressed)
+	{
+		this->backToClassCreationButton->click(this->getGameState());
+	}
+
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool mouseWheelUp = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
+	bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
+
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	// See if a class in the list was clicked, or if it is being scrolled.
+	if (this->classesListBox->contains(mouseOriginalPoint))
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-
-		if (applicationExit)
+		if (leftClick)
 		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed)
-		{
-			this->backToClassCreationButton->click(this->getGameState());
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-
-		bool mouseWheelUp = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
-		bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
-
-		bool scrollUpClick = leftClick && this->upButton->contains(mouseOriginalPoint);
-		bool scrollDownClick = leftClick && this->downButton->contains(mouseOriginalPoint);
-
-		if (this->classesListBox->contains(mouseOriginalPoint))
-		{
-			if (leftClick)
+			// Verify that the clicked index is valid. If so, use that character class.
+			int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
-				// Verify that the clicked index is valid. If so, use that character class.
-				int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
-				if ((index >= 0) && (index < this->classesListBox->getElementCount()))
-				{
-					this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
-						*this->charClasses.at(index).get()));
-					this->acceptButton->click(this->getGameState());
-				}
-			}
-			else if (mouseWheelUp)
-			{
-				this->upButton->click(this->getGameState());
-			}
-			else if (mouseWheelDown)
-			{
-				this->downButton->click(this->getGameState());
+				this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
+					*this->charClasses.at(index).get()));
+				this->acceptButton->click(this->getGameState());
 			}
 		}
-
-		// Check scroll buttons (they are outside the list box).
-		if (scrollUpClick)
+		else if (mouseWheelUp)
 		{
 			this->upButton->click(this->getGameState());
 		}
-		else if (scrollDownClick)
+		else if (mouseWheelDown)
 		{
 			this->downButton->click(this->getGameState());
 		}
 	}
-}
 
-void ChooseClassPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseClassPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void ChooseClassPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+	if (leftClick)
+	{
+		// Check scroll buttons (they are outside the list box to the left).
+		if (this->upButton->contains(mouseOriginalPoint))
+		{
+			this->upButton->click(this->getGameState());
+		}
+		else if (this->downButton->contains(mouseOriginalPoint))
+		{
+			this->downButton->click(this->getGameState());
+		}
+	}	
 }
 
 void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)

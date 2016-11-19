@@ -39,48 +39,31 @@ AutomapPanel::~AutomapPanel()
 
 }
 
-void AutomapPanel::handleEvents(bool &running)
+void AutomapPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool nPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_n);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (escapePressed || nPressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
-		bool nPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_n);
+		this->backToGameButton->click(this->getGameState());
+	}
 
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed || nPressed)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
+
+		// Check if "Exit" was clicked.
+		if (this->backToGameButton->contains(mouseOriginalPoint))
 		{
 			this->backToGameButton->click(this->getGameState());
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-
-		if (leftClick)
-		{
-			// Check if "Exit" was clicked.
-			if (this->backToGameButton->contains(mouseOriginalPoint))
-			{
-				this->backToGameButton->click(this->getGameState());
-			}
 		}
 	}
 }
@@ -91,16 +74,9 @@ void AutomapPanel::handleMouse(double dt)
 	static_cast<void>(dt);
 }
 
-void AutomapPanel::handleKeyboard(double dt)
+void AutomapPanel::tick(double dt)
 {
-	static_cast<void>(dt);
-}
-
-void AutomapPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+	this->handleMouse(dt);
 }
 
 void AutomapPanel::render(Renderer &renderer)

@@ -12,15 +12,15 @@ class AutomapPanel : public Panel
 private:
 	std::unique_ptr<Button> backToGameButton;
 	// Name of location...
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
+
+	// Listen for when the LMB is held on a compass direction.
+	void handleMouse(double dt);
 public:
 	AutomapPanel(GameState *gameState);
 	virtual ~AutomapPanel();
 
-	virtual void tick(double dt, bool &running) override;
+	virtual void handleEvent(const SDL_Event &e) override;
+	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
 

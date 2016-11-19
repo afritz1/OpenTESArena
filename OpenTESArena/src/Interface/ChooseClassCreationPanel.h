@@ -5,7 +5,6 @@
 
 // This panel is for the "How do you wish to select your class?" screen.
 
-// There is a rough draft version of the "Select" option already.
 // The questions are not implemented yet for the "Generate" option.
 
 // There could be new tooltips for each option. I always found it confusing what 
@@ -25,15 +24,11 @@ private:
 	SDL_Texture *parchment;
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
 	std::unique_ptr<Button> backToMainMenuButton, generateButton, selectButton;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ChooseClassCreationPanel(GameState *gameState);
 	virtual ~ChooseClassCreationPanel();
-	
-	virtual void tick(double dt, bool &running) override;
+
+	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

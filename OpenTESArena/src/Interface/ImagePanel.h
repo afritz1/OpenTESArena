@@ -20,17 +20,14 @@ private:
 	std::string paletteName;
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;
-protected:
-	virtual void handleEvents(bool &running) override;
-	virtual void handleMouse(double dt) override;
-	virtual void handleKeyboard(double dt) override;
 public:
 	ImagePanel(GameState *gameState, const std::string &paletteName, 
 		const std::string &textureName, double secondsToDisplay, 
 		const std::function<void(GameState*)> &endingAction);
 	virtual ~ImagePanel();
-	
-	virtual void tick(double dt, bool &running) override;
+
+	virtual void handleEvent(const SDL_Event &e) override;
+	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
 

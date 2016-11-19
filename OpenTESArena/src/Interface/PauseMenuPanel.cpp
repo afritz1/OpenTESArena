@@ -284,98 +284,64 @@ void PauseMenuPanel::updateSoundText(double volume)
 	}();
 }
 
-void PauseMenuPanel::handleEvents(bool &running)
+void PauseMenuPanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	if (escapePressed)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
+		this->resumeButton->click(this->getGameState());
+	}
 
-		if (applicationExit)
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+
+	if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
+
+		// See if any of the buttons are clicked.
+		// (This code is getting kind of bad now. Maybe use a vector?)
+		if (this->loadButton->contains(mouseOriginalPoint))
 		{
-			running = false;
+			this->loadButton->click(this->getGameState());
 		}
-		if (resized)
+		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
+			this->exitButton->click(this->getGameState());
 		}
-		if (escapePressed)
+		else if (this->newButton->contains(mouseOriginalPoint))
+		{
+			this->newButton->click(this->getGameState());
+		}
+		else if (this->saveButton->contains(mouseOriginalPoint))
+		{
+			this->saveButton->click(this->getGameState());
+		}
+		else if (this->resumeButton->contains(mouseOriginalPoint))
 		{
 			this->resumeButton->click(this->getGameState());
 		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-
-		if (leftClick)
+		else if (this->musicUpButton->contains(mouseOriginalPoint))
 		{
-			// See if any of the buttons are clicked.
-			// (This code is getting kind of bad now. Maybe use a vector?)
-			if (this->loadButton->contains(mouseOriginalPoint))
-			{
-				this->loadButton->click(this->getGameState());
-			}
-			else if (this->exitButton->contains(mouseOriginalPoint))
-			{
-				this->exitButton->click(this->getGameState());
-			}
-			else if (this->newButton->contains(mouseOriginalPoint))
-			{
-				this->newButton->click(this->getGameState());
-			}
-			else if (this->saveButton->contains(mouseOriginalPoint))
-			{
-				this->saveButton->click(this->getGameState());
-			}
-			else if (this->resumeButton->contains(mouseOriginalPoint))
-			{
-				this->resumeButton->click(this->getGameState());
-			}
-			else if (this->musicUpButton->contains(mouseOriginalPoint))
-			{
-				this->musicUpButton->click(this->getGameState());
-			}
-			else if (this->musicDownButton->contains(mouseOriginalPoint))
-			{
-				this->musicDownButton->click(this->getGameState());
-			}
-			else if (this->soundUpButton->contains(mouseOriginalPoint))
-			{
-				this->soundUpButton->click(this->getGameState());
-			}
-			else if (this->soundDownButton->contains(mouseOriginalPoint))
-			{
-				this->soundDownButton->click(this->getGameState());
-			}
+			this->musicUpButton->click(this->getGameState());
 		}
-	}
-}
-
-void PauseMenuPanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void PauseMenuPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void PauseMenuPanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
-
-	this->handleEvents(running);
+		else if (this->musicDownButton->contains(mouseOriginalPoint))
+		{
+			this->musicDownButton->click(this->getGameState());
+		}
+		else if (this->soundUpButton->contains(mouseOriginalPoint))
+		{
+			this->soundUpButton->click(this->getGameState());
+		}
+		else if (this->soundDownButton->contains(mouseOriginalPoint))
+		{
+			this->soundDownButton->click(this->getGameState());
+		}
+	}	
 }
 
 void PauseMenuPanel::render(Renderer &renderer)

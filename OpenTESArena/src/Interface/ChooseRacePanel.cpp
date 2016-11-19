@@ -99,104 +99,68 @@ ChooseRacePanel::~ChooseRacePanel()
 	SDL_DestroyTexture(this->parchment);
 }
 
-void ChooseRacePanel::handleEvents(bool &running)
+void ChooseRacePanel::handleEvent(const SDL_Event &e)
 {
-	auto mousePosition = this->getMousePosition();
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
-		.nativePointToOriginal(mousePosition);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_RIGHT);
 
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	// Interact with the pop-up text box if visible.
+	// To do: find a better way to do this (via a stack of pop-ups?).
+	if (this->initialTextBoxVisible)
 	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_RIGHT);
-
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
 		bool enterPressed = (e.type == SDL_KEYDOWN) &&
 			((e.key.keysym.sym == SDLK_RETURN) ||
 			(e.key.keysym.sym == SDLK_KP_ENTER));
 		bool spacePressed = (e.type == SDL_KEYDOWN) &&
 			(e.key.keysym.sym == SDLK_SPACE);
 
-		// Interact with the pop-up text box if visible.
-		// To do: find a better way to do this (via a queue of pop-ups?).
-		if (this->initialTextBoxVisible)
+		bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
+			spacePressed || escapePressed;
+
+		if (hideInitialPopUp)
 		{
-			bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
-				spacePressed || escapePressed;
-
-			if (hideInitialPopUp)
-			{
-				// Hide the initial text box.
-				this->initialTextBoxVisible = false;
-			}
-
-			continue;
+			// Hide the initial text box.
+			this->initialTextBoxVisible = false;
 		}
 
-		// Interact with the map screen instead.
-		if (escapePressed)
-		{
-			this->backToGenderButton->click(this->getGameState());
-		}
-		else if (leftClick)
-		{
-			// Listen for map clicks.
-			for (const auto provinceName : Province::getAllProvinceNames())
-			{
-				Province province(provinceName);
-				const Rect &clickArea = province.getWorldMapClickArea();
-
-				// Ignore the Imperial race because it is not implemented yet.
-				if (clickArea.contains(mouseOriginalPoint) &&
-					(provinceName != ProvinceName::ImperialProvince))
-				{
-					// Save the clicked province's race.
-					this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
-						province.getRaceName()));
-
-					// Go to the attributes panel.
-					this->acceptButton->click(this->getGameState());
-					break;
-				}
-			}
-		}
+		return;
 	}
-}
 
-void ChooseRacePanel::handleMouse(double dt)
-{
-	static_cast<void>(dt);
-}
+	// Interact with the map screen instead.
+	if (escapePressed)
+	{
+		this->backToGenderButton->click(this->getGameState());
+	}
+	else if (leftClick)
+	{
+		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+			.nativePointToOriginal(mousePosition);
 
-void ChooseRacePanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
+		// Listen for map clicks.
+		for (const auto provinceName : Province::getAllProvinceNames())
+		{
+			Province province(provinceName);
+			const Rect &clickArea = province.getWorldMapClickArea();
 
-void ChooseRacePanel::tick(double dt, bool &running)
-{
-	static_cast<void>(dt);
+			// Ignore the Imperial race because it is not implemented yet.
+			if (clickArea.contains(mouseOriginalPoint) &&
+				(provinceName != ProvinceName::ImperialProvince))
+			{
+				// Save the clicked province's race.
+				this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
+					province.getRaceName()));
 
-	this->handleEvents(running);
+				// Go to the attributes panel.
+				this->acceptButton->click(this->getGameState());
+				break;
+			}
+		}
+	}	
 }
 
 void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer)

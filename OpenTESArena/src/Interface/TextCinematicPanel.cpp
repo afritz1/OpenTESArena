@@ -22,8 +22,6 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-const double TextCinematicPanel::DEFAULT_MOVIE_SECONDS_PER_IMAGE = 1.0 / 7.0;
-
 TextCinematicPanel::TextCinematicPanel(GameState *gameState, 
 	const std::string &sequenceName, const std::string &text, 
 	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
@@ -94,69 +92,44 @@ TextCinematicPanel::~TextCinematicPanel()
 
 }
 
-void TextCinematicPanel::handleEvents(bool &running)
+void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
-	{
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool escapePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_ESCAPE);
+	bool escapePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_ESCAPE);
 
-		if (applicationExit)
+	if (escapePressed)
+	{
+		// Force the cinematic to end.
+		this->skipButton->click(this->getGameState());
+	}
+
+	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
+		(e.button.button == SDL_BUTTON_LEFT);
+	bool spacePressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_SPACE);
+	bool returnPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_RETURN);
+	bool numpadEnterPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_KP_ENTER);
+
+	bool skipHotkeyPressed = spacePressed || returnPressed || numpadEnterPressed;
+
+	if (leftClick || skipHotkeyPressed)
+	{
+		this->textIndex++;
+
+		// If done with the last text box, then prepare for the next panel.
+		int textBoxCount = static_cast<int>(this->textBoxes.size());
+		if (this->textIndex >= textBoxCount)
 		{
-			running = false;
-		}
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->getGameState()->resizeWindow(width, height);
-		}
-		if (escapePressed)
-		{
-			// Force the cinematic to end.
+			this->textIndex = textBoxCount - 1;
 			this->skipButton->click(this->getGameState());
 		}
-
-		bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-			(e.button.button == SDL_BUTTON_LEFT);
-		bool skipHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_SPACE) ||
-			(e.key.keysym.sym == SDLK_RETURN) ||
-				(e.key.keysym.sym == SDLK_KP_ENTER));
-
-		if (leftClick || skipHotkeyPressed)
-		{
-			this->textIndex++;
-
-			// If done with the last text box, then prepare for the next panel.
-			int textBoxCount = static_cast<int>(this->textBoxes.size());
-			if (this->textIndex >= textBoxCount)
-			{
-				this->textIndex = textBoxCount - 1;
-				this->skipButton->click(this->getGameState());
-			}
-		}
-	}
+	}	
 }
 
-void TextCinematicPanel::handleMouse(double dt)
+void TextCinematicPanel::tick(double dt)
 {
-	static_cast<void>(dt);
-}
-
-void TextCinematicPanel::handleKeyboard(double dt)
-{
-	static_cast<void>(dt);
-}
-
-void TextCinematicPanel::tick(double dt, bool &running)
-{
-	this->handleEvents(running);
-
 	this->currentImageSeconds += dt;
 
 	while (this->currentImageSeconds > this->secondsPerImage)
