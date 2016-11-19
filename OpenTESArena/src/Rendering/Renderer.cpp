@@ -402,6 +402,18 @@ void Renderer::updateVoxel(int x, int y, int z,
 	this->clProgram->updateVoxel(x, y, z, rects, textureIndex);
 }
 
+void Renderer::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
+{
+	assert(this->clProgram.get() != nullptr);
+	this->clProgram->updateSprite(spriteID, rect, textureIndex);
+}
+
+void Renderer::removeSprite(int spriteID)
+{
+	assert(this->clProgram.get() != nullptr);
+	this->clProgram->removeSprite(spriteID);
+}
+
 void Renderer::clearNative(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);

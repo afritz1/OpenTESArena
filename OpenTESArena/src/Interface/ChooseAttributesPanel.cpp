@@ -315,6 +315,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			makeBuilding(1, 1, 7, worldHeight - 1, 1, { 0 });
 			makeBuilding(10, 1, 3, worldHeight - 1, 1, { 0 });
 
+			// -- test -- Add sprite textures, used later in GameWorldPanel::tick().
+			const SDL_Surface *surface = textureManager.getSurfaces("BARTEND.DFA").at(0);
+			renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
+				surface->w, surface->h);
+			surface = textureManager.getSurfaces("BARTEND.DFA").at(1);
+			renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
+				surface->w, surface->h);
+			// -- end test --
+
 			double gameTime = 0.0; // In seconds. Also affects sun position.
 			std::unique_ptr<GameData> gameData(new GameData(
 				std::move(player), std::move(entityManager), gameTime, 

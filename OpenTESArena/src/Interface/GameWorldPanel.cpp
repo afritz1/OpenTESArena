@@ -497,6 +497,33 @@ void GameWorldPanel::tick(double dt, bool &running)
 	auto &renderer = this->getGameState()->getRenderer();
 	renderer.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
 	renderer.updateGameTime(gameData->getGameTime());
+
+	// -- test -- update test sprites.
+	const Float3d playerRight = player.getFrame().getRight();
+	const Float3f spriteRight(
+		static_cast<float>(-playerRight.getX()),
+		static_cast<float>(-playerRight.getY()),
+		static_cast<float>(-playerRight.getZ()));
+
+	static int index = 0;
+	for (int k = 1; k < gameData->getWorldDepth() - 1; k += 8)
+	{
+		for (int i = 1; i < gameData->getWorldWidth() - 1; i += 8)
+		{
+			Rect3D rect = Rect3D::fromFrame(
+				Float3f(i + 0.50f, 1.0f, k + 0.50f),
+				spriteRight,
+				Float3f(0.0f, 1.0f, 0.0f),
+				(44.0f / 66.0f) * 0.75f,
+				1.0f * 0.75f);
+			renderer.updateSprite(
+				(i - 1) + ((k - 1) * (gameData->getWorldWidth() - 1)), 
+				rect, 
+				30 + ((index / 8) % 2));
+		}
+	}
+	index++;
+	// -- end test --
 }
 
 void GameWorldPanel::render(Renderer &renderer)

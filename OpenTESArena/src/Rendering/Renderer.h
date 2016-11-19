@@ -119,6 +119,8 @@ public:
 		const std::vector<int> &textureIndices);
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 		int textureIndex);
+	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
+	void removeSprite(int spriteID);
 
 	// Fills the desired frame buffer with the draw color, or default black/transparent.
 	void clearNative(const Color &color);

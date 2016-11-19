@@ -8,13 +8,14 @@ This open-source project aims to be a modern engine reimplementation for "The El
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-November 9th, 2016:
+November 18th, 2016:
 
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings and a day/night cycle. No jumping, collision, or sprites yet (they're only in my test project). A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+The game world is currently a barebones test city with some buildings, sprites, and a day/night cycle. No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
+- Esc - pause menu
 - Tab - character sheet and inventory
 - M - world map (click on provinces for province maps)
 - L - logbook
@@ -25,8 +26,6 @@ This is how the test world looks now:
 <br/>
 ![Preview](Preview.PNG)
 <br/>
-
-I'm currently catching back up to the state of the world shown in these other [preview images](samples) because the sprite rendering portion of the graphics engine is being redesigned.
 
 ## Project Details
 
@@ -56,7 +55,7 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 
 ## Building from source
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated October 26th).
+Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated November 18th).
 
 #### Obtaining the developer libraries:
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
@@ -81,15 +80,14 @@ If there is a bug or technical problem in the program, check out the issues tab!
 ## Scope
 
 Current priority:
-- Geometry management
-- Sprites
+- Click to move and turn
+- Options menu
+- Weapon attacks (hold RMB to swing)
 
 Next priority:
 - Character creation questions
-- Click to move and turn
 - Game interface button behavior
-- Options menu
-- Weapon attacks (hold RMB to swing)
+- Lights (street lamps, etc.)
 
 Later:
 - Adaptive super-sampling
@@ -101,7 +99,6 @@ Later:
 - Enemies
 - Inventory and containers
 - Levels and experience
-- Lights (street lamps, etc.)
 - Load artifact data
 - Load class data (to replace classes.txt)
 - Load locations data
