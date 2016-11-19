@@ -5,7 +5,7 @@
 #include "ImagePanel.h"
 
 #include "Button.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -14,10 +14,10 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-ImagePanel::ImagePanel(GameState *gameState, const std::string &paletteName, 
+ImagePanel::ImagePanel(Game *game, const std::string &paletteName, 
 	const std::string &textureName, double secondsToDisplay,
-	const std::function<void(GameState*)> &endingAction)
-	: Panel(gameState)
+	const std::function<void(Game*)> &endingAction)
+	: Panel(game)
 {
 	this->skipButton = [&endingAction]()
 	{
@@ -53,7 +53,7 @@ void ImagePanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick || skipHotkeyPressed)
 	{
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}	
 }
 
@@ -62,7 +62,7 @@ void ImagePanel::tick(double dt)
 	this->currentSeconds += dt;
 	if (this->currentSeconds > this->secondsToDisplay)
 	{
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}
 }
 
@@ -72,7 +72,7 @@ void ImagePanel::render(Renderer &renderer)
 	renderer.clearNative();
 	renderer.clearOriginal();
 
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(

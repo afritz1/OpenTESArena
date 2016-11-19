@@ -4,8 +4,8 @@
 #include "../Math/Rect.h"
 
 ToggleButton::ToggleButton(int x, int y, int width, int height, bool on, 
-	const std::function<void(GameState*)> &onFunction, 
-	const std::function<void(GameState*)> &offFunction)
+	const std::function<void(Game*)> &onFunction, 
+	const std::function<void(Game*)> &offFunction)
 {
 	this->onFunction = onFunction;
 	this->offFunction = offFunction;
@@ -17,8 +17,8 @@ ToggleButton::ToggleButton(int x, int y, int width, int height, bool on,
 }
 
 ToggleButton::ToggleButton(const Int2 &center, int width, int height, bool on,
-	const std::function<void(GameState*)> &onFunction,
-	const std::function<void(GameState*)> &offFunction)
+	const std::function<void(Game*)> &onFunction,
+	const std::function<void(Game*)> &offFunction)
 	: ToggleButton(center.getX() - (width / 2), center.getY() - (height / 2),
 		width, height, on, onFunction, offFunction) { }
 
@@ -38,16 +38,16 @@ bool ToggleButton::contains(const Int2 &point)
 	return rect.contains(point);
 }
 
-void ToggleButton::toggle(GameState *gameState)
+void ToggleButton::toggle(Game *game)
 {
 	this->on = !this->on;
 
 	if (this->on)
 	{
-		this->onFunction(gameState);
+		this->onFunction(game);
 	}
 	else
 	{
-		this->offFunction(gameState);
+		this->offFunction(game);
 	}
 }

@@ -12,7 +12,7 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
@@ -29,13 +29,13 @@
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
-ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &charClass,
+ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, CharacterGenderName gender)
-	: Panel(gameState)
+	: Panel(game)
 {
-	this->parchment = [gameState]()
+	this->parchment = [game]()
 	{
-		auto &renderer = gameState->getRenderer();
+		auto &renderer = game->getRenderer();
 
 		// Create placeholder parchment.
 		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
@@ -48,13 +48,13 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 		return texture;
 	}();
 
-	this->initialTextBox = [gameState, charClass, name]()
+	this->initialTextBox = [game, charClass, name]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 100);
 		Color color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -62,27 +62,27 @@ ChooseRacePanel::ChooseRacePanel(GameState *gameState, const CharacterClass &cha
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToGenderButton = [charClass, name]()
 	{
-		auto function = [charClass, name](GameState *gameState)
+		auto function = [charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
-				gameState, charClass, name));
-			gameState->setPanel(std::move(namePanel));
+				game, charClass, name));
+			game->setPanel(std::move(namePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->acceptButton = [this, gender, charClass, name]()
 	{
-		auto function = [this, gender, charClass, name](GameState *gameState)
+		auto function = [this, gender, charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
-				gameState, charClass, name, gender, *this->raceName.get()));
-			gameState->setPanel(std::move(attributesPanel));
+				game, charClass, name, gender, *this->raceName.get()));
+			game->setPanel(std::move(attributesPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -133,12 +133,12 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	// Interact with the map screen instead.
 	if (escapePressed)
 	{
-		this->backToGenderButton->click(this->getGameState());
+		this->backToGenderButton->click(this->getGame());
 	}
 	else if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Listen for map clicks.
@@ -156,7 +156,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 					province.getRaceName()));
 
 				// Go to the attributes panel.
-				this->acceptButton->click(this->getGameState());
+				this->acceptButton->click(this->getGame());
 				break;
 			}
 		}
@@ -165,7 +165,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 
 void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer)
 {
-	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+	auto mouseOriginalPosition = this->getGame()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());
 	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
 	std::unique_ptr<TextBox> tooltip(new TextBox(
@@ -173,9 +173,9 @@ void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &r
 		mouseOriginalPosition.getY(),
 		Color::White,
 		"Land of the " + raceName,
-		this->getGameState()->getFontManager().getFont(FontName::D),
+		this->getGame()->getFontManager().getFont(FontName::D),
 		TextAlignment::Left,
-		this->getGameState()->getRenderer()));
+		this->getGame()->getRenderer()));
 
 	int tooltipWidth, tooltipHeight;
 	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr,
@@ -212,7 +212,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background map.
@@ -245,7 +245,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw hovered province tooltip.
 	if (!this->initialTextBoxVisible)
 	{
-		auto mouseOriginalPosition = this->getGameState()->getRenderer()
+		auto mouseOriginalPosition = this->getGame()->getRenderer()
 			.nativePointToOriginal(this->getMousePosition());
 
 		// Draw tooltip if the mouse is in a province.

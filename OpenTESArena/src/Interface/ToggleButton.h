@@ -6,23 +6,23 @@
 // A button for toggling on and off. When the button is toggled, the 
 // function for the new toggle state is called.
 
-class GameState;
+class Game;
 class Int2;
 
 class ToggleButton
 {
 private:
-	std::function<void(GameState*)> onFunction;
-	std::function<void(GameState*)> offFunction;
+	std::function<void(Game*)> onFunction;
+	std::function<void(Game*)> offFunction;
 	int x, y, width, height;
 	bool on;
 public:
 	ToggleButton(int x, int y, int width, int height, bool on,
-		const std::function<void(GameState*)> &onFunction,
-		const std::function<void(GameState*)> &offFunction);
+		const std::function<void(Game*)> &onFunction,
+		const std::function<void(Game*)> &offFunction);
 	ToggleButton(const Int2 &center, int width, int height, bool on,
-		const std::function<void(GameState*)> &onFunction,
-		const std::function<void(GameState*)> &offFunction);
+		const std::function<void(Game*)> &onFunction,
+		const std::function<void(Game*)> &offFunction);
 	virtual ~ToggleButton();
 
 	// Returns whether the button is toggled on.
@@ -32,7 +32,7 @@ public:
 	bool contains(const Int2 &point);
 
 	// Switches the toggle state of the button.
-	void toggle(GameState *gameState);
+	void toggle(Game *game);
 };
 
 #endif

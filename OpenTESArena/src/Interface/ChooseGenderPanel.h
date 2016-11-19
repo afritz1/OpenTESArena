@@ -21,7 +21,7 @@ private:
 	std::unique_ptr<CharacterClass> charClass;
 	std::string name;
 public:
-	ChooseGenderPanel(GameState *gameState, const CharacterClass &charClass,
+	ChooseGenderPanel(Game *game, const CharacterClass &charClass,
 		const std::string &name);
 	virtual ~ChooseGenderPanel();
 

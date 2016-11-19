@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/FontManager.h"
@@ -56,8 +56,8 @@ namespace
 	};
 }
 
-ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &province)
-	: Panel(gameState)
+ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
+	: Panel(game)
 {
 	this->searchButton = []()
 	{
@@ -66,7 +66,7 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// Nothing yet.
 		};
@@ -80,7 +80,7 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// Nothing yet.
 		};
@@ -94,10 +94,10 @@ ProvinceMapPanel::ProvinceMapPanel(GameState *gameState, const Province &provinc
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(gameState));
-			gameState->setPanel(std::move(gamePanel));
+			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
+			game->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
 	}();
@@ -121,7 +121,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || rightClick)
 	{
-		this->backToWorldMapButton->click(this->getGameState());
+		this->backToWorldMapButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -130,20 +130,20 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->searchButton->contains(mouseOriginalPoint))
 		{
-			this->searchButton->click(this->getGameState());
+			this->searchButton->click(this->getGame());
 		}
 		else if (this->travelButton->contains(mouseOriginalPoint))
 		{
-			this->travelButton->click(this->getGameState());
+			this->travelButton->click(this->getGame());
 		}
 		else if (this->backToWorldMapButton->contains(mouseOriginalPoint))
 		{
-			this->backToWorldMapButton->click(this->getGameState());
+			this->backToWorldMapButton->click(this->getGame());
 		}
 
 		// Check locations for clicks...
@@ -158,7 +158,7 @@ void ProvinceMapPanel::tick(double dt)
 
 void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer)
 {
-	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+	auto mouseOriginalPosition = this->getGame()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());
 
 	std::unique_ptr<TextBox> tooltip(new TextBox(
@@ -166,9 +166,9 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 		mouseOriginalPosition.getY(),
 		Color::White,
 		ProvinceButtonTooltips.at(buttonName),
-		this->getGameState()->getFontManager().getFont(FontName::D),
+		this->getGame()->getFontManager().getFont(FontName::D),
 		TextAlignment::Left,
-		this->getGameState()->getRenderer()));
+		this->getGame()->getRenderer()));
 
 	int tooltipWidth, tooltipHeight;
 	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr, 
@@ -200,14 +200,14 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 void ProvinceMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGameState()->gameDataIsActive());
+	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clearNative();
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get the texture name for this province.
@@ -221,7 +221,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(mapBackground.get());
 
 	// Draw tooltip if the mouse is over a button.
-	auto mouseOriginalPosition = this->getGameState()->getRenderer()
+	auto mouseOriginalPosition = this->getGame()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());
 
 	for (const auto &pair : ProvinceButtonTooltips)

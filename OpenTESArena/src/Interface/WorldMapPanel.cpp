@@ -8,7 +8,7 @@
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/PaletteFile.h"
@@ -21,29 +21,29 @@
 #include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
-WorldMapPanel::WorldMapPanel(GameState *gameState)
-	: Panel(gameState)
+WorldMapPanel::WorldMapPanel(Game *game)
+	: Panel(game)
 {
 	this->backToGameButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 22, Renderer::ORIGINAL_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(gamePanel));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
+			game->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
 
 	this->provinceButton = [this]()
 	{
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(
-				gameState, Province(*this->provinceName.get())));
-			gameState->setPanel(std::move(provincePanel));
+				game, Province(*this->provinceName.get())));
+			game->setPanel(std::move(provincePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -60,7 +60,7 @@ WorldMapPanel::~WorldMapPanel()
 void WorldMapPanel::handleEvent(const SDL_Event &e)
 {
 	const Int2 mousePosition = this->getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	bool escapePressed = (e.type == SDL_KEYDOWN) &&
@@ -69,7 +69,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || mPressed)
 	{
-		this->backToGameButton->click(this->getGameState());
+		this->backToGameButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -79,7 +79,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 	{
 		if (this->backToGameButton->contains(mouseOriginalPoint))
 		{
-			this->backToGameButton->click(this->getGameState());
+			this->backToGameButton->click(this->getGame());
 		}
 
 		// Listen for map clicks.
@@ -95,7 +95,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 					provinceName));
 
 				// Go to the province panel.
-				this->provinceButton->click(this->getGameState());
+				this->provinceButton->click(this->getGame());
 				break;
 			}
 		}
@@ -104,14 +104,14 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 void WorldMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGameState()->gameDataIsActive());
+	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clearNative();
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw world map background. This one has "Exit" at the bottom right.

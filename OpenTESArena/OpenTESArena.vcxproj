@@ -212,7 +212,6 @@
     <ClCompile Include="src\Interface\CinematicPanel.cpp" />
     <ClCompile Include="src\Interface\Button.cpp" />
     <ClCompile Include="src\Interface\MainMenuPanel.cpp" />
-    <ClCompile Include="src\Game\GameState.cpp" />
     <ClCompile Include="src\Game\Game.cpp" />
     <ClCompile Include="src\Items\MiscellaneousArtifactData.cpp" />
     <ClCompile Include="src\Items\ShieldArtifactData.cpp" />
@@ -354,7 +353,6 @@
     <ClInclude Include="src\Interface\CinematicPanel.h" />
     <ClInclude Include="src\Interface\Button.h" />
     <ClInclude Include="src\Interface\MainMenuPanel.h" />
-    <ClInclude Include="src\Game\GameState.h" />
     <ClInclude Include="src\Game\Game.h" />
     <ClInclude Include="src\Items\MiscellaneousArtifactData.h" />
     <ClInclude Include="src\Items\ShieldArtifactData.h" />

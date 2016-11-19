@@ -8,7 +8,7 @@
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -21,15 +21,15 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-OptionsPanel::OptionsPanel(GameState *gameState)
-	: Panel(gameState)
+OptionsPanel::OptionsPanel(Game *game)
+	: Panel(game)
 {
-	this->titleTextBox = [gameState]()
+	this->titleTextBox = [game]()
 	{
 		Int2 center(160, 30);
 		auto color = Color::White;
 		std::string text = "Options";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -37,15 +37,15 @@ OptionsPanel::OptionsPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToPauseButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
-			gameState->setPanel(std::move(pausePanel));
+			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
+			game->setPanel(std::move(pausePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -63,7 +63,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToPauseButton->click(this->getGameState());
+		this->backToPauseButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -72,7 +72,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Option clicks...
@@ -86,7 +86,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw temporary background.

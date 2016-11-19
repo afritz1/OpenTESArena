@@ -27,7 +27,7 @@ private:
 	std::unique_ptr<Button> doneButton, nextPageButton;
 	std::vector<Int2> headOffsets;
 public:
-	CharacterPanel(GameState *gameState);
+	CharacterPanel(Game *game);
 	virtual ~CharacterPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

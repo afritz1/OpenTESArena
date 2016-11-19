@@ -26,7 +26,7 @@ private:
 	void updateMusicText(double volume);
 	void updateSoundText(double volume);
 public:
-	PauseMenuPanel(GameState *gameState);
+	PauseMenuPanel(Game *game);
 	virtual ~PauseMenuPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

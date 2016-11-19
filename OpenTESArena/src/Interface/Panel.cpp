@@ -8,7 +8,7 @@
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
@@ -23,33 +23,33 @@
 
 #include "components/vfs/manager.hpp"
 
-Panel::Panel(GameState *gameState)
+Panel::Panel(Game *game)
 {
-	this->gameState = gameState;
+	this->game = game;
 }
 
 Panel::~Panel()
 {
-	// gameState is owned by the Game object.
+	// Game is owned by the Game object.
 }
 
-std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
+std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 {
 	// If the intro skip option is set, then jump to the main menu.
-	if (gameState->getOptions().introIsSkipped())
+	if (game->getOptions().introIsSkipped())
 	{
-		return std::unique_ptr<Panel>(new MainMenuPanel(gameState));
+		return std::unique_ptr<Panel>(new MainMenuPanel(game));
 	}
 
 	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
-	auto changeToMainMenu = [](GameState *gameState)
+	auto changeToMainMenu = [](Game *game)
 	{
-		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
-		gameState->setPanel(std::move(mainMenuPanel));
+		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
+		game->setPanel(std::move(mainMenuPanel));
 	};
 
-	auto changeToIntroStory = [changeToMainMenu](GameState *gameState)
+	auto changeToIntroStory = [changeToMainMenu](Game *game)
 	{
 		std::vector<std::string> paletteNames
 		{
@@ -69,43 +69,43 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		};
 
 		std::unique_ptr<Panel> introStoryPanel(new ImageSequencePanel(
-			gameState,
+			game,
 			paletteNames,
 			textureNames,
 			imageDurations,
 			changeToMainMenu));
 
-		gameState->setPanel(std::move(introStoryPanel));
+		game->setPanel(std::move(introStoryPanel));
 	};
 
-	auto changeToScrolling = [changeToIntroStory](GameState *gameState)
+	auto changeToScrolling = [changeToIntroStory](Game *game)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
-			gameState,
+			game,
 			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			PaletteFile::fromName(PaletteName::Default),
 			0.042,
 			changeToIntroStory));
-		gameState->setPanel(std::move(scrollingPanel));
+		game->setPanel(std::move(scrollingPanel));
 	};
 
-	auto changeToQuote = [changeToScrolling](GameState *gameState)
+	auto changeToQuote = [changeToScrolling](Game *game)
 	{
 		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> quotePanel(new ImagePanel(
-			gameState,
+			game,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroQuote),
 			secondsToDisplay,
 			changeToScrolling));
-		gameState->setPanel(std::move(quotePanel));
+		game->setPanel(std::move(quotePanel));
 	};
 
-	auto makeIntroTitlePanel = [changeToQuote, gameState]()
+	auto makeIntroTitlePanel = [changeToQuote, game]()
 	{
 		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> titlePanel(new ImagePanel(
-			gameState,
+			game,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroTitle),
 			secondsToDisplay,
@@ -113,16 +113,16 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 		return std::move(titlePanel);
 	};
 
-	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](GameState *gameState)
+	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game *game)
 	{
 		std::unique_ptr<Panel> titlePanel = makeIntroTitlePanel();
-		gameState->setPanel(std::move(titlePanel));
+		game->setPanel(std::move(titlePanel));
 	};
 
-	/*auto makeIntroBookPanel = [changeToTitle, gameState]()
+	/*auto makeIntroBookPanel = [changeToTitle, game]()
 	{
 		std::unique_ptr<Panel> introBook(new CinematicPanel(
-			gameState,
+			game,
 			TextureFile::fromName(TextureSequenceName::IntroBook),
 			PaletteFile::fromName(PaletteName::Default),
 			0.142, // Roughly 7 fps.
@@ -143,14 +143,14 @@ std::unique_ptr<Panel> Panel::defaultPanel(GameState *gameState)
 	//return (stream != nullptr) ? makeIntroBookPanel() : makeIntroTitlePanel();
 }
 
-GameState *Panel::getGameState() const
+Game *Panel::getGame() const
 {
-	return this->gameState;
+	return this->game;
 }
 
 double Panel::getCursorScale() const
 {
-	double cursorScale = this->getGameState()->getOptions().getCursorScale();
+	double cursorScale = this->getGame()->getOptions().getCursorScale();
 	return cursorScale;
 }
 

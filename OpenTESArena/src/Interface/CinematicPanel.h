@@ -10,7 +10,7 @@
 // eventually lead to another panel. Skipping is available, too.
 
 class Button;
-class GameState;
+class Game;
 class Renderer;
 
 class CinematicPanel : public Panel
@@ -22,9 +22,9 @@ private:
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
 public:
-	CinematicPanel(GameState *gameState, const std::string &paletteName,
+	CinematicPanel(Game *game, const std::string &paletteName,
 		const std::string &sequenceName, double secondsPerImage,
-		const std::function<void(GameState*)> &endingAction);
+		const std::function<void(Game*)> &endingAction);
 	virtual ~CinematicPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -20,7 +20,7 @@
 // newlines built in as usual.
 
 class Button;
-class GameState;
+class Game;
 class Renderer;
 class TextBox;
 
@@ -33,9 +33,9 @@ private:
 	double secondsPerImage, currentImageSeconds;
 	int imageIndex, textIndex;
 public:
-	TextCinematicPanel(GameState *gameState, const std::string &sequenceName,
+	TextCinematicPanel(Game *game, const std::string &sequenceName,
 		const std::string &text, double secondsPerImage,
-		const std::function<void(GameState*)> &endingAction);
+		const std::function<void(Game*)> &endingAction);
 	virtual ~TextCinematicPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

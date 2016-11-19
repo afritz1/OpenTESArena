@@ -10,7 +10,7 @@
 #include "CinematicPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
@@ -24,18 +24,18 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
-MainMenuPanel::MainMenuPanel(GameState *gameState)
-	: Panel(gameState)
+MainMenuPanel::MainMenuPanel(Game *game)
+	: Panel(game)
 {
 	this->loadButton = []()
 	{
 		Int2 center(168, 58);
 		int width = 150;
 		int height = 20;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
-			gameState->setPanel(std::move(loadPanel));
+			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
+			game->setPanel(std::move(loadPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -45,17 +45,17 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		Int2 center(168, 112);
 		int width = 150;
 		int height = 20;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// Link together the opening scroll, intro cinematic, and character creation.
-			auto changeToCharCreation = [](GameState *gameState)
+			auto changeToCharCreation = [](Game *game)
 			{
-				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(gameState));
-				gameState->setPanel(std::move(creationPanel));
-				gameState->setMusic(MusicName::Sheet);
+				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
+				game->setPanel(std::move(creationPanel));
+				game->setMusic(MusicName::Sheet);
 			};
 
-			auto changeToNewGameStory = [changeToCharCreation](GameState *gameState)
+			auto changeToNewGameStory = [changeToCharCreation](Game *game)
 			{
 				std::vector<std::string> paletteNames
 				{
@@ -77,23 +77,23 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 				};
 
 				std::unique_ptr<Panel> newGameStoryPanel(new ImageSequencePanel(
-					gameState,
+					game,
 					paletteNames,
 					textureNames,
 					imageDurations,
 					changeToCharCreation));
 
-				gameState->setPanel(std::move(newGameStoryPanel));
+				game->setPanel(std::move(newGameStoryPanel));
 			};
 
 			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
-				gameState,
+				game,
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				PaletteFile::fromName(PaletteName::Default),
 				0.042,
 				changeToNewGameStory));
-			gameState->setPanel(std::move(cinematicPanel));
-			gameState->setMusic(MusicName::EvilIntro);
+			game->setPanel(std::move(cinematicPanel));
+			game->setMusic(MusicName::EvilIntro);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -103,7 +103,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 		Int2 center(168, 158);
 		int width = 45;
 		int height = 20;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
             SDL_Event e;
 			e.quit.type = SDL_QUIT;
@@ -114,7 +114,7 @@ MainMenuPanel::MainMenuPanel(GameState *gameState)
 	}();
 
 	// The game data should not be active on the main menu.
-	assert(!gameState->gameDataIsActive());
+	assert(!game->gameDataIsActive());
 }
 
 MainMenuPanel::~MainMenuPanel()
@@ -133,15 +133,15 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 
 	if (lPressed)
 	{
-		this->loadButton->click(this->getGameState());
+		this->loadButton->click(this->getGame());
 	}
 	else if (sPressed)
 	{
-		this->newButton->click(this->getGameState());
+		this->newButton->click(this->getGame());
 	}
 	else if (ePressed)
 	{
-		this->exitButton->click(this->getGameState());
+		this->exitButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -150,20 +150,20 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->loadButton->contains(mouseOriginalPoint))
 		{
-			this->loadButton->click(this->getGameState());
+			this->loadButton->click(this->getGame());
 		}
 		else if (this->newButton->contains(mouseOriginalPoint))
 		{
-			this->newButton->click(this->getGameState());
+			this->newButton->click(this->getGame());
 		}
 		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
-			this->exitButton->click(this->getGameState());
+			this->exitButton->click(this->getGame());
 		}
 	}
 }
@@ -175,7 +175,7 @@ void MainMenuPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw main menu.

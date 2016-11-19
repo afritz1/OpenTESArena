@@ -16,7 +16,7 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/CoordinateFrame.h"
 #include "../Math/Int2.h"
@@ -73,18 +73,18 @@ namespace
 	const Rect ScrollDownRegion(208, 42, 9, 9);
 }
 
-GameWorldPanel::GameWorldPanel(GameState *gameState)
-	: Panel(gameState)
+GameWorldPanel::GameWorldPanel(Game *game)
+	: Panel(game)
 {
-	assert(gameState->gameDataIsActive());
+	assert(game->gameDataIsActive());
 
-	this->playerNameTextBox = [gameState]()
+	this->playerNameTextBox = [game]()
 	{
 		int x = 17;
 		int y = 154;
 		Color color(215, 121, 8);
-		std::string text = gameState->getGameData()->getPlayer().getFirstName();
-		auto &font = gameState->getFontManager().getFont(FontName::Char);
+		std::string text = game->getGameData().getPlayer().getFirstName();
+		auto &font = game->getFontManager().getFont(FontName::Char);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
@@ -93,61 +93,61 @@ GameWorldPanel::GameWorldPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->automapButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> automapPanel(new AutomapPanel(gameState));
-			gameState->setPanel(std::move(automapPanel));
+			std::unique_ptr<Panel> automapPanel(new AutomapPanel(game));
+			game->setPanel(std::move(automapPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->characterSheetButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(gameState));
-			gameState->setPanel(std::move(sheetPanel));
+			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
+			game->setPanel(std::move(sheetPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->logbookButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(gameState));
-			gameState->setPanel(std::move(logbookPanel));
+			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
+			game->setPanel(std::move(logbookPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->pauseButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(gameState));
-			gameState->setPanel(std::move(pausePanel));
+			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
+			game->setPanel(std::move(pausePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	this->worldMapButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> mapPanel(new WorldMapPanel(gameState));
-			gameState->setPanel(std::move(mapPanel));
+			std::unique_ptr<Panel> mapPanel(new WorldMapPanel(game));
+			game->setPanel(std::move(mapPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
 	// Set all of the cursor regions relative to the current window.
-	const Int2 screenDims = gameState->getRenderer().getWindowDimensions();
+	const Int2 screenDims = game->getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.getX(), screenDims.getY());
 }
 
@@ -174,7 +174,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->pauseButton->click(this->getGameState());
+		this->pauseButton->click(this->getGame());
 	}
 
 	bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
@@ -183,7 +183,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	if (takeScreenshot)
 	{
 		// Save a screenshot to the local folder.
-		auto &renderer = this->getGameState()->getRenderer();
+		auto &renderer = this->getGame()->getRenderer();
 		SDL_Surface *screenshot = renderer.getScreenshot();
 		SDL_SaveBMP(screenshot, "out.bmp");
 		SDL_FreeSurface(screenshot);
@@ -194,7 +194,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 		(e.button.button == SDL_BUTTON_RIGHT);
 
-	const auto &renderer = this->getGameState()->getRenderer();
+	const auto &renderer = this->getGame()->getRenderer();
 
 	// Get mouse position relative to letterbox coordinates.
 	const Int2 originalPosition = renderer.nativePointToOriginal(
@@ -205,7 +205,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Was an interface button clicked?
 		if (PortraitRegion.contains(originalPosition))
 		{
-			this->characterSheetButton->click(this->getGameState());
+			this->characterSheetButton->click(this->getGame());
 		}
 		else if (DrawWeaponRegion.contains(originalPosition))
 		{
@@ -213,7 +213,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (MapRegion.contains(originalPosition))
 		{
-			this->automapButton->click(this->getGameState());
+			this->automapButton->click(this->getGame());
 		}
 		else if (ThievingRegion.contains(originalPosition))
 		{
@@ -229,7 +229,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (LogbookRegion.contains(originalPosition))
 		{
-			this->logbookButton->click(this->getGameState());
+			this->logbookButton->click(this->getGame());
 		}
 		else if (UseItemRegion.contains(originalPosition))
 		{
@@ -246,7 +246,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		if (MapRegion.contains(originalPosition))
 		{
-			this->worldMapButton->click(this->getGameState());
+			this->worldMapButton->click(this->getGame());
 		}
 	}
 
@@ -261,25 +261,25 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	if (automapHotkeyPressed)
 	{
-		this->automapButton->click(this->getGameState());
+		this->automapButton->click(this->getGame());
 	}
 	else if (logbookHotkeyPressed)
 	{
-		this->logbookButton->click(this->getGameState());
+		this->logbookButton->click(this->getGame());
 	}
 	else if (sheetHotkeyPressed)
 	{
-		this->characterSheetButton->click(this->getGameState());
+		this->characterSheetButton->click(this->getGame());
 	}
 	else if (worldMapHotkeyPressed)
 	{
-		this->worldMapButton->click(this->getGameState());
+		this->worldMapButton->click(this->getGame());
 	}	
 }
 
 void GameWorldPanel::handleMouse(double dt)
 {
-	const auto &renderer = this->getGameState()->getRenderer();
+	const auto &renderer = this->getGame()->getRenderer();
 
 	const uint32_t mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
 	const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
@@ -318,8 +318,8 @@ void GameWorldPanel::handleMouse(double dt)
 			return std::isfinite(percent) ? percent : 0.0;
 		}();
 
-		auto &player = this->getGameState()->getGameData()->getPlayer();
-		const auto &options = this->getGameState()->getOptions();
+		auto &player = this->getGame()->getGameData().getPlayer();
+		const auto &options = this->getGame()->getOptions();
 
 		// Yaw the camera left or right. No vertical movement in classic camera mode.
 		// Multiply turning speed by delta time so it behaves correctly with different
@@ -345,13 +345,13 @@ void GameWorldPanel::handleMouse(double dt)
 
 	if (turning)
 	{
-		auto dimensions = this->getGameState()->getRenderer().getWindowDimensions();
+		auto dimensions = this->getGame()->getRenderer().getWindowDimensions();
 		double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
 		double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
 
 		// Pitch and/or yaw the camera.
-		const auto &options = this->getGameState()->getOptions();
-		this->getGameState()->getGameData()->getPlayer().rotate(dxx, -dyy,
+		const auto &options = this->getGame()->getOptions();
+		this->getGame()->getGameData().getPlayer().rotate(dxx, -dyy,
 			options.getHorizontalSensitivity(), options.getVerticalSensitivity(),
 			options.getVerticalFOV());
 	}*/
@@ -373,7 +373,7 @@ void GameWorldPanel::handleKeyboard(double dt)
 	if (any)
 	{
 		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
-		auto &player = this->getGameState()->getGameData()->getPlayer();
+		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// Get some relevant player direction data.
 		Float2d groundDirection = player.getGroundDirection();
@@ -465,7 +465,7 @@ void GameWorldPanel::updateCursorRegions(int width, int height)
 
 void GameWorldPanel::tick(double dt)
 {
-	assert(this->getGameState()->gameDataIsActive());
+	assert(this->getGame()->gameDataIsActive());
 
 	// Handle mouse and keyboard for player motion.
 	this->handleMouse(dt);
@@ -474,18 +474,18 @@ void GameWorldPanel::tick(double dt)
 	// Animate the game world.
 	// - Later, this should be more explicit about what it's updating exactly.
 	// - Entity AI, spells flying, doors opening/closing, etc.
-	auto *gameData = this->getGameState()->getGameData();
-	gameData->incrementGameTime(dt);
+	auto &gameData = this->getGame()->getGameData();
+	gameData.incrementGameTime(dt);
 
 	// Tick the player.
-	auto &player = gameData->getPlayer();
-	player.tick(this->getGameState(), dt);
+	auto &player = gameData.getPlayer();
+	player.tick(this->getGame(), dt);
 
 	// Update CLProgram members that are refreshed each frame.
-	double verticalFOV = this->getGameState()->getOptions().getVerticalFOV();
-	auto &renderer = this->getGameState()->getRenderer();
+	double verticalFOV = this->getGame()->getOptions().getVerticalFOV();
+	auto &renderer = this->getGame()->getRenderer();
 	renderer.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
-	renderer.updateGameTime(gameData->getGameTime());
+	renderer.updateGameTime(gameData.getGameTime());
 
 	// -- test -- update test sprites.
 	const Float3d playerRight = player.getFrame().getRight();
@@ -495,9 +495,9 @@ void GameWorldPanel::tick(double dt)
 		static_cast<float>(-playerRight.getZ()));
 
 	static int index = 0;
-	for (int k = 1; k < gameData->getWorldDepth() - 1; k += 8)
+	for (int k = 1; k < gameData.getWorldDepth() - 1; k += 8)
 	{
-		for (int i = 1; i < gameData->getWorldWidth() - 1; i += 8)
+		for (int i = 1; i < gameData.getWorldWidth() - 1; i += 8)
 		{
 			Rect3D rect = Rect3D::fromFrame(
 				Float3f(i + 0.50f, 1.0f, k + 0.50f),
@@ -506,7 +506,7 @@ void GameWorldPanel::tick(double dt)
 				(44.0f / 66.0f) * 0.75f,
 				1.0f * 0.75f);
 			renderer.updateSprite(
-				(i - 1) + ((k - 1) * (gameData->getWorldWidth() - 1)), 
+				(i - 1) + ((k - 1) * (gameData.getWorldWidth() - 1)), 
 				rect, 
 				30 + ((index / 8) % 2));
 		}
@@ -517,7 +517,7 @@ void GameWorldPanel::tick(double dt)
 
 void GameWorldPanel::render(Renderer &renderer)
 {
-	assert(this->getGameState()->gameDataIsActive());
+	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clearNative();
@@ -529,7 +529,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.renderWorld();
 
 	// Set screen palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Set original frame buffer blending to true.
@@ -542,7 +542,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	const auto &player = this->getGameState()->getGameData()->getPlayer();
+	const auto &player = this->getGame()->getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceName(), true);
 	const auto &portrait = textureManager.getTextures(headsFilename)

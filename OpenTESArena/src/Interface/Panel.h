@@ -4,14 +4,14 @@
 #include <memory>
 
 // Each panel interprets user input and draws to the screen. There is only one panel 
-// active at a time, and it is owned by the GameState.
+// active at a time, and it is owned by the Game.
 
 // How might "continued" text boxes work? Arena has some pop-up text boxes that have
 // multiple screens based on the amount of text, and even some buttons like "yes/no" on
 // the last screen. I think I'll just replace them with scrolled text boxes. The buttons
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
-class GameState;
+class Game;
 class Int2;
 class Renderer;
 
@@ -20,16 +20,16 @@ union SDL_Event;
 class Panel
 {
 private:
-	GameState *gameState;
+	Game *game;
 protected:
-	GameState *getGameState() const;
+	Game *getGame() const;
 	double getCursorScale() const;
 	Int2 getMousePosition() const;
 public:
-	Panel(GameState *gameState);
+	Panel(Game *game);
 	virtual ~Panel();
 
-	static std::unique_ptr<Panel> defaultPanel(GameState *gameState);
+	static std::unique_ptr<Panel> defaultPanel(Game *game);
 
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);

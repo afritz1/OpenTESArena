@@ -16,7 +16,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<Button> backToPauseButton;
 public:
-	OptionsPanel(GameState *gameState);
+	OptionsPanel(Game *game);
 	virtual ~OptionsPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

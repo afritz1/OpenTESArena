@@ -17,7 +17,7 @@
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
 #include "../Math/Random.h"
@@ -40,17 +40,17 @@
 #include "../Utilities/String.h"
 #include "../World/VoxelBuilder.h"
 
-ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
+ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
 	CharacterRaceName raceName)
-	: Panel(gameState), headOffsets()
+	: Panel(game), headOffsets()
 {
-	this->nameTextBox = [gameState, name]()
+	this->nameTextBox = [game, name]()
 	{
 		Int2 origin(10, 8);
 		Color color(199, 199, 199);
 		std::string text = name;
-		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			origin.getX(),
@@ -59,15 +59,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->raceTextBox = [gameState, raceName]()
+	this->raceTextBox = [game, raceName]()
 	{
 		Int2 origin(10, 17);
 		Color color(199, 199, 199);
 		std::string text = CharacterRace(raceName).toString();
-		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			origin.getX(),
@@ -76,15 +76,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->classTextBox = [gameState, charClass]()
+	this->classTextBox = [game, charClass]()
 	{
 		Int2 origin(10, 26);
 		Color color(199, 199, 199);
 		std::string text = charClass.getDisplayName();
-		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			origin.getX(),
@@ -93,16 +93,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToRaceButton = [charClass, name, gender]()
 	{
-		auto function = [charClass, name, gender](GameState *gameState)
+		auto function = [charClass, name, gender](Game *game)
 		{
 			std::unique_ptr<Panel> racePanel(new ChooseRacePanel(
-				gameState, charClass, name, gender));
-			gameState->setPanel(std::move(racePanel));
+				game, charClass, name, gender));
+			game->setPanel(std::move(racePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -113,7 +113,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		int width = 21;
 		int height = 12;
 
-		auto gameDataFunction = [this, charClass, name, gender, raceName](GameState *gameState)
+		auto gameDataFunction = [this, charClass, name, gender, raceName](Game *game)
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
@@ -138,15 +138,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			int worldDepth = 32;
 
 			// Initialize 3D rendering program.
-			auto &renderer = gameState->getRenderer();
+			auto &renderer = game->getRenderer();
 			renderer.initializeWorldRendering(
 				worldWidth, worldHeight, worldDepth, 
-				gameState->getOptions().getResolutionScale(), false);
+				game->getOptions().getResolutionScale(), false);
 
 			// Send some textures and test geometry to CL device memory. Eventually
 			// this will be moved out to another data class, maybe stored in the game
 			// data object.
-			auto &textureManager = gameState->getTextureManager();
+			auto &textureManager = game->getTextureManager();
 			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 			std::vector<const SDL_Surface*> surfaces =
@@ -330,19 +330,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 				worldWidth, worldHeight, worldDepth));
 
 			// Set the game data before constructing the game world panel.
-			gameState->setGameData(std::move(gameData));
+			game->setGameData(std::move(gameData));
 		};
 
-		auto gameFunction = [](GameState *gameState)
+		auto gameFunction = [](Game *game)
 		{
-			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(gameWorldPanel));
-			gameState->setMusic(MusicName::Overcast);
+			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
+			game->setPanel(std::move(gameWorldPanel));
+			game->setMusic(MusicName::Overcast);
 		};
 
-		auto cinematicFunction = [gameDataFunction, gameFunction](GameState *gameState)
+		auto cinematicFunction = [gameDataFunction, gameFunction](Game *game)
 		{
-			gameDataFunction(gameState);
+			gameDataFunction(game);
 
 			// The original game wraps text onto the next screen if the player's name is
 			// too long. For example, it causes "listen to me" to go down one line and 
@@ -350,12 +350,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// for every subsequent screen forward by a little bit.
 
 			// Read Ria Silmane's text from TEMPLATE.DAT.
-			std::string silmaneText = gameState->getTextAssets().getTemplateDatText("#1400");
+			std::string silmaneText = game->getTextAssets().getTemplateDatText("#1400");
 			silmaneText.append("\n");
 
 			// Replace all instances of %pcf with the player's first name.
 			const std::string playerName =
-				gameState->getGameData()->getPlayer().getFirstName();
+				game->getGameData().getPlayer().getFirstName();
 			silmaneText = String::replace(silmaneText, "%pcf", playerName);
 
 			// Some more formatting should be done in the future so the text wraps nicer.
@@ -363,14 +363,14 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 			// some max line length value.
 
 			std::unique_ptr<Panel> cinematicPanel(new TextCinematicPanel(
-				gameState,
+				game,
 				TextureFile::fromName(TextureSequenceName::Silmane),
 				silmaneText,
 				0.171,
 				gameFunction));
 
-			gameState->setPanel(std::move(cinematicPanel));
-			gameState->setMusic(MusicName::Vision);
+			game->setPanel(std::move(cinematicPanel));
+			game->setMusic(MusicName::Vision);
 		};
 
 		return std::unique_ptr<Button>(new Button(center, width, height, cinematicFunction));
@@ -381,7 +381,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
 		};
@@ -393,7 +393,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(GameState *gameState,
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
 		};
@@ -428,7 +428,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToRaceButton->click(this->getGameState());
+		this->backToRaceButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -437,18 +437,18 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		(e.button.button == SDL_BUTTON_RIGHT);
 		
 	const Int2 mousePosition = this->getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	if (leftClick)
 	{
 		if (this->doneButton->contains(mouseOriginalPoint))
 		{
-			this->doneButton->click(this->getGameState());
+			this->doneButton->click(this->getGame());
 		}
 		else if (this->incrementPortraitButton->contains(mouseOriginalPoint))
 		{
-			this->incrementPortraitButton->click(this->getGameState());
+			this->incrementPortraitButton->click(this->getGame());
 		}
 	}
 
@@ -456,7 +456,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 	{
 		if (this->decrementPortraitButton->contains(mouseOriginalPoint))
 		{
-			this->decrementPortraitButton->click(this->getGameState());
+			this->decrementPortraitButton->click(this->getGame());
 		}
 	}	
 }
@@ -468,7 +468,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Get the filenames for the portrait and clothes.

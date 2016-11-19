@@ -23,7 +23,7 @@ private:
 		scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:
-	CharacterEquipmentPanel(GameState *gameState);
+	CharacterEquipmentPanel(Game *game);
 	virtual ~CharacterEquipmentPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

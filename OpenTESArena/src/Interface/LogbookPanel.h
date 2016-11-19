@@ -13,7 +13,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<Button> backButton;
 public:
-	LogbookPanel(GameState *gameState);
+	LogbookPanel(Game *game);
 	virtual ~LogbookPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

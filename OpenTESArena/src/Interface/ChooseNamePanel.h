@@ -32,7 +32,7 @@ private:
 	std::unique_ptr<CharacterClass> charClass;
 	std::string name;
 public:
-	ChooseNamePanel(GameState *gameState, const CharacterClass &charClass);
+	ChooseNamePanel(Game *game, const CharacterClass &charClass);
 	virtual ~ChooseNamePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

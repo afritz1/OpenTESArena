@@ -16,7 +16,7 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
@@ -33,16 +33,16 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-PauseMenuPanel::PauseMenuPanel(GameState *gameState)
-	: Panel(gameState)
+PauseMenuPanel::PauseMenuPanel(Game *game)
+	: Panel(game)
 {
-	this->playerNameTextBox = [gameState]()
+	this->playerNameTextBox = [game]()
 	{
 		int x = 17;
 		int y = 154;
 		Color color(215, 121, 8);
-		std::string text = gameState->getGameData()->getPlayer().getFirstName();
-		auto &font = gameState->getFontManager().getFont(FontName::Char);
+		std::string text = game->getGameData().getPlayer().getFirstName();
+		auto &font = game->getFontManager().getFont(FontName::Char);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
@@ -51,16 +51,16 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->musicTextBox = [gameState]()
+	this->musicTextBox = [game]()
 	{
 		Int2 center(127, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(static_cast<int>(
-			std::round(gameState->getOptions().getMusicVolume() * 100.0)));
-		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+			std::round(game->getOptions().getMusicVolume() * 100.0)));
+		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -68,16 +68,16 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->soundTextBox = [gameState]()
+	this->soundTextBox = [game]()
 	{
 		Int2 center(54, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(static_cast<int>(
-			std::round(gameState->getOptions().getSoundVolume() * 100.0)));
-		auto &font = gameState->getFontManager().getFont(FontName::Arena);
+			std::round(game->getOptions().getSoundVolume() * 100.0)));
+		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -85,17 +85,17 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->loadButton = []()
 	{
 		int x = 65;
 		int y = 118;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(gameState));
-			gameState->setPanel(std::move(loadPanel));
+			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
+			game->setPanel(std::move(loadPanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
@@ -104,7 +104,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 193;
 		int y = 118;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			SDL_Event evt;
 			evt.quit.type = SDL_QUIT;
@@ -118,13 +118,13 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 0;
 		int y = 118;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			gameState->setGameData(nullptr);
+			game->setGameData(nullptr);
 
-			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
-			gameState->setPanel(std::move(mainMenuPanel));
-			gameState->setMusic(MusicName::PercIntro);
+			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
+			game->setPanel(std::move(mainMenuPanel));
+			game->setMusic(MusicName::PercIntro);
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 65, 29, function));
 	}();
@@ -133,11 +133,11 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 129;
 		int y = 118;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// SaveGamePanel...
-			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(gameState));
-			//gameState->setPanel(std::move(optionsPanel));
+			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
+			//game->setPanel(std::move(optionsPanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
@@ -146,10 +146,10 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 257;
 		int y = 118;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(gamePanel));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
+			game->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
 	}();
@@ -158,12 +158,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 119;
 		int y = 79;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
-			Options &options = gameState->getOptions();
+			Options &options = game->getOptions();
 			options.setMusicVolume(std::min(options.getMusicVolume() + 0.050, 1.0));
 
-			AudioManager &audioManager = gameState->getAudioManager();
+			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
@@ -176,12 +176,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 119;
 		int y = 104;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
-			Options &options = gameState->getOptions();
+			Options &options = game->getOptions();
 			options.setMusicVolume(std::max(options.getMusicVolume() - 0.050, 0.0));
 
-			AudioManager &audioManager = gameState->getAudioManager();
+			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
@@ -194,12 +194,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 46;
 		int y = 79;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
-			Options &options = gameState->getOptions();
+			Options &options = game->getOptions();
 			options.setSoundVolume(std::min(options.getSoundVolume() + 0.050, 1.0));
 
-			AudioManager &audioManager = gameState->getAudioManager();
+			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
@@ -212,12 +212,12 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 	{
 		int x = 46;
 		int y = 104;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
-			Options &options = gameState->getOptions();
+			Options &options = game->getOptions();
 			options.setSoundVolume(std::max(options.getSoundVolume() - 0.050, 0.0));
 
-			AudioManager &audioManager = gameState->getAudioManager();
+			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
@@ -228,7 +228,7 @@ PauseMenuPanel::PauseMenuPanel(GameState *gameState)
 
 	// Store these because of the order game data is deleted when going
 	// to the main menu.
-	auto &player = gameState->getGameData()->getPlayer();
+	auto &player = game->getGameData().getPlayer();
 	this->headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceName(), true);
 	this->portraitID = player.getPortraitID();
@@ -250,7 +250,7 @@ void PauseMenuPanel::updateMusicText(double volume)
 		Int2 center(127, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(displayedVolume);
-		auto &font = this->getGameState()->getFontManager().getFont(FontName::Arena);
+		auto &font = this->getGame()->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -258,7 +258,7 @@ void PauseMenuPanel::updateMusicText(double volume)
 			text,
 			font,
 			alignment,
-			this->getGameState()->getRenderer()));
+			this->getGame()->getRenderer()));
 	}();
 }
 
@@ -272,7 +272,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 		Int2 center(54, 96);
 		Color color(12, 73, 16);
 		std::string text = std::to_string(displayedVolume);
-		auto &font = this->getGameState()->getFontManager().getFont(FontName::Arena);
+		auto &font = this->getGame()->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -280,7 +280,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 			text,
 			font,
 			alignment,
-			this->getGameState()->getRenderer()));
+			this->getGame()->getRenderer()));
 	}();
 }
 
@@ -291,7 +291,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->resumeButton->click(this->getGameState());
+		this->resumeButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -300,46 +300,46 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// See if any of the buttons are clicked.
 		// (This code is getting kind of bad now. Maybe use a vector?)
 		if (this->loadButton->contains(mouseOriginalPoint))
 		{
-			this->loadButton->click(this->getGameState());
+			this->loadButton->click(this->getGame());
 		}
 		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
-			this->exitButton->click(this->getGameState());
+			this->exitButton->click(this->getGame());
 		}
 		else if (this->newButton->contains(mouseOriginalPoint))
 		{
-			this->newButton->click(this->getGameState());
+			this->newButton->click(this->getGame());
 		}
 		else if (this->saveButton->contains(mouseOriginalPoint))
 		{
-			this->saveButton->click(this->getGameState());
+			this->saveButton->click(this->getGame());
 		}
 		else if (this->resumeButton->contains(mouseOriginalPoint))
 		{
-			this->resumeButton->click(this->getGameState());
+			this->resumeButton->click(this->getGame());
 		}
 		else if (this->musicUpButton->contains(mouseOriginalPoint))
 		{
-			this->musicUpButton->click(this->getGameState());
+			this->musicUpButton->click(this->getGame());
 		}
 		else if (this->musicDownButton->contains(mouseOriginalPoint))
 		{
-			this->musicDownButton->click(this->getGameState());
+			this->musicDownButton->click(this->getGame());
 		}
 		else if (this->soundUpButton->contains(mouseOriginalPoint))
 		{
-			this->soundUpButton->click(this->getGameState());
+			this->soundUpButton->click(this->getGame());
 		}
 		else if (this->soundDownButton->contains(mouseOriginalPoint))
 		{
-			this->soundDownButton->click(this->getGameState());
+			this->soundDownButton->click(this->getGame());
 		}
 	}	
 }
@@ -351,7 +351,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw pause background.

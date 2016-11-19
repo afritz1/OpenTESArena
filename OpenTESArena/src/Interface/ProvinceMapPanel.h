@@ -17,7 +17,7 @@ private:
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 public:
-	ProvinceMapPanel(GameState *gameState, const Province &province);
+	ProvinceMapPanel(Game *game, const Province &province);
 	virtual ~ProvinceMapPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -55,7 +55,7 @@ public:
 	void rotate(double dx, double dy, double hSensitivity, double vSensitivity,
 		double verticalFOV);
 
-	virtual void tick(GameState *gameState, double dt) override;
+	virtual void tick(Game *game, double dt) override;
 };
 
 #endif

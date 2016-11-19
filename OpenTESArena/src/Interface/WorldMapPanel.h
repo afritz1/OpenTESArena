@@ -14,7 +14,7 @@ private:
 	std::unique_ptr<Button> backToGameButton, provinceButton;
 	std::unique_ptr<ProvinceName> provinceName;
 public:
-	WorldMapPanel(GameState *gameState);
+	WorldMapPanel(Game *game);
 	virtual ~WorldMapPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

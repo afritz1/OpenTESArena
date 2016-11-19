@@ -6,7 +6,7 @@
 #include "ImageSequencePanel.h"
 
 #include "Button.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -15,12 +15,12 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-ImageSequencePanel::ImageSequencePanel(GameState *gameState,
+ImageSequencePanel::ImageSequencePanel(Game *game,
 	const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames,
 	const std::vector<double> &imageDurations,
-	const std::function<void(GameState*)> &endingAction)
-	: Panel(gameState), paletteNames(paletteNames), textureNames(textureNames),
+	const std::function<void(Game*)> &endingAction)
+	: Panel(game), paletteNames(paletteNames), textureNames(textureNames),
 	imageDurations(imageDurations)
 {
 	assert(paletteNames.size() == textureNames.size());
@@ -53,7 +53,7 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 
 	if (skipAllHotkeyPressed)
 	{
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}
 	else if (leftClick || skipOneHotkeyPressed)
 	{
@@ -65,7 +65,7 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 
 		if (this->imageIndex == imageCount)
 		{
-			this->skipButton->click(this->getGameState());
+			this->skipButton->click(this->getGame());
 		}
 	}	
 }
@@ -88,7 +88,7 @@ void ImageSequencePanel::tick(double dt)
 			// Check if the last image is now over.
 			if (this->imageIndex == imageCount)
 			{
-				this->skipButton->click(this->getGameState());
+				this->skipButton->click(this->getGame());
 			}
 		}
 	}
@@ -103,7 +103,7 @@ void ImageSequencePanel::render(Renderer &renderer)
 	renderer.clearNative();
 	renderer.clearOriginal();
 
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(

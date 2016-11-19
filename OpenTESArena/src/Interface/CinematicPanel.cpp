@@ -5,15 +5,15 @@
 #include "CinematicPanel.h"
 
 #include "Button.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-CinematicPanel::CinematicPanel(GameState *gameState,
+CinematicPanel::CinematicPanel(Game *game,
 	const std::string &sequenceName, const std::string &paletteName,
-	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
-	: Panel(gameState)
+	double secondsPerImage, const std::function<void(Game*)> &endingAction)
+	: Panel(game)
 {
 	this->skipButton = [&endingAction]()
 	{
@@ -50,7 +50,7 @@ void CinematicPanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick || skipHotkeyPressed)
 	{
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}
 }
 
@@ -65,7 +65,7 @@ void CinematicPanel::tick(double dt)
 	}
 
 	// Get a reference to all images in the sequence.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 
@@ -73,7 +73,7 @@ void CinematicPanel::tick(double dt)
 	if (this->imageIndex >= textures.size())
 	{
 		this->imageIndex = static_cast<int>(textures.size() - 1);
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}
 }
 
@@ -84,7 +84,7 @@ void CinematicPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Get a reference to all images in the sequence.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 

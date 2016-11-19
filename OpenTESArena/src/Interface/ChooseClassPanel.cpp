@@ -15,7 +15,7 @@
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterClassParser.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
@@ -35,8 +35,8 @@
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
-ChooseClassPanel::ChooseClassPanel(GameState *gameState)
-	: Panel(gameState)
+ChooseClassPanel::ChooseClassPanel(Game *game)
+	: Panel(game)
 {
 	// Read in character classes.
 	this->charClasses = CharacterClassParser::parse();
@@ -49,13 +49,13 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		return a->getDisplayName().compare(b->getDisplayName()) < 0;
 	});
 
-	this->titleTextBox = [gameState]()
+	this->titleTextBox = [game]()
 	{
 		int x = 89;
 		int y = 32;
 		Color color(211, 211, 211);
 		std::string text = "Choose thy class...";
-		auto &font = gameState->getFontManager().getFont(FontName::C);
+		auto &font = game->getFontManager().getFont(FontName::C);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
 			x,
@@ -64,14 +64,14 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->classesListBox = [this, gameState]()
+	this->classesListBox = [this, game]()
 	{
 		int x = 85;
 		int y = 46;
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		Color color(85, 44, 20);
 		int maxDisplayed = 6;
 		std::vector<std::string> elements;
@@ -89,15 +89,15 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 			elements,
 			font,
 			maxDisplayed,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToClassCreationButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(gameState));
-			gameState->setPanel(std::move(creationPanel));
+			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
+			game->setPanel(std::move(creationPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -107,7 +107,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		Int2 center(68, 22);
 		int w = 8;
 		int h = 8;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			// Scroll the list box up one if able.
 			if (this->classesListBox->getScrollIndex() > 0)
@@ -123,7 +123,7 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 		Int2 center(68, 117);
 		int w = 8;
 		int h = 8;
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			// Scroll the list box down one if able.
 			if (this->classesListBox->getScrollIndex() <
@@ -138,11 +138,11 @@ ChooseClassPanel::ChooseClassPanel(GameState *gameState)
 
 	this->acceptButton = [this]
 	{
-		auto function = [this](GameState *gameState)
+		auto function = [this](Game *game)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(
-				gameState, *this->charClass.get()));
-			gameState->setPanel(std::move(namePanel));
+				game, *this->charClass.get()));
+			game->setPanel(std::move(namePanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -173,7 +173,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToClassCreationButton->click(this->getGameState());
+		this->backToClassCreationButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -182,7 +182,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
 
 	const Int2 mousePosition = this->getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// See if a class in the list was clicked, or if it is being scrolled.
@@ -196,16 +196,16 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			{
 				this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
 					*this->charClasses.at(index).get()));
-				this->acceptButton->click(this->getGameState());
+				this->acceptButton->click(this->getGame());
 			}
 		}
 		else if (mouseWheelUp)
 		{
-			this->upButton->click(this->getGameState());
+			this->upButton->click(this->getGame());
 		}
 		else if (mouseWheelDown)
 		{
-			this->downButton->click(this->getGameState());
+			this->downButton->click(this->getGame());
 		}
 	}
 
@@ -214,11 +214,11 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		// Check scroll buttons (they are outside the list box to the left).
 		if (this->upButton->contains(mouseOriginalPoint))
 		{
-			this->upButton->click(this->getGameState());
+			this->upButton->click(this->getGame());
 		}
 		else if (this->downButton->contains(mouseOriginalPoint))
 		{
-			this->downButton->click(this->getGameState());
+			this->downButton->click(this->getGame());
 		}
 	}	
 }
@@ -240,9 +240,9 @@ void ChooseClassPanel::createTooltip(int tooltipIndex, Renderer &renderer)
 		0, 0,
 		Color::White,
 		tooltipText,
-		this->getGameState()->getFontManager().getFont(FontName::D),
+		this->getGame()->getFontManager().getFont(FontName::D),
 		TextAlignment::Left,
-		this->getGameState()->getRenderer()));
+		this->getGame()->getRenderer()));
 
 	SDL_Surface *tooltipTextBoxSurface = tooltipTextBox->getSurface();
 
@@ -414,7 +414,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 
 void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 {
-	auto mouseOriginalPoint = this->getGameState()->getRenderer()
+	auto mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(this->getMousePosition());
 
 	// Make the tooltip if it does not exist already.
@@ -445,7 +445,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.

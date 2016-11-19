@@ -25,7 +25,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
 	std::unique_ptr<Button> backToMainMenuButton, generateButton, selectButton;
 public:
-	ChooseClassCreationPanel(GameState *gameState);
+	ChooseClassCreationPanel(Game *game);
 	virtual ~ChooseClassCreationPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

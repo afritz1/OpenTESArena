@@ -35,7 +35,7 @@ private:
 	std::string name;
 	int portraitIndex;
 public:
-	ChooseAttributesPanel(GameState *gameState, const CharacterClass &charClass, 
+	ChooseAttributesPanel(Game *game, const CharacterClass &charClass, 
 		const std::string &name, CharacterGenderName gender, CharacterRaceName raceName);
 	virtual ~ChooseAttributesPanel();
 

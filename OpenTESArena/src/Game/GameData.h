@@ -6,8 +6,8 @@
 // Intended to be a container for the player and world data that is currently active 
 // while a player is loaded (i.e., not in the main menu).
 
-// The GameData object in the GameState will be initialized only upon loading of the
-// player, and uninitialized when the player goes to the main menu (thus unloading
+// The GameData object will be initialized only upon loading of the player, and 
+// will be uninitialized when the player goes to the main menu (thus unloading
 // the character resources). Whichever entry points into the "game" there are, they
 // need to load data into the game data object.
 

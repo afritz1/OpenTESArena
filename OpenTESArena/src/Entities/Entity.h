@@ -23,7 +23,7 @@
 // there's no zero-distance issue.
 
 class EntityManager;
-class GameState;
+class Game;
 
 enum class EntityType;
 
@@ -44,7 +44,7 @@ public:
 	const Float3d &getPosition() const;
 	virtual EntityType getEntityType() const = 0;
 
-	virtual void tick(GameState *gameState, double dt) = 0;
+	virtual void tick(Game *game, double dt) = 0;
 };
 
 #endif

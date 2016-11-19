@@ -38,7 +38,7 @@ private:
 	void createTooltip(int tooltipIndex, Renderer &renderer);
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 public:
-	ChooseClassPanel(GameState *gameState);
+	ChooseClassPanel(Game *game);
 	virtual ~ChooseClassPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

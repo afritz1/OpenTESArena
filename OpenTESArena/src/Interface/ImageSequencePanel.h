@@ -24,11 +24,11 @@ private:
 	double currentSeconds;
 	int imageIndex;
 public:
-	ImageSequencePanel(GameState *gameState,
+	ImageSequencePanel(Game *game,
 		const std::vector<std::string> &paletteNames,
 		const std::vector<std::string> &textureNames,
 		const std::vector<double> &imageDurations,
-		const std::function<void(GameState*)> &endingAction);
+		const std::function<void(Game*)> &endingAction);
 	virtual ~ImageSequencePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

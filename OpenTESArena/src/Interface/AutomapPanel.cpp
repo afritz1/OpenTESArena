@@ -7,7 +7,7 @@
 #include "Button.h"
 #include "GameWorldPanel.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -17,18 +17,18 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-AutomapPanel::AutomapPanel(GameState *gameState)
-	: Panel(gameState)
+AutomapPanel::AutomapPanel(Game *game)
+	: Panel(game)
 {
 	this->backToGameButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 57, Renderer::ORIGINAL_HEIGHT - 29);
 		int width = 38;
 		int height = 13;
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(gamePanel));
+			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
+			game->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -48,7 +48,7 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || nPressed)
 	{
-		this->backToGameButton->click(this->getGameState());
+		this->backToGameButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -57,13 +57,13 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Check if "Exit" was clicked.
 		if (this->backToGameButton->contains(mouseOriginalPoint))
 		{
-			this->backToGameButton->click(this->getGameState());
+			this->backToGameButton->click(this->getGame());
 		}
 	}
 }
@@ -86,7 +86,7 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw automap background.

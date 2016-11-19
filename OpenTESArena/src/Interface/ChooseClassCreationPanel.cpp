@@ -9,7 +9,7 @@
 #include "MainMenuPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -24,12 +24,12 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
-ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
-	: Panel(gameState)
+ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
+	: Panel(game)
 {
-	this->parchment = [gameState]()
+	this->parchment = [game]()
 	{
-		auto &renderer = gameState->getRenderer();
+		auto &renderer = game->getRenderer();
 
 		// Create placeholder parchment.
 		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
@@ -42,12 +42,12 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 		return texture;
 	}();
 
-	this->titleTextBox = [gameState]()
+	this->titleTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text("How do you wish\nto select your class?");
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -55,15 +55,15 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->generateTextBox = [gameState]()
+	this->generateTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text("Generate\n(not implemented)");
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -71,15 +71,15 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->selectTextBox = [gameState]()
+	this->selectTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text("Select");
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -87,16 +87,16 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToMainMenuButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(gameState));
-			gameState->setPanel(std::move(mainMenuPanel));
-			gameState->setMusic(MusicName::PercIntro);
+			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
+			game->setPanel(std::move(mainMenuPanel));
+			game->setMusic(MusicName::PercIntro);
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -104,11 +104,11 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	this->generateButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
-			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
-			gameState->setPanel(std::move(classPanel));*/
+			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
+			game->setPanel(std::move(classPanel));*/
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
@@ -116,10 +116,10 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(GameState *gameState)
 	this->selectButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(gameState));
-			gameState->setPanel(std::move(classPanel));
+			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
+			game->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
@@ -137,7 +137,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToMainMenuButton->click(this->getGameState());
+		this->backToMainMenuButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -146,16 +146,16 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->generateButton->contains(mouseOriginalPoint))
 		{
-			this->generateButton->click(this->getGameState());
+			this->generateButton->click(this->getGame());
 		}
 		else if (this->selectButton->contains(mouseOriginalPoint))
 		{
-			this->selectButton->click(this->getGameState());
+			this->selectButton->click(this->getGame());
 		}
 	}
 }
@@ -167,7 +167,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.

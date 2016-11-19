@@ -17,7 +17,7 @@ private:
 public:
 	// This could get the game data boolean from the game state itself to determine
 	// whether to return to the main menu or the pause menu.
-	LoadGamePanel(GameState *gameState);
+	LoadGamePanel(Game *game);
 	virtual ~LoadGamePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

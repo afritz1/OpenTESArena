@@ -8,7 +8,7 @@
 #include "GameWorldPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -21,15 +21,15 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-LogbookPanel::LogbookPanel(GameState *gameState)
-	: Panel(gameState)
+LogbookPanel::LogbookPanel(Game *game)
+	: Panel(game)
 {
-	this->titleTextBox = [gameState]()
+	this->titleTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
 		Color color(255, 207, 12);
 		std::string text = "Your logbook is empty.";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -37,16 +37,16 @@ LogbookPanel::LogbookPanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 40, Renderer::ORIGINAL_HEIGHT - 13);
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
-			std::unique_ptr<Panel> backPanel(new GameWorldPanel(gameState));
-			gameState->setPanel(std::move(backPanel));
+			std::unique_ptr<Panel> backPanel(new GameWorldPanel(game));
+			game->setPanel(std::move(backPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 34, 14, function));
 	}();
@@ -60,7 +60,7 @@ LogbookPanel::~LogbookPanel()
 void LogbookPanel::handleEvent(const SDL_Event &e)
 {
 	const Int2 mousePosition = this->getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	bool escapePressed = (e.type == SDL_KEYDOWN) &&
@@ -70,7 +70,7 @@ void LogbookPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || lPressed)
 	{
-		this->backButton->click(this->getGameState());
+		this->backButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -78,7 +78,7 @@ void LogbookPanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick && this->backButton->contains(mouseOriginalPoint))
 	{
-		this->backButton->click(this->getGameState());
+		this->backButton->click(this->getGame());
 	}	
 }
 
@@ -89,7 +89,7 @@ void LogbookPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw logbook background.

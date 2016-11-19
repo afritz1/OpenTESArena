@@ -10,7 +10,7 @@
 // it's one image.
 
 class Button;
-class GameState;
+class Game;
 class Renderer;
 
 class ImagePanel : public Panel
@@ -21,9 +21,9 @@ private:
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;
 public:
-	ImagePanel(GameState *gameState, const std::string &paletteName, 
+	ImagePanel(Game *game, const std::string &paletteName, 
 		const std::string &textureName, double secondsToDisplay, 
-		const std::function<void(GameState*)> &endingAction);
+		const std::function<void(Game*)> &endingAction);
 	virtual ~ImagePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

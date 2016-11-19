@@ -8,7 +8,7 @@
 #include "CharacterGenderName.h"
 #include "CharacterRaceName.h"
 #include "EntityType.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../Math/CoordinateFrame.h"
 #include "../Math/Quaternion.h"
@@ -138,7 +138,7 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 	this->yaw(-lookRightRads/* / zoom*/);
 }
 
-void Player::tick(GameState *gameState, double dt)
+void Player::tick(Game *game, double dt)
 {
 	assert(dt >= 0.0);
 	

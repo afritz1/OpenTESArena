@@ -8,7 +8,7 @@
 #include "Button.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -22,15 +22,15 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-TextCinematicPanel::TextCinematicPanel(GameState *gameState, 
+TextCinematicPanel::TextCinematicPanel(Game *game, 
 	const std::string &sequenceName, const std::string &text, 
-	double secondsPerImage, const std::function<void(GameState*)> &endingAction)
-	: Panel(gameState)
+	double secondsPerImage, const std::function<void(Game*)> &endingAction)
+	: Panel(game)
 {
 	// Text cannot be empty.
 	assert(text.size() > 0);
 
-	this->textBoxes = [gameState, &text]()
+	this->textBoxes = [game, &text]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT - 12);
 
@@ -66,9 +66,9 @@ TextCinematicPanel::TextCinematicPanel(GameState *gameState,
 				center,
 				textColor,
 				textBoxText,
-				gameState->getFontManager().getFont(FontName::Arena),
+				game->getFontManager().getFont(FontName::Arena),
 				TextAlignment::Center,
-				gameState->getRenderer()));
+				game->getRenderer()));
 			textBoxes.push_back(std::move(textBox));
 		}
 
@@ -100,7 +100,7 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 	if (escapePressed)
 	{
 		// Force the cinematic to end.
-		this->skipButton->click(this->getGameState());
+		this->skipButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -123,7 +123,7 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 		if (this->textIndex >= textBoxCount)
 		{
 			this->textIndex = textBoxCount - 1;
-			this->skipButton->click(this->getGameState());
+			this->skipButton->click(this->getGame());
 		}
 	}	
 }
@@ -137,7 +137,7 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->imageIndex++;
 
-		auto &textureManager = this->getGameState()->getTextureManager();
+		auto &textureManager = this->getGame()->getTextureManager();
 
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
@@ -157,7 +157,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get a reference to all relevant textures.

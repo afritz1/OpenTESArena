@@ -11,7 +11,7 @@
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterGenderName.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -25,13 +25,13 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
-ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass &charClass,
+ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass,
 	const std::string &name)
-	: Panel(gameState)
+	: Panel(game)
 {
-	this->parchment = [gameState]()
+	this->parchment = [game]()
 	{
-		auto &renderer = gameState->getRenderer();
+		auto &renderer = game->getRenderer();
 
 		// Create placeholder parchment.
 		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
@@ -44,12 +44,12 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 		return texture;
 	}();
 
-	this->genderTextBox = [gameState]()
+	this->genderTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
 		std::string text = "Choose thy gender...";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -57,15 +57,15 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->maleTextBox = [gameState]()
+	this->maleTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
 		std::string text = "Male";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -73,15 +73,15 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
-	this->femaleTextBox = [gameState]()
+	this->femaleTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
 		std::string text = "Female";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -89,15 +89,15 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backToNameButton = [charClass]()
 	{
-		auto function = [charClass](GameState *gameState)
+		auto function = [charClass](Game *game)
 		{
-			gameState->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
-				gameState, charClass)));
+			game->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
+				game, charClass)));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -105,11 +105,11 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 	this->maleButton = [charClass, name]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		auto function = [charClass, name](GameState *gameState)
+		auto function = [charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
-				gameState, charClass, name, CharacterGenderName::Male));
-			gameState->setPanel(std::move(classPanel));
+				game, charClass, name, CharacterGenderName::Male));
+			game->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
@@ -117,11 +117,11 @@ ChooseGenderPanel::ChooseGenderPanel(GameState *gameState, const CharacterClass 
 	this->femaleButton = [charClass, name]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		auto function = [charClass, name](GameState *gameState)
+		auto function = [charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
-				gameState, charClass, name, CharacterGenderName::Female));
-			gameState->setPanel(std::move(classPanel));
+				game, charClass, name, CharacterGenderName::Female));
+			game->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
@@ -142,7 +142,7 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToNameButton->click(this->getGameState());
+		this->backToNameButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -151,16 +151,16 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->maleButton->contains(mouseOriginalPoint))
 		{
-			this->maleButton->click(this->getGameState());
+			this->maleButton->click(this->getGame());
 		}
 		else if (this->femaleButton->contains(mouseOriginalPoint))
 		{
-			this->femaleButton->click(this->getGameState());
+			this->femaleButton->click(this->getGame());
 		}
 	}
 }
@@ -172,7 +172,7 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.

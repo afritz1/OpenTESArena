@@ -11,7 +11,7 @@ class MainMenuPanel : public Panel
 private:
 	std::unique_ptr<Button> loadButton, newButton, exitButton;
 public:
-	MainMenuPanel(GameState *gameState);
+	MainMenuPanel(Game *game);
 	virtual ~MainMenuPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

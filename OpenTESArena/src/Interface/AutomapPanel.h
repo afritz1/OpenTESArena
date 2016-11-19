@@ -16,7 +16,7 @@ private:
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
 public:
-	AutomapPanel(GameState *gameState);
+	AutomapPanel(Game *game);
 	virtual ~AutomapPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

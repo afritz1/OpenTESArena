@@ -33,7 +33,7 @@ private:
 
 	void drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer);
 public:
-	ChooseRacePanel(GameState *gameState, const CharacterClass &charClass, 
+	ChooseRacePanel(Game *game, const CharacterClass &charClass, 
 		const std::string &name, CharacterGenderName gender);
 	virtual ~ChooseRacePanel();
 

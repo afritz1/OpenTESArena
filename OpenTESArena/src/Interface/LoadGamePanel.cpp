@@ -9,7 +9,7 @@
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Game/GameState.h"
+#include "../Game/Game.h"
 #include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -23,15 +23,15 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-LoadGamePanel::LoadGamePanel(GameState *gameState)
-	: Panel(gameState)
+LoadGamePanel::LoadGamePanel(Game *game)
+	: Panel(game)
 {
-	this->underConstructionTextBox = [gameState]()
+	this->underConstructionTextBox = [game]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 170);
 		auto color = Color::White;
 		std::string text = "Under construction!";
-		auto &font = gameState->getFontManager().getFont(FontName::A);
+		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
@@ -39,18 +39,18 @@ LoadGamePanel::LoadGamePanel(GameState *gameState)
 			text,
 			font,
 			alignment,
-			gameState->getRenderer()));
+			game->getRenderer()));
 	}();
 
 	this->backButton = []()
 	{
-		auto function = [](GameState *gameState)
+		auto function = [](Game *game)
 		{
 			// Back button behavior depends on if game data is active.
-			auto backPanel = gameState->gameDataIsActive() ?
-				std::unique_ptr<Panel>(new PauseMenuPanel(gameState)) :
-				std::unique_ptr<Panel>(new MainMenuPanel(gameState));
-			gameState->setPanel(std::move(backPanel));
+			auto backPanel = game->gameDataIsActive() ?
+				std::unique_ptr<Panel>(new PauseMenuPanel(game)) :
+				std::unique_ptr<Panel>(new MainMenuPanel(game));
+			game->setPanel(std::move(backPanel));
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
@@ -68,7 +68,7 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backButton->click(this->getGameState());
+		this->backButton->click(this->getGame());
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -77,7 +77,7 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = this->getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGameState()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Listen for up/down arrow click, saved game click...
@@ -91,7 +91,7 @@ void LoadGamePanel::render(Renderer &renderer)
 	renderer.clearOriginal();
 
 	// Set palette.
-	auto &textureManager = this->getGameState()->getTextureManager();
+	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw slots background.
