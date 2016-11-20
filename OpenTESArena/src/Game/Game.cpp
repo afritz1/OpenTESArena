@@ -43,11 +43,6 @@ Game::Game()
 	// Initialize virtual file system using the Arena path in the options file.
 	VFS::Manager::get().initialize(std::string(this->options->getArenaPath()));
 
-	// Set the panel and music for the next tick. Don't use "this->panel" yet.
-	this->nextPanel = Panel::defaultPanel(this);
-	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(
-		MusicName::PercIntro));
-
 	// Initialize the OpenAL Soft audio manager.
 	this->audioManager.init(*this->options.get());
 
@@ -78,19 +73,21 @@ Game::Game()
 	// Set target frames per second.
 	this->targetFPS = DEFAULT_FPS;
 
-	// Leave some things null for now. 
-	this->gameData = nullptr;
-	this->panel = nullptr;
-
+	// Set game loop boolean to default.
 	this->running = true;
+
+	// Initialize panel and music to default.
+	this->panel = Panel::defaultPanel(this);
+	this->setMusic(MusicName::PercIntro);
 
 	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// GameData is initialized when the player enters the game world. 
-	// The panel is set at the beginning of a frame if one is waiting.
-	assert(this->gameData.get() == nullptr);
-	assert(this->panel.get() == nullptr);
+	// Leave some members null for now. The game data is initialized when the player 
+	// enters the game world, and the "next panel" is a temporary used by the game
+	// to avoid corruption between panel events which change the panel.
+	this->gameData = nullptr;
+	this->nextPanel = nullptr;
 }
 
 Game::~Game()
@@ -148,7 +145,7 @@ void Game::setPanel(std::unique_ptr<Panel> nextPanel)
 
 void Game::setMusic(MusicName name)
 {
-	this->nextMusic = std::unique_ptr<MusicName>(new MusicName(name));
+	this->audioManager.playMusic(name);
 }
 
 void Game::setGameData(std::unique_ptr<GameData> gameData)
@@ -170,19 +167,6 @@ void Game::resizeWindow(int width, int height)
 
 void Game::tick(double dt)
 {
-	// Change the panel if requested.
-	if (this->nextPanel.get() != nullptr)
-	{
-		this->panel = std::move(this->nextPanel);
-	}
-
-	// Change the music if requested.
-	if (this->nextMusic.get() != nullptr)
-	{
-		this->audioManager.playMusic(*this->nextMusic.get());
-		this->nextMusic = nullptr;
-	}
-
 	// Handle events for the current game state.
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
@@ -206,10 +190,23 @@ void Game::tick(double dt)
 
 		// Panel-specific events are handled by the panel.
 		this->panel->handleEvent(e);
+
+		// If the panel event requested a new panel, switch to it and send the
+		// remaining events for this frame to the new panel.
+		if (this->nextPanel.get() != nullptr)
+		{
+			this->panel = std::move(this->nextPanel);
+		}
 	}
 
 	// Tick the current panel by delta time.
 	this->panel->tick(dt);
+
+	// If the panel tick requested a new panel, switch to it.
+	if (this->nextPanel.get() != nullptr)
+	{
+		this->panel = std::move(this->nextPanel);
+	}
 }
 
 void Game::render()

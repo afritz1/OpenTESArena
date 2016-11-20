@@ -32,7 +32,6 @@ private:
 	AudioManager audioManager;
 	std::unique_ptr<FontManager> fontManager;
 	std::unique_ptr<GameData> gameData;
-	std::unique_ptr<MusicName> nextMusic;
 	std::unique_ptr<Options> options;
 	std::unique_ptr<Panel> panel, nextPanel;
 	std::unique_ptr<Renderer> renderer;
@@ -82,10 +81,11 @@ public:
 	// Gets the text assets object for loading Arena-related text files.
 	TextAssets &getTextAssets() const;
 
-	// Sets the next panel at the next tick.
+	// Sets the panel after the current SDL event has been processed (to avoid 
+	// interfering with the current panel).
 	void setPanel(std::unique_ptr<Panel> nextPanel);
 
-	// Sets the next music at the next tick.
+	// Sets the music to the given music name.
 	void setMusic(MusicName name);
 
 	// Sets the current game data object. A game session is active if the game data
