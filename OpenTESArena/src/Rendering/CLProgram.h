@@ -23,16 +23,12 @@
 // It is important to remember that cl_float3 and cl_float4 are structurally
 // equivalent (cl_float * 4, or 16 bytes).
 
-// After theorizing some (see SpriteReference.h comments), it appears that having
-// single-indirection sprite references (i.e., offset + count -> rectangle) would be
-// faster than double-indirection (i.e., offset + count -> index -> rectangle) for 
-// rendering. Though single-indirection means having some duplicated geometry for each 
-// chunk pointed to by a sprite reference, it preserves the cache and prevents global 
-// memory from being saturated with incoherent read requests. Double-indirection would 
-// also mean passing another index buffer to the kernel.
-
-// The more I think about sprite management, the more it feels like a heap manager. I'll
-// probably need to draw this on paper to see how it really works out.
+// It appears that having single-indirection sprite references (i.e., offset + count -> 
+// rectangle) is faster than double-indirection (i.e., offset + count -> index -> 
+// rectangle) for rendering. Though single-indirection means having some duplicated 
+// geometry for each chunk pointed to by a sprite reference, it preserves the cache 
+// and prevents global memory from being saturated with incoherent read requests. 
+// Double-indirection would also mean passing another index buffer to the kernel.
 
 class BufferView;
 class TextureReference;

@@ -4,11 +4,15 @@
 #include <list>
 #include <unordered_map>
 
-// A buffer view is an imaginary overlay for a memory buffer, so it can be treated like 
-// a linked list of blocks. In other words, it is a guide telling the caller where to 
-// allocate a request in an actual buffer. The buffer view itself assumes infinite 
-// capacity, so it is the caller's job to make sure their buffer can fit an allocation
-// at the suggested byte offset.
+// A buffer view is an imaginary overlay for a memory buffer so it can be treated like
+// a stand-alone heap.
+
+// In other words, it is a guide telling the caller where to allocate a request in an
+// actual buffer. The buffer view itself assumes infinite capacity, so it is the caller's
+// job to make sure their buffer can fit an allocation at the suggested byte offset.
+
+// The buffer view doesn't do any allocations itself. It simply maintains the positions 
+// and sizes of imaginary ones.
 
 class BufferView
 {
