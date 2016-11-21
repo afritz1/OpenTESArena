@@ -55,7 +55,7 @@ private:
 	std::vector<uint8_t> outputData; // For receiving pixels from the device's output buffer.
 	std::unordered_map<Int3, size_t> voxelOffsets; // Byte offsets into rectBuffer for each voxel.
 	std::unordered_map<Int3, size_t> spriteOffsets; // Byte offsets into rectBuffer for each sprite group.
-	std::unordered_map<Int3, std::vector<int>> spriteRefIDs; // Sprite ID list for sprite references.
+	std::unordered_map<Int3, std::vector<int>> spriteGroups; // Sprite ID list for sprite references.
 	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels; // Coordinates of a sprite's touched voxels.
 	std::unordered_map<int, std::pair<Rect3D, int>> spriteRects; // A copy of each sprite's rect and texture.
 	std::unique_ptr<BufferView> rectBufferView; // For managing allocations in rectBuffer.

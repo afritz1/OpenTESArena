@@ -1144,15 +1144,15 @@ void CLProgram::updateVoxel(int x, int y, int z,
 void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 {
 	// Get the list of sprite IDs associated with the voxel if there is one.
-	auto refIter = this->spriteRefIDs.find(voxel);
-	if (refIter == this->spriteRefIDs.end())
+	auto groupIter = this->spriteGroups.find(voxel);
+	if (groupIter == this->spriteGroups.end())
 	{
 		// Add a mapping to a new empty ID list.
-		refIter = this->spriteRefIDs.emplace(std::make_pair(
+		groupIter = this->spriteGroups.emplace(std::make_pair(
 			voxel, std::vector<int>())).first;
 	}
 
-	std::vector<int> &spriteIDs = refIter->second;
+	std::vector<int> &spriteIDs = groupIter->second;
 
 	// Make sure the sprite isn't already in the voxel.
 	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
@@ -1224,12 +1224,12 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 {
 	// Get the list of sprite IDs associated with the voxel.
-	const auto refIter = this->spriteRefIDs.find(voxel);
-	Debug::check(refIter != this->spriteRefIDs.end(), "CLProgram",
+	const auto groupIter = this->spriteGroups.find(voxel);
+	Debug::check(groupIter != this->spriteGroups.end(), "CLProgram",
 		"Expected a sprite list for voxel [" + std::to_string(voxel.getX()) + 
 		", " + std::to_string(voxel.getY()) + ", " + std::to_string(voxel.getZ()) + "].");
 
-	std::vector<int> &spriteIDs = refIter->second;
+	std::vector<int> &spriteIDs = groupIter->second;
 
 	// Make sure the sprite is in the voxel.
 	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
@@ -1283,7 +1283,7 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 	else
 	{
 		// No more sprites in the voxel, so erase the associated mappings.
-		this->spriteRefIDs.erase(refIter);
+		this->spriteGroups.erase(groupIter);
 		this->spriteOffsets.erase(offsetIter);
 
 		// Set the sprite reference to zero.
@@ -1307,7 +1307,7 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 	const size_t offset = this->spriteOffsets.at(voxel);
 
 	// Get the index of the sprite in the sprite reference.
-	const std::vector<int> &spriteIDs = this->spriteRefIDs.at(voxel);
+	const std::vector<int> &spriteIDs = this->spriteGroups.at(voxel);
 	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
 	assert(idIter != spriteIDs.end());
 	const size_t index = idIter - spriteIDs.begin();
