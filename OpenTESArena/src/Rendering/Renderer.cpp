@@ -392,26 +392,26 @@ void Renderer::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects
 	const std::vector<int> &textureIndices)
 {
 	assert(this->clProgram.get() != nullptr);
-	this->clProgram->updateVoxel(x, y, z, rects, textureIndices);
+	this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndices);
 }
 
 void Renderer::updateVoxel(int x, int y, int z,
 	const std::vector<Rect3D> &rects, int textureIndex)
 {
 	assert(this->clProgram.get() != nullptr);
-	this->clProgram->updateVoxel(x, y, z, rects, textureIndex);
+	this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndex);
 }
 
 void Renderer::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
 {
 	assert(this->clProgram.get() != nullptr);
-	this->clProgram->updateSprite(spriteID, rect, textureIndex);
+	this->clProgram->queueSpriteUpdate(spriteID, rect, textureIndex);
 }
 
 void Renderer::removeSprite(int spriteID)
 {
 	assert(this->clProgram.get() != nullptr);
-	this->clProgram->removeSprite(spriteID);
+	this->clProgram->queueSpriteRemoval(spriteID);
 }
 
 void Renderer::clearNative(const Color &color)
@@ -475,6 +475,9 @@ void Renderer::renderWorld()
 {
 	// The 3D rendering program must be initialized.
 	assert(this->clProgram.get() != nullptr);
+
+	// Push any pending updates to device memory.
+	this->clProgram->pushUpdates();
 
 	// Render the game world.
 	const void *worldFrameBuffer = this->clProgram->render();

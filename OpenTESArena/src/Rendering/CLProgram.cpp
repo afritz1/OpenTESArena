@@ -981,7 +981,7 @@ int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 	return static_cast<int>(this->textureRefs.size() - 1);
 }
 
-void CLProgram::updateVoxelRef(int x, int y, int z, int offset, int count)
+void CLProgram::queueVoxelRefUpdate(int x, int y, int z, int offset, int count)
 {
 	assert(x >= 0);
 	assert(y >= 0);
@@ -992,24 +992,22 @@ void CLProgram::updateVoxelRef(int x, int y, int z, int offset, int count)
 	assert(offset >= 0);
 	assert(count >= 0);
 
-	std::vector<cl_char> buffer(SIZEOF_VOXEL_REF);
-	cl_char *bufPtr = buffer.data();
+	const Int3 voxel(x, y, z);
 
-	cl_int *offPtr = reinterpret_cast<cl_int*>(bufPtr);
-	offPtr[0] = static_cast<cl_int>(offset);
-	offPtr[1] = static_cast<cl_int>(count);
-
-	// Write the buffer to device memory.
-	const cl::size_type bufferOffset = (x * SIZEOF_VOXEL_REF) +
-		((y * this->worldWidth) * SIZEOF_VOXEL_REF) +
-		((z * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer,
-		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxelRef");
+	// Refresh the voxel reference queue for this voxel.
+	auto queueIter = this->voxelRefQueue.find(voxel);
+	if (queueIter != this->voxelRefQueue.end())
+	{
+		queueIter->second = std::make_pair(offset, count);
+	}
+	else
+	{
+		this->voxelRefQueue.emplace(std::make_pair(voxel,
+			std::make_pair(offset, count)));
+	}
 }
 
-void CLProgram::updateSpriteRef(int x, int y, int z, int offset, int count)
+void CLProgram::queueSpriteRefUpdate(int x, int y, int z, int offset, int count)
 {
 	assert(x >= 0);
 	assert(y >= 0);
@@ -1020,25 +1018,23 @@ void CLProgram::updateSpriteRef(int x, int y, int z, int offset, int count)
 	assert(offset >= 0);
 	assert(count >= 0);
 
-	std::vector<cl_char> buffer(SIZEOF_SPRITE_REF);
-	cl_char *bufPtr = buffer.data();
+	const Int3 voxel(x, y, z);
 
-	cl_int *offPtr = reinterpret_cast<cl_int*>(bufPtr);
-	offPtr[0] = static_cast<cl_int>(offset);
-	offPtr[1] = static_cast<cl_int>(count);
-
-	// Write the buffer to device memory.
-	const cl::size_type bufferOffset = (x * SIZEOF_SPRITE_REF) +
-		((y * this->worldWidth) * SIZEOF_SPRITE_REF) +
-		((z * this->worldWidth * this->worldHeight) * SIZEOF_SPRITE_REF);
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->spriteRefBuffer,
-		CL_TRUE, bufferOffset, buffer.size(), static_cast<const void*>(bufPtr),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateSpriteRef");
+	// Refresh the sprite reference queue for this voxel.
+	auto queueIter = this->spriteRefQueue.find(voxel);
+	if (queueIter != this->spriteRefQueue.end())
+	{
+		queueIter->second = std::make_pair(offset, count);
+	}
+	else
+	{
+		this->spriteRefQueue.emplace(std::make_pair(voxel,
+			std::make_pair(offset, count)));
+	}
 }
 
-void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
-	const std::vector<int> &textureIndices)
+void CLProgram::queueVoxelUpdate(int x, int y, int z, 
+	const std::vector<Rect3D> &rects, const std::vector<int> &textureIndices)
 {
 	assert(x >= 0);
 	assert(y >= 0);
@@ -1048,9 +1044,10 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	assert(z < this->worldDepth);
 	assert(textureIndices.size() == rects.size());
 
+	const Int3 voxel(x, y, z);
+
 	// Free the existing allocation for the voxel if there is one.
-	const Int3 voxelCoordinate(x, y, z);
-	auto offsetIter = this->voxelOffsets.find(voxelCoordinate);
+	auto offsetIter = this->voxelOffsets.find(voxel);
 	if (offsetIter != this->voxelOffsets.end())
 	{
 		const size_t offset = offsetIter->second;
@@ -1062,28 +1059,39 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 	// no voxel reference should be pointing to them.
 	if (rects.size() > 0)
 	{
-		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rects.size());
+		const size_t bufferSize = SIZEOF_RECTANGLE * rects.size();
 
-		// Write each rectangle with its texture index to the buffer.
+		// Refresh the voxel queue at this voxel.
+		auto queueIter = this->voxelQueue.find(voxel);
+		if (queueIter == this->voxelQueue.end())
+		{
+			// Add a new voxel mapping for the queue.
+			queueIter = this->voxelQueue.emplace(std::make_pair(voxel,
+				std::vector<std::pair<Rect3D, int>>())).first;
+		}
+
+		auto &workItem = queueIter->second;
+		workItem.clear();
+		
 		for (size_t i = 0; i < rects.size(); ++i)
 		{
 			const Rect3D &rect = rects.at(i);
-			const TextureReference &textureRef = this->textureRefs.at(textureIndices.at(i));
-			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+			const int textureID = textureIndices.at(i);
+			
+			workItem.push_back(std::make_pair(rect, textureID));
 		}
 
 		// Allocate a region for the voxel's new rectangles.
-		const cl::size_type bufferOffset = this->rectBufferView->allocate(buffer.size());
+		const cl::size_type offset = this->rectBufferView->allocate(bufferSize);
 
 		// Make a new voxel offset mapping if one doesn't exist.
 		if (offsetIter == this->voxelOffsets.end())
 		{
-			offsetIter = this->voxelOffsets.emplace(std::make_pair(
-				voxelCoordinate, bufferOffset)).first;
+			offsetIter = this->voxelOffsets.emplace(std::make_pair(voxel, offset)).first;
 		}
 		else
 		{
-			offsetIter->second = bufferOffset;
+			offsetIter->second = offset;
 		}
 
 		// Size of the existing rectangle buffer.
@@ -1092,7 +1100,7 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo updateVoxel.");
 
 		// Minimum size of geometry memory required for the new voxel geometry.
-		const cl::size_type requiredSize = bufferOffset + buffer.size();
+		const cl::size_type requiredSize = offset + bufferSize;
 
 		if (requiredSize > rectBufferSize)
 		{
@@ -1100,15 +1108,10 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 			this->resizeRectBuffer(requiredSize);
 		}
 
-		// Write the buffer to device memory.
-		status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE, 
-			bufferOffset, buffer.size(), static_cast<const void*>(buffer.data()),
-			nullptr, nullptr);
-		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer updateVoxel");
-
 		// Update the voxel reference at the given coordinate. The offset should never
 		// be a fraction because only rectangles are allocated in the buffer view.
-		this->updateVoxelRef(x, y, z, static_cast<int>(bufferOffset / SIZEOF_RECTANGLE),
+		this->queueVoxelRefUpdate(x, y, z, 
+			static_cast<int>(offset / SIZEOF_RECTANGLE),
 			static_cast<int>(rects.size()));
 	}
 	else
@@ -1121,11 +1124,11 @@ void CLProgram::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rect
 		}
 
 		// Set the voxel reference to empty.
-		this->updateVoxelRef(x, y, z, 0, 0);
+		this->queueVoxelRefUpdate(x, y, z, 0, 0);
 	}
 }
 
-void CLProgram::updateVoxel(int x, int y, int z,
+void CLProgram::queueVoxelUpdate(int x, int y, int z,
 	const std::vector<Rect3D> &rects, int textureIndex)
 {
 	// Blocks in Arena almost always share the same texture index on all sides, 
@@ -1138,61 +1141,59 @@ void CLProgram::updateVoxel(int x, int y, int z,
 		index = textureIndex;
 	}
 
-	this->updateVoxel(x, y, z, rects, textureIndices);
+	this->queueVoxelUpdate(x, y, z, rects, textureIndices);
 }
 
 void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 {
-	// Get the list of sprite IDs associated with the voxel if there is one.
+	// Get the sprite group associated with the voxel and free the old sprite
+	// group allocation if there is one.
 	auto groupIter = this->spriteGroups.find(voxel);
 	if (groupIter == this->spriteGroups.end())
 	{
-		// Add a mapping to a new empty ID list.
+		// Add a mapping to a new group with a dummy byte offset of 0.
 		groupIter = this->spriteGroups.emplace(std::make_pair(
-			voxel, std::vector<int>())).first;
+			voxel, std::make_pair(0, std::vector<int>()))).first;
+	}
+	else
+	{
+		// Free the old sprite group allocation.
+		const size_t offset = groupIter->second.first;
+		this->rectBufferView->deallocate(offset);
 	}
 
-	std::vector<int> &spriteIDs = groupIter->second;
-
-	// Make sure the sprite isn't already in the voxel.
-	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
-	Debug::check(idIter == spriteIDs.end(), "CLProgram",
-		"Can't add a duplicate sprite to the same voxel.");
+	std::vector<int> &spriteIDs = groupIter->second.second;
 
 	// Add the new ID into the sprite group.
 	spriteIDs.push_back(spriteID);
 
-	std::vector<cl_char> buffer(SIZEOF_RECTANGLE * spriteIDs.size());
-
-	// Write each sprite's rectangle with its texture index to the buffer.
-	for (size_t i = 0; i < spriteIDs.size(); ++i)
+	// Refresh the sprite queue at this voxel.
+	auto queueIter = this->spriteQueue.find(voxel);
+	if (queueIter == this->spriteQueue.end())
 	{
-		// Get the rectangle + texture pair for the sprite.
-		const auto &pair = this->spriteRects.at(spriteIDs.at(i));
+		// Add a new voxel mapping for the queue.
+		queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
+			std::vector<std::pair<Rect3D, int>>())).first;
+	}
+
+	auto &workItem = queueIter->second;
+	workItem.clear();
+
+	for (const auto id : spriteIDs)
+	{
+		const auto &pair = this->spriteData.at(id);
 		const Rect3D &rect = pair.first;
-		const TextureReference &textureRef = this->textureRefs.at(pair.second);
+		const int textureID = pair.second;
 
-		this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
-	}
-
-	// Free the old sprite group allocation if there is one.
-	auto offsetIter = this->spriteOffsets.find(voxel);
-	if (offsetIter != this->spriteOffsets.end())
-	{
-		// Deallocate the old sprite group.
-		this->rectBufferView->deallocate(offsetIter->second);
-	}
-	else
-	{
-		// Make a new sprite offset mapping with a dummy offset.
-		offsetIter = this->spriteOffsets.emplace(std::make_pair(
-			voxel, static_cast<size_t>(0))).first;
+		workItem.push_back(std::make_pair(rect, textureID));
 	}
 
 	// Allocate the new sprite group and get its byte offset in the rect buffer. 
 	// The voxel is guaranteed to have at least one sprite, so there's no need to 
 	// check for buffer.size() == 0 (unlike with voxel updating).
-	offsetIter->second = this->rectBufferView->allocate(buffer.size());
+	const size_t bufferSize = SIZEOF_RECTANGLE * spriteIDs.size();
+	size_t &offset = groupIter->second.first;
+	offset = this->rectBufferView->allocate(bufferSize);
 
 	// Size of the existing rectangle buffer.
 	cl_int status = CL_SUCCESS;
@@ -1200,7 +1201,7 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addSpriteToVoxel.");
 
 	// Minimum size of geometry memory required for the new sprite geometry.
-	const cl::size_type requiredSize = offsetIter->second + buffer.size();
+	const cl::size_type requiredSize = offset + bufferSize;
 
 	if (requiredSize > rectBufferSize)
 	{
@@ -1208,16 +1209,10 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 		this->resizeRectBuffer(requiredSize);
 	}
 
-	// Write the buffer to device memory.
-	status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE, 
-		offsetIter->second, buffer.size(), static_cast<const void*>(buffer.data()),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer addSpriteToVoxel.");
-
 	// Update the sprite reference. The offset should never be a fraction because 
 	// only rectangles are allocated in the buffer view.
-	this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(),
-		static_cast<int>(offsetIter->second / SIZEOF_RECTANGLE),
+	this->queueSpriteRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(),
+		static_cast<int>(offset / SIZEOF_RECTANGLE),
 		static_cast<int>(spriteIDs.size()));
 }
 
@@ -1225,107 +1220,101 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 {
 	// Get the list of sprite IDs associated with the voxel.
 	const auto groupIter = this->spriteGroups.find(voxel);
-	Debug::check(groupIter != this->spriteGroups.end(), "CLProgram",
-		"Expected a sprite list for voxel [" + std::to_string(voxel.getX()) + 
-		", " + std::to_string(voxel.getY()) + ", " + std::to_string(voxel.getZ()) + "].");
-
-	std::vector<int> &spriteIDs = groupIter->second;
-
-	// Make sure the sprite is in the voxel.
-	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
-	Debug::check(idIter != spriteIDs.end(), "CLProgram",
-		"Expected sprite ID " + std::to_string(spriteID) + " in voxel [" + 
-		std::to_string(voxel.getX()) + ", " + std::to_string(voxel.getY()) + ", " + 
-		std::to_string(voxel.getZ()) + "].");
+	std::vector<int> &spriteIDs = groupIter->second.second;
 
 	// Erase the sprite ID from the sprite group.
+	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
 	spriteIDs.erase(idIter);
 
 	// Get the byte offset of the sprite group in the rect buffer and 
 	// deallocate it.
-	const auto offsetIter = this->spriteOffsets.find(voxel);
-	this->rectBufferView->deallocate(offsetIter->second);
+	size_t &offset = groupIter->second.first;
+	this->rectBufferView->deallocate(offset);
 
 	// If there are still sprites in the voxel, reallocate the sprite group in the 
 	// rect buffer (this isn't entirely necessary; it's just done for correctness
 	// so a sprite group doesn't have unused memory).
 	if (spriteIDs.size() > 0)
 	{
-		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * spriteIDs.size());
-
-		for (size_t i = 0; i < spriteIDs.size(); ++i)
+		// Refresh the sprite queue at this voxel.
+		auto queueIter = this->spriteQueue.find(voxel);
+		if (queueIter == this->spriteQueue.end())
 		{
-			// Get the rectangle + texture pair for the sprite.
-			const auto &pair = this->spriteRects.at(spriteIDs.at(i));
-			const Rect3D &rect = pair.first;
-			const TextureReference &textureRef = this->textureRefs.at(pair.second);
+			// Add a new voxel mapping for the queue.
+			queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
+				std::vector<std::pair<Rect3D, int>>())).first;
+		}
 
-			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+		auto &workItem = queueIter->second;
+		workItem.clear();
+
+		for (const auto id : spriteIDs)
+		{
+			const auto &pair = this->spriteData.at(id);
+			const Rect3D &rect = pair.first;
+			const int textureID = pair.second;
+
+			workItem.push_back(std::make_pair(rect, textureID));
 		}
 
 		// Reallocate sprite group (no need to resize because the sprite group has shrunk;
 		// if it doesn't find a better fit, it will find the deallocated space again).
-		offsetIter->second = this->rectBufferView->allocate(buffer.size());
-
-		// Write to rectBuffer.
-		cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE,
-			offsetIter->second, buffer.size(), static_cast<const void*>(buffer.data()),
-			nullptr, nullptr);
-		Debug::check(status == CL_SUCCESS, "CLProgram",
-			"cl::enqueueWriteBuffer removeSpriteFromVoxel.");
+		offset = this->rectBufferView->allocate(SIZEOF_RECTANGLE * spriteIDs.size());
 
 		// Update the sprite reference. The offset should never be a fraction because 
 		// only rectangles are allocated in the buffer view.
-		this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(),
-			static_cast<int>(offsetIter->second / SIZEOF_RECTANGLE),
+		this->queueSpriteRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(),
+			static_cast<int>(offset / SIZEOF_RECTANGLE),
 			static_cast<int>(spriteIDs.size()));
 	}
 	else
 	{
-		// No more sprites in the voxel, so erase the associated mappings.
+		// No more sprites in the voxel, so erase the associated mapping.
 		this->spriteGroups.erase(groupIter);
-		this->spriteOffsets.erase(offsetIter);
 
 		// Set the sprite reference to zero.
-		this->updateSpriteRef(voxel.getX(), voxel.getY(), voxel.getZ(), 0, 0);
+		this->queueSpriteRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(), 0, 0);
 	}
 }
 
 void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 {
-	// Get the sprite's rectangle and texture index.
-	const auto &pair = this->spriteRects.at(spriteID);
+	// Get the sprite's rectangle and texture reference.
+	const auto &rectData = this->spriteData.at(spriteID);
+	const Rect3D &rect = rectData.first;
+	const TextureReference &textureRef = this->textureRefs.at(rectData.second);
 
-	std::vector<cl_char> buffer(SIZEOF_RECTANGLE);
+	// Get the sprite group for the voxel.
+	const auto &spriteGroup = this->spriteGroups.at(voxel);
+	const std::vector<int> &spriteIDs = spriteGroup.second;
 
-	// Write the new sprite rectangle and texture reference to the temp buffer.
-	const Rect3D &rect = pair.first;
-	const TextureReference &textureRef = this->textureRefs.at(pair.second);
-	this->writeRect(rect, textureRef, buffer, 0);
+	// Refresh the sprite queue at this voxel.
+	// (Later, this code and pushUpdates() should calculate only necessary changes).
+	auto queueIter = this->spriteQueue.find(voxel);
+	if (queueIter == this->spriteQueue.end())
+	{
+		queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
+			std::vector<std::pair<Rect3D, int>>())).first;
+	}
 
-	// Get the byte offset of the sprite group in the rect buffer.
-	const size_t offset = this->spriteOffsets.at(voxel);
+	auto &workItem = queueIter->second;
+	workItem.clear();
 
-	// Get the index of the sprite in the sprite reference.
-	const std::vector<int> &spriteIDs = this->spriteGroups.at(voxel);
-	const auto idIter = std::find(spriteIDs.begin(), spriteIDs.end(), spriteID);
-	assert(idIter != spriteIDs.end());
-	const size_t index = idIter - spriteIDs.begin();
+	for (const auto id : spriteIDs)
+	{
+		const auto &rectData = this->spriteData.at(id);
+		const Rect3D &rect = rectData.first;
+		const int textureID = rectData.second;
 
-	// Write the buffer to device memory.
-	const cl::size_type bufferOffset = offset + (SIZEOF_RECTANGLE * index);
-	cl_int status = this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_TRUE,
-		bufferOffset, buffer.size(), static_cast<const void*>(buffer.data()),
-		nullptr, nullptr);
-	Debug::check(status == CL_SUCCESS, "CLProgram",
-		"cl::enqueueWriteBuffer updateSpriteInVoxel.");
+		workItem.push_back(std::make_pair(rect, textureID));
+	}
 }
 
-void CLProgram::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
+void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureIndex)
 {
 	// See if the sprite already has a mapping for it.
-	const auto rectIter = this->spriteRects.find(spriteID);
-	if (rectIter != this->spriteRects.end())
+	const auto rectIter = this->spriteData.find(spriteID);
+	if (rectIter != this->spriteData.end())
 	{
 		// Sprite mapping exists, so overwrite its data.
 		rectIter->second = std::make_pair(rect, textureIndex);
@@ -1379,11 +1368,11 @@ void CLProgram::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
 	else
 	{
 		// No sprite mapping exists, so insert new sprite data.
-		this->spriteRects.emplace(std::make_pair(spriteID,
+		this->spriteData.emplace(std::make_pair(spriteID,
 			std::make_pair(rect, textureIndex)));
 
 		// Add the voxels that the sprite touches.
-		auto touchedIter = this->spriteTouchedVoxels.emplace(std::make_pair(
+		const auto touchedIter = this->spriteTouchedVoxels.emplace(std::make_pair(
 			spriteID, this->getTouchedVoxels(rect, true))).first;
 		const std::vector<Int3> &touchedVoxels = touchedIter->second;
 
@@ -1395,15 +1384,11 @@ void CLProgram::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
 	}
 }
 
-void CLProgram::removeSprite(int spriteID)
+void CLProgram::queueSpriteRemoval(int spriteID)
 {
-	// Don't try to remove a sprite if it doesn't exist.
-	const auto pairIter = this->spriteRects.find(spriteID);
-	Debug::check(pairIter != this->spriteRects.end(), "CLProgram",
-		"Can't remove a non-existent sprite's data.");
-
-	// Remove the sprite's rectangle/texture mapping.
-	this->spriteRects.erase(pairIter);
+	// Remove the sprite's rectangle + texture ID mapping.
+	const auto dataIter = this->spriteData.find(spriteID);
+	this->spriteData.erase(dataIter);
 
 	// Get the voxels touched by the sprite.
 	const auto touchedIter = this->spriteTouchedVoxels.find(spriteID);
@@ -1417,6 +1402,137 @@ void CLProgram::removeSprite(int spriteID)
 
 	// Remove the sprite's touched voxels mapping.
 	this->spriteTouchedVoxels.erase(touchedIter);
+}
+
+void CLProgram::pushUpdates()
+{
+	// Buffers with offsets for asynchronous writes to device memory.
+	std::vector<std::pair<size_t, std::vector<cl_char>>> rectBuffers, 
+		voxelRefBuffers, spriteRefBuffers;
+
+	// Lambda for adding a rectangle buffer to the queue.
+	auto addRectBuffer = [this, &rectBuffers](const Int3 &voxel,
+		const std::vector<std::pair<Rect3D, int>> &rectData, size_t offset)
+	{
+		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rectData.size());
+
+		for (size_t i = 0; i < rectData.size(); ++i)
+		{
+			const auto &pair = rectData.at(i);
+			const Rect3D &rect = pair.first;
+			const TextureReference &textureRef = this->textureRefs.at(pair.second);
+			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
+		}
+
+		rectBuffers.push_back(std::make_pair(offset, std::move(buffer)));
+	};
+
+	// Lambda for adding a voxel reference buffer to the queue.
+	auto addVoxelRefBuffer = [this, &voxelRefBuffers](const Int3 &voxel, int offset, int count)
+	{
+		std::vector<cl_char> buffer(SIZEOF_VOXEL_REF);
+		
+		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
+		offPtr[0] = static_cast<cl_int>(offset);
+		offPtr[1] = static_cast<cl_int>(count);
+
+		const size_t bufferOffset = (voxel.getX() * SIZEOF_VOXEL_REF) +
+			((voxel.getY() * this->worldWidth) * SIZEOF_VOXEL_REF) +
+			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
+		voxelRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
+	};
+
+	// Lambda for adding a sprite reference buffer to the queue.
+	auto addSpriteRefBuffer = [this, &spriteRefBuffers](const Int3 &voxel, int offset, int count)
+	{
+		std::vector<cl_char> buffer(SIZEOF_SPRITE_REF);
+
+		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
+		offPtr[0] = static_cast<cl_int>(offset);
+		offPtr[1] = static_cast<cl_int>(count);
+
+		const size_t bufferOffset = (voxel.getX() * SIZEOF_SPRITE_REF) +
+			((voxel.getY() * this->worldWidth) * SIZEOF_SPRITE_REF) +
+			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_SPRITE_REF);
+		spriteRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
+	};
+
+	// Add voxel queue buffers.
+	for (const auto &group : this->voxelQueue)
+	{
+		const Int3 &voxel = group.first;
+		const auto &rectData = group.second;
+		const size_t byteOffset = this->voxelOffsets.at(voxel);
+		addRectBuffer(voxel, rectData, byteOffset);
+	}
+
+	// Add sprite queue buffers.
+	for (const auto &group : this->spriteQueue)
+	{
+		const Int3 &voxel = group.first;
+		const auto &rectData = group.second;
+		const size_t byteOffset = this->spriteGroups.at(voxel).first;
+		addRectBuffer(voxel, rectData, byteOffset);
+	}
+
+	// Add voxel reference queue buffers.
+	for (const auto &group : this->voxelRefQueue)
+	{
+		const Int3 &voxel = group.first;
+		const int offset = group.second.first;
+		const int count = group.second.second;
+		addVoxelRefBuffer(voxel, offset, count);
+	}
+
+	// Add sprite reference queue buffers.
+	for (const auto &group : this->spriteRefQueue)
+	{
+		const Int3 &voxel = group.first;
+		const int offset = group.second.first;
+		const int count = group.second.second;
+		addSpriteRefBuffer(voxel, offset, count);
+	}
+
+	// Begin asynchronous writes to the rectangle buffer.
+	for (const auto &pair : rectBuffers)
+	{
+		const size_t offset = pair.first;
+		const std::vector<cl_char> &buffer = pair.second;
+		this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_FALSE, 
+			offset, buffer.size(), static_cast<const void*>(buffer.data()),
+			nullptr, nullptr);
+	}
+
+	// Begin asynchronous writes to the voxel reference buffer.
+	for (const auto &pair : voxelRefBuffers)
+	{
+		const size_t offset = pair.first;
+		const std::vector<cl_char> &buffer = pair.second;
+		this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer, CL_FALSE,
+			offset, buffer.size(), static_cast<const void*>(buffer.data()),
+			nullptr, nullptr);
+	}
+
+	// Begin asynchronous writes to the sprite reference buffer.
+	for (const auto &pair : spriteRefBuffers)
+	{
+		const size_t offset = pair.first;
+		const std::vector<cl_char> &buffer = pair.second;
+		this->commandQueue.enqueueWriteBuffer(this->spriteRefBuffer, CL_FALSE,
+			offset, buffer.size(), static_cast<const void*>(buffer.data()),
+			nullptr, nullptr);
+	}
+
+	// Erase the queues so they're empty for the next frame.
+	this->voxelQueue.clear();
+	this->spriteQueue.clear();
+	this->voxelRefQueue.clear();
+	this->spriteRefQueue.clear();
+
+	// Make sure all writes have finished before continuing.
+	cl_int status = this->commandQueue.finish();
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"pushUpdates(), " + this->getErrorString(status));
 }
 
 const void *CLProgram::render()

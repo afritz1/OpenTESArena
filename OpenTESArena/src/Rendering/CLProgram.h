@@ -43,7 +43,7 @@ private:
 	static const std::string POST_PROCESS_KERNEL;
 	static const std::string CONVERT_TO_RGB_KERNEL;
 
-	cl::Device device; // The device selected from the devices list.
+	cl::Device device;
 	cl::Context context;
 	cl::CommandQueue commandQueue;
 	cl::Program program;
@@ -52,14 +52,36 @@ private:
 		rectangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer,
 		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer,
 		colorBuffer, outputBuffer;
-	std::vector<uint8_t> outputData; // For receiving pixels from the device's output buffer.
-	std::unordered_map<Int3, size_t> voxelOffsets; // Byte offsets into rectBuffer for each voxel.
-	std::unordered_map<Int3, size_t> spriteOffsets; // Byte offsets into rectBuffer for each sprite group.
-	std::unordered_map<Int3, std::vector<int>> spriteGroups; // Sprite ID list for sprite references.
-	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels; // Coordinates of a sprite's touched voxels.
-	std::unordered_map<int, std::pair<Rect3D, int>> spriteRects; // A copy of each sprite's rect and texture.
-	std::unique_ptr<BufferView> rectBufferView; // For managing allocations in rectBuffer.
+
+	// For receiving pixels from the device's output buffer.
+	std::vector<uint8_t> outputData;
+
+	// Byte offset for voxel groups.
+	std::unordered_map<Int3, size_t> voxelOffsets;
+
+	// Byte offset and sprite ID list for sprite groups.
+	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> spriteGroups;
+
+	// Geometry queues. Each pair is a voxel/sprite group to be updated in device 
+	// memory. Each list pair carries the rectangle and its texture index.
+	std::unordered_map<Int3, std::vector<std::pair<Rect3D, int>>> voxelQueue, spriteQueue;
+
+	// Reference queues. Each pair is a voxel/sprite reference to be updated in
+	// device memory.
+	std::unordered_map<Int3, std::pair<int, int>> voxelRefQueue, spriteRefQueue;
+
+	// Voxel coordinates of a sprite's touched voxels.
+	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels;
+
+	// A copy of each sprite's rectangle and texture ID.
+	std::unordered_map<int, std::pair<Rect3D, int>> spriteData;
+
+	// For managing allocations in the rectangle buffer.
+	std::unique_ptr<BufferView> rectBufferView;
+
+	// Offsets and sizes of textures in device memory.
 	std::vector<TextureReference> textureRefs;
+
 	int renderWidth, renderHeight, worldWidth, worldHeight, worldDepth;
 
 	std::string getBuildReport() const;
@@ -73,7 +95,7 @@ private:
 	// using the buffer must be refreshed by the caller.
 	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
 
-	// Helper method for resizing the rectangle buffer and setting arguments.
+	// Helper method for resizing the rectangle buffer and setting kernel arguments.
 	void resizeRectBuffer(cl::size_type requiredSize);
 
 	// Returns a vector of voxel coordinates for all voxels that a rectangle touches,
@@ -95,11 +117,11 @@ private:
 	// a given voxel in device memory.
 	void updateSpriteInVoxel(int spriteID, const Int3 &voxel);
 
-	// Updates a voxel reference's offset and count in device memory.
-	void updateVoxelRef(int x, int y, int z, int offset, int count);
+	// Queues a voxel reference for updating in device memory.
+	void queueVoxelRefUpdate(int x, int y, int z, int offset, int count);
 
-	// Updates a sprite reference's offset and count in device memory.
-	void updateSpriteRef(int x, int y, int z, int offset, int count);
+	// Queues a sprite reference for updating in device memory.
+	void queueSpriteRefUpdate(int x, int y, int z, int offset, int count);
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
@@ -131,19 +153,21 @@ public:
 	// adding new geometry data. Pixel data is expected to be in ARGB8888 format.
 	int addTexture(uint32_t *pixels, int width, int height);
 
-	// Updates a voxel's geometry in device memory. Currently restricted to up to 6 
-	// rectangles, and all rectangles must be updated at the same time.
-	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+	// Queues a voxel's geometry for updating. The given data vectors can be empty,
+	// in which case the voxel becomes empty as well.
+	void queueVoxelUpdate(int x, int y, int z, const std::vector<Rect3D> &rects,
 		const std::vector<int> &textureIndices);
-	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
+	void queueVoxelUpdate(int x, int y, int z, const std::vector<Rect3D> &rects,
 		int textureIndex);
 
-	// Updates a sprite in device memory if it exists, and adds the sprite if it 
-	// doesn't exist.
-	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
+	// Queues a sprite for updating if it exists, and adds the sprite if it doesn't exist.
+	void queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureIndex);
 
-	// Removes a sprite from device memory.
-	void removeSprite(int spriteID);
+	// Queues a sprite for removal from device memory.
+	void queueSpriteRemoval(int spriteID);
+
+	// Consumes all voxel and sprite updates in the queue and writes to device memory.
+	void pushUpdates();
 
 	// Runs the OpenCL program and returns a pointer to the resulting frame buffer.
 	const void *render();
