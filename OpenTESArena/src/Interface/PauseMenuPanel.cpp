@@ -225,14 +225,6 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 17, 9, function));
 	}();
-
-	// Store these because of the order game data is deleted when going
-	// to the main menu.
-	auto &player = game->getGameData().getPlayer();
-	this->headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceName(), true);
-	this->portraitID = player.getPortraitID();
-	this->classCanCastMagic = player.getCharacterClass().canCastMagic();
 }
 
 PauseMenuPanel::~PauseMenuPanel()
@@ -341,7 +333,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		{
 			this->soundDownButton->click(this->getGame());
 		}
-	}	
+	}
 }
 
 void PauseMenuPanel::render(Renderer &renderer)
@@ -362,19 +354,22 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw game world interface below the pause menu.
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	renderer.drawToOriginal(gameInterface.get(), 0, 
+	renderer.drawToOriginal(gameInterface.get(), 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	const auto &portrait = textureManager.getTextures(this->headsFilename)
-		.at(this->portraitID);
+	const auto &player = this->getGame()->getGameData().getPlayer();
+	const auto &headsFilename = PortraitFile::getHeads(
+		player.getGenderName(), player.getRaceName(), true);
+	const auto &portrait = textureManager.getTextures(headsFilename)
+		.at(player.getPortraitID());
 	const auto &status = textureManager.getTextures(
 		TextureFile::fromName(TextureName::StatusGradients)).at(0);
 	renderer.drawToOriginal(status.get(), 14, 166);
 	renderer.drawToOriginal(portrait.get(), 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
-	if (!this->classCanCastMagic)
+	if (!player.getCharacterClass().canCastMagic())
 	{
 		const auto &nonMagicIcon = textureManager.getTexture(
 			TextureFile::fromName(TextureName::NoSpell));
