@@ -39,6 +39,9 @@ private:
 
 	// Handle player movement in the game world.
 	void handleKeyboard(double dt);
+
+	// Draws a tooltip sitting on the top left of the game interface.
+	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	// Constructs the game world panel. The GameData object in Game must be
 	// initialized.

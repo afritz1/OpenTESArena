@@ -274,7 +274,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (worldMapHotkeyPressed)
 	{
 		this->worldMapButton->click(this->getGame());
-	}	
+	}
 }
 
 void GameWorldPanel::handleMouse(double dt)
@@ -418,6 +418,20 @@ void GameWorldPanel::handleKeyboard(double dt)
 	}
 }
 
+void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
+{
+	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
+
+	Texture tooltip(Panel::createTooltip(text, font, renderer));
+
+	auto &textureManager = this->getGame()->getTextureManager();
+	const auto &gameInterface = textureManager.getTexture(
+		TextureFile::fromName(TextureName::GameWorldInterface));
+
+	renderer.drawToOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT - 
+		gameInterface.getHeight() - tooltip.getHeight());
+}
+
 Float2d GameWorldPanel::getMotionMagnitudes(const Int2 &nativePoint)
 {
 	// To do...
@@ -506,8 +520,8 @@ void GameWorldPanel::tick(double dt)
 				(44.0f / 66.0f) * 0.75f,
 				1.0f * 0.75f);
 			renderer.updateSprite(
-				(i - 1) + ((k - 1) * (gameData.getWorldWidth() - 1)), 
-				rect, 
+				(i - 1) + ((k - 1) * (gameData.getWorldWidth() - 1)),
+				rect,
 				30 + ((index / 8) % 2));
 		}
 	}
@@ -538,7 +552,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw game world interface.
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	renderer.drawToOriginal(gameInterface.get(), 0, 
+	renderer.drawToOriginal(gameInterface.get(), 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
@@ -598,6 +612,47 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
+	// Check if the mouse is over one of the buttons for tooltips.
+	const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+
+	if (PortraitRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Stats", renderer);
+	}
+	else if (DrawWeaponRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Draw/Sheathe Weapon", renderer);
+	}
+	else if (MapRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Automap/World Map", renderer);
+	}
+	else if (ThievingRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Steal", renderer);
+	}
+	else if (StatusRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Status", renderer);
+	}
+	else if (MagicRegion.contains(originalPosition) &&
+		player.getCharacterClass().canCastMagic())
+	{
+		this->drawTooltip("Cast Magic", renderer);
+	}
+	else if (LogbookRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Logbook", renderer);
+	}
+	else if (UseItemRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Use Item", renderer);
+	}
+	else if (RestRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Camp", renderer);
+	}
+
 	// Scale the original frame buffer onto the native one.
 	// This shouldn't be done for the game world interface because it needs to
 	// clamp to the screen edges, not the letterbox edges. 
@@ -620,9 +675,9 @@ void GameWorldPanel::render(Renderer &renderer)
 			}
 		}
 
-		// If not in any of the arrow regions, use the default sword cursor.
-		return textureManager.getTexture(
-			TextureFile::fromName(TextureName::SwordCursor));
+	// If not in any of the arrow regions, use the default sword cursor.
+	return textureManager.getTexture(
+		TextureFile::fromName(TextureName::SwordCursor));
 	}();
 
 	renderer.drawToNative(cursor.get(), mousePosition.getX(), mousePosition.getY(),
