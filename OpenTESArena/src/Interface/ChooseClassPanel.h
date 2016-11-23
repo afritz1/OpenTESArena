@@ -16,8 +16,7 @@ class ListBox;
 class Renderer;
 class Surface;
 class TextBox;
-
-struct SDL_Texture;
+class Texture;
 
 class ChooseClassPanel : public Panel
 {
@@ -27,7 +26,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
 	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
-	std::unordered_map<int, SDL_Texture*> tooltipTextures;
+	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<std::unique_ptr<CharacterClass>> charClasses;
 	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
 
@@ -35,7 +34,6 @@ private:
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
 
-	void createTooltip(int tooltipIndex, Renderer &renderer);
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 public:
 	ChooseClassPanel(Game *game);

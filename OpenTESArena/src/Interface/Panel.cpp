@@ -8,6 +8,8 @@
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
+#include "TextAlignment.h"
+#include "TextBox.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Int2.h"
@@ -20,6 +22,7 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Surface.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -31,6 +34,42 @@ Panel::Panel(Game *game)
 Panel::~Panel()
 {
 	// Game is owned by the Game object.
+}
+
+SDL_Texture *Panel::createTooltip(const std::string &text,
+	const Font &font, Renderer &renderer)
+{
+	const Color textColor(255, 255, 255, 255);
+	const Color backColor(32, 32, 32, 192);
+
+	// Create text.
+	const TextBox textBox(0, 0, textColor, text, font, TextAlignment::Left, renderer);
+	SDL_Surface *textSurface = textBox.getSurface();
+
+	// Create background. Make it a little bigger than the text box.
+	const int padding = 4;
+	SDL_Surface *background = Surface::createSurfaceWithFormat(
+		textSurface->w + padding, textSurface->h + padding, 
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	SDL_FillRect(background, nullptr, SDL_MapRGBA(background->format, backColor.getR(),
+		backColor.getG(), backColor.getB(), backColor.getA()));
+
+	// Offset the text from the top left corner by a bit so it isn't against the side 
+	// of the tooltip (for aesthetic purposes).
+	SDL_Rect rect;
+	rect.x = padding / 2;
+	rect.y = padding / 2;
+	rect.w = textSurface->w;
+	rect.h = textSurface->h;
+
+	// Draw the text onto the background.
+	SDL_BlitSurface(textSurface, nullptr, background, &rect);
+
+	// Create a hardware texture for the tooltip.
+	SDL_Texture *tooltip = renderer.createTextureFromSurface(background);
+	SDL_FreeSurface(background);
+
+	return tooltip;
 }
 
 std::unique_ptr<Panel> Panel::defaultPanel(Game *game)

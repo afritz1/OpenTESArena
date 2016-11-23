@@ -2,6 +2,7 @@
 #define PANEL_H
 
 #include <memory>
+#include <string>
 
 // Each panel interprets user input and draws to the screen. There is only one panel 
 // active at a time, and it is owned by the Game.
@@ -11,9 +12,13 @@
 // the last screen. I think I'll just replace them with scrolled text boxes. The buttons
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
+class Color;
+class Font;
 class Game;
 class Int2;
 class Renderer;
+
+struct SDL_Texture;
 
 union SDL_Event;
 
@@ -22,6 +27,11 @@ class Panel
 private:
 	Game *game;
 protected:
+	// Generates a tooltip texture with the default white foreground and gray
+	// background with alpha blending.
+	static SDL_Texture *createTooltip(const std::string &text,
+		const Font &font, Renderer &renderer);
+
 	Game *getGame() const;
 	double getCursorScale() const;
 	Int2 getMousePosition() const;

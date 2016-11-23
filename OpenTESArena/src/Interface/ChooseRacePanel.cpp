@@ -165,44 +165,21 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 
 void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer)
 {
-	auto mouseOriginalPosition = this->getGame()->getRenderer()
-		.nativePointToOriginal(this->getMousePosition());
 	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
-	std::unique_ptr<TextBox> tooltip(new TextBox(
-		mouseOriginalPosition.getX(),
-		mouseOriginalPosition.getY(),
-		Color::White,
-		"Land of the " + raceName,
-		this->getGame()->getFontManager().getFont(FontName::D),
-		TextAlignment::Left,
-		this->getGame()->getRenderer()));
+	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
 
-	int tooltipWidth, tooltipHeight;
-	SDL_QueryTexture(tooltip->getTexture(), nullptr, nullptr,
-		&tooltipWidth, &tooltipHeight);
+	Texture tooltip(Panel::createTooltip("Land of the " + raceName, font, renderer));
 
-	Texture tooltipBackground = [&renderer, &tooltip, tooltipWidth, tooltipHeight]()
-	{
-		SDL_Surface *temp = Surface::createSurfaceWithFormat(
-			tooltipWidth, tooltipHeight, Renderer::DEFAULT_BPP,
-			Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(temp, nullptr, SDL_MapRGBA(temp->format, 32, 32, 32, 192));
-		SDL_Texture *background = renderer.createTextureFromSurface(temp);
-		SDL_SetTextureBlendMode(background, SDL_BLENDMODE_BLEND);
-		SDL_FreeSurface(temp);
-		return Texture(background);
-	}();
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const int mouseX = originalPosition.getX();
+	const int mouseY = originalPosition.getY();
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+		(mouseX + 8) : (mouseX - tooltip.getWidth());
+	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+		mouseY : (mouseY - tooltip.getHeight());
 
-	const int tooltipX = tooltip->getX();
-	const int tooltipY = tooltip->getY();
-	const int x = ((tooltipX + 8 + tooltipWidth) < Renderer::ORIGINAL_WIDTH) ?
-		(tooltipX + 8) : (tooltipX - tooltipWidth);
-	const int y = ((tooltipY + tooltipHeight) < Renderer::ORIGINAL_HEIGHT) ?
-		tooltipY : (tooltipY - tooltipHeight);
-
-	renderer.drawToOriginal(tooltipBackground.get(), x, y - 1, 
-		tooltipWidth, tooltipHeight + 2);
-	renderer.drawToOriginal(tooltip->getTexture(), x, y, tooltipWidth, tooltipHeight);
+	renderer.drawToOriginal(tooltip.get(), x, y);
 }
 
 void ChooseRacePanel::render(Renderer &renderer)
