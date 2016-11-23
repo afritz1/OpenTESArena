@@ -1,6 +1,8 @@
 #ifndef AUTOMAP_PANEL_H
 #define AUTOMAP_PANEL_H
 
+#include <string>
+
 #include "Panel.h"
 
 class Button;
@@ -15,6 +17,8 @@ private:
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
+
+	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	AutomapPanel(Game *game);
 	virtual ~AutomapPanel();

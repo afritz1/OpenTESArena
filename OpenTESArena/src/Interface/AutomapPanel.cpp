@@ -9,6 +9,9 @@
 #include "TextBox.h"
 #include "../Game/Game.h"
 #include "../Math/Int2.h"
+#include "../Math/Rect.h"
+#include "../Media/FontManager.h"
+#include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -16,6 +19,15 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+
+namespace
+{
+	// Click areas for compass directions.
+	const Rect UpRegion(264, 23, 14, 14);
+	const Rect DownRegion(264, 60, 14, 14);
+	const Rect LeftRegion(245, 41, 14, 14);
+	const Rect RightRegion(284, 41, 14, 14);
+}
 
 AutomapPanel::AutomapPanel(Game *game)
 	: Panel(game)
@@ -74,6 +86,24 @@ void AutomapPanel::handleMouse(double dt)
 	static_cast<void>(dt);
 }
 
+void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
+{
+	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
+
+	Texture tooltip(Panel::createTooltip(text, font, renderer));
+
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const int mouseX = originalPosition.getX();
+	const int mouseY = originalPosition.getY();
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+		(mouseX + 8) : (mouseX - tooltip.getWidth());
+	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+		(mouseY - 1) : (mouseY - tooltip.getHeight());
+
+	renderer.drawToOriginal(tooltip.get(), x, y);
+}
+
 void AutomapPanel::tick(double dt)
 {
 	this->handleMouse(dt);
@@ -94,6 +124,26 @@ void AutomapPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::Automap),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(automapBackground.get());
+
+	// Check if the mouse is over the compass directions for tooltips.
+	const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+
+	if (UpRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Up", renderer);
+	}
+	else if (DownRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Down", renderer);
+	}
+	else if (LeftRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Left", renderer);
+	}
+	else if (RightRegion.contains(originalPosition))
+	{
+		this->drawTooltip("Right", renderer);
+	}
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
