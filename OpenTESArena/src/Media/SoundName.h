@@ -20,7 +20,7 @@ enum class SoundName
 	Drip2,
 	Drums,
 	Eerie,
-	HiChoir,
+	HighChoir,
 	HumEerie,
 	Scream1,
 	Scream2,

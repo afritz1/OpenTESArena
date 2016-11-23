@@ -15,6 +15,7 @@
 #include "../Math/Int2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
+#include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PPMFile.h"
 #include "../Media/TextureManager.h"
@@ -145,7 +146,8 @@ void Game::setPanel(std::unique_ptr<Panel> nextPanel)
 
 void Game::setMusic(MusicName name)
 {
-	this->audioManager.playMusic(name);
+	const std::string &filename = MusicFile::fromName(name);
+	this->audioManager.playMusic(filename);
 }
 
 void Game::setGameData(std::unique_ptr<GameData> gameData)

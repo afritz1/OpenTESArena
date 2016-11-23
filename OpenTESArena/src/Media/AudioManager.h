@@ -3,16 +3,12 @@
 
 #include <memory>
 
-// OpenAL Soft will be used with WildMIDI and/or FluidSynth.
+// This class manages what sounds and music are played.
 
-// Music is for looping background music. Sound is for short to medium duration 
-// sounds and speech.
+// OpenAL Soft is used with WildMIDI for music.
 
 class AudioManagerImpl;
 class Options;
-
-enum class MusicName;
-enum class SoundName;
 
 class AudioManager
 {
@@ -26,18 +22,22 @@ public:
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
 
-	bool musicIsPlaying() const;
+	// Plays a music file. All music should loop until changed.
+	void playMusic(const std::string &filename);
 
-	// All music will continue to loop until changed by an outside force.
-	void playMusic(MusicName musicName);
-	void playSound(SoundName soundName);
+	// Plays a sound file. All sounds should play once.
+	void playSound(const std::string &filename);
 
-	void toggleMusic();
+	// Stops the music.
 	void stopMusic();
+
+	// Stops all sounds.
 	void stopSound();
 
-	// Percent is [0.0, 1.0].
+	// Sets the music volume. Percent must be between 0.0 and 1.0.
 	void setMusicVolume(double percent);
+
+	// Sets the sound volume. Percent must be between 0.0 and 1.0.
 	void setSoundVolume(double percent);
 };
 

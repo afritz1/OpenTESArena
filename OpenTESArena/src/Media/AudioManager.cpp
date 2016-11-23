@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstdint>
 #include <deque>
-#include <map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -14,188 +13,9 @@
 
 #include "AudioManager.h"
 
-#include "MusicName.h"
-#include "MusicType.h"
-#include "SoundName.h"
 #include "WildMidi.hpp"
 #include "../Game/Options.h"
 #include "../Utilities/Debug.h"
-
-namespace
-{
-	// Each MusicType corresponds to a list of MusicNames. These lists should be
-	// given to some other class in the project so that the audio manager doesn't
-	// need to use random numbers (remove the MusicType #include at that point).
-	const std::map<MusicType, std::vector<MusicName>> MusicTypeNames =
-	{
-		{ MusicType::ArabCityEnter, { MusicName::ArabCityEnter } },
-		{ MusicType::ArabTownEnter, { MusicName::ArabTownEnter } },
-		{ MusicType::ArabVillageEnter, { MusicName::ArabVillageEnter } },
-		{ MusicType::CityEnter, { MusicName::CityEnter } },
-		{ MusicType::Credits, { MusicName::Credits } },
-		{ MusicType::Dungeon, { MusicName::Dungeon1, MusicName::Dungeon2, MusicName::Dungeon3, MusicName::Dungeon4 } }, 
-		{ MusicType::Equipment, { MusicName::Equipment } },
-		{ MusicType::Evil, { MusicName::Evil } },
-		{ MusicType::EvilIntro, { MusicName::EvilIntro } },
-		{ MusicType::Magic, { MusicName::Magic } },
-		{ MusicType::Night, { MusicName::Night } },
-		{ MusicType::Overcast, { MusicName::Overcast } },
-		{ MusicType::Palace, { MusicName::Palace } },
-		{ MusicType::PercIntro, { MusicName::PercIntro } },
-		{ MusicType::Raining, { MusicName::Raining } },
-		{ MusicType::Sheet, { MusicName::Sheet } },
-		{ MusicType::Sneaking, { MusicName::Sneaking } },
-		{ MusicType::Snowing, { MusicName::Snowing, MusicName::OverSnow } },
-		{ MusicType::Sunny, { MusicName::SunnyDay } },
-		{ MusicType::Swimming, { MusicName::Swimming } },
-		{ MusicType::Tavern, { MusicName::Tavern, MusicName::Square } },
-		{ MusicType::Temple, { MusicName::Temple } },
-		{ MusicType::TownEnter, { MusicName::TownEnter } },
-		{ MusicType::VillageEnter, { MusicName::VillageEnter } },
-		{ MusicType::Vision, { MusicName::Vision } },
-		{ MusicType::WinGame, { MusicName::WinGame } }
-	};
-
-	// Each MusicName has a corresponding filename. Interestingly, it seems Arena
-	// has separate XFM files for FM synth output devices (OPL, as on Adlib and
-	// Sound Blaster before the AWE32), while the corresponding XMI files are for
-	// MT-32, MPU-401, and other General MIDI devices.
-	const std::map<MusicName, std::string> MusicFilenames =
-	{
-		{ MusicName::ArabCityEnter, "ARABCITY.XMI" },
-		{ MusicName::ArabTownEnter, "ARABTOWN.XMI" },
-		{ MusicName::ArabVillageEnter, "ARAB_VLG.XMI" },
-		{ MusicName::CityEnter, "CITY.XMI" },
-		{ MusicName::Combat, "COMBAT.XMI" },
-		{ MusicName::Credits, "CREDITS.XMI" },
-		{ MusicName::Dungeon1, "DUNGEON1.XMI" },
-		{ MusicName::Dungeon2, "DUNGEON2.XMI" },
-		{ MusicName::Dungeon3, "DUNGEON3.XMI" },
-		{ MusicName::Dungeon4, "DUNGEON4.XMI" },
-		{ MusicName::Equipment, "EQUIPMNT.XMI" },
-		{ MusicName::Evil, "EVIL.XMI" },
-		{ MusicName::EvilIntro, "EVLINTRO.XMI" },
-		{ MusicName::Magic, "MAGIC_2.XMI" },
-		{ MusicName::Night, "NIGHT.XMI" },
-		{ MusicName::Overcast, "OVERCAST.XMI" },
-		{ MusicName::OverSnow, "OVERSNOW.XMI" },
-		{ MusicName::Palace, "PALACE.XMI" },
-		{ MusicName::PercIntro, "PERCNTRO.XMI" },
-		{ MusicName::Raining, "RAINING.XMI" },
-		{ MusicName::Sheet, "SHEET.XMI" },
-		{ MusicName::Sneaking, "SNEAKING.XMI" },
-		{ MusicName::Snowing, "SNOWING.XMI" },
-		{ MusicName::Square, "SQUARE.XMI" },
-		{ MusicName::SunnyDay, "SUNNYDAY.XMI" },
-		{ MusicName::Swimming, "SWIMMING.XMI" },
-		{ MusicName::Tavern, "TAVERN.XMI" },
-		{ MusicName::Temple, "TEMPLE.XMI" },
-		{ MusicName::TownEnter, "TOWN.XMI" },
-		{ MusicName::VillageEnter, "VILLAGE.XMI" },
-		{ MusicName::Vision, "VISION.XMI" },
-		{ MusicName::WinGame, "WINGAME.XMI" }
-	};
-
-	// Each SoundName has a corresponding filename. A number of them have
-	// their name mixed up with another in the original files. I'm not sure
-	// if the entity "Walk" sounds are used (maybe just the iron golem's).
-	// - Unused/duplicate sounds: MOON.VOC, SNARL2.VOC, UMPH.VOC, WHINE.VOC.
-	const std::map<SoundName, std::string> SoundFilenames =
-	{
-		// Ambient
-		{ SoundName::Back1, "BACK1.VOC" },
-		{ SoundName::Birds, "BIRDS.VOC" },
-		{ SoundName::Birds2, "BIRDS2.VOC" },
-		{ SoundName::Clicks, "CLICKS.VOC" },
-		{ SoundName::DeepChoir, "DEEPCHOI.VOC" },
-		{ SoundName::Drip1, "DRIP1.VOC" },
-		{ SoundName::Drip2, "DRIP2.VOC" },
-		{ SoundName::Drums, "DRUMS.VOC" },
-		{ SoundName::Eerie, "EERIE.VOC" },
-		{ SoundName::HiChoir, "HICHOIR.VOC" },
-		{ SoundName::HumEerie, "HUMEERIE.VOC" },
-		{ SoundName::Scream1, "SCREAM1.VOC" },
-		{ SoundName::Scream2, "SCREAM2.VOC" },
-		{ SoundName::Thunder, "THUNDER.VOC" },
-		{ SoundName::Wind, "WIND.VOC" },
-
-		// Combat
-		{ SoundName::ArrowFire, "ARROWFR.VOC" },
-		{ SoundName::ArrowHit, "ARROWHT.VOC" },
-		{ SoundName::Bash, "BASH.VOC" },
-		{ SoundName::BodyFall, "BODYFALL.VOC" },
-		{ SoundName::Clank, "CLANK.VOC" },
-		{ SoundName::EnemyHit, "EHIT.VOC" },
-		{ SoundName::FemaleDie, "FDIE.VOC" },
-		{ SoundName::MaleDie, "MDIE.VOC" },
-		{ SoundName::NHit, "NHIT.VOC" },
-		{ SoundName::PlayerHit, "UHIT.VOC" },
-		{ SoundName::Swish, "SWISH.VOC" },
-
-		// Crime
-		{ SoundName::Halt, "HALT.VOC" },
-		{ SoundName::StopThief, "STPTHIEF.VOC" },
-
-		// Doors
-		{ SoundName::CloseDoor, "CLOSDOOR.VOC" },
-		{ SoundName::Grind, "GRIND.VOC" },
-		{ SoundName::Lock, "LOCK.VOC" },
-		{ SoundName::OpenAlt, "OPENALT.VOC" },
-		{ SoundName::OpenDoor, "OPENDOOR.VOC" },
-		{ SoundName::Portcullis, "PORTC.VOC" },
-
-		// Entities
-		{ SoundName::Rat, "RATS.VOC" },
-		{ SoundName::SnowWolf, "WOLF.VOC" },
-		{ SoundName::Spider, "SKELETON.VOC" },
-		{ SoundName::Troll, "TROLL.VOC" },
-		{ SoundName::Wolf, "WOLF.VOC" },
-
-		{ SoundName::Goblin, "LICH.VOC" },
-		{ SoundName::LizardMan, "MONSTER.VOC" },
-		{ SoundName::LizardManWalk, "LIZARDST.VOC" },
-		{ SoundName::Medusa, "SQUISH1.VOC" },
-		{ SoundName::Minotaur, "GROWL2.VOC" },
-		{ SoundName::Orc, "ORC.VOC" },
-
-		{ SoundName::IceGolem, "ICEGOLEM.VOC" },
-		{ SoundName::IronGolem, "GROWL1.VOC" },
-		{ SoundName::IronGolemWalk, "IRONGOLS.VOC" },
-		{ SoundName::StoneGolem, "STONEGOL.VOC" },
-
-		{ SoundName::FireDaemon, "FIREDAEM.VOC" },
-		{ SoundName::HellHound, "GROWL.VOC" },
-		{ SoundName::HellHoundWalk, "HELLHOUN.VOC" },
-		{ SoundName::Homonculus, "HOMO.VOC" },
-
-		{ SoundName::Ghost, "GHOST.VOC" },
-		{ SoundName::Ghoul, "GHOUL.VOC" },
-		{ SoundName::Lich, "MINOTAUR.VOC" },
-		{ SoundName::Skeleton, "MEDUSA.VOC" },
-		{ SoundName::Vampire, "VAMPIRE.VOC" },
-		{ SoundName::Wraith, "WRAITH.VOC" },
-		{ SoundName::Zombie, "ZOMBIE.VOC" },
-
-		// Fanfare
-		{ SoundName::Fanfare1, "FANFARE1.VOC" },
-		{ SoundName::Fanfare2, "FANFARE2.VOC" },
-
-		// Movement
-		{ SoundName::DirtLeft, "DIRTL.VOC" },
-		{ SoundName::DirtRight, "DIRTR.VOC" },
-		{ SoundName::MudLeft, "MUDSTE.VOC" },
-		{ SoundName::MudRight, "MUDSTEP.VOC" },
-		{ SoundName::SnowLeft, "SNOWL.VOC" },
-		{ SoundName::SnowRight, "SNOWR.VOC" },
-		{ SoundName::Splash, "SPLASH.VOC" },
-		{ SoundName::Swim, "SWIMMING.VOC" },
-
-		// Spells
-		{ SoundName::Burst, "BURST5.VOC" },
-		{ SoundName::Explode, "EXPLODE.VOC" },
-		{ SoundName::SlowBall, "SLOWBALL.VOC" }
-	};
-}
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
@@ -218,18 +38,12 @@ public:
 
 	void init(const Options &options);
 
-	bool musicIsPlaying() const;
+	void playMusic(const std::string &filename);
+	void playSound(const std::string &filename);
 
-	// All music should loop until changed. Some, like when entering a city, are an 
-	// exception to this.
-	void playMusic(MusicName musicName);
-	void playSound(SoundName soundName);
-
-	void toggleMusic();
 	void stopMusic();
 	void stopSound();
 
-	// Percent is [0.0, 1.0].
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 };
@@ -544,29 +358,17 @@ void AudioManagerImpl::init(const Options &options)
 	}
 }
 
-bool AudioManagerImpl::musicIsPlaying() const
-{
-	return false;
-}
-
-void AudioManagerImpl::playMusic(MusicName musicName)
+void AudioManagerImpl::playMusic(const std::string &filename)
 {
 	stopMusic();
 
-	auto music = MusicFilenames.find(musicName);
-	if (music == MusicFilenames.end())
-	{
-		Debug::mention("Audio Manager", "Failed to lookup music ID " +
-			std::to_string(static_cast<int>(musicName)) + ".");
-		mCurrentSong = nullptr;
-	}
-	else if (!mFreeSources.empty())
+	if (!mFreeSources.empty())
 	{
 		if (MidiDevice::isInited())
-			mCurrentSong = MidiDevice::get().open(music->second);
+			mCurrentSong = MidiDevice::get().open(filename);
 		if (!mCurrentSong)
 		{
-			Debug::mention("Audio Manager", "Failed to play " + music->second + ".");
+			Debug::mention("Audio Manager", "Failed to play " + filename + ".");
 			return;
 		}
 
@@ -575,21 +377,17 @@ void AudioManagerImpl::playMusic(MusicName musicName)
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
-			Debug::mention("Audio Manager", "Playing music " + music->second + ".");
+			Debug::mention("Audio Manager", "Playing music " + filename + ".");
 		}
 		else
 			Debug::mention("Audio Manager", "Failed to init song stream.");
 	}
 }
 
-void AudioManagerImpl::playSound(SoundName soundName)
+void AudioManagerImpl::playSound(const std::string &filename)
 {
-	static_cast<void>(soundName);
-}
-
-void AudioManagerImpl::toggleMusic()
-{
-
+	// To do: sound support.
+	static_cast<void>(filename);
 }
 
 void AudioManagerImpl::stopMusic()
@@ -602,7 +400,7 @@ void AudioManagerImpl::stopMusic()
 
 void AudioManagerImpl::stopSound()
 {
-
+	// To do: stop all sounds.
 }
 
 void AudioManagerImpl::setMusicVolume(double percent)
@@ -638,19 +436,14 @@ void AudioManager::init(const Options &options)
 	pImpl->init(options);
 }
 
-bool AudioManager::musicIsPlaying() const
+void AudioManager::playMusic(const std::string &filename)
 {
-	return pImpl->musicIsPlaying();
+	pImpl->playMusic(filename);
 }
 
-void AudioManager::playMusic(MusicName musicName)
+void AudioManager::playSound(const std::string &filename)
 {
-	pImpl->playMusic(musicName);
-}
-
-void AudioManager::playSound(SoundName soundName)
-{
-	pImpl->playSound(soundName);
+	pImpl->playSound(filename);
 }
 
 void AudioManager::stopMusic()
@@ -661,11 +454,6 @@ void AudioManager::stopMusic()
 void AudioManager::stopSound()
 {
 	pImpl->stopSound();
-}
-
-void AudioManager::toggleMusic()
-{
-	pImpl->toggleMusic();
 }
 
 void AudioManager::setMusicVolume(double percent)
