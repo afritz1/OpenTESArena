@@ -62,7 +62,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
-		std::string text("Generate\n(not implemented)");
+		std::string text("Generate");
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -160,6 +160,24 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
+void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
+{
+	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
+
+	Texture tooltip(Panel::createTooltip(text, font, renderer));
+
+	const Int2 mousePosition = this->getMousePosition();
+	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const int mouseX = originalPosition.getX();
+	const int mouseY = originalPosition.getY();
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+		(mouseX + 8) : (mouseX - tooltip.getWidth());
+	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+		(mouseY - 1) : (mouseY - tooltip.getHeight());
+
+	renderer.drawToOriginal(tooltip.get(), x, y);
+}
+
 void ChooseClassCreationPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
@@ -193,6 +211,18 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 		this->generateTextBox->getX(), this->generateTextBox->getY());
 	renderer.drawToOriginal(this->selectTextBox->getTexture(),
 		this->selectTextBox->getX(), this->selectTextBox->getY());
+
+	// Check if the mouse is hovered over one of the boxes for tooltips.
+	const Int2 originalPoint = renderer.nativePointToOriginal(this->getMousePosition());
+
+	if (this->generateButton->contains(originalPoint))
+	{
+		this->drawTooltip("Answer questions\n(not implemented)", renderer);
+	}
+	else if (this->selectButton->contains(originalPoint))
+	{
+		this->drawTooltip("Choose from a list", renderer);
+	}
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

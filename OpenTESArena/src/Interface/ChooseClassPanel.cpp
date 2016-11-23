@@ -31,7 +31,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 

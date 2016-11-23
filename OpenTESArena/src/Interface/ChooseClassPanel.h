@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Rendering/Texture.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
 // list that says nothing about the classes (thus requiring the manual for 
@@ -16,7 +17,6 @@ class ListBox;
 class Renderer;
 class Surface;
 class TextBox;
-class Texture;
 
 class ChooseClassPanel : public Panel
 {
