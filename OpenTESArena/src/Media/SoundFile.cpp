@@ -4,6 +4,20 @@
 
 #include "SoundName.h"
 
+namespace std
+{
+	// Hash specialization, since GCC doesn't support enum classes used as keys
+	// in unordered_maps.
+	template <>
+	struct hash<SoundName>
+	{
+		size_t operator()(const SoundName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	// Each SoundName has a corresponding filename. A number of them have
