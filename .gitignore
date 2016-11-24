@@ -52,9 +52,9 @@ build/
 [Bb]in/
 [Oo]bj/
 
-# OpenTESArena data folders
-data/
-options/
+# OpenTESArena user data folders
+OpenTESArena/data/
+OpenTESArena/options/
 
 # Compressed files
 *.tar.gz

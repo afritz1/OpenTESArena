@@ -1,0 +1,8 @@
+These files are for OpenTESArena. They are updated every once in a while.
+
+Project website:
+- https://github.com/afritz1/OpenTESArena
+
+Running the executable:
+1. Copy the "ARENA" floppy disk folder into data/, or change "ArenaPath" in options.txt to point to an existing location on your computer.
+2. Change "Soundfont" in options.txt to point to a soundfont .cfg on your computer (i.e., data/eawpats/timidity.cfg).

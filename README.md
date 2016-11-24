@@ -55,8 +55,6 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 
 ## Building from source
 
-Get the latest `data` and `options` folders [here](https://www.dropbox.com/s/xc8llh52eahaofs/OpenTESArena_data.zip?dl=0) (last updated November 18th).
-
 #### Obtaining the developer libraries:
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
 - OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use [cl2.hpp](https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp) header from OpenCL 2.0.

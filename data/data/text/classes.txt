@@ -1,0 +1,31 @@
+# Classes layout:
+# displayName, category, magicBoolean, startingHealth, healthDice, allowedArmors/Any/None, allowedShields/Any/None, allowedWeapons/Any/None
+
+# Favored attributes? "Thy <attribute1> and <attribute2> must be strong if 
+# thou art to succeed as a <class>."
+
+# Experience? Specials like lockpick effectiveness?
+
+# Mages
+Battle Mage, Mage, True, 25, 10, Leather, Buckler Round, Any
+Healer, Mage, True, 25, 8, Leather Chain, Buckler Round, Dagger Staff Mace Flail
+Mage, Mage, True, 25, 6, None, Buckler, Dagger Staff
+Nightblade, Mage, True, 25, 8, Leather, Buckler, Dagger Staff ShortBow Shortsword Saber
+Sorcerer, Mage, True, 25, 6, Leather Chain, None, Any
+Spellsword, Mage, True, 25, 12, Leather Chain, Buckler Round Kite, Any
+
+# Thieves.
+Acrobat, Thief, False, 25, 12, Leather, None, Dagger Shortsword Broadsword Tanto ShortBow
+Assassin, Thief, True, 25, 8, Leather, None, Any
+Bard, Thief, True, 25, 10, Leather Chain, Buckler Round Kite, Dagger Shortsword Broadsword Saber Mace WarAxe ShortBow
+Burglar, Thief, True, 25, 10, Leather, None, Dagger Shortsword Tanto ShortBow
+Rogue, Thief, True, 25, 8, Leather Chain, Buckler Round Kite, Any
+Thief, Thief, False, 25, 14, Leather, Buckler, Dagger Shortsword Broadsword Saber WarAxe ShortBow
+
+# Warriors.
+Archer, Warrior, False, 25, 16, Leather Chain, None, Any
+Barbarian, Warrior, False, 25, 30, Leather Chain, Any, Any
+Knight, Warrior, False, 25, 18, Chain Plate, Any, Any
+Monk, Warrior, False, 25, 14, None, None, Any
+Ranger, Warrior, False, 25, 18, Any, Buckler Round Kite, Any
+Warrior, Warrior, False, 25, 20, Any, Any, Any
