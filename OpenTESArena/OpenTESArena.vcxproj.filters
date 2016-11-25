@@ -134,6 +134,7 @@
     <ClCompile Include="src\Utilities\BufferView.cpp" />
     <ClCompile Include="src\Media\SoundFile.cpp" />
     <ClCompile Include="src\Media\MusicFile.cpp" />
+    <ClCompile Include="src\Media\WeaponFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -313,6 +314,7 @@
     <ClInclude Include="src\Utilities\BufferView.h" />
     <ClInclude Include="src\Media\SoundFile.h" />
     <ClInclude Include="src\Media\MusicFile.h" />
+    <ClInclude Include="src\Media\WeaponFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

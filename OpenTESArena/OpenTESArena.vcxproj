@@ -286,6 +286,7 @@
     <ClCompile Include="src\Assets\TextAssets.cpp" />
     <ClCompile Include="src\World\VoxelBuilder.cpp" />
     <ClCompile Include="src\Rendering\Texture.cpp" />
+    <ClCompile Include="src\Media\WeaponFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Media\MusicFile.h" />
@@ -465,6 +466,7 @@
     <ClInclude Include="src\Assets\TextAssets.h" />
     <ClInclude Include="src\World\VoxelBuilder.h" />
     <ClInclude Include="src\Rendering\Texture.h" />
+    <ClInclude Include="src\Media\WeaponFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
