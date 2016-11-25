@@ -37,14 +37,15 @@ private:
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
-	int targetFPS;
-	bool running;
 
 	// Waits the given number of milliseconds.
 	void delay(int ms);
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
+
+	// Handles SDL events for the current frame.
+	void handleEvents(bool &running);
 
 	// Animates the game state by delta time.
 	void tick(double dt);

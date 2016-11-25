@@ -26,13 +26,6 @@
 
 #include "components/vfs/manager.hpp"
 
-namespace
-{
-	// Default and minimum allowed values for frames per second.
-	const int DEFAULT_FPS = 60;
-	const int MIN_FPS = 15;
-}
-
 Game::Game()
 {
 	Debug::mention("Game", "Initializing (Platform: " +
@@ -70,12 +63,6 @@ Game::Game()
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
 	this->renderer->setWindowIcon(icon);
 	SDL_FreeSurface(icon);
-
-	// Set target frames per second.
-	this->targetFPS = DEFAULT_FPS;
-
-	// Set game loop boolean to default.
-	this->running = true;
 
 	// Initialize panel and music to default.
 	this->panel = Panel::defaultPanel(this);
@@ -167,7 +154,7 @@ void Game::resizeWindow(int width, int height)
 	this->renderer->resize(width, height, this->getOptions().getResolutionScale());
 }
 
-void Game::tick(double dt)
+void Game::handleEvents(bool &running)
 {
 	// Handle events for the current game state.
 	SDL_Event e;
@@ -180,7 +167,7 @@ void Game::tick(double dt)
 
 		if (applicationExit)
 		{
-			this->running = false;
+			running = false;
 		}
 
 		if (resized)
@@ -200,7 +187,10 @@ void Game::tick(double dt)
 			this->panel = std::move(this->nextPanel);
 		}
 	}
+}
 
+void Game::tick(double dt)
+{
 	// Tick the current panel by delta time.
 	this->panel->tick(dt);
 
@@ -219,28 +209,36 @@ void Game::render()
 
 void Game::loop()
 {
-	const int minimumMS = 1000 / MIN_FPS;
-	const int maximumMS = 1000 / this->targetFPS;
+	// Longest allowed frame time.
+	const int maximumMS = 1000 / Options::MIN_FPS;
 
 	int thisTime = SDL_GetTicks();
 	int lastTime = thisTime;
 
 	// Primary game loop.
-	while (this->running)
+	bool running = true;
+	while (running)
 	{
 		lastTime = thisTime;
 		thisTime = SDL_GetTicks();
 
+		// Fastest allowed frame time in milliseconds.
+		const int minimumMS = 1000 / this->options->getTargetFPS();
+
 		// Delay the current frame if the previous one was too fast.
 		int frameTime = thisTime - lastTime;
-		if (frameTime < maximumMS)
+		if (frameTime < minimumMS)
 		{
-			this->delay(maximumMS - frameTime);
+			this->delay(minimumMS - frameTime);
 			thisTime = SDL_GetTicks();
 			frameTime = thisTime - lastTime;
 		}
 
-		const double dt = std::fmin(frameTime, minimumMS) / 1000.0;
+		// Clamp the delta time to at most the maximum frame time.
+		const double dt = std::fmin(frameTime, maximumMS) / 1000.0;
+
+		// Listen for input events.
+		this->handleEvents(running);
 
 		// Animate the current game state by delta time.
 		this->tick(dt);
