@@ -31,7 +31,7 @@ private:
 	bool skipIntro;
 public:
 	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
-		int targetFPS, double resolutionScale, double verticalFOV, double zetterboxAspect, 
+		int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect, 
 		double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont, 
 		double musicVolume, double soundVolume, int soundChannels, bool skipIntro);
 	~Options();
