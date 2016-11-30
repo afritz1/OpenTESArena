@@ -12,6 +12,9 @@
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #include <CL/cl2.hpp>
 
+#include "ArrayReference.h"
+#include "Light.h"
+#include "RectData.h"
 #include "../Math/Float3.h"
 #include "../Math/Int3.h"
 #include "../Math/Rect3D.h"
@@ -31,7 +34,6 @@
 // Double-indirection would also mean passing another index buffer to the kernel.
 
 class BufferView;
-class TextureReference;
 
 class CLProgram
 {
@@ -62,22 +64,39 @@ private:
 	// Byte offset and sprite ID list for sprite groups.
 	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> spriteGroups;
 
-	// Geometry queues. Each pair is a voxel/sprite group to be updated in device 
-	// memory. Each list pair carries the rectangle and its texture index.
-	std::unordered_map<Int3, std::vector<std::pair<Rect3D, int>>> voxelQueue, spriteQueue;
+	// Byte offset and light ID list for light groups.
+	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> lightGroups;
 
-	// Reference queues. Each pair is a voxel/sprite reference to be updated in
-	// device memory.
-	std::unordered_map<Int3, std::pair<int, int>> voxelRefQueue, spriteRefQueue;
+	// Byte offset and rect index list for owner groups.
+	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> ownerGroups;
 
-	// Voxel coordinates of a sprite's touched voxels.
-	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels;
+	// Geometry queues. Each mapping is a rect group to be updated in device memory.
+	// Each rect data object carries the rectangle and its texture index.
+	std::unordered_map<Int3, std::vector<RectData>> voxelQueue, spriteQueue;
+
+	// Light queue. Each mapping is a light group to be updated in device memory.
+	std::unordered_map<Int3, std::vector<Light>> lightQueue;
+
+	// Index queue. Each mapping is a rect index group to be updated in device memory.
+	std::unordered_map<Int3, std::vector<int>> ownerQueue;
+
+	// Reference queues. Each mapping is a reference to be updated in device memory.
+	// Each queue is cleared after updating is complete for the frame.
+	std::unordered_map<Int3, VoxelReference> voxelRefQueue;
+	std::unordered_map<Int3, SpriteReference> spriteRefQueue;
+	std::unordered_map<Int3, LightReference> lightRefQueue;
+
+	// Voxel coordinates of a sprite's or light's touched voxels.
+	std::unordered_map<int, std::vector<Int3>> spriteTouchedVoxels, lightTouchedVoxels;
 
 	// A copy of each sprite's rectangle and texture ID.
-	std::unordered_map<int, std::pair<Rect3D, int>> spriteData;
+	std::unordered_map<int, RectData> spriteData;
 
-	// For managing allocations in the rectangle buffer.
-	std::unique_ptr<BufferView> rectBufferView;
+	// A copy of each light's data.
+	std::unordered_map<int, Light> lightData;
+
+	// For managing allocations in the rectangle buffer and light buffer.
+	std::unique_ptr<BufferView> rectBufferView, lightBufferView;
 
 	// Offsets and sizes of textures in device memory.
 	std::vector<TextureReference> textureRefs;
@@ -103,9 +122,18 @@ private:
 	// sprites.
 	std::vector<Int3> getTouchedVoxels(const Rect3D &rect, bool clampBounds) const;
 
+	// Returns a vector of voxel coordinates for all voxels that a light reaches,
+	// with the option to only get voxels within the world bounds. Intended only for 
+	// point lights.
+	std::vector<Int3> getTouchedVoxels(const Float3d &point, double intensity,
+		bool clampBounds) const;
+
 	// Helper method for writing a rectangle and texture reference to a temp buffer.
 	void writeRect(const Rect3D &rect, const TextureReference &textureRef,
 		std::vector<cl_char> &buffer, size_t byteOffset) const;
+
+	// Helper method for writing a light to a temp buffer.
+	void writeLight(const Light &light, std::vector<cl_char> &buffer, size_t byteOffset) const;
 
 	// Helper method for adding a sprite to a sprite group in device memory.
 	void addSpriteToVoxel(int spriteID, const Int3 &voxel);
@@ -117,11 +145,23 @@ private:
 	// a given voxel in device memory.
 	void updateSpriteInVoxel(int spriteID, const Int3 &voxel);
 
+	// Helper method for adding a light to a light group in device memory.
+	void addLightToVoxel(int lightID, const Int3 &voxel);
+
+	// Helper method for removing a light from a light group in device memory.
+	void removeLightFromVoxel(int lightID, const Int3 &voxel);
+
+	// Helper method for updating a light's data in a given voxel in device memory.
+	void updateLightInVoxel(int lightID, const Int3 &voxel);
+
 	// Queues a voxel reference for updating in device memory.
 	void queueVoxelRefUpdate(int x, int y, int z, int offset, int count);
 
 	// Queues a sprite reference for updating in device memory.
 	void queueSpriteRefUpdate(int x, int y, int z, int offset, int count);
+
+	// Queues a light reference for updating in device memory.
+	void queueLightRefUpdate(int x, int y, int z, int offset, int count);
 public:
 	// Constructor for the OpenCL render program.
 	CLProgram(int worldWidth, int worldHeight, int worldDepth,
@@ -165,6 +205,14 @@ public:
 
 	// Queues a sprite for removal from device memory.
 	void queueSpriteRemoval(int spriteID);
+
+	// Queues a light for updating if it exists, and adds it if it doesn't exist.
+	// The owner ID is the sprite ID associated with the light, if any.
+	void queueLightUpdate(int lightID, const Float3d &point, const Float3d &color,
+		const int *ownerID, double intensity);
+
+	// Queues a light for removal from device memory.
+	void queueLightRemoval(int lightID);
 
 	// Consumes all voxel and sprite updates in the queue and writes to device memory.
 	void pushUpdates();

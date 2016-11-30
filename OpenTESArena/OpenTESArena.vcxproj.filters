@@ -5,7 +5,6 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Media\Color.cpp" />
     <ClCompile Include="src\Math\Random.cpp" />
-    <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
     <ClCompile Include="src\Interface\TextBox.cpp" />
     <ClCompile Include="src\Media\TextureManager.cpp" />
@@ -135,13 +134,15 @@
     <ClCompile Include="src\Media\SoundFile.cpp" />
     <ClCompile Include="src\Media\MusicFile.cpp" />
     <ClCompile Include="src\Media\WeaponFile.cpp" />
+    <ClCompile Include="src\Rendering\ArrayReference.cpp" />
+    <ClCompile Include="src\Rendering\Light.cpp" />
+    <ClCompile Include="src\Rendering\RectData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
     <ClInclude Include="src\Math\Constants.h" />
     <ClInclude Include="src\Media\Color.h" />
     <ClInclude Include="src\Math\Random.h" />
-    <ClInclude Include="src\Rendering\TextureReference.h" />
     <ClInclude Include="src\Media\MusicName.h" />
     <ClInclude Include="src\World\Chunk.h" />
     <ClInclude Include="src\World\Voxel.h" />
@@ -315,6 +316,9 @@
     <ClInclude Include="src\Media\SoundFile.h" />
     <ClInclude Include="src\Media\MusicFile.h" />
     <ClInclude Include="src\Media\WeaponFile.h" />
+    <ClInclude Include="src\Rendering\ArrayReference.h" />
+    <ClInclude Include="src\Rendering\Light.h" />
+    <ClInclude Include="src\Rendering\RectData.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

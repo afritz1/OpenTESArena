@@ -98,17 +98,40 @@ typedef struct
 } Intersection;
 
 /* ------------------------- */
+/* OwnerReference struct */
+/* ------------------------- */
+
+// Points to a list of rectangle indices into the rect buffer that a shadow ray
+// should ignore when checking a point light's shadows. 
+
+// The indices all point to the same shape (the "owner sprite"), but there must be 
+// a list instead of one sprite ID because the sprite can cover more than one voxel 
+// (requiring a copy per voxel with this design, for better cache performance).
+
+// The offset and count are in units of integers.
+
+typedef struct
+{
+	int offset;
+	int count;
+} OwnerReference;
+
+/* ------------------------- */
 /* Light struct */
 /* ------------------------- */
 
-// All lights will use the same drop-off function for now.
+// All lights will use quadratic drop-off (inverse square law).
+// -> percent = ((x - D) ^ 2) / (D ^ 2), for some max distance D.
+// -> Max reach of the light is determined by intensity (in this design).
 
 // Time complexity of ray tracing is linear in the number of nearby lights, 
 // so don't go overboard!
 
-typedef struct 
+typedef struct
 {
-	float3 color, point;
+	float3 point, color;
+	OwnerReference ownerRef;
+	float intensity;
 } Light;
 
 /* ------------------------- */

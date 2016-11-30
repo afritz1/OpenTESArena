@@ -5,7 +5,6 @@
 
 #include "CLProgram.h"
 
-#include "TextureReference.h"
 #include "../Entities/Directable.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
@@ -20,7 +19,8 @@ namespace
 	// aligns structs to multiples of 8 bytes. Additional padding is sometimes 
 	// necessary to match struct alignment.
 	const cl::size_type SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float) + 12;
-	const cl::size_type SIZEOF_LIGHT = sizeof(cl_float3) * 2;
+	const cl::size_type SIZEOF_OWNER_REF = sizeof(cl_int) * 2;
+	const cl::size_type SIZEOF_LIGHT = (sizeof(cl_float3) * 2) + SIZEOF_OWNER_REF + sizeof(cl_float) + 4;
 	const cl::size_type SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
 	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
@@ -777,6 +777,67 @@ std::vector<Int3> CLProgram::getTouchedVoxels(const Rect3D &rect, bool clampBoun
 	// get all touched voxels.
 }
 
+std::vector<Int3> CLProgram::getTouchedVoxels(const Float3d &point, 
+	double intensity, bool clampBounds) const
+{
+	// Quick and easy solution: just enclose the light's reach within a box and get 
+	// all voxels touching that box. A bit of wasted effort when rendering, though.
+
+	const double halfIntensity = intensity * 0.5;
+
+	const Float3f boxMin(
+		static_cast<float>(point.getX() - halfIntensity),
+		static_cast<float>(point.getY() - halfIntensity),
+		static_cast<float>(point.getZ() - halfIntensity));
+	const Float3f boxMax(
+		static_cast<float>(point.getX() + halfIntensity),
+		static_cast<float>(point.getY() + halfIntensity),
+		static_cast<float>(point.getZ() + halfIntensity));
+
+	// Lambda to convert a 3D point to a voxel coordinate, optionally clamping
+	// within world bounds if requested.
+	auto getVoxelCoordinate = [this, clampBounds](const Float3f &point)
+	{
+		const int pX = static_cast<int>(point.getX());
+		const int pY = static_cast<int>(point.getY());
+		const int pZ = static_cast<int>(point.getZ());
+
+		if (clampBounds)
+		{
+			return Int3(
+				std::max(0, std::min(this->worldWidth - 1, pX)),
+				std::max(0, std::min(this->worldHeight - 1, pY)),
+				std::max(0, std::min(this->worldDepth - 1, pZ)));
+		}
+		else
+		{
+			return Int3(pX, pY, pZ);
+		}
+	};
+
+	// Voxel coordinates for the nearest and farthest corners from the origin.
+	const Int3 voxelMin = getVoxelCoordinate(boxMin);
+	const Int3 voxelMax = getVoxelCoordinate(boxMax);
+
+	// Insert a 3D coordinate for every voxel the bounding box touches.
+	std::vector<Int3> coordinates;
+	for (int k = voxelMin.getZ(); k <= voxelMax.getZ(); ++k)
+	{
+		for (int j = voxelMin.getY(); j <= voxelMax.getY(); ++j)
+		{
+			for (int i = voxelMin.getX(); i <= voxelMax.getX(); ++i)
+			{
+				coordinates.push_back(Int3(i, j, k));
+			}
+		}
+	}
+
+	return coordinates;
+
+	// A smarter version would treat the light's reach like a sphere and get all
+	// voxels touched by that sphere instead.
+}
+
 void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef,
 	std::vector<cl_char> &buffer, size_t byteOffset) const
 {
@@ -820,12 +881,40 @@ void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef
 
 	// Texture reference data.
 	cl_int *offsetPtr = reinterpret_cast<cl_int*>(recPtr + (sizeof(cl_float3) * 6));
-	offsetPtr[0] = static_cast<cl_int>(textureRef.getOffset());
+	offsetPtr[0] = static_cast<cl_int>(textureRef.offset);
 
 	cl_short *dimPtr = reinterpret_cast<cl_short*>(recPtr +
 		(sizeof(cl_float3) * 6) + sizeof(cl_int));
-	dimPtr[0] = static_cast<cl_short>(textureRef.getWidth());
-	dimPtr[1] = static_cast<cl_short>(textureRef.getHeight());
+	dimPtr[0] = static_cast<cl_short>(textureRef.width);
+	dimPtr[1] = static_cast<cl_short>(textureRef.height);
+}
+
+void CLProgram::writeLight(const Light &light, std::vector<cl_char> &buffer, 
+	size_t byteOffset) const
+{
+	cl_char *dataPtr = buffer.data() + byteOffset;
+
+	const Float3d &point = light.getPoint();
+	cl_float *pointPtr = reinterpret_cast<cl_float*>(dataPtr);
+	pointPtr[0] = static_cast<cl_float>(point.getX());
+	pointPtr[1] = static_cast<cl_float>(point.getY());
+	pointPtr[2] = static_cast<cl_float>(point.getZ());
+
+	const Float3d &color = light.getColor();
+	cl_float *colorPtr = reinterpret_cast<cl_float*>(dataPtr + sizeof(cl_float3));
+	colorPtr[0] = static_cast<cl_float>(color.getX());
+	colorPtr[1] = static_cast<cl_float>(color.getY());
+	colorPtr[2] = static_cast<cl_float>(color.getZ());
+
+	const OwnerReference &ownerRef = light.getOwnerRef();
+	cl_int *ownerPtr = reinterpret_cast<cl_int*>(dataPtr + (sizeof(cl_float3) * 2));
+	ownerPtr[0] = static_cast<cl_int>(ownerRef.offset);
+	ownerPtr[1] = static_cast<cl_int>(ownerRef.count);
+
+	const double intensity = light.getIntensity();
+	cl_float *intensityPtr = reinterpret_cast<cl_float*>(dataPtr + 
+		(sizeof(cl_float3) * 2) + SIZEOF_OWNER_REF);
+	intensityPtr[0] = static_cast<cl_float>(intensity);
 }
 
 void CLProgram::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
@@ -920,9 +1009,9 @@ int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 	const int pixelOffset = [this]()
 	{
 		int offset = 0;
-		for (auto &textureRef : this->textureRefs)
+		for (const auto &textureRef : this->textureRefs)
 		{
-			offset += textureRef.getWidth() * textureRef.getHeight();
+			offset += textureRef.width * textureRef.height;
 		}
 
 		return offset;
@@ -998,12 +1087,12 @@ void CLProgram::queueVoxelRefUpdate(int x, int y, int z, int offset, int count)
 	auto queueIter = this->voxelRefQueue.find(voxel);
 	if (queueIter != this->voxelRefQueue.end())
 	{
-		queueIter->second = std::make_pair(offset, count);
+		queueIter->second = VoxelReference(offset, count);
 	}
 	else
 	{
-		this->voxelRefQueue.emplace(std::make_pair(voxel,
-			std::make_pair(offset, count)));
+		this->voxelRefQueue.emplace(std::make_pair(
+			voxel, VoxelReference(offset, count)));
 	}
 }
 
@@ -1024,12 +1113,38 @@ void CLProgram::queueSpriteRefUpdate(int x, int y, int z, int offset, int count)
 	auto queueIter = this->spriteRefQueue.find(voxel);
 	if (queueIter != this->spriteRefQueue.end())
 	{
-		queueIter->second = std::make_pair(offset, count);
+		queueIter->second = SpriteReference(offset, count);
 	}
 	else
 	{
-		this->spriteRefQueue.emplace(std::make_pair(voxel,
-			std::make_pair(offset, count)));
+		this->spriteRefQueue.emplace(std::make_pair(
+			voxel, SpriteReference(offset, count)));
+	}
+}
+
+void CLProgram::queueLightRefUpdate(int x, int y, int z, int offset, int count)
+{
+	assert(x >= 0);
+	assert(y >= 0);
+	assert(z >= 0);
+	assert(x < this->worldWidth);
+	assert(y < this->worldHeight);
+	assert(z < this->worldDepth);
+	assert(offset >= 0);
+	assert(count >= 0);
+
+	const Int3 voxel(x, y, z);
+
+	// Refresh the light reference queue for this voxel.
+	auto queueIter = this->lightRefQueue.find(voxel);
+	if (queueIter != this->lightRefQueue.end())
+	{
+		queueIter->second = LightReference(offset, count);
+	}
+	else
+	{
+		this->lightRefQueue.emplace(std::make_pair(
+			voxel, LightReference(offset, count)));
 	}
 }
 
@@ -1066,8 +1181,8 @@ void CLProgram::queueVoxelUpdate(int x, int y, int z,
 		if (queueIter == this->voxelQueue.end())
 		{
 			// Add a new voxel mapping for the queue.
-			queueIter = this->voxelQueue.emplace(std::make_pair(voxel,
-				std::vector<std::pair<Rect3D, int>>())).first;
+			queueIter = this->voxelQueue.emplace(std::make_pair(
+				voxel, std::vector<RectData>())).first;
 		}
 
 		auto &workItem = queueIter->second;
@@ -1078,7 +1193,7 @@ void CLProgram::queueVoxelUpdate(int x, int y, int z,
 			const Rect3D &rect = rects.at(i);
 			const int textureID = textureIndices.at(i);
 			
-			workItem.push_back(std::make_pair(rect, textureID));
+			workItem.push_back(RectData(rect, textureID));
 		}
 
 		// Allocate a region for the voxel's new rectangles.
@@ -1087,7 +1202,8 @@ void CLProgram::queueVoxelUpdate(int x, int y, int z,
 		// Make a new voxel offset mapping if one doesn't exist.
 		if (offsetIter == this->voxelOffsets.end())
 		{
-			offsetIter = this->voxelOffsets.emplace(std::make_pair(voxel, offset)).first;
+			offsetIter = this->voxelOffsets.emplace(std::make_pair(
+				voxel, offset)).first;
 		}
 		else
 		{
@@ -1172,8 +1288,8 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 	if (queueIter == this->spriteQueue.end())
 	{
 		// Add a new voxel mapping for the queue.
-		queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
-			std::vector<std::pair<Rect3D, int>>())).first;
+		queueIter = this->spriteQueue.emplace(std::make_pair(
+			voxel, std::vector<RectData>())).first;
 	}
 
 	auto &workItem = queueIter->second;
@@ -1181,11 +1297,11 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 
 	for (const auto id : spriteIDs)
 	{
-		const auto &pair = this->spriteData.at(id);
-		const Rect3D &rect = pair.first;
-		const int textureID = pair.second;
+		const auto &rectData = this->spriteData.at(id);
+		const Rect3D &rect = rectData.getRect();
+		const int textureID = rectData.getTextureID();
 
-		workItem.push_back(std::make_pair(rect, textureID));
+		workItem.push_back(RectData(rect, textureID));
 	}
 
 	// Allocate the new sprite group and get its byte offset in the rect buffer. 
@@ -1241,8 +1357,8 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 		if (queueIter == this->spriteQueue.end())
 		{
 			// Add a new voxel mapping for the queue.
-			queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
-				std::vector<std::pair<Rect3D, int>>())).first;
+			queueIter = this->spriteQueue.emplace(std::make_pair(
+				voxel, std::vector<RectData>())).first;
 		}
 
 		auto &workItem = queueIter->second;
@@ -1250,11 +1366,11 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 
 		for (const auto id : spriteIDs)
 		{
-			const auto &pair = this->spriteData.at(id);
-			const Rect3D &rect = pair.first;
-			const int textureID = pair.second;
+			const auto &rectData = this->spriteData.at(id);
+			const Rect3D &rect = rectData.getRect();
+			const int textureID = rectData.getTextureID();
 
-			workItem.push_back(std::make_pair(rect, textureID));
+			workItem.push_back(RectData(rect, textureID));
 		}
 
 		// Reallocate sprite group (no need to resize because the sprite group has shrunk;
@@ -1281,8 +1397,8 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 {
 	// Get the sprite's rectangle and texture reference.
 	const auto &rectData = this->spriteData.at(spriteID);
-	const Rect3D &rect = rectData.first;
-	const TextureReference &textureRef = this->textureRefs.at(rectData.second);
+	const Rect3D &rect = rectData.getRect();
+	const TextureReference &textureRef = this->textureRefs.at(rectData.getTextureID());
 
 	// Get the sprite group for the voxel.
 	const auto &spriteGroup = this->spriteGroups.at(voxel);
@@ -1293,8 +1409,8 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 	auto queueIter = this->spriteQueue.find(voxel);
 	if (queueIter == this->spriteQueue.end())
 	{
-		queueIter = this->spriteQueue.emplace(std::make_pair(voxel,
-			std::vector<std::pair<Rect3D, int>>())).first;
+		queueIter = this->spriteQueue.emplace(std::make_pair(
+			voxel, std::vector<RectData>())).first;
 	}
 
 	auto &workItem = queueIter->second;
@@ -1303,11 +1419,32 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 	for (const auto id : spriteIDs)
 	{
 		const auto &rectData = this->spriteData.at(id);
-		const Rect3D &rect = rectData.first;
-		const int textureID = rectData.second;
+		const Rect3D &rect = rectData.getRect();
+		const int textureID = rectData.getTextureID();
 
-		workItem.push_back(std::make_pair(rect, textureID));
+		workItem.push_back(RectData(rect, textureID));
 	}
+}
+
+void CLProgram::addLightToVoxel(int lightID, const Int3 &voxel)
+{
+	// Similar to addSpriteToVoxel()...
+	// Owner...
+	Debug::crash("CLProgram", "addLightToVoxel() not implemented.");
+}
+
+void CLProgram::removeLightFromVoxel(int lightID, const Int3 &voxel)
+{
+	// Similar to removeSpriteFromVoxel()...
+	// Owner...
+	Debug::crash("CLProgram", "removeLightFromVoxel() not implemented.");
+}
+
+void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
+{
+	// Similar to updateSpriteInVoxel()...
+	// Owner...
+	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
 }
 
 void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureIndex)
@@ -1317,7 +1454,7 @@ void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureI
 	if (rectIter != this->spriteData.end())
 	{
 		// Sprite mapping exists, so overwrite its data.
-		rectIter->second = std::make_pair(rect, textureIndex);
+		rectIter->second = RectData(rect, textureIndex);
 
 		// Get previously touched voxels.
 		const auto touchedIter = this->spriteTouchedVoxels.find(spriteID);
@@ -1368,8 +1505,8 @@ void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureI
 	else
 	{
 		// No sprite mapping exists, so insert new sprite data.
-		this->spriteData.emplace(std::make_pair(spriteID,
-			std::make_pair(rect, textureIndex)));
+		this->spriteData.emplace(std::make_pair(
+			spriteID, RectData(rect, textureIndex)));
 
 		// Add the voxels that the sprite touches.
 		const auto touchedIter = this->spriteTouchedVoxels.emplace(std::make_pair(
@@ -1404,27 +1541,52 @@ void CLProgram::queueSpriteRemoval(int spriteID)
 	this->spriteTouchedVoxels.erase(touchedIter);
 }
 
+void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3d &color, 
+	const int *ownerID, double intensity)
+{
+	// If ownerID is null, then owner reference is (0, 0).
+
+	// Lights... owners...
+	Debug::crash("CLProgram", "queueLightUpdate() not implemented.");
+}
+
+void CLProgram::queueLightRemoval(int lightID)
+{
+	Debug::crash("CLProgram", "queueLightRemoval() not implemented.");
+}
+
 void CLProgram::pushUpdates()
 {
 	// Buffers with offsets for asynchronous writes to device memory.
-	std::vector<std::pair<size_t, std::vector<cl_char>>> rectBuffers, 
-		voxelRefBuffers, spriteRefBuffers;
+	std::vector<std::pair<size_t, std::vector<cl_char>>> rectBuffers, lightBuffers,
+		voxelRefBuffers, spriteRefBuffers, lightRefBuffers;
 
 	// Lambda for adding a rectangle buffer to the queue.
 	auto addRectBuffer = [this, &rectBuffers](const Int3 &voxel,
-		const std::vector<std::pair<Rect3D, int>> &rectData, size_t offset)
+		const std::vector<RectData> &rectData, size_t offset)
 	{
 		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rectData.size());
 
 		for (size_t i = 0; i < rectData.size(); ++i)
 		{
 			const auto &pair = rectData.at(i);
-			const Rect3D &rect = pair.first;
-			const TextureReference &textureRef = this->textureRefs.at(pair.second);
+			const Rect3D &rect = pair.getRect();
+			const TextureReference &textureRef = this->textureRefs.at(pair.getTextureID());
 			this->writeRect(rect, textureRef, buffer, SIZEOF_RECTANGLE * i);
 		}
 
 		rectBuffers.push_back(std::make_pair(offset, std::move(buffer)));
+	};
+
+	// Lambda for adding a light buffer to the queue.
+	auto addLightBuffer = [this, &lightBuffers](const Int3 &voxel,
+		const std::vector<Light> &lightData, size_t offset)
+	{
+		std::vector<cl_char> buffer(SIZEOF_LIGHT * lightData.size());
+
+		Debug::crash("CLProgram", "lambda addLightBuffer() not implemented.");
+
+		lightBuffers.push_back(std::make_pair(offset, std::move(buffer)));
 	};
 
 	// Lambda for adding a voxel reference buffer to the queue.
@@ -1457,6 +1619,21 @@ void CLProgram::pushUpdates()
 		spriteRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
 	};
 
+	// Lambda for adding a light reference buffer to the queue.
+	auto addLightRefBuffer = [this, &lightRefBuffers](const Int3 &voxel, int offset, int count)
+	{
+		std::vector<cl_char> buffer(SIZEOF_LIGHT_REF);
+
+		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
+		offPtr[0] = static_cast<cl_int>(offset);
+		offPtr[1] = static_cast<cl_int>(count);
+
+		const size_t bufferOffset = (voxel.getX() * SIZEOF_LIGHT_REF) +
+			((voxel.getY() * this->worldWidth) * SIZEOF_LIGHT_REF) +
+			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_LIGHT_REF);
+		lightRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
+	};
+
 	// Add voxel queue buffers.
 	for (const auto &group : this->voxelQueue)
 	{
@@ -1479,8 +1656,8 @@ void CLProgram::pushUpdates()
 	for (const auto &group : this->voxelRefQueue)
 	{
 		const Int3 &voxel = group.first;
-		const int offset = group.second.first;
-		const int count = group.second.second;
+		const int offset = group.second.offset;
+		const int count = group.second.count;
 		addVoxelRefBuffer(voxel, offset, count);
 	}
 
@@ -1488,8 +1665,8 @@ void CLProgram::pushUpdates()
 	for (const auto &group : this->spriteRefQueue)
 	{
 		const Int3 &voxel = group.first;
-		const int offset = group.second.first;
-		const int count = group.second.second;
+		const int offset = group.second.offset;
+		const int count = group.second.count;
 		addSpriteRefBuffer(voxel, offset, count);
 	}
 

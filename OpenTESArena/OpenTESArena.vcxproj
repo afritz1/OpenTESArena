@@ -153,8 +153,11 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Rendering\RectData.cpp" />
+    <ClCompile Include="src\Rendering\Light.cpp" />
     <ClCompile Include="src\Media\MusicFile.cpp" />
     <ClCompile Include="src\Media\SoundFile.cpp" />
+    <ClCompile Include="src\Rendering\ArrayReference.cpp" />
     <ClCompile Include="src\Utilities\BufferView.cpp" />
     <ClCompile Include="src\Assets\ExeUnpacker.cpp" />
     <ClCompile Include="src\Media\PPMFile.cpp" />
@@ -266,7 +269,6 @@
     <ClCompile Include="src\Math\Float2.cpp" />
     <ClCompile Include="src\Math\Float3.cpp" />
     <ClCompile Include="src\Math\Float4.cpp" />
-    <ClCompile Include="src\Rendering\TextureReference.cpp" />
     <ClCompile Include="src\Rendering\Surface.cpp" />
     <ClCompile Include="src\World\Voxel.cpp" />
     <ClCompile Include="src\Interface\TextBox.cpp" />
@@ -289,6 +291,9 @@
     <ClCompile Include="src\Media\WeaponFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Rendering\RectData.h" />
+    <ClInclude Include="src\Rendering\Light.h" />
+    <ClInclude Include="src\Rendering\ArrayReference.h" />
     <ClInclude Include="src\Media\MusicFile.h" />
     <ClInclude Include="src\Media\SoundFile.h" />
     <ClInclude Include="src\Utilities\BufferView.h" />
@@ -442,7 +447,6 @@
     <ClInclude Include="src\Math\Float4.h" />
     <ClInclude Include="src\Math\Float3.h" />
     <ClInclude Include="src\Media\MusicName.h" />
-    <ClInclude Include="src\Rendering\TextureReference.h" />
     <ClInclude Include="src\Rendering\Surface.h" />
     <ClInclude Include="src\World\ClimateName.h" />
     <ClInclude Include="src\World\LocationType.h" />
