@@ -70,6 +70,9 @@ private:
 	// Byte offset and rect index list for owner groups.
 	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> ownerGroups;
 
+	// Light ID to sprite ID mappings.
+	std::unordered_map<int, int> lightOwners;
+
 	// Geometry queues. Each mapping is a rect group to be updated in device memory.
 	// Each rect data object carries the rectangle and its texture index.
 	std::unordered_map<Int3, std::vector<RectData>> voxelQueue, spriteQueue;
@@ -133,7 +136,8 @@ private:
 		std::vector<cl_char> &buffer, size_t byteOffset) const;
 
 	// Helper method for writing a light to a temp buffer.
-	void writeLight(const Light &light, std::vector<cl_char> &buffer, size_t byteOffset) const;
+	void writeLight(const Light &light, const OwnerReference &ownerRef,
+		std::vector<cl_char> &buffer, size_t byteOffset) const;
 
 	// Helper method for adding a sprite to a sprite group in device memory.
 	void addSpriteToVoxel(int spriteID, const Int3 &voxel);

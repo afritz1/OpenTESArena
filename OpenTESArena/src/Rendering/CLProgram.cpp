@@ -889,8 +889,8 @@ void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef
 	dimPtr[1] = static_cast<cl_short>(textureRef.height);
 }
 
-void CLProgram::writeLight(const Light &light, std::vector<cl_char> &buffer, 
-	size_t byteOffset) const
+void CLProgram::writeLight(const Light &light, const OwnerReference &ownerRef, 
+	std::vector<cl_char> &buffer, size_t byteOffset) const
 {
 	cl_char *dataPtr = buffer.data() + byteOffset;
 
@@ -906,7 +906,6 @@ void CLProgram::writeLight(const Light &light, std::vector<cl_char> &buffer,
 	colorPtr[1] = static_cast<cl_float>(color.getY());
 	colorPtr[2] = static_cast<cl_float>(color.getZ());
 
-	const OwnerReference &ownerRef = light.getOwnerRef();
 	cl_int *ownerPtr = reinterpret_cast<cl_int*>(dataPtr + (sizeof(cl_float3) * 2));
 	ownerPtr[0] = static_cast<cl_int>(ownerRef.offset);
 	ownerPtr[1] = static_cast<cl_int>(ownerRef.count);
@@ -1429,21 +1428,26 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 void CLProgram::addLightToVoxel(int lightID, const Int3 &voxel)
 {
 	// Similar to addSpriteToVoxel()...
-	// Owner...
+	// Owner buffer... buffer view...
 	Debug::crash("CLProgram", "addLightToVoxel() not implemented.");
 }
 
 void CLProgram::removeLightFromVoxel(int lightID, const Int3 &voxel)
 {
 	// Similar to removeSpriteFromVoxel()...
-	// Owner...
+	// Owner buffer... buffer view...
 	Debug::crash("CLProgram", "removeLightFromVoxel() not implemented.");
 }
 
 void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 {
 	// Similar to updateSpriteInVoxel()...
-	// Owner...
+	// Get lightOwners mapping... refresh owner list based on sprite's touched voxels
+	// if light has an owner...
+	
+	// This method can't tell whether its owner sprite (if it exists) has moved or not, 
+	// but if this light is being updated, then its sprite has most likely moved.
+
 	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
 }
 
@@ -1544,15 +1548,121 @@ void CLProgram::queueSpriteRemoval(int spriteID)
 void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3d &color, 
 	const int *ownerID, double intensity)
 {
-	// If ownerID is null, then owner reference is (0, 0).
+	// See if the light already has a mapping for it.
+	const auto lightIter = this->lightData.find(lightID);
+	if (lightIter != this->lightData.end())
+	{
+		// Light mapping exists, so overwrite its data.
+		lightIter->second = Light(point, color, intensity);
 
-	// Lights... owners...
-	Debug::crash("CLProgram", "queueLightUpdate() not implemented.");
+		// If the new and old owner IDs don't match, refresh the mapping.
+		const auto ownerIter = this->lightOwners.find(lightID);
+		if (ownerIter != this->lightOwners.end())
+		{
+			// A mapping exists. See if the owner ID is not null.
+			if (ownerID != nullptr)
+			{
+				// Overwrite the old owner ID.
+				ownerIter->second = *ownerID;
+			}
+			else
+			{
+				// Erase the old owner ID.
+				this->lightOwners.erase(ownerIter);
+			}
+		}
+		else
+		{
+			// No mapping exists. Only add one if the new owner ID is not null.
+			if (ownerID != nullptr)
+			{
+				this->lightOwners.emplace(std::make_pair(lightID, *ownerID)).first;
+			}
+		}
+
+		// Get previously touched voxels.
+		const auto touchedIter = this->lightTouchedVoxels.find(lightID);
+		const std::vector<Int3> &prevTouchedVoxels = touchedIter->second;
+
+		// Get new touched voxels (those within the light's range).
+		std::vector<Int3> newTouchedVoxels = this->getTouchedVoxels(point, intensity, true);
+
+		// Update the light for voxels that are in both lists.
+		for (const auto &voxel : prevTouchedVoxels)
+		{
+			const auto newVoxelsIter = std::find(
+				newTouchedVoxels.begin(), newTouchedVoxels.end(), voxel);
+
+			if (newVoxelsIter != newTouchedVoxels.end())
+			{
+				this->updateLightInVoxel(lightID, voxel);
+			}
+		}
+
+		// Remove the light from voxels it's no longer touching.
+		for (const auto &voxel : prevTouchedVoxels)
+		{
+			const auto newVoxelsIter = std::find(
+				newTouchedVoxels.begin(), newTouchedVoxels.end(), voxel);
+
+			if (newVoxelsIter == newTouchedVoxels.end())
+			{
+				this->removeLightFromVoxel(lightID, voxel);
+			}
+		}
+
+		// Add the light to voxels it's now touching.
+		for (const auto &voxel : newTouchedVoxels)
+		{
+			const auto oldVoxelsIter = std::find(
+				prevTouchedVoxels.begin(), prevTouchedVoxels.end(), voxel);
+
+			if (oldVoxelsIter == prevTouchedVoxels.end())
+			{
+				this->addLightToVoxel(lightID, voxel);
+			}
+		}
+
+		// Overwrite the light's touched voxels.
+		touchedIter->second = newTouchedVoxels;
+	}
+	else
+	{
+		// No light mapping exists, so insert new light data.
+		this->lightData.emplace(std::make_pair(
+			lightID, Light(point, color, intensity)));
+
+		// Add all the voxels the light reaches.
+		const auto touchedIter = this->lightTouchedVoxels.emplace(std::make_pair(
+			lightID, this->getTouchedVoxels(point, intensity, true))).first;
+		const std::vector<Int3> &touchedVoxels = touchedIter->second;
+
+		// Add the light to each voxel it's touching.
+		for (const auto &voxel : touchedVoxels)
+		{
+			this->addLightToVoxel(lightID, voxel);
+		}
+	}
 }
 
 void CLProgram::queueLightRemoval(int lightID)
 {
-	Debug::crash("CLProgram", "queueLightRemoval() not implemented.");
+	// Remove the light's mapping.
+	const auto dataIter = this->lightData.find(lightID);
+	this->lightData.erase(dataIter);
+
+	// Get the voxels touched by the light.
+	const auto touchedIter = this->lightTouchedVoxels.find(lightID);
+	const std::vector<Int3> &touchedVoxels = touchedIter->second;
+
+	// Remove the light from each voxel it touches.
+	for (const auto &voxel : touchedVoxels)
+	{
+		this->removeLightFromVoxel(lightID, voxel);
+	}
+
+	// Remove the light's touched voxels mapping.
+	this->lightTouchedVoxels.erase(touchedIter);
 }
 
 void CLProgram::pushUpdates()
