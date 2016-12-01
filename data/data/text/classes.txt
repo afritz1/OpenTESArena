@@ -7,11 +7,11 @@
 # Experience? Specials like lockpick effectiveness?
 
 # Mages
-Battle Mage, Mage, True, 25, 10, Leather, Buckler Round, Any
+Battlemage, Mage, True, 25, 10, Leather, Buckler Round, Any
 Healer, Mage, True, 25, 8, Leather Chain, Buckler Round, Dagger Staff Mace Flail
 Mage, Mage, True, 25, 6, None, Buckler, Dagger Staff
 Nightblade, Mage, True, 25, 8, Leather, Buckler, Dagger Staff ShortBow Shortsword Saber
-Sorcerer, Mage, True, 25, 6, Leather Chain, None, Any
+Sorceror, Mage, True, 25, 6, Leather Chain, None, Any
 Spellsword, Mage, True, 25, 12, Leather Chain, Buckler Round Kite, Any
 
 # Thieves.
