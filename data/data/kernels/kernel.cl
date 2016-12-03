@@ -684,6 +684,7 @@ __kernel void rayTrace(
 	const __global LightReference *lightRefs,
 	const __global Rectangle *rects,
 	const __global Light *lights,
+	const __global int *owners,
 	const __global float4 *textures,
 	const __global float *gameTime,
 	const __global float *depthBuffer, 

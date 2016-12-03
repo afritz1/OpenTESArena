@@ -157,8 +157,12 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
 	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		SIZEOF_LIGHT /* Some # of lights * world dims, Placeholder size */, nullptr, &status);
+		static_cast<cl::size_type>(4096) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
+
+	this->ownerBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
+		static_cast<cl::size_type>(4096) /* Resized as necessary. */, nullptr, &status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer ownerBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
 		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
@@ -275,39 +279,43 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel lightBuffer.");
 
-	status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+	status = this->rayTraceKernel.setArg(5, this->ownerBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel ownerBuffer.");
+
+	status = this->rayTraceKernel.setArg(6, this->textureBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel textureBuffer.");
 
-	status = this->rayTraceKernel.setArg(6, this->gameTimeBuffer);
+	status = this->rayTraceKernel.setArg(7, this->gameTimeBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel gameTimeBuffer.");
 
-	status = this->rayTraceKernel.setArg(7, this->depthBuffer);
+	status = this->rayTraceKernel.setArg(8, this->depthBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel depthBuffer.");
 
-	status = this->rayTraceKernel.setArg(8, this->normalBuffer);
+	status = this->rayTraceKernel.setArg(9, this->normalBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel normalBuffer.");
 
-	status = this->rayTraceKernel.setArg(9, this->viewBuffer);
+	status = this->rayTraceKernel.setArg(10, this->viewBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel viewBuffer.");
 
-	status = this->rayTraceKernel.setArg(10, this->pointBuffer);
+	status = this->rayTraceKernel.setArg(11, this->pointBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel pointBuffer.");
 
-	status = this->rayTraceKernel.setArg(11, this->uvBuffer);
+	status = this->rayTraceKernel.setArg(12, this->uvBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel uvBuffer.");
 
-	status = this->rayTraceKernel.setArg(12, this->rectangleIndexBuffer);
+	status = this->rayTraceKernel.setArg(13, this->rectangleIndexBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel rectangleIndexBuffer.");
 
-	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
+	status = this->rayTraceKernel.setArg(14, this->colorBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel colorBuffer.");
 
@@ -498,39 +506,43 @@ void CLProgram::resize(int renderWidth, int renderHeight)
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize lightBuffer.");
 
-	status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+	status = this->rayTraceKernel.setArg(5, this->ownerBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg rayTraceKernel resize ownerBuffer.");
+
+	status = this->rayTraceKernel.setArg(6, this->textureBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize textureBuffer.");
 
-	status = this->rayTraceKernel.setArg(6, this->gameTimeBuffer);
+	status = this->rayTraceKernel.setArg(7, this->gameTimeBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize gameTimeBuffer.");
 
-	status = this->rayTraceKernel.setArg(7, this->depthBuffer);
+	status = this->rayTraceKernel.setArg(8, this->depthBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize depthBuffer.");
 
-	status = this->rayTraceKernel.setArg(8, this->normalBuffer);
+	status = this->rayTraceKernel.setArg(9, this->normalBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize normalBuffer.");
 
-	status = this->rayTraceKernel.setArg(9, this->viewBuffer);
+	status = this->rayTraceKernel.setArg(10, this->viewBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize viewBuffer.");
 
-	status = this->rayTraceKernel.setArg(10, this->pointBuffer);
+	status = this->rayTraceKernel.setArg(11, this->pointBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize pointBuffer.");
 
-	status = this->rayTraceKernel.setArg(11, this->uvBuffer);
+	status = this->rayTraceKernel.setArg(12, this->uvBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize uvBuffer.");
 
-	status = this->rayTraceKernel.setArg(12, this->rectangleIndexBuffer);
+	status = this->rayTraceKernel.setArg(13, this->rectangleIndexBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize rectangleIndexBuffer.");
 
-	status = this->rayTraceKernel.setArg(13, this->colorBuffer);
+	status = this->rayTraceKernel.setArg(14, this->colorBuffer);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Kernel::setArg rayTraceKernel resize colorBuffer.");
 
@@ -1052,7 +1064,7 @@ int CLProgram::addTexture(uint32_t *pixels, int width, int height)
 		Debug::check(status == CL_SUCCESS, "CLProgram",
 			"cl::Kernel::setArg addTexture intersectKernel.");
 
-		status = this->rayTraceKernel.setArg(5, this->textureBuffer);
+		status = this->rayTraceKernel.setArg(6, this->textureBuffer);
 		Debug::check(status == CL_SUCCESS, "CLProgram",
 			"cl::Kernel::setArg addTexture rayTraceKernel.");
 	}

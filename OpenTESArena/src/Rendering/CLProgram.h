@@ -51,9 +51,9 @@ private:
 	cl::Program program;
 	cl::Kernel intersectKernel, rayTraceKernel, convertToRGBKernel;
 	cl::Buffer cameraBuffer, voxelRefBuffer, spriteRefBuffer, lightRefBuffer,
-		rectangleBuffer, lightBuffer, textureBuffer, gameTimeBuffer, depthBuffer,
-		normalBuffer, viewBuffer, pointBuffer, uvBuffer, rectangleIndexBuffer,
-		colorBuffer, outputBuffer;
+		rectangleBuffer, lightBuffer, ownerBuffer, textureBuffer, gameTimeBuffer, 
+		depthBuffer, normalBuffer, viewBuffer, pointBuffer, uvBuffer, 
+		rectangleIndexBuffer, colorBuffer, outputBuffer;
 
 	// For receiving pixels from the device's output buffer.
 	std::vector<uint8_t> outputData;
