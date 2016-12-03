@@ -80,7 +80,8 @@ private:
 	std::unordered_map<Int3, std::vector<RectData>> voxelQueue, spriteQueue;
 
 	// Light queue. Each mapping is a light group to be updated in device memory.
-	// Each light data object carries the light and its owner reference.
+	// Each light data object carries the light and its owner reference. The owner
+	// reference will be (0, 0) if the light has no owners.
 	std::unordered_map<Int3, std::vector<LightData>> lightQueue;
 
 	// Index queue. Each mapping is a rect index group to be updated in device memory,

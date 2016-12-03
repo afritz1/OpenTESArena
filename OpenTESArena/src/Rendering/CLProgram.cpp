@@ -70,8 +70,8 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 
 	// Mention some version information about the platform (it should be okay if the 
 	// platform version is higher than the device version).
-	Debug::mention("CLProgram", "Platform version \"" +
-		platform.getInfo<CL_PLATFORM_VERSION>() + "\".");
+	Debug::mention("CLProgram", "Platform: " +
+		platform.getInfo<CL_PLATFORM_VERSION>() + ".");
 
 	// Check for all possible devices on the platform, starting with GPUs.
 	auto devices = CLProgram::getDevices(platform, CL_DEVICE_TYPE_GPU);
@@ -1406,11 +1406,6 @@ void CLProgram::removeSpriteFromVoxel(int spriteID, const Int3 &voxel)
 
 void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 {
-	// Get the sprite's rectangle and texture reference.
-	const auto &rectData = this->spriteData.at(spriteID);
-	const Rect3D &rect = rectData.getRect();
-	const TextureReference &textureRef = this->textureRefs.at(rectData.getTextureID());
-
 	// Get the sprite group for the voxel.
 	const auto &spriteGroup = this->spriteGroups.at(voxel);
 	const std::vector<int> &spriteIDs = spriteGroup.second;
@@ -1460,6 +1455,45 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 	// This method can't tell whether its owner sprite (if it exists) has moved or not, 
 	// but if this light is being updated, then its sprite has most likely moved.
 
+	// Get the light group for the voxel.
+	const auto &lightGroup = this->lightGroups.at(voxel);
+	const std::vector<int> &lightIDs = lightGroup.second;
+
+	// To do: update owner reference in this method using spriteGroup, etc.
+	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
+
+	// Refresh the light queue at this voxel.
+	// (Later, this code and pushUpdates() should calculate only necessary changes).
+	auto queueIter = this->lightQueue.find(voxel);
+	if (queueIter == this->lightQueue.end())
+	{
+		queueIter = this->lightQueue.emplace(std::make_pair(
+			voxel, std::vector<LightData>())).first;
+	}
+
+	auto &workItem = queueIter->second;
+	workItem.clear();
+
+	for (const auto id : lightIDs)
+	{
+		const Light &light = this->lightData.at(id);
+
+		// Add a work item depending on the light's owner (if any).
+		const auto ownerIter = this->ownerData.find(id);
+		if (ownerIter != this->ownerData.end())
+		{
+			// Get the light's owner.
+			const OwnerReference &ownerRef = ownerIter->second;
+			workItem.push_back(LightData(light, ownerRef));
+		}
+		else
+		{
+			// If the light has no owner, make an empty owner reference instead.
+			workItem.push_back(LightData(light, OwnerReference(0, 0)));
+		}
+	}
+
+	// To do: refresh the owner queue for the light?
 	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
 }
 
