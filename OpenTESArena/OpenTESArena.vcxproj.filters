@@ -137,6 +137,7 @@
     <ClCompile Include="src\Rendering\ArrayReference.cpp" />
     <ClCompile Include="src\Rendering\Light.cpp" />
     <ClCompile Include="src\Rendering\RectData.cpp" />
+    <ClCompile Include="src\Rendering\LightData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Math\Quaternion.h" />
@@ -319,6 +320,7 @@
     <ClInclude Include="src\Rendering\ArrayReference.h" />
     <ClInclude Include="src\Rendering\Light.h" />
     <ClInclude Include="src\Rendering\RectData.h" />
+    <ClInclude Include="src\Rendering\LightData.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

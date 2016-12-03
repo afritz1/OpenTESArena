@@ -1681,10 +1681,10 @@ void CLProgram::pushUpdates()
 {
 	// Buffers with offsets for asynchronous writes to device memory.
 	std::vector<std::pair<size_t, std::vector<cl_char>>> rectBuffers, lightBuffers,
-		voxelRefBuffers, spriteRefBuffers, lightRefBuffers;
+		ownerBuffers, voxelRefBuffers, spriteRefBuffers, lightRefBuffers;
 
 	// Lambda for adding a rectangle buffer to the queue.
-	auto addRectBuffer = [this, &rectBuffers](const Int3 &voxel,
+	auto addRectBuffer = [this, &rectBuffers](
 		const std::vector<RectData> &rectData, size_t offset)
 	{
 		std::vector<cl_char> buffer(SIZEOF_RECTANGLE * rectData.size());
@@ -1701,59 +1701,52 @@ void CLProgram::pushUpdates()
 	};
 
 	// Lambda for adding a light buffer to the queue.
-	auto addLightBuffer = [this, &lightBuffers](const Int3 &voxel,
-		const std::vector<Light> &lightData, size_t offset)
+	auto addLightBuffer = [this, &lightBuffers](
+		const std::vector<LightData> &lightData, size_t offset)
 	{
 		std::vector<cl_char> buffer(SIZEOF_LIGHT * lightData.size());
 
-		Debug::crash("CLProgram", "lambda addLightBuffer() not implemented.");
+		for (size_t i = 0; i < lightData.size(); ++i)
+		{
+			const auto &pair = lightData.at(i);
+			const Light &light = pair.getLight();
+			const OwnerReference &ownerRef = pair.getOwnerRef();
+			this->writeLight(light, ownerRef, buffer, SIZEOF_LIGHT * i);
+		}
 
 		lightBuffers.push_back(std::make_pair(offset, std::move(buffer)));
 	};
 
-	// Lambda for adding a voxel reference buffer to the queue.
-	auto addVoxelRefBuffer = [this, &voxelRefBuffers](const Int3 &voxel, int offset, int count)
+	// Lambda for adding an owner buffer to the queue.
+	auto addOwnerBuffer = [this, &ownerBuffers](
+		const std::vector<int> &ownerData, size_t offset)
 	{
-		std::vector<cl_char> buffer(SIZEOF_VOXEL_REF);
-		
-		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
-		offPtr[0] = static_cast<cl_int>(offset);
-		offPtr[1] = static_cast<cl_int>(count);
+		std::vector<cl_char> buffer(sizeof(cl_int) * ownerData.size());
 
-		const size_t bufferOffset = (voxel.getX() * SIZEOF_VOXEL_REF) +
-			((voxel.getY() * this->worldWidth) * SIZEOF_VOXEL_REF) +
-			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_VOXEL_REF);
-		voxelRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
+		for (size_t i = 0; i < ownerData.size(); ++i)
+		{
+			const size_t offset = sizeof(cl_int) * i;
+			cl_int *dataPtr = reinterpret_cast<cl_int*>(buffer.data() + offset);
+			dataPtr[0] = ownerData.at(i);
+		}
+
+		ownerBuffers.push_back(std::make_pair(offset, std::move(buffer)));
 	};
 
-	// Lambda for adding a sprite reference buffer to the queue.
-	auto addSpriteRefBuffer = [this, &spriteRefBuffers](const Int3 &voxel, int offset, int count)
+	// Lambda for adding a voxel/sprite/light reference buffer to the queue.
+	auto addRefBuffer = [this](const Int3 &voxel, int offset, int count, size_t sizeOfRef, 
+		std::vector<std::pair<size_t, std::vector<cl_char>>> &dstBuffers)
 	{
-		std::vector<cl_char> buffer(SIZEOF_SPRITE_REF);
+		std::vector<cl_char> buffer(sizeOfRef);
 
 		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
 		offPtr[0] = static_cast<cl_int>(offset);
 		offPtr[1] = static_cast<cl_int>(count);
 
-		const size_t bufferOffset = (voxel.getX() * SIZEOF_SPRITE_REF) +
-			((voxel.getY() * this->worldWidth) * SIZEOF_SPRITE_REF) +
-			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_SPRITE_REF);
-		spriteRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
-	};
-
-	// Lambda for adding a light reference buffer to the queue.
-	auto addLightRefBuffer = [this, &lightRefBuffers](const Int3 &voxel, int offset, int count)
-	{
-		std::vector<cl_char> buffer(SIZEOF_LIGHT_REF);
-
-		cl_int *offPtr = reinterpret_cast<cl_int*>(buffer.data());
-		offPtr[0] = static_cast<cl_int>(offset);
-		offPtr[1] = static_cast<cl_int>(count);
-
-		const size_t bufferOffset = (voxel.getX() * SIZEOF_LIGHT_REF) +
-			((voxel.getY() * this->worldWidth) * SIZEOF_LIGHT_REF) +
-			((voxel.getZ() * this->worldWidth * this->worldHeight) * SIZEOF_LIGHT_REF);
-		lightRefBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
+		const size_t bufferOffset = (voxel.getX() * sizeOfRef) +
+			((voxel.getY() * this->worldWidth) * sizeOfRef) +
+			((voxel.getZ() * this->worldWidth * this->worldHeight) * sizeOfRef);
+		dstBuffers.push_back(std::make_pair(bufferOffset, std::move(buffer)));
 	};
 
 	// Add voxel queue buffers.
@@ -1762,7 +1755,7 @@ void CLProgram::pushUpdates()
 		const Int3 &voxel = group.first;
 		const auto &rectData = group.second;
 		const size_t byteOffset = this->voxelOffsets.at(voxel);
-		addRectBuffer(voxel, rectData, byteOffset);
+		addRectBuffer(rectData, byteOffset);
 	}
 
 	// Add sprite queue buffers.
@@ -1771,7 +1764,25 @@ void CLProgram::pushUpdates()
 		const Int3 &voxel = group.first;
 		const auto &rectData = group.second;
 		const size_t byteOffset = this->spriteGroups.at(voxel).first;
-		addRectBuffer(voxel, rectData, byteOffset);
+		addRectBuffer(rectData, byteOffset);
+	}
+
+	// Add light queue buffers.
+	for (const auto &group : this->lightQueue)
+	{
+		const Int3 &voxel = group.first;
+		const auto &lightData = group.second;
+		const size_t byteOffset = this->lightGroups.at(voxel).first;
+		addLightBuffer(lightData, byteOffset);
+	}
+
+	// Add owner queue buffers.
+	for (const auto &group : this->ownerQueue)
+	{
+		const int lightID = group.first;
+		const auto &ownerData = group.second;
+		const size_t byteOffset = this->ownerGroups.at(lightID).first;
+		addOwnerBuffer(ownerData, byteOffset);
 	}
 
 	// Add voxel reference queue buffers.
@@ -1780,7 +1791,7 @@ void CLProgram::pushUpdates()
 		const Int3 &voxel = group.first;
 		const int offset = group.second.offset;
 		const int count = group.second.count;
-		addVoxelRefBuffer(voxel, offset, count);
+		addRefBuffer(voxel, offset, count, SIZEOF_VOXEL_REF, voxelRefBuffers);
 	}
 
 	// Add sprite reference queue buffers.
@@ -1789,44 +1800,49 @@ void CLProgram::pushUpdates()
 		const Int3 &voxel = group.first;
 		const int offset = group.second.offset;
 		const int count = group.second.count;
-		addSpriteRefBuffer(voxel, offset, count);
+		addRefBuffer(voxel, offset, count, SIZEOF_SPRITE_REF, spriteRefBuffers);
 	}
 
-	// Begin asynchronous writes to the rectangle buffer.
-	for (const auto &pair : rectBuffers)
+	// Add light reference queue buffers.
+	for (const auto &group : this->lightRefQueue)
 	{
-		const size_t offset = pair.first;
-		const std::vector<cl_char> &buffer = pair.second;
-		this->commandQueue.enqueueWriteBuffer(this->rectangleBuffer, CL_FALSE, 
-			offset, buffer.size(), static_cast<const void*>(buffer.data()),
-			nullptr, nullptr);
+		const Int3 &voxel = group.first;
+		const int offset = group.second.offset;
+		const int count = group.second.count;
+		addRefBuffer(voxel, offset, count, SIZEOF_LIGHT_REF, lightRefBuffers);
 	}
 
-	// Begin asynchronous writes to the voxel reference buffer.
-	for (const auto &pair : voxelRefBuffers)
+	// Lambda for asynchronously writing queue buffers to an OpenCL buffer.
+	auto enqueueAsyncWrite = [this](
+		const std::vector<std::pair<size_t, std::vector<cl_char>>> &buffers,
+		cl::Buffer &dstBuffer)
 	{
-		const size_t offset = pair.first;
-		const std::vector<cl_char> &buffer = pair.second;
-		this->commandQueue.enqueueWriteBuffer(this->voxelRefBuffer, CL_FALSE,
-			offset, buffer.size(), static_cast<const void*>(buffer.data()),
-			nullptr, nullptr);
-	}
+		for (const auto &pair : buffers)
+		{
+			const size_t offset = pair.first;
+			const std::vector<cl_char> &buffer = pair.second;
+			this->commandQueue.enqueueWriteBuffer(dstBuffer, CL_FALSE,
+				offset, buffer.size(), static_cast<const void*>(buffer.data()),
+				nullptr, nullptr);
+		}
+	};
 
-	// Begin asynchronous writes to the sprite reference buffer.
-	for (const auto &pair : spriteRefBuffers)
-	{
-		const size_t offset = pair.first;
-		const std::vector<cl_char> &buffer = pair.second;
-		this->commandQueue.enqueueWriteBuffer(this->spriteRefBuffer, CL_FALSE,
-			offset, buffer.size(), static_cast<const void*>(buffer.data()),
-			nullptr, nullptr);
-	}
+	// Begin asynchronous writes to various buffers.
+	enqueueAsyncWrite(rectBuffers, this->rectangleBuffer);
+	enqueueAsyncWrite(lightBuffers, this->lightBuffer);
+	enqueueAsyncWrite(ownerBuffers, this->ownerBuffer);
+	enqueueAsyncWrite(voxelRefBuffers, this->voxelRefBuffer);
+	enqueueAsyncWrite(spriteRefBuffers, this->spriteRefBuffer);
+	enqueueAsyncWrite(lightRefBuffers, this->lightRefBuffer);
 
 	// Erase the queues so they're empty for the next frame.
 	this->voxelQueue.clear();
 	this->spriteQueue.clear();
+	this->lightQueue.clear();
+	this->ownerQueue.clear();
 	this->voxelRefQueue.clear();
 	this->spriteRefQueue.clear();
+	this->lightRefQueue.clear();
 
 	// Make sure all writes have finished before continuing.
 	cl_int status = this->commandQueue.finish();

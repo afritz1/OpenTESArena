@@ -153,6 +153,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Rendering\LightData.cpp" />
     <ClCompile Include="src\Rendering\RectData.cpp" />
     <ClCompile Include="src\Rendering\Light.cpp" />
     <ClCompile Include="src\Media\MusicFile.cpp" />
@@ -291,6 +292,7 @@
     <ClCompile Include="src\Media\WeaponFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Rendering\LightData.h" />
     <ClInclude Include="src\Rendering\RectData.h" />
     <ClInclude Include="src\Rendering\Light.h" />
     <ClInclude Include="src\Rendering\ArrayReference.h" />

@@ -14,6 +14,7 @@
 
 #include "ArrayReference.h"
 #include "Light.h"
+#include "LightData.h"
 #include "RectData.h"
 #include "../Math/Float3.h"
 #include "../Math/Int3.h"
@@ -24,7 +25,7 @@
 // resized or when the game world's dimensions change.
 
 // It is important to remember that cl_float3 and cl_float4 are structurally
-// equivalent (cl_float * 4, or 16 bytes).
+// equivalent (cl_float * 4, 16 bytes).
 
 // It appears that having single-indirection sprite references (i.e., offset + count -> 
 // rectangle) is faster than double-indirection (i.e., offset + count -> index -> 
@@ -67,10 +68,11 @@ private:
 	// Byte offset and light ID list for light groups.
 	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> lightGroups;
 
-	// Byte offset and rect index list for owner groups.
-	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> ownerGroups;
+	// Byte offset and rect index list for owner groups, accessed by a light ID.
+	std::unordered_map<int, std::pair<size_t, std::vector<int>>> ownerGroups;
 
-	// Light ID to sprite ID mappings.
+	// Light ID to sprite ID mappings. Not every light needs an owner, so this mapping
+	// might not cover every light.
 	std::unordered_map<int, int> lightOwners;
 
 	// Geometry queues. Each mapping is a rect group to be updated in device memory.
@@ -78,10 +80,12 @@ private:
 	std::unordered_map<Int3, std::vector<RectData>> voxelQueue, spriteQueue;
 
 	// Light queue. Each mapping is a light group to be updated in device memory.
-	std::unordered_map<Int3, std::vector<Light>> lightQueue;
+	// Each light data object carries the light and its owner reference.
+	std::unordered_map<Int3, std::vector<LightData>> lightQueue;
 
-	// Index queue. Each mapping is a rect index group to be updated in device memory.
-	std::unordered_map<Int3, std::vector<int>> ownerQueue;
+	// Index queue. Each mapping is a rect index group to be updated in device memory,
+	// and is accessed by a light ID.
+	std::unordered_map<int, std::vector<int>> ownerQueue;
 
 	// Reference queues. Each mapping is a reference to be updated in device memory.
 	// Each queue is cleared after updating is complete for the frame.
@@ -98,8 +102,12 @@ private:
 	// A copy of each light's data.
 	std::unordered_map<int, Light> lightData;
 
-	// For managing allocations in the rectangle buffer and light buffer.
-	std::unique_ptr<BufferView> rectBufferView, lightBufferView;
+	// A copy of each light's owner reference, if any. This is separate from "lightData"
+	// because not all lights have owners.
+	std::unordered_map<int, OwnerReference> ownerData;
+
+	// For managing allocations in various dynamic buffers.
+	std::unique_ptr<BufferView> rectBufferView, lightBufferView, ownerBufferView;
 
 	// Offsets and sizes of textures in device memory.
 	std::vector<TextureReference> textureRefs;
