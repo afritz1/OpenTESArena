@@ -8,11 +8,9 @@ This open-source project aims to be a modern engine reimplementation for "The El
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-November 18th, 2016:
-
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings, sprites, and a day/night cycle. No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior now, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+The game world is currently a barebones test city with some buildings, sprites, and a day/night cycle. No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
 - Esc - pause menu
@@ -21,19 +19,19 @@ Here are some hotkeys in the game world:
 - L - logbook
 - N - automap
 
-This is how the test world looks now:
-<br/>
 <br/>
 ![Preview](Preview.PNG)
 <br/>
 
 ## Project Details
 
-The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
+The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake (and it still is quite an experiment), but now the project is steadily inching closer to something akin to the original.
+
+The graphics are being rendered with a ray tracer I'm writing in OpenCL. I puzzled for a long time about what 3D rendering method to use, and I decided that this would be a good place to demonstrate real time GPU ray tracing. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
-It's named OpenTESArena and is not to be confused with the Quake III-based [OpenArena](https://github.com/OpenArena).
+This project shares a similar name with the Quake III-based [OpenArena](https://github.com/OpenArena), though the two projects are unrelated.
 
 Check out the Projects tab to see what's currently on the to-do list. Open a pull request if you'd like to contribute.
 
@@ -79,13 +77,13 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 Current priority:
 - Click to move and turn
-- Options menu
-- Weapon attacks (hold RMB to swing)
+- Lights (street lamps, etc.)
 
 Next priority:
 - Character creation questions
 - Game interface button behavior
-- Lights (street lamps, etc.)
+- Options menu
+- Weapon attacks (hold RMB to swing)
 
 Later:
 - Adaptive super-sampling
@@ -100,7 +98,8 @@ Later:
 - Load artifact data
 - Load class data (to replace classes.txt)
 - Load locations data
-- Load strings from Arena executable
+- Load unpacked Arena executable data
+- Modern (Daggerfall-like) interface option with free-look camera
 - Random test cities and dungeons
 - Redesigned water and lava (to replace vanilla screen animations)
 - Reflections in windows and water
@@ -116,6 +115,7 @@ Outside scope (until much later):
 - (new) New kinds of stores
 - Original city/dungeon data
 - Pickpocketing
+- Scripting
 - Services (bartender, priest, shopkeeper, wizard)
 - Spells
 - Sprite variation (clothes/hair/skin colors)
@@ -124,16 +124,8 @@ Outside scope (until much later):
 - Wandering people
 - Wilderness (seed-based chunk generation)
 
-## Graphics
-
-The 3D graphics are being done with a ray tracer I am writing in OpenCL. As it is fairly experimental, I suggest using a modern GPU. If you do not have a graphics card, then the engine switches to the (less desirable) CPU mode automatically. I would like to add a user option for this at some point.
-
-I puzzled for a long time about whether to use a ray tracer or OpenGL, or even just a software renderer, and I finally decided that this would be a good place to show that real time ray tracing can be done in some games today. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
-
-I have a design for adaptive super-sampling that I'd really like to implement sometime. It's a form of anti-aliasing that's slightly faster than super-sampling because it only does extra work on pixels that need it. Other features like bloom and soft shadows from the sun might make it in sometime as well.
-
 ## Resources
 
 All of the music and sound files, as well as the vast majority of wall and sprite textures, are available to look at thanks to exporter programs like WinArena and [other utilities](http://www.uesp.net/wiki/Arena:Files#Misc_Utilities). However, this project will still use the original files that came with the floppy disk version of Arena.
 
-Here is the [Unofficial Elder Scrolls website](http://www.uesp.net/wiki/Arena:Arena) for information regarding the original game. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a (humorous) overview of the game's history and gameplay. The Arena manual PDF is available [here](http://www.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well.
+Here is the [Unofficial Elder Scrolls website](http://www.uesp.net/wiki/Arena:Arena) for information regarding the original game. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay. The Arena manual PDF is available [here](http://www.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well.
