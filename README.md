@@ -68,8 +68,7 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 - CMake should allow you to build the project.
 
 #### Running the executable:
-- The executable expects the `data` and `options` folders to be in the same directory as it. If you built the executable yourself from the repository, move them up one level out of the `data_files` folder.
-- Add any additional libraries (SDL2.dll, wildmidi_dynamic.dll, etc.) to the executable directory.
+- Make sure any required libraries (SDL2.dll, wildmidi_dynamic.dll, etc.) are in the executable directory (this should be automated sometime).
 - Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
