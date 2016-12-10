@@ -1448,9 +1448,38 @@ void CLProgram::removeLightFromVoxel(int lightID, const Int3 &voxel)
 
 void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 {
-	// Similar to updateSpriteInVoxel()...
-	// Get lightOwners mapping... refresh owner list based on sprite's touched voxels
-	// if light has an owner...
+	// To do: hmm... can a light gain and lose different owners over its lifetime?
+	// Probably not... but should this case be handled anyway?
+	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
+
+	// Refresh the light's owner list IDs if it has an owner.
+	const auto lightOwnerIter = this->lightOwners.find(lightID);
+	if (lightOwnerIter != this->lightOwners.end())
+	{
+		const int spriteID = lightOwnerIter->second;
+
+		// Get each voxel the sprite is touching.
+		const std::vector<Int3> &touchedVoxels = this->spriteTouchedVoxels.at(spriteID);
+
+		// Get rect indices of each of the sprite's rects.
+		std::vector<int> rectIndices;
+
+		for (const auto &voxel : touchedVoxels)
+		{
+			// Get the sprite group associated with the voxel.
+			const auto &spriteGroup = this->spriteGroups.at(voxel);
+			const std::vector<int> &idGroup = spriteGroup.second;
+			const auto idIter = std::find(idGroup.begin(), idGroup.end(), spriteID);
+			const int idIndex = static_cast<int>(idIter - idGroup.begin());
+			const int offset = static_cast<int>(spriteGroup.first) / SIZEOF_RECTANGLE;
+
+			rectIndices.push_back(offset + idIndex);
+		}
+
+		// To do: refresh ownerGroup.at(lightID) and owner reference...
+		// reallocate owner buffer view with rect indices vector?
+		//const auto ownerIter = this->ownerData.at(lightID);
+	}
 	
 	// This method can't tell whether its owner sprite (if it exists) has moved or not, 
 	// but if this light is being updated, then its sprite has most likely moved.
@@ -1458,9 +1487,6 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 	// Get the light group for the voxel.
 	const auto &lightGroup = this->lightGroups.at(voxel);
 	const std::vector<int> &lightIDs = lightGroup.second;
-
-	// To do: update owner reference in this method using spriteGroup, etc.
-	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
 
 	// Refresh the light queue at this voxel.
 	// (Later, this code and pushUpdates() should calculate only necessary changes).
