@@ -5,7 +5,7 @@ FILE(GLOB COMP_SOURCES vfs/*.h vfs/*.hpp vfs/*.cpp
 )
 
 IF (WIN32)
-	FILE(GLOB COMP_WIN32_SOURCES misc/*.h misc/*.hpp misc/*.cpp)
+	FILE(GLOB COMP_WIN32_SOURCES misc/*.h misc/*.c misc/*.hpp misc/*.cpp)
 ENDIF (WIN32)
 
 ADD_LIBRARY (components STATIC ${COMP_SOURCES} ${COMP_WIN32_SOURCES})
