@@ -3,7 +3,7 @@
 
 #ifdef _WIN32
 #include "dirent.h"
-#include "fnmatch.h"
+#include "../misc/fnmatch.h"
 #else
 #include <dirent.h>
 #include <sys/stat.h>
