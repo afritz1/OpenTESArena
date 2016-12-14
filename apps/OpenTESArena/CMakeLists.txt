@@ -15,7 +15,16 @@ ELSE(WILDMIDI_FOUND)
     MESSAGE(STATUS "WildMidi not found, no MIDI support!")
 ENDIF(WILDMIDI_FOUND)
 
-FILE(GLOB_RECURSE TES_SOURCES src/*.h src/*.hpp src/*.cpp)
+FILE(GLOB_RECURSE TES_SOURCES 
+    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.h 
+    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.c 
+    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.hpp 
+    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.cpp)
+
+IF (WIN32)
+    LIST(APPEND TES_SOURCES $(CMAKE_SOURCE_DIR)/windows/opentesarena.rc)
+    ADD_DEFINITIONS("-D_SCL_SECURE_NO_WARNINGS=1")
+ENDIF()
 
 ADD_EXECUTABLE (TESArena ${TES_SOURCES})
 TARGET_LINK_LIBRARIES(TESArena components ${EXTERNAL_LIBS})
