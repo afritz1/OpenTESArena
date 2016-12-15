@@ -16,13 +16,13 @@ ELSE(WILDMIDI_FOUND)
 ENDIF(WILDMIDI_FOUND)
 
 FILE(GLOB_RECURSE TES_SOURCES 
-    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.h 
-    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.c 
-    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.hpp 
-    $(CMAKE_SOURCE_DIR)/OpenTESArena/src/*.cpp)
+    ${CMAKE_SOURCE_DIR}/OpenTESArena/src/*.h 
+    ${CMAKE_SOURCE_DIR}/OpenTESArena/src/*.c 
+    ${CMAKE_SOURCE_DIR}/OpenTESArena/src/*.hpp 
+    ${CMAKE_SOURCE_DIR}/OpenTESArena/src/*.cpp)
 
 IF (WIN32)
-    LIST(APPEND TES_SOURCES $(CMAKE_SOURCE_DIR)/windows/opentesarena.rc)
+    LIST(APPEND TES_SOURCES ${CMAKE_SOURCE_DIR}/windows/opentesarena.rc)
     ADD_DEFINITIONS("-D_SCL_SECURE_NO_WARNINGS=1")
 ENDIF()
 
