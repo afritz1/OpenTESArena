@@ -75,7 +75,7 @@ endfunction()
 
 find_path(OpenCL_INCLUDE_DIR
   NAMES
-    cl.h
+    cl.h CL/cl.h
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -88,7 +88,6 @@ find_path(OpenCL_INCLUDE_DIR
     /usr/include/OpenCL
   PATH_SUFFIXES
     include
-    include/CL
     OpenCL/common/inc
     OpenCL
     "AMD APP/include")
@@ -98,7 +97,7 @@ _FIND_OPENCL_VERSION()
 # Once we have a working include directory, try looking specifically for cl2.hpp
 find_path(OpenCL_CL2_INCLUDE_DIR
   NAMES
-    cl2.hpp cl2.hpp
+    cl2.hpp CL/cl2.hpp
   PATHS
     ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
@@ -111,7 +110,6 @@ find_path(OpenCL_CL2_INCLUDE_DIR
     ${OpenCL_INCLUDE_DIR}
   PATH_SUFFIXES
     include
-    include/CL
     OpenCL/common/inc
     "AMD APP/include")
     
