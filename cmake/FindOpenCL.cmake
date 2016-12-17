@@ -88,6 +88,7 @@ find_path(OpenCL_INCLUDE_DIR
     /usr/include/OpenCL
   PATH_SUFFIXES
     include
+    include/CL
     OpenCL/common/inc
     OpenCL
     "AMD APP/include")
@@ -110,6 +111,7 @@ find_path(OpenCL_CL2_INCLUDE_DIR
     ${OpenCL_INCLUDE_DIR}
   PATH_SUFFIXES
     include
+    include/CL
     OpenCL/common/inc
     "AMD APP/include")
     
@@ -122,7 +124,6 @@ find_library(OpenCL_LIBRARY
   NAMES OpenCL
   PATHS
     ENV "PROGRAMFILES(X86)"
-    ENV "PROGRAMFILES(X86)"
     ENV AMDAPPSDKROOT
     ENV INTELOCLSDKROOT
     ENV CUDA_PATH
@@ -133,6 +134,7 @@ find_library(OpenCL_LIBRARY
     /usr/lib/i386-linux-gnu
   PATH_SUFFIXES
     "AMD APP/lib/x86"
+    lib/x86_64
     lib/x86
     lib/Win32
 
