@@ -53,22 +53,18 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 
 ## Building from source
 
-#### Obtaining the developer libraries:
+#### Project dependencies:
+- [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
 - OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use [cl2.hpp](https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp) header from OpenCL 2.0.
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases)
 
-#### Building the executable (Windows):
-- Build the components static library (i.e., `components.lib`) separately using the files in the `components` folder.
-- If necessary, edit the Visual Studio project's include and library directories to fit your computer.
-- Link to the developer libraries and components library and build the executable.
-
-#### Building the executable (Linux):
-- CMake should allow you to build the project.
+#### Building the executable:
+- Use CMake to generate your project files and then build the executable.
 
 #### Running the executable:
-- Make sure any required libraries (SDL2.dll, wildmidi_dynamic.dll, etc.) are in the executable directory (this should be automated sometime).
+- You will need to copy the `data` and `options` folders to the project directory to allow the executable to run within your IDE (this should be automated sometime).
 - Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
