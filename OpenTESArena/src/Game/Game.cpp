@@ -164,6 +164,8 @@ void Game::handleEvents(bool &running)
 		bool applicationExit = (e.type == SDL_QUIT);
 		bool resized = (e.type == SDL_WINDOWEVENT) &&
 			(e.window.event == SDL_WINDOWEVENT_RESIZED);
+		bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_PRINTSCREEN);
 
 		if (applicationExit)
 		{
@@ -175,6 +177,14 @@ void Game::handleEvents(bool &running)
 			int width = e.window.data1;
 			int height = e.window.data2;
 			this->resizeWindow(width, height);
+		}
+
+		if (takeScreenshot)
+		{
+			// Save a screenshot to the local folder.
+			auto &renderer = this->getRenderer();
+			Surface screenshot(renderer.getScreenshot());
+			SDL_SaveBMP(screenshot.get(), "out.bmp");
 		}
 
 		// Panel-specific events are handled by the panel.
