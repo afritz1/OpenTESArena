@@ -1,6 +1,6 @@
 #include "String.h"
 
-std::vector<std::string> String::split(const std::string &line, char separator)
+std::vector<std::string> String::split(const std::string &str, char separator)
 {
 	std::vector<std::string> strings;
 
@@ -8,7 +8,7 @@ std::vector<std::string> String::split(const std::string &line, char separator)
 	// vector with one empty string is returned.
 	strings.push_back(std::string());
 
-	for (const auto c : line)
+	for (const auto c : str)
 	{
 		if (c == separator)
 		{
@@ -25,18 +25,18 @@ std::vector<std::string> String::split(const std::string &line, char separator)
 	return strings;
 }
 
-std::vector<std::string> String::split(const std::string &line)
+std::vector<std::string> String::split(const std::string &str)
 {
-	return String::split(line, ' ');
+	return String::split(str, ' ');
 }
 
-std::string String::trim(const std::string &line)
+std::string String::trim(const std::string &str)
 {
 	const char space = ' ';
 
 	std::string trimmed;
 
-	for (const auto c : line)
+	for (const char c : str)
 	{
 		if (c != space)
 		{
@@ -47,14 +47,42 @@ std::string String::trim(const std::string &line)
 	return trimmed;
 }
 
-std::string String::trimLines(const std::string &line)
+std::string String::trimFront(const std::string &str)
+{
+	const char space = ' ';
+
+	std::string trimmed(str);
+	
+	while (trimmed.front() == space)
+	{
+		trimmed.erase(trimmed.begin());
+	}
+
+	return trimmed;
+}
+
+std::string String::trimBack(const std::string &str)
+{
+	const char space = ' ';
+
+	std::string trimmed(str);
+
+	while (trimmed.back() == space)
+	{
+		trimmed.pop_back();
+	}
+
+	return trimmed;
+}
+
+std::string String::trimLines(const std::string &str)
 {
 	const char carriageReturn = '\r';
 	const char newLine = '\n';
 
 	std::string trimmed;
 
-	for (const char c : line)
+	for (const char c : str)
 	{
 		if ((c != carriageReturn) && (c != newLine))
 		{

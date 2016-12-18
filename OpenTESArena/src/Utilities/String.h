@@ -15,16 +15,22 @@ private:
 	~String() = delete;
 public:
 	// Splits a string on the given character.
-	static std::vector<std::string> split(const std::string &line, char separator);
+	static std::vector<std::string> split(const std::string &str, char separator);
 
 	// Splits a string on whitespace.
-	static std::vector<std::string> split(const std::string &line);
+	static std::vector<std::string> split(const std::string &str);
 
-	// Removes whitespace from a string.
-	static std::string trim(const std::string &line);
+	// Removes all whitespace from a string.
+	static std::string trim(const std::string &str);
+
+	// Removes leading whitespace from a string.
+	static std::string trimFront(const std::string &str);
+
+	// Removes trailing whitespace from a string.
+	static std::string trimBack(const std::string &str);
 
 	// Removes new line characters from a string.
-	static std::string trimLines(const std::string &line);
+	static std::string trimLines(const std::string &str);
 
 	// Gets the right-most extension from a string, i.e., ".txt".
 	static std::string getExtension(const std::string &str);
