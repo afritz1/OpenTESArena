@@ -1,8 +1,8 @@
 #ifndef ENTITY_MANAGER_H
 #define ENTITY_MANAGER_H
 
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 class Entity;
@@ -12,7 +12,7 @@ enum class EntityType;
 class EntityManager
 {
 private:
-	std::map<int, std::unique_ptr<Entity>> entities;
+	std::unordered_map<int, std::unique_ptr<Entity>> entities;
 public:
 	EntityManager();
 	~EntityManager();
@@ -24,7 +24,7 @@ public:
 	std::vector<Entity*> getEntities(EntityType entityType) const;
 
 	// Obtains an available ID to be assigned to a new entity.
-	int nextID();
+	int nextID() const;
 	
 	// Adds an entity. The entity must get their ID from "nextID()" beforehand.
 	void add(std::unique_ptr<Entity> entity);
