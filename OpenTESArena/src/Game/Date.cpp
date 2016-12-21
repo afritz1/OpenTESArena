@@ -5,37 +5,28 @@
 #include "Month.h"
 #include "Weekday.h"
 #include "Year.h"
+#include "../Utilities/Debug.h"
 
-Date::Date(int day, WeekdayName weekdayName, MonthName monthName, const Year &year)
+Date::Date(const Year &year, const Month &month, const Weekday &weekday, int day)
 {
 	// Programmer error if the day is ever out of range.
 	assert(day >= 1);
 	assert(day <= 30);
 
-	this->day = day;
-
-	this->weekday = std::unique_ptr<Weekday>(new Weekday(weekdayName));
-	this->month = std::unique_ptr<Month>(new Month(monthName));
 	this->year = std::unique_ptr<Year>(new Year(year));
+	this->month = std::unique_ptr<Month>(new Month(month));
+	this->weekday = std::unique_ptr<Weekday>(new Weekday(weekday));
+	this->day = day;
 }
-
-Date::Date(const Date &date)
-	: Date(date.getDayNumber(), date.getWeekday().getWeekdayName(), 
-		date.getMonth().getMonthName(), date.getYear()) { }
 
 Date::~Date()
 {
 
 }
 
-int Date::getDayNumber() const
+const Year &Date::getYear() const
 {
-	return this->day;
-}
-
-const Weekday &Date::getWeekday() const
-{
-	return *this->weekday.get();
+	return *this->year.get();
 }
 
 const Month &Date::getMonth() const
@@ -43,9 +34,14 @@ const Month &Date::getMonth() const
 	return *this->month.get();
 }
 
-const Year &Date::getYear() const
+const Weekday &Date::getWeekday() const
 {
-	return *this->year.get();
+	return *this->weekday.get();
+}
+
+int Date::getDayNumber() const
+{
+	return this->day;
 }
 
 std::string Date::getOrdinalDay() const
@@ -86,7 +82,7 @@ void Date::incrementDay()
 
 	this->day++;
 	this->incrementWeekday();
-	
+
 	// No need to check for "> 31"; the assertions take care of that.
 	if (this->day == 31)
 	{
@@ -97,19 +93,21 @@ void Date::incrementDay()
 
 void Date::incrementWeekday()
 {
-	this->weekday->incrementWeekday();
+	Debug::crash("Date", "incrementWeekday() not implemented.");
+	//this->weekday->incrementWeekday();
 }
 
 void Date::incrementMonth()
 {
-	bool isLastMonth = this->month->isLastMonthInYear();
+	Debug::crash("Date", "incrementMonth() not implemented.");
+	/*bool isLastMonth = this->month->isLastMonthInYear();
 
 	this->month->incrementMonth();
 
 	if (isLastMonth)
 	{
 		this->incrementYear();
-	}
+	}*/
 }
 
 void Date::incrementYear()

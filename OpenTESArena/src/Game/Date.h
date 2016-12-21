@@ -4,12 +4,15 @@
 #include <memory>
 #include <string>
 
+// The Date class manages all the data needed to define a particular day in the game.
+
+// Perhaps a "DateManager" class will know all the names of months and weekdays so that
+// they can be properly incremented? Those strings will need to be read from the Arena
+// executable.
+
 class Month;
 class Weekday;
 class Year;
-
-enum class MonthName;
-enum class WeekdayName;
 
 class Date
 {
@@ -27,14 +30,13 @@ private:
 	void incrementYear();
 public:
 	// Date constructor for a fully defined date.
-	Date(int day, WeekdayName weekdayName, MonthName monthName, const Year &year);
-	Date(const Date &date);
+	Date(const Year &year, const Month &month, const Weekday &weekday, int day);
 	~Date();
 
-	int getDayNumber() const;
-	const Weekday &getWeekday() const;
-	const Month &getMonth() const;
 	const Year &getYear() const;
+	const Month &getMonth() const;
+	const Weekday &getWeekday() const;
+	int getDayNumber() const;
 	std::string getOrdinalDay() const;
 
 	// No need for a "fullNameToString()" method because each name can be obtained

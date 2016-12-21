@@ -1,53 +1,14 @@
 #include <cassert>
-#include <map>
 
 #include "Holiday.h"
 
-#include "HolidayName.h"
-#include "MonthName.h"
-
-const std::map<HolidayName, std::string> HolidayDisplayNames =
+Holiday::Holiday(const std::string &holidayName, const std::string &monthName, int day)
+	: holidayName(holidayName), monthName(monthName)
 {
-	{ HolidayName::NewLifeFestival, "New Life Festival" },
-	{ HolidayName::SouthWindsPrayer, "South Winds Prayer" },
-	{ HolidayName::HeartsDay, "Heart's Day" },
-	{ HolidayName::FirstPlanting, "First Planting" },
-	{ HolidayName::JestersDay, "Jester's Day" },
-	{ HolidayName::SecondPlanting, "Second Planting" },
-	{ HolidayName::MidYearCelebration, "Mid Year Celebration" },
-	{ HolidayName::MerchantsFestival, "Merchant's Festival" }, // "Merchants" in the manual.
-	{ HolidayName::SunsRest, "Sun's Rest" },
-	{ HolidayName::HarvestsEnd, "Harvest's End" },
-	{ HolidayName::TalesAndTallows, "Tales and Tallows" },
-	{ HolidayName::WitchesFestival, "Witches' Festival" }, // "Witches" in the manual.
-	{ HolidayName::EmperorsDay, "Emperor's Day" },
-	{ HolidayName::WarriorsFestival, "Warrior's Festival" }, // "Warriors" in the manual.
-	{ HolidayName::NorthWindsPrayer, "North Winds Prayer" }
-};
+	assert(day >= 1);
+	assert(day <= 30);
 
-// Every holiday has an associated day and month. No particular weekday association.
-const std::map<HolidayName, std::pair<MonthName, int>> HolidayDates =
-{
-	{ HolidayName::NewLifeFestival, { MonthName::MorningStar, 1 } },
-	{ HolidayName::SouthWindsPrayer, { MonthName::MorningStar, 15 } },
-	{ HolidayName::HeartsDay, { MonthName::SunsDawn, 16 } },
-	{ HolidayName::FirstPlanting, { MonthName::FirstSeed, 7 } },
-	{ HolidayName::JestersDay, { MonthName::RainsHand, 28 } },
-	{ HolidayName::SecondPlanting, { MonthName::SecondSeed, 7 } },
-	{ HolidayName::MidYearCelebration, { MonthName::MidYear, 16 } },
-	{ HolidayName::MerchantsFestival, { MonthName::SunsHeight, 10 } },
-	{ HolidayName::SunsRest, { MonthName::SunsHeight, 20 } },
-	{ HolidayName::HarvestsEnd, { MonthName::LastSeed, 27 } },
-	{ HolidayName::TalesAndTallows, { MonthName::Hearthfire, 3 } },
-	{ HolidayName::WitchesFestival, { MonthName::Frostfall, 13 } },
-	{ HolidayName::EmperorsDay, { MonthName::Frostfall, 30 } },
-	{ HolidayName::WarriorsFestival, { MonthName::SunsDusk, 20 } },
-	{ HolidayName::NorthWindsPrayer, { MonthName::EveningStar, 1 } }
-};
-
-Holiday::Holiday(HolidayName holidayName)
-{
-	this->holidayName = holidayName;
+	this->day = day;
 }
 
 Holiday::~Holiday()
@@ -55,29 +16,17 @@ Holiday::~Holiday()
 
 }
 
-HolidayName Holiday::getHolidayName() const
+const std::string &Holiday::getHolidayName() const
 {
 	return this->holidayName;
 }
 
-int Holiday::getDayNumber() const
+const std::string &Holiday::getMonthName() const
 {
-	int dayNumber = HolidayDates.at(this->getHolidayName()).second;
-
-	assert(dayNumber >= 1);
-	assert(dayNumber <= 30);
-
-	return dayNumber;
+	return this->monthName;
 }
 
-MonthName Holiday::getMonthName() const
+int Holiday::getDay() const
 {
-	auto monthName = HolidayDates.at(this->getHolidayName()).first;
-	return monthName;
-}
-
-std::string Holiday::toString() const
-{
-	auto displayName = HolidayDisplayNames.at(this->getHolidayName());
-	return displayName;
+	return this->day;
 }

@@ -3,26 +3,25 @@
 
 #include <string>
 
-enum class MonthName;
+// Another part of the program will need to implement "isLastMonthInYear()" and 
+// "incrementMonth()" eventually.
+// - Maybe "incrementMonth()" could be implemented as "const std::string &nextMonth(
+//   const std::string &monthName)".
+
+// By reading certain strings from the Arena executable, a list of months can 
+// be generated.
 
 class Month
 {
 private:
-	MonthName monthName;
+	std::string monthName;
 public:
-	Month(MonthName monthName);
+	Month(const std::string &monthName);
 	~Month();
 
 	static const int DAYS_PER_MONTH;
 
-	MonthName getMonthName() const;
-
-	// For knowing when to increment the year.
-	bool isLastMonthInYear() const;
-
-	std::string toString() const;
-
-	void incrementMonth();
+	const std::string &getMonthName() const;
 };
 
 #endif

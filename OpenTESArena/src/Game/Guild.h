@@ -3,18 +3,20 @@
 
 #include <string>
 
-enum class GuildName;
+// A guild is mostly just a name used in various conversations in the game, but
+// the Mage's Guild is an actual guild the player can go visit.
+
+// Guilds will be read from the Arena executable eventually.
 
 class Guild
 {
 private:
-	GuildName guildName;
+	std::string guildName;
 public:
-	Guild(GuildName guildName);
+	Guild(const std::string &guildName);
 	~Guild();
 
-	GuildName getGuildName() const;
-	std::string toString() const;
+	const std::string &getGuildName() const;
 };
 
 #endif

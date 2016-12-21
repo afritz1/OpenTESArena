@@ -3,24 +3,24 @@
 
 #include <string>
 
-enum class HolidayName;
-enum class MonthName;
+// Holidays affect certain things in the game world, like prices at shops and temples.
+
+// They will be read in from the Arena executable eventually.
 
 class Holiday
 {
 private:
-	HolidayName holidayName;
+	std::string holidayName, monthName;
+	int day;
 public:
-	Holiday(HolidayName holidayName);
+	Holiday(const std::string &holidayName, const std::string &monthName, int day);
 	~Holiday();
 
-	HolidayName getHolidayName() const;
+	const std::string &getHolidayName() const;
 
 	// These two methods together tell when a holiday is.
-	int getDayNumber() const;
-	MonthName getMonthName() const;
-
-	std::string toString() const;
+	const std::string &getMonthName() const;
+	int getDay() const;
 };
 
 #endif
