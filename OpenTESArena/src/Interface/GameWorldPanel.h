@@ -17,6 +17,8 @@ class Rect;
 class Renderer;
 class TextBox;
 
+enum class PlayerInterface;
+
 class GameWorldPanel : public Panel
 {
 private:
@@ -24,6 +26,7 @@ private:
 	std::unique_ptr<Button> automapButton, characterSheetButton, logbookButton, 
 		pauseButton, worldMapButton;
 	std::array<std::unique_ptr<Rect>, 9> nativeCursorRegions;
+	PlayerInterface playerInterface;
 
 	// Gets the current strength of movement and rotation based on where the
 	// cursor is in the window. X is used for turning or strafing, and Y is used 

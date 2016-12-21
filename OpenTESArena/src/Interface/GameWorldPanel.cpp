@@ -73,6 +73,12 @@ namespace
 	const Rect ScrollDownRegion(208, 42, 9, 9);
 }
 
+enum class PlayerInterface
+{
+	Classic,
+	Modern
+};
+
 GameWorldPanel::GameWorldPanel(Game *game)
 	: Panel(game)
 {
@@ -145,6 +151,10 @@ GameWorldPanel::GameWorldPanel(Game *game)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
+
+	// Default to classic mode for now. Eventually, "modern" mode will be
+	// an option for a free-look camera like Daggerfall.
+	this->playerInterface = PlayerInterface::Classic;
 
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game->getRenderer().getWindowDimensions();
