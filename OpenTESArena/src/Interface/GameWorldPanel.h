@@ -28,20 +28,15 @@ private:
 	std::array<std::unique_ptr<Rect>, 9> nativeCursorRegions;
 	PlayerInterface playerInterface;
 
-	// Gets the current strength of movement and rotation based on where the
-	// cursor is in the window. X is used for turning or strafing, and Y is used 
-	// for going forward or backward.
-	Float2d getMotionMagnitudes(const Int2 &nativePoint);
-
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
 	void updateCursorRegions(int width, int height);
 
-	// Handle mouse input for the player camera.
-	void handleMouse(double dt);
-
-	// Handle player movement in the game world.
-	void handleKeyboard(double dt);
+	// Handles input for the player camera.
+	void handlePlayerTurning(double dt);
+	
+	// Handles input for player movement in the game world.
+	void handlePlayerMovement(double dt);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);

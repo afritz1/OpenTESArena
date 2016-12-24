@@ -275,102 +275,172 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
-void GameWorldPanel::handleMouse(double dt)
+void GameWorldPanel::handlePlayerTurning(double dt)
 {
-	const auto &renderer = this->getGame()->getRenderer();
+	// In the future, maybe this could be separated into two methods:
+	// 1) handleClassicTurning()
+	// 2) handleModernTurning()
 
-	const uint32_t mouse = SDL_GetRelativeMouseState(nullptr, nullptr);
-	const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-
-	if (leftClick)
-	{
-		// Horizontal camera movement rough draft. The original camera controls for 
-		// Arena are bad, but I am simulating them before thinking of adding modern 
-		// 3D camera support (like Daggerfall) as an option.
-		const Int2 screenDimensions = renderer.getWindowDimensions();
-		const Int2 mousePosition = this->getMousePosition();
-
-		// Strength of turning is determined by proximity of the mouse cursor to
-		// the left or right screen edge.
-		const double dx = [this, &mousePosition, &screenDimensions]()
-		{
-			const int mouseX = mousePosition.getX();
-
-			// Native cursor regions (scaled to the current window).
-			const Rect &middleLeft = *this->nativeCursorRegions.at(3).get();
-			const Rect &middleRight = *this->nativeCursorRegions.at(5).get();
-
-			// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
-			double percent = 0.0;
-			if (middleLeft.contains(mousePosition))
-			{
-				percent = -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
-			}
-			else if (middleRight.contains(mousePosition))
-			{
-				percent = static_cast<double>(mouseX - middleRight.getLeft()) /
-					middleRight.getWidth();
-			}
-
-			// No NaNs or infinities allowed.
-			return std::isfinite(percent) ? percent : 0.0;
-		}();
-
-		auto &player = this->getGame()->getGameData().getPlayer();
-		const auto &options = this->getGame()->getOptions();
-
-		// Yaw the camera left or right. No vertical movement in classic camera mode.
-		// Multiply turning speed by delta time so it behaves correctly with different
-		// frame rates.
-		player.rotate(dx * dt, 0.0, options.getHorizontalSensitivity(),
-			options.getVerticalSensitivity(), options.getVerticalFOV());
-	}
-
+	// Don't handle weapon swinging here. That can go in another method.
 	// If right click is held, weapon is out, and mouse motion is significant, then
 	// get the swing direction and swing.
 
-	// Later in development, a 3D camera would be fun (more like Daggerfall), but 
-	// for now the objective is to more closely resemble the original game, so the
-	// rough draft 3D camera code below is commented out as a result.
-
-	// Make the camera look around.
-	/*int dx, dy;
-	const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
-
-	bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-	bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-	bool turning = ((dx != 0) || (dy != 0)) && leftClick;
-
-	if (turning)
+	if (this->playerInterface == PlayerInterface::Classic)
 	{
-		auto dimensions = this->getGame()->getRenderer().getWindowDimensions();
-		double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
-		double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
+		// Classic interface mode.
+		// Arena's mouse look is pretty clunky, and I much prefer the free-look model,
+		// but this option needs to be here all the same.
 
-		// Pitch and/or yaw the camera.
+		// Holding the LMB in the left, right, upper left, or upper right parts of the
+		// screen turns the player. A and D turn the player as well.
+
 		const auto &options = this->getGame()->getOptions();
-		this->getGame()->getGameData().getPlayer().rotate(dxx, -dyy,
-			options.getHorizontalSensitivity(), options.getVerticalSensitivity(),
-			options.getVerticalFOV());
-	}*/
+		auto &player = this->getGame()->getGameData().getPlayer();
+
+		// Listen for LMB, A, or D. Don't turn if Ctrl is held.
+		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
+		const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+
+		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
+		bool left = keys[SDL_SCANCODE_A] != 0;
+		bool right = keys[SDL_SCANCODE_D] != 0;
+		bool lCtrl = keys[SDL_SCANCODE_LCTRL] != 0;
+		
+		// Mouse turning takes priority over key turning.
+		if (leftClick)
+		{
+			const Int2 mousePosition = this->getMousePosition();
+
+			// Strength of turning is determined by proximity of the mouse cursor to
+			// the left or right screen edge.
+			const double dx = [this, &mousePosition]()
+			{
+				const int mouseX = mousePosition.getX();
+
+				// Native cursor regions for turning (scaled to the current window).
+				const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
+				const Rect &topRight = *this->nativeCursorRegions.at(2).get();
+				const Rect &middleLeft = *this->nativeCursorRegions.at(3).get();
+				const Rect &middleRight = *this->nativeCursorRegions.at(5).get();
+
+				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
+				double percent = 0.0;
+				if (topLeft.contains(mousePosition))
+				{
+					percent = -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
+				}
+				else if (topRight.contains(mousePosition))
+				{
+					percent = static_cast<double>(mouseX - topRight.getLeft()) /
+						topRight.getWidth();
+				}
+				else if (middleLeft.contains(mousePosition))
+				{
+					percent = -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
+				}
+				else if (middleRight.contains(mousePosition))
+				{
+					percent = static_cast<double>(mouseX - middleRight.getLeft()) /
+						middleRight.getWidth();
+				}
+
+				// No NaNs or infinities allowed.
+				return std::isfinite(percent) ? percent : 0.0;
+			}();
+
+			// Yaw the camera left or right. No vertical movement in classic camera mode.
+			// Multiply turning speed by delta time so it behaves correctly with different
+			// frame rates.
+			player.rotate(dx * dt, 0.0, options.getHorizontalSensitivity(),
+				options.getVerticalSensitivity(), options.getVerticalFOV());
+		}
+		else if (!lCtrl)
+		{
+			// If left control is not held, then turning is permitted.
+			// Use an arbitrary turn speed mixed with the horizontal sensitivity.
+			const double turnSpeed = 0.60;
+
+			if (left)
+			{
+				// Turn left at a fixed angular velocity.
+				player.rotate(-turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
+					options.getVerticalSensitivity(), options.getVerticalFOV());
+			}
+			else if (right)
+			{
+				// Turn right at a fixed angular velocity.
+				player.rotate(turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
+					options.getVerticalSensitivity(), options.getVerticalFOV());
+			}
+		}
+	}
+	else
+	{
+		// Modern interface.
+		Debug::crash("Game World", "Modern interface not implemented.");
+
+		// Later in development, a 3D camera would be fun (more like Daggerfall), but 
+		// for now the objective is to more closely resemble the original game, so the
+		// rough draft 3D camera code below is commented out as a result.
+
+		// Make the camera look around.
+		/*int dx, dy;
+		const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
+
+		bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+		bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+		bool turning = ((dx != 0) || (dy != 0)) && leftClick;
+
+		if (turning)
+		{
+			auto dimensions = this->getGame()->getRenderer().getWindowDimensions();
+			double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
+			double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
+
+			// Pitch and/or yaw the camera.
+			const auto &options = this->getGame()->getOptions();
+			auto &player = this->getGame()->getGameData().getPlayer();
+			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(), 
+				options.getVerticalSensitivity(), options.getVerticalFOV());
+		}*/
+	}
 }
 
-void GameWorldPanel::handleKeyboard(double dt)
+void GameWorldPanel::handlePlayerMovement(double dt)
 {
-	// Listen for WASD, jump...
-	const auto *keys = SDL_GetKeyboardState(nullptr);
+	// In the future, maybe this could be separated into two methods:
+	// 1) handleClassicMovement()
+	// 2) handleModernMovement()
 
-	bool forward = keys[SDL_SCANCODE_W] != 0;
-	bool backward = keys[SDL_SCANCODE_S] != 0;
-	bool left = keys[SDL_SCANCODE_A] != 0;
-	bool right = keys[SDL_SCANCODE_D] != 0;
-	bool jump = keys[SDL_SCANCODE_SPACE] != 0;
-
-	bool any = forward || backward || left || right || jump;
-
-	if (any)
+	if (this->playerInterface == PlayerInterface::Classic)
 	{
+		// Classic interface mode.
+		// Arena uses arrow keys, but let's use the left hand side of the keyboard 
+		// because we like being comfortable.
+
+		// A and D turn the player, and if Ctrl is held, the player slides instead.
+		// Let's keep the turning part in the other method because turning doesn't
+		// affect velocity.
+
+		// Listen for mouse, WASD, and Ctrl.
+		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
+		const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+
+		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
+		bool forward = keys[SDL_SCANCODE_W] != 0;
+		bool backward = keys[SDL_SCANCODE_S] != 0;
+		bool left = keys[SDL_SCANCODE_A] != 0;
+		bool right = keys[SDL_SCANCODE_D] != 0;
+		bool lCtrl = keys[SDL_SCANCODE_LCTRL] != 0;
+
+		// The original game didn't have sprinting, but it seems like something 
+		// relevant to do anyway (at least for development).
 		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
+
+		// Arbitrary movement speeds.
+		const double walkSpeed = 15.0;
+		const double runSpeed = 30.0;
+
 		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// Get some relevant player direction data.
@@ -379,40 +449,119 @@ void GameWorldPanel::handleKeyboard(double dt)
 			groundDirection.getY()).normalized();
 		Float3d rightDirection = player.getFrame().getRight().normalized();
 
-		// Calculate the acceleration direction based on input.
-		Float3d accelDirection = Float3d(0.0, 0.0, 0.0);
-		if (forward)
+		// Mouse movement takes priority over key movement.
+		if (leftClick)
 		{
-			accelDirection = accelDirection + groundDirection3D;
-		}
-		if (backward)
-		{
-			accelDirection = accelDirection - groundDirection3D;
-		}
-		if (right)
-		{
-			accelDirection = accelDirection + rightDirection;
-		}
-		if (left)
-		{
-			accelDirection = accelDirection - rightDirection;
-		}
+			const Int2 mousePosition = this->getMousePosition();
+			const int mouseX = mousePosition.getX();
+			const int mouseY = mousePosition.getY();
 
-		// To do: check jump eventually once gravity and ground collision are implemented.
+			// Native cursor regions for motion (scaled to the current window).
+			const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
+			const Rect &top = *this->nativeCursorRegions.at(1).get();
+			const Rect &topRight = *this->nativeCursorRegions.at(2).get();
+			const Rect &bottomLeft = *this->nativeCursorRegions.at(6).get();
+			const Rect &bottom = *this->nativeCursorRegions.at(7).get();
+			const Rect &bottomRight = *this->nativeCursorRegions.at(8).get();
 
-		// Use a normalized direction.
-		accelDirection = accelDirection.normalized();
+			// Strength of movement is determined by the mouse's position in each region.
+			// Motion magnitude (percent) is between 0.0 and 1.0.
+			double percent = 0.0;
+			Float3d accelDirection(0.0, 0.0, 0.0);
+			if (topLeft.contains(mousePosition))
+			{
+				// Forward.
+				accelDirection = accelDirection + groundDirection3D;
+				percent = 1.0 - (static_cast<double>(mouseY) / topLeft.getHeight());
+			}
+			else if (top.contains(mousePosition))
+			{
+				// Forward.
+				accelDirection = accelDirection + groundDirection3D;
+				percent = 1.0 - (static_cast<double>(mouseY) / top.getHeight());
+			}
+			else if (topRight.contains(mousePosition))
+			{
+				// Forward.
+				accelDirection = accelDirection + groundDirection3D;
+				percent = 1.0 - (static_cast<double>(mouseY) / topRight.getHeight());
+			}
+			else if (bottomLeft.contains(mousePosition))
+			{
+				// Left.
+				accelDirection = accelDirection - rightDirection;
+				percent = 1.0 - (static_cast<double>(mouseX) / bottomLeft.getWidth());
+			}
+			else if (bottom.contains(mousePosition))
+			{
+				// Backwards.
+				accelDirection = accelDirection - groundDirection3D;
+				percent = static_cast<double>(mouseY - bottom.getTop()) /
+					bottom.getHeight();
+			}
+			else if (bottomRight.contains(mousePosition))
+			{
+				// Right.
+				accelDirection = accelDirection + rightDirection;
+				percent = static_cast<double>(mouseX - bottomRight.getLeft()) /
+					bottomRight.getWidth();
+			}
 
-		// Set the magnitude of the acceleration to some arbitrary numbers. These values 
-		// are independent of max speed. The original game didn't have sprinting, but it 
-		// seems like something relevant to do anyway (at least in testing).
-		double accelMagnitude = isRunning ? 30.0 : 10.0;
+			// Use a normalized direction.
+			accelDirection = accelDirection.normalized();
 
-		// Change the player's velocity if valid.
-		if (std::isfinite(accelDirection.length()))
-		{
-			player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// are independent of max speed.
+			double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
+
+			// Change the player's velocity if valid.
+			if (std::isfinite(accelDirection.length()) && 
+				std::isfinite(accelMagnitude))
+			{
+				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+			}
 		}
+		else if (forward || backward || ((left || right) && lCtrl))
+		{
+			// Calculate the acceleration direction based on input.
+			Float3d accelDirection(0.0, 0.0, 0.0);
+			if (forward)
+			{
+				accelDirection = accelDirection + groundDirection3D;
+			}
+			if (backward)
+			{
+				accelDirection = accelDirection - groundDirection3D;
+			}
+			if (right)
+			{
+				accelDirection = accelDirection + rightDirection;
+			}
+			if (left)
+			{
+				accelDirection = accelDirection - rightDirection;
+			}
+
+			// To do: check jump eventually once gravity and ground collision are implemented.
+
+			// Use a normalized direction.
+			accelDirection = accelDirection.normalized();
+
+			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// are independent of max speed.
+			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
+
+			// Change the player's velocity if valid.
+			if (std::isfinite(accelDirection.length()))
+			{
+				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+			}
+		}
+	}
+	else
+	{
+		// Modern interface.
+		Debug::crash("Game World", "Modern interface not implemented.");
 	}
 }
 
@@ -428,12 +577,6 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 	renderer.drawToOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT - 
 		gameInterface.getHeight() - tooltip.getHeight());
-}
-
-Float2d GameWorldPanel::getMotionMagnitudes(const Int2 &nativePoint)
-{
-	// To do...
-	return Float2d();
 }
 
 void GameWorldPanel::updateCursorRegions(int width, int height)
@@ -479,9 +622,9 @@ void GameWorldPanel::tick(double dt)
 {
 	assert(this->getGame()->gameDataIsActive());
 
-	// Handle mouse and keyboard for player motion.
-	this->handleMouse(dt);
-	this->handleKeyboard(dt);
+	// Handle input for player motion.
+	this->handlePlayerTurning(dt);
+	this->handlePlayerMovement(dt);
 
 	// Animate the game world.
 	// - Later, this should be more explicit about what it's updating exactly.

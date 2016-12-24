@@ -72,7 +72,6 @@ If there is a bug or technical problem in the program, check out the issues tab!
 ## Scope
 
 Current priority:
-- Click to move and turn
 - Lights (street lamps, etc.)
 
 Next priority:
