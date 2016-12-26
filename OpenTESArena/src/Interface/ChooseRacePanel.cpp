@@ -198,8 +198,13 @@ void ChooseRacePanel::render(Renderer &renderer)
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(raceSelectMap.get());
 
-	// Don't worry about the yellow dots for now. Whatever the original game is doing
-	// to cover them up should be figured out sometime.
+	// Arena just covers up the "exit" text at the bottom right.
+	const auto &exitCover = textureManager.getTexture(
+		TextureFile::fromName(TextureName::NoExit),
+		TextureFile::fromName(TextureName::RaceSelect));
+	renderer.drawToOriginal(exitCover.get(),
+		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
+		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
 
 	// Draw visible parchments and text.
 	if (this->initialTextBoxVisible)
