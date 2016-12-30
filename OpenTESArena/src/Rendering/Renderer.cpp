@@ -58,6 +58,10 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	this->originalTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, Renderer::ORIGINAL_WIDTH, Renderer::ORIGINAL_HEIGHT);
 
+	// Verify that the system has an available OpenCL device for rendering.
+	Debug::check(CLProgram::getTotalDeviceCount() > 0, "Renderer",
+		"No OpenCL render devices found.");
+
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	this->clProgram = nullptr;
 	this->gameWorldTexture = nullptr;

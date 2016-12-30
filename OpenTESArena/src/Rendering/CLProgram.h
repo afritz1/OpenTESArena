@@ -191,6 +191,10 @@ public:
 	static std::vector<cl::Device> getDevices(const cl::Platform &platform,
 		cl_device_type type);
 
+	// Gets the total number of available OpenCL devices (CPU, GPU, etc.).
+	// If this returns 0, the program cannot render the 3D world with OpenCL.
+	static int getTotalDeviceCount();
+
 	// Updates the render dimensions.
 	void resize(int renderWidth, int renderHeight);
 

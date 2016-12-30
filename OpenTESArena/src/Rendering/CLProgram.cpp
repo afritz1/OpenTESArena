@@ -354,6 +354,20 @@ std::vector<cl::Device> CLProgram::getDevices(const cl::Platform &platform,
 	return devices;
 }
 
+int CLProgram::getTotalDeviceCount()
+{
+	std::vector<cl::Platform> platforms = CLProgram::getPlatforms();
+	
+	size_t deviceCount = 0;
+	for (const auto &platform : platforms)
+	{
+		auto devices = CLProgram::getDevices(platform, CL_DEVICE_TYPE_ALL);
+		deviceCount += devices.size();
+	}
+
+	return static_cast<int>(deviceCount);
+}
+
 void CLProgram::resize(int renderWidth, int renderHeight)
 {
 	// Since the CL program is tightly coupled with the render resolution, nearly all
