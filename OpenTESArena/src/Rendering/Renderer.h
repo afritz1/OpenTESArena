@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "Rect3D.h"
 #include "../Math/Float3.h"
-#include "../Math/Rect3D.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
 

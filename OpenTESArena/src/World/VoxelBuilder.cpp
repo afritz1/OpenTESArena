@@ -3,7 +3,7 @@
 #include "VoxelBuilder.h"
 
 #include "../Math/Float3.h"
-#include "../Math/Rect3D.h"
+#include "../Rendering/Rect3D.h"
 
 std::vector<Rect3D> VoxelBuilder::makeSizedBlock(int x, int y, int z, float y1, float y2)
 {

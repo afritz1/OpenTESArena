@@ -15,10 +15,10 @@
 #include "ArrayReference.h"
 #include "Light.h"
 #include "LightData.h"
+#include "Rect3D.h"
 #include "RectData.h"
 #include "../Math/Float3.h"
 #include "../Math/Int3.h"
-#include "../Math/Rect3D.h"
 
 // The CLProgram manages all interactions of the application with the 3D graphics
 // engine and the GPU compute schedule. It should be refreshed when the window is
@@ -128,17 +128,6 @@ private:
 
 	// Helper method for resizing the rectangle buffer and setting kernel arguments.
 	void resizeRectBuffer(cl::size_type requiredSize);
-
-	// Returns a vector of voxel coordinates for all voxels that a rectangle touches,
-	// with the option to only get voxels within the world bounds. Intended only for 
-	// sprites.
-	std::vector<Int3> getTouchedVoxels(const Rect3D &rect, bool clampBounds) const;
-
-	// Returns a vector of voxel coordinates for all voxels that a light reaches,
-	// with the option to only get voxels within the world bounds. Intended only for 
-	// point lights.
-	std::vector<Int3> getTouchedVoxels(const Float3d &point, double intensity,
-		bool clampBounds) const;
 
 	// Helper method for writing a rectangle and texture reference to a temp buffer.
 	void writeRect(const Rect3D &rect, const TextureReference &textureRef,

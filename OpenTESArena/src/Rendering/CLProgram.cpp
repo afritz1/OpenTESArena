@@ -735,135 +735,6 @@ void CLProgram::resizeRectBuffer(cl::size_type requiredSize)
 		"cl::Kernel::setArg resizeRectBuffer rayTraceKernel.");
 }
 
-std::vector<Int3> CLProgram::getTouchedVoxels(const Rect3D &rect, bool clampBounds) const
-{
-	// Create an axis-aligned bounding box for the rectangle.
-	const Float3f &p1 = rect.getP1();
-	const Float3f &p2 = rect.getP2();
-	const Float3f &p3 = rect.getP3();
-	const Float3f p4 = p1 + (p3 - p2);
-	const Float3f boxMin(
-		std::min(p1.getX(), std::min(p2.getX(), std::min(p3.getX(), p4.getX()))),
-		std::min(p1.getY(), std::min(p2.getY(), std::min(p3.getY(), p4.getY()))),
-		std::min(p1.getZ(), std::min(p2.getZ(), std::min(p3.getZ(), p4.getZ()))));
-	const Float3f boxMax(
-		std::max(p1.getX(), std::max(p2.getX(), std::max(p3.getX(), p4.getX()))),
-		std::max(p1.getY(), std::max(p2.getY(), std::max(p3.getY(), p4.getY()))),
-		std::max(p1.getZ(), std::max(p2.getZ(), std::max(p3.getZ(), p4.getZ()))));
-
-	// Lambda to convert a 3D point to a voxel coordinate, optionally clamping
-	// within world bounds if requested.
-	auto getVoxelCoordinate = [this, clampBounds](const Float3f &point)
-	{
-		const int pX = static_cast<int>(point.getX());
-		const int pY = static_cast<int>(point.getY());
-		const int pZ = static_cast<int>(point.getZ());
-
-		if (clampBounds)
-		{
-			return Int3(
-				std::max(0, std::min(this->worldWidth - 1, pX)),
-				std::max(0, std::min(this->worldHeight - 1, pY)),
-				std::max(0, std::min(this->worldDepth - 1, pZ)));
-		}
-		else
-		{
-			return Int3(pX, pY, pZ);
-		}
-	};
-
-	// Voxel coordinates for the nearest and farthest corners from the origin.
-	const Int3 voxelMin = getVoxelCoordinate(boxMin);
-	const Int3 voxelMax = getVoxelCoordinate(boxMax);
-
-	// Insert a 3D coordinate for every voxel the bounding box touches.
-	std::vector<Int3> coordinates;
-	for (int k = voxelMin.getZ(); k <= voxelMax.getZ(); ++k)
-	{
-		for (int j = voxelMin.getY(); j <= voxelMax.getY(); ++j)
-		{
-			for (int i = voxelMin.getX(); i <= voxelMax.getX(); ++i)
-			{
-				coordinates.push_back(Int3(i, j, k));
-			}
-		}
-	}
-
-	return coordinates;
-
-	// This bounding box method sometimes gives false positives (resulting in 
-	// wasted time checking an unrelated voxel) because when a sprite covers three 
-	// voxels in an L, the bounding box will incorrectly cover a fourth voxel even 
-	// though the sprite itself isn't touching it. It won't result in incorrect
-	// behavior though; just less than optimal rectangle bounds.
-
-	// A smarter method would look at the sprite from above, treating it like
-	// a 2D line segment in the XZ plane and doing Bresenham's line algorithm,
-	// then extruding that line by the height of the sprite across the Y axis to 
-	// get all touched voxels.
-}
-
-std::vector<Int3> CLProgram::getTouchedVoxels(const Float3d &point, 
-	double intensity, bool clampBounds) const
-{
-	// Quick and easy solution: just enclose the light's reach within a box and get 
-	// all voxels touching that box. A bit of wasted effort when rendering, though.
-
-	const double halfIntensity = intensity * 0.5;
-
-	const Float3f boxMin(
-		static_cast<float>(point.getX() - halfIntensity),
-		static_cast<float>(point.getY() - halfIntensity),
-		static_cast<float>(point.getZ() - halfIntensity));
-	const Float3f boxMax(
-		static_cast<float>(point.getX() + halfIntensity),
-		static_cast<float>(point.getY() + halfIntensity),
-		static_cast<float>(point.getZ() + halfIntensity));
-
-	// Lambda to convert a 3D point to a voxel coordinate, optionally clamping
-	// within world bounds if requested.
-	auto getVoxelCoordinate = [this, clampBounds](const Float3f &point)
-	{
-		const int pX = static_cast<int>(point.getX());
-		const int pY = static_cast<int>(point.getY());
-		const int pZ = static_cast<int>(point.getZ());
-
-		if (clampBounds)
-		{
-			return Int3(
-				std::max(0, std::min(this->worldWidth - 1, pX)),
-				std::max(0, std::min(this->worldHeight - 1, pY)),
-				std::max(0, std::min(this->worldDepth - 1, pZ)));
-		}
-		else
-		{
-			return Int3(pX, pY, pZ);
-		}
-	};
-
-	// Voxel coordinates for the nearest and farthest corners from the origin.
-	const Int3 voxelMin = getVoxelCoordinate(boxMin);
-	const Int3 voxelMax = getVoxelCoordinate(boxMax);
-
-	// Insert a 3D coordinate for every voxel the bounding box touches.
-	std::vector<Int3> coordinates;
-	for (int k = voxelMin.getZ(); k <= voxelMax.getZ(); ++k)
-	{
-		for (int j = voxelMin.getY(); j <= voxelMax.getY(); ++j)
-		{
-			for (int i = voxelMin.getX(); i <= voxelMax.getX(); ++i)
-			{
-				coordinates.push_back(Int3(i, j, k));
-			}
-		}
-	}
-
-	return coordinates;
-
-	// A smarter version would treat the light's reach like a sphere and get all
-	// voxels touched by that sphere instead.
-}
-
 void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef,
 	std::vector<cl_char> &buffer, size_t byteOffset) const
 {
@@ -1551,7 +1422,8 @@ void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureI
 		const std::vector<Int3> &prevTouchedVoxels = touchedIter->second;
 
 		// Get new touched voxels.
-		std::vector<Int3> newTouchedVoxels = this->getTouchedVoxels(rect, true);
+		std::vector<Int3> newTouchedVoxels = rect.getTouchedVoxels(
+			this->worldWidth, this->worldHeight, this->worldDepth);
 
 		// Update the rect and index for voxels that are in both lists.
 		for (const auto &voxel : prevTouchedVoxels)
@@ -1599,12 +1471,13 @@ void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureI
 			spriteID, RectData(rect, textureIndex)));
 
 		// Add the voxels that the sprite touches.
+		std::vector<Int3> touchedVoxels = rect.getTouchedVoxels(
+			this->worldWidth, this->worldHeight, this->worldDepth);
 		const auto touchedIter = this->spriteTouchedVoxels.emplace(std::make_pair(
-			spriteID, this->getTouchedVoxels(rect, true))).first;
-		const std::vector<Int3> &touchedVoxels = touchedIter->second;
+			spriteID, std::move(touchedVoxels))).first;
 
 		// Add the sprite to each voxel it's touching.
-		for (const auto &voxel : touchedVoxels)
+		for (const auto &voxel : touchedIter->second)
 		{
 			this->addSpriteToVoxel(spriteID, voxel);
 		}
@@ -1671,7 +1544,9 @@ void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3
 		const std::vector<Int3> &prevTouchedVoxels = touchedIter->second;
 
 		// Get new touched voxels (those within the light's range).
-		std::vector<Int3> newTouchedVoxels = this->getTouchedVoxels(point, intensity, true);
+		const Light &light = lightIter->second;
+		std::vector<Int3> newTouchedVoxels = light.getTouchedVoxels(
+			this->worldWidth, this->worldHeight, this->worldDepth);
 
 		// Update the light for voxels that are in both lists.
 		for (const auto &voxel : prevTouchedVoxels)
@@ -1715,16 +1590,18 @@ void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3
 	else
 	{
 		// No light mapping exists, so insert new light data.
-		this->lightData.emplace(std::make_pair(
-			lightID, Light(point, color, intensity)));
+		const auto lightIter = this->lightData.emplace(std::make_pair(
+			lightID, Light(point, color, intensity))).first;
 
 		// Add all the voxels the light reaches.
+		const Light &light = lightIter->second;
+		std::vector<Int3> touchedVoxels = light.getTouchedVoxels(
+			this->worldWidth, this->worldHeight, this->worldDepth);
 		const auto touchedIter = this->lightTouchedVoxels.emplace(std::make_pair(
-			lightID, this->getTouchedVoxels(point, intensity, true))).first;
-		const std::vector<Int3> &touchedVoxels = touchedIter->second;
+			lightID, std::move(touchedVoxels))).first;
 
 		// Add the light to each voxel it's touching.
-		for (const auto &voxel : touchedVoxels)
+		for (const auto &voxel : touchedIter->second)
 		{
 			this->addLightToVoxel(lightID, voxel);
 		}

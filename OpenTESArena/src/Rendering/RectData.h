@@ -1,7 +1,7 @@
 #ifndef RECT_DATA_H
 #define RECT_DATA_H
 
-#include "../Math/Rect3D.h"
+#include "Rect3D.h"
 
 // Helper class for managing a rectangle and its texture in OpenCL device memory.
 

@@ -21,11 +21,6 @@ private:
 public:
 	Sprite(const Float3d &point, const Float3d &direction, double width, double height);
 	~Sprite();
-
-	// Returns a list of coordinates for voxels that the sprite is touching in 3D space.
-	// This is important for efficiently determining which sprite references should be
-	// updated in the OpenCL kernel.
-	std::vector<Int3> getTouchedVoxels() const;
 };
 
 #endif
