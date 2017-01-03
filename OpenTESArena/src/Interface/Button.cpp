@@ -29,6 +29,26 @@ Button::~Button()
 
 }
 
+int Button::getX() const
+{
+	return this->x;
+}
+
+int Button::getY() const
+{
+	return this->y;
+}
+
+int Button::getWidth() const
+{
+	return this->width;
+}
+
+int Button::getHeight() const
+{
+	return this->height;
+}
+
 bool Button::contains(const Int2 &point)
 {
 	Rect rect(this->x, this->y, this->width, this->height);

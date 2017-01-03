@@ -73,11 +73,11 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 Current priority:
 - Lights (street lamps, etc.)
+- Options menu
 
 Next priority:
 - Character creation questions
 - Game interface button behavior
-- Options menu
 - Weapon attacks (hold RMB to swing)
 
 Later:

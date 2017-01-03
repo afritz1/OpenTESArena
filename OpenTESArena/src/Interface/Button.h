@@ -24,6 +24,11 @@ public:
 
 	virtual ~Button();
 
+	int getX() const;
+	int getY() const;
+	int getWidth() const;
+	int getHeight() const;
+
 	// Returns whether the button's area contains the given point.
 	bool contains(const Int2 &point);
 

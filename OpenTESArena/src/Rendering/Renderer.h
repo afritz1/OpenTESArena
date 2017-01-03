@@ -128,10 +128,17 @@ public:
 	void clearOriginal(const Color &color);
 	void clearOriginal();
 
-	// Wrapper methods for some SDL draw functions. These draw onto the native texture.
-	void drawPixel(const Color &color, int x, int y);
-	void drawLine(const Color &color, int x1, int y1, int x2, int y2);
-	void drawRect(const Color &color, int x, int y, int w, int h);
+	// Wrapper methods for some SDL draw functions.
+	void drawNativePixel(const Color &color, int x, int y);
+	void drawNativeLine(const Color &color, int x1, int y1, int x2, int y2);
+	void drawNativeRect(const Color &color, int x, int y, int w, int h);
+	void drawOriginalPixel(const Color &color, int x, int y);
+	void drawOriginalLine(const Color &color, int x1, int y1, int x2, int y2);
+	void drawOriginalRect(const Color &color, int x, int y, int w, int h);
+
+	// Wrapper methods for some SDL fill functions.
+	void fillNativeRect(const Color &color, int x, int y, int w, int h);
+	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the rendering program which draws the world onto the native frame buffer.
 	// If the rendering program is uninitialized, this causes a crash.

@@ -444,15 +444,15 @@ void Renderer::clearOriginal()
 	this->clearOriginal(Color::Transparent);
 }
 
-void Renderer::drawPixel(const Color &color, int x, int y)
+void Renderer::drawNativePixel(const Color &color, int x, int y)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(), 
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
 		color.getB(), color.getA());
 	SDL_RenderDrawPoint(this->renderer, x, y);
 }
 
-void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
+void Renderer::drawNativeLine(const Color &color, int x1, int y1, int x2, int y2)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
@@ -460,7 +460,7 @@ void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
 	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
 }
 
-void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
+void Renderer::drawNativeRect(const Color &color, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
@@ -473,6 +473,67 @@ void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 	rect.h = h;
 
 	SDL_RenderDrawRect(this->renderer, &rect);
+}
+
+void Renderer::drawOriginalPixel(const Color &color, int x, int y)
+{
+	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+	SDL_RenderDrawPoint(this->renderer, x, y);
+}
+
+void Renderer::drawOriginalLine(const Color &color, int x1, int y1, int x2, int y2)
+{
+	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
+}
+
+void Renderer::drawOriginalRect(const Color &color, int x, int y, int w, int h)
+{
+	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
+
+	SDL_RenderDrawRect(this->renderer, &rect);
+}
+
+void Renderer::fillNativeRect(const Color &color, int x, int y, int w, int h)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
+
+	SDL_RenderFillRect(this->renderer, &rect);
+}
+
+void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
+{
+	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderDrawColor(this->renderer, color.getR(), color.getG(),
+		color.getB(), color.getA());
+
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.w = w;
+	rect.h = h;
+
+	SDL_RenderFillRect(this->renderer, &rect);
 }
 
 void Renderer::renderWorld()

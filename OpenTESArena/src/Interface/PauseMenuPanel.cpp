@@ -88,6 +88,38 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			game->getRenderer()));
 	}();
 
+	this->optionsTextBox = [game]()
+	{
+		Int2 center(234, 96);
+		Color color(215, 158, 4);
+		std::string text("OPTIONS");
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->optionsShadowTextBox = [this, game]()
+	{
+		Int2 center(233, 97);
+		Color color(101, 77, 24);
+		std::string text("OPTIONS");
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
 	this->loadButton = []()
 	{
 		int x = 65;
@@ -152,6 +184,18 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			game->setPanel(std::move(gamePanel));
 		};
 		return std::unique_ptr<Button>(new Button(x, y, 64, 29, function));
+	}();
+
+	this->optionsButton = []()
+	{
+		int x = 162;
+		int y = 89;
+		auto function = [](Game *game)
+		{
+			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
+			game->setPanel(std::move(optionsPanel));
+		};
+		return std::unique_ptr<Button>(new Button(x, y, 145, 14, function));
 	}();
 
 	this->musicUpButton = [this]()
@@ -317,6 +361,10 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		{
 			this->resumeButton->click(this->getGame());
 		}
+		else if (this->optionsButton->contains(mouseOriginalPoint))
+		{
+			this->optionsButton->click(this->getGame());
+		}
 		else if (this->musicUpButton->contains(mouseOriginalPoint))
 		{
 			this->musicUpButton->click(this->getGame());
@@ -376,13 +424,29 @@ void PauseMenuPanel::render(Renderer &renderer)
 		renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
 	}
 
-	// Draw text: player's name, music volume, sound volume.
+	// Cover up the detail slider with a new options background.
+	Color optionsBackground(85, 85, 97);
+	Color optionsLightBorder(125, 125, 145);
+	Color optionsDarkBorder(40, 40, 48);
+	renderer.fillOriginalRect(optionsBackground, 162, 89, 145, 14);
+	renderer.drawOriginalLine(optionsLightBorder, 162, 89, 306, 89);
+	renderer.drawOriginalLine(optionsLightBorder, 306, 89, 306, 102);
+	renderer.drawOriginalLine(optionsDarkBorder, 162, 102, 305, 102);
+	renderer.drawOriginalLine(optionsDarkBorder, 162, 90, 162, 102);
+	renderer.drawOriginalPixel(optionsBackground, 162, 89);
+	renderer.drawOriginalPixel(optionsBackground, 306, 102);
+
+	// Draw text: player's name, music volume, sound volume, options.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 	renderer.drawToOriginal(this->musicTextBox->getTexture(),
 		this->musicTextBox->getX(), this->musicTextBox->getY());
 	renderer.drawToOriginal(this->soundTextBox->getTexture(),
 		this->soundTextBox->getX(), this->soundTextBox->getY());
+	renderer.drawToOriginal(this->optionsShadowTextBox->getTexture(),
+		this->optionsShadowTextBox->getX(), this->optionsShadowTextBox->getY());
+	renderer.drawToOriginal(this->optionsTextBox->getTexture(),
+		this->optionsTextBox->getX(), this->optionsTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

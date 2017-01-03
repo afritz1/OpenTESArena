@@ -90,7 +90,7 @@ void OptionsPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw temporary background.
-	renderer.clearOriginal(Color(48, 48, 36));
+	renderer.clearOriginal(Color(70, 70, 78));
 
 	// Draw buttons, eventually...
 

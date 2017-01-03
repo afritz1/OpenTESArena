@@ -12,9 +12,10 @@ class TextBox;
 class PauseMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox;
+	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox,
+		optionsTextBox, optionsShadowTextBox;
 	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton,
-		musicUpButton, musicDownButton, soundUpButton, soundDownButton;
+		optionsButton, musicUpButton, musicDownButton, soundUpButton, soundDownButton;
 
 	void updateMusicText(double volume);
 	void updateSoundText(double volume);
