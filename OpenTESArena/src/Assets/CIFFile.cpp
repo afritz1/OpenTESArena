@@ -12,15 +12,16 @@
 
 namespace
 {
-	// These CIF files are headerless with hardcoded dimensions.
-	const std::unordered_map<std::string, Int2> RawCifOverride =
+	// These CIF files are headerless with a hardcoded frame count and pair
+	// of dimensions (they seem to all be tile-based).
+	const std::unordered_map<std::string, std::pair<int, Int2>> RawCifOverride =
 	{
-		{ "BRASS.CIF", { 8, 8 } },
-		{ "BRASS2.CIF", { 8, 8 } },
-		{ "MARBLE.CIF", { 3, 3 } },
-		{ "MARBLE2.CIF", { 3, 3 } },
-		{ "PARCH.CIF", { 20, 20 } },
-		{ "SCROLL.CIF", { 20, 20 } }
+		{ "BRASS.CIF", { 9, Int2(8, 8) } },
+		{ "BRASS2.CIF", { 9, Int2(8, 8) } },
+		{ "MARBLE.CIF", { 9, Int2(3, 3) } },
+		{ "MARBLE2.CIF", { 9, Int2(3, 3) } },
+		{ "PARCH.CIF", { 9, Int2(20, 20) } },
+		{ "SCROLL.CIF", { 9, Int2(20, 20) } }
 	};
 }
 
@@ -47,8 +48,11 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	{
 		xoff = 0;
 		yoff = 0;
-		width = rawOverride->second.getX();
-		height = rawOverride->second.getY();
+
+		const Int2 &dims = rawOverride->second.second;
+		width = dims.getX();
+		height = dims.getY();
+
 		flags = 0;
 		len = width * height;
 	}
@@ -172,18 +176,23 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	else if (isRaw)
 	{
 		// Uncompressed raw CIF.
-		this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
-		this->offsets.push_back(Int2(xoff, yoff));
-		this->dimensions.push_back(Int2(width, height));
+		const int imageCount = rawOverride->second.first;
 
-		const uint8_t *imagePixels = srcData.data();
-		uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
-
-		std::transform(imagePixels, imagePixels + len, dstPixels,
-			[&palette](uint8_t col) -> uint32_t
+		for (int i = 0; i < imageCount; ++i)
 		{
-			return palette[col].toARGB();
-		});
+			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->offsets.push_back(Int2(xoff, yoff));
+			this->dimensions.push_back(Int2(width, height));
+
+			const uint8_t *imagePixels = srcData.data() + (len * i);
+			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+
+			std::transform(imagePixels, imagePixels + len, dstPixels,
+				[&palette](uint8_t col) -> uint32_t
+			{
+				return palette[col].toARGB();
+			});
+		}
 	}
 	else if ((flags & 0x00FF) == 0)
 	{

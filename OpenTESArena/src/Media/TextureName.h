@@ -91,6 +91,8 @@ enum class TextureName
 	AddJobStatusCancel, // Blacksmith repair buttons.
 	BarterBackground, // Stone-looking background for bartering.
 	BonusPointsText, // Texture shown in character stats on level-up.
+	Brass, // Tiles for a brass texture somewhere.
+	Brass2, // Tiles for a brass texture somewhere.
 	CharacterCreation, // Starry night with house.
 	CharacterEquipment, // Character sheet equipment. "NEWEQUIP.IMG" switches Drop and Exit.
 	CharacterStats, // Character sheet attributes, stats, etc..
@@ -102,16 +104,19 @@ enum class TextureName
 	LoadSave, // Slots for loading and saving.
 	Logbook, // Logbook background.
 	MainMenu, // Load, New, Exit.
+	Marble, // Tiles for a marble texture somewhere.
+	Marble2, // Tiles for a marble texture somewhere.
 	NextPage, // Next page button in character stats.
 	NoExit, // Covers "Exit" in race select.
 	NoSpell, // Darkened spell icon for non-spellcasters.
+	Parchment, // Nine tiles for parchment generation.
 	ParchmentBig, // Fullscreen parchment with scrolls on top and bottom.
-	ParchmentCorner, // Helps with parchment generation.
 	PauseBackground, // Arena logo with sound/music/detail and buttons
 	PopUp,
 	PopUp2, // For character creation classes.
 	PopUp11, // For items, etc..
 	RaceSelect, // World map with location dots and no exit text.
+	Scroll, // Nine tiles, similar to parchment tiles, but with a different palette.
 	SpellbookText, // Text that covers up "Equipment" in player's inventory.
 	StatusGradients, // Colored gradients behind player portrait.
 	UpDown, // Scroll arrows.
