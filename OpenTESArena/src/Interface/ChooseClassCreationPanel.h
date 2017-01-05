@@ -13,13 +13,12 @@
 class Button;
 class Renderer;
 class TextBox;
-
-struct SDL_Texture;
+class Texture;
 
 class ChooseClassCreationPanel : public Panel
 {
 private:
-	SDL_Texture *parchment;
+	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
 	std::unique_ptr<Button> backToMainMenuButton, generateButton, selectButton;
 

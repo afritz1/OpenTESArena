@@ -16,7 +16,7 @@ namespace
 	// Number of columns of whitespace a space is.
 	const std::unordered_map<std::string, int> FontSpaceWidths =
 	{
-		{ "FONT_A.DAT", 4 },
+		{ "FONT_A.DAT", 5 },
 		{ "ARENAFNT.DAT", 3 },
 		{ "FONT_B.DAT", 3 },
 		{ "FONT_C.DAT", 4 },

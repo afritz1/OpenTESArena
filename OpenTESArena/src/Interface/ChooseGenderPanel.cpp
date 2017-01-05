@@ -7,6 +7,8 @@
 #include "Button.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -29,20 +31,9 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 	const std::string &name)
 	: Panel(game)
 {
-	this->parchment = [game]()
-	{
-		auto &renderer = game->getRenderer();
-
-		// Create placeholder parchment.
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
-
-		SDL_Texture *texture = renderer.createTextureFromSurface(surface);
-		SDL_FreeSurface(surface);
-
-		return texture;
-	}();
+	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
+		PopUpType::Parchment, 180, 40, game->getTextureManager(),
+		game->getRenderer())));
 
 	this->genderTextBox = [game]()
 	{
@@ -132,7 +123,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 
 ChooseGenderPanel::~ChooseGenderPanel()
 {
-	SDL_DestroyTexture(this->parchment);
+
 }
 
 void ChooseGenderPanel::handleEvent(const SDL_Event &e)
@@ -182,13 +173,13 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background.get());
 
 	// Draw parchments: title, male, and female.
-	int parchmentWidth, parchmentHeight;
-	SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
-	int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
-	int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2) - 20;
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY);
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 40);
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 80);
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -
+		(this->parchment->getWidth() / 2);
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) -
+		(this->parchment->getHeight() / 2);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY - 20);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 20);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, male, and female.
 	renderer.drawToOriginal(this->genderTextBox->getTexture(),

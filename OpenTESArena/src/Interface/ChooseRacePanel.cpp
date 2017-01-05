@@ -7,6 +7,8 @@
 #include "Button.h"
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -33,24 +35,13 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, CharacterGenderName gender)
 	: Panel(game)
 {
-	this->parchment = [game]()
-	{
-		auto &renderer = game->getRenderer();
-
-		// Create placeholder parchment.
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
-
-		SDL_Texture *texture = renderer.createTextureFromSurface(surface);
-		SDL_FreeSurface(surface);
-
-		return texture;
-	}();
+	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
+		PopUpType::Parchment, 240, 60, game->getTextureManager(),
+		game->getRenderer())));
 
 	this->initialTextBox = [game, charClass, name]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 100);
+		Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 100);
 		Color color(48, 12, 12);
 		std::string text = "From where dost thou hail,\n" +
 			name + "\nthe\n" + charClass.getDisplayName() + "?";
@@ -96,7 +87,7 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 
 ChooseRacePanel::~ChooseRacePanel()
 {
-	SDL_DestroyTexture(this->parchment);
+	
 }
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
@@ -209,17 +200,9 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw visible parchments and text.
 	if (this->initialTextBoxVisible)
 	{
-		int parchmentWidth, parchmentHeight;
-		SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
-		const int parchmentNewWidth = static_cast<int>(parchmentWidth * 1.35);
-		const int parchmentNewHeight = static_cast<int>(parchmentHeight * 1.65);
-
-		renderer.drawToOriginal(this->parchment,
-			(Renderer::ORIGINAL_WIDTH / 2) - (parchmentNewWidth / 2),
-			(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentNewHeight / 2),
-			parchmentNewWidth,
-			parchmentNewHeight);
-
+		renderer.drawToOriginal(this->parchment->get(),
+			(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2) - 1,
+			(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 1);
 		renderer.drawToOriginal(this->initialTextBox->getTexture(),
 			this->initialTextBox->getX(), this->initialTextBox->getY());
 	}

@@ -18,15 +18,14 @@ class Button;
 class CharacterClass;
 class Renderer;
 class TextBox;
-
-struct SDL_Texture;
+class Texture;
 
 class ChooseNamePanel : public Panel
 {
 private:
 	static const int MAX_NAME_LENGTH;
 
-	SDL_Texture *parchment;
+	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	std::unique_ptr<Button> backToClassButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;

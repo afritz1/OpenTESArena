@@ -12,17 +12,16 @@ class Button;
 class CharacterClass;
 class Renderer;
 class TextBox;
+class Texture;
 
 enum class CharacterGenderName;
 enum class CharacterRaceName;
 enum class ProvinceName;
 
-struct SDL_Texture;
-
 class ChooseRacePanel : public Panel
 {
 private:
-	SDL_Texture *parchment;
+	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToGenderButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;

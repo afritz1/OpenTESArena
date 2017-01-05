@@ -8,6 +8,8 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -30,30 +32,21 @@ const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 	: Panel(game)
 {
-	this->parchment = [game]()
-	{
-		auto &renderer = game->getRenderer();
-
-		// Create placeholder parchment.
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
-
-		SDL_Texture *texture = renderer.createTextureFromSurface(surface);
-		SDL_FreeSurface(surface);
-
-		return texture;
-	}();
+	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
+		PopUpType::Parchment, 300, 60, game->getTextureManager(),
+		game->getRenderer())));
 
 	this->titleTextBox = [game, charClass]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 90);
+		int x = 26;
+		int y = 82;
 		Color color(48, 12, 12);
-		std::string text = "What will be thy name,\n" + charClass.getDisplayName() + "?";
+		std::string text = "What will be thy name, " + charClass.getDisplayName() + "?";
 		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
+			x,
+			y,
 			color,
 			text,
 			font,
@@ -63,13 +56,15 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 
 	this->nameTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 112);
+		int x = 61;
+		int y = 101;
 		Color color(48, 12, 12);
 		std::string text = "";
 		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
+			x,
+			y,
 			color,
 			text,
 			font,
@@ -104,7 +99,7 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 
 ChooseNamePanel::~ChooseNamePanel()
 {
-	SDL_DestroyTexture(this->parchment);
+	
 }
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
@@ -211,11 +206,12 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 		this->nameTextBox = [this]
 		{
 			return std::unique_ptr<TextBox>(new TextBox(
-				Int2(Renderer::ORIGINAL_WIDTH / 2, 112),
+				61,
+				101,
 				Color(48, 12, 12),
 				this->name,
 				this->getGame()->getFontManager().getFont(FontName::A),
-				TextAlignment::Center,
+				TextAlignment::Left,
 				this->getGame()->getRenderer()));
 		}();
 	}
@@ -238,18 +234,9 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background.get());
 
 	// Draw parchment: title.
-	int parchmentWidth, parchmentHeight;
-	SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
-	const double parchmentXScale = 1.5;
-	const double parchmentYScale = 1.65;
-	const int parchmentNewWidth = static_cast<int>(parchmentWidth * parchmentXScale);
-	const int parchmentNewHeight = static_cast<int>(parchmentHeight * parchmentYScale);
-
-	renderer.drawToOriginal(this->parchment,
-		(Renderer::ORIGINAL_WIDTH / 2) - (parchmentNewWidth / 2),
-		(Renderer::ORIGINAL_HEIGHT / 2) - (parchmentNewHeight / 2),
-		parchmentNewWidth,
-		parchmentNewHeight);
+	renderer.drawToOriginal(this->parchment->get(),
+		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2),
+		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2));
 
 	// Draw text: title, name.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),

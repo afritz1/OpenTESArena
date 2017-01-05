@@ -7,6 +7,8 @@
 #include "Button.h"
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -27,20 +29,9 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	: Panel(game)
 {
-	this->parchment = [game]()
-	{
-		auto &renderer = game->getRenderer();
-
-		// Create placeholder parchment.
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(180, 40,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 166, 125, 81, 255));
-
-		SDL_Texture *texture = renderer.createTextureFromSurface(surface);
-		SDL_FreeSurface(surface);
-
-		return texture;
-	}();
+	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
+		PopUpType::Parchment, 180, 40, game->getTextureManager(), 
+		game->getRenderer())));
 
 	this->titleTextBox = [game]()
 	{
@@ -127,7 +118,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 ChooseClassCreationPanel::~ChooseClassCreationPanel()
 {
-	SDL_DestroyTexture(this->parchment);
+	
 }
 
 void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
@@ -195,14 +186,14 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background.get());
 
 	// Draw parchments: title, generate, select.
-	int parchmentWidth, parchmentHeight;
-	SDL_QueryTexture(this->parchment, nullptr, nullptr, &parchmentWidth, &parchmentHeight);
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (parchmentWidth / 2);
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (parchmentHeight / 2) - 20;
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
+		(this->parchment->getWidth() / 2);
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
+		(this->parchment->getHeight() / 2);
 
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY);
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 40);
-	renderer.drawToOriginal(this->parchment, parchmentX, parchmentY + 80);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY - 20);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 20);
+	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, generate, select.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
