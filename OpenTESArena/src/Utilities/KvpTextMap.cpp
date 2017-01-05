@@ -19,7 +19,6 @@ namespace
 const char KvpTextMap::COMMENT = '#';
 
 KvpTextMap::KvpTextMap(const std::string &filename)
-	: pairs()
 {
 	std::string text = File::toString(filename);
 	std::istringstream iss(text);
@@ -29,7 +28,7 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 	while (std::getline(iss, line))
 	{
 		// Ignore comments and blank lines.
-		const char &firstChar = line.at(0);
+		const char firstChar = line.at(0);
 		if ((firstChar == KvpTextMap::COMMENT) ||
 			(firstChar == '\r') ||
 			(firstChar == '\n'))
@@ -68,10 +67,11 @@ const std::string &KvpTextMap::getValue(const std::string &key) const
 bool KvpTextMap::getBoolean(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
-	Debug::check(KvpTextMapBooleans.find(value) != KvpTextMapBooleans.end(),
-		"KVP Text Map", "Boolean \"" + value + "\" must be either True or False.");
+	const auto boolIter = KvpTextMapBooleans.find(value);
+	Debug::check(boolIter != KvpTextMapBooleans.end(), "KVP Text Map", 
+		"Boolean \"" + value + "\" must be either True or False.");
 
-	return KvpTextMapBooleans.at(value);
+	return boolIter->second;
 }
 
 int KvpTextMap::getInteger(const std::string &key) const
@@ -86,7 +86,7 @@ double KvpTextMap::getDouble(const std::string &key) const
 	return std::stod(value);
 }
 
-std::string KvpTextMap::getString(const std::string &key) const
+const std::string &KvpTextMap::getString(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	return value;

@@ -25,7 +25,7 @@ public:
 	bool getBoolean(const std::string &key) const;
 	int getInteger(const std::string &key) const;
 	double getDouble(const std::string &key) const;
-	std::string getString(const std::string &key) const;
+	const std::string &getString(const std::string &key) const;
 };
 
 #endif
