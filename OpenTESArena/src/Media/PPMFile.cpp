@@ -7,7 +7,7 @@
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
 
-std::unique_ptr<uint32_t> PPMFile::read(const std::string &filename,
+std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 	int &width, int &height)
 {
 	const std::string text = File::toString(filename);
@@ -33,7 +33,7 @@ std::unique_ptr<uint32_t> PPMFile::read(const std::string &filename,
 		std::to_string(maxColorValue) + "\".");
 
 	// Start reading RGB components for each pixel.
-	std::unique_ptr<uint32_t> pixels(new uint32_t[width * height]);
+	std::unique_ptr<uint32_t[]> pixels(new uint32_t[width * height]);
 	std::fill(pixels.get(), pixels.get() + (width * height), 0);
 
 	for (int y = 0; y < height; ++y)

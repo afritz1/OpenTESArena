@@ -13,7 +13,7 @@
 class CFAFile
 {
 private:
-	std::vector<std::unique_ptr<uint32_t>> pixels;
+	std::vector<std::unique_ptr<uint32_t[]>> pixels;
 	int width, height;
 
 	// CFA files have their palette indices compressed into fewer bits depending

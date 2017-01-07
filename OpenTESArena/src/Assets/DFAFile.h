@@ -14,7 +14,7 @@
 class DFAFile
 {
 private:
-	std::vector<std::unique_ptr<uint32_t>> pixels;
+	std::vector<std::unique_ptr<uint32_t[]>> pixels;
 	int width, height;
 public:
 	DFAFile(const std::string &filename, const Palette &palette);

@@ -28,7 +28,7 @@ class FLCFile
 {
 private:
 	// One unique_ptr for each frame.
-	std::vector<std::unique_ptr<uint32_t>> pixels;
+	std::vector<std::unique_ptr<uint32_t[]>> pixels;
 	double frameDuration;
 	int width;
 	int height;
@@ -38,12 +38,12 @@ private:
 
 	// Decodes a fullscreen FLC chunk by updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint32_t> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
+	std::unique_ptr<uint32_t[]> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
 		const Palette &palette, std::vector<uint8_t> &initialFrame);
 
 	// Decodes a delta FLC chunk by partially updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint32_t> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
+	std::unique_ptr<uint32_t[]> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
 		const Palette &palette, std::vector<uint8_t> &initialFrame);
 public:
 	FLCFile(const std::string &filename);

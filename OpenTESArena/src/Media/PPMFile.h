@@ -17,7 +17,7 @@ private:
 	~PPMFile() = delete;
 public:
 	// Reads a .ppm file.
-	static std::unique_ptr<uint32_t> read(const std::string &filename,
+	static std::unique_ptr<uint32_t[]> read(const std::string &filename,
 		int &width, int &height);
 
 	// Writes a new .ppm file.

@@ -14,7 +14,7 @@
 class IMGFile
 {
 private:
-	std::unique_ptr<uint32_t> pixels;
+	std::unique_ptr<uint32_t[]> pixels;
 	int width, height;
 
 	// Reads the palette from an IMG file and writes into the given palette reference.

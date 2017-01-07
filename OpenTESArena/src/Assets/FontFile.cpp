@@ -116,7 +116,7 @@ FontFile::FontFile(const std::string &filename)
 		FontElement &element = symbols.at(i);
 
 		auto &pair = this->characters.at(i);
-		pair = std::make_pair(element.width, std::unique_ptr<uint32_t>(
+		pair = std::make_pair(element.width, std::unique_ptr<uint32_t[]>(
 			new uint32_t[element.width * element.height]));
 
 		uint32_t *pixels = pair.second.get();

@@ -15,7 +15,7 @@ class RCIFile
 {
 private:
 	// One unique_ptr for each frame of the RCI.
-	std::vector<std::unique_ptr<uint32_t>> frames;
+	std::vector<std::unique_ptr<uint32_t[]>> frames;
 
 	// Number of bytes in a 320x100 frame (should be 32000).
 	static const int FRAME_SIZE;

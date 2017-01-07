@@ -86,7 +86,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeRLE(header + 12, width * height, decomp);
 
-			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
@@ -120,7 +120,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeType04(header + 12, header + 12 + len, decomp);
 
-			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
@@ -157,7 +157,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			// (should be equivalent to width * height).
 			Compression::decodeType08(header + 12 + 2, header + 12 + len, decomp);
 
-			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
@@ -180,7 +180,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 
 		for (int i = 0; i < imageCount; ++i)
 		{
-			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
@@ -210,7 +210,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			this->pixels.push_back(std::unique_ptr<uint32_t>(new uint32_t[width * height]));
+			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 

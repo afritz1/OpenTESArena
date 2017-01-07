@@ -16,7 +16,7 @@ private:
 	// One entry per character from ASCII 32 to 127 inclusive, with space (ASCII 32)
 	// at index 0. Each pair has the width of its letter in pixels with its black 
 	// and white pixel data.
-	std::vector<std::pair<int, std::unique_ptr<uint32_t>>> characters;
+	std::vector<std::pair<int, std::unique_ptr<uint32_t[]>>> characters;
 	int characterHeight;
 public:
 	FontFile(const std::string &filename);

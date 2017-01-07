@@ -84,7 +84,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	// Finally, create 32-bit images using each frame's palette indices.
 	for (const auto &frame : frames)
 	{
-		this->pixels.push_back(std::unique_ptr<uint32_t>(
+		this->pixels.push_back(std::unique_ptr<uint32_t[]>(
 			new uint32_t[this->width * this->height]));
 
 		uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();

@@ -15,7 +15,7 @@ class SETFile
 {
 private:
 	// One unique_ptr for each 64x64 image of the SET.
-	std::vector<std::unique_ptr<uint32_t>> chunks;
+	std::vector<std::unique_ptr<uint32_t[]>> chunks;
 
 	// Number of bytes in a 64x64 image (should be 4096).
 	static const int CHUNK_SIZE;

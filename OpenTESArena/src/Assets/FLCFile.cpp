@@ -230,7 +230,7 @@ void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 	}
 }
 
-std::unique_ptr<uint32_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
+std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
 {
 	// Decode a fullscreen image chunk. Most likely the first image in the FLIC.
@@ -295,7 +295,7 @@ std::unique_ptr<uint32_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	initialFrame = decomp;
 
 	const uint8_t *decompPixels = decomp.data();
-	std::unique_ptr<uint32_t> image(new uint32_t[this->width * this->height]);
+	std::unique_ptr<uint32_t[]> image(new uint32_t[this->width * this->height]);
 
 	std::transform(decompPixels, decompPixels + decomp.size(), image.get(),
 		[&palette](uint8_t col) -> uint32_t
@@ -306,7 +306,7 @@ std::unique_ptr<uint32_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	return std::move(image);
 }
 
-std::unique_ptr<uint32_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
+std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
 {
 	// Decode a delta frame chunk. The majority of FLIC frames are this format.
@@ -431,7 +431,7 @@ std::unique_ptr<uint32_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 	// Use the modified initial frame as the source instead of a separate
 	// decompressed buffer.
 	const uint8_t *framePixels = initialFrame.data();
-	std::unique_ptr<uint32_t> image(new uint32_t[this->width * this->height]);
+	std::unique_ptr<uint32_t[]> image(new uint32_t[this->width * this->height]);
 
 	std::transform(framePixels, framePixels + initialFrame.size(), image.get(),
 		[&palette](uint8_t col) -> uint32_t

@@ -17,7 +17,7 @@ class Int2;
 class CIFFile
 {
 private:
-	std::vector<std::unique_ptr<uint32_t>> pixels;
+	std::vector<std::unique_ptr<uint32_t[]>> pixels;
 	std::vector<Int2> offsets;
 	std::vector<Int2> dimensions;
 public:

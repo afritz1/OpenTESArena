@@ -28,7 +28,7 @@ RCIFile::RCIFile(const std::string &filename, const Palette &palette)
 	// Create an image for each uncompressed frame using the given palette.
 	for (int frameIndex = 0; frameIndex < frameCount; ++frameIndex)
 	{
-		this->frames.push_back(std::unique_ptr<uint32_t>(
+		this->frames.push_back(std::unique_ptr<uint32_t[]>(
 			new uint32_t[RCIFile::FRAME_SIZE]));
 
 		const int byteOffset = RCIFile::FRAME_SIZE * frameIndex;
