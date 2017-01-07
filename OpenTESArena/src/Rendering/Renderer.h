@@ -121,6 +121,8 @@ public:
 		int textureIndex);
 	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
 	void removeSprite(int spriteID);
+	void updateLight(int lightID, const Float3d &point, const Float3d &color, double intensity);
+	void removeLight(int lightID);
 
 	// Fills the desired frame buffer with the draw color, or default black/transparent.
 	void clearNative(const Color &color);

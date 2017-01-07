@@ -32,7 +32,6 @@ const std::string CLProgram::PATH = "data/kernels/";
 const std::string CLProgram::FILENAME = "kernel.cl";
 const std::string CLProgram::INTERSECT_KERNEL = "intersect";
 const std::string CLProgram::RAY_TRACE_KERNEL = "rayTrace";
-const std::string CLProgram::POST_PROCESS_KERNEL = "postProcess";
 const std::string CLProgram::CONVERT_TO_RGB_KERNEL = "convertToRGB";
 
 CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
@@ -57,8 +56,10 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	this->outputData = std::vector<uint8_t>(sizeof(cl_int) * renderPixelCount);
 
-	// Initialize rectangle buffer view to empty.
+	// Initialize buffer views to empty.
 	this->rectBufferView = std::unique_ptr<BufferView>(new BufferView());
+	this->lightBufferView = std::unique_ptr<BufferView>(new BufferView());
+	//this->ownerBufferView = std::unique_ptr<BufferView>(new BufferView()); // Commented out for now.
 
 	// Get the OpenCL platforms (i.e., AMD, Intel, Nvidia) available on the machine.
 	auto platforms = CLProgram::getPlatforms();
@@ -157,7 +158,7 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
 	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(4096) /* Resized as necessary. */, nullptr, &status);
+		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->ownerBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -735,6 +736,35 @@ void CLProgram::resizeRectBuffer(cl::size_type requiredSize)
 		"cl::Kernel::setArg resizeRectBuffer rayTraceKernel.");
 }
 
+void CLProgram::resizeLightBuffer(cl::size_type requiredSize)
+{
+	cl_int status = CL_SUCCESS;
+	const cl::size_type lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo resizeLightBuffer.");
+
+	const size_t newSize = [requiredSize, lightBufferSize]()
+	{
+		// Make sure size is at least 1 before doubling.
+		size_t size = std::max(lightBufferSize, static_cast<size_t>(1));
+		while (size < requiredSize)
+		{
+			size *= 2;
+		}
+		return size;
+	}();
+
+	Debug::mention("CLProgram", "Resizing light memory from " +
+		std::to_string(lightBufferSize) + " to " + std::to_string(newSize) + " bytes.");
+
+	// Resize the light buffer to the new size.
+	this->resizeBuffer(this->lightBuffer, newSize);
+
+	// Tell the kernels where to find the new light buffer.
+	status = this->rayTraceKernel.setArg(4, this->lightBuffer);
+	Debug::check(status == CL_SUCCESS, "CLProgram",
+		"cl::Kernel::setArg resizeLightBuffer rayTraceKernel.");
+}
+
 void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef,
 	std::vector<cl_char> &buffer, size_t byteOffset) const
 {
@@ -786,7 +816,7 @@ void CLProgram::writeRect(const Rect3D &rect, const TextureReference &textureRef
 	dimPtr[1] = static_cast<cl_short>(textureRef.height);
 }
 
-void CLProgram::writeLight(const Light &light, const OwnerReference &ownerRef, 
+void CLProgram::writeLight(const Light &light, /*const OwnerReference &ownerRef,*/
 	std::vector<cl_char> &buffer, size_t byteOffset) const
 {
 	cl_char *dataPtr = buffer.data() + byteOffset;
@@ -804,8 +834,11 @@ void CLProgram::writeLight(const Light &light, const OwnerReference &ownerRef,
 	colorPtr[2] = static_cast<cl_float>(color.getZ());
 
 	cl_int *ownerPtr = reinterpret_cast<cl_int*>(dataPtr + (sizeof(cl_float3) * 2));
-	ownerPtr[0] = static_cast<cl_int>(ownerRef.offset);
-	ownerPtr[1] = static_cast<cl_int>(ownerRef.count);
+	// Commented out for now.
+	//ownerPtr[0] = static_cast<cl_int>(ownerRef.offset);
+	//ownerPtr[1] = static_cast<cl_int>(ownerRef.count);
+	ownerPtr[0] = static_cast<cl_int>(0);
+	ownerPtr[1] = static_cast<cl_int>(0);
 
 	const double intensity = light.getIntensity();
 	cl_float *intensityPtr = reinterpret_cast<cl_float*>(dataPtr + 
@@ -1319,26 +1352,136 @@ void CLProgram::updateSpriteInVoxel(int spriteID, const Int3 &voxel)
 
 void CLProgram::addLightToVoxel(int lightID, const Int3 &voxel)
 {
-	// Similar to addSpriteToVoxel()...
-	// Owner buffer... buffer view...
-	Debug::crash("CLProgram", "addLightToVoxel() not implemented.");
+	// Get the light group associated with the voxel and free the old light
+	// group allocation if there is one.
+	auto groupIter = this->lightGroups.find(voxel);
+	if (groupIter == this->lightGroups.end())
+	{
+		// Add a mapping to a new group with a dummy byte offset of 0.
+		groupIter = this->lightGroups.emplace(std::make_pair(
+			voxel, std::make_pair(0, std::vector<int>()))).first;
+	}
+	else
+	{
+		// Free the old light group allocation.
+		const size_t offset = groupIter->second.first;
+		this->lightBufferView->deallocate(offset);
+	}
+
+	std::vector<int> &lightIDs = groupIter->second.second;
+
+	// Add the new ID into the light group.
+	lightIDs.push_back(lightID);
+
+	// Refresh the light queue at this voxel.
+	auto queueIter = this->lightQueue.find(voxel);
+	if (queueIter == this->lightQueue.end())
+	{
+		// Add a new voxel mapping for the queue.
+		queueIter = this->lightQueue.emplace(std::make_pair(
+			voxel, std::vector<LightData>())).first;
+	}
+
+	auto &workItem = queueIter->second;
+	workItem.clear();
+
+	for (const auto id : lightIDs)
+	{
+		const Light &light = this->lightData.at(id);
+		workItem.push_back(LightData(light));
+	}
+
+	// Allocate the new light group and get its byte offset in the light buffer. 
+	// The voxel is guaranteed to have at least one light, so there's no need to 
+	// check for buffer.size() == 0 (unlike with voxel updating).
+	const size_t bufferSize = SIZEOF_LIGHT * lightIDs.size();
+	size_t &offset = groupIter->second.first;
+	offset = this->lightBufferView->allocate(bufferSize);
+
+	// Size of the existing light buffer.
+	cl_int status = CL_SUCCESS;
+	const cl::size_type lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
+	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addLightToVoxel.");
+
+	// Minimum size of light memory required for the new light.
+	const cl::size_type requiredSize = offset + bufferSize;
+
+	if (requiredSize > lightBufferSize)
+	{
+		// Resize the light buffer and reset its associated kernel arguments.
+		this->resizeLightBuffer(requiredSize);
+	}
+
+	// Update the light reference. The offset should never be a fraction because 
+	// only lights are allocated in the light buffer view.
+	this->queueLightRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(),
+		static_cast<int>(offset / SIZEOF_LIGHT),
+		static_cast<int>(lightIDs.size()));
 }
 
 void CLProgram::removeLightFromVoxel(int lightID, const Int3 &voxel)
 {
-	// Similar to removeSpriteFromVoxel()...
-	// Owner buffer... buffer view...
-	Debug::crash("CLProgram", "removeLightFromVoxel() not implemented.");
+	// Get the list of light IDs associated with the voxel.
+	const auto groupIter = this->lightGroups.find(voxel);
+	std::vector<int> &lightIDs = groupIter->second.second;
+
+	// Erase the light ID from the light group.
+	const auto idIter = std::find(lightIDs.begin(), lightIDs.end(), lightID);
+	lightIDs.erase(idIter);
+
+	// Get the byte offset of the light group in the light buffer and 
+	// deallocate it.
+	size_t &offset = groupIter->second.first;
+	this->lightBufferView->deallocate(offset);
+
+	// If there are still lights in the voxel, reallocate the light group in the 
+	// light buffer (this isn't entirely necessary; it's just done for correctness
+	// so a light group doesn't have unused memory).
+	if (lightIDs.size() > 0)
+	{
+		// Refresh the light queue at this voxel.
+		auto queueIter = this->lightQueue.find(voxel);
+		if (queueIter == this->lightQueue.end())
+		{
+			// Add a new voxel mapping for the queue.
+			queueIter = this->lightQueue.emplace(std::make_pair(
+				voxel, std::vector<LightData>())).first;
+		}
+
+		auto &workItem = queueIter->second;
+		workItem.clear();
+
+		for (const auto id : lightIDs)
+		{
+			const Light &light = this->lightData.at(id);
+			workItem.push_back(LightData(light));
+		}
+
+		// Reallocate light group (no need to resize because the light group has shrunk;
+		// if it doesn't find a better fit, it will find the deallocated space again).
+		offset = this->lightBufferView->allocate(SIZEOF_LIGHT * lightIDs.size());
+
+		// Update the light reference. The offset should never be a fraction because 
+		// only lights are allocated in the light buffer view.
+		this->queueLightRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(),
+			static_cast<int>(offset / SIZEOF_LIGHT),
+			static_cast<int>(lightIDs.size()));
+	}
+	else
+	{
+		// No more lights in the voxel, so erase the associated mapping.
+		this->lightGroups.erase(groupIter);
+
+		// Set the light reference to zero.
+		this->queueLightRefUpdate(voxel.getX(), voxel.getY(), voxel.getZ(), 0, 0);
+	}
 }
 
 void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 {
-	// To do: hmm... can a light gain and lose different owners over its lifetime?
-	// Probably not... but should this case be handled anyway?
-	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
-
 	// Refresh the light's owner list IDs if it has an owner.
-	const auto lightOwnerIter = this->lightOwners.find(lightID);
+	// Commented out for now.
+	/*const auto lightOwnerIter = this->lightOwners.find(lightID);
 	if (lightOwnerIter != this->lightOwners.end())
 	{
 		const int spriteID = lightOwnerIter->second;
@@ -1364,7 +1507,7 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 		// To do: refresh ownerGroup.at(lightID) and owner reference...
 		// reallocate owner buffer view with rect indices vector?
 		//const auto ownerIter = this->ownerData.at(lightID);
-	}
+	}*/
 	
 	// This method can't tell whether its owner sprite (if it exists) has moved or not, 
 	// but if this light is being updated, then its sprite has most likely moved.
@@ -1375,6 +1518,7 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 
 	// Refresh the light queue at this voxel.
 	// (Later, this code and pushUpdates() should calculate only necessary changes).
+	// (It's actually more important with lights because they affect so many voxels).
 	auto queueIter = this->lightQueue.find(voxel);
 	if (queueIter == this->lightQueue.end())
 	{
@@ -1390,7 +1534,8 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 		const Light &light = this->lightData.at(id);
 
 		// Add a work item depending on the light's owner (if any).
-		const auto ownerIter = this->ownerData.find(id);
+		// Commented out for now.
+		/*const auto ownerIter = this->ownerData.find(id);
 		if (ownerIter != this->ownerData.end())
 		{
 			// Get the light's owner.
@@ -1398,14 +1543,14 @@ void CLProgram::updateLightInVoxel(int lightID, const Int3 &voxel)
 			workItem.push_back(LightData(light, ownerRef));
 		}
 		else
-		{
+		{*/
 			// If the light has no owner, make an empty owner reference instead.
-			workItem.push_back(LightData(light, OwnerReference(0, 0)));
-		}
+			workItem.push_back(LightData(light/*, OwnerReference(0, 0)*/));
+		/*}*/
 	}
 
 	// To do: refresh the owner queue for the light?
-	Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
+	//Debug::crash("CLProgram", "updateLightInVoxel() not implemented.");
 }
 
 void CLProgram::queueSpriteUpdate(int spriteID, const Rect3D &rect, int textureIndex)
@@ -1505,7 +1650,7 @@ void CLProgram::queueSpriteRemoval(int spriteID)
 }
 
 void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3d &color, 
-	const int *ownerID, double intensity)
+	/*const int *ownerID,*/ double intensity)
 {
 	// See if the light already has a mapping for it.
 	const auto lightIter = this->lightData.find(lightID);
@@ -1515,7 +1660,8 @@ void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3
 		lightIter->second = Light(point, color, intensity);
 
 		// If the new and old owner IDs don't match, refresh the mapping.
-		const auto ownerIter = this->lightOwners.find(lightID);
+		// Commented out for now.
+		/*const auto ownerIter = this->lightOwners.find(lightID);
 		if (ownerIter != this->lightOwners.end())
 		{
 			// A mapping exists. See if the owner ID is not null.
@@ -1537,7 +1683,7 @@ void CLProgram::queueLightUpdate(int lightID, const Float3d &point, const Float3
 			{
 				this->lightOwners.emplace(std::make_pair(lightID, *ownerID)).first;
 			}
-		}
+		}*/
 
 		// Get previously touched voxels.
 		const auto touchedIter = this->lightTouchedVoxels.find(lightID);
@@ -1632,7 +1778,7 @@ void CLProgram::pushUpdates()
 {
 	// Buffers with offsets for asynchronous writes to device memory.
 	std::vector<std::pair<size_t, std::vector<cl_char>>> rectBuffers, lightBuffers,
-		ownerBuffers, voxelRefBuffers, spriteRefBuffers, lightRefBuffers;
+		/*ownerBuffers,*/ voxelRefBuffers, spriteRefBuffers, lightRefBuffers;
 
 	// Lambda for adding a rectangle buffer to the queue.
 	auto addRectBuffer = [this, &rectBuffers](
@@ -1661,15 +1807,16 @@ void CLProgram::pushUpdates()
 		{
 			const auto &pair = lightData.at(i);
 			const Light &light = pair.getLight();
-			const OwnerReference &ownerRef = pair.getOwnerRef();
-			this->writeLight(light, ownerRef, buffer, SIZEOF_LIGHT * i);
+			//const OwnerReference &ownerRef = pair.getOwnerRef();
+			this->writeLight(light, /*ownerRef,*/ buffer, SIZEOF_LIGHT * i);
 		}
 
 		lightBuffers.push_back(std::make_pair(offset, std::move(buffer)));
 	};
 
 	// Lambda for adding an owner buffer to the queue.
-	auto addOwnerBuffer = [this, &ownerBuffers](
+	// Commented out for now.
+	/*auto addOwnerBuffer = [this, &ownerBuffers](
 		const std::vector<int> &ownerData, size_t offset)
 	{
 		std::vector<cl_char> buffer(sizeof(cl_int) * ownerData.size());
@@ -1682,7 +1829,7 @@ void CLProgram::pushUpdates()
 		}
 
 		ownerBuffers.push_back(std::make_pair(offset, std::move(buffer)));
-	};
+	};*/
 
 	// Lambda for adding a voxel/sprite/light reference buffer to the queue.
 	auto addRefBuffer = [this](const Int3 &voxel, int offset, int count, size_t sizeOfRef, 
@@ -1728,13 +1875,14 @@ void CLProgram::pushUpdates()
 	}
 
 	// Add owner queue buffers.
-	for (const auto &group : this->ownerQueue)
+	// Commented out for now.
+	/*for (const auto &group : this->ownerQueue)
 	{
 		const int lightID = group.first;
 		const auto &ownerData = group.second;
 		const size_t byteOffset = this->ownerGroups.at(lightID).first;
 		addOwnerBuffer(ownerData, byteOffset);
-	}
+	}*/
 
 	// Add voxel reference queue buffers.
 	for (const auto &group : this->voxelRefQueue)
@@ -1781,7 +1929,7 @@ void CLProgram::pushUpdates()
 	// Begin asynchronous writes to various buffers.
 	enqueueAsyncWrite(rectBuffers, this->rectangleBuffer);
 	enqueueAsyncWrite(lightBuffers, this->lightBuffer);
-	enqueueAsyncWrite(ownerBuffers, this->ownerBuffer);
+	//enqueueAsyncWrite(ownerBuffers, this->ownerBuffer); // Commented out for now.
 	enqueueAsyncWrite(voxelRefBuffers, this->voxelRefBuffer);
 	enqueueAsyncWrite(spriteRefBuffers, this->spriteRefBuffer);
 	enqueueAsyncWrite(lightRefBuffers, this->lightRefBuffer);
@@ -1790,7 +1938,7 @@ void CLProgram::pushUpdates()
 	this->voxelQueue.clear();
 	this->spriteQueue.clear();
 	this->lightQueue.clear();
-	this->ownerQueue.clear();
+	//this->ownerQueue.clear(); // Commented out for now.
 	this->voxelRefQueue.clear();
 	this->spriteRefQueue.clear();
 	this->lightRefQueue.clear();

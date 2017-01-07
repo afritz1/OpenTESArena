@@ -322,6 +322,21 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			surface = textureManager.getSurfaces("BARTEND.DFA").at(1);
 			renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
 				surface->w, surface->h);
+
+			// Add lights. They are expensive to update every frame because they cover
+			// so many voxels, so the tick method should only update moving ones in practice.
+			// The intensity (reach) of a light also determines its memory usage.
+			for (int k = 1; k < worldDepth - 1; k += 8)
+			{
+				for (int i = 1; i < worldWidth - 1; i += 8)
+				{
+					renderer.updateLight(
+						(i - 1) + ((k - 1) * (worldWidth - 1)),
+						Float3d(i + 0.90, 1.50, k + 0.20),
+						Float3d(1.0, 0.80, 0.40),
+						6.0);
+				}
+			}
 			// -- end test --
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.

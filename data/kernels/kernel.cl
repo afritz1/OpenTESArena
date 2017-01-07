@@ -55,6 +55,7 @@
 
 #define MAX_FOG_DISTANCE 35.0f // This should be dynamic eventually.
 #define BETTER_FOG TRUE
+#define POINT_LIGHT_SHADOWS TRUE
 
 #define RENDER_WIDTH_REAL ((float)RENDER_WIDTH)
 #define RENDER_HEIGHT_REAL ((float)RENDER_HEIGHT)
@@ -557,6 +558,60 @@ float3 getShadedColor(const Rectangle *rect, float depth, float3 normal, float3 
 		color += (textureColor * sunColor) * lnDot;
 	}
 
+	// (Maybe the voxelDDA function could return a "lastGridIndex" int?).
+	int3 voxel = (int3)(
+		clamp((int)floor(point.x), 0, WORLD_WIDTH - 1),
+		clamp((int)floor(point.y), 0, WORLD_HEIGHT - 1),
+		clamp((int)floor(point.z), 0, WORLD_DEPTH - 1));
+	const int gridIndex = voxel.x + (voxel.y * WORLD_WIDTH) + 
+		(voxel.z * WORLD_WIDTH * WORLD_HEIGHT);
+	const LightReference lightRef = lightRefs[gridIndex];
+	
+	// Iterate over each light touching the voxel.
+	for (int i = 0; i < lightRef.count; ++i)
+	{
+		const int lightIndex = lightRef.offset + i;
+		const Light light = lights[lightIndex];
+		
+		float3 lightDirection = light.point - point;
+		const float lightDist = length(lightDirection);
+		lightDirection *= 1.0f / lightDist;
+
+		Ray lightRay;
+		lightRay.point = point + (normal * EPSILON);
+		lightRay.direction = lightDirection;
+		lightRay.depth = RAY_INITIAL_DEPTH;
+
+		// Once using owner references, a specialized voxel DDA function will
+		// be required that checks the light's list of owner IDs for every sprite
+		// to see which sprite to ignore during intersection and light differently.
+		// -> "Light differently" might involve doing fabs() on negative lnDots.
+		Intersection lightTry;
+		lightTry.t = INTERSECTION_T_MAX;
+		
+		// Checking shadows for each light is expensive, so it should be an option.
+#if POINT_LIGHT_SHADOWS
+		voxelDDA(&lightRay, &lightTry, voxelRefs, spriteRefs, rects, textures);
+#endif
+
+		if (lightTry.t > lightDist)
+		{
+			// Nothing is blocking the light's visibility at the hit point, so
+			// get the light's contribution.
+
+			// Quadratic drop-off (distance is between 0 and the light's max distance).
+			const float clampedDist = (lightDist > light.intensity) ?
+				light.intensity : lightDist;
+			const float lightStrength = ((clampedDist - light.intensity) * 
+				(clampedDist - light.intensity)) / (light.intensity * light.intensity);
+
+			const float lnDot = dot(lightDirection, normal);
+			const float3 lightContribution = (light.color * fmax(lnDot, 0.0f)) * lightStrength;
+
+			color += (textureColor * lightContribution);
+		}
+	}
+
 	// Interpolate with fog based on depth.
 	const float fogPercent = getFogPercent(depth, MAX_FOG_DISTANCE);
 	return mix(color, backgroundColor, fogPercent);
@@ -714,7 +769,7 @@ __kernel void rayTrace(
 }
 
 // Optional kernel. Does it also need a temp float3 buffer?
-__kernel void postProcess(
+/*__kernel void postProcess(
 	const __global float3 *input, 
 	__global float3 *output)
 {
@@ -729,7 +784,7 @@ __kernel void postProcess(
 	// Brightness... gamma correction...
 
 	output[index] = color;
-}
+}*/
 
 // Prepare float3 colors for display.
 __kernel void convertToRGB(

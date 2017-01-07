@@ -69,11 +69,13 @@ private:
 	std::unordered_map<Int3, std::pair<size_t, std::vector<int>>> lightGroups;
 
 	// Byte offset and rect index list for owner groups, accessed by a light ID.
-	std::unordered_map<int, std::pair<size_t, std::vector<int>>> ownerGroups;
+	// Commented out for now.
+	//std::unordered_map<int, std::pair<size_t, std::vector<int>>> ownerGroups;
 
 	// Light ID to sprite ID mappings. Not every light needs an owner, so this mapping
 	// might not cover every light.
-	std::unordered_map<int, int> lightOwners;
+	// Commented out for now.
+	//std::unordered_map<int, int> lightOwners;
 
 	// Geometry queues. Each mapping is a rect group to be updated in device memory.
 	// Each rect data object carries the rectangle and its texture index.
@@ -86,7 +88,8 @@ private:
 
 	// Index queue. Each mapping is a rect index group to be updated in device memory,
 	// and is accessed by a light ID.
-	std::unordered_map<int, std::vector<int>> ownerQueue;
+	// Commented out for now.
+	//std::unordered_map<int, std::vector<int>> ownerQueue;
 
 	// Reference queues. Each mapping is a reference to be updated in device memory.
 	// Each queue is cleared after updating is complete for the frame.
@@ -105,10 +108,11 @@ private:
 
 	// A copy of each light's owner reference, if any. This is separate from "lightData"
 	// because not all lights have owners.
-	std::unordered_map<int, OwnerReference> ownerData;
+	// Commented out for now.
+	//std::unordered_map<int, OwnerReference> ownerData;
 
 	// For managing allocations in various dynamic buffers.
-	std::unique_ptr<BufferView> rectBufferView, lightBufferView, ownerBufferView;
+	std::unique_ptr<BufferView> rectBufferView, lightBufferView/*, ownerBufferView*/;
 
 	// Offsets and sizes of textures in device memory.
 	std::vector<TextureReference> textureRefs;
@@ -129,12 +133,15 @@ private:
 	// Helper method for resizing the rectangle buffer and setting kernel arguments.
 	void resizeRectBuffer(cl::size_type requiredSize);
 
+	// Helper method for resizing the light buffer and setting kernel arguments.
+	void resizeLightBuffer(cl::size_type requiredSize);
+
 	// Helper method for writing a rectangle and texture reference to a temp buffer.
 	void writeRect(const Rect3D &rect, const TextureReference &textureRef,
 		std::vector<cl_char> &buffer, size_t byteOffset) const;
 
 	// Helper method for writing a light to a temp buffer.
-	void writeLight(const Light &light, const OwnerReference &ownerRef,
+	void writeLight(const Light &light, /*const OwnerReference &ownerRef,*/
 		std::vector<cl_char> &buffer, size_t byteOffset) const;
 
 	// Helper method for adding a sprite to a sprite group in device memory.
@@ -215,7 +222,7 @@ public:
 	// Queues a light for updating if it exists, and adds it if it doesn't exist.
 	// The owner ID is the sprite ID associated with the light, if any.
 	void queueLightUpdate(int lightID, const Float3d &point, const Float3d &color,
-		const int *ownerID, double intensity);
+		/*const int *ownerID,*/ double intensity);
 
 	// Queues a light for removal from device memory.
 	void queueLightRemoval(int lightID);

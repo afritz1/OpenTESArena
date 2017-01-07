@@ -418,6 +418,19 @@ void Renderer::removeSprite(int spriteID)
 	this->clProgram->queueSpriteRemoval(spriteID);
 }
 
+void Renderer::updateLight(int lightID, const Float3d &point, 
+	const Float3d &color, double intensity)
+{
+	assert(this->clProgram.get() != nullptr);
+	this->clProgram->queueLightUpdate(lightID, point, color, intensity);
+}
+
+void Renderer::removeLight(int lightID)
+{
+	assert(this->clProgram.get() != nullptr);
+	this->clProgram->queueLightRemoval(lightID);
+}
+
 void Renderer::clearNative(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
