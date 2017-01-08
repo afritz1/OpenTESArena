@@ -10,7 +10,13 @@
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
 #define CL_HPP_TARGET_OPENCL_VERSION 120
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+
+#if defined(__MINGW32__) || defined(__MINGW64__)
+#include "../../../components/CL/cl2.hpp"
+#else
 #include <CL/cl2.hpp>
+#endif
+
 
 #include "ArrayReference.h"
 #include "Light.h"
