@@ -7,16 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#define CL_HPP_MINIMUM_OPENCL_VERSION 120
-#define CL_HPP_TARGET_OPENCL_VERSION 120
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include "../../../components/CL/cl2.hpp"
-#else
-#include <CL/cl2.hpp>
-#endif
-
+#include <CL/cl.hpp>
 
 #include "ArrayReference.h"
 #include "Light.h"
@@ -134,13 +125,13 @@ private:
 	// Reallocates a device buffer with the given size while retaining the previous data.
 	// If the new size is smaller, the previous data is truncated. Any kernel arguments
 	// using the buffer must be refreshed by the caller.
-	void resizeBuffer(cl::Buffer &buffer, cl::size_type newSize);
+	void resizeBuffer(cl::Buffer &buffer, size_t newSize);
 
 	// Helper method for resizing the rectangle buffer and setting kernel arguments.
-	void resizeRectBuffer(cl::size_type requiredSize);
+	void resizeRectBuffer(size_t requiredSize);
 
 	// Helper method for resizing the light buffer and setting kernel arguments.
-	void resizeLightBuffer(cl::size_type requiredSize);
+	void resizeLightBuffer(size_t requiredSize);
 
 	// Helper method for writing a rectangle and texture reference to a temp buffer.
 	void writeRect(const Rect3D &rect, const TextureReference &textureRef,
