@@ -2,7 +2,7 @@
 
 This open-source project aims to be a modern engine reimplementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
 
-- Version: 0.1.0
+- Version: 0.2.0
 - License: MIT
 - IRC: #opentesarena on irc.freenode.net
 
@@ -61,33 +61,34 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases)
 
 #### Building the executable:
-- Use CMake to generate your project files and then build the executable.
+- Create a `build` folder in the top-level directory.
+- Use CMake to generate your project files in `build`, then compile the executable.
 
 #### Running the executable:
-- You will need to copy the `data` and `options` folders to the project directory to allow the executable to run within your IDE (this should be automated sometime).
+- Copy the `data` and `options` folders to where the executable is in the `build` directory.
 - Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
 
 ## Scope
 
-Current priority:
-- Lights (street lamps, etc.)
-- Options menu
+Current priority (~0.2.0 - ~0.3.0):
+- Considerations for software rendering
 
-Next priority:
+Next priority (~0.3.0 - ~0.10.0):
+- Better pop-up functionality (chain pop-ups together, yes/no buttons)
 - Character creation questions
-- Game interface button behavior
-- Weapon attacks (hold RMB to swing)
-
-Later:
-- Adaptive super-sampling
-- Automap
-- Class rules and traits
 - Clicking in game world
 - Collision detection
+- More light functionality (give a sprite ownership of a light)
+- Options menu
+
+Later (~0.10.0 - ...):
+- Automap
+- Class rules and traits
 - Doors and secret walls
 - Enemies
+- Game interface button behavior
 - Inventory and containers
 - Levels and experience
 - Load artifact data
@@ -98,8 +99,10 @@ Later:
 - Random test cities and dungeons
 - Redesigned water and lava (to replace vanilla screen animations)
 - Reflections in windows and water
+- Weapon attacks (hold RMB to swing)
 
 Outside scope (until much later):
+- Adaptive super-sampling
 - (new) Custom class creation
 - (new) Followers
 - (new) Imperial race
@@ -115,7 +118,7 @@ Outside scope (until much later):
 - Spells
 - Sprite variation (clothes/hair/skin colors)
 - (new) UI scale
-- Vulkan (to replace OpenCL)
+- Vulkan
 - Wandering people
 - Wilderness (seed-based chunk generation)
 
