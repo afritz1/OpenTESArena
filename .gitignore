@@ -45,23 +45,19 @@ ipch/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
-bld/
-build/
-[Bb]in/
-[Oo]bj/
-
-# OpenTESArena user data folders
-OpenTESArena/data/
-OpenTESArena/options/
+x64*
+x86*
+bld*
+build*
+[Bb]in*
+[Oo]bj*
 
 # Compressed files
 *.tar.gz
 *.zip
 *.7z
 
-# Cmake artifacts
+# CMake artifacts
 CMakeCache.txt
 CMakeFiles/
 Makefile
