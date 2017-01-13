@@ -5,7 +5,6 @@
 #include "TextAlignment.h"
 #include "../Math/Int2.h"
 #include "../Math/Rect.h"
-#include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
@@ -14,9 +13,12 @@
 
 TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	const Font &font, TextAlignment alignment, Renderer &renderer)
+	: textColor(textColor)
 {
 	this->x = x;
 	this->y = y;
+	this->fontName = font.getFontName();
+	this->alignment = alignment;
 
 	// Split "text" into separate lines of text. Also, if "text" is empty, then just 
 	// add a space so there doesn't need to be any "zero-character" special cases.
@@ -185,6 +187,21 @@ int TextBox::getX() const
 int TextBox::getY() const
 {
 	return this->y;
+}
+
+TextAlignment TextBox::getAlignment() const
+{
+	return this->alignment;
+}
+
+FontName TextBox::getFontName() const
+{
+	return this->fontName;
+}
+
+const Color &TextBox::getTextColor() const
+{
+	return this->textColor;
 }
 
 SDL_Surface *TextBox::getSurface() const

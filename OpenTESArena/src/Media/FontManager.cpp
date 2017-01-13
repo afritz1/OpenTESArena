@@ -24,10 +24,9 @@ const Font &FontManager::getFont(FontName fontName)
 	}
 	else
 	{
-		Font font(fontName);
-
 		// Load the font object and insert it into the font manager map.
-		fontIter = this->fonts.emplace(std::make_pair(fontName, std::move(font))).first;
+		fontIter = this->fonts.emplace(std::make_pair(fontName, 
+			std::move(Font(fontName)))).first;
 
 		return fontIter->second;
 	}

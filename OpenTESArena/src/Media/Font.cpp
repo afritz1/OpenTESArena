@@ -28,8 +28,9 @@ namespace
 }
 
 Font::Font(FontName fontName)
-	: characters()
 {
+	this->fontName = fontName;
+
 	// Load the font file for this font name.
 	const std::string &filename = FontFilenames.at(fontName);
 	FontFile fontFile(filename);
@@ -67,6 +68,7 @@ Font::Font(Font &&font)
 {
 	this->characters = std::move(font.characters);
 	this->characterHeight = font.characterHeight;
+	this->fontName = font.fontName;
 }
 
 Font::~Font()
@@ -75,14 +77,6 @@ Font::~Font()
 	{
 		SDL_FreeSurface(surface);
 	}
-}
-
-Font &Font::operator=(Font &&font)
-{
-	this->characters = std::move(font.characters);
-	this->characterHeight = font.characterHeight;
-
-	return *this;
 }
 
 const std::string &Font::fromName(FontName fontName)
@@ -94,6 +88,11 @@ const std::string &Font::fromName(FontName fontName)
 int Font::getCharacterHeight() const
 {
 	return this->characterHeight;
+}
+
+FontName Font::getFontName() const
+{
+	return this->fontName;
 }
 
 SDL_Surface *Font::getSurface(char c) const
