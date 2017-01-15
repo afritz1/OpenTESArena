@@ -18,14 +18,14 @@ namespace
 	// These sizes are intended to match those of the .cl file structs. OpenCL 
 	// aligns structs to multiples of 8 bytes. Additional padding is sometimes 
 	// necessary to match struct alignment.
-	const cl::size_type SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float) + 12;
-	const cl::size_type SIZEOF_OWNER_REF = sizeof(cl_int) * 2;
-	const cl::size_type SIZEOF_LIGHT = (sizeof(cl_float3) * 2) + SIZEOF_OWNER_REF + sizeof(cl_float) + 4;
-	const cl::size_type SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
-	const cl::size_type SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
-	const cl::size_type SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
-	const cl::size_type SIZEOF_RECTANGLE = (sizeof(cl_float3) * 6) + SIZEOF_TEXTURE_REF + 8;
-	const cl::size_type SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
+	const size_t SIZEOF_CAMERA = (sizeof(cl_float3) * 4) + sizeof(cl_float) + 12;
+	const size_t SIZEOF_OWNER_REF = sizeof(cl_int) * 2;
+	const size_t SIZEOF_LIGHT = (sizeof(cl_float3) * 2) + SIZEOF_OWNER_REF + sizeof(cl_float) + 4;
+	const size_t SIZEOF_LIGHT_REF = sizeof(cl_int) * 2;
+	const size_t SIZEOF_SPRITE_REF = sizeof(cl_int) * 2;
+	const size_t SIZEOF_TEXTURE_REF = sizeof(cl_int) + (sizeof(cl_short) * 2);
+	const size_t SIZEOF_RECTANGLE = (sizeof(cl_float3) * 6) + SIZEOF_TEXTURE_REF + 8;
+	const size_t SIZEOF_VOXEL_REF = sizeof(cl_int) * 2;
 }
 
 const std::string CLProgram::PATH = "data/kernels/";
@@ -154,19 +154,19 @@ CLProgram::CLProgram(int worldWidth, int worldHeight, int worldDepth,
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightRefBuffer.");
 
 	this->rectangleBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
+		static_cast<size_t>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer rectangleBuffer.");
 
 	this->lightBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
+		static_cast<size_t>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer lightBuffer.");
 
 	this->ownerBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(4096) /* Resized as necessary. */, nullptr, &status);
+		static_cast<size_t>(4096) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer ownerBuffer.");
 
 	this->textureBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
-		static_cast<cl::size_type>(65536) /* Resized as necessary. */, nullptr, &status);
+		static_cast<size_t>(65536) /* Resized as necessary. */, nullptr, &status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer textureBuffer.");
 
 	this->gameTimeBuffer = cl::Buffer(this->context, CL_MEM_READ_ONLY,
@@ -660,7 +660,7 @@ void CLProgram::zeroBuffer(cl::Buffer &buffer)
 	cl_int status = CL_SUCCESS;
 
 	// Get the current size of the buffer.
-	const cl::size_type bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Buffer::getInfo CL_MEM_SIZE resizeBuffer.");
 
@@ -671,12 +671,12 @@ void CLProgram::zeroBuffer(cl::Buffer &buffer)
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer zeroBuffer.");
 }
 
-void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
+void CLProgram::resizeBuffer(cl::Buffer &buffer, size_t newSize)
 {
 	cl_int status = CL_SUCCESS;
 
 	// Get the current size of the buffer.
-	const cl::size_type bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t bufferSize = buffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::Buffer::getInfo CL_MEM_SIZE resizeBuffer.");
 
@@ -697,16 +697,16 @@ void CLProgram::resizeBuffer(cl::Buffer &buffer, cl::size_type newSize)
 
 	// Write the old data into the new buffer. If the new buffer is smaller, then
 	// truncate the old data.
-	const cl::size_type bytesToWrite = std::min(newSize, bufferSize);
+	const size_t bytesToWrite = std::min(newSize, bufferSize);
 	status = this->commandQueue.enqueueWriteBuffer(buffer, CL_TRUE, 0,
 		bytesToWrite, static_cast<const void*>(oldData.data()), nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::enqueueWriteBuffer resizeBuffer.");
 }
 
-void CLProgram::resizeRectBuffer(cl::size_type requiredSize)
+void CLProgram::resizeRectBuffer(size_t requiredSize)
 {
 	cl_int status = CL_SUCCESS;
-	const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo resizeRectBuffer.");
 
 	const size_t newSize = [requiredSize, rectBufferSize]()
@@ -736,10 +736,10 @@ void CLProgram::resizeRectBuffer(cl::size_type requiredSize)
 		"cl::Kernel::setArg resizeRectBuffer rayTraceKernel.");
 }
 
-void CLProgram::resizeLightBuffer(cl::size_type requiredSize)
+void CLProgram::resizeLightBuffer(size_t requiredSize)
 {
 	cl_int status = CL_SUCCESS;
-	const cl::size_type lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo resizeLightBuffer.");
 
 	const size_t newSize = [requiredSize, lightBufferSize]()
@@ -1126,7 +1126,7 @@ void CLProgram::queueVoxelUpdate(int x, int y, int z,
 		}
 
 		// Allocate a region for the voxel's new rectangles.
-		const cl::size_type offset = this->rectBufferView->allocate(bufferSize);
+		const size_t offset = this->rectBufferView->allocate(bufferSize);
 
 		// Make a new voxel offset mapping if one doesn't exist.
 		if (offsetIter == this->voxelOffsets.end())
@@ -1141,11 +1141,11 @@ void CLProgram::queueVoxelUpdate(int x, int y, int z,
 
 		// Size of the existing rectangle buffer.
 		cl_int status = CL_SUCCESS;
-		const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
+		const size_t rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
 		Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo updateVoxel.");
 
 		// Minimum size of geometry memory required for the new voxel geometry.
-		const cl::size_type requiredSize = offset + bufferSize;
+		const size_t requiredSize = offset + bufferSize;
 
 		if (requiredSize > rectBufferSize)
 		{
@@ -1242,11 +1242,11 @@ void CLProgram::addSpriteToVoxel(int spriteID, const Int3 &voxel)
 
 	// Size of the existing rectangle buffer.
 	cl_int status = CL_SUCCESS;
-	const cl::size_type rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t rectBufferSize = this->rectangleBuffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addSpriteToVoxel.");
 
 	// Minimum size of geometry memory required for the new sprite geometry.
-	const cl::size_type requiredSize = offset + bufferSize;
+	const size_t requiredSize = offset + bufferSize;
 
 	if (requiredSize > rectBufferSize)
 	{
@@ -1400,11 +1400,11 @@ void CLProgram::addLightToVoxel(int lightID, const Int3 &voxel)
 
 	// Size of the existing light buffer.
 	cl_int status = CL_SUCCESS;
-	const cl::size_type lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
+	const size_t lightBufferSize = this->lightBuffer.getInfo<CL_MEM_SIZE>(&status);
 	Debug::check(status == CL_SUCCESS, "CLProgram", "cl::Buffer::getInfo addLightToVoxel.");
 
 	// Minimum size of light memory required for the new light.
-	const cl::size_type requiredSize = offset + bufferSize;
+	const size_t requiredSize = offset + bufferSize;
 
 	if (requiredSize > lightBufferSize)
 	{
@@ -1975,7 +1975,7 @@ const void *CLProgram::render()
 	void *outputDataPtr = static_cast<void*>(this->outputData.data());
 	const int renderPixelCount = this->renderWidth * this->renderHeight;
 	status = this->commandQueue.enqueueReadBuffer(this->outputBuffer, CL_TRUE, 0,
-		static_cast<cl::size_type>(sizeof(cl_int) * renderPixelCount),
+		static_cast<size_t>(sizeof(cl_int) * renderPixelCount),
 		outputDataPtr, nullptr, nullptr);
 	Debug::check(status == CL_SUCCESS, "CLProgram",
 		"cl::CommandQueue::enqueueReadBuffer " + this->getErrorString(status) + ".");
