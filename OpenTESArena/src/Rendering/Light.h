@@ -5,9 +5,9 @@
 
 #include "../Math/Float3.h"
 
-// Helper class for managing lights in OpenCL device memory.
+// Helper class for managing lights in renderer memory.
 
-// The owner reference is managed elsewhere in the CLProgram. This class is just 
+// The owner reference is managed elsewhere in the renderer. This class is just 
 // for the light's data.
 
 class Int3;

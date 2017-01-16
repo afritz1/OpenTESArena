@@ -3,7 +3,8 @@
 
 #include "Rect3D.h"
 
-// Helper class for managing a rectangle and its texture in OpenCL device memory.
+// Helper class for managing a rectangle and its texture. Most useful with
+// dynamic geometry like sprites.
 
 class RectData
 {

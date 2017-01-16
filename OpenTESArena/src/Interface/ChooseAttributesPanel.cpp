@@ -32,7 +32,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
-#include "../Rendering/CLProgram.h"
 #include "../Rendering/Rect3D.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
@@ -117,7 +116,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			// Make placeholders here for the game data. They'll be more informed
 			// in the future once the player has a place in the world and the options
-			// menu has settings for the CLProgram.
+			// menu has settings for the renderer.
 			std::unique_ptr<EntityManager> entityManager(new EntityManager());
 
 			Float3d position = Float3d(1.50, 1.70, 2.50); // Arbitrary player height.
@@ -143,10 +142,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				worldWidth, worldHeight, worldDepth, 
 				game->getOptions().getResolutionScale(), false);
 
-			// Send some textures and test geometry to CL device memory. Eventually
+			// Send some textures and test geometry to renderer memory. Eventually
 			// this will be moved out to another data class, maybe stored in the game
 			// data object.
-			auto &textureManager = game->getTextureManager();
+			/*auto &textureManager = game->getTextureManager();
 			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 			std::vector<const SDL_Surface*> surfaces =
@@ -336,7 +335,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 						Float3d(1.0, 0.80, 0.40),
 						6.0);
 				}
-			}
+			}*/
 			// -- end test --
 
 			double gameTime = 0.0; // In seconds. Also affects sun position.

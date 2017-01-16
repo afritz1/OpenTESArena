@@ -57,7 +57,7 @@ public:
 	const Texture &getTexture(const std::string &filename);
 	
 	// Gets a set of surfaces from a file. Intended only for obtaining pixel data for use 
-	// with the OpenCL buffers. TextureManager::getTextures() should be used instead for 
+	// with renderer buffers. TextureManager::getTextures() should be used instead for 
 	// any 2D interface objects.
 	const std::vector<SDL_Surface*> &getSurfaces(const std::string &filename,
 		const std::string &paletteName);

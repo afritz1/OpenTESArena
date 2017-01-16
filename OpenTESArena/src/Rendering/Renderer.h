@@ -2,7 +2,6 @@
 #define RENDERER_H
 
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,13 +12,9 @@
 
 // The format for all textures is ARGB8888.
 
-class CLProgram;
 class Color;
 class Int2;
 
-enum class TextureName;
-
-struct SDL_PixelFormat;
 struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;
@@ -29,9 +24,8 @@ struct SDL_Window;
 class Renderer
 {
 private:
-	static const std::string DEFAULT_RENDER_SCALE_QUALITY;
+	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 
-	std::unique_ptr<CLProgram> clProgram;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *originalTexture, *gameWorldTexture; // Frame buffers.
@@ -86,11 +80,10 @@ public:
 	bool letterboxContains(const Int2 &nativePoint) const;
 
 	// Wrapper methods for SDL_CreateTexture.
-	SDL_Texture *createTexture(unsigned int format, int access, int w, int h);
+	SDL_Texture *createTexture(uint32_t format, int access, int w, int h);
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
 
-	// Resizes the renderer dimensions, and rebuilds the render program if it is
-	// initialized.
+	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale);
 
 	// Sets the window icon to be the given surface.
@@ -104,14 +97,16 @@ public:
 	// so only set it to true when the original frame buffer needs transparency.
 	void useTransparencyBlending(bool blend);
 
-	// Initialize the OpenCL program for rendering the game world. The "renderFullWindow"
-	// argument determines whether to render a "fullscreen" 3D image or just the part
-	// above the game interface. If there is an existing OpenCL program in memory, it 
-	// will be overwritten with the new one.
+	// Initialize the renderer for the game world. The "renderFullWindow" argument 
+	// determines whether to render a "fullscreen" 3D image or just the part above 
+	// the game interface. If there is an existing renderer in memory, it will be 
+	// overwritten with the new one.
 	void initializeWorldRendering(int worldWidth, int worldHeight, int worldDepth,
 		double resolutionScale, bool renderFullWindow);
 
-	// Helper methods for interacting with OpenCL device memory.
+	// Helper methods for interacting with render memory.
+	// - Eventually, the geometry methods here will be separated into "static" and
+	//   "dynamic" groups; static geometry is fixed to a voxel, dynamic is arbitrary.
 	void updateCamera(const Float3d &eye, const Float3d &direction, double fovY);
 	void updateGameTime(double gameTime);
 	int addTexture(uint32_t *pixels, int width, int height);
@@ -142,8 +137,8 @@ public:
 	void fillNativeRect(const Color &color, int x, int y, int w, int h);
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
-	// Runs the rendering program which draws the world onto the native frame buffer.
-	// If the rendering program is uninitialized, this causes a crash.
+	// Runs the 3D renderer which draws the world onto the native frame buffer.
+	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld();
 
 	// Draw methods for the native and original frame buffers.

@@ -34,7 +34,6 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
-#include "../Rendering/CLProgram.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
@@ -636,8 +635,8 @@ void GameWorldPanel::tick(double dt)
 	auto &player = gameData.getPlayer();
 	player.tick(this->getGame(), dt);
 
-	// Update CLProgram members that are refreshed each frame.
-	double verticalFOV = this->getGame()->getOptions().getVerticalFOV();
+	// Update renderer members that are refreshed each frame.
+	/*double verticalFOV = this->getGame()->getOptions().getVerticalFOV();
 	auto &renderer = this->getGame()->getRenderer();
 	renderer.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
 	renderer.updateGameTime(gameData.getGameTime());
@@ -666,7 +665,7 @@ void GameWorldPanel::tick(double dt)
 				30 + ((index / 8) % 2));
 		}
 	}
-	index++;
+	index++;*/
 	// -- end test --
 }
 
@@ -682,6 +681,14 @@ void GameWorldPanel::render(Renderer &renderer)
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
 	renderer.renderWorld();
+	// -- temp text --
+	TextBox tempText(Int2(160, 80), Color::White,
+		"Moving to software rendering\nsoon!",
+		this->getGame()->getFontManager().getFont(FontName::Arena),
+		TextAlignment::Center, renderer);
+	renderer.drawToOriginal(tempText.getTexture(), 
+		tempText.getX(), tempText.getY());
+	// -- end temp text --
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

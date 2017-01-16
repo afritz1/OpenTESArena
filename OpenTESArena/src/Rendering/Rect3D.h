@@ -5,12 +5,12 @@
 
 #include "../Math/Float3.h"
 
-// Intended for use with the OpenCL kernel. I thought of this optimization since
-// all surfaces in Arena can be represented as rectangles (no need for triangles).
+// Intended for use with rendering. I thought of this optimization since all surfaces 
+// in Arena can be represented as rectangles (no need for triangles).
 
 // There's no need for explicit UV coordinates; they can be inferred relative to points
-// and used as constants in the kernel. In this design, it would go counter-clockwise 
-// from the top-left point:
+// and used as constants. In this design, it would go counter-clockwise from the top-left 
+// point:
 // - p1: (u=0, v=0)
 // - p2: (u=0, v=1)
 // - p3: (u=1, v=1)
@@ -56,6 +56,9 @@ public:
 
 	// Returns a vector of voxel coordinates for all voxels that the rectangle touches,
 	// with the option to only get voxels within the world bounds.
+	// - As a possible optimization to this method, to avoid heap usage, simply return
+	//   the min and max XYZ values, and the caller can loop over those themselves.
+	//   Maybe return a bounding box struct?
 	std::vector<Int3> getTouchedVoxels(int worldWidth, int worldHeight, int worldDepth) const;
 	std::vector<Int3> getTouchedVoxels() const;
 };

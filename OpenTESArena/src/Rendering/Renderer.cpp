@@ -6,7 +6,6 @@
 
 #include "Renderer.h"
 
-#include "CLProgram.h"
 #include "Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/Int2.h"
@@ -14,7 +13,7 @@
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
 
-const std::string Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
+const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
@@ -58,12 +57,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	this->originalTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, Renderer::ORIGINAL_WIDTH, Renderer::ORIGINAL_HEIGHT);
 
-	// Verify that the system has an available OpenCL device for rendering.
-	Debug::check(CLProgram::getTotalDeviceCount() > 0, "Renderer",
-		"No OpenCL render devices found.");
-
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
-	this->clProgram = nullptr;
 	this->gameWorldTexture = nullptr;
 	this->fullGameWindow = false;
 
@@ -96,7 +90,7 @@ SDL_Renderer *Renderer::createRenderer()
 
 	// Set pixel interpolation hint.
 	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
-		Renderer::DEFAULT_RENDER_SCALE_QUALITY.c_str());
+		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
 		Debug::mention("Renderer", "Could not set interpolation hint.");
@@ -110,8 +104,8 @@ SDL_Renderer *Renderer::createRenderer()
 	// (such as with Linux), so we retry with software.
 	if (!nativeSurface)
 	{
-		Debug::mention("Renderer",
-			"Failed to initialize with hardware accelerated renderer, trying software.");
+		Debug::mention("Renderer", "Failed to initialize accelerated SDL_Renderer.");
+		Debug::mention("Renderer", "Trying software fallback.");
 
 		SDL_DestroyRenderer(rendererContext);
 
@@ -137,7 +131,7 @@ SDL_Surface *Renderer::getWindowSurface() const
 
 Int2 Renderer::getWindowDimensions() const
 {
-	SDL_Surface *nativeSurface = this->getWindowSurface();
+	const SDL_Surface *nativeSurface = this->getWindowSurface();
 	return Int2(nativeSurface->w, nativeSurface->h);
 }
 
@@ -274,7 +268,7 @@ bool Renderer::letterboxContains(const Int2 &nativePoint) const
 	return rectangle.contains(nativePoint);
 }
 
-SDL_Texture *Renderer::createTexture(unsigned int format, int access, int w, int h)
+SDL_Texture *Renderer::createTexture(uint32_t format, int access, int w, int h)
 {
 	return SDL_CreateTexture(this->renderer, format, access, w, h);
 }
@@ -300,8 +294,8 @@ void Renderer::resize(int width, int height, double resolutionScale)
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
 
-	// Rebuild the OpenCL program if initialized.
-	if (this->clProgram.get() != nullptr)
+	// Rebuild the 3D renderer if initialized.
+	/*if (this->worldRenderer.get() != nullptr)
 	{
 		// Height of the game world view in pixels. Determined by whether the game 
 		// interface is visible or not.
@@ -319,8 +313,8 @@ void Renderer::resize(int width, int height, double resolutionScale)
 			"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 		// Initialize 3D rendering program.
-		this->clProgram->resize(renderWidth, renderHeight);
-	}
+		// this->worldRenderer->resize(renderWidth, renderHeight);
+	}*/
 }
 
 void Renderer::setWindowIcon(SDL_Surface *icon)
@@ -358,10 +352,10 @@ void Renderer::initializeWorldRendering(int worldWidth, int worldHeight, int wor
 	const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
 
 	// Remove any previous game world frame buffer.
-	if (this->clProgram.get() != nullptr)
+	/*if (this->worldRenderer.get() != nullptr)
 	{
 		SDL_DestroyTexture(this->gameWorldTexture);
-	}
+	}*/
 
 	// Initialize a new game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
@@ -370,65 +364,75 @@ void Renderer::initializeWorldRendering(int worldWidth, int worldHeight, int wor
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering program.
-	this->clProgram = std::unique_ptr<CLProgram>(new CLProgram(
-		worldWidth, worldHeight, worldDepth, renderWidth, renderHeight));
+	/*this->worldRenderer = std::unique_ptr<WorldRenderer>(new WorldRenderer(
+		worldWidth, worldHeight, worldDepth, renderWidth, renderHeight));*/
 }
 
 void Renderer::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->updateCamera(eye, direction, fovY);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->updateCamera(eye, direction, fovY);
+	Debug::crash("Renderer", "updateCamera() not implemented.");
 }
 
 void Renderer::updateGameTime(double gameTime)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->updateGameTime(gameTime);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->updateGameTime(gameTime);
+	Debug::crash("Renderer", "updateGameTime() not implemented.");
 }
 
 int Renderer::addTexture(uint32_t *pixels, int width, int height)
 {
-	assert(this->clProgram.get() != nullptr);
-	return this->clProgram->addTexture(pixels, width, height);
+	//assert(this->clProgram.get() != nullptr);
+	//return this->clProgram->addTexture(pixels, width, height);
+	Debug::crash("Renderer", "addTexture() not implemented.");
+	return -1;
 }
 
 void Renderer::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 	const std::vector<int> &textureIndices)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndices);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndices);
+	Debug::crash("Renderer", "updateVoxel() not implemented.");
 }
 
 void Renderer::updateVoxel(int x, int y, int z,
 	const std::vector<Rect3D> &rects, int textureIndex)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndex);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndex);
+	Debug::crash("Renderer", "updateVoxel() not implemented.");
 }
 
 void Renderer::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueSpriteUpdate(spriteID, rect, textureIndex);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueSpriteUpdate(spriteID, rect, textureIndex);
+	Debug::crash("Renderer", "updateSprite() not implemented.");
 }
 
 void Renderer::removeSprite(int spriteID)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueSpriteRemoval(spriteID);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueSpriteRemoval(spriteID);
+	Debug::crash("Renderer", "removeSprite() not implemented.");
 }
 
 void Renderer::updateLight(int lightID, const Float3d &point, 
 	const Float3d &color, double intensity)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueLightUpdate(lightID, point, color, intensity);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueLightUpdate(lightID, point, color, intensity);
+	Debug::crash("Renderer", "updateLight() not implemented.");
 }
 
 void Renderer::removeLight(int lightID)
 {
-	assert(this->clProgram.get() != nullptr);
-	this->clProgram->queueLightRemoval(lightID);
+	//assert(this->clProgram.get() != nullptr);
+	//this->clProgram->queueLightRemoval(lightID);
+	Debug::crash("Renderer", "removeLight() not implemented.");
 }
 
 void Renderer::clearNative(const Color &color)
@@ -551,14 +555,14 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::renderWorld()
 {
-	// The 3D rendering program must be initialized.
-	assert(this->clProgram.get() != nullptr);
+	// Just draw blank for now.
 
-	// Push any pending updates to device memory.
-	this->clProgram->pushUpdates();
+	/*
+	// The 3D renderer must be initialized.
+	assert(this->worldRenderer.get() != nullptr);
 
 	// Render the game world.
-	const void *worldFrameBuffer = this->clProgram->render();
+	const void *worldFrameBuffer = this->worldRenderer->render();
 
 	int renderWidth;
 	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);
@@ -572,6 +576,7 @@ void Renderer::renderWorld()
 	const int screenWidth = this->getWindowDimensions().getX();
 	const int viewHeight = this->getViewHeight();
 	this->drawToNative(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
+	*/
 }
 
 void Renderer::drawToNative(SDL_Texture *texture, int x, int y, int w, int h)

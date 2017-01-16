@@ -6,9 +6,7 @@ compiler: gcc
 group: stable
 
 before_install:
-  - sudo apt-get install libsdl2-dev libopenal-dev opencl-headers ocl-icd-libopencl1
-  - wget https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp
-  - sudo mv cl2.hpp /usr/include/CL/
+  - sudo apt-get install libsdl2-dev libopenal-dev
   - sudo apt-get install wildmidi
 
 install:

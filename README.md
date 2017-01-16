@@ -1,6 +1,6 @@
 # OpenTESArena
 
-This open-source project aims to be a modern engine reimplementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, OpenAL Soft and WildMIDI for sound, and OpenCL for 3D rendering. There is currently support for Windows and Linux.
+This open-source project aims to be a modern engine reimplementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows and Linux.
 
 - Version: 0.2.0
 - License: MIT
@@ -10,7 +10,9 @@ This open-source project aims to be a modern engine reimplementation for "The El
 
 This project is early in development.
 
-The game world is currently a barebones test city with some buildings, sprites, and a day/night cycle. No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+The OpenCL rendering code has been torn out (since OpenCL isn't really a graphics API), so the game world isn't being rendered right now. I'll be developing a software renderer instead for purposes of faster prototyping and general ease of use.
+
+No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
 - Esc - pause menu
@@ -27,7 +29,7 @@ Here are some hotkeys in the game world:
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake (and it still is quite an experiment), but now the project is steadily inching closer to something akin to the original.
 
-The graphics are being rendered with a ray tracer I'm writing in OpenCL. I puzzled for a long time about what 3D rendering method to use, and I decided that this would be a good place to demonstrate real time GPU ray tracing. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+The graphics are being rendered with a ray tracer I'm writing. I puzzled for a long time about what 3D rendering method to use, and I decided that this would be a good place to demonstrate real time ray tracing. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
@@ -56,7 +58,6 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 #### Project dependencies:
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.17.2](http://kcat.strangesoft.net/openal.html#download)
-- OpenCL 1.2 ([AMD](http://developer.amd.com/tools-and-sdks/opencl-zone/amd-accelerated-parallel-processing-app-sdk/), [Nvidia](https://developer.nvidia.com/opencl)) - use [cl2.hpp](https://github.com/KhronosGroup/OpenCL-CLHPP/releases/download/v2.0.10/cl2.hpp) header from OpenCL 2.0.
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases)
 
