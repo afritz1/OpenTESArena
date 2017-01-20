@@ -36,7 +36,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);
-	Debug::check(lastCompWord == 0xFFFF, "Exe Unpacker", 
+	Debug::check(lastCompWord == 0xFFFF, "Exe Unpacker",
 		"Invalid last compressed word \"" + String::toHexString(lastCompWord) + "\".");
 
 	// Calculate length of decompressed data -- more precise method (for A.EXE).
@@ -52,56 +52,67 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	// Current position for inserting decompressed data.
 	size_t decompIndex = 0;
-
-	// The decompression mode determines how bits are interpreted.
-	auto mode = DecompressionMode::Default;
 	
-	const size_t compressedByteCount = compressedEnd - compressedStart;
-	for (size_t i = 0; i < (compressedByteCount - 1); i += 2)
+	// A 16-bit array of compressed data.
+	uint16_t bitArray = Bytes::getLE16(compressedStart);
+
+	// Decompression mode for determining how bits are interpreted.
+	auto mode = DecompressionMode::Default;
+
+	// Continually read bit arrays from the compressed data. Break once a
+	// compressed byte equals 0xFF in copy mode.
+	int byteIndex = 0; // Offset from start of compressed data.
+	int bitIndex = 0; // Position in 16-bit array.
+	while (true)
 	{
-		const uint16_t bitArray = Bytes::getLE16(compressedStart + i);
-
-		// Loop over each bit in the bit array.
-		for (int bitIndex = 0; bitIndex < 16; ++bitIndex)
+		// Advance the bit array if done with the current one.
+		if (bitIndex > 15)
 		{
-			const bool bit = (bitArray & (1 << bitIndex)) != 0;
-
-			if (mode == DecompressionMode::Default)
-			{
-				// The value of the bit determines the next mode.
-				// - I'm thinking that a decompression "mode" is unnecessary, and the
-				//   code can simply branch on the bit itself for copying or decrypting.
-				//   Additionally, the mode check above is always true.
-				mode = bit ? DecompressionMode::Copy : DecompressionMode::Decrypt;
-			}
-
-			if (mode == DecompressionMode::Decrypt)
-			{
-				// Read the next byte from the compressed data (after the bit array).
-				const uint8_t encryptedByte = compressedStart[i + 2];
-				i++;
-
-				// Retrieve the XOR key based on the current bit index.
-				const std::array<uint8_t, 16> keys =
-				{
-					15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 16
-				};
-
-				const uint8_t key = keys.at(bitIndex);
-				const uint8_t decryptedByte = encryptedByte ^ key;
-
-				// Insert the decrypted byte into the decompressed data.
-				decomp.at(decompIndex) = decryptedByte;
-				decompIndex++;
-			}
-			else if (mode == DecompressionMode::Copy)
-			{
-				
-			}
-
-			// Change back to default mode.
-			mode = DecompressionMode::Default;
+			byteIndex += 2;
+			bitIndex = 0;
+			bitArray = Bytes::getLE16(compressedStart + byteIndex);
 		}
+
+		const bool bit = (bitArray & (1 << bitIndex)) != 0;
+
+		// Choose which decompression mode to use for the current bit.
+		if (mode == DecompressionMode::Default)
+		{
+			mode = bit ? DecompressionMode::Copy : DecompressionMode::Decrypt;
+		}
+
+		if (mode == DecompressionMode::Decrypt)
+		{
+			// Read the next byte from the compressed data (after the bit array).
+			const uint8_t encryptedByte = compressedStart[byteIndex + 2];
+			byteIndex++;
+
+			// Lambda for decrypting an encrypted byte with an XOR operation based on 
+			// the current bit index.
+			auto decrypt = [](uint8_t encryptedByte, int bitIndex)
+			{
+				const uint8_t key = (bitIndex < 15) ? (15 - bitIndex) : 16;
+				const uint8_t decryptedByte = encryptedByte ^ key;
+				return decryptedByte;
+			};
+
+			// Decrypt the byte.
+			const uint8_t decryptedByte = decrypt(encryptedByte, bitIndex);
+
+			// Append the decrypted byte onto the decompressed data.
+			decomp.at(decompIndex) = decryptedByte;
+			decompIndex++;
+
+			// Advance to the next bit in the bit array.
+			bitIndex++;
+		}
+		else
+		{
+			// Copy mode.
+			Debug::crash("Exe Unpacker", "Copy mode not implemented.");
+		}
+
+		mode = DecompressionMode::Default;
 	}
 
 	// Keep this until the decompressor works.
