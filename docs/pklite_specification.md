@@ -1,132 +1,211 @@
 # PKLITE V1.12 compression format specification
 
 
-This specification should work with any executable compressed with PKLITE V1.12, but it is mainly designed for A.EXE from Bethesda's 'The Elder Scrolls: Arena'.
+## Table of contents
+
+* [1 Clarifications](#1-clarifications) 
+* [2 Data length](#2-data-length)
+  * [2.1 Compressed data](#21-compressed-data)
+  * [2.2 Decompressed data](#22-decompressed-data)
+    * [2.2.1 First method](#221-first-method)
+    * [2.2.2 Second method](#222-second-method)
+* [3 Compressed data format](#3-compressed-data-format)
+  * [3.1 Data description](#31-data-description)
+  * [3.2 Encrypted data](#32-encrypted-data)
+  * [3.3 Relocation data](#33-relocation-data)
+* [4 Decompression](#4-decompression)
+  * [4.1 Decision](#41-decision)
+  * [4.2 Decryption](#42-decryption)
+  * [4.3 Duplication](#43-duplication)
+    * [4.3.1 Number of bytes](#431-number-of-bytes)
+      * [4.3.1.1 Special case](#4311-special-case)
+    * [4.3.2 Offset](#432-offset)
+    * [4.3.3 Duplicating data](#433-duplicating-data)
+* [5 Pointer relocation](#5-pointer-relocation)
 
 
-
-## Length of compressed/decompressed data
-
-If `l` is the length of the executable in bytes, then the compressed data is stored from position `0x2F0` up until `l - 8` within the executable. The compressed data should end with the word `0xFFFF`.
-
-However, it isn't entirely certain how long the *decompressed* data is going to be.
+----------
 
 
-### First method
+## 1 Clarifications
 
-It can be estimated by loading in the word at position `0x61`, and then performing the following operation on it:
+This specification should work with any executable compressed with PKLITE V1.12, but it is mainly designed for 'A.EXE' from Bethesda's 'The Elder Scrolls: Arena'.
 
-`estimated length = word * 0x10 - 0x450`
+
+----------
+
+
+## 2 Data length
+
+### 2.1 Compressed data
+
+The compressed data is stored within the executable in little endian format.
+
+If `l` is the length of the executable in bytes, then the compressed data is stored from byte at position `0x2F0` up until `l - 8` within the executable. The compressed data should end with `0xFFFF`.
+
+### 2.2 Decompressed data
+
+It may be useful to know how much space is required to store the decompressed data. The methods below describe ways to do it.
+
+#### 2.2.1 First method
+
+It can be estimated by loading in the 2-byte value at position `0x61`, and then performing the following operation on it:
+
+`estimated length = value * 0x10 - 0x450`
 
 This will give a slight overestimate for the actual length of decompressed data.
 
 
-### Second method
+#### 2.2.2 Second method
 
-In case of A.EXE, the length of decompressed data can be calculated more precisely. This method relies on using the position that the stack pointer would be given at the end of decompression, if the program were run in DOS. In case of A.EXE, the stack pointer is placed at the end of the decompressed data. So, if one can calculate its position, one will know the length of decompressed data.
+In case of 'A.EXE', the length of decompressed data can be calculated more precisely.
+
+When 'A.EXE' finishes decompressing the data, it places the stack pointer at a pre-determined position, which happens to be at the end of the decompressed data. So, if one can calculate where the stack pointer would be placed, one will know how long the decompressed data is.
 
 **Side note:** This is the reason why the decompressed data from A.EXE has empty space at the end: to leave room for the stack.
 
-The position of the stack pointer can be calculated using the 'segment' stored at position `l - 8`, and the 'offset' stored at `l - 6`. Both of them are 2 bytes long.
-
-Using these two values, the length of the decompressed data can be calculated, like so:
+The position of the stack pointer can be calculated using the 'segment' stored at position `l - 8`, and the 'offset' stored at `l - 6`. Both of those values are 2 bytes long. Using these two values, the length of the decompressed data can be calculated, like so:
 
 `length = segment * 0x10 + offset`
 
-In case of A.EXE, `segment = 0x4A57` and `offset = 0x0080`, so the length of decompressed data is `0x4A5F0` bytes.
+In case of 'A.EXE', `segment = 0x4A57` and `offset = 0x0080`, so the length of decompressed data is `0x4A5F0` bytes.
 
-This might not work with other executables compressed with PKLITE V1.12, since their stack might not be located at the end of the decompressed data, but instead somewhere else. It's still possible to calculate an overestimate for them using the first method.
+This might not work with other executables compressed with PKLITE V1.12, since their stack pointer might not be placed at end of the decompressed data, but instead somewhere else. It's still possible to calculate an overestimate for them using the first method.
 
 
+----------
 
-## Compressed data format
 
-All of the data stored within the executable is in little endian format. When data is being decompressed, it should be stored in little endian as well.
-Since the data is likely to be accessed at 1 byte intervals, little endianness will only make a difference with values longer than 1 byte.
+## 3 Compressed data format
 
-The compressed data is continuous, and it should be read from start to finish continuously, i.e. no going back and forth. If something is to be read from the compressed data, it should be read from where the last 'read operation' left off.
+The compressed data is continuous, so it should be read from start to finish continuously, i.e. no going back and forth. If something is to be read from the compressed data, it should be read from where the last 'read operation' left off.
+
 This also applies to storing decompressed data: all new data should be appended to the end of existing decompressed data (or the beginning if no data has been decompressed yet).
 
-The compressed data consists of bit arrays with various data between them. The first bit array is always located at the beginning of the compressed data. The position of the rest of the bit arrays is unknown, and will have to be determined at runtime.
-These 16-bit bit arrays describe how the compressed data is to be decompressed. Their contents are used to decide what compressed/uncompressed data to load, modify and copy.
+### 3.1 Data description
 
-New bit arrays are expected to be loaded in as soon as the old ones are fully processed, and since other data may be loaded in the meantime, their position will vary.
-These 16-bit arrays are stored as a single little endian word. When it is required to load a bit array, this word should be read in, from which the array can be constructed.
+The compressed data contains a long stream of bits that describes how the data should be decompressed.
 
-The LSB (least significant bit) is the first bit of the bit array. The MSB (most significant bit) is the last bit of the bit array. So, for example, if the word is `0xD132` (which is `1101000100110010b`):
+Unfortunately, that stream has been split up into chunks, which are scattered all around the data, and it isn't clear how many of them there are.
 
-|  Bits |   1   |   1   |   0   |   1   |   0   |   0   |   0   |   1   |   0   |   0   |   1   |   1   |   0   |   0   |   1   |   0   |
-|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
-| Order |  16th |  15th |  14th |  13th |  12th |  11th |  10th |  9th  |  8th  |  7th  |  6th  |  5th  |  4th  |  3rd  |  2nd  |  1st  |
+Fortunately, the first chunk is always at the start of the compressed data, and the rest can be found based on the contents of the previous chunks.
 
-`0` is the first bit of the bit array, `1` is the second bit, and so on, meaning that the 15th bit is a `1` and the 16th bit is a `1`.
+These chunks are stored in little endian format, and they are 2 bytes long, meaning that they contain 16 bits.
 
-Bits from the bit array will be requested during the decompression process. Like with compressed data, bits should be read continuously from the bit array.
-Each bit should only be read/checked/accessed once.
-If after reading a bit there are no more unread bits left in the array, a new array should be loaded in. This is done so that there are always bits ready.
-The new bit array should replace the old one.
+The bits those chunks contain are going to be checked/processed sequentially. The order is important. The first bit of the chunk is the least significant bit of the 2 byte value. The last (16th) bit of the chunk is the most significant bit.
 
-On a newly loaded array, the first bit should be read first, then the second, and so on.
+So, for example, if the 2 byte value was `0xC41C` (`1100010000011100b`), the first bit of the chunk would be `0`, and `1` would be the last (16th) bit of the chunk.
 
-The bit array should persist across all modes.
+During decompression, bits from the 'data description' bit stream will be requested. The flowchart below shows how it should be handled:
 
-When the decompression starts, the first bit array (located at the beginning of compressed data) should be loaded in, and the decompression enters a '[Default Mode](#default-mode)'.
+```
+   +---------+
+   |   Bit   |
+   |requested|
+   +---------+
+        |
+        v
+  +----------+
+  | Load bit |
+  |from chunk|
+  +----------+
+        |
+        v
+  +------------+
+  |Was this the|  Yes   +--------+
+  |last bit in |------->|Load new|
+  |   chunk?   |        | chunk  |
+  +------------+        +--------+
+        |                   |
+        | No                v
+        v             +------------+
+  +-----------+       |  Point to  |
+  |Advance bit|       |first bit in|
+  |  pointer  |       | new chunk  |
+  +-----------+       +------------+
+        |                   |
+        +-------------------+
+        |
+        v
+   +----+-----+
+   |  Output  |
+   |loaded bit|
+   +----------+
+```
+
+So, even though the bit stream has been split up into chunks, individual bits can be loaded from it in a continuous and seamless way.
+
+Each new chunk should be loaded in from compressed data, like all other data.
+
+### 3.2 Encrypted data
+
+There is encrypted data stored between the chunks. It will be loaded in and decrypted when necessary as described in '[4.2 Decryption](#42-decryption)'.
+
+### 3.3 Relocation data
+
+The decompression process will finish before all of the compressed data is processed. The rest of the compressed data describes how the pointers within decompressed data should be relocated. This process will be described in '[5 Pointer relocation](#5-pointer-relocation)'.
 
 
-
-## Default Mode
-
-During the Default Mode, a single bit is read from the bit array.
-
-* If the bit is a 0, then Decrypt Mode should be entered, where a byte of compressed data is decrypted and transferred to decompressed data. This will be explained further in '[Decrypt Mode](#decrypt-mode)'.
-* If the bit is a 1, then Copy Mode should be entered, where a part of the decompressed data is duplicated. This will be explained further in '[Copy Mode](#copy-mode)'.
-
-Then, once the appropriate action has been done, the Default Mode repeats. It should be repeated as long as there is data available to read, or until the decompression finishes, which will be described in '[Copy Mode](#copy-mode)'.
+----------
 
 
+## 4 Decompression
 
-## Decrypt Mode
+At the start of decompression, the first chunk should be loaded in. The 'bit pointer' should point to the first bit in this chunk.
 
-During the Decrypt Mode, the next *byte* from compressed data should be read.
+### 4.1 Decision
 
-This byte is encrypted with an XOR cipher. It can be decrypted by performing an XOR operation on the byte, with the right key.
+A bit should be read from the 'data description' bit stream, as described previously.
 
-The key varies, but it follows a pattern. It depends on which bit within the bit array caused the Decrypt Mode to be entered. The table below shows the bit positions with their equivalent keys.
+* If the bit is a `0`, then a single byte from the compressed data should be decrypted. This will be explained further in '[4.2 Decryption](#42-decryption)'.
+* If the bit is a `1`, then a part of the decompressed data should be duplicated. This will be explained further in '[4.3 Duplication](#43-duplication)'.
 
-| Bit position |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  10 |  11 |  12 |  13 |  14 |  15 |  16 |
-|:------------:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-|     Key      |  15 |  14 |  13 |  12 |  11 |  10 |  9  |  8  |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  16 |
+Then, once an appropriate action has been done, another [Decision](#41-decision) should be made, followed by the right action.
 
-Keep in mind that the key for the 16th bit is 16, not 0.
-
-Once an XOR operation has been performed on the byte (with the correct key), the decrypted byte should be stored in the decompressed data.
-
-When this is done, Default Mode should be re-entered.
+This should be repeated until all of the compressed data has been processed, or until decompression has finished, which will be described in '[4.3.1.1 Special case](#4311-special-case)'.
 
 
-
-## Copy Mode
-
-The Copy Mode duplicates some of the existing decompressed data and appends it to the end of the decompressed data.
-
-To do that, it needs to figure out how many bytes to copy, and where from.
+----------
 
 
-### Number of bytes
+### 4.2 Decryption
 
-The number of bytes that the Copy Mode will copy can be found by reading in bits from the bit arrays.
+When decrypting, a byte from the compressed data is loaded in, decrypted and placed in decompressed data.
 
-The bits form a codeword of a specifically designed 'Huffman code'.
-The table below shows how the codewords are to be decoded:
+The byte is encrypted with an XOR cipher. It can be decrypted by performing an XOR operation on the byte, with the right key.
+
+The key is the number of unread bits in the current chunk, so it can range from 16 to 1. It can't be 0, because when all bits have been read from a chunk, a new chunk should be loaded in, which will have 16 unread bits.
+
+
+----------
+
+
+### 4.3 Duplication
+
+When duplicating, a part of the existing decompressed data is duplicated and appended to the end.
+
+In order to do that, we need to know how many bytes to copy, and where from.
+
+#### 4.3.1 Number of bytes
+
+Once it has been decided that decompressed data needs to be duplicated, a few bits from the bit stream will need to be loaded in. These bits will determine the number of bytes that should be duplicated.
+
+However, it is not certain how many bits need to be loaded in, because the values are encoded using a prefix code, which is variable-length. This is done to compress them.
+
+The table below shows how codewords should be decoded. The leftmost bit is the first bit read, the second one is the second bit read, and so on.
+
+The decimal values are provided for convenience, as they don't have to (and maybe shouldn't) be used in decoding.
+
+If the table looks confusing, I would recommend reading about prefix codes, Huffman codes, or even Shannon–Fano codes.
 
 |   Binary  | Decimal | Decoded |
 |-----------|:-------:|:-------:|
 | 10        |    2    |    2    |
 | 11        |    3    |    3    |
 | 000       |    0    |    4    |
-| 0010      |    2    |	   5    |
+| 0010      |    2    |    5    |
 | 0011      |    3    |    6    |
-| 0100      |    4    |	   7    |
+| 0100      |    4    |    7    |
 | 01010     |    10   |    8    |
 | 01011     |    11   |    9    |
 | 01100     |    12   |    10   |
@@ -146,32 +225,31 @@ The table below shows how the codewords are to be decoded:
 | 011111110 |   254   |    23   |
 | 011111111 |   255   |    24   |
 
-The task of decoding these numbers can be done in many ways. In any case, as few bits should be read as possible. If the bits match any of the binary numbers, then the number is decoded.
+If a codeword consists of only 2 bits, then only 2 bits should be loaded in to decode it. This is possible due to the properties of prefix codes, where no codeword is the prefix of another codeword.
 
-The decoded number is the number of bytes to be copied in Copy Mode.
+The decoded value is the number of bytes that Duplication should copy.
 
-#### Further explanation
-One could start off by reading in two bits from the bit arrays, and checking if they matches with any of the top two options:
-* If it does (i.e. the first bit read was a 1), then the number is decoded. No more bytes should be read.
-* If it doesn't (i.e. the first bit read wasn't a 1), then the third bit should be loaded in.
+##### 4.3.1.1 Special case
 
-Then the bits are checked against the 3rd option. If it doesn't match, the next bit is loaded in. Then they are checked against the next 3 options. And so on.
+If the bits decode into the 'Special case', then a byte should be read from compressed data:
 
-This might be a naive way to decode the numbers, but it is quick, easy, and clear. One could also try to decode it with a 'Huffman tree' or something else. As long as the bits are decoded correctly, it doesn't matter.
-
-#### Special case
-If the bits decode into the 'Special case', then a single byte should be read from compressed data:
-* If the byte is `0xFE`, then the Copy Mode should be aborted, and Default Mode should commence.
-* If the byte is `0xFF`, then the Copy Mode should be aborted, and **the decompression process is finished**. One can now proceed with the relocation process, described at '[Pointer relocation](pointer-relocation)'.
-* Otherwise, the number of bytes to be copied in Copy Mode is equal to `byte + 25`. This is used to allow more than 24 bytes to be copied.
+* If the byte is `0xFE`, then Duplication should be aborted, and a [Decision](#41-decision) should be made again.
+* If the byte is `0xFF`, then Duplication should be aborted, and **the decompression process is finished**. One can now proceed with the relocation process, described at '[5 Pointer relocation](#5-pointer-relocation)'.
+* Otherwise, the number of bytes that Duplication should copy is `byte + 25`.
 
 
-### Position
+----------
 
-If Copy Mode wasn't aborted, then the number of bytes to copy was either decoded or loaded in. Now one can find the position of the bytes that are to be copied.
-The position will be specified by an offset going back through the decompressed data. The offset will specify the beginning of the data to copy.
 
-The offset is a two byte value, with a less significant byte and a more significant byte. The more significant byte will be found first.
+#### 4.3.2 Offset
+
+If Duplication wasn't aborted, then the number of bytes to copy was either decoded or loaded in. Now one should find the position of the bytes that are to be copied.
+
+The position will be found as a backward offset from the end of existing compressed data. The offset will specify the beginning of the data to copy.
+
+For example, if the offset is 5, then the 5th to last byte would be copied, assuming only 1 byte was to be copied.
+
+The offset is a 2-byte value, with a less significant byte and a more significant byte. The more significant byte will be found first.
 
 If the number of bytes to be copied (found previously) is 2, then the more significant byte is going to be 0, and no decoding should be done.
 
@@ -216,25 +294,28 @@ There is no special case for this one.
 
 Once the more significant byte has been found, a byte should be loaded in from the compressed data. The loaded byte is the less significant byte of the offset.
 
-These two bytes combine into a 2 byte number, which is the offset. It can be used along with the 'number of bytes' to duplicate decompressed data.
+These two bytes combine into a 2-byte number, which is the offset. It can be used along with the 'number of bytes' (found previously) to duplicate decompressed data.
 
 
-### Duplicating data
+----------
+
+
+#### 4.3.3 Duplicating data
 
 Once the 'number of bytes' and the offset have been found, the decompressed data can be duplicated.
 
-If `l` is the length of the existing decompressed data, then decompressed data from `l - offset` to `l - offset + number` should be copied and appended in front of the existing decompressed data.
-
-Once it is copied, the Default Mode should be re-entered.
+If `l` is the length of the existing decompressed data, then decompressed data from `l - offset` to `l - offset + number of bytes` should be copied and appended in front of the existing decompressed data.
 
 
+----------
 
-## Pointer relocation
+
+## 5 Pointer relocation
 
 Once the decompression is finished, the pointers within the decompressed code can be relocated, so that they point to the right address.
 
-However, this only has to be done if you want to execute the code and you are running it in DOS.
+However, this has little practical use outside of DOS, plus the strings/data are left unchanged.
 
-The strings/data are left unchanged.
+It might be even better to leave the pointers as they are, since they will remain relative to the start decompressed data.
 
-I could explain how to do it, but I don't see the point.
+As such, I won't explain how to relocate the pointers. I'm sorry if you really needed to do it.
