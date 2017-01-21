@@ -194,7 +194,7 @@ However, it is not certain how many bits need to be loaded in, because the value
 
 The table below shows how codewords should be decoded. The leftmost bit is the first bit read, the second one is the second bit read, and so on.
 
-The decimal values are provided for convinience, as they don't have to (and maybe shouldn't) be used in decoding.
+The decimal values are provided for convenience, as they don't have to (and maybe shouldn't) be used in decoding.
 
 If the table looks confusing, I would recommend reading about prefix codes, Huffman codes, or even Shannon–Fano codes.
 
