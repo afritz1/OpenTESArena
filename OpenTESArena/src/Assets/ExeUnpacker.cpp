@@ -11,13 +11,6 @@
 
 #include "components/vfs/manager.hpp"
 
-enum class DecompressionMode
-{
-	Default,
-	Decrypt,
-	Copy
-};
-
 ExeUnpacker::ExeUnpacker(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
@@ -56,63 +49,74 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 	// A 16-bit array of compressed data.
 	uint16_t bitArray = Bytes::getLE16(compressedStart);
 
-	// Decompression mode for determining how bits are interpreted.
-	auto mode = DecompressionMode::Default;
+	// Offset from start of compressed data (start at 2 because of the bit array).
+	int byteIndex = 2;
+	
+	// Number of bits consumed in the current 16-bit array.
+	int bitsRead = 0;
 
-	// Continually read bit arrays from the compressed data. Break once a
-	// compressed byte equals 0xFF in copy mode.
-	int byteIndex = 0; // Offset from start of compressed data.
-	int bitIndex = 0; // Position in 16-bit array.
+	// Continually read bit arrays from the compressed data and interpret each bit. 
+	// Break once a compressed byte equals 0xFF in copy mode.
 	while (true)
 	{
-		// Advance the bit array if done with the current one.
-		if (bitIndex > 15)
+		// Lambda for getting the next byte from compressed data.
+		auto getNextByte = [compressedStart, &byteIndex]()
 		{
-			byteIndex += 2;
-			bitIndex = 0;
-			bitArray = Bytes::getLE16(compressedStart + byteIndex);
-		}
-
-		const bool bit = (bitArray & (1 << bitIndex)) != 0;
-
-		// Choose which decompression mode to use for the current bit.
-		if (mode == DecompressionMode::Default)
-		{
-			mode = bit ? DecompressionMode::Copy : DecompressionMode::Decrypt;
-		}
-
-		if (mode == DecompressionMode::Decrypt)
-		{
-			// Read the next byte from the compressed data (after the bit array).
-			const uint8_t encryptedByte = compressedStart[byteIndex + 2];
+			const uint8_t byte = compressedStart[byteIndex];
 			byteIndex++;
+
+			return byte;
+		};
+
+		// Lambda for getting the next bit in the theoretical bit stream.
+		auto getNextBit = [compressedStart, &bitArray, &bitsRead, &getNextByte]()
+		{
+			// Advance the bit array if done with the current one.
+			if (bitsRead == 16)
+			{
+				bitsRead = 0;
+
+				// Get two bytes in little endian format.
+				const uint8_t byte1 = getNextByte();
+				const uint8_t byte2 = getNextByte();
+				bitArray = byte1 | (byte2 << 8);
+			}
+
+			const bool bit = (bitArray & (1 << bitsRead)) != 0;
+			bitsRead++;
+
+			return bit;
+		};
+		
+		// Decide which mode to use for the current bit.
+		if (getNextBit())
+		{
+			// "Copy" mode.
+			// Calculate which bytes in the decompressed data to duplicate and append.
+			Debug::crash("Exe Unpacker", "Copy mode not implemented.");
+		}
+		else
+		{
+			// "Decryption" mode.
+			// Read the next byte from the compressed data.
+			const uint8_t encryptedByte = getNextByte();
 
 			// Lambda for decrypting an encrypted byte with an XOR operation based on 
 			// the current bit index.
-			auto decrypt = [](uint8_t encryptedByte, int bitIndex)
+			auto decrypt = [](uint8_t encryptedByte, int bitsRead)
 			{
-				const uint8_t key = (bitIndex < 15) ? (15 - bitIndex) : 16;
+				const uint8_t key = (bitsRead < 16) ? (16 - bitsRead) : 16;
 				const uint8_t decryptedByte = encryptedByte ^ key;
 				return decryptedByte;
 			};
 
 			// Decrypt the byte.
-			const uint8_t decryptedByte = decrypt(encryptedByte, bitIndex);
+			const uint8_t decryptedByte = decrypt(encryptedByte, bitsRead);
 
 			// Append the decrypted byte onto the decompressed data.
 			decomp.at(decompIndex) = decryptedByte;
 			decompIndex++;
-
-			// Advance to the next bit in the bit array.
-			bitIndex++;
 		}
-		else
-		{
-			// Copy mode.
-			Debug::crash("Exe Unpacker", "Copy mode not implemented.");
-		}
-
-		mode = DecompressionMode::Default;
 	}
 
 	// Keep this until the decompressor works.
