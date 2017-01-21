@@ -71,6 +71,9 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 		// Lambda for getting the next bit in the theoretical bit stream.
 		auto getNextBit = [compressedStart, &bitArray, &bitsRead, &getNextByte]()
 		{
+			const bool bit = (bitArray & (1 << bitsRead)) != 0;
+			bitsRead++;
+
 			// Advance the bit array if done with the current one.
 			if (bitsRead == 16)
 			{
@@ -81,9 +84,6 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 				const uint8_t byte2 = getNextByte();
 				bitArray = byte1 | (byte2 << 8);
 			}
-
-			const bool bit = (bitArray & (1 << bitsRead)) != 0;
-			bitsRead++;
 
 			return bit;
 		};
@@ -102,10 +102,11 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			const uint8_t encryptedByte = getNextByte();
 
 			// Lambda for decrypting an encrypted byte with an XOR operation based on 
-			// the current bit index.
+			// the current bit index. "bitsRead" is between 0 and 15. It is 0 if the
+			// 16th bit of the previous array was used to get here.
 			auto decrypt = [](uint8_t encryptedByte, int bitsRead)
 			{
-				const uint8_t key = (bitsRead < 16) ? (16 - bitsRead) : 16;
+				const uint8_t key = 16 - bitsRead;
 				const uint8_t decryptedByte = encryptedByte ^ key;
 				return decryptedByte;
 			};
