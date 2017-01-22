@@ -69,7 +69,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 		};
 
 		// Lambda for getting the next bit in the theoretical bit stream.
-		auto getNextBit = [compressedStart, &bitArray, &bitsRead, &getNextByte]()
+		auto getNextBit = [&bitArray, &bitsRead, &getNextByte]()
 		{
 			const bool bit = (bitArray & (1 << bitsRead)) != 0;
 			bitsRead++;
