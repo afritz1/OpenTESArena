@@ -25,6 +25,7 @@ class Renderer
 {
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
+	static const std::string DEFAULT_TITLE;
 
 	SDL_Window *window;
 	SDL_Renderer *renderer;
@@ -88,6 +89,9 @@ public:
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(SDL_Surface *icon);
+
+	// Sets the window title.
+	void setWindowTitle(const std::string &title);
 
 	// Teleports the mouse to a location in the window.
 	void warpMouse(int x, int y);

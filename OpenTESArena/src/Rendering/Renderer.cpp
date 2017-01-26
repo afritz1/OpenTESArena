@@ -14,6 +14,7 @@
 #include "../Utilities/Debug.h"
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
+const std::string Renderer::DEFAULT_TITLE = "OpenTESArena";
 const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
@@ -31,7 +32,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	// Initialize window. The SDL_Surface is obtained from this window.
 	this->window = [width, height, fullscreen]()
 	{
-		std::string title = "OpenTESArena";
+		const std::string &title = Renderer::DEFAULT_TITLE;
 		return fullscreen ?
 			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED,
 				SDL_WINDOWPOS_UNDEFINED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP) :
@@ -320,6 +321,11 @@ void Renderer::resize(int width, int height, double resolutionScale)
 void Renderer::setWindowIcon(SDL_Surface *icon)
 {
 	SDL_SetWindowIcon(this->window, icon);
+}
+
+void Renderer::setWindowTitle(const std::string &title)
+{
+	SDL_SetWindowTitle(this->window, title.c_str());
 }
 
 void Renderer::warpMouse(int x, int y)
