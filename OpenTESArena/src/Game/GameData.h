@@ -2,6 +2,7 @@
 #define GAME_DATA_H
 
 #include <memory>
+#include <vector>
 
 // Intended to be a container for the player and world data that is currently active 
 // while a player is loaded (i.e., not in the main menu).
@@ -19,19 +20,22 @@ class GameData
 private:
 	std::unique_ptr<Player> player;
 	std::unique_ptr<EntityManager> entityManager;
+	std::vector<char> voxelGrid;
+	std::vector<char> collisionGrid;
 	double gameTime;
 	int worldWidth, worldHeight, worldDepth;
-	// province... location... voxels... weather...
-	// sprites...
+	// province... location... weather...
 	// date...
 public:
 	GameData(std::unique_ptr<Player> player,
-		std::unique_ptr<EntityManager> entityManager,
-		double gameTime, int worldWidth, int worldHeight, int worldDepth);
+		std::unique_ptr<EntityManager> entityManager, double gameTime, 
+		int worldWidth, int worldHeight, int worldDepth);
 	~GameData();
 
 	Player &getPlayer() const;
 	EntityManager &getEntityManager() const;
+	std::vector<char> &getVoxelGrid(); // 3D array.
+	std::vector<char> &getCollisionGrid(); // 3D array.
 	double getGameTime() const;
 	int getWorldWidth() const;
 	int getWorldHeight() const;
