@@ -136,10 +136,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			int worldHeight = 5;
 			int worldDepth = 32;
 
-			// Initialize 3D rendering program.
+			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
 			renderer.initializeWorldRendering(
-				worldWidth, worldHeight, worldDepth, 
 				game->getOptions().getResolutionScale(), false);
 
 			// Send some textures and test geometry to renderer memory. Eventually

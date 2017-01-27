@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@
 
 class Color;
 class Int2;
+class SoftwareRenderer;
 
 struct SDL_Rect;
 struct SDL_Renderer;
@@ -30,6 +32,7 @@ private:
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *originalTexture, *gameWorldTexture; // Frame buffers.
+	std::unique_ptr<SoftwareRenderer> softwareRenderer; // 3D renderer.
 	double letterboxAspect;
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
@@ -101,12 +104,11 @@ public:
 	// so only set it to true when the original frame buffer needs transparency.
 	void useTransparencyBlending(bool blend);
 
-	// Initialize the renderer for the game world. The "renderFullWindow" argument 
+	// Initialize the renderer for the game world. The "fullGameWindow" argument 
 	// determines whether to render a "fullscreen" 3D image or just the part above 
 	// the game interface. If there is an existing renderer in memory, it will be 
 	// overwritten with the new one.
-	void initializeWorldRendering(int worldWidth, int worldHeight, int worldDepth,
-		double resolutionScale, bool renderFullWindow);
+	void initializeWorldRendering(double resolutionScale, bool fullGameWindow);
 
 	// Helper methods for interacting with render memory.
 	// - Eventually, the geometry methods here will be separated into "static" and
