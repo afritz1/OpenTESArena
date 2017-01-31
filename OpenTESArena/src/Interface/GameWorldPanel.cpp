@@ -578,6 +578,30 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
+void GameWorldPanel::drawDebugText(Renderer &renderer)
+{
+	const Int2 windowDims = renderer.getWindowDimensions();
+	const double resolutionScale = this->getGame()->getOptions().getResolutionScale();
+
+	const auto &player = this->getGame()->getGameData().getPlayer();
+	const Float3d &position = player.getPosition();
+	const Float3d &direction = player.getDirection();
+
+	TextBox tempText(2, 2, Color::White,
+		"Screen: " + std::to_string(windowDims.getX()) + "x" +
+		std::to_string(windowDims.getY()) + "\n" +
+		"Resolution scale: " + std::to_string(resolutionScale) + "\n" +
+		"X: " + std::to_string(position.getX()) + "\n" +
+		"Y: " + std::to_string(position.getY()) + "\n" +
+		"Z: " + std::to_string(position.getZ()) + "\n" +
+		"DirX: " + std::to_string(direction.getX()) + "\n" +
+		"DirY: " + std::to_string(direction.getY()) + "\n" +
+		"DirZ: " + std::to_string(direction.getZ()),
+		this->getGame()->getFontManager().getFont(FontName::D),
+		TextAlignment::Left, renderer);
+	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
+}
+
 void GameWorldPanel::updateCursorRegions(int width, int height)
 {
 	// Scale ratios.
@@ -636,13 +660,13 @@ void GameWorldPanel::tick(double dt)
 	player.tick(this->getGame(), dt);
 
 	// Update renderer members that are refreshed each frame.
-	/*double verticalFOV = this->getGame()->getOptions().getVerticalFOV();
 	auto &renderer = this->getGame()->getRenderer();
-	renderer.updateCamera(player.getPosition(), player.getDirection(), verticalFOV);
-	renderer.updateGameTime(gameData.getGameTime());
+	renderer.updateCamera(player.getPosition(), player.getDirection(), 
+		this->getGame()->getOptions().getVerticalFOV());
+	//renderer.updateGameTime(gameData.getGameTime()); // To do.
 
 	// -- test -- update test sprites.
-	const Float3d playerRight = player.getFrame().getRight();
+	/*const Float3d playerRight = player.getFrame().getRight();
 	const Float3f spriteRight(
 		static_cast<float>(-playerRight.getX()),
 		static_cast<float>(-playerRight.getY()),
@@ -680,15 +704,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw game world onto the native frame buffer. The game world buffer
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
-	renderer.renderWorld();
-	// -- temp text --
-	TextBox tempText(Int2(160, 80), Color::White,
-		"Moving to software rendering\nsoon!",
-		this->getGame()->getFontManager().getFont(FontName::Arena),
-		TextAlignment::Center, renderer);
-	renderer.drawToOriginal(tempText.getTexture(), 
-		tempText.getX(), tempText.getY());
-	// -- end temp text --
+	auto &gameData = this->getGame()->getGameData();
+	renderer.renderWorld(gameData.getVoxelGrid(), gameData.getWorldWidth(),
+		gameData.getWorldHeight(), gameData.getWorldDepth());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -696,6 +714,9 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Set original frame buffer blending to true.
 	renderer.useTransparencyBlending(true);
+
+	// Draw some debug text.
+	this->drawDebugText(renderer);
 
 	// Draw game world interface.
 	const auto &gameInterface = textureManager.getTexture(

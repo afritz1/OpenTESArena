@@ -342,6 +342,34 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				std::move(player), std::move(entityManager), gameTime, 
 				worldWidth, worldHeight, worldDepth));
 
+			// -- test --
+			auto &voxelGrid = gameData->getVoxelGrid();
+
+			// Set random voxels.
+			Random random(0);
+
+			for (int k = 0; k < worldDepth; ++k)
+			{
+				for (int i = 0; i < worldWidth; ++i)
+				{
+					// Ground.
+					const int j = 0;
+					const int index = i + (j * worldWidth) + (k * worldWidth * worldHeight);
+					voxelGrid[index] = random.next(2);
+				}
+			}
+
+			for (int n = 0; n < 200; ++n)
+			{
+				const int x = random.next(worldWidth);
+				const int y = 1 + random.next(worldHeight - 1);
+				const int z = random.next(worldDepth);
+
+				const int index = x + (y * worldWidth) + (z * worldWidth * worldHeight);
+				voxelGrid[index] = 1;
+			}
+			// -- end test --
+
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
 		};

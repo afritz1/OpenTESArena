@@ -40,6 +40,9 @@ private:
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
+
+	// Draws some debug text.
+	void drawDebugText(Renderer &renderer);
 public:
 	// Constructs the game world panel. The GameData object in Game must be
 	// initialized.

@@ -145,7 +145,8 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld();
+	void renderWorld(const std::vector<char> &voxelGrid, int gridWidth,
+		int gridHeight, int gridDepth);
 
 	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);

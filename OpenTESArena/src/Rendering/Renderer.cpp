@@ -378,9 +378,10 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 
 void Renderer::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->updateCamera(eye, direction, fovY);
-	Debug::crash("Renderer", "updateCamera() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setEye(eye);
+	this->softwareRenderer->setForward(direction);
+	this->softwareRenderer->setFovY(fovY);
 }
 
 void Renderer::updateGameTime(double gameTime)
@@ -561,13 +562,14 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect);
 }
 
-void Renderer::renderWorld()
+void Renderer::renderWorld(const std::vector<char> &voxelGrid, int gridWidth,
+	int gridHeight, int gridDepth)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
 
 	// Render the game world to a frame buffer.
-	this->softwareRenderer->render();
+	this->softwareRenderer->render(voxelGrid, gridWidth, gridHeight, gridDepth);
 
 	int renderWidth;
 	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);
