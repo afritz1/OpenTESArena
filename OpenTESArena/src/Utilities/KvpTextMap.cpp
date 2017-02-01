@@ -28,10 +28,12 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 	while (std::getline(iss, line))
 	{
 		// Ignore comments and blank lines.
+		if (line.length() == 0)
+			continue;
+
 		const char firstChar = line.at(0);
 		if ((firstChar == KvpTextMap::COMMENT) ||
-			(firstChar == '\r') ||
-			(firstChar == '\n'))
+		    (firstChar == '\r'))
 		{
 			continue;
 		}
