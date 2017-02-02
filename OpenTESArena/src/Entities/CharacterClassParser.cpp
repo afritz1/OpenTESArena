@@ -91,12 +91,13 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	// For each line, get the substrings between commas.
 	while (std::getline(iss, line))
 	{
-		const char &firstColumn = line.at(0);
-
 		// Ignore comments and blank lines.
+		if (line.length() == 0)
+			continue;
+
+		const char &firstColumn = line.at(0);
 		if ((firstColumn == comment) ||
-			(firstColumn == '\r') ||
-			(firstColumn == '\n'))
+		    (firstColumn == '\r'))
 		{
 			continue;
 		}
@@ -175,7 +176,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 		// Get the set of weapons (read until the end of the line).
 		index += 2;
 		oldIndex = index;
-		while ((line.at(index) != '\r') && (line.at(index) != '\n'))
+		while ((index < line.length()) && (line.at(index) != '\r'))
 		{
 			++index;
 		}
