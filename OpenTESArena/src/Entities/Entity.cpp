@@ -5,7 +5,7 @@
 #include "EntityManager.h"
 #include "EntityType.h"
 
-Entity::Entity(EntityType entityType, const Float3d &position, 
+Entity::Entity(EntityType entityType, const Double3 &position, 
 	EntityManager &entityManager)
 {
 	this->id = entityManager.nextID();
@@ -23,7 +23,7 @@ int Entity::getID() const
 	return this->id;
 }
 
-const Float3d &Entity::getPosition() const
+const Double3 &Entity::getPosition() const
 {
 	return this->position;
 }

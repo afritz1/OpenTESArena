@@ -3,7 +3,7 @@
 
 #include <memory>
 
-class Int2;
+#include "../Math/Vector2.h"
 
 struct SDL_Rect;
 

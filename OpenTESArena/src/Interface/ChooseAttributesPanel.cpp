@@ -19,7 +19,6 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
-#include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -52,8 +51,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -69,8 +68,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -86,8 +85,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -119,9 +118,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			// menu has settings for the renderer.
 			std::unique_ptr<EntityManager> entityManager(new EntityManager());
 
-			Float3d position = Float3d(1.50, 1.70, 2.50); // Arbitrary player height.
-			Float3d direction = Float3d(1.0, 0.0, 1.0).normalized();
-			Float3d velocity = Float3d(0.0, 0.0, 0.0);
+			Double3 position = Double3(1.50, 1.70, 2.50); // Arbitrary player height.
+			Double3 direction = Double3(1.0, 0.0, 1.0).normalized();
+			Double3 velocity = Double3(0.0, 0.0, 0.0);
 
 			// Some arbitrary max speeds.
 			double maxWalkSpeed = 2.0;
@@ -330,8 +329,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				{
 					renderer.updateLight(
 						(i - 1) + ((k - 1) * (worldWidth - 1)),
-						Float3d(i + 0.90, 1.50, k + 0.20),
-						Float3d(1.0, 0.80, 0.40),
+						Double3(i + 0.90, 1.50, k + 0.20),
+						Double3(1.0, 0.80, 0.40),
 						6.0);
 				}
 			}*/
@@ -534,9 +533,9 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);
 	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawToOriginal(pants.get(), pantsOffset.getX(), pantsOffset.getY());
-	renderer.drawToOriginal(head.get(), headOffset.getX(), headOffset.getY());
-	renderer.drawToOriginal(shirt.get(), shirtOffset.getX(), shirtOffset.getY());
+	renderer.drawToOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawToOriginal(head.get(), headOffset.x, headOffset.y);
+	renderer.drawToOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw attributes texture.
 	const auto &attributesBackground = textureManager.getTexture(
@@ -559,7 +558,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

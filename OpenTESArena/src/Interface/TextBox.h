@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
+#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 
 // Redesigned for use with the font system using Arena assets.
 
 class Font;
-class Int2;
 class Renderer;
 
 enum class FontName;

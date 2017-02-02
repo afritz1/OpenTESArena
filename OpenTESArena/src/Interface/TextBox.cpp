@@ -3,7 +3,6 @@
 #include "TextBox.h"
 
 #include "TextAlignment.h"
-#include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"
@@ -163,7 +162,7 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 
 TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text,
 	const Font &font, TextAlignment alignment, Renderer &renderer)
-	: TextBox(center.getX(), center.getY(), textColor, text, font, alignment, renderer)
+	: TextBox(center.x, center.y, textColor, text, font, alignment, renderer)
 {
 	// Just shift the resulting text box coordinates left and up to center it.
 	int width, height;

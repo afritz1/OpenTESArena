@@ -2,7 +2,7 @@
 
 #include "VoxelBuilder.h"
 
-#include "../Math/Float3.h"
+#include "../Math/Vector3.h"
 #include "../Rendering/Rect3D.h"
 
 std::vector<Rect3D> VoxelBuilder::makeSizedBlock(int x, int y, int z, float y1, float y2)
@@ -21,39 +21,39 @@ std::vector<Rect3D> VoxelBuilder::makeSizedBlock(int x, int y, int z, float y1, 
 
 	// Front.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + y2, zPos),
-		Float3f(xPos + 1.0f, yPos + y1, zPos),
-		Float3f(xPos, yPos + y1, zPos)));
+		Float3(xPos + 1.0f, yPos + y2, zPos),
+		Float3(xPos + 1.0f, yPos + y1, zPos),
+		Float3(xPos, yPos + y1, zPos)));
 
 	// Back.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + y2, zPos + 1.0f),
-		Float3f(xPos, yPos + y1, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos + y1, zPos + 1.0f)));
+		Float3(xPos, yPos + y2, zPos + 1.0f),
+		Float3(xPos, yPos + y1, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos + y1, zPos + 1.0f)));
 
 	// Top.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + y2, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos + y2, zPos),
-		Float3f(xPos, yPos + y2, zPos)));
+		Float3(xPos + 1.0f, yPos + y2, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos + y2, zPos),
+		Float3(xPos, yPos + y2, zPos)));
 
 	// Bottom.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos, zPos),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f),
-		Float3f(xPos, yPos, zPos + 1.0f)));
+		Float3(xPos + 1.0f, yPos, zPos),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f),
+		Float3(xPos, yPos, zPos + 1.0f)));
 
 	// Right.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + y2, zPos),
-		Float3f(xPos, yPos + y1, zPos),
-		Float3f(xPos, yPos + y1, zPos + 1.0f)));
+		Float3(xPos, yPos + y2, zPos),
+		Float3(xPos, yPos + y1, zPos),
+		Float3(xPos, yPos + y1, zPos + 1.0f)));
 
 	// Left.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + y2, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos + y1, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos + y1, zPos)));
+		Float3(xPos + 1.0f, yPos + y2, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos + y1, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos + y1, zPos)));
 
 	return rects;
 }
@@ -70,9 +70,9 @@ Rect3D VoxelBuilder::makeCeiling(int x, int y, int z)
 	const float zPos = static_cast<float>(z);
 
 	return Rect3D(
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos),
-		Float3f(xPos, yPos + 1.0f, zPos));
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos),
+		Float3(xPos, yPos + 1.0f, zPos));
 }
 
 Rect3D VoxelBuilder::makeFloor(int x, int y, int z)
@@ -82,9 +82,9 @@ Rect3D VoxelBuilder::makeFloor(int x, int y, int z)
 	const float zPos = static_cast<float>(z);
 
 	return Rect3D(
-		Float3f(xPos + 1.0f, yPos, zPos),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f),
-		Float3f(xPos, yPos, zPos + 1.0f));
+		Float3(xPos + 1.0f, yPos, zPos),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f),
+		Float3(xPos, yPos, zPos + 1.0f));
 }
 
 std::vector<Rect3D> VoxelBuilder::makeHollowY(int x, int y, int z)
@@ -100,27 +100,27 @@ std::vector<Rect3D> VoxelBuilder::makeHollowY(int x, int y, int z)
 
 	// Front.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos),
-		Float3f(xPos + 1.0f, yPos, zPos),
-		Float3f(xPos, yPos, zPos)));
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos),
+		Float3(xPos + 1.0f, yPos, zPos),
+		Float3(xPos, yPos, zPos)));
 
 	// Back.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + 1.0f, zPos + 1.0f),
-		Float3f(xPos, yPos, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f)));
+		Float3(xPos, yPos + 1.0f, zPos + 1.0f),
+		Float3(xPos, yPos, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f)));
 
 	// Right.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + 1.0f, zPos),
-		Float3f(xPos, yPos, zPos),
-		Float3f(xPos, yPos, zPos + 1.0f)));
+		Float3(xPos, yPos + 1.0f, zPos),
+		Float3(xPos, yPos, zPos),
+		Float3(xPos, yPos, zPos + 1.0f)));
 
 	// Left.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos)));
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos)));
 
 	return rects;
 }
@@ -138,15 +138,15 @@ std::vector<Rect3D> VoxelBuilder::makeHollowYZ(int x, int y, int z)
 
 	// Right.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + 1.0f, zPos),
-		Float3f(xPos, yPos, zPos),
-		Float3f(xPos, yPos, zPos + 1.0f)));
+		Float3(xPos, yPos + 1.0f, zPos),
+		Float3(xPos, yPos, zPos),
+		Float3(xPos, yPos, zPos + 1.0f)));
 
 	// Left.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos)));
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos)));
 
 	return rects;
 }
@@ -164,15 +164,15 @@ std::vector<Rect3D> VoxelBuilder::makeHollowXY(int x, int y, int z)
 
 	// Front.
 	rects.push_back(Rect3D(
-		Float3f(xPos + 1.0f, yPos + 1.0f, zPos),
-		Float3f(xPos + 1.0f, yPos, zPos),
-		Float3f(xPos, yPos, zPos)));
+		Float3(xPos + 1.0f, yPos + 1.0f, zPos),
+		Float3(xPos + 1.0f, yPos, zPos),
+		Float3(xPos, yPos, zPos)));
 
 	// Back.
 	rects.push_back(Rect3D(
-		Float3f(xPos, yPos + 1.0f, zPos + 1.0f),
-		Float3f(xPos, yPos, zPos + 1.0f),
-		Float3f(xPos + 1.0f, yPos, zPos + 1.0f)));
+		Float3(xPos, yPos + 1.0f, zPos + 1.0f),
+		Float3(xPos, yPos, zPos + 1.0f),
+		Float3(xPos + 1.0f, yPos, zPos + 1.0f)));
 
 	return rects;
 }

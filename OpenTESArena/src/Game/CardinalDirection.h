@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../Math/Float2.h"
+#include "../Math/Vector2.h"
 
 // North, northeast, southwest, etc..
 
@@ -14,7 +14,7 @@ class CardinalDirection
 private:
 	CardinalDirectionName directionName;
 public:
-	CardinalDirection(const Float2d &direction);
+	CardinalDirection(const Double2 &direction);
 	~CardinalDirection();
 
 	CardinalDirectionName getDirectionName() const;

@@ -3,32 +3,30 @@
 #include "Matrix4.h"
 
 #include "Constants.h"
-#include "Float3.h"
-#include "Float4.h"
 
 template <typename T>
-Matrix4<T>::Matrix4(const Float4<T> &x, const Float4<T> &y, const Float4<T> &z,
-	const Float4<T> &w)
+Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
+	const Vector4f<T> &w)
 {
-	this->x[0] = x.getX();
-	this->x[1] = x.getY();
-	this->x[2] = x.getZ();
-	this->x[3] = x.getW();
+	this->x[0] = x.x;
+	this->x[1] = x.y;
+	this->x[2] = x.z;
+	this->x[3] = x.w;
 
-	this->y[0] = y.getX();
-	this->y[1] = y.getY();
-	this->y[2] = y.getZ();
-	this->y[3] = y.getW();
+	this->y[0] = y.x;
+	this->y[1] = y.y;
+	this->y[2] = y.z;
+	this->y[3] = y.w;
 
-	this->z[0] = z.getX();
-	this->z[1] = z.getY();
-	this->z[2] = z.getZ();
-	this->z[3] = z.getW();
+	this->z[0] = z.x;
+	this->z[1] = z.y;
+	this->z[2] = z.z;
+	this->z[3] = z.w;
 
-	this->w[0] = w.getX();
-	this->w[1] = w.getY();
-	this->w[2] = w.getZ();
-	this->w[3] = w.getW();
+	this->w[0] = w.x;
+	this->w[1] = w.y;
+	this->w[2] = w.z;
+	this->w[3] = w.w;
 }
 
 template <typename T>
@@ -62,33 +60,9 @@ Matrix4<T>::~Matrix4()
 }
 
 template <typename T>
-Float4<T> Matrix4<T>::getX() const
-{
-	return Float4<T>(this->x[0], this->x[1], this->x[2], this->x[3]);
-}
-
-template <typename T>
-Float4<T> Matrix4<T>::getY() const
-{
-	return Float4<T>(this->y[0], this->y[1], this->y[2], this->y[3]);
-}
-
-template <typename T>
-Float4<T> Matrix4<T>::getZ() const
-{
-	return Float4<T>(this->z[0], this->z[1], this->z[2], this->z[3]);
-}
-
-template <typename T>
-Float4<T> Matrix4<T>::getW() const
-{
-	return Float4<T>(this->w[0], this->w[1], this->w[2], this->w[3]);
-}
-
-template <typename T>
 Matrix4<T> Matrix4<T>::identity()
 {
-	auto m = Matrix4<T>();
+	Matrix4<T> m;
 	m.x[0] = static_cast<T>(1.0);
 	m.y[1] = static_cast<T>(1.0);
 	m.z[2] = static_cast<T>(1.0);
@@ -178,7 +152,7 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 }
 
 template <typename T>
-Matrix4<T> Matrix4<T>::operator *(const Matrix4<T> &m) const
+Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 {
 	auto p = Matrix4<T>();
 
@@ -274,17 +248,17 @@ Matrix4<T> Matrix4<T>::operator *(const Matrix4<T> &m) const
 }
 
 template <typename T>
-Float4<T> Matrix4<T>::operator*(const Float4<T> &f) const
+Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &f) const
 {
-	auto newX = (this->x[0] * f.getX()) + (this->y[0] * f.getY()) +
-		(this->z[0] * f.getZ()) + (this->w[0] * f.getW());
-	auto newY = (this->x[1] * f.getX()) + (this->y[1] * f.getY()) +
-		(this->z[1] * f.getZ()) + (this->w[1] * f.getW());
-	auto newZ = (this->x[2] * f.getX()) + (this->y[2] * f.getY()) +
-		(this->z[2] * f.getZ()) + (this->w[2] * f.getW());
-	auto newW = (this->x[3] * f.getX()) + (this->y[3] * f.getY()) +
-		(this->z[3] * f.getZ()) + (this->w[3] * f.getW());
-	return Float4<T>(newX, newY, newZ, newW);
+	T newX = (this->x[0] * f.x) + (this->y[0] * f.y) +
+		(this->z[0] * f.z) + (this->w[0] * f.w);
+	T newY = (this->x[1] * f.x) + (this->y[1] * f.y) +
+		(this->z[1] * f.z) + (this->w[1] * f.w);
+	T newZ = (this->x[2] * f.x) + (this->y[2] * f.y) +
+		(this->z[2] * f.z) + (this->w[2] * f.w);
+	T newW = (this->x[3] * f.x) + (this->y[3] * f.y) +
+		(this->z[3] * f.z) + (this->w[3] * f.w);
+	return Vector4f<T>(newX, newY, newZ, newW);
 }
 
 template <typename T>

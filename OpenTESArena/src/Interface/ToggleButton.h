@@ -3,11 +3,12 @@
 
 #include <functional>
 
+#include "../Math/Vector2.h"
+
 // A button for toggling on and off. When the button is toggled, the 
 // function for the new toggle state is called.
 
 class Game;
-class Int2;
 
 class ToggleButton
 {

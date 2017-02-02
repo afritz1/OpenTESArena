@@ -3,7 +3,6 @@
 #include "Button.h"
 
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
 #include "../Math/Rect.h"
 
 Button::Button(int x, int y, int width, int height, 
@@ -18,7 +17,7 @@ Button::Button(int x, int y, int width, int height,
 
 Button::Button(const Int2 &center, int width, int height, 
 	const std::function<void(Game*)> &function)
-	: Button(center.getX() - (width / 2), center.getY() - (height / 2), 
+	: Button(center.x - (width / 2), center.y - (height / 2), 
 		width, height, function) { }
 
 Button::Button(const std::function<void(Game*)> &function)

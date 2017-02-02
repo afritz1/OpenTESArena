@@ -15,7 +15,6 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -39,8 +38,8 @@ CharacterPanel::CharacterPanel(Game *game)
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -57,8 +56,8 @@ CharacterPanel::CharacterPanel(Game *game)
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -75,8 +74,8 @@ CharacterPanel::CharacterPanel(Game *game)
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.getX(),
-			origin.getY(),
+			origin.x,
+			origin.y,
 			color,
 			text,
 			font,
@@ -197,9 +196,9 @@ void CharacterPanel::render(Renderer &renderer)
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);
 	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawToOriginal(pants.get(), pantsOffset.getX(), pantsOffset.getY());
-	renderer.drawToOriginal(head.get(), headOffset.getX(), headOffset.getY());
-	renderer.drawToOriginal(shirt.get(), shirtOffset.getX(), shirtOffset.getY());
+	renderer.drawToOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawToOriginal(head.get(), headOffset.x, headOffset.y);
+	renderer.drawToOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw character stats background.
 	const auto &statsBackground = textureManager.getTexture(
@@ -227,7 +226,7 @@ void CharacterPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

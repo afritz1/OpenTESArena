@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Math/Vector2.h"
 
 class Button;
 class CharacterClass;
-class Int2;
 class Renderer;
 class TextBox;
 

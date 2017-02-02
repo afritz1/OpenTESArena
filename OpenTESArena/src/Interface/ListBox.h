@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 
 // This class defines a list of displayed text boxes. The index of a clicked text 

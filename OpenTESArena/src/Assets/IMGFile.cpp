@@ -3,7 +3,7 @@
 #include "IMGFile.h"
 
 #include "Compression.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 
@@ -53,8 +53,8 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		xoff = 0;
 		yoff = 0;
-		width = rawOverride->second.getX();
-		height = rawOverride->second.getY();
+		width = rawOverride->second.x;
+		height = rawOverride->second.y;
 		flags = 0;
 		len = width * height;
 	}

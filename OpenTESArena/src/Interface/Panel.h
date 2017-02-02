@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "../Math/Vector2.h"
+
 // Each panel interprets user input and draws to the screen. There is only one panel 
 // active at a time, and it is owned by the Game.
 
@@ -15,7 +17,6 @@
 class Color;
 class Font;
 class Game;
-class Int2;
 class Renderer;
 
 struct SDL_Texture;

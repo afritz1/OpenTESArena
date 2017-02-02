@@ -7,7 +7,6 @@
 #include "TextureName.h"
 #include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
-#include "../Math/Int2.h"
 
 namespace std
 {

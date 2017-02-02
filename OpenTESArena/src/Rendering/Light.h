@@ -3,29 +3,27 @@
 
 #include <vector>
 
-#include "../Math/Float3.h"
+#include "../Math/Vector3.h"
 
 // Helper class for managing lights in renderer memory.
 
 // The owner reference is managed elsewhere in the renderer. This class is just 
 // for the light's data.
 
-class Int3;
-
 class Light
 {
 private:
-	Float3d point, color;
+	Double3 point, color;
 	double intensity;
 
 	// Gets the axis-aligned bounding box for the light.
-	std::pair<Float3f, Float3f> getAABB() const;
+	std::pair<Float3, Float3> getAABB() const;
 public:
-	Light(const Float3d &point, const Float3d &color, double intensity);
+	Light(const Double3 &point, const Double3 &color, double intensity);
 	~Light();
 
-	const Float3d &getPoint() const;
-	const Float3d &getColor() const;
+	const Double3 &getPoint() const;
+	const Double3 &getColor() const;
 	double getIntensity() const;
 
 	// Returns a vector of voxel coordinates for all voxels that the light reaches,

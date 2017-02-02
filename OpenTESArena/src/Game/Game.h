@@ -17,7 +17,6 @@
 
 class GameData;
 class FontManager;
-class Int2;
 class Options;
 class Panel;
 class Renderer;

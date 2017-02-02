@@ -6,13 +6,12 @@
 #include <string>
 #include <vector>
 
+#include "../Math/Vector2.h"
 #include "../Media/Palette.h"
 
 // A CIF file has one or more images, and each image has some frames associated
 // with it. Examples of CIF images are character faces, cursors, and weapon 
 // animations.
-
-class Int2;
 
 class CIFFile
 {

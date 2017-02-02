@@ -12,7 +12,7 @@
 #include "OptionsParser.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
 #include "../Media/MusicFile.h"

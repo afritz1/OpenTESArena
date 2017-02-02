@@ -15,7 +15,7 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"

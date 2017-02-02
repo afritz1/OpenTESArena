@@ -3,7 +3,7 @@
 
 #include "Movable.h"
 
-Movable::Movable(const Float3d &velocity, double maxWalkSpeed, double maxRunSpeed)
+Movable::Movable(const Double3 &velocity, double maxWalkSpeed, double maxRunSpeed)
 	: velocity(velocity)
 {
 	this->maxWalkSpeed = maxWalkSpeed;
@@ -15,7 +15,7 @@ Movable::~Movable()
 
 }
 
-const Float3d &Movable::getVelocity() const
+const Double3 &Movable::getVelocity() const
 {
 	return this->velocity;
 }
@@ -30,7 +30,7 @@ double Movable::getMaxRunSpeed() const
 	return this->maxRunSpeed;
 }
 
-void Movable::accelerate(const Float3d &direction, double magnitude,
+void Movable::accelerate(const Double3 &direction, double magnitude,
 	bool isRunning, double dt)
 {
 	assert(dt >= 0.0);
@@ -39,7 +39,7 @@ void Movable::accelerate(const Float3d &direction, double magnitude,
 	assert(direction.isNormalized());
 
 	// Simple Euler integration for updating velocity.
-	Float3d newVelocity = this->velocity + ((direction * magnitude) * dt);
+	Double3 newVelocity = this->velocity + ((direction * magnitude) * dt);
 	
 	if (std::isfinite(newVelocity.length()))
 	{
@@ -56,7 +56,7 @@ void Movable::accelerate(const Float3d &direction, double magnitude,
 	}
 }
 
-void Movable::setVelocity(const Float3d &velocity)
+void Movable::setVelocity(const Double3 &velocity)
 {
 	assert(std::isfinite(velocity.length()));
 

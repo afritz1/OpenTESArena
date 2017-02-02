@@ -19,9 +19,9 @@
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/CoordinateFrame.h"
-#include "../Math/Int2.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
+#include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -157,7 +157,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game->getRenderer().getWindowDimensions();
-	this->updateCursorRegions(screenDims.getX(), screenDims.getY());
+	this->updateCursorRegions(screenDims.x, screenDims.y);
 }
 
 GameWorldPanel::~GameWorldPanel()
@@ -314,7 +314,7 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 			// the left or right screen edge.
 			const double dx = [this, &mousePosition]()
 			{
-				const int mouseX = mousePosition.getX();
+				const int mouseX = mousePosition.x;
 
 				// Native cursor regions for turning (scaled to the current window).
 				const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
@@ -393,8 +393,8 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 		if (turning)
 		{
 			auto dimensions = this->getGame()->getRenderer().getWindowDimensions();
-			double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.getX());
-			double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.getY());
+			double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.x);
+			double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.y);
 
 			// Pitch and/or yaw the camera.
 			const auto &options = this->getGame()->getOptions();
@@ -443,17 +443,17 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// Get some relevant player direction data.
-		Float2d groundDirection = player.getGroundDirection();
-		Float3d groundDirection3D = Float3d(groundDirection.getX(), 0.0,
-			groundDirection.getY()).normalized();
-		Float3d rightDirection = player.getFrame().getRight().normalized();
+		Double2 groundDirection = player.getGroundDirection();
+		Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
+			groundDirection.y).normalized();
+		Double3 rightDirection = player.getFrame().getRight().normalized();
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick)
 		{
 			const Int2 mousePosition = this->getMousePosition();
-			const int mouseX = mousePosition.getX();
-			const int mouseY = mousePosition.getY();
+			const int mouseX = mousePosition.x;
+			const int mouseY = mousePosition.y;
 
 			// Native cursor regions for motion (scaled to the current window).
 			const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
@@ -466,7 +466,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
 			double percent = 0.0;
-			Float3d accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection(0.0, 0.0, 0.0);
 			if (topLeft.contains(mousePosition))
 			{
 				// Forward.
@@ -523,7 +523,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		else if (forward || backward || ((left || right) && lCtrl))
 		{
 			// Calculate the acceleration direction based on input.
-			Float3d accelDirection(0.0, 0.0, 0.0);
+			Double3 accelDirection(0.0, 0.0, 0.0);
 			if (forward)
 			{
 				accelDirection = accelDirection + groundDirection3D;
@@ -584,19 +584,19 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const double resolutionScale = this->getGame()->getOptions().getResolutionScale();
 
 	const auto &player = this->getGame()->getGameData().getPlayer();
-	const Float3d &position = player.getPosition();
-	const Float3d &direction = player.getDirection();
+	const Double3 &position = player.getPosition();
+	const Double3 &direction = player.getDirection();
 
 	TextBox tempText(2, 2, Color::White,
-		"Screen: " + std::to_string(windowDims.getX()) + "x" +
-		std::to_string(windowDims.getY()) + "\n" +
+		"Screen: " + std::to_string(windowDims.x) + "x" +
+		std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + std::to_string(resolutionScale) + "\n" +
-		"X: " + std::to_string(position.getX()) + "\n" +
-		"Y: " + std::to_string(position.getY()) + "\n" +
-		"Z: " + std::to_string(position.getZ()) + "\n" +
-		"DirX: " + std::to_string(direction.getX()) + "\n" +
-		"DirY: " + std::to_string(direction.getY()) + "\n" +
-		"DirZ: " + std::to_string(direction.getZ()),
+		"X: " + std::to_string(position.x) + "\n" +
+		"Y: " + std::to_string(position.y) + "\n" +
+		"Z: " + std::to_string(position.z) + "\n" +
+		"DirX: " + std::to_string(direction.x) + "\n" +
+		"DirY: " + std::to_string(direction.y) + "\n" +
+		"DirZ: " + std::to_string(direction.z),
 		this->getGame()->getFontManager().getFont(FontName::D),
 		TextAlignment::Left, renderer);
 	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
@@ -666,11 +666,11 @@ void GameWorldPanel::tick(double dt)
 	//renderer.updateGameTime(gameData.getGameTime()); // To do.
 
 	// -- test -- update test sprites.
-	/*const Float3d playerRight = player.getFrame().getRight();
-	const Float3f spriteRight(
-		static_cast<float>(-playerRight.getX()),
-		static_cast<float>(-playerRight.getY()),
-		static_cast<float>(-playerRight.getZ()));
+	/*const Double3 playerRight = player.getFrame().getRight();
+	const Float3 spriteRight(
+		static_cast<float>(-playerRight.x),
+		static_cast<float>(-playerRight.y),
+		static_cast<float>(-playerRight.z));
 
 	static int index = 0;
 	for (int k = 1; k < gameData.getWorldDepth() - 1; k += 8)
@@ -678,9 +678,9 @@ void GameWorldPanel::tick(double dt)
 		for (int i = 1; i < gameData.getWorldWidth() - 1; i += 8)
 		{
 			Rect3D rect = Rect3D::fromFrame(
-				Float3f(i + 0.50f, 1.0f, k + 0.50f),
+				Float3(i + 0.50f, 1.0f, k + 0.50f),
 				spriteRight,
-				Float3f(0.0f, 1.0f, 0.0f),
+				Float3(0.0f, 1.0f, 0.0f),
 				(44.0f / 66.0f) * 0.75f,
 				1.0f * 0.75f);
 			renderer.updateSprite(
@@ -849,7 +849,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	}();
 
-	renderer.drawToNative(cursor.get(), mousePosition.getX(), mousePosition.getY(),
+	renderer.drawToNative(cursor.get(), mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 

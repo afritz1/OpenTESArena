@@ -4,7 +4,6 @@
 #include <array>
 
 #include "Panel.h"
-#include "../Math/Float2.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 

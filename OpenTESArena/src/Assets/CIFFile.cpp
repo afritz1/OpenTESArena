@@ -4,7 +4,6 @@
 #include "CIFFile.h"
 
 #include "Compression.h"
-#include "../Math/Int2.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 
@@ -50,8 +49,8 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 		yoff = 0;
 
 		const Int2 &dims = rawOverride->second.second;
-		width = dims.getX();
-		height = dims.getY();
+		width = dims.x;
+		height = dims.y;
 
 		flags = 0;
 		len = width * height;
@@ -245,22 +244,22 @@ int CIFFile::getImageCount() const
 
 int CIFFile::getXOffset(int index) const
 {
-	return this->offsets.at(index).getX();
+	return this->offsets.at(index).x;
 }
 
 int CIFFile::getYOffset(int index) const
 {
-	return this->offsets.at(index).getY();
+	return this->offsets.at(index).y;
 }
 
 int CIFFile::getWidth(int index) const
 {
-	return this->dimensions.at(index).getX();
+	return this->dimensions.at(index).x;
 }
 
 int CIFFile::getHeight(int index) const
 {
-	return this->dimensions.at(index).getY();
+	return this->dimensions.at(index).y;
 }
 
 uint32_t *CIFFile::getPixels(int index) const

@@ -14,7 +14,6 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
@@ -247,9 +246,9 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);
 	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawToOriginal(pants.get(), pantsOffset.getX(), pantsOffset.getY());
-	renderer.drawToOriginal(head.get(), headOffset.getX(), headOffset.getY());
-	renderer.drawToOriginal(shirt.get(), shirtOffset.getX(), shirtOffset.getY());
+	renderer.drawToOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawToOriginal(head.get(), headOffset.x, headOffset.y);
+	renderer.drawToOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw character equipment background.
 	const auto &equipmentBackground = textureManager.getTexture(
@@ -272,7 +271,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	const auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

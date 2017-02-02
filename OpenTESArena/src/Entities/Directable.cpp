@@ -6,7 +6,7 @@
 #include "../Math/Constants.h"
 #include "../Math/CoordinateFrame.h"
 
-Directable::Directable(const Float3d &direction)
+Directable::Directable(const Double3 &direction)
 {
 	this->setDirection(direction);
 }
@@ -16,30 +16,30 @@ Directable::~Directable()
 
 }
 
-Float3d Directable::getGlobalUp()
+Double3 Directable::getGlobalUp()
 {
-	return Float3d(0.0, 1.0, 0.0);
+	return Double3(0.0, 1.0, 0.0);
 }
 
-const Float3d &Directable::getDirection() const
+const Double3 &Directable::getDirection() const
 {
 	return this->direction;
 }
 
-Float2d Directable::getGroundDirection() const
+Double2 Directable::getGroundDirection() const
 {
-	return Float2d(this->direction.getX(), this->direction.getZ()).normalized();
+	return Double2(this->direction.x, this->direction.z).normalized();
 }
 
 CoordinateFrame Directable::getFrame() const
 {
-	Float3d forward = this->direction;
-	Float3d right = forward.cross(this->getGlobalUp());
-	Float3d up = right.cross(forward);
+	Double3 forward = this->direction;
+	Double3 right = forward.cross(this->getGlobalUp());
+	Double3 up = right.cross(forward);
 	return CoordinateFrame(forward, right, up);
 }
 
-void Directable::setDirection(const Float3d &direction)
+void Directable::setDirection(const Double3 &direction)
 {
 	assert(direction.isNormalized());
 

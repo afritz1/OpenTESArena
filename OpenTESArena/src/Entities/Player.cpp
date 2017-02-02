@@ -16,7 +16,7 @@
 
 Player::Player(const std::string &displayName, CharacterGenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
-	const Float3d &position, const Float3d &direction, const Float3d &velocity,
+	const Double3 &position, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
 	: Entity(EntityType::Player, position, entityManager), Directable(direction),
 	Movable(velocity, maxWalkSpeed, maxRunSpeed)
@@ -86,7 +86,8 @@ void Player::pitch(double radians)
 	auto q = Quaternion::fromAxisAngle(frame.getRight(), radians) *
 		Quaternion(this->getDirection(), 0.0);
 
-	this->setDirection(q.getXYZ().normalized());
+	const Double3 direction(q.x, q.y, q.z);
+	this->setDirection(direction.normalized());
 }
 
 void Player::yaw(double radians)
@@ -94,7 +95,8 @@ void Player::yaw(double radians)
 	auto q = Quaternion::fromAxisAngle(Directable::getGlobalUp(), radians) *
 		Quaternion(this->getDirection(), 0.0);
 
-	this->setDirection(q.getXYZ().normalized());
+	const Double3 direction(q.x, q.y, q.z);
+	this->setDirection(direction.normalized());
 }
 
 void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity,
@@ -122,7 +124,7 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 		lookUpRads = 0.0;
 	}
 
-	const double currentDec = std::acos(this->getDirection().normalized().getY());
+	const double currentDec = std::acos(this->getDirection().normalized().y);
 	const double requestedDec = currentDec - lookUpRads;
 
 	const double MIN_UP_TILT_DEG = 0.10;
@@ -143,7 +145,7 @@ void Player::tick(Game *game, double dt)
 	assert(dt >= 0.0);
 	
 	// Simple Euler integration for updating the player's position.
-	Float3d newPosition = this->position + (this->getVelocity() * dt);
+	Double3 newPosition = this->position + (this->getVelocity() * dt);
 
 	// Update the position if valid.
 	if (std::isfinite(newPosition.length()))
@@ -155,7 +157,7 @@ void Player::tick(Game *game, double dt)
 	// is implemented, change this to affect the ground direction and Y directions 
 	// separately.
 	double friction = 8.0;
-	Float3d frictionDirection = -this->getVelocity().normalized();
+	Double3 frictionDirection = -this->getVelocity().normalized();
 	double frictionMagnitude = (this->getVelocity().length() * 0.5) * friction;
 
 	// Change the velocity if friction is valid.

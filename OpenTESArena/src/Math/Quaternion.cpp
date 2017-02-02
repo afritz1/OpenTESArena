@@ -3,8 +3,6 @@
 #include "Quaternion.h"
 
 #include "Constants.h"
-#include "Float3.h"
-#include "Float4.h"
 
 Quaternion::Quaternion(double x, double y, double z, double w)
 {
@@ -14,11 +12,11 @@ Quaternion::Quaternion(double x, double y, double z, double w)
 	this->w = w;
 }
 
-Quaternion::Quaternion(const Float3<double> &v, double w)
-	: Quaternion(v.getX(), v.getY(), v.getZ(), w) { }
+Quaternion::Quaternion(const Double3 &v, double w)
+	: Quaternion(v.x, v.y, v.z, w) { }
 
-Quaternion::Quaternion(const Float4<double> &v)
-	: Quaternion(v.getX(), v.getY(), v.getZ(), v.getW()) { }
+Quaternion::Quaternion(const Double4 &v)
+	: Quaternion(v.x, v.y, v.z, v.w) { }
 
 Quaternion::Quaternion()
 	: Quaternion(0.0, 0.0, 0.0, 0.0) { }
@@ -33,7 +31,7 @@ Quaternion Quaternion::identity()
 	return Quaternion(0.0, 0.0, 0.0, 1.0);
 }
 
-Quaternion Quaternion::fromAxisAngle(const Float3<double> &v, double w)
+Quaternion Quaternion::fromAxisAngle(const Double3 &v, double w)
 {
 	if (v.lengthSquared() < EPSILON)
 	{
@@ -41,57 +39,27 @@ Quaternion Quaternion::fromAxisAngle(const Float3<double> &v, double w)
 	}
 
 	double halfW = w * 0.5;
-	Float3d axis = v.normalized() * std::sin(halfW);
+	Double3 axis = v.normalized() * std::sin(halfW);
 	return Quaternion(axis, std::cos(halfW)).normalized();
 }
 
-Quaternion Quaternion::fromAxisAngle(const Float4<double> &v)
+Quaternion Quaternion::fromAxisAngle(const Double4 &v)
 {
-	return Quaternion::fromAxisAngle(v.getX(), v.getY(), v.getZ(), v.getW());
+	return Quaternion::fromAxisAngle(v.x, v.y, v.z, v.w);
 }
 
 Quaternion Quaternion::fromAxisAngle(double x, double y, double z, double w)
 {
-	return Quaternion(Float3<double>(x, y, z), w);
+	return Quaternion(Double3(x, y, z), w);
 }
 
 Quaternion Quaternion::operator *(const Quaternion &q) const
 {
-	Float3<double> left(this->x, this->y, this->z);
-	Float3<double> right(q.x, q.y, q.z);
-	Float3<double> axis = (left * q.w) + (right * this->w) + left.cross(right);
+	Double3 left(this->x, this->y, this->z);
+	Double3 right(q.x, q.y, q.z);
+	Double3 axis = (left * q.w) + (right * this->w) + left.cross(right);
 	double magnitude = (this->w * q.w) - left.dot(right);
 	return Quaternion(axis, magnitude);
-}
-
-double Quaternion::getX() const
-{
-	return this->x;
-}
-
-double Quaternion::getY() const
-{
-	return this->y;
-}
-
-double Quaternion::getZ() const
-{
-	return this->z;
-}
-
-double Quaternion::getW() const
-{
-	return this->w;
-}
-
-Float3<double> Quaternion::getXYZ() const
-{
-	return Float3<double>(this->x, this->y, this->z);
-}
-
-Float4<double> Quaternion::getXYZW() const
-{
-	return Float4<double>(this->x, this->y, this->z, this->w);
 }
 
 std::string Quaternion::toString() const

@@ -4,8 +4,6 @@
 
 #include "Rect.h"
 
-#include "Int2.h"
-
 Rect::Rect(int x, int y, int width, int height)
 {
 	assert(width >= 0);
@@ -121,10 +119,10 @@ void Rect::setHeight(int height)
 
 bool Rect::contains(const Int2 &point) const
 {
-	return (point.getX() >= this->getLeft()) &&
-		(point.getY() >= this->getTop()) &&
-		(point.getX() < this->getRight()) &&
-		(point.getY() < this->getBottom());
+	return (point.x >= this->getLeft()) &&
+		(point.y >= this->getTop()) &&
+		(point.x < this->getRight()) &&
+		(point.y < this->getBottom());
 }
 
 bool Rect::contains(const Rect &rectangle) const

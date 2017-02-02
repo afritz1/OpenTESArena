@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Math/Vector2.h"
 
 // This panel is for choosing character creation attributes and the portrait.
 
@@ -15,7 +16,6 @@
 
 class Button;
 class CharacterClass;
-class Int2;
 class Renderer;
 class TextBox;
 

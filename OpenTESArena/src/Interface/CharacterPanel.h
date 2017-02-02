@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Math/Vector2.h"
 
 // Maybe rename this to "CharacterStatsPanel"?
 
@@ -12,7 +13,6 @@
 
 class Button;
 class CharacterClass;
-class Int2;
 class Renderer;
 class TextBox;
 

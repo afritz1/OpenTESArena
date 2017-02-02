@@ -20,19 +20,19 @@ const std::map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-CardinalDirection::CardinalDirection(const Float2d &direction)
+CardinalDirection::CardinalDirection(const Double2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	assert(direction.isNormalized());
 
-	const Float2d north(0.0, 1.0);
-	const Float2d south(0.0, -1.0);
-	const Float2d east(1.0, 0.0);
-	const Float2d west(-1.0, 0.0);
-	const Float2d northEast = north.slerp(east, 0.5);
-	const Float2d southEast = south.slerp(east, 0.5);
-	const Float2d southWest = south.slerp(west, 0.5);
-	const Float2d northWest = north.slerp(west, 0.5);
+	const Double2 north(0.0, 1.0);
+	const Double2 south(0.0, -1.0);
+	const Double2 east(1.0, 0.0);
+	const Double2 west(-1.0, 0.0);
+	const Double2 northEast = north.slerp(east, 0.5);
+	const Double2 southEast = south.slerp(east, 0.5);
+	const Double2 southWest = south.slerp(west, 0.5);
+	const Double2 northWest = north.slerp(west, 0.5);
 
 	// The spherical interpolations should already be normalized if their parent vectors
 	// are normalized.
@@ -48,7 +48,7 @@ CardinalDirection::CardinalDirection(const Float2d &direction)
 	// Each direction gets an eighth of the circle's area. In dot product terms,
 	// that's an allowance of 0.25 deviation from the direction.
 	const double deviation = 0.25;
-	auto isCloseEnoughTo = [deviation, &direction](const Float2d &cardinalDirection)
+	auto isCloseEnoughTo = [deviation, &direction](const Double2 &cardinalDirection)
 	{
 		return direction.dot(cardinalDirection) >= (1.0 - deviation);
 	};

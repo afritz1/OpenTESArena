@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "../Math/Float3.h"
+#include "../Math/Vector3.h"
 
 // Intended for use with rendering. I thought of this optimization since all surfaces 
 // in Arena can be represented as rectangles (no need for triangles).
@@ -29,30 +29,28 @@
 // I can't think of any reason not to make this change. The flexibility of triangles 
 // is not required in the ray tracer.
 
-class Int3;
-
 class Rect3D
 {
 private:
-	Float3f p1, p2, p3;
+	Float3 p1, p2, p3;
 	 
 	// Gets the axis-aligned bounding box for the rectangle.
-	std::pair<Float3f, Float3f> getAABB() const;
+	std::pair<Float3, Float3> getAABB() const;
 public:
-	Rect3D(const Float3f &p1, const Float3f &p2, const Float3f &p3);
+	Rect3D(const Float3 &p1, const Float3 &p2, const Float3 &p3);
 	~Rect3D();
 
 	// Creates a rectangle using a couple vectors with a width and height. The point is 
 	// assumed to be at the center of the bottom edge of the rectangle (intended for 
 	// use with sprite positions).
-	static Rect3D fromFrame(const Float3f &point, const Float3f &right, 
-		const Float3f &up, float width, float height);
+	static Rect3D fromFrame(const Float3 &point, const Float3 &right, 
+		const Float3 &up, float width, float height);
 
-	const Float3f &getP1() const;
-	const Float3f &getP2() const;
-	const Float3f &getP3() const;
-	Float3f getP4() const;
-	Float3f getNormal() const;
+	const Float3 &getP1() const;
+	const Float3 &getP2() const;
+	const Float3 &getP3() const;
+	Float3 getP4() const;
+	Float3 getNormal() const;
 
 	// Returns a vector of voxel coordinates for all voxels that the rectangle touches,
 	// with the option to only get voxels within the world bounds.

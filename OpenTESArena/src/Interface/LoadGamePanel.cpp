@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -112,7 +112,7 @@ void LoadGamePanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

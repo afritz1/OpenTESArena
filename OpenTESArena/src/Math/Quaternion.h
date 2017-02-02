@@ -3,37 +3,27 @@
 
 #include <string>
 
-template<typename T>
-class Float3;
-
-template<typename T>
-class Float4;
+#include "Vector3.h"
+#include "Vector4.h"
 
 class Quaternion
 {
-private:
-	double x, y, z, w;
 public:
+	double x, y, z, w;
+
 	Quaternion(double x, double y, double z, double w);
-	Quaternion(const Float3<double> &v, double w);
-	Quaternion(const Float4<double> &v);
+	Quaternion(const Double3 &v, double w);
+	Quaternion(const Double4 &v);
 	Quaternion();
 	~Quaternion();
 
 	static Quaternion identity();
-	static Quaternion fromAxisAngle(const Float3<double> &v, double w);
-	static Quaternion fromAxisAngle(const Float4<double> &v);
+	static Quaternion fromAxisAngle(const Double3 &v, double w);
+	static Quaternion fromAxisAngle(const Double4 &v);
 	static Quaternion fromAxisAngle(double x, double y, double z, double w);
 
-	Quaternion operator *(const Quaternion &q) const;
-
-	double getX() const;
-	double getY() const;
-	double getZ() const;
-	double getW() const;
-	Float3<double> getXYZ() const;
-	Float4<double> getXYZW() const;
-
+	Quaternion operator*(const Quaternion &q) const;
+	
 	std::string toString() const;
 	double length() const;
 	Quaternion normalized() const;

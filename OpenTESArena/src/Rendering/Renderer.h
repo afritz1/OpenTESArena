@@ -7,14 +7,14 @@
 #include <vector>
 
 #include "Rect3D.h"
-#include "../Math/Float3.h"
+#include "../Math/Vector2.h"
+#include "../Math/Vector3.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
 
 // The format for all textures is ARGB8888.
 
 class Color;
-class Int2;
 class SoftwareRenderer;
 
 struct SDL_Rect;
@@ -113,7 +113,7 @@ public:
 	// Helper methods for interacting with render memory.
 	// - Eventually, the geometry methods here will be separated into "static" and
 	//   "dynamic" groups; static geometry is fixed to a voxel, dynamic is arbitrary.
-	void updateCamera(const Float3d &eye, const Float3d &direction, double fovY);
+	void updateCamera(const Double3 &eye, const Double3 &direction, double fovY);
 	void updateGameTime(double gameTime);
 	int addTexture(uint32_t *pixels, int width, int height);
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
@@ -122,7 +122,7 @@ public:
 		int textureIndex);
 	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
 	void removeSprite(int spriteID);
-	void updateLight(int lightID, const Float3d &point, const Float3d &color, double intensity);
+	void updateLight(int lightID, const Double3 &point, const Double3 &color, double intensity);
 	void removeLight(int lightID);
 
 	// Fills the desired frame buffer with the draw color, or default black/transparent.

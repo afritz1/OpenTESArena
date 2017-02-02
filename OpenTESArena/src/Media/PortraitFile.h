@@ -3,9 +3,9 @@
 
 #include <string>
 
-// This static class gets the filenames for images relevant to character portraits.
+#include "../Math/Vector2.h"
 
-class Int2;
+// This static class gets the filenames for images relevant to character portraits.
 
 enum class CharacterGenderName;
 enum class CharacterRaceName;

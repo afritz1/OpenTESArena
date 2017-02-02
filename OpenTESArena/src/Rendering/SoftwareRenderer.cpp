@@ -28,13 +28,13 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	}
 
 	// Initialize camera values to "empty".
-	this->eye = Float3d(0.0, 0.0, 0.0);
-	this->forward = Float3d(0.0, 0.0, 0.0);
+	this->eye = Double3();
+	this->forward = Double3();
 	this->fovY = 0.0;
 
 	// Initialize start cell to "empty".
-	this->startCellReal = Float3d(0.0, 0.0, 0.0);
-	this->startCell = Int3(0, 0, 0);
+	this->startCellReal = Double3();
+	this->startCell = Int3();
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -47,12 +47,12 @@ const uint32_t *SoftwareRenderer::getPixels() const
 	return this->colorBuffer.data();
 }
 
-void SoftwareRenderer::setEye(const Float3d &eye)
+void SoftwareRenderer::setEye(const Double3 &eye)
 {
 	this->eye = eye;
 }
 
-void SoftwareRenderer::setForward(const Float3d &forward)
+void SoftwareRenderer::setForward(const Double3 &forward)
 {
 	this->forward = forward;
 }
@@ -62,7 +62,7 @@ void SoftwareRenderer::setFovY(double fovY)
 	this->fovY = fovY;
 }
 
-Float3d SoftwareRenderer::castRay(const Float3d &direction,
+Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	const std::vector<char> &voxelGrid, const int gridWidth,
 	const int gridHeight, const int gridDepth) const
 {
@@ -83,75 +83,66 @@ Float3d SoftwareRenderer::castRay(const Float3d &direction,
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
 
-	const double dirXSquared = direction.getX() * direction.getX();
-	const double dirYSquared = direction.getY() * direction.getY();
-	const double dirZSquared = direction.getZ() * direction.getZ();
+	const Double3 dirSquared(
+		direction.x * direction.x,
+		direction.y * direction.y,
+		direction.z * direction.z);
 
 	// Calculate delta distances along each axis. These determine how far
 	// the ray has to go until the next X, Y, or Z side is hit, respectively.
-	const double deltaDistX = std::sqrt(1.0 + (dirYSquared / dirXSquared) +
-		(dirZSquared / dirXSquared));
-	const double deltaDistY = std::sqrt(1.0 + (dirXSquared / dirYSquared) +
-		(dirZSquared / dirYSquared));
-	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared) +
-		(dirYSquared / dirZSquared));
+	const Double3 deltaDist(
+		std::sqrt(1.0 + (dirSquared.y / dirSquared.x) + (dirSquared.z / dirSquared.x)),
+		std::sqrt(1.0 + (dirSquared.x / dirSquared.y) + (dirSquared.z / dirSquared.y)),
+		std::sqrt(1.0 + (dirSquared.x / dirSquared.z) + (dirSquared.y / dirSquared.z)));
 
 	// Booleans for whether a ray component is non-negative. Used with step directions 
 	// and texture coordinates.
-	const bool nonNegativeDirX = direction.getX() >= 0.0;
-	const bool nonNegativeDirY = direction.getY() >= 0.0;
-	const bool nonNegativeDirZ = direction.getZ() >= 0.0;
+	const bool nonNegativeDirX = direction.x >= 0.0;
+	const bool nonNegativeDirY = direction.y >= 0.0;
+	const bool nonNegativeDirZ = direction.z >= 0.0;
 
 	// Calculate step directions and initial side distances.
-	int stepX;
-	double sideDistX;
+	Int3 step;
+	Double3 sideDist;
 	if (nonNegativeDirX)
 	{
-		stepX = 1;
-		sideDistX = (this->startCellReal.getX() + 1.0 - this->eye.getX()) * deltaDistX;
+		step.x = 1;
+		sideDist.x = (this->startCellReal.x + 1.0 - this->eye.x) * deltaDist.x;
 	}
 	else
 	{
-		stepX = -1;
-		sideDistX = (this->eye.getX() - this->startCellReal.getX()) * deltaDistX;
+		step.x = -1;
+		sideDist.x = (this->eye.x - this->startCellReal.x) * deltaDist.x;
 	}
 
-	int stepY;
-	double sideDistY;
 	if (nonNegativeDirY)
 	{
-		stepY = 1;
-		sideDistY = (this->startCellReal.getY() + 1.0 - this->eye.getY()) * deltaDistY;
+		step.y = 1;
+		sideDist.y = (this->startCellReal.y + 1.0 - this->eye.y) * deltaDist.y;
 	}
 	else
 	{
-		stepY = -1;
-		sideDistY = (this->eye.getY() - this->startCellReal.getY()) * deltaDistY;
+		step.y = -1;
+		sideDist.y = (this->eye.y - this->startCellReal.y) * deltaDist.y;
 	}
 
-	int stepZ;
-	double sideDistZ;
 	if (nonNegativeDirZ)
 	{
-		stepZ = 1;
-		sideDistZ = (this->startCellReal.getZ() + 1.0 - this->eye.getZ()) * deltaDistZ;
+		step.z = 1;
+		sideDist.z = (this->startCellReal.z + 1.0 - this->eye.z) * deltaDist.z;
 	}
 	else
 	{
-		stepZ = -1;
-		sideDistZ = (this->eye.getZ() - this->startCellReal.getZ()) * deltaDistZ;
+		step.z = -1;
+		sideDist.z = (this->eye.z - this->startCellReal.z) * deltaDist.z;
 	}
 
 	// Make a copy of the initial side distances. They are used for the special case 
 	// of the ray ending in the same voxel it started in.
-	const double initialSideDistX = sideDistX;
-	const double initialSideDistY = sideDistY;
-	const double initialSideDistZ = sideDistZ;
+	const Double3 initialSideDist = sideDist;
 
 	// Get initial voxel coordinates.
-	int cellX = this->startCell.getX();
-	int cellY = this->startCell.getY();
-	int cellZ = this->startCell.getZ();
+	Int3 cell = this->startCell;
 
 	// ID of a hit voxel. Zero (air) by default.
 	char hitID = 0;
@@ -162,14 +153,15 @@ Float3d SoftwareRenderer::castRay(const Float3d &direction,
 
 	// Step through the voxel grid while the current coordinate is valid.
 	// - Another condition should eventually be used instead. It should
-	//   check whether the ray has stepped far enough.
-	bool voxelIsValid = (cellX >= 0) && (cellY >= 0) && (cellZ >= 0) &&
-		(cellX < gridWidth) && (cellY < gridHeight) && (cellZ < gridDepth);
+	//   check whether the ray has stepped far enough (cmp distance squared?),
+	//   and "voxelIsValid" should be used to 'continue' instead if not valid.
+	bool voxelIsValid = (cell.x >= 0) && (cell.y >= 0) && (cell.z >= 0) &&
+		(cell.x < gridWidth) && (cell.y < gridHeight) && (cell.z < gridDepth);
 
 	while (voxelIsValid)
 	{
-		const int gridIndex = cellX + (cellY * gridWidth) +
-			(cellZ * gridWidth * gridHeight);
+		const int gridIndex = cell.x + (cell.y * gridWidth) +
+			(cell.z * gridWidth * gridHeight);
 
 		// Check if the current voxel is solid.
 		const char voxelID = voxelGrid[gridIndex];
@@ -180,84 +172,71 @@ Float3d SoftwareRenderer::castRay(const Float3d &direction,
 			break;
 		}
 
-		if ((sideDistX < sideDistY) && (sideDistX < sideDistZ))
+		if ((sideDist.x < sideDist.y) && (sideDist.x < sideDist.z))
 		{
-			sideDistX += deltaDistX;
-			cellX += stepX;
+			sideDist.x += deltaDist.x;
+			cell.x += step.x;
 			axis = Axis::X;
-			voxelIsValid = (cellX >= 0) && (cellX < gridWidth);
+			voxelIsValid = (cell.x >= 0) && (cell.x < gridWidth);
 		}
-		else if (sideDistY < sideDistZ)
+		else if (sideDist.y < sideDist.z)
 		{
-			sideDistY += deltaDistY;
-			cellY += stepY;
+			sideDist.y += deltaDist.y;
+			cell.y += step.y;
 			axis = Axis::Y;
-			voxelIsValid = (cellY >= 0) && (cellY < gridHeight);
+			voxelIsValid = (cell.y >= 0) && (cell.y < gridHeight);
 		}
 		else
 		{
-			sideDistZ += deltaDistZ;
-			cellZ += stepZ;
+			sideDist.z += deltaDist.z;
+			cell.z += step.z;
 			axis = Axis::Z;
-			voxelIsValid = (cellZ >= 0) && (cellZ < gridDepth);
+			voxelIsValid = (cell.z >= 0) && (cell.z < gridDepth);
 		}
 	}
 
 	// Boolean for whether the ray ended in the same voxel it started in.
-	const bool stoppedInFirstVoxel =
-		(cellX == this->startCell.getX()) &&
-		(cellY == this->startCell.getY()) &&
-		(cellZ == this->startCell.getZ());
+	const bool stoppedInFirstVoxel = cell == this->startCell;
 
 	// Get the distance from the camera to the hit point. It is a special case
 	// if the ray stopped in the first voxel.
 	double distance;
 	if (stoppedInFirstVoxel)
 	{
-		if ((initialSideDistX < initialSideDistY) &&
-			(initialSideDistX < initialSideDistZ))
+		if ((initialSideDist.x < initialSideDist.y) &&
+			(initialSideDist.x < initialSideDist.z))
 		{
-			distance = initialSideDistX;
+			distance = initialSideDist.x;
 			axis = Axis::X;
 		}
-		else if (initialSideDistY < initialSideDistZ)
+		else if (initialSideDist.y < initialSideDist.z)
 		{
-			distance = initialSideDistY;
+			distance = initialSideDist.y;
 			axis = Axis::Y;
 		}
 		else
 		{
-			distance = initialSideDistZ;
+			distance = initialSideDist.z;
 			axis = Axis::Z;
 		}
 	}
 	else
 	{
-		if (axis == Axis::X)
-		{
-			distance = (static_cast<double>(cellX) - this->eye.getX() +
-				static_cast<double>((1 - stepX) / 2)) / direction.getX();
-		}
-		else if (axis == Axis::Y)
-		{
-			distance = (static_cast<double>(cellY) - this->eye.getY() +
-				static_cast<double>((1 - stepY) / 2)) / direction.getY();
-		}
-		else
-		{
-			distance = (static_cast<double>(cellZ) - this->eye.getZ() +
-				static_cast<double>((1 - stepZ) / 2)) / direction.getZ();
-		}
+		const size_t axisIndex = static_cast<size_t>(axis);
+
+		// Assign to distance based on which axis was hit (x, y, z).
+		distance = (static_cast<double>(cell[axisIndex]) - this->eye[axisIndex] +
+			static_cast<double>((1 - step[axisIndex]) / 2)) / direction[axisIndex];
 	}
 
 	// Simple fog color.
-	const Float3d fog(0.45, 0.75, 1.0);
+	const Double3 fog(0.45, 0.75, 1.0);
 
 	// If there was a hit, get the shaded color.
 	if (hitID > 0)
 	{
 		// Intersection point on the voxel.
-		Float3d hitPoint = this->eye + (direction * distance);
+		const Double3 hitPoint = this->eye + (direction * distance);
 
 		// Texture coordinates.
 		// - To do: use "stoppedInFirstVoxel" condition here to make sure coordinates
@@ -267,49 +246,49 @@ Float3d SoftwareRenderer::castRay(const Float3d &direction,
 		{
 			if (nonNegativeDirX)
 			{
-				u = hitPoint.getZ() - std::floor(hitPoint.getZ());
-				v = 1.0 - (hitPoint.getY() - std::floor(hitPoint.getY()));
+				u = hitPoint.z - std::floor(hitPoint.z);
+				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 			}
 			else
 			{
-				u = 1.0 - (hitPoint.getZ() - std::floor(hitPoint.getZ()));
-				v = 1.0 - (hitPoint.getY() - std::floor(hitPoint.getY()));
+				u = 1.0 - (hitPoint.z - std::floor(hitPoint.z));
+				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 			}
 		}
 		else if (axis == Axis::Y)
 		{
 			if (nonNegativeDirY)
 			{
-				u = hitPoint.getZ() - std::floor(hitPoint.getZ());
-				v = hitPoint.getX() - std::floor(hitPoint.getX());
+				u = hitPoint.z - std::floor(hitPoint.z);
+				v = hitPoint.x - std::floor(hitPoint.x);
 			}
 			else
 			{
-				u = hitPoint.getZ() - std::floor(hitPoint.getZ());
-				v = 1.0 - (hitPoint.getX() - std::floor(hitPoint.getX()));
+				u = hitPoint.z - std::floor(hitPoint.z);
+				v = 1.0 - (hitPoint.x - std::floor(hitPoint.x));
 			}
 		}
 		else
 		{
 			if (nonNegativeDirZ)
 			{
-				u = 1.0 - (hitPoint.getX() - std::floor(hitPoint.getX()));
-				v = 1.0 - (hitPoint.getY() - std::floor(hitPoint.getY()));
+				u = 1.0 - (hitPoint.x - std::floor(hitPoint.x));
+				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 			}
 			else
 			{
-				u = hitPoint.getX() - std::floor(hitPoint.getX());
-				v = 1.0 - (hitPoint.getY() - std::floor(hitPoint.getY()));
+				u = hitPoint.x - std::floor(hitPoint.x);
+				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 			}
 		}
 
 		// Simple UVW placeholder color.
-		const Float3d color(u, v, 1.0 - u - v);
+		const Double3 color(u, v, 1.0 - u - v);
 
 		// Linearly interpolate with some depth.
 		const double maxDist = 15.0;
 		const double depth = std::min(distance, maxDist) / maxDist;
-		return color + ((fog - color) * depth);
+		return color.lerp(fog, depth);
 	}
 	else
 	{
@@ -327,25 +306,25 @@ void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
 	const double aspect = widthReal / heightReal;
 
 	// Constant camera values. "(0.0, 1.0, 0.0)" is the "global up" vector.
-	const Float3d forward = this->forward.normalized();
-	const Float3d right = forward.cross(Float3d(0.0, 1.0, 0.0)).normalized();
-	const Float3d up = right.cross(forward).normalized();
+	const Double3 forward = this->forward.normalized();
+	const Double3 right = forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
+	const Double3 up = right.cross(forward).normalized();
 
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
 
 	// "Forward" component of the camera for generating rays with.
-	const Float3d forwardComp = forward * zoom;
+	const Double3 forwardComp = forward * zoom;
 
 	// Constant DDA-related values.
-	this->startCellReal = Float3d(
-		std::floor(this->eye.getX()),
-		std::floor(this->eye.getY()),
-		std::floor(this->eye.getZ()));
+	this->startCellReal = Double3(
+		std::floor(this->eye.x),
+		std::floor(this->eye.y),
+		std::floor(this->eye.z));
 	this->startCell = Int3(
-		static_cast<int>(this->startCellReal.getX()),
-		static_cast<int>(this->startCellReal.getY()),
-		static_cast<int>(this->startCellReal.getZ()));
+		static_cast<int>(this->startCellReal.x),
+		static_cast<int>(this->startCellReal.y),
+		static_cast<int>(this->startCellReal.z));
 
 	// Output color buffer.
 	uint32_t *pixels = this->colorBuffer.data();
@@ -362,7 +341,7 @@ void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
 			const double yPercent = static_cast<double>(y) / heightReal;
 
 			// "Up" component of the ray direction, based on current screen Y.
-			const Float3d upComp = up * ((2.0 * yPercent) - 1.0);
+			const Double3 upComp = up * ((2.0 * yPercent) - 1.0);
 
 			for (int x = 0; x < this->width; ++x)
 			{
@@ -370,15 +349,15 @@ void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
 				const double xPercent = static_cast<double>(x) / widthReal;
 
 				// "Right" component of the ray direction, based on current screen X.
-				const Float3d rightComp = right * (aspect * ((2.0 * xPercent) - 1.0));
+				const Double3 rightComp = right * (aspect * ((2.0 * xPercent) - 1.0));
 
 				// Calculate the ray direction through the pixel.
 				// - If un-normalized, it uses the Z distance, but the insides of voxels
 				//   don't look right then.
-				const Float3d direction = (forwardComp + rightComp - upComp).normalized();
+				const Double3 direction = (forwardComp + rightComp - upComp).normalized();
 
 				// Get the resulting color of the ray, starting from the eye.
-				const Float3d color = this->castRay(direction, voxelGrid,
+				const Double3 color = this->castRay(direction, voxelGrid,
 					gridWidth, gridHeight, gridDepth);
 
 				// Convert to 0x00RRGGBB.

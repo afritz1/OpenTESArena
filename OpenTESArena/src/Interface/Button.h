@@ -3,10 +3,11 @@
 
 #include <functional>
 
+#include "../Math/Vector2.h"
+
 // All buttons are given a pointer to the current game state.
 
 class Game;
-class Int2;
 
 class Button
 {

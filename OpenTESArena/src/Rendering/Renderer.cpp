@@ -9,7 +9,6 @@
 #include "SoftwareRenderer.h"
 #include "Surface.h"
 #include "../Math/Constants.h"
-#include "../Math/Int2.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
@@ -51,7 +50,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 
 	// Initialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_TARGET, windowDimensions.getX(), windowDimensions.getY());
+		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
@@ -140,7 +139,7 @@ Int2 Renderer::getWindowDimensions() const
 
 int Renderer::getViewHeight() const
 {
-	const int screenHeight = this->getWindowDimensions().getY();
+	const int screenHeight = this->getWindowDimensions().y;
 
 	// Ratio of the view height and window height in 320x200.
 	const double viewWindowRatio = static_cast<double>(ORIGINAL_HEIGHT - 53) /
@@ -200,7 +199,7 @@ SDL_Surface *Renderer::getScreenshot() const
 {
 	const Int2 dimensions = this->getWindowDimensions();
 	SDL_Surface *screenshot = Surface::createSurfaceWithFormat(
-		dimensions.getX(), dimensions.getY(),
+		dimensions.x, dimensions.y,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	int status = SDL_RenderReadPixels(this->renderer, nullptr,
@@ -222,22 +221,25 @@ SDL_Surface *Renderer::getScreenshot() const
 Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
 {
 	// From native point to letterbox point.
-	Int2 windowDimensions = this->getWindowDimensions();
-	const auto letterbox = this->getLetterboxDimensions();
+	const Int2 windowDimensions = this->getWindowDimensions();
+	const SDL_Rect letterbox = this->getLetterboxDimensions();
 
-	Int2 letterboxPoint(
-		nativePoint.getX() - letterbox.x,
-		nativePoint.getY() - letterbox.y);
+	const Int2 letterboxPoint(
+		nativePoint.x - letterbox.x,
+		nativePoint.y - letterbox.y);
 
 	// Then from letterbox point to original point.
-	double letterboxXPercent = static_cast<double>(letterboxPoint.getX()) /
+	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) /
 		static_cast<double>(letterbox.w);
-	double letterboxYPercent = static_cast<double>(letterboxPoint.getY()) /
+	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) /
 		static_cast<double>(letterbox.h);
 
-	Int2 originalPoint(
-		static_cast<double>(Renderer::ORIGINAL_WIDTH) * letterboxXPercent,
-		static_cast<double>(Renderer::ORIGINAL_HEIGHT) * letterboxYPercent);
+	const double originalWidthReal = static_cast<double>(Renderer::ORIGINAL_WIDTH);
+	const double originalHeightReal = static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+
+	const Int2 originalPoint(
+		static_cast<int>(originalWidthReal * letterboxXPercent),
+		static_cast<int>(originalHeightReal * letterboxYPercent));
 
 	return originalPoint;
 }
@@ -245,28 +247,32 @@ Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
 Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
-	double originalXPercent = static_cast<double>(originalPoint.getX()) /
+	const double originalXPercent = static_cast<double>(originalPoint.x) /
 		static_cast<double>(Renderer::ORIGINAL_WIDTH);
-	double originalYPercent = static_cast<double>(originalPoint.getY()) /
+	const double originalYPercent = static_cast<double>(originalPoint.y) /
 		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
 
-	const auto letterbox = this->getLetterboxDimensions();
-	Int2 letterboxPoint(
-		static_cast<double>(letterbox.w) * originalXPercent,
-		static_cast<double>(letterbox.h) * originalYPercent);
+	const SDL_Rect letterbox = this->getLetterboxDimensions();
+
+	const double letterboxWidthReal = static_cast<double>(letterbox.w);
+	const double letterboxHeightReal = static_cast<double>(letterbox.h);
+
+	const Int2 letterboxPoint(
+		static_cast<int>(letterboxWidthReal * originalXPercent),
+		static_cast<int>(letterboxHeightReal * originalYPercent));
 
 	// Then from letterbox point to native point.
-	Int2 nativePoint(
-		letterboxPoint.getX() + letterbox.x,
-		letterboxPoint.getY() + letterbox.y);
+	const Int2 nativePoint(
+		letterboxPoint.x + letterbox.x,
+		letterboxPoint.y + letterbox.y);
 
 	return nativePoint;
 }
 
 bool Renderer::letterboxContains(const Int2 &nativePoint) const
 {
-	auto letterbox = this->getLetterboxDimensions();
-	Rect rectangle(letterbox.x, letterbox.y,
+	const SDL_Rect letterbox = this->getLetterboxDimensions();
+	const Rect rectangle(letterbox.x, letterbox.y,
 		letterbox.w, letterbox.h);
 	return rectangle.contains(nativePoint);
 }
@@ -348,8 +354,8 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 {
 	this->fullGameWindow = fullGameWindow;
 
-	const int screenWidth = this->getWindowDimensions().getX();
-	const int screenHeight = this->getWindowDimensions().getY();
+	const int screenWidth = this->getWindowDimensions().x;
+	const int screenHeight = this->getWindowDimensions().y;
 
 	// Height of the game world view in pixels. Determined by whether the game 
 	// interface is visible or not.
@@ -376,7 +382,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		renderWidth, renderHeight));
 }
 
-void Renderer::updateCamera(const Float3d &eye, const Float3d &direction, double fovY)
+void Renderer::updateCamera(const Double3 &eye, const Double3 &direction, double fovY)
 {
 	assert(this->softwareRenderer.get() != nullptr);
 	this->softwareRenderer->setEye(eye);
@@ -429,8 +435,8 @@ void Renderer::removeSprite(int spriteID)
 	Debug::crash("Renderer", "removeSprite() not implemented.");
 }
 
-void Renderer::updateLight(int lightID, const Float3d &point,
-	const Float3d &color, double intensity)
+void Renderer::updateLight(int lightID, const Double3 &point,
+	const Double3 &color, double intensity)
 {
 	//assert(this->clProgram.get() != nullptr);
 	//this->clProgram->queueLightUpdate(lightID, point, color, intensity);
@@ -582,7 +588,7 @@ void Renderer::renderWorld(const std::vector<char> &voxelGrid, int gridWidth,
 		static_cast<const void*>(pixels), pitch);
 
 	// Now copy to the native frame buffer (stretching if needed).
-	const int screenWidth = this->getWindowDimensions().getX();
+	const int screenWidth = this->getWindowDimensions().x;
 	const int viewHeight = this->getViewHeight();
 	this->drawToNative(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
 }

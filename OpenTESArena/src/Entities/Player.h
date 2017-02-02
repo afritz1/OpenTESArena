@@ -36,7 +36,7 @@ public:
 	// Default constructor.
 	Player(const std::string &displayName, CharacterGenderName gender,
 		CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
-		const Float3d &position, const Float3d &direction, const Float3d &velocity, 
+		const Double3 &position, const Double3 &direction, const Double3 &velocity, 
 		double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager);
 
 	virtual ~Player();

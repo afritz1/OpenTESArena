@@ -20,7 +20,7 @@
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
 #include "../Items/Weapon.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -386,8 +386,8 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 
 	const Int2 mousePosition = this->getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
-	const int mouseX = originalPosition.getX();
-	const int mouseY = originalPosition.getY();
+	const int mouseX = originalPosition.x;
+	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
@@ -423,8 +423,8 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawToOriginal(this->classesListBox->getTexture(),
-		this->classesListBox->getPoint().getX(),
-		this->classesListBox->getPoint().getY());
+		this->classesListBox->getPoint().x,
+		this->classesListBox->getPoint().y);
 
 	// Draw tooltip if over a valid element in the list box.
 	auto mouseOriginalPoint = renderer.nativePointToOriginal(
@@ -447,7 +447,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

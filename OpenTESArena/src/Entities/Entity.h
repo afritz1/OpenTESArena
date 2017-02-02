@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "../Math/Float3.h"
+#include "../Math/Vector3.h"
 
 // Entities are anything in the world that isn't part of the voxel grid. Every 
 // entity has a world position and a unique referencing ID. 
@@ -33,15 +33,15 @@ private:
 	int id;
 	EntityType entityType;
 protected:
-	Float3d position;
+	Double3 position;
 public:
-	Entity(EntityType entityType, const Float3d &position, EntityManager &entityManager);
+	Entity(EntityType entityType, const Double3 &position, EntityManager &entityManager);
 	virtual ~Entity();
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	
 	int getID() const;
-	const Float3d &getPosition() const;
+	const Double3 &getPosition() const;
 	virtual EntityType getEntityType() const = 0;
 
 	virtual void tick(Game *game, double dt) = 0;

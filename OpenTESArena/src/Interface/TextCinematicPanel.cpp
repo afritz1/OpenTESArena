@@ -9,7 +9,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
+#include "../Math/Vector2.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"

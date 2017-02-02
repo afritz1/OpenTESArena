@@ -11,8 +11,8 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
-#include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Math/Vector2.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
@@ -188,8 +188,8 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 	const Int2 mousePosition = this->getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
-	const int mouseX = originalPosition.getX();
-	const int mouseY = originalPosition.getY();
+	const int mouseX = originalPosition.x;
+	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
@@ -242,7 +242,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::SwordCursor));
 	auto mousePosition = this->getMousePosition();
 	renderer.drawToNative(cursor.get(),
-		mousePosition.getX(), mousePosition.getY(),
+		mousePosition.x, mousePosition.y,
 		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
 		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
 }

@@ -7,8 +7,8 @@
 
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Math/Int2.h"
 #include "../Math/Rect.h"
+#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"
@@ -113,7 +113,7 @@ bool ListBox::contains(const Int2 &point)
 	int width, height;
 	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, &height);
 
-	Rect rect(this->point.getX(), this->point.getY(), width, height);
+	Rect rect(this->point.x, this->point.y, width, height);
 	return rect.contains(point);
 }
 
@@ -121,7 +121,7 @@ int ListBox::getClickedIndex(const Int2 &point) const
 {
 	// Only the Y component of the point really matters here.
 	const int index = this->scrollIndex + 
-		((point.getY() - this->point.getY()) / this->font.getCharacterHeight());
+		((point.y - this->point.y) / this->font.getCharacterHeight());
 	return index;
 }
 
