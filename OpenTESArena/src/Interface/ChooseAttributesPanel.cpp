@@ -336,10 +336,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			}*/
 			// -- end test --
 
-			double gameTime = 0.0; // In seconds. Also affects sun position.
+			const double gameTime = 0.0; // In seconds. Also affects sun position.
+			const double viewDistance = 15.0;
 			std::unique_ptr<GameData> gameData(new GameData(
 				std::move(player), std::move(entityManager), gameTime, 
-				worldWidth, worldHeight, worldDepth));
+				viewDistance, worldWidth, worldHeight, worldDepth));
 
 			// -- test --
 			auto &voxelGrid = gameData->getVoxelGrid();

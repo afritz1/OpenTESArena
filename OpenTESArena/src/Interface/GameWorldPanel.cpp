@@ -664,6 +664,7 @@ void GameWorldPanel::tick(double dt)
 	renderer.updateCamera(player.getPosition(), player.getDirection(), 
 		this->getGame()->getOptions().getVerticalFOV());
 	//renderer.updateGameTime(gameData.getGameTime()); // To do.
+	renderer.updateViewDistance(gameData.getViewDistance());
 
 	// -- test -- update test sprites.
 	/*const Double3 playerRight = player.getFrame().getRight();

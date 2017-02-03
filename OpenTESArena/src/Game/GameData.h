@@ -22,14 +22,14 @@ private:
 	std::unique_ptr<EntityManager> entityManager;
 	std::vector<char> voxelGrid;
 	std::vector<char> collisionGrid;
-	double gameTime;
+	double gameTime, viewDistance;
 	int worldWidth, worldHeight, worldDepth;
 	// province... location... weather...
 	// date...
 public:
 	GameData(std::unique_ptr<Player> player,
 		std::unique_ptr<EntityManager> entityManager, double gameTime, 
-		int worldWidth, int worldHeight, int worldDepth);
+		double viewDistance, int worldWidth, int worldHeight, int worldDepth);
 	~GameData();
 
 	Player &getPlayer() const;
@@ -37,6 +37,7 @@ public:
 	std::vector<char> &getVoxelGrid(); // 3D array.
 	std::vector<char> &getCollisionGrid(); // 3D array.
 	double getGameTime() const;
+	double getViewDistance() const;
 	int getWorldWidth() const;
 	int getWorldHeight() const;
 	int getWorldDepth() const;

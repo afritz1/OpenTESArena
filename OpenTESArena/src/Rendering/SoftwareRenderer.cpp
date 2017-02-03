@@ -32,6 +32,8 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->forward = Double3();
 	this->fovY = 0.0;
 
+	this->viewDistance = 0.0;
+
 	// Initialize start cell to "empty".
 	this->startCellReal = Double3();
 	this->startCell = Int3();
@@ -60,6 +62,11 @@ void SoftwareRenderer::setForward(const Double3 &forward)
 void SoftwareRenderer::setFovY(double fovY)
 {
 	this->fovY = fovY;
+}
+
+void SoftwareRenderer::setViewDistance(double viewDistance)
+{
+	this->viewDistance = viewDistance;
 }
 
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
@@ -270,8 +277,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		const Double3 color(u, v, 1.0 - u - v);
 
 		// Linearly interpolate with some depth.
-		const double maxDist = 15.0;
-		const double depth = std::min(distance, maxDist) / maxDist;
+		const double depth = std::min(distance, this->viewDistance) / this->viewDistance;
 		return color.lerp(fog, depth);
 	}
 	else

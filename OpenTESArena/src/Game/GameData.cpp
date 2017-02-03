@@ -9,7 +9,7 @@
 
 GameData::GameData(std::unique_ptr<Player> player,
 	std::unique_ptr<EntityManager> entityManager, double gameTime, 
-	int worldWidth, int worldHeight, int worldDepth)
+	double viewDistance, int worldWidth, int worldHeight, int worldDepth)
 {
 	Debug::mention("GameData", "Initializing.");
 
@@ -24,6 +24,7 @@ GameData::GameData(std::unique_ptr<Player> player,
 	std::fill(this->collisionGrid.begin(), this->collisionGrid.end(), 0);
 
 	this->gameTime = gameTime;
+	this->viewDistance = viewDistance;
 	this->worldWidth = worldWidth;
 	this->worldHeight = worldHeight;
 	this->worldDepth = worldDepth;
@@ -57,6 +58,11 @@ std::vector<char> &GameData::getCollisionGrid()
 double GameData::getGameTime() const
 {
 	return this->gameTime;
+}
+
+double GameData::getViewDistance() const
+{
+	return this->viewDistance;
 }
 
 int GameData::getWorldWidth() const

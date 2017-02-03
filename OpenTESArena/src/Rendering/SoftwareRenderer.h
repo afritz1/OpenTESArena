@@ -21,6 +21,7 @@ private:
 	Double3 startCellReal; // Initial voxel as a float type.
 	Int3 startCell; // Initial voxel for ray casting.
 	double fovY; // Vertical field of view.
+	double viewDistance; // Max render distance (usually at 100% fog).
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
 
@@ -39,6 +40,7 @@ public:
 	void setEye(const Double3 &eye);
 	void setForward(const Double3 &forward);
 	void setFovY(double fovY);
+	void setViewDistance(double viewDistance);
 
 	// Draws the scene to the internal frame buffer.
 	void render(const std::vector<char> &voxelGrid, const int gridWidth,
