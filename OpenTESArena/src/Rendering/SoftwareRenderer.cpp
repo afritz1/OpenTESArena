@@ -224,7 +224,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	{
 		const size_t axisIndex = static_cast<size_t>(axis);
 
-		// Assign to distance based on which axis was hit (x, y, z).
+		// Assign to distance based on which axis was hit.
 		distance = (static_cast<double>(cell[axisIndex]) - this->eye[axisIndex] +
 			static_cast<double>((1 - step[axisIndex]) / 2)) / direction[axisIndex];
 	}
@@ -238,48 +238,53 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		// Intersection point on the voxel.
 		const Double3 hitPoint = this->eye + (direction * distance);
 
-		// Texture coordinates.
-		// - To do: use "stoppedInFirstVoxel" condition here to make sure coordinates
-		//   inside voxels are flipped correctly.
+		// Texture coordinates. U and V are affected by which side is hit (near, far),
+		// and whether the hit point is on the front or back of the voxel face.
 		double u, v;
 		if (axis == Axis::X)
 		{
+			const double uVal = hitPoint.z - std::floor(hitPoint.z);
+
 			if (nonNegativeDirX)
 			{
-				u = hitPoint.z - std::floor(hitPoint.z);
-				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+				u = stoppedInFirstVoxel ? (1.0 - uVal) : uVal;
 			}
 			else
 			{
-				u = 1.0 - (hitPoint.z - std::floor(hitPoint.z));
-				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+				u = stoppedInFirstVoxel ? uVal : (1.0 - uVal);
 			}
+
+			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 		else if (axis == Axis::Y)
 		{
+			u = hitPoint.z - std::floor(hitPoint.z);
+
+			const double vVal = hitPoint.x - std::floor(hitPoint.x);
+
 			if (nonNegativeDirY)
 			{
-				u = hitPoint.z - std::floor(hitPoint.z);
-				v = hitPoint.x - std::floor(hitPoint.x);
+				v = stoppedInFirstVoxel ? (1.0 - vVal) : vVal;
 			}
 			else
 			{
-				u = hitPoint.z - std::floor(hitPoint.z);
-				v = 1.0 - (hitPoint.x - std::floor(hitPoint.x));
+				v = stoppedInFirstVoxel ? vVal : (1.0 - vVal);
 			}
 		}
 		else
 		{
+			const double uVal = hitPoint.x - std::floor(hitPoint.x);
+
 			if (nonNegativeDirZ)
 			{
-				u = 1.0 - (hitPoint.x - std::floor(hitPoint.x));
-				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+				u = stoppedInFirstVoxel ? uVal : (1.0 - uVal);
 			}
 			else
 			{
-				u = hitPoint.x - std::floor(hitPoint.x);
-				v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+				u = stoppedInFirstVoxel ? (1.0 - uVal) : uVal;
 			}
+
+			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 
 		// Simple UVW placeholder color.
