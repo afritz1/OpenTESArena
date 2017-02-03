@@ -33,6 +33,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->fovY = 0.0;
 
 	this->viewDistance = 0.0;
+	this->viewDistSquaredCeil = 0;
 
 	// Initialize start cell to "empty".
 	this->startCellReal = Double3();
@@ -67,6 +68,8 @@ void SoftwareRenderer::setFovY(double fovY)
 void SoftwareRenderer::setViewDistance(double viewDistance)
 {
 	this->viewDistance = viewDistance;
+	this->viewDistSquaredCeil = static_cast<int>(
+		std::ceil(viewDistance * viewDistance));
 }
 
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
@@ -158,15 +161,35 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	enum class Axis { X, Y, Z };
 	Axis axis = Axis::X;
 
-	// Step through the voxel grid while the current coordinate is valid.
-	// - Another condition should eventually be used instead. It should
-	//   check whether the ray has stepped far enough (cmp distance squared?),
-	//   and "voxelIsValid" should be used to 'continue' instead if not valid.
+	// Distance squared (in voxels) that the ray has stepped. Square roots are
+	// too slow to use in the DDA loop, so this is used instead.
+	// - When using variable-sized voxels, this may be calculated differently.
+	int cellDistSquared = 0;
+
+	// Offset values for which corner of a voxel to compare the distance 
+	// squared against. The correct corner to use is important when culling
+	// shapes at max view distance.
+	// - These will depend on voxel sizes eventually.
+	const Int3 startCellWithOffset(
+		this->startCell.x + ((1 + step.x) / 2),
+		this->startCell.y + ((1 + step.y) / 2),
+		this->startCell.z + ((1 + step.z) / 2));
+	const Int3 cellOffset(
+		(1 - step.x) / 2,
+		(1 - step.y) / 2,
+		(1 - step.z) / 2);
+
+	// Check world bounds on the start voxel. Bounds are partially recalculated 
+	// for axes that the DDA loop is stepping through.
 	bool voxelIsValid = (cell.x >= 0) && (cell.y >= 0) && (cell.z >= 0) &&
 		(cell.x < gridWidth) && (cell.y < gridHeight) && (cell.z < gridDepth);
 
-	while (voxelIsValid)
+	// Step through the voxel grid while the current coordinate is valid and
+	// the total voxel distance stepped is less than the view distance.
+	// (Note that the "voxel distance" is not the same as "actual" distance.)
+	while (voxelIsValid && (cellDistSquared < this->viewDistSquaredCeil))
 	{
+		// Get the index of the current voxel in the voxel grid.
 		const int gridIndex = cell.x + (cell.y * gridWidth) +
 			(cell.z * gridWidth * gridHeight);
 
@@ -184,22 +207,29 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			sideDist.x += deltaDist.x;
 			cell.x += step.x;
 			axis = Axis::X;
-			voxelIsValid = (cell.x >= 0) && (cell.x < gridWidth);
+			voxelIsValid &= (cell.x >= 0) && (cell.x < gridWidth);
 		}
 		else if (sideDist.y < sideDist.z)
 		{
 			sideDist.y += deltaDist.y;
 			cell.y += step.y;
 			axis = Axis::Y;
-			voxelIsValid = (cell.y >= 0) && (cell.y < gridHeight);
+			voxelIsValid &= (cell.y >= 0) && (cell.y < gridHeight);
 		}
 		else
 		{
 			sideDist.z += deltaDist.z;
 			cell.z += step.z;
 			axis = Axis::Z;
-			voxelIsValid = (cell.z >= 0) && (cell.z < gridDepth);
+			voxelIsValid &= (cell.z >= 0) && (cell.z < gridDepth);
 		}
+
+		// Refresh how far the current cell is from the start cell, squared.
+		// The "offsets" move each point to the correct corner for each voxel
+		// so that the stepping stops correctly at max view distance.
+		const Int3 cellDiff = (cell + cellOffset) - startCellWithOffset;
+		cellDistSquared = (cellDiff.x * cellDiff.x) + (cellDiff.y * cellDiff.y) +
+			(cellDiff.z * cellDiff.z);
 	}
 
 	// Boolean for whether the ray ended in the same voxel it started in.
