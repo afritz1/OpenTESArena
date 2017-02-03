@@ -238,6 +238,9 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		// Intersection point on the voxel.
 		const Double3 hitPoint = this->eye + (direction * distance);
 
+		// Boolean for whether the hit point is on the back of a voxel face.
+		const bool backFace = stoppedInFirstVoxel;
+
 		// Texture coordinates. U and V are affected by which side is hit (near, far),
 		// and whether the hit point is on the front or back of the voxel face.
 		double u, v;
@@ -245,45 +248,21 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		{
 			const double uVal = hitPoint.z - std::floor(hitPoint.z);
 
-			if (nonNegativeDirX)
-			{
-				u = stoppedInFirstVoxel ? (1.0 - uVal) : uVal;
-			}
-			else
-			{
-				u = stoppedInFirstVoxel ? uVal : (1.0 - uVal);
-			}
-
+			u = (nonNegativeDirX ^ backFace) ? uVal : (1.0 - uVal);
 			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 		else if (axis == Axis::Y)
 		{
-			u = hitPoint.z - std::floor(hitPoint.z);
-
 			const double vVal = hitPoint.x - std::floor(hitPoint.x);
 
-			if (nonNegativeDirY)
-			{
-				v = stoppedInFirstVoxel ? (1.0 - vVal) : vVal;
-			}
-			else
-			{
-				v = stoppedInFirstVoxel ? vVal : (1.0 - vVal);
-			}
+			u = hitPoint.z - std::floor(hitPoint.z);
+			v = (nonNegativeDirY ^ backFace) ? vVal : (1.0 - vVal);
 		}
 		else
 		{
 			const double uVal = hitPoint.x - std::floor(hitPoint.x);
 
-			if (nonNegativeDirZ)
-			{
-				u = stoppedInFirstVoxel ? uVal : (1.0 - uVal);
-			}
-			else
-			{
-				u = stoppedInFirstVoxel ? (1.0 - uVal) : uVal;
-			}
-
+			u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
 			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 
