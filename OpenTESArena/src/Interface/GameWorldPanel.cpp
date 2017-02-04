@@ -18,6 +18,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Math/Constants.h"
 #include "../Math/CoordinateFrame.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
@@ -736,18 +737,27 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(status.get(), 14, 166);
 	renderer.drawToOriginal(portrait.get(), 14, 166);
 
-	// Draw compass slider (the actual headings). +X is north, +Z is east.
-	// Should do some sin() and cos() functions to get the pixel offset.
+	// Draw compass slider based on player direction. +X is north, +Z is east.
 	auto *compassSlider = textureManager.getSurface(
 		TextureFile::fromName(TextureName::CompassSlider));
+	const Double2 groundDirection = player.getGroundDirection();
 
-	Texture compassSliderSegment = [&renderer, &compassSlider]()
+	Texture compassSliderSegment = [&renderer, &compassSlider, &groundDirection]()
 	{
 		SDL_Surface *segmentTemp = Surface::createSurfaceWithFormat(32, 7,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
+		// Angle between 0 and 2 pi.
+		const double angle = std::atan2(groundDirection.y, groundDirection.x);
+
+		// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a 
+		// small "pop-in" when turning from N to NE, because N is drawn in two places, 
+		// but the second place (offset == 256) has tick marks where "NE" should be.
+		const int xOffset = static_cast<int>(240.0 + 
+			std::round(256.0 * (angle / (2.0 * PI)))) % 256;
+
 		SDL_Rect clipRect;
-		clipRect.x = 60; // Arbitrary offset until compass rotation works.
+		clipRect.x = xOffset;
 		clipRect.y = 0;
 		clipRect.w = segmentTemp->w;
 		clipRect.h = segmentTemp->h;
