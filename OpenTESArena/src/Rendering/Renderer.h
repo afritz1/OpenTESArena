@@ -116,7 +116,7 @@ public:
 	void updateCamera(const Double3 &eye, const Double3 &direction, double fovY);
 	void updateGameTime(double gameTime);
 	void updateViewDistance(double viewDistance);
-	int addTexture(uint32_t *pixels, int width, int height);
+	int addTexture(const uint32_t *pixels, int width, int height);
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 		const std::vector<int> &textureIndices);
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,

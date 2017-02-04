@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../Math/Vector3.h"
+#include "../Math/Vector4.h"
 
 // This class runs the CPU-based 3D rendering for the application.
 
@@ -16,7 +17,14 @@
 class SoftwareRenderer
 {
 private:
+	struct TextureData
+	{
+		std::vector<Double4> pixels;
+		int width, height;
+	};
+
 	std::vector<uint32_t> colorBuffer;
+	std::vector<TextureData> textures;
 	Double3 eye, forward; // Camera position and forward vector.
 	Double3 startCellReal; // Initial voxel as a float type.
 	Int3 startCell; // Initial voxel for ray casting.
@@ -42,6 +50,12 @@ public:
 	void setForward(const Double3 &forward);
 	void setFovY(double fovY);
 	void setViewDistance(double viewDistance);
+
+	// Adds a texture and returns its assigned ID (index).
+	int addTexture(const uint32_t *pixels, int width, int height);
+
+	// Resizes the frame buffer and related values.
+	void resize(int width, int height);
 
 	// Draws the scene to the internal frame buffer.
 	void render(const std::vector<char> &voxelGrid, const int gridWidth,

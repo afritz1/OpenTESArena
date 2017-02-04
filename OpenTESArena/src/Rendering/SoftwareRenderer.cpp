@@ -72,6 +72,40 @@ void SoftwareRenderer::setViewDistance(double viewDistance)
 		std::ceil(viewDistance * viewDistance));
 }
 
+int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
+{
+	const int pixelCount = width * height;
+
+	TextureData texture;
+	texture.pixels = std::vector<Double4>(pixelCount);
+	texture.width = width;
+	texture.height = height;
+
+	// Convert ARGB color from integer to double-precision format for speed.
+	// This does waste an extreme amount of memory (32 bytes per pixel!), but
+	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
+	// would be a megabyte).
+	Double4 *texturePixels = texture.pixels.data();
+	for (int i = 0; i < pixelCount; ++i)
+	{
+		texturePixels[i] = Double4::fromARGB(pixels[i]);
+	}
+
+	this->textures.push_back(std::move(texture));
+
+	return static_cast<int>(this->textures.size() - 1);
+}
+
+void SoftwareRenderer::resize(int width, int height)
+{
+	const int pixelCount = width * height;
+	this->colorBuffer.resize(pixelCount);
+	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), 0);
+
+	this->width = width;
+	this->height = height;
+}
+
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	const std::vector<char> &voxelGrid, const int gridWidth,
 	const int gridHeight, const int gridDepth) const
@@ -303,8 +337,21 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 
-		// Simple UVW placeholder color.
-		const Double3 color(u, v, 1.0 - u - v);
+		// Get the texture associated with the ID. Subtract 1 because the first
+		// texture is at index 0 but the lowest hitID is 1.
+		const TextureData &texture = this->textures[hitID - 1];
+
+		// Calculate position in texture.
+		int textureX = static_cast<int>(u * texture.width);
+		int textureY = static_cast<int>(v * texture.height);
+
+		// Get the texel color at the hit point.
+		// - Later, the alpha component can be used for transparency and ignoring
+		//   intersections (in the DDA loop).
+		const Double4 texel = texture.pixels[textureX + (textureY * texture.width)];
+
+		// Convert the texel to a 3-component color.
+		const Double3 color(texel.x, texel.y, texel.z);
 
 		// Linearly interpolate with some depth.
 		const double depth = std::min(distance, this->viewDistance) / this->viewDistance;

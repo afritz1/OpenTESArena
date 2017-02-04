@@ -334,6 +334,21 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 						6.0);
 				}
 			}*/
+
+			// Add some test textures.
+			auto &textureManager = this->getGame()->getTextureManager();
+			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
+			std::vector<const SDL_Surface*> surfaces = {
+				textureManager.getSurfaces("NORM1.SET").at(0),
+				textureManager.getSurfaces("NORM1.SET").at(1),
+				textureManager.getSurfaces("NORM1.SET").at(2)
+			};
+
+			for (const auto *surface : surfaces)
+			{
+				renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
+					surface->w, surface->h);
+			}
 			// -- end test --
 
 			const double gameTime = 0.0; // In seconds. Also affects sun position.
@@ -355,7 +370,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 					// Ground.
 					const int j = 0;
 					const int index = i + (j * worldWidth) + (k * worldWidth * worldHeight);
-					voxelGrid[index] = random.next(2);
+					voxelGrid[index] = 1 + random.next(3);
 				}
 			}
 
@@ -366,7 +381,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				const int z = random.next(worldDepth);
 
 				const int index = x + (y * worldWidth) + (z * worldWidth * worldHeight);
-				voxelGrid[index] = 1;
+				voxelGrid[index] = 1 + random.next(3);
 			}
 			// -- end test --
 

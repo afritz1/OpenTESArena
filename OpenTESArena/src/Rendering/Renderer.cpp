@@ -321,9 +321,8 @@ void Renderer::resize(int width, int height, double resolutionScale)
 		Debug::check(this->gameWorldTexture != nullptr, "Renderer",
 			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
 
-		// Initialize 3D renderer.
-		this->softwareRenderer = std::unique_ptr<SoftwareRenderer>(new SoftwareRenderer(
-			renderWidth, renderHeight));
+		// Resize 3D renderer.
+		this->softwareRenderer->resize(renderWidth, renderHeight);
 	}
 }
 
@@ -403,12 +402,10 @@ void Renderer::updateViewDistance(double viewDistance)
 	this->softwareRenderer->setViewDistance(viewDistance);
 }
 
-int Renderer::addTexture(uint32_t *pixels, int width, int height)
+int Renderer::addTexture(const uint32_t *pixels, int width, int height)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//return this->clProgram->addTexture(pixels, width, height);
-	Debug::crash("Renderer", "addTexture() not implemented.");
-	return -1;
+	assert(this->softwareRenderer.get() != nullptr);
+	return this->softwareRenderer->addTexture(pixels, width, height);
 }
 
 void Renderer::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
