@@ -707,8 +707,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
 	auto &gameData = this->getGame()->getGameData();
-	renderer.renderWorld(gameData.getVoxelGrid(), gameData.getWorldWidth(),
-		gameData.getWorldHeight(), gameData.getWorldDepth());
+	renderer.renderWorld(gameData.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

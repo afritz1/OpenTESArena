@@ -37,6 +37,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/VoxelBuilder.h"
+#include "../World/VoxelGrid.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
@@ -129,11 +130,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			std::unique_ptr<Player> player(new Player(name, gender, raceName,
 				charClass, this->portraitIndex, position, direction, velocity,
 				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
-
-			// Some arbitrary test dimensions.
-			int worldWidth = 32;
-			int worldHeight = 5;
-			int worldDepth = 32;
 
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
@@ -351,37 +347,45 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			}
 			// -- end test --
 
+			// Voxel grid with some arbitrary dimensions.
+			const int gridWidth = 32;
+			const int gridHeight = 5;
+			const int gridDepth = 32;
+			const double voxelHeight = 1.0;
+			std::unique_ptr<VoxelGrid> voxelGrid(new VoxelGrid(
+				gridWidth, gridHeight, gridDepth, voxelHeight));
+
 			const double gameTime = 0.0; // In seconds. Also affects sun position.
 			const double viewDistance = 15.0;
 			std::unique_ptr<GameData> gameData(new GameData(
-				std::move(player), std::move(entityManager), gameTime, 
-				viewDistance, worldWidth, worldHeight, worldDepth));
+				std::move(player), std::move(entityManager), 
+				std::move(voxelGrid), gameTime, viewDistance));
 
 			// -- test --
-			auto &voxelGrid = gameData->getVoxelGrid();
 
 			// Set random voxels.
+			char *voxels = gameData->getVoxelGrid().getVoxels();
 			Random random(0);
 
-			for (int k = 0; k < worldDepth; ++k)
+			for (int k = 0; k < gridDepth; ++k)
 			{
-				for (int i = 0; i < worldWidth; ++i)
+				for (int i = 0; i < gridWidth; ++i)
 				{
 					// Ground.
 					const int j = 0;
-					const int index = i + (j * worldWidth) + (k * worldWidth * worldHeight);
-					voxelGrid[index] = 1 + random.next(3);
+					const int index = i + (j * gridWidth) + (k * gridWidth * gridHeight);
+					voxels[index] = 1 + random.next(3);
 				}
 			}
 
 			for (int n = 0; n < 200; ++n)
 			{
-				const int x = random.next(worldWidth);
-				const int y = 1 + random.next(worldHeight - 1);
-				const int z = random.next(worldDepth);
+				const int x = random.next(gridWidth);
+				const int y = 1 + random.next(gridHeight - 1);
+				const int z = random.next(gridDepth);
 
-				const int index = x + (y * worldWidth) + (z * worldWidth * worldHeight);
-				voxelGrid[index] = 1 + random.next(3);
+				const int index = x + (y * gridWidth) + (z * gridWidth * gridHeight);
+				voxels[index] = 1 + random.next(3);
 			}
 			// -- end test --
 

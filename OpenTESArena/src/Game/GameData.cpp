@@ -6,28 +6,27 @@
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Utilities/Debug.h"
+#include "../World/VoxelGrid.h"
 
 GameData::GameData(std::unique_ptr<Player> player,
-	std::unique_ptr<EntityManager> entityManager, double gameTime, 
-	double viewDistance, int worldWidth, int worldHeight, int worldDepth)
+	std::unique_ptr<EntityManager> entityManager, 
+	std::unique_ptr<VoxelGrid> voxelGrid,
+	double gameTime, double viewDistance)
 {
 	Debug::mention("GameData", "Initializing.");
 
 	this->player = std::move(player);
 	this->entityManager = std::move(entityManager);
+	this->voxelGrid = std::move(voxelGrid);
 
-	// Initialize 3D grids.
-	const int worldVolume = worldWidth * worldHeight * worldDepth;
-	this->voxelGrid = std::vector<char>(worldVolume);
+	// Initialize collision grid to empty.
+	const int worldVolume = this->voxelGrid->getWidth() * this->voxelGrid->getHeight() *
+		this->voxelGrid->getDepth();
 	this->collisionGrid = std::vector<char>(worldVolume);
-	std::fill(this->voxelGrid.begin(), this->voxelGrid.end(), 0);
 	std::fill(this->collisionGrid.begin(), this->collisionGrid.end(), 0);
 
 	this->gameTime = gameTime;
 	this->viewDistance = viewDistance;
-	this->worldWidth = worldWidth;
-	this->worldHeight = worldHeight;
-	this->worldDepth = worldDepth;
 }
 
 GameData::~GameData()
@@ -45,9 +44,9 @@ EntityManager &GameData::getEntityManager() const
 	return *this->entityManager.get();
 }
 
-std::vector<char> &GameData::getVoxelGrid()
+VoxelGrid &GameData::getVoxelGrid()
 {
-	return this->voxelGrid;
+	return *this->voxelGrid.get();
 }
 
 std::vector<char> &GameData::getCollisionGrid()
@@ -63,21 +62,6 @@ double GameData::getGameTime() const
 double GameData::getViewDistance() const
 {
 	return this->viewDistance;
-}
-
-int GameData::getWorldWidth() const
-{
-	return this->worldWidth;
-}
-
-int GameData::getWorldHeight() const
-{
-	return this->worldHeight;
-}
-
-int GameData::getWorldDepth() const
-{
-	return this->worldDepth;
 }
 
 void GameData::incrementGameTime(double dt)

@@ -14,6 +14,8 @@
 // it's not a graphics API, and the overhead of passing frame buffers back and
 // forth with the GPU was "hilarious" as one said. It was good practice, though!
 
+class VoxelGrid;
+
 class SoftwareRenderer
 {
 private:
@@ -35,8 +37,7 @@ private:
 	int renderThreadCount; // Number of threads to use for rendering.
 
 	// Casts a ray from the default start point (eye) and returns the color.
-	Double3 castRay(const Double3 &direction, const std::vector<char> &voxelGrid, 
-		const int gridWidth, const int gridHeight, const int gridDepth) const;
+	Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
@@ -58,8 +59,7 @@ public:
 	void resize(int width, int height);
 
 	// Draws the scene to the internal frame buffer.
-	void render(const std::vector<char> &voxelGrid, const int gridWidth,
-		const int gridHeight, const int gridDepth);
+	void render(const VoxelGrid &voxelGrid);
 };
 
 #endif

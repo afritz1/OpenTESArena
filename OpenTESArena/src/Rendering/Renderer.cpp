@@ -12,6 +12,7 @@
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
+#include "../World/VoxelGrid.h"
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const std::string Renderer::DEFAULT_TITLE = "OpenTESArena";
@@ -571,14 +572,13 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect);
 }
 
-void Renderer::renderWorld(const std::vector<char> &voxelGrid, int gridWidth,
-	int gridHeight, int gridDepth)
+void Renderer::renderWorld(const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
 
 	// Render the game world to a frame buffer.
-	this->softwareRenderer->render(voxelGrid, gridWidth, gridHeight, gridDepth);
+	this->softwareRenderer->render(voxelGrid);
 
 	int renderWidth;
 	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);

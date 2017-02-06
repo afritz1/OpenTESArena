@@ -7,6 +7,7 @@
 
 #include "../Math/Constants.h"
 #include "../Utilities/Debug.h"
+#include "../World/VoxelGrid.h"
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
@@ -107,8 +108,7 @@ void SoftwareRenderer::resize(int width, int height)
 }
 
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
-	const std::vector<char> &voxelGrid, const int gridWidth,
-	const int gridHeight, const int gridDepth) const
+	const VoxelGrid &voxelGrid) const
 {
 	// This is an extension of Lode Vandevenne's DDA algorithm from 2D to 3D.
 	// Technically, it could be considered a "3D-DDA" algorithm. It will eventually 
@@ -213,6 +213,11 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		(1 - step.y) / 2,
 		(1 - step.z) / 2);
 
+	// Get dimensions of the voxel grid.
+	const int gridWidth = voxelGrid.getWidth();
+	const int gridHeight = voxelGrid.getHeight();
+	const int gridDepth = voxelGrid.getDepth();
+
 	// Check world bounds on the start voxel. Bounds are partially recalculated 
 	// for axes that the DDA loop is stepping through.
 	bool voxelIsValid = (cell.x >= 0) && (cell.y >= 0) && (cell.z >= 0) &&
@@ -221,6 +226,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// Step through the voxel grid while the current coordinate is valid and
 	// the total voxel distance stepped is less than the view distance.
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
+	const char *voxels = voxelGrid.getVoxels();
 	while (voxelIsValid && (cellDistSquared < this->viewDistSquaredCeil))
 	{
 		// Get the index of the current voxel in the voxel grid.
@@ -228,7 +234,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			(cell.z * gridWidth * gridHeight);
 
 		// Check if the current voxel is solid.
-		const char voxelID = voxelGrid[gridIndex];
+		const char voxelID = voxels[gridIndex];
 
 		if (voxelID > 0)
 		{
@@ -364,8 +370,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	}
 }
 
-void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
-	const int gridWidth, const int gridHeight, const int gridDepth)
+void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -399,8 +404,8 @@ void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
 	// Lambda for rendering some rows of pixels using 3D ray casting. While this is 
 	// far more expensive than 2.5D ray casting, it does allow the scene to be 
 	// represented in true 3D instead of "fake" 3D.
-	auto renderRows = [this, &voxelGrid, gridWidth, gridHeight, gridDepth, widthReal,
-		heightReal, aspect, &forwardComp, &up, &right, pixels](int startY, int endY)
+	auto renderRows = [this, &voxelGrid, widthReal, heightReal, aspect, 
+		&forwardComp, &up, &right, pixels](int startY, int endY)
 	{
 		for (int y = startY; y < endY; ++y)
 		{
@@ -424,8 +429,7 @@ void SoftwareRenderer::render(const std::vector<char> &voxelGrid,
 				const Double3 direction = (forwardComp + rightComp - upComp).normalized();
 
 				// Get the resulting color of the ray, starting from the eye.
-				const Double3 color = this->castRay(direction, voxelGrid,
-					gridWidth, gridHeight, gridDepth);
+				const Double3 color = this->castRay(direction, voxelGrid);
 
 				// Convert to 0x00RRGGBB.
 				const int index = x + (y * this->width);

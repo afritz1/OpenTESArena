@@ -16,6 +16,7 @@
 
 class Color;
 class SoftwareRenderer;
+class VoxelGrid;
 
 struct SDL_Rect;
 struct SDL_Renderer;
@@ -146,8 +147,7 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const std::vector<char> &voxelGrid, int gridWidth,
-		int gridHeight, int gridDepth);
+	void renderWorld(const VoxelGrid &voxelGrid);
 
 	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);
