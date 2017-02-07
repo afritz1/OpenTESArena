@@ -37,6 +37,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/VoxelBuilder.h"
+#include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
@@ -355,6 +356,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			std::unique_ptr<VoxelGrid> voxelGrid(new VoxelGrid(
 				gridWidth, gridHeight, gridDepth, voxelHeight));
 
+			// Add some voxel data for the voxel IDs to refer to.
+			voxelGrid->addVoxelData(VoxelData(0, 0));
+			voxelGrid->addVoxelData(VoxelData(1, 1));
+			voxelGrid->addVoxelData(VoxelData(2, 2));
+
 			const double gameTime = 0.0; // In seconds. Also affects sun position.
 			const double viewDistance = 15.0;
 			std::unique_ptr<GameData> gameData(new GameData(
@@ -363,7 +369,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 			// -- test --
 
-			// Set random voxels.
+			// Set random voxels. These voxel IDs will refer to voxel data.
 			char *voxels = gameData->getVoxelGrid().getVoxels();
 			Random random(0);
 

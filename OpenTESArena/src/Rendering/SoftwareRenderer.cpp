@@ -7,6 +7,7 @@
 
 #include "../Math/Constants.h"
 #include "../Utilities/Debug.h"
+#include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
@@ -343,18 +344,23 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
 		}
 
-		// Get the texture associated with the ID. Subtract 1 because the first
-		// texture is at index 0 but the lowest hitID is 1.
-		const TextureData &texture = this->textures[hitID - 1];
+		// Get the voxel data associated with the ID. Subtract 1 because the first
+		// entry is at index 0 but the lowest hitID is 1.
+		const VoxelData &voxelData = voxelGrid.getVoxelData(hitID - 1);
+
+		// Get the texture depending on which face was hit.
+		const TextureData &texture = (axis == Axis::Y) ?
+			this->textures[voxelData.floorAndCeilingID] :
+			this->textures[voxelData.sideID];
 
 		// Calculate position in texture.
-		int textureX = static_cast<int>(u * texture.width);
-		int textureY = static_cast<int>(v * texture.height);
+		const int textureX = static_cast<int>(u * texture.width);
+		const int textureY = static_cast<int>(v * texture.height);
 
 		// Get the texel color at the hit point.
 		// - Later, the alpha component can be used for transparency and ignoring
 		//   intersections (in the DDA loop).
-		const Double4 texel = texture.pixels[textureX + (textureY * texture.width)];
+		const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 
 		// Convert the texel to a 3-component color.
 		const Double3 color(texel.x, texel.y, texel.z);
