@@ -332,13 +332,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				}
 			}*/
 
-			// Add some test textures.
+			// Add some distinctive test textures.
 			auto &textureManager = this->getGame()->getTextureManager();
 			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 			std::vector<const SDL_Surface*> surfaces = {
-				textureManager.getSurfaces("NORM1.SET").at(0),
-				textureManager.getSurfaces("NORM1.SET").at(1),
-				textureManager.getSurfaces("NORM1.SET").at(2)
+				textureManager.getSurfaces("CASA.SET").at(3),
+				textureManager.getSurfaces("CASF.SET").at(3),
+				textureManager.getSurfaces("CASH.SET").at(3)
 			};
 
 			for (const auto *surface : surfaces)
@@ -352,7 +352,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			const int gridWidth = 32;
 			const int gridHeight = 5;
 			const int gridDepth = 32;
-			const double voxelHeight = 1.0;
+			const double voxelHeight = 1.5; // "Tall" voxels.
 			std::unique_ptr<VoxelGrid> voxelGrid(new VoxelGrid(
 				gridWidth, gridHeight, gridDepth, voxelHeight));
 

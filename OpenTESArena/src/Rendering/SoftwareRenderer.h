@@ -32,8 +32,8 @@ private:
 	Int3 startCell; // Initial voxel for ray casting.
 	double fovY; // Vertical field of view.
 	double viewDistance; // Max render distance (usually at 100% fog).
+	double viewDistSquared; // For comparing with cell distance squared.
 	int width, height; // Dimensions of frame buffer.
-	int viewDistSquaredCeil; // For comparing with cell distance squared.
 	int renderThreadCount; // Number of threads to use for rendering.
 
 	// Casts a ray from the default start point (eye) and returns the color.

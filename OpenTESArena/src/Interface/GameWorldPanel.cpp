@@ -443,6 +443,21 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 
 		auto &player = this->getGame()->getGameData().getPlayer();
 
+		// -- test --
+		// Some simple code to move the camera along the Y axis.
+		bool space = keys[SDL_SCANCODE_SPACE] != 0;
+		bool c = keys[SDL_SCANCODE_C] != 0;
+		Double3 &pos = const_cast<Double3&>(player.getPosition());
+		if (space)
+		{
+			pos.y += 0.5 * dt;
+		}
+		else if (c)
+		{
+			pos.y -= 0.5 * dt;
+		}
+		// -- end test --
+
 		// Get some relevant player direction data.
 		Double2 groundDirection = player.getGroundDirection();
 		Double3 groundDirection3D = Double3(groundDirection.x, 0.0,

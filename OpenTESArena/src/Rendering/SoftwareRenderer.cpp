@@ -35,7 +35,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->fovY = 0.0;
 
 	this->viewDistance = 0.0;
-	this->viewDistSquaredCeil = 0;
+	this->viewDistSquared = 0.0;
 
 	// Initialize start cell to "empty".
 	this->startCellReal = Double3();
@@ -70,8 +70,7 @@ void SoftwareRenderer::setFovY(double fovY)
 void SoftwareRenderer::setViewDistance(double viewDistance)
 {
 	this->viewDistance = viewDistance;
-	this->viewDistSquaredCeil = static_cast<int>(
-		std::ceil(viewDistance * viewDistance));
+	this->viewDistSquared = viewDistance * viewDistance;
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -115,11 +114,14 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// Technically, it could be considered a "3D-DDA" algorithm. It will eventually 
 	// have some additional features so all of Arena's geometry can be represented.
 
-	// Once variable-sized voxels start getting used, there will need to be several
-	// things changed here. First, some constants like "1.0" will become parameters.
-	// Second, the distance calculation will need to be modified accordingly. Third, 
-	// the texture coordinates will need some modifications so they span the range 
-	// of the voxel face (maybe subtracting the floor() won't be sufficient?).
+	// To do:
+	// - Figure out proper DDA lengths for variable-height voxels, and why using
+	//   voxelHeight squared instead of 1.0 in deltaDist.y looks weird (sideDist.y?).
+	// - Cuboids within voxels (bridges, beds, shelves) with variable Y offset and size.
+	// - Sprites (SpriteGrid? Sprite data, and list of sprite IDs per voxel).
+	// - Transparent textures (check texel alpha in DDA loop).
+	// - Sky (if hitID == 0).
+	// - Shading (shadows from the sun, point lights).
 
 	// Some floating point behavior assumptions:
 	// -> (value / 0.0) == infinity
@@ -132,6 +134,14 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		direction.x * direction.x,
 		direction.y * direction.y,
 		direction.z * direction.z);
+
+	// Height (Y size) of each voxel in the voxel grid. Some levels in Arena have
+	// "tall" voxels, so the voxel height must be a variable.
+	const double voxelHeight = voxelGrid.getVoxelHeight();
+
+	// A custom variable that represents the Y "floor" of the current voxel. Since
+	// the Y size of voxels might be different from 1.0, std::floor() cannot be used.
+	const double eyeYRelativeFloor = this->eye.y - std::fmod(this->eye.y, voxelHeight);
 
 	// Calculate delta distances along each axis. These determine how far
 	// the ray has to go until the next X, Y, or Z side is hit, respectively.
@@ -163,12 +173,12 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	if (nonNegativeDirY)
 	{
 		step.y = 1;
-		sideDist.y = (this->startCellReal.y + 1.0 - this->eye.y) * deltaDist.y;
+		sideDist.y = (eyeYRelativeFloor + voxelHeight - this->eye.y) * deltaDist.y;
 	}
 	else
 	{
 		step.y = -1;
-		sideDist.y = (this->eye.y - this->startCellReal.y) * deltaDist.y;
+		sideDist.y = (this->eye.y - eyeYRelativeFloor) * deltaDist.y;
 	}
 
 	if (nonNegativeDirZ)
@@ -186,6 +196,13 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// of the ray ending in the same voxel it started in.
 	const Double3 initialSideDist = sideDist;
 
+	// Make a copy of the step magnitudes, converted to doubles. The Y component
+	// also needs to be a multiple of the voxel height.
+	const Double3 stepReal(
+		static_cast<double>(step.x),
+		static_cast<double>(step.y * voxelHeight),
+		static_cast<double>(step.z));
+
 	// Get initial voxel coordinates.
 	Int3 cell = this->startCell;
 
@@ -199,20 +216,19 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// Distance squared (in voxels) that the ray has stepped. Square roots are
 	// too slow to use in the DDA loop, so this is used instead.
 	// - When using variable-sized voxels, this may be calculated differently.
-	int cellDistSquared = 0;
+	double cellDistSquared = 0.0;
 
 	// Offset values for which corner of a voxel to compare the distance 
 	// squared against. The correct corner to use is important when culling
 	// shapes at max view distance.
-	// - These will depend on voxel sizes eventually.
-	const Int3 startCellWithOffset(
-		this->startCell.x + ((1 + step.x) / 2),
-		this->startCell.y + ((1 + step.y) / 2),
-		this->startCell.z + ((1 + step.z) / 2));
-	const Int3 cellOffset(
-		(1 - step.x) / 2,
-		(1 - step.y) / 2,
-		(1 - step.z) / 2);
+	const Double3 startCellWithOffset(
+		this->startCellReal.x + ((1.0 + stepReal.x) / 2.0),
+		eyeYRelativeFloor + ((voxelHeight + stepReal.y) / 2.0),
+		this->startCellReal.z + ((1.0 + stepReal.z) / 2.0));
+	const Double3 cellOffset(
+		(1.0 - stepReal.x) / 2.0,
+		(voxelHeight - stepReal.y) / 2.0,
+		(1.0 - stepReal.z) / 2.0);
 
 	// Get dimensions of the voxel grid.
 	const int gridWidth = voxelGrid.getWidth();
@@ -228,7 +244,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// the total voxel distance stepped is less than the view distance.
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
 	const char *voxels = voxelGrid.getVoxels();
-	while (voxelIsValid && (cellDistSquared < this->viewDistSquaredCeil))
+	while (voxelIsValid && (cellDistSquared < this->viewDistSquared))
 	{
 		// Get the index of the current voxel in the voxel grid.
 		const int gridIndex = cell.x + (cell.y * gridWidth) +
@@ -268,7 +284,10 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		// Refresh how far the current cell is from the start cell, squared.
 		// The "offsets" move each point to the correct corner for each voxel
 		// so that the stepping stops correctly at max view distance.
-		const Int3 cellDiff = (cell + cellOffset) - startCellWithOffset;
+		const Double3 cellDiff(
+			(static_cast<double>(cell.x) + cellOffset.x) - startCellWithOffset.x,
+			((static_cast<double>(cell.y) * voxelHeight) + cellOffset.y) - startCellWithOffset.y,
+			(static_cast<double>(cell.z) + cellOffset.z) - startCellWithOffset.z);
 		cellDistSquared = (cellDiff.x * cellDiff.x) + (cellDiff.y * cellDiff.y) +
 			(cellDiff.z * cellDiff.z);
 	}
@@ -303,8 +322,21 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		const size_t axisIndex = static_cast<size_t>(axis);
 
 		// Assign to distance based on which axis was hit.
-		distance = (static_cast<double>(cell[axisIndex]) - this->eye[axisIndex] +
-			static_cast<double>((1 - step[axisIndex]) / 2)) / direction[axisIndex];
+		if (axis == Axis::X)
+		{
+			distance = (static_cast<double>(cell.x) - this->eye.x +
+				((1.0 - stepReal.x) / 2.0)) / direction.x;
+		}
+		else if (axis == Axis::Y)
+		{
+			distance = ((static_cast<double>(cell.y) * voxelHeight) - this->eye.y +
+				((voxelHeight - stepReal.y) / 2.0)) / direction.y;
+		}
+		else
+		{
+			distance = (static_cast<double>(cell.z) - this->eye.z +
+				((1.0 - stepReal.z) / 2.0)) / direction.z;
+		}
 	}
 
 	// Simple fog color.
@@ -327,7 +359,8 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			const double uVal = hitPoint.z - std::floor(hitPoint.z);
 
 			u = (nonNegativeDirX ^ backFace) ? uVal : (1.0 - uVal);
-			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+			//v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+			v = 1.0 - (std::fmod(hitPoint.y, voxelHeight) / voxelHeight);
 		}
 		else if (axis == Axis::Y)
 		{
@@ -341,8 +374,19 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 			const double uVal = hitPoint.x - std::floor(hitPoint.x);
 
 			u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
-			v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+			//v = 1.0 - (hitPoint.y - std::floor(hitPoint.y));
+			v = 1.0 - (std::fmod(hitPoint.y, voxelHeight) / voxelHeight);
 		}
+
+		// -- temp --
+		// Display bad texture coordinates as magenta. I think it has to do with
+		// std::fmod rounding to zero or something. There's no way the error could
+		// be that large with doubles.
+		if ((u < 0.0) || (u >= 1.0) || (v < 0.0) || (v >= 1.0))
+		{
+			return Double3(1.0, 0.0, 1.0);
+		}
+		// -- end temp --
 
 		// Get the voxel data associated with the ID. Subtract 1 because the first
 		// entry is at index 0 but the lowest hitID is 1.
@@ -394,10 +438,11 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// "Forward" component of the camera for generating rays with.
 	const Double3 forwardComp = forward * zoom;
 
-	// Constant DDA-related values.
+	// Constant DDA-related values. The Y component also needs to take voxel height
+	// into account because voxel height is an area-dependent variable.
 	this->startCellReal = Double3(
 		std::floor(this->eye.x),
-		std::floor(this->eye.y),
+		std::floor(this->eye.y / voxelGrid.getVoxelHeight()),
 		std::floor(this->eye.z));
 	this->startCell = Int3(
 		static_cast<int>(this->startCellReal.x),
