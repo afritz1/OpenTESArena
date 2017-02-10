@@ -139,9 +139,8 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// "tall" voxels, so the voxel height must be a variable.
 	const double voxelHeight = voxelGrid.getVoxelHeight();
 
-	// A custom variable that represents the Y "floor" of the current voxel. Since
-	// the Y size of voxels might be different from 1.0, std::floor() cannot be used.
-	const double eyeYRelativeFloor = this->eye.y - std::fmod(this->eye.y, voxelHeight);
+	// A custom variable that represents the Y "floor" of the current voxel.
+	const double eyeYRelativeFloor = std::floor(this->eye.y / voxelHeight) * voxelHeight;
 
 	// Calculate delta distances along each axis. These determine how far
 	// the ray has to go until the next X, Y, or Z side is hit, respectively.
@@ -196,11 +195,10 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// of the ray ending in the same voxel it started in.
 	const Double3 initialSideDist = sideDist;
 
-	// Make a copy of the step magnitudes, converted to doubles. The Y component
-	// also needs to be a multiple of the voxel height.
+	// Make a copy of the step magnitudes, converted to doubles.
 	const Double3 stepReal(
 		static_cast<double>(step.x),
-		static_cast<double>(step.y * voxelHeight),
+		static_cast<double>(step.y),
 		static_cast<double>(step.z));
 
 	// Get initial voxel coordinates.
@@ -223,11 +221,11 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	// shapes at max view distance.
 	const Double3 startCellWithOffset(
 		this->startCellReal.x + ((1.0 + stepReal.x) / 2.0),
-		eyeYRelativeFloor + ((voxelHeight + stepReal.y) / 2.0),
+		eyeYRelativeFloor + (((1.0 + stepReal.y) / 2.0) * voxelHeight),
 		this->startCellReal.z + ((1.0 + stepReal.z) / 2.0));
 	const Double3 cellOffset(
 		(1.0 - stepReal.x) / 2.0,
-		(voxelHeight - stepReal.y) / 2.0,
+		((1.0 - stepReal.y) / 2.0) * voxelHeight,
 		(1.0 - stepReal.z) / 2.0);
 
 	// Get dimensions of the voxel grid.
@@ -286,7 +284,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		// so that the stepping stops correctly at max view distance.
 		const Double3 cellDiff(
 			(static_cast<double>(cell.x) + cellOffset.x) - startCellWithOffset.x,
-			((static_cast<double>(cell.y) * voxelHeight) + cellOffset.y) - startCellWithOffset.y,
+			(static_cast<double>(cell.y) + cellOffset.y) - startCellWithOffset.y,
 			(static_cast<double>(cell.z) + cellOffset.z) - startCellWithOffset.z);
 		cellDistSquared = (cellDiff.x * cellDiff.x) + (cellDiff.y * cellDiff.y) +
 			(cellDiff.z * cellDiff.z);
@@ -330,7 +328,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		else if (axis == Axis::Y)
 		{
 			distance = ((static_cast<double>(cell.y) * voxelHeight) - this->eye.y +
-				((voxelHeight - stepReal.y) / 2.0)) / direction.y;
+				(((1.0 - stepReal.y) / 2.0) * voxelHeight)) / direction.y;
 		}
 		else
 		{
@@ -353,6 +351,9 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 
 		// Texture coordinates. U and V are affected by which side is hit (near, far),
 		// and whether the hit point is on the front or back of the voxel face.
+		// - Note, for edge cases where {u,v}Val == 1.0, the texture coordinate is
+		//   out of bounds by one pixel, so instead of 1.0, something like 0.9999999
+		//   should be used instead. std::nextafter(1.0, -INFINITY)?
 		double u, v;
 		if (axis == Axis::X)
 		{
@@ -379,9 +380,8 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		}
 
 		// -- temp --
-		// Display bad texture coordinates as magenta. I think it has to do with
-		// std::fmod rounding to zero or something. There's no way the error could
-		// be that large with doubles.
+		// Display bad texture coordinates as magenta. If any of these is true, it
+		// means something above is wrong.
 		if ((u < 0.0) || (u >= 1.0) || (v < 0.0) || (v >= 1.0))
 		{
 			return Double3(1.0, 0.0, 1.0);
