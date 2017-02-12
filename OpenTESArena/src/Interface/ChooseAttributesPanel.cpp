@@ -352,7 +352,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			const int gridWidth = 32;
 			const int gridHeight = 5;
 			const int gridDepth = 32;
-			const double voxelHeight = 1.5; // "Tall" voxels.
+			const double voxelHeight = 1.0;
 			std::unique_ptr<VoxelGrid> voxelGrid(new VoxelGrid(
 				gridWidth, gridHeight, gridDepth, voxelHeight));
 

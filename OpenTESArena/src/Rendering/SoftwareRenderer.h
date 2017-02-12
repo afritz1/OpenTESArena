@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
 
@@ -36,8 +37,12 @@ private:
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
 
-	// Casts a ray from the default start point (eye) and returns the color.
+	// Casts a 3D ray from the default start point (eye) and returns the color.
 	Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
+
+	// Casts a 2D ray from the default start point (eye) and returns the color.
+	void castRay(const Double2 &direction, const VoxelGrid &voxelGrid, 
+		int x, uint32_t *pixels) const;
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();

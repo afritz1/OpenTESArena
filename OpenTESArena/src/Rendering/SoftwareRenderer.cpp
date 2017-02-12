@@ -420,6 +420,177 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	}
 }
 
+void SoftwareRenderer::castRay(const Double2 &direction,
+	const VoxelGrid &voxelGrid, int x, uint32_t *pixels) const
+{
+	// This is the "classic" 2.5D version of ray casting, based on Lode Vandevenne's 
+	// ray caster. It will also need to allow multiple floors, variable eye height,
+	// and flats with arbitrary angles around the Y axis (doors, etc.). I think a
+	// 2D depth buffer will be required, too.
+
+	// Some floating point behavior assumptions:
+	// -> (value / 0.0) == infinity
+	// -> (value / infinity) == 0.0
+	// -> (int)(-0.8) == 0
+	// -> (int)floor(-0.8) == -1
+	// -> (int)ceil(-0.8) == 0
+	
+	// Because 2D vectors use "X" and "Y", the Z component is actually
+	// aliased as "Y", which is a minor annoyance.
+	const double dirX = direction.x;
+	const double dirZ = direction.y;
+	const double dirXSquared = direction.x * direction.x;
+	const double dirZSquared = direction.y * direction.y;
+
+	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
+	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
+
+	const bool nonNegativeDirX = direction.x >= 0.0;
+	const bool nonNegativeDirZ = direction.y >= 0.0;
+
+	int stepX, stepZ;
+	double sideDistX, sideDistZ;
+	if (nonNegativeDirX)
+	{
+		stepX = 1;
+		sideDistX = (this->startCellReal.x + 1.0 - this->eye.x) * deltaDistX;
+	}
+	else
+	{
+		stepX = -1;
+		sideDistX = (this->eye.x - this->startCellReal.x) * deltaDistX;
+	}
+
+	if (nonNegativeDirZ)
+	{
+		stepZ = 1;
+		sideDistZ = (this->startCellReal.z + 1.0 - this->eye.z) * deltaDistZ;
+	}
+	else
+	{
+		stepZ = -1;
+		sideDistZ = (this->eye.z - this->startCellReal.z) * deltaDistZ;
+	}
+
+	// Make a copy of the initial side distances for the special case of ending in
+	// the first voxel. This is the oblique distance though, so some changes will
+	// be necessary.
+	const double initialSideDistX = sideDistX;
+	const double initialSideDistZ = sideDistZ;
+	
+	const int gridWidth = voxelGrid.getWidth();
+	const int gridHeight = voxelGrid.getHeight();
+	const int gridDepth = voxelGrid.getDepth();
+
+	int cellX = this->startCell.x;
+	const int cellY = this->startCell.y; // Constant for now.
+	int cellZ = this->startCell.z;
+
+	// Axis enum. Eventually, Y will be added for floors and ceilings.
+	enum class Axis { X, Z };
+	Axis axis = Axis::X;
+
+	// Pointer to voxel grid data.
+	const char *voxels = voxelGrid.getVoxels();
+
+	// Voxel ID of a hit voxel, if any. Zero is "air".
+	char hitID = 0;
+
+	// Step through the voxel grid while the current coordinate is valid.
+	bool voxelIsValid = (cellX >= 0) && (cellY >= 0) && (cellZ >= 0) &&
+		(cellX < gridWidth) && (cellY < gridHeight) && (cellZ < gridDepth);
+
+	while (voxelIsValid)
+	{
+		// Get the index of the current voxel in the voxel grid.
+		const int gridIndex = cellX + (cellY * gridWidth) +
+			(cellZ * gridWidth * gridHeight);
+
+		// Check if the current voxel is solid.
+		const char voxelID = voxels[gridIndex];
+
+		if (voxelID > 0)
+		{
+			hitID = voxelID;
+			break;
+		}
+
+		if (sideDistX < sideDistZ)
+		{
+			sideDistX += deltaDistX;
+			cellX += stepX;
+			axis = Axis::X;
+			voxelIsValid &= (cellX >= 0) && (cellX < gridWidth);
+		}
+		else
+		{
+			sideDistZ += deltaDistZ;
+			cellZ += stepZ;
+			axis = Axis::Z;
+			voxelIsValid &= (cellZ >= 0) && (cellZ < gridDepth);
+		}
+	}
+
+	// If hit ID is positive, a wall was hit.
+	if (hitID > 0)
+	{
+		// Boolean for whether the stepping stopped in the first voxel.
+		const bool stoppedInFirstVoxel = (cellX == this->startCell.x) &&
+			(cellZ == this->startCell.z);
+
+		// The "z-distance" from the camera to the wall. It's a special case if the
+		// stepping stopped in the first voxel.
+		double zDistance;
+		if (stoppedInFirstVoxel)
+		{
+			// To do: figure out the correct initial side distance calculation.
+			// - Maybe avoid a square root with direction?
+			if (initialSideDistX < initialSideDistZ)
+			{
+				//zDistance = initialSideDistX;
+				zDistance = 0.01;
+				axis = Axis::X;
+			}
+			else
+			{
+				//zDistance = initialSideDistZ;
+				zDistance = 0.01;
+				axis = Axis::Z;
+			}
+		}
+		else
+		{
+			zDistance = (axis == Axis::X) ?
+				(static_cast<double>(cellX) - this->eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
+				(static_cast<double>(cellZ) - this->eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+		}
+
+		// Height in pixels on the screen.
+		// "Pixel height" looks like a very simple form of projection, and will need to be 
+		// expanded for more flexibility.
+		const double heightReal = static_cast<double>(this->height);
+		const int pixelHeight = static_cast<int>(std::round(heightReal / zDistance));
+
+		// Find the Y coordinates of where the wall starts and stops on the screen.
+		// - Dividing pixelHeight by 4 instead of 2 compensates for aspect vs. aspect * 0.5.
+		const int drawStart = std::max(0, (-pixelHeight / 4) + (this->height / 2));
+		const int drawEnd = std::min(this->height, (pixelHeight / 4) + (this->height / 2));
+
+		// Calculate linearly interpolated fog.
+		const Double3 fogColor(0.40, 0.65, 1.0);
+		const double fogPercent = std::min(zDistance, this->viewDistance) / this->viewDistance;
+		
+		for (int y = drawStart; y < drawEnd; ++y)
+		{
+			const Double4 &texel = this->textures[hitID - 1].pixels[0];
+			const Double3 color(texel.x, texel.y, texel.z);
+
+			const int index = x + (y * this->width);
+			pixels[index] = color.lerp(fogColor, fogPercent).toRGB();
+		}
+	}
+}
+
 void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 {
 	// Constants for screen dimensions.
@@ -432,14 +603,18 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	const Double3 right = forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
 	const Double3 up = right.cross(forward).normalized();
 
+	// Constant camera values for 2D (camera elevation would be forward.y).
+	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
+	const Double2 right2D = Double2(right.x, right.z).normalized();
+
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
 
 	// "Forward" component of the camera for generating rays with.
-	const Double3 forwardComp = forward * zoom;
+	const Double2 forwardComp = forward2D * zoom;
 
 	// Constant DDA-related values. The Y component also needs to take voxel height
-	// into account because voxel height is an area-dependent variable.
+	// into account because voxel height is a level-dependent variable.
 	this->startCellReal = Double3(
 		std::floor(this->eye.x),
 		std::floor(this->eye.y / voxelGrid.getVoxelHeight()),
@@ -455,7 +630,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Lambda for rendering some rows of pixels using 3D ray casting. While this is 
 	// far more expensive than 2.5D ray casting, it does allow the scene to be 
 	// represented in true 3D instead of "fake" 3D.
-	auto renderRows = [this, &voxelGrid, widthReal, heightReal, aspect, 
+	/*auto renderRows = [this, &voxelGrid, widthReal, heightReal, aspect,
 		&forwardComp, &up, &right, pixels](int startY, int endY)
 	{
 		for (int y = startY; y < endY; ++y)
@@ -487,24 +662,52 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 				pixels[index] = color.clamped().toRGB();
 			}
 		}
+	};*/
+
+	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
+	// the cheaper form of ray casting (although still not very efficient), and results
+	// in a "fake" 3D scene.
+	auto renderColumns = [this, &voxelGrid, widthReal, aspect, &forwardComp,
+		&right2D, pixels](int startX, int endX)
+	{
+		for (int x = startX; x < endX; ++x)
+		{
+			// X percent across the screen.
+			const double xPercent = static_cast<double>(x) / widthReal;
+
+			// "Right" component of the ray direction, based on current screen X.
+			const Double2 rightComp = right2D * (aspect * ((2.0 * xPercent) - 1.0));
+
+			// Calculate the ray direction through the pixel.
+			// - If un-normalized, it uses the Z distance, but the insides of voxels
+			//   don't look right then.
+			const Double2 direction = forwardComp + rightComp;
+
+			// Cast the 2D ray and fill in the column's pixels with color.
+			this->castRay(direction, voxelGrid, x, pixels);
+		}
 	};
+
+	// Clear screen (this could potentially be multi-threaded).
+	const Double3 skyColor(0.40, 0.65, 1.0);
+	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), skyColor.toRGB());
 
 	// Prepare render threads.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);
 
-	// Start the render threads. "blockSize" is the approximate number of rows per thread.
-	// Rounding is involved so the start and stop rows are correct for all resolutions.
-	const double blockSize = heightReal / static_cast<double>(this->renderThreadCount);
+	// Start the render threads. "blockSize" is the approximate number of columns per thread.
+	// Rounding is involved so the start and stop coordinates are correct for all resolutions.
+	const double blockSize = widthReal / static_cast<double>(this->renderThreadCount);
 	for (int i = 0; i < this->renderThreadCount; ++i)
 	{
-		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
-		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
+		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
+		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
 		// Make sure the rounding is correct.
-		assert(startY >= 0);
-		assert(endY <= this->height);
+		assert(startX >= 0);
+		assert(endX <= this->width);
 
-		renderThreads[i] = std::thread(renderRows, startY, endY);
+		renderThreads[i] = std::thread(renderColumns, startX, endX);
 	}
 
 	// Wait for the render threads to finish.
