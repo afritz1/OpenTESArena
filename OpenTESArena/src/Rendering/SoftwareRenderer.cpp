@@ -12,10 +12,12 @@
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
-	// Initialize 2D frame buffer.
+	// Initialize 2D frame buffers.
 	const int pixelCount = width * height;
 	this->colorBuffer = std::vector<uint32_t>(pixelCount);
+	this->zBuffer = std::vector<double>(pixelCount);
 	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), 0);
+	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
 
 	this->width = width;
 	this->height = height;
@@ -101,7 +103,9 @@ void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;
 	this->colorBuffer.resize(pixelCount);
+	this->zBuffer.resize(pixelCount);
 	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), 0);
+	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
 
 	this->width = width;
 	this->height = height;
@@ -421,7 +425,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 }
 
 void SoftwareRenderer::castRay(const Double2 &direction,
-	const VoxelGrid &voxelGrid, int x, uint32_t *pixels) const
+	const VoxelGrid &voxelGrid, int x)
 {
 	// This is the "classic" 2.5D version of ray casting, based on Lode Vandevenne's 
 	// ray caster. It will also need to allow multiple floors, variable eye height,
@@ -434,7 +438,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	// -> (int)(-0.8) == 0
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
-	
+
 	// Because 2D vectors use "X" and "Y", the Z component is actually
 	// aliased as "Y", which is a minor annoyance.
 	const double dirX = direction.x;
@@ -477,7 +481,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	// be necessary.
 	const double initialSideDistX = sideDistX;
 	const double initialSideDistZ = sideDistZ;
-	
+
 	const int gridWidth = voxelGrid.getWidth();
 	const int gridHeight = voxelGrid.getHeight();
 	const int gridDepth = voxelGrid.getDepth();
@@ -490,7 +494,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	enum class Axis { X, Z };
 	Axis axis = Axis::X;
 
-	// Pointer to voxel grid data.
+	// Pointer to voxel ID grid data.
 	const char *voxels = voxelGrid.getVoxels();
 
 	// Voxel ID of a hit voxel, if any. Zero is "air".
@@ -544,17 +548,15 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		if (stoppedInFirstVoxel)
 		{
 			// To do: figure out the correct initial side distance calculation.
-			// - Maybe avoid a square root with direction?
+			// - Maybe try to avoid a square root with direction?
 			if (initialSideDistX < initialSideDistZ)
 			{
-				//zDistance = initialSideDistX;
-				zDistance = 0.01;
+				zDistance = initialSideDistX;
 				axis = Axis::X;
 			}
 			else
 			{
-				//zDistance = initialSideDistZ;
-				zDistance = 0.01;
+				zDistance = initialSideDistZ;
 				axis = Axis::Z;
 			}
 		}
@@ -565,30 +567,87 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 				(static_cast<double>(cellZ) - this->eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
 		}
 
-		// Height in pixels on the screen.
-		// "Pixel height" looks like a very simple form of projection, and will need to be 
-		// expanded for more flexibility.
-		const double heightReal = static_cast<double>(this->height);
-		const int pixelHeight = static_cast<int>(std::round(heightReal / zDistance));
+		// Boolean for whether the intersected voxel face is a back face.
+		const bool backFace = stoppedInFirstVoxel;
 
-		// Find the Y coordinates of where the wall starts and stops on the screen.
-		// - Dividing pixelHeight by 4 instead of 2 compensates for aspect vs. aspect * 0.5.
-		const int drawStart = std::max(0, (-pixelHeight / 4) + (this->height / 2));
-		const int drawEnd = std::min(this->height, (pixelHeight / 4) + (this->height / 2));
+		// 3D hit point on the wall from casting a ray along the XZ plane. The Y coordinate 
+		// will be used eventually.
+		const Double3 hitPoint(
+			this->eye.x + (dirX * zDistance),
+			this->eye.y,
+			this->eye.z + (dirZ * zDistance));
 
-		// Calculate linearly interpolated fog.
+		// Horizontal texture coordinate (constant for all wall pixels in a column).
+		// - Remember to watch out for the edge cases where u == 1.0, resulting in an
+		//   out-of-bounds texel access.
+		double u;
+		if (axis == Axis::X)
+		{
+			const double uVal = hitPoint.z - std::floor(hitPoint.z);
+			u = (nonNegativeDirX ^ backFace) ? uVal : (1.0 - uVal);
+		}
+		else
+		{
+			const double uVal = hitPoint.x - std::floor(hitPoint.x);
+			u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
+		}
+
+		// Height in pixels on the screen. "Pixel height" appears to be a very simple kind of 
+		// projection, and it will need to be expanded for more flexibility.
+		// - Dividing pixelHeight by 2 compensates for aspect vs. aspect * 0.5.
+		// - I think the evolution away from a simple "Wolfenstein 3D ray caster" will occur
+		//   once using perspective transformations to project 3D points from voxel edges onto 
+		//   the screen. Each column will get the ceiling and floor heights on the intersected 
+		//   voxel and will use the transformed Y coordinates for the start and end in the column.
+		//   The "hitPoint" itself might not even be used.
+		const int pixelHeight = static_cast<int>(std::round(
+			static_cast<double>(this->height) / zDistance)) / 2;
+
+		// These are the start and end Y coordinates as projected onto the viewing plane.
+		// Eventually, I'd like them to be normalized doubles so I can do rounding and 
+		// other things for more control over the calculation before conversion to integers.
+		const int projectedStart = (this->height / 2) - (pixelHeight / 2);
+		const int projectedEnd = (this->height / 2) + (pixelHeight / 2);
+
+		// Clamp the Y coordinates for where the wall starts and stops on the screen.
+		const int drawStart = std::max(0, projectedStart);
+		const int drawEnd = std::min(this->height, projectedEnd);
+
+		// The texture associated with the voxel ID. Subtract 1 because the lowest hit ID
+		// is 1 and textures start at 0.
+		const TextureData &texture = this->textures[hitID - 1];
+
+		// X position in texture.
+		const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+
+		// Linearly interpolated fog.
 		const Double3 fogColor(0.40, 0.65, 1.0);
 		const double fogPercent = std::min(zDistance, this->viewDistance) / this->viewDistance;
-		
+
+		// Draw each wall pixel in the column.
+		uint32_t *pixels = this->colorBuffer.data();
+		double *depth = this->zBuffer.data();
 		for (int y = drawStart; y < drawEnd; ++y)
 		{
-			const Double4 &texel = this->textures[hitID - 1].pixels[0];
+			// Vertical texture coordinate.
+			const double v = static_cast<double>(y - projectedStart) /
+				static_cast<double>(projectedEnd - projectedStart);
+
+			// Y position in texture.
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 			const Double3 color(texel.x, texel.y, texel.z);
 
 			const int index = x + (y * this->width);
-			pixels[index] = color.lerp(fogColor, fogPercent).toRGB();
+			pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+			depth[index] = zDistance;
 		}
 	}
+
+	// Floor/ceiling...
+
+	// Sprites...
 }
 
 void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
@@ -668,7 +727,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
 	auto renderColumns = [this, &voxelGrid, widthReal, aspect, &forwardComp,
-		&right2D, pixels](int startX, int endX)
+		&right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -684,7 +743,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 			const Double2 direction = forwardComp + rightComp;
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->castRay(direction, voxelGrid, x, pixels);
+			this->castRay(direction, voxelGrid, x);
 		}
 	};
 

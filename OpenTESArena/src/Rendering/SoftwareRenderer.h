@@ -27,6 +27,7 @@ private:
 	};
 
 	std::vector<uint32_t> colorBuffer;
+	std::vector<double> zBuffer;
 	std::vector<TextureData> textures;
 	Double3 eye, forward; // Camera position and forward vector.
 	Double3 startCellReal; // Initial voxel as a float type.
@@ -41,8 +42,7 @@ private:
 	Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
 	// Casts a 2D ray from the default start point (eye) and returns the color.
-	void castRay(const Double2 &direction, const VoxelGrid &voxelGrid, 
-		int x, uint32_t *pixels) const;
+	void castRay(const Double2 &direction, const VoxelGrid &voxelGrid, int x);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
