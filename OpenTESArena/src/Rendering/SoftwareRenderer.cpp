@@ -32,6 +32,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	}
 
 	// Initialize camera values to "empty".
+	this->transform = Matrix4d();
 	this->eye = Double3();
 	this->forward = Double3();
 	this->fovY = 0.0;
@@ -570,8 +571,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		// Boolean for whether the intersected voxel face is a back face.
 		const bool backFace = stoppedInFirstVoxel;
 
-		// 3D hit point on the wall from casting a ray along the XZ plane. The Y coordinate 
-		// will be used eventually.
+		// 3D hit point on the wall from casting a ray along the XZ plane.
 		const Double3 hitPoint(
 			this->eye.x + (dirX * zDistance),
 			this->eye.y,
@@ -579,7 +579,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// Horizontal texture coordinate (constant for all wall pixels in a column).
 		// - Remember to watch out for the edge cases where u == 1.0, resulting in an
-		//   out-of-bounds texel access.
+		//   out-of-bounds texel access. Maybe use std::nextafter() for ~0.9999999?
 		double u;
 		if (axis == Axis::X)
 		{
@@ -592,22 +592,41 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 			u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
 		}
 
-		// Height in pixels on the screen. "Pixel height" appears to be a very simple kind of 
-		// projection, and it will need to be expanded for more flexibility.
-		// - Dividing pixelHeight by 2 compensates for aspect vs. aspect * 0.5.
-		// - I think the evolution away from a simple "Wolfenstein 3D ray caster" will occur
-		//   once using perspective transformations to project 3D points from voxel edges onto 
-		//   the screen. Each column will get the ceiling and floor heights on the intersected 
-		//   voxel and will use the transformed Y coordinates for the start and end in the column.
-		//   The "hitPoint" itself might not even be used.
-		const int pixelHeight = static_cast<int>(std::round(
-			static_cast<double>(this->height) / zDistance)) / 2;
+		// Generate a point on the ceiling edge and floor edge of the wall relative
+		// to the hit point.
+		const Double3 ceilingPoint(hitPoint.x, std::ceil(hitPoint.y), hitPoint.z);
+		const Double3 floorPoint(hitPoint.x, std::floor(hitPoint.y), hitPoint.z);
 
-		// These are the start and end Y coordinates as projected onto the viewing plane.
-		// Eventually, I'd like them to be normalized doubles so I can do rounding and 
-		// other things for more control over the calculation before conversion to integers.
-		const int projectedStart = (this->height / 2) - (pixelHeight / 2);
-		const int projectedEnd = (this->height / 2) + (pixelHeight / 2);
+		// Transform the points to camera space (projection * view).
+		Double4 p1 = this->transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
+		Double4 p2 = this->transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
+
+		// Convert to normalized coordinates.
+		p1 = p1 / p1.w;
+		p2 = p2 / p2.w;
+
+		// Camera elevation, as I call it, is simply the Y component of the player's 3D direction.
+		// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing), and 
+		// its magnitude must be clamped less than 1 because 1 would imply the player is looking 
+		// straight up or down, which is impossible (the viewing frustum would have a volume of 0). 
+		// Its value could be clamped within some range, like [-0.3, 0.3], depending on how far 
+		// the player should be able to look up and down, and how tolerable the skewing is.
+		// - This value will usually be non-zero in the "modern" interface mode.
+		const double cameraElevation = 0.0;
+
+		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// correct aspect ratio.
+		// - Since the ray cast guarantees the intersection to be in the correct column
+		//   of the screen, only the Y coordinates need to be projected.
+		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+		// Get the start and end Y pixel coordinates of the projected points (potentially
+		// outside the top or bottom of the screen).
+		const double heightReal = static_cast<double>(this->height);
+		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
+		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
 
 		// Clamp the Y coordinates for where the wall starts and stops on the screen.
 		const int drawStart = std::max(0, projectedStart);
@@ -617,8 +636,10 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		// is 1 and textures start at 0.
 		const TextureData &texture = this->textures[hitID - 1];
 
-		// X position in texture.
-		const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+		// X position in texture (temporarily using modulo to protect against edge cases 
+		// where u == 1.0; it should be fixed in the u calculation instead).
+		const int textureX = static_cast<int>(u *
+			static_cast<double>(texture.width)) % texture.width;
 
 		// Linearly interpolated fog.
 		const Double3 fogColor(0.40, 0.65, 1.0);
@@ -662,13 +683,19 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	const Double3 right = forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
 	const Double3 up = right.cross(forward).normalized();
 
-	// Constant camera values for 2D (camera elevation would be forward.y).
-	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
-	const Double2 right2D = Double2(right.x, right.z).normalized();
-
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
 
+	// Refresh transformation matrix (model matrix isn't required because it's just the
+	// identity matrix, and the near plane in the perspective matrix doesn't really matter).
+	Matrix4d view = Matrix4d::view(this->eye, forward, right, up);
+	Matrix4d projection = Matrix4d::perspective(this->fovY, aspect, 0.001, this->viewDistance);
+	this->transform = projection * view;
+
+	// Constant camera values for 2D (camera elevation would be forward.y).
+	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
+	const Double2 right2D = Double2(right.x, right.z).normalized();
+	
 	// "Forward" component of the camera for generating rays with.
 	const Double2 forwardComp = forward2D * zoom;
 

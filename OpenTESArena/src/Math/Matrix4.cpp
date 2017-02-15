@@ -73,17 +73,17 @@ Matrix4<T> Matrix4<T>::identity()
 template <typename T>
 Matrix4<T> Matrix4<T>::translation(T x, T y, T z)
 {
-	auto m = Matrix4<T>::identity();
-	m.x[3] = x;
-	m.y[3] = y;
-	m.z[3] = z;
+	Matrix4<T> m = Matrix4<T>::identity();
+	m.w[0] = x;
+	m.w[1] = y;
+	m.w[2] = z;
 	return m;
 }
 
 template <typename T>
 Matrix4<T> Matrix4<T>::scale(T x, T y, T z)
 {
-	auto m = Matrix4<T>::identity();
+	Matrix4<T> m = Matrix4<T>::identity();
 	m.x[0] = x;
 	m.y[1] = y;
 	m.z[2] = z;
@@ -93,9 +93,9 @@ Matrix4<T> Matrix4<T>::scale(T x, T y, T z)
 template <typename T>
 Matrix4<T> Matrix4<T>::xRotation(T radians)
 {
-	auto m = Matrix4<T>::identity();
-	auto sAngle = static_cast<T>(std::sin(radians));
-	auto cAngle = static_cast<T>(std::cos(radians));
+	Matrix4<T> m = Matrix4<T>::identity();
+	T sAngle = static_cast<T>(std::sin(radians));
+	T cAngle = static_cast<T>(std::cos(radians));
 	m.y[1] = cAngle;
 	m.y[2] = sAngle;
 	m.z[1] = -sAngle;
@@ -106,9 +106,9 @@ Matrix4<T> Matrix4<T>::xRotation(T radians)
 template <typename T>
 Matrix4<T> Matrix4<T>::yRotation(T radians)
 {
-	auto m = Matrix4<T>::identity();
-	auto sAngle = static_cast<T>(std::sin(radians));
-	auto cAngle = static_cast<T>(std::cos(radians));
+	Matrix4<T> m = Matrix4<T>::identity();
+	T sAngle = static_cast<T>(std::sin(radians));
+	T cAngle = static_cast<T>(std::cos(radians));
 	m.x[0] = cAngle;
 	m.x[2] = sAngle;
 	m.z[0] = -sAngle;
@@ -119,9 +119,9 @@ Matrix4<T> Matrix4<T>::yRotation(T radians)
 template <typename T>
 Matrix4<T> Matrix4<T>::zRotation(T radians)
 {
-	auto m = Matrix4<T>::identity();
-	auto sAngle = static_cast<T>(std::sin(radians));
-	auto cAngle = static_cast<T>(std::cos(radians));
+	Matrix4<T> m = Matrix4<T>::identity();
+	T sAngle = static_cast<T>(std::sin(radians));
+	T cAngle = static_cast<T>(std::cos(radians));
 	m.x[0] = cAngle;
 	m.x[1] = sAngle;
 	m.y[0] = -sAngle;
@@ -129,10 +129,30 @@ Matrix4<T> Matrix4<T>::zRotation(T radians)
 	return m;
 }
 
+template<typename T>
+Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
+	const Vector3f<T> &right, const Vector3f<T> &up)
+{
+	Matrix4<T> rotation = Matrix4<T>::identity();
+	rotation.x[0] = right.x;
+	rotation.y[0] = right.y;
+	rotation.z[0] = right.z;
+	rotation.x[1] = up.x;
+	rotation.y[1] = up.y;
+	rotation.z[1] = up.z;
+	rotation.x[2] = -forward.x;
+	rotation.y[2] = -forward.y;
+	rotation.z[2] = -forward.z;
+
+	Matrix4<T> transpose = Matrix4<T>::translation(-eye.x, -eye.y, -eye.z);
+
+	return rotation * transpose;
+}
+
 template <typename T>
 Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
 {
-	auto m = Matrix4<T>::identity();
+	Matrix4<T> m = Matrix4<T>::identity();
 	m.x[0] = (static_cast<T>(2.0) * near) / width;
 	m.y[1] = (static_cast<T>(2.0) * near) / height;
 	m.z[2] = -(far + near) / (far - near);
@@ -145,18 +165,18 @@ Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
-	auto height = (static_cast<T>(2.0) * near) * static_cast<T>(
+	T height = (static_cast<T>(2.0) * near) * static_cast<T>(
 		std::tan((static_cast<T>(0.5 * PI) * fovY) / static_cast<T>(180.0)));
-	auto width = height * aspect;
+	T width = height * aspect;
 	return Matrix4<T>::projection(near, far, width, height);
 }
 
 template <typename T>
 Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 {
-	auto p = Matrix4<T>();
+	Matrix4<T> p;
 
-	// Column X
+	// Column X.
 	p.x[0] =
 		(this->x[0] * m.x[0]) +
 		(this->y[0] * m.x[1]) +
@@ -178,7 +198,7 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 		(this->z[3] * m.x[2]) +
 		(this->w[3] * m.x[3]);
 
-	// Column Y
+	// Column Y.
 	p.y[0] =
 		(this->x[0] * m.y[0]) +
 		(this->y[0] * m.y[1]) +
@@ -200,7 +220,7 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 		(this->z[3] * m.y[2]) +
 		(this->w[3] * m.y[3]);
 
-	// Column Z
+	// Column Z.
 	p.z[0] =
 		(this->x[0] * m.z[0]) +
 		(this->y[0] * m.z[1]) +
@@ -222,7 +242,7 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 		(this->z[3] * m.z[2]) +
 		(this->w[3] * m.z[3]);
 
-	// Column W
+	// Column W.
 	p.w[0] =
 		(this->x[0] * m.w[0]) +
 		(this->y[0] * m.w[1]) +

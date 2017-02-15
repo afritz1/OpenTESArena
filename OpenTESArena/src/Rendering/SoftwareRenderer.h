@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
@@ -29,6 +30,7 @@ private:
 	std::vector<uint32_t> colorBuffer;
 	std::vector<double> zBuffer;
 	std::vector<TextureData> textures;
+	Matrix4d transform; // Transformation matrix for 3D point projection.
 	Double3 eye, forward; // Camera position and forward vector.
 	Double3 startCellReal; // Initial voxel as a float type.
 	Int3 startCell; // Initial voxel for ray casting.

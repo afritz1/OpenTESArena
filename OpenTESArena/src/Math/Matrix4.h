@@ -4,6 +4,7 @@
 #include <string>
 #include <type_traits>
 
+#include "Vector3.h"
 #include "Vector4.h"
 
 template <typename T>
@@ -29,6 +30,8 @@ public:
 	static Matrix4<T> xRotation(T radians);
 	static Matrix4<T> yRotation(T radians);
 	static Matrix4<T> zRotation(T radians);
+	static Matrix4<T> view(const Vector3f<T> &eye, const Vector3f<T> &forward,
+		const Vector3f<T> &right, const Vector3f<T> &up);
 	static Matrix4<T> projection(T near, T far, T width, T height);
 	static Matrix4<T> perspective(T fovY, T aspect, T near, T far);
 
