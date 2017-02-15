@@ -29,7 +29,7 @@ Here are some hotkeys in the game world:
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake (and it still is quite an experiment), but now the project is steadily inching closer to something akin to the original.
 
-The graphics are being rendered with a ray tracer I'm writing. I puzzled for a long time about what 3D rendering method to use, and I decided that this would be a good place to demonstrate real time ray tracing. Arena looked like a good game to experiment with graphics-wise due to its low geometry count.
+I've been experimenting with various methods of rendering looking for the right one. Versions 0.2.0 and before use 3D ray casting with OpenCL on the GPU, and it allows for some really nice-looking dynamic shadows. I'm trying out a software ray casting method instead to see if it would be a better fit. Of course there's always OpenGL, but this project (and Arena's low geometry count) affords me the opportunity to experiment. I want to see how the software renderer turns out before I think about reintroducing a graphics card API.
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
