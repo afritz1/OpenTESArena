@@ -667,8 +667,15 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	}
 
 	// Floor/ceiling...
+	// - I wonder how it should start if no wall was hit. Maybe project the floor based on
+	//   where the stepping stopped to get a Y coordinate?
+	// - Do not depend on when a wall on the current floor is hit. Floor/ceiling casting
+	//   can continue as far as it needs to.
 
 	// Sprites...
+	// - Determining visible sprites should be done before rendering anything.
+	//   Even better, store their projected coordinates during that process so they can
+	//   simply be looked up when rendering here.
 }
 
 void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
