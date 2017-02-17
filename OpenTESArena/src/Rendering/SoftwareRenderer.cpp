@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <thread>
 
 #include "SoftwareRenderer.h"
@@ -43,6 +44,17 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	// Initialize start cell to "empty".
 	this->startCellReal = Double3();
 	this->startCell = Int3();
+
+	// -- test --
+	// Throw some test flats into the world.
+	for (int k = 4; k < 16; ++k)
+	{
+		for (int i = 4; i < 16; ++i)
+		{
+			this->addFlat(Double3(i, 1.0, k), Double2(-1.0, 0.0), 0.8, 0.9, i % 3);
+		}
+	}
+	// -- end test --
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -62,7 +74,8 @@ void SoftwareRenderer::setEye(const Double3 &eye)
 
 void SoftwareRenderer::setForward(const Double3 &forward)
 {
-	this->forward = forward;
+	// All camera axes should be normalized.
+	this->forward = forward.normalized();
 }
 
 void SoftwareRenderer::setFovY(double fovY)
@@ -100,6 +113,75 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	return static_cast<int>(this->textures.size() - 1);
 }
 
+int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
+	double width, double height, int textureID)
+{
+	// Search for the next available flat ID.
+	int id = 0;
+	while (this->flats.find(id) != this->flats.end())
+	{
+		id++;
+	}
+
+	SoftwareRenderer::Flat flat;
+	flat.position = position;
+	flat.direction = direction;
+	flat.width = width;
+	flat.height = height;
+	flat.textureID = textureID;
+
+	// Add the flat (sprite, door, store sign, etc.).
+	this->flats.insert(std::make_pair(id, flat));
+
+	return id;
+}
+
+void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2 *direction,
+	const double *width, const double *height, const int *textureID)
+{
+	const auto flatIter = this->flats.find(id);
+	Debug::check(flatIter != this->flats.end(), "Software Renderer",
+		"Cannot update a non-existent flat (" + std::to_string(id) + ").");
+
+	SoftwareRenderer::Flat &flat = flatIter->second;
+
+	// Check which values requested updating and update them.
+	if (position != nullptr)
+	{
+		flat.position = *position;
+	}
+
+	if (direction != nullptr)
+	{
+		flat.direction = *direction;
+	}
+
+	if (width != nullptr)
+	{
+		flat.width = *width;
+	}
+
+	if (height != nullptr)
+	{
+		flat.height = *height;
+	}
+
+	if (textureID != nullptr)
+	{
+		flat.textureID = *textureID;
+	}
+}
+
+void SoftwareRenderer::removeFlat(int id)
+{
+	// Make sure the flat exists before removing it.
+	const auto flatIter = this->flats.find(id);
+	Debug::check(flatIter != this->flats.end(), "Software Renderer",
+		"Cannot remove a non-existent flat (" + std::to_string(id) + ").");
+
+	this->flats.erase(flatIter);
+}
+
 void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;
@@ -110,6 +192,81 @@ void SoftwareRenderer::resize(int width, int height)
 
 	this->width = width;
 	this->height = height;
+}
+
+void SoftwareRenderer::updateVisibleFlats()
+{
+	// Assumes that "visibleFlats" is empty.
+	for (const auto &pair : this->flats)
+	{
+		const Flat &flat = pair.second;
+
+		// Get the flat's axes. (0, 1, 0) is "global up".
+		const Double3 flatForward = Double3(flat.direction.x, 0.0, flat.direction.y).normalized();
+		const Double3 flatUp(0.0, 1.0, 0.0);
+		const Double3 flatRight = flatForward.cross(flatUp).normalized();
+
+		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
+		const Double3 flatUpScaled = flatUp * flat.height;
+
+		// Calculate the four corners of the flat in world space.
+		const Double3 topLeft = flat.position - flatRightScaled + flatUpScaled;
+		const Double3 topRight = flat.position + flatRightScaled + flatUpScaled;
+		const Double3 bottomLeft = flat.position - flatRightScaled;
+		const Double3 bottomRight = flat.position + flatRightScaled;
+
+		// Transform the points to camera space (projection * view).
+		Double4 p1 = this->transform * Double4(topLeft.x, topLeft.y, topLeft.z, 1.0);
+		Double4 p2 = this->transform * Double4(topRight.x, topRight.y, topRight.z, 1.0);
+		Double4 p3 = this->transform * Double4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0);
+		Double4 p4 = this->transform * Double4(bottomRight.x, bottomRight.y, bottomRight.z, 1.0);
+
+		// Create fresh projection data for the flat by projecting the points to the 
+		// viewing plane. Also take camera elevation into account.
+		Flat::ProjectionData projectionData;
+		const double cameraElevation = this->forward.y;
+
+		// Get Z distances.
+		projectionData.leftZ = p1.z;
+		projectionData.rightZ = p2.z;
+
+		// Convert to normalized coordinates.
+		p1 = p1 / p1.w;
+		p2 = p2 / p2.w;
+		p3 = p3 / p3.w;
+		p4 = p4 / p4.w;
+
+		// Translate coordinates on the screen relative to the middle (0.5, 0.5).
+		// Multiply by 0.5 to apply the correct aspect ratio.
+		projectionData.leftX = 0.50 + (p1.x * 0.50);
+		projectionData.rightX = 0.50 + (p2.x * 0.50);
+		projectionData.topLeftY = (0.50 + cameraElevation) - (p1.y * 0.50);
+		projectionData.topRightY = (0.50 + cameraElevation) - (p2.y * 0.50);
+		projectionData.bottomLeftY = (0.50 + cameraElevation) - (p3.y * 0.50);
+		projectionData.bottomRightY = (0.50 + cameraElevation) - (p4.y * 0.50);
+
+		// The flat is visible if at least one of the Z values is positive and
+		// the vertical edges are within bounds.
+		const bool leftZPositive = projectionData.leftZ > 0.0;
+		const bool rightZPositive = projectionData.rightZ > 0.0;
+		const bool rightEdgeVisible =
+			(projectionData.rightX >= 0.0) || (projectionData.rightX < 1.0) &&
+			((projectionData.topRightY < 1.0) || (projectionData.bottomRightY >= 0.0));
+		const bool leftEdgeVisible =
+			(projectionData.leftX >= 0.0) || (projectionData.leftX < 1.0) &&
+			((projectionData.topLeftY < 1.0) || (projectionData.bottomLeftY >= 0.0));
+
+		// - To do: make this code more correct. It should not reject points
+		//   when an edge is visible (i.e., top is above screen, bottom is below screen).
+		// - I also think some more robust rasterization practices might need to be included,
+		//   so that flats intersecting the viewing plane are rendered correctly. For example,
+		//   clipping anything with negative Z and interpolating the new texture coordinates...? 
+		//   Just an idea. Right now it throws away flats partially behind the view plane.
+		if ((leftZPositive && rightZPositive) && (rightEdgeVisible || leftEdgeVisible))
+		{
+			this->visibleFlats.push_back(std::make_pair(&flat, projectionData));
+		}
+	}
 }
 
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
@@ -612,7 +769,9 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		// Its value could be clamped within some range, like [-0.3, 0.3], depending on how far 
 		// the player should be able to look up and down, and how tolerable the skewing is.
 		// - This value will usually be non-zero in the "modern" interface mode.
-		const double cameraElevation = 0.0;
+		// - Maybe it should involve the angle between horizontal and vertical, because if
+		//   the player is looking halfway between, then the elevation would be sqrt(2) / 2.
+		const double cameraElevation = this->forward.y;
 
 		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
 		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
@@ -672,10 +831,90 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	// - Do not depend on when a wall on the current floor is hit. Floor/ceiling casting
 	//   can continue as far as it needs to.
 
-	// Sprites...
-	// - Determining visible sprites should be done before rendering anything.
-	//   Even better, store their projected coordinates during that process so they can
-	//   simply be looked up when rendering here.
+	// Sprites.
+	// - Sprites *could* be done outside the ray casting loop, though they would need to be
+	//   parallelized a bit differently then. Here, it is easy to parallelize by column,
+	//   so it might be faster in practice, even if a little redundant work is done.
+
+	// - To do: go through all of this again and verify the math for correctness.
+	for (const auto &pair : this->visibleFlats)
+	{
+		const Flat &flat = *pair.first;
+		const Flat::ProjectionData &projectionData = pair.second;
+
+		// X percent across the screen.
+		const double xPercent = static_cast<double>(x) /
+			static_cast<double>(this->width);
+
+		// Find where the column is within the X range of the flat.
+		const double xRangePercent = (xPercent - projectionData.rightX) /
+			(projectionData.leftX - projectionData.rightX);
+
+		// Don't render the flat if the X range percent is invalid.
+		if ((xRangePercent < 0.0) || (xRangePercent >= 1.0))
+		{
+			continue;
+		}
+
+		// Horizontal texture coordinate in the flat.
+		const double u = xRangePercent;
+
+		// Interpolate the projected Y coordinates based on the X range.
+		const double projectedY1 = projectionData.topRightY +
+			((projectionData.topLeftY - projectionData.topRightY) * xRangePercent);
+		const double projectedY2 = projectionData.bottomRightY +
+			((projectionData.bottomLeftY - projectionData.bottomRightY) * xRangePercent);
+
+		// Get the start and end Y pixel coordinates of the projected points (potentially
+		// outside the top or bottom of the screen).
+		const double heightReal = static_cast<double>(this->height);
+		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
+		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
+
+		// Clamp the Y coordinates for where the wall starts and stops on the screen.
+		const int drawStart = std::max(0, projectedStart);
+		const int drawEnd = std::min(this->height, projectedEnd);
+
+		// The texture associated with the voxel ID.
+		const TextureData &texture = this->textures[flat.textureID];
+
+		// X position in texture (temporarily using modulo to protect against edge cases 
+		// where u == 1.0; it should be fixed in the u calculation instead).
+		const int textureX = static_cast<int>(u *
+			static_cast<double>(texture.width)) % texture.width;
+
+		const double nearZ = std::min(projectionData.leftZ, projectionData.rightZ);
+		const double farZ = std::max(projectionData.leftZ, projectionData.rightZ);
+		const double zDistance = nearZ + ((farZ - nearZ) * xRangePercent);
+
+		// Linearly interpolated fog.
+		const Double3 fogColor(0.40, 0.65, 1.0);
+		const double fogPercent = std::min(zDistance, this->viewDistance) / this->viewDistance;
+
+		uint32_t *pixels = this->colorBuffer.data();
+		double *depth = this->zBuffer.data();
+		for (int y = drawStart; y < drawEnd; ++y)
+		{
+			// Vertical texture coordinate.
+			const double v = static_cast<double>(y - projectedStart) /
+				static_cast<double>(projectedEnd - projectedStart);
+
+			// Y position in texture.
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+			const Double3 color(texel.x, texel.y, texel.z);
+
+			const int index = x + (y * this->width);
+
+			// Draw if less than the current depth.
+			if (zDistance < depth[index])
+			{
+				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depth[index] = zDistance;
+			}
+		}
+	}
 }
 
 void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
@@ -686,23 +925,23 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	const double aspect = widthReal / heightReal;
 
 	// Constant camera values. "(0.0, 1.0, 0.0)" is the "global up" vector.
-	const Double3 forward = this->forward.normalized();
-	const Double3 right = forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
-	const Double3 up = right.cross(forward).normalized();
+	// Assume "this->forward" is normalized.
+	const Double3 right = this->forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
+	const Double3 up = right.cross(this->forward).normalized();
 
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
 
 	// Refresh transformation matrix (model matrix isn't required because it's just the
 	// identity matrix, and the near plane in the perspective matrix doesn't really matter).
-	Matrix4d view = Matrix4d::view(this->eye, forward, right, up);
+	Matrix4d view = Matrix4d::view(this->eye, this->forward, right, up);
 	Matrix4d projection = Matrix4d::perspective(this->fovY, aspect, 0.001, this->viewDistance);
 	this->transform = projection * view;
 
-	// Constant camera values for 2D (camera elevation would be forward.y).
-	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
+	// Constant camera values for 2D (camera elevation is this->forward.y).
+	const Double2 forward2D = Double2(this->forward.x, this->forward.z).normalized();
 	const Double2 right2D = Double2(right.x, right.z).normalized();
-	
+
 	// "Forward" component of the camera for generating rays with.
 	const Double2 forwardComp = forward2D * zoom;
 
@@ -784,6 +1023,21 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Clear screen (this could potentially be multi-threaded).
 	const Double3 skyColor(0.40, 0.65, 1.0);
 	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), skyColor.toRGB());
+	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
+
+	// Erase the visible flats list and re-calculate them.
+	this->visibleFlats.clear();
+	this->updateVisibleFlats();
+
+	// Sort the visible flat data farthest to nearest (this may be relevant for
+	// transparencies).
+	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
+		[](const std::pair<const Flat*, Flat::ProjectionData> &a,
+			const std::pair<const Flat*, Flat::ProjectionData> &b)
+	{
+		return std::min(a.second.leftZ, a.second.rightZ) >
+			std::min(b.second.leftZ, b.second.rightZ);
+	});
 
 	// Prepare render threads.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);
