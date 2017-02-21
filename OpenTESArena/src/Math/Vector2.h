@@ -47,6 +47,9 @@ class Vector2f
 public:
 	static_assert(std::is_floating_point<T>::value, "Vector2f<T> must be floating-point type.");
 
+	static const Vector2f<T> UnitX;
+	static const Vector2f<T> UnitY;
+
 	T x, y;
 
 	Vector2f(T x, T y);

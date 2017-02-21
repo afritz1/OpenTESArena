@@ -49,6 +49,10 @@ class Vector3f
 public:
 	static_assert(std::is_floating_point<T>::value, "Vector3f<T> must be floating-point type.");
 
+	static const Vector3f<T> UnitX;
+	static const Vector3f<T> UnitY;
+	static const Vector3f<T> UnitZ;
+
 	T x, y, z;
 
 	Vector3f(T x, T y, T z);

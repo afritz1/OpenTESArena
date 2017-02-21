@@ -45,6 +45,11 @@ class Vector4f
 {
 public:
 	static_assert(std::is_floating_point<T>::value, "Vector4f<T> must be floating-point type.");
+	
+	static const Vector4f<T> UnitX;
+	static const Vector4f<T> UnitY;
+	static const Vector4f<T> UnitZ;
+	static const Vector4f<T> UnitW;
 
 	T x, y, z, w;
 
