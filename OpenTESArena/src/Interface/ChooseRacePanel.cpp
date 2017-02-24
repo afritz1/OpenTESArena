@@ -12,8 +12,8 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
-#include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
+#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -32,7 +32,7 @@
 #include "../World/ProvinceName.h"
 
 ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
-	const std::string &name, CharacterGenderName gender)
+	const std::string &name, GenderName gender)
 	: Panel(game)
 {
 	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
@@ -80,7 +80,7 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->name = name;
-	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
+	this->gender = std::unique_ptr<GenderName>(new GenderName(gender));
 	this->raceName = nullptr;
 	this->initialTextBoxVisible = true;
 }

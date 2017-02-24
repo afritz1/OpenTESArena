@@ -5,17 +5,17 @@
 
 #include "TextureFile.h"
 #include "TextureName.h"
-#include "../Entities/CharacterGenderName.h"
 #include "../Entities/CharacterRaceName.h"
+#include "../Entities/GenderName.h"
 
 namespace std
 {
 	// Hash specializations, since GCC doesn't support enum classes used as keys
 	// in unordered_maps.
 	template <>
-	struct hash<CharacterGenderName>
+	struct hash<GenderName>
 	{
-		size_t operator()(const CharacterGenderName &x) const
+		size_t operator()(const GenderName &x) const
 		{
 			return static_cast<size_t>(x);
 		}
@@ -31,21 +31,21 @@ namespace std
 	};
 
 	template <>
-	struct hash<std::pair<CharacterGenderName, CharacterRaceName>>
+	struct hash<std::pair<GenderName, CharacterRaceName>>
 	{
-		size_t operator()(const std::pair<CharacterGenderName, CharacterRaceName> &x) const
+		size_t operator()(const std::pair<GenderName, CharacterRaceName> &x) const
 		{
-			return std::hash<CharacterGenderName>()(x.first) ^
+			return std::hash<GenderName>()(x.first) ^
 				std::hash<CharacterRaceName>()(x.second);
 		}
 	};
 
 	template <>
-	struct hash<std::pair<CharacterGenderName, bool>>
+	struct hash<std::pair<GenderName, bool>>
 	{
-		size_t operator()(const std::pair<CharacterGenderName, bool> &x) const
+		size_t operator()(const std::pair<GenderName, bool> &x) const
 		{
-			return std::hash<CharacterGenderName>()(x.first) ^ std::hash<bool>()(x.second);
+			return std::hash<GenderName>()(x.first) ^ std::hash<bool>()(x.second);
 		}
 	};
 }
@@ -54,93 +54,93 @@ namespace
 {
 	// Pairings of genders and races to portrait head filenames designed for the
 	// character sheet.
-	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
+	const std::unordered_map<std::pair<GenderName, CharacterRaceName>,
 		TextureName> HeadTextureNames =
 	{
-		{ { CharacterGenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfHeads },
+		{ { GenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianHeads },
+		{ { GenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonHeads },
+		{ { GenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfHeads },
+		{ { GenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfHeads },
+		{ { GenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitHeads },
+		{ { GenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordHeads },
+		{ { GenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardHeads },
+		{ { GenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfHeads },
 
-		{ { CharacterGenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfHeads }
+		{ { GenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianHeads },
+		{ { GenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonHeads },
+		{ { GenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfHeads },
+		{ { GenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfHeads },
+		{ { GenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitHeads },
+		{ { GenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordHeads },
+		{ { GenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardHeads },
+		{ { GenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfHeads }
 	};
 
 	// Pairings of genders and races to portrait head filenames designed for 
 	// the in-game interface.
-	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
+	const std::unordered_map<std::pair<GenderName, CharacterRaceName>,
 		TextureName> TrimmedHeadTextureNames =
 	{
-		{ { CharacterGenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardTrimmedHeads },
-		{ { CharacterGenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardTrimmedHeads },
+		{ { GenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfTrimmedHeads },
 
-		{ { CharacterGenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardTrimmedHeads },
-		{ { CharacterGenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfTrimmedHeads }
+		{ { GenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardTrimmedHeads },
+		{ { GenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfTrimmedHeads }
 	};
 
 	// Pairings of genders and races to portrait background filenames.
-	const std::unordered_map<std::pair<CharacterGenderName, CharacterRaceName>,
+	const std::unordered_map<std::pair<GenderName, CharacterRaceName>,
 		TextureName> BodyTextureNames =
 	{
-		{ { CharacterGenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianBackground },
-		{ { CharacterGenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonBackground },
-		{ { CharacterGenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfBackground },
-		{ { CharacterGenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfBackground},
-		{ { CharacterGenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitBackground},
-		{ { CharacterGenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordBackground},
-		{ { CharacterGenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardBackground},
-		{ { CharacterGenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfBackground },
+		{ { GenderName::Female, CharacterRaceName::Argonian }, TextureName::FemaleArgonianBackground },
+		{ { GenderName::Female, CharacterRaceName::Breton }, TextureName::FemaleBretonBackground },
+		{ { GenderName::Female, CharacterRaceName::DarkElf }, TextureName::FemaleDarkElfBackground },
+		{ { GenderName::Female, CharacterRaceName::HighElf }, TextureName::FemaleHighElfBackground},
+		{ { GenderName::Female, CharacterRaceName::Khajiit }, TextureName::FemaleKhajiitBackground},
+		{ { GenderName::Female, CharacterRaceName::Nord }, TextureName::FemaleNordBackground},
+		{ { GenderName::Female, CharacterRaceName::Redguard }, TextureName::FemaleRedguardBackground},
+		{ { GenderName::Female, CharacterRaceName::WoodElf }, TextureName::FemaleWoodElfBackground },
 
-		{ { CharacterGenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardBackground },
-		{ { CharacterGenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfBackground }
+		{ { GenderName::Male, CharacterRaceName::Argonian }, TextureName::MaleArgonianBackground },
+		{ { GenderName::Male, CharacterRaceName::Breton }, TextureName::MaleBretonBackground },
+		{ { GenderName::Male, CharacterRaceName::DarkElf }, TextureName::MaleDarkElfBackground },
+		{ { GenderName::Male, CharacterRaceName::HighElf }, TextureName::MaleHighElfBackground },
+		{ { GenderName::Male, CharacterRaceName::Khajiit }, TextureName::MaleKhajiitBackground },
+		{ { GenderName::Male, CharacterRaceName::Nord }, TextureName::MaleNordBackground },
+		{ { GenderName::Male, CharacterRaceName::Redguard }, TextureName::MaleRedguardBackground },
+		{ { GenderName::Male, CharacterRaceName::WoodElf }, TextureName::MaleWoodElfBackground }
 	};
 
 	// Pixel offsets for shirt textures in the equipment screen.
-	const std::unordered_map<std::pair<CharacterGenderName, bool>, Int2> ShirtOffsets =
+	const std::unordered_map<std::pair<GenderName, bool>, Int2> ShirtOffsets =
 	{
-		{ { CharacterGenderName::Female, false }, Int2(220, 35) },
-		{ { CharacterGenderName::Female, true }, Int2(220, 33) },
-		{ { CharacterGenderName::Male, false }, Int2(186, 12) },
-		{ { CharacterGenderName::Male, true }, Int2(215, 35) }
+		{ { GenderName::Female, false }, Int2(220, 35) },
+		{ { GenderName::Female, true }, Int2(220, 33) },
+		{ { GenderName::Male, false }, Int2(186, 12) },
+		{ { GenderName::Male, true }, Int2(215, 35) }
 	};
 
 	// Pixel offsets for pants textures in the equipment screen.
-	const std::unordered_map<CharacterGenderName, Int2> PantsOffsets =
+	const std::unordered_map<GenderName, Int2> PantsOffsets =
 	{
-		{ CharacterGenderName::Female, Int2(212, 74) },
-		{ CharacterGenderName::Male, Int2(229, 82) }
+		{ GenderName::Female, Int2(212, 74) },
+		{ GenderName::Male, Int2(229, 82) }
 	};
 }
 
-const std::string &PortraitFile::getHeads(CharacterGenderName gender, 
+const std::string &PortraitFile::getHeads(GenderName gender, 
 	CharacterRaceName race, bool trimmed)
 {
 	const TextureName textureName = trimmed ?
@@ -150,18 +150,18 @@ const std::string &PortraitFile::getHeads(CharacterGenderName gender,
 	return filename;
 }
 
-const std::string &PortraitFile::getBody(CharacterGenderName gender, CharacterRaceName race)
+const std::string &PortraitFile::getBody(GenderName gender, CharacterRaceName race)
 {
 	const TextureName textureName = BodyTextureNames.at(std::make_pair(gender, race));
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }
 
-const std::string &PortraitFile::getShirt(CharacterGenderName gender, bool magic)
+const std::string &PortraitFile::getShirt(GenderName gender, bool magic)
 {
 	const TextureName textureName = [gender, magic]()
 	{
-		if (gender == CharacterGenderName::Female)
+		if (gender == GenderName::Female)
 		{
 			return magic ? TextureName::FemaleMagicShirt : TextureName::FemaleNonMagicShirt;
 		}
@@ -175,29 +175,29 @@ const std::string &PortraitFile::getShirt(CharacterGenderName gender, bool magic
 	return filename;
 }
 
-const std::string &PortraitFile::getPants(CharacterGenderName gender)
+const std::string &PortraitFile::getPants(GenderName gender)
 {
-	const TextureName textureName = (gender == CharacterGenderName::Female) ?
+	const TextureName textureName = (gender == GenderName::Female) ?
 		TextureName::FemalePants : TextureName::MalePants;
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }
 
-const std::string &PortraitFile::getEquipment(CharacterGenderName gender)
+const std::string &PortraitFile::getEquipment(GenderName gender)
 {
-	const TextureName textureName = (gender == CharacterGenderName::Female) ?
+	const TextureName textureName = (gender == GenderName::Female) ?
 		TextureName::FemaleEquipment : TextureName::MaleEquipment;
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }
 
-const Int2 &PortraitFile::getShirtOffset(CharacterGenderName gender, bool magic)
+const Int2 &PortraitFile::getShirtOffset(GenderName gender, bool magic)
 {
 	const Int2 &offset = ShirtOffsets.at(std::make_pair(gender, magic));
 	return offset;
 }
 
-const Int2 &PortraitFile::getPantsOffset(CharacterGenderName gender)
+const Int2 &PortraitFile::getPantsOffset(GenderName gender)
 {
 	const Int2 &offset = PantsOffsets.at(gender);
 	return offset;

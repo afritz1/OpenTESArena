@@ -41,7 +41,7 @@
 #include "../World/VoxelGrid.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
-	const CharacterClass &charClass, const std::string &name, CharacterGenderName gender,
+	const CharacterClass &charClass, const std::string &name, GenderName gender,
 	CharacterRaceName raceName)
 	: Panel(game), headOffsets()
 {
@@ -475,7 +475,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
 
-	this->gender = std::unique_ptr<CharacterGenderName>(new CharacterGenderName(gender));
+	this->gender = std::unique_ptr<GenderName>(new GenderName(gender));
 	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
 	this->name = name;

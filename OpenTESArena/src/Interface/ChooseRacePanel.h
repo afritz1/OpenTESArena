@@ -14,8 +14,8 @@ class Renderer;
 class TextBox;
 class Texture;
 
-enum class CharacterGenderName;
 enum class CharacterRaceName;
+enum class GenderName;
 enum class ProvinceName;
 
 class ChooseRacePanel : public Panel
@@ -25,7 +25,7 @@ private:
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToGenderButton, acceptButton;
 	std::unique_ptr<CharacterClass> charClass;
-	std::unique_ptr<CharacterGenderName> gender;
+	std::unique_ptr<GenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName; // Null until a province is clicked.
 	std::string name;
 	bool initialTextBoxVisible;
@@ -33,7 +33,7 @@ private:
 	void drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer);
 public:
 	ChooseRacePanel(Game *game, const CharacterClass &charClass, 
-		const std::string &name, CharacterGenderName gender);
+		const std::string &name, GenderName gender);
 	virtual ~ChooseRacePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

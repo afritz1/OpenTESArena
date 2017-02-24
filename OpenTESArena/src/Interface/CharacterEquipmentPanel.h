@@ -11,8 +11,8 @@ class CharacterClass;
 class Renderer;
 class TextBox;
 
-enum class CharacterGenderName;
 enum class CharacterRaceName;
+enum class GenderName;
 
 class CharacterEquipmentPanel : public Panel
 {

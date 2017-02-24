@@ -5,24 +5,25 @@
 #include "Player.h"
 
 #include "CharacterClass.h"
-#include "CharacterGenderName.h"
 #include "CharacterRaceName.h"
 #include "EntityType.h"
+#include "GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
-#include "../Math/CoordinateFrame.h"
 #include "../Math/Quaternion.h"
 #include "../Utilities/String.h"
 
-Player::Player(const std::string &displayName, CharacterGenderName gender,
+Player::Player(const std::string &displayName, GenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 	const Double3 &position, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
-	: Entity(EntityType::Player, position, entityManager), Directable(direction),
-	Movable(velocity, maxWalkSpeed, maxRunSpeed)
+	: Entity(EntityType::Player, entityManager), camera(position, direction),
+	velocity(velocity)
 {
 	assert(portraitID >= 0);
 
+	this->maxWalkSpeed = maxWalkSpeed;
+	this->maxRunSpeed = maxRunSpeed;
 	this->displayName = displayName;
 	this->gender = gender;
 	this->raceName = raceName;
@@ -40,13 +41,18 @@ std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
 	return std::unique_ptr<Entity>(new Player(
 		this->getDisplayName(), this->getGenderName(), this->getRaceName(),
 		this->getCharacterClass(), this->getPortraitID(), this->getPosition(),
-		this->getDirection(), this->getVelocity(), this->getMaxWalkSpeed(),
-		this->getMaxRunSpeed(), entityManager));
+		this->camera.getDirection(), this->velocity, this->maxWalkSpeed,
+		this->maxRunSpeed, entityManager));
 }
 
 EntityType Player::getEntityType() const
 {
 	return EntityType::Player;
+}
+
+const Double3 &Player::getPosition() const
+{
+	return this->camera.position;
 }
 
 const std::string &Player::getDisplayName() const
@@ -65,7 +71,7 @@ int Player::getPortraitID() const
 	return this->portraitID;
 }
 
-CharacterGenderName Player::getGenderName() const
+GenderName Player::getGenderName() const
 {
 	return this->gender;
 }
@@ -80,85 +86,80 @@ const CharacterClass &Player::getCharacterClass() const
 	return *this->charClass.get();
 }
 
-void Player::pitch(double radians)
+const Double3 &Player::getDirection() const
 {
-	auto frame = this->getFrame();
-	auto q = Quaternion::fromAxisAngle(frame.getRight(), radians) *
-		Quaternion(this->getDirection(), 0.0);
-
-	const Double3 direction(q.x, q.y, q.z);
-	this->setDirection(direction.normalized());
+	return this->camera.getDirection();
 }
 
-void Player::yaw(double radians)
+const Double3 &Player::getRight() const
 {
-	auto q = Quaternion::fromAxisAngle(Directable::getGlobalUp(), radians) *
-		Quaternion(this->getDirection(), 0.0);
-
-	const Double3 direction(q.x, q.y, q.z);
-	this->setDirection(direction.normalized());
+	return this->camera.getRight();
 }
 
-void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity,
-	double verticalFOV)
+Double2 Player::getGroundDirection() const
 {
-	assert(std::isfinite(dx));
-	assert(std::isfinite(dy));
-	assert(std::isfinite(this->getDirection().length()));
-	assert(hSensitivity > 0.0);
-	assert(vSensitivity > 0.0);
-	assert(verticalFOV > 0.0);
-	assert(verticalFOV < 180.0);
+	const Double3 &direction = this->camera.getDirection();
+	return Double2(direction.x, direction.z).normalized();
+}
 
+void Player::teleport(const Double3 &position)
+{
+	this->camera.position = position;
+}
+
+void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity)
+{
 	// Multiply sensitivities by 100.0 so the values in options.txt are nicer.
-	double lookRightRads = (hSensitivity * 100.0 * dx) * DEG_TO_RAD;
-	double lookUpRads = (vSensitivity * 100.0 * dy) * DEG_TO_RAD;
-
-	if (!std::isfinite(lookRightRads))
-	{
-		lookRightRads = 0.0;
-	}
-
-	if (!std::isfinite(lookUpRads))
-	{
-		lookUpRads = 0.0;
-	}
-
-	const double currentDec = std::acos(this->getDirection().normalized().y);
-	const double requestedDec = currentDec - lookUpRads;
-
-	const double MIN_UP_TILT_DEG = 0.10;
-	const double zenithMaxDec = MIN_UP_TILT_DEG * DEG_TO_RAD;
-	const double zenithMinDec = (180.0 - MIN_UP_TILT_DEG) * DEG_TO_RAD;
-
-	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
-		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
-
-	// Only divide by zoom when sensitivity depends on field of view (which it doesn't here).
-	//const double zoom = 1.0 / std::tan((verticalFOV * 0.5) * DEG_TO_RAD);
-	this->pitch(lookUpRads/* / zoom*/);
-	this->yaw(-lookRightRads/* / zoom*/);
+	this->camera.rotate(dx * (100.0 * hSensitivity), dy * (100.0 * vSensitivity));
 }
 
-void Player::tick(Game *game, double dt)
+void Player::accelerate(const Double3 &direction, double magnitude, 
+	bool isRunning, double dt)
 {
 	assert(dt >= 0.0);
+	assert(magnitude >= 0.0);
+	assert(std::isfinite(magnitude));
+	assert(direction.isNormalized());
+
+	// Simple Euler integration for updating velocity.
+	Double3 newVelocity = this->velocity + ((direction * magnitude) * dt);
+
+	if (std::isfinite(newVelocity.length()))
+	{
+		this->velocity = newVelocity;
+	}
+
+	// Don't let the velocity be greater than the max speed for the current 
+	// movement state (i.e., walking/running). This will change once jumping
+	// and gravity are implemented.
+	double maxSpeed = isRunning ? this->maxRunSpeed : this->maxWalkSpeed;
+	if (this->velocity.length() > maxSpeed)
+	{
+		this->velocity = this->velocity.normalized() * maxSpeed;
+	}
+}
+
+void Player::tick(Game &game, double dt)
+{
+	assert(dt >= 0.0);
+
+	Double3 &position = this->camera.position;
 	
 	// Simple Euler integration for updating the player's position.
-	Double3 newPosition = this->position + (this->getVelocity() * dt);
+	Double3 newPosition = position + (this->velocity * dt);
 
 	// Update the position if valid.
 	if (std::isfinite(newPosition.length()))
 	{
-		this->position = newPosition;
+		position = newPosition;
 	}
 
 	// Slow down the player with some imaginary friction (as a force). Once jumping 
 	// is implemented, change this to affect the ground direction and Y directions 
 	// separately.
 	double friction = 8.0;
-	Double3 frictionDirection = -this->getVelocity().normalized();
-	double frictionMagnitude = (this->getVelocity().length() * 0.5) * friction;
+	Double3 frictionDirection = -this->velocity.normalized();
+	double frictionMagnitude = (this->velocity.length() * 0.5) * friction;
 
 	// Change the velocity if friction is valid.
 	if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > EPSILON))

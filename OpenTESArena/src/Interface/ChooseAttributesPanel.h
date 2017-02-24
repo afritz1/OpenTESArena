@@ -19,8 +19,8 @@ class CharacterClass;
 class Renderer;
 class TextBox;
 
-enum class CharacterGenderName;
 enum class CharacterRaceName;
+enum class GenderName;
 
 class ChooseAttributesPanel : public Panel
 {
@@ -30,13 +30,13 @@ private:
 		decrementPortraitButton;
 	std::vector<Int2> headOffsets;
 	std::unique_ptr<CharacterClass> charClass;
-	std::unique_ptr<CharacterGenderName> gender;
+	std::unique_ptr<GenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName;
 	std::string name;
 	int portraitIndex;
 public:
 	ChooseAttributesPanel(Game *game, const CharacterClass &charClass, 
-		const std::string &name, CharacterGenderName gender, CharacterRaceName raceName);
+		const std::string &name, GenderName gender, CharacterRaceName raceName);
 	virtual ~ChooseAttributesPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

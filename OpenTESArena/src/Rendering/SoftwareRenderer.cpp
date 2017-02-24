@@ -201,9 +201,9 @@ void SoftwareRenderer::updateVisibleFlats()
 	{
 		const Flat &flat = pair.second;
 
-		// Get the flat's axes. (0, 1, 0) is "global up".
+		// Get the flat's axes. UnitY is "global up".
 		const Double3 flatForward = Double3(flat.direction.x, 0.0, flat.direction.y).normalized();
-		const Double3 flatUp(0.0, 1.0, 0.0);
+		const Double3 flatUp = Double3::UnitY;
 		const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
 		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
@@ -924,9 +924,9 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
 
-	// Constant camera values. "(0.0, 1.0, 0.0)" is the "global up" vector.
+	// Constant camera values. UnitY is the "global up" vector.
 	// Assume "this->forward" is normalized.
-	const Double3 right = this->forward.cross(Double3(0.0, 1.0, 0.0)).normalized();
+	const Double3 right = this->forward.cross(Double3::UnitY).normalized();
 	const Double3 up = right.cross(this->forward).normalized();
 
 	// Zoom of the camera, based on vertical field of view.

@@ -19,7 +19,6 @@
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
-#include "../Math/CoordinateFrame.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -352,7 +351,7 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 			// Multiply turning speed by delta time so it behaves correctly with different
 			// frame rates.
 			player.rotate(dx * dt, 0.0, options.getHorizontalSensitivity(),
-				options.getVerticalSensitivity(), options.getVerticalFOV());
+				options.getVerticalSensitivity());
 		}
 		else if (!lCtrl)
 		{
@@ -364,13 +363,13 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 			{
 				// Turn left at a fixed angular velocity.
 				player.rotate(-turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
-					options.getVerticalSensitivity(), options.getVerticalFOV());
+					options.getVerticalSensitivity());
 			}
 			else if (right)
 			{
 				// Turn right at a fixed angular velocity.
 				player.rotate(turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
-					options.getVerticalSensitivity(), options.getVerticalFOV());
+					options.getVerticalSensitivity());
 			}
 		}
 	}
@@ -447,22 +446,22 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// Some simple code to move the camera along the Y axis.
 		bool space = keys[SDL_SCANCODE_SPACE] != 0;
 		bool c = keys[SDL_SCANCODE_C] != 0;
-		Double3 &pos = const_cast<Double3&>(player.getPosition());
 		if (space)
 		{
-			pos.y += 0.5 * dt;
+			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
 		}
 		else if (c)
 		{
-			pos.y -= 0.5 * dt;
+			player.teleport(player.getPosition() - Double3(0.0, 0.5 * dt, 0.0));
 		}
 		// -- end test --
 
-		// Get some relevant player direction data.
-		Double2 groundDirection = player.getGroundDirection();
-		Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
+		// Get some relevant player direction data (getDirection() isn't necessary here
+		// because the Y component is intentionally truncated).
+		const Double2 groundDirection = player.getGroundDirection();
+		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
 			groundDirection.y).normalized();
-		Double3 rightDirection = player.getFrame().getRight().normalized();
+		const Double3 &rightDirection = player.getRight();
 
 		// Mouse movement takes priority over key movement.
 		if (leftClick)
@@ -673,7 +672,8 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
-	player.tick(this->getGame(), dt);
+	auto &game = *this->getGame();
+	player.tick(game, dt);
 
 	// Update renderer members that are refreshed each frame.
 	auto &renderer = this->getGame()->getRenderer();

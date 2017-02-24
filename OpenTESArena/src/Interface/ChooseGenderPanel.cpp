@@ -12,7 +12,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
-#include "../Entities/CharacterGenderName.h"
+#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -99,7 +99,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		auto function = [charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
-				game, charClass, name, CharacterGenderName::Male));
+				game, charClass, name, GenderName::Male));
 			game->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
@@ -111,7 +111,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		auto function = [charClass, name](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
-				game, charClass, name, CharacterGenderName::Female));
+				game, charClass, name, GenderName::Female));
 			game->setPanel(std::move(classPanel));
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
