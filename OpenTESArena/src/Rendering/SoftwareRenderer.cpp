@@ -802,7 +802,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// Linearly interpolated fog.
 		const Double3 fogColor(0.40, 0.65, 1.0);
-		const double fogPercent = std::min(zDistance, this->viewDistance) / this->viewDistance;
+		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
 
 		// Draw each wall pixel in the column.
 		uint32_t *pixels = this->colorBuffer.data();
@@ -889,7 +889,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// Linearly interpolated fog.
 		const Double3 fogColor(0.40, 0.65, 1.0);
-		const double fogPercent = std::min(zDistance, this->viewDistance) / this->viewDistance;
+		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
 
 		uint32_t *pixels = this->colorBuffer.data();
 		double *depth = this->zBuffer.data();
