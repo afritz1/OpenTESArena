@@ -57,6 +57,7 @@ private:
 	Matrix4d transform; // Transformation matrix for 3D point projection.
 	Double3 eye, forward; // Camera position and forward vector (forward.y used for Y-shearing).
 	Double3 startCellReal; // Initial voxel as a float type.
+	Double3 fogColor;
 	Int3 startCell; // Initial voxel for ray casting.
 	double fovY; // Vertical field of view.
 	double viewDistance; // Max render distance (usually at 100% fog).

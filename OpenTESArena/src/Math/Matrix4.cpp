@@ -129,7 +129,7 @@ Matrix4<T> Matrix4<T>::zRotation(T radians)
 	return m;
 }
 
-template<typename T>
+template <typename T>
 Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	const Vector3f<T> &right, const Vector3f<T> &up)
 {
@@ -165,9 +165,9 @@ Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
 template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
-	T height = (static_cast<T>(2.0) * near) * static_cast<T>(
-		std::tan((static_cast<T>(0.5 * PI) * fovY) / static_cast<T>(180.0)));
-	T width = height * aspect;
+	const T height = (static_cast<T>(2.0) * near) * static_cast<T>(
+		std::tan((fovY * 0.50) * DEG_TO_RAD));
+	const T width = height * aspect;
 	return Matrix4<T>::projection(near, far, width, height);
 }
 

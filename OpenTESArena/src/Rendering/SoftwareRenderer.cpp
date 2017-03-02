@@ -45,6 +45,10 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->startCellReal = Double3();
 	this->startCell = Int3();
 
+	// Pick an arbitrary fog color. Later, the DAYTIME.COL palette should be used
+	// for sky color interpolation as the day progresses.
+	this->fogColor = Double3(0.45, 0.75, 1.0);
+
 	// -- test --
 	// Throw some test flats into the world.
 	for (int k = 4; k < 16; ++k)
@@ -196,7 +200,8 @@ void SoftwareRenderer::resize(int width, int height)
 
 void SoftwareRenderer::updateVisibleFlats()
 {
-	// Assumes that "visibleFlats" is empty.
+	this->visibleFlats.clear();
+
 	for (const auto &pair : this->flats)
 	{
 		const Flat &flat = pair.second;
@@ -499,9 +504,6 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		}
 	}
 
-	// Simple fog color.
-	const Double3 fog(0.45, 0.75, 1.0);
-
 	// If there was a hit, get the shaded color.
 	if (hitID > 0)
 	{
@@ -573,12 +575,12 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 
 		// Linearly interpolate with some depth.
 		const double depth = std::min(distance, this->viewDistance) / this->viewDistance;
-		return color.lerp(fog, depth);
+		return color.lerp(this->fogColor, depth);
 	}
 	else
 	{
 		// No intersection. Return sky color.
-		return fog;
+		return this->fogColor;
 	}
 }
 
@@ -801,7 +803,6 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 			static_cast<double>(texture.width)) % texture.width;
 
 		// Linearly interpolated fog.
-		const Double3 fogColor(0.40, 0.65, 1.0);
 		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
 
 		// Draw each wall pixel in the column.
@@ -820,7 +821,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 			const Double3 color(texel.x, texel.y, texel.z);
 
 			const int index = x + (y * this->width);
-			pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+			pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
 			depth[index] = zDistance;
 		}
 	}
@@ -888,7 +889,6 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		const double zDistance = nearZ + ((farZ - nearZ) * xRangePercent);
 
 		// Linearly interpolated fog.
-		const Double3 fogColor(0.40, 0.65, 1.0);
 		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
 
 		uint32_t *pixels = this->colorBuffer.data();
@@ -910,7 +910,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 			// Draw if less than the current depth.
 			if (zDistance < depth[index])
 			{
-				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
 				depth[index] = zDistance;
 			}
 		}
@@ -955,47 +955,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		static_cast<int>(this->startCellReal.x),
 		static_cast<int>(this->startCellReal.y),
 		static_cast<int>(this->startCellReal.z));
-
-	// Output color buffer.
-	uint32_t *pixels = this->colorBuffer.data();
-
-	// Lambda for rendering some rows of pixels using 3D ray casting. While this is 
-	// far more expensive than 2.5D ray casting, it does allow the scene to be 
-	// represented in true 3D instead of "fake" 3D.
-	/*auto renderRows = [this, &voxelGrid, widthReal, heightReal, aspect,
-		&forwardComp, &up, &right, pixels](int startY, int endY)
-	{
-		for (int y = startY; y < endY; ++y)
-		{
-			// Y percent across the screen.
-			const double yPercent = static_cast<double>(y) / heightReal;
-
-			// "Up" component of the ray direction, based on current screen Y.
-			const Double3 upComp = up * ((2.0 * yPercent) - 1.0);
-
-			for (int x = 0; x < this->width; ++x)
-			{
-				// X percent across the screen.
-				const double xPercent = static_cast<double>(x) / widthReal;
-
-				// "Right" component of the ray direction, based on current screen X.
-				const Double3 rightComp = right * (aspect * ((2.0 * xPercent) - 1.0));
-
-				// Calculate the ray direction through the pixel.
-				// - If un-normalized, it uses the Z distance, but the insides of voxels
-				//   don't look right then.
-				const Double3 direction = (forwardComp + rightComp - upComp).normalized();
-
-				// Get the resulting color of the ray, starting from the eye.
-				const Double3 color = this->castRay(direction, voxelGrid);
-
-				// Convert to 0x00RRGGBB.
-				const int index = x + (y * this->width);
-				pixels[index] = color.clamped().toRGB();
-			}
-		}
-	};*/
-
+	
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
@@ -1026,7 +986,6 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
 
 	// Erase the visible flats list and re-calculate them.
-	this->visibleFlats.clear();
 	this->updateVisibleFlats();
 
 	// Sort the visible flat data farthest to nearest (this may be relevant for
