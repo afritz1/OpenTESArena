@@ -4,7 +4,7 @@ This open-source project aims to be a modern engine reimplementation for "The El
 
 - Version: 0.2.0
 - License: MIT
-- IRC: #opentesarena on irc.freenode.net
+- IRC: #opentesarena on [webchat.freenode.net](https://webchat.freenode.net/)
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
