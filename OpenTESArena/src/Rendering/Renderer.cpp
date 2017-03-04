@@ -397,10 +397,10 @@ void Renderer::updateGameTime(double gameTime)
 	Debug::crash("Renderer", "updateGameTime() not implemented.");
 }
 
-void Renderer::updateViewDistance(double viewDistance)
+void Renderer::updateFogDistance(double fogDistance)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setViewDistance(viewDistance);
+	this->softwareRenderer->setFogDistance(fogDistance);
 }
 
 int Renderer::addTexture(const uint32_t *pixels, int width, int height)

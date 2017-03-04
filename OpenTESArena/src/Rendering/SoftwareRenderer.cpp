@@ -11,6 +11,9 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
+const double SoftwareRenderer::NEAR_PLANE = 0.0001;
+const double SoftwareRenderer::FAR_PLANE = 1000.0;
+
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
 	// Initialize 2D frame buffers.
@@ -38,8 +41,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->forward = Double3();
 	this->fovY = 0.0;
 
-	this->viewDistance = 0.0;
-	this->viewDistSquared = 0.0;
+	this->fogDistance = 0.0;
 
 	// Initialize start cell to "empty".
 	this->startCellReal = Double3();
@@ -87,10 +89,9 @@ void SoftwareRenderer::setFovY(double fovY)
 	this->fovY = fovY;
 }
 
-void SoftwareRenderer::setViewDistance(double viewDistance)
+void SoftwareRenderer::setFogDistance(double fogDistance)
 {
-	this->viewDistance = viewDistance;
-	this->viewDistSquared = viewDistance * viewDistance;
+	this->fogDistance = fogDistance;
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -284,7 +285,7 @@ void SoftwareRenderer::updateVisibleFlats()
 	});
 }
 
-Double3 SoftwareRenderer::castRay(const Double3 &direction,
+/*Double3 SoftwareRenderer::castRay(const Double3 &direction,
 	const VoxelGrid &voxelGrid) const
 {
 	// This is an extension of Lode Vandevenne's DDA algorithm from 2D to 3D.
@@ -592,7 +593,7 @@ Double3 SoftwareRenderer::castRay(const Double3 &direction,
 		// No intersection. Return sky color.
 		return this->fogColor;
 	}
-}
+}*/
 
 void SoftwareRenderer::castRay(const Double2 &direction,
 	const VoxelGrid &voxelGrid, int x)
@@ -813,7 +814,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 			static_cast<double>(texture.width)) % texture.width;
 
 		// Linearly interpolated fog.
-		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
+		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
 
 		// Draw each wall pixel in the column.
 		uint32_t *pixels = this->colorBuffer.data();
@@ -903,7 +904,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		const double zDistance = nearZ + ((farZ - nearZ) * xRangePercent);
 
 		// Linearly interpolated fog.
-		const double fogPercent = std::min(zDistance / this->viewDistance, 1.0);
+		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
 
 		uint32_t *pixels = this->colorBuffer.data();
 		double *depth = this->zBuffer.data();
@@ -945,10 +946,11 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
 
-	// Refresh transformation matrix (model matrix isn't required because it's just the
-	// identity matrix, and the near plane in the perspective matrix doesn't really matter).
+	// Refresh transformation matrix (model matrix isn't required because it's just 
+	// the identity matrix).
 	Matrix4d view = Matrix4d::view(this->eye, this->forward, right, up);
-	Matrix4d projection = Matrix4d::perspective(this->fovY, aspect, 0.001, this->viewDistance);
+	Matrix4d projection = Matrix4d::perspective(this->fovY, aspect, 
+		SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
 	this->transform = projection * view;
 
 	// Constant camera values for 2D (camera elevation is this->forward.y).

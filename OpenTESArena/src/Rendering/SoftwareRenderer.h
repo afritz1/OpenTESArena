@@ -49,6 +49,10 @@ private:
 		};
 	};
 
+	// Clipping planes for Z coordinates.
+	static const double NEAR_PLANE;
+	static const double FAR_PLANE;
+
 	std::vector<uint32_t> colorBuffer;
 	std::vector<double> zBuffer;
 	std::unordered_map<int, Flat> flats;
@@ -60,13 +64,13 @@ private:
 	Double3 fogColor;
 	Int3 startCell; // Initial voxel for ray casting.
 	double fovY; // Vertical field of view.
-	double viewDistance; // Max render distance (usually at 100% fog).
-	double viewDistSquared; // For comparing with cell distance squared.
+	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
-	Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
+	// (Unused for now; keeping for reference).
+	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
 	// Casts a 2D ray from the default start point (eye) and writes color into
 	// the given column.
@@ -86,7 +90,9 @@ public:
 	void setEye(const Double3 &eye);
 	void setForward(const Double3 &forward);
 	void setFovY(double fovY);
-	void setViewDistance(double viewDistance);
+
+	// Sets the distance at which the fog is maximum.
+	void setFogDistance(double fogDistance);
 
 	// Adds a texture and returns its assigned ID (index).
 	int addTexture(const uint32_t *pixels, int width, int height);

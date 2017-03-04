@@ -11,7 +11,7 @@
 GameData::GameData(std::unique_ptr<Player> player,
 	std::unique_ptr<EntityManager> entityManager, 
 	std::unique_ptr<VoxelGrid> voxelGrid,
-	double gameTime, double viewDistance)
+	double gameTime, double fogDistance)
 {
 	Debug::mention("GameData", "Initializing.");
 
@@ -26,7 +26,7 @@ GameData::GameData(std::unique_ptr<Player> player,
 	std::fill(this->collisionGrid.begin(), this->collisionGrid.end(), 0);
 
 	this->gameTime = gameTime;
-	this->viewDistance = viewDistance;
+	this->fogDistance = fogDistance;
 }
 
 GameData::~GameData()
@@ -59,9 +59,9 @@ double GameData::getGameTime() const
 	return this->gameTime;
 }
 
-double GameData::getViewDistance() const
+double GameData::getFogDistance() const
 {
-	return this->viewDistance;
+	return this->fogDistance;
 }
 
 void GameData::incrementGameTime(double dt)
