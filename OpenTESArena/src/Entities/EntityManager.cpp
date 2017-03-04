@@ -10,6 +10,11 @@ EntityManager::EntityManager()
 
 }
 
+EntityManager::EntityManager(EntityManager &&entityManager)
+{
+	this->entities = std::move(entityManager.entities);
+}
+
 EntityManager::~EntityManager()
 {
 

@@ -15,6 +15,7 @@ private:
 	std::unordered_map<int, std::unique_ptr<Entity>> entities;
 public:
 	EntityManager();
+	EntityManager(EntityManager &&entityManager);
 	~EntityManager();
 
 	// Gets an entity pointer, given their ID. Returns null if no ID matches.

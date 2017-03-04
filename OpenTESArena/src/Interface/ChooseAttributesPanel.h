@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Entities/CharacterClass.h"
 #include "../Math/Vector2.h"
 
 // This panel is for choosing character creation attributes and the portrait.
@@ -15,7 +16,6 @@
 // Maybe there could be a "LevelUpPanel" for that instead.
 
 class Button;
-class CharacterClass;
 class Renderer;
 class TextBox;
 
@@ -29,9 +29,9 @@ private:
 	std::unique_ptr<Button> backToRaceButton, doneButton, incrementPortraitButton, 
 		decrementPortraitButton;
 	std::vector<Int2> headOffsets;
-	std::unique_ptr<CharacterClass> charClass;
-	std::unique_ptr<GenderName> gender;
-	std::unique_ptr<CharacterRaceName> raceName;
+	CharacterClass charClass;
+	GenderName gender;
+	CharacterRaceName raceName;
 	std::string name;
 	int portraitIndex;
 public:

@@ -4,7 +4,6 @@
 
 #include "Player.h"
 
-#include "CharacterClass.h"
 #include "CharacterRaceName.h"
 #include "EntityType.h"
 #include "GenderName.h"
@@ -17,17 +16,15 @@ Player::Player(const std::string &displayName, GenderName gender,
 	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
 	const Double3 &position, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
-	: Entity(EntityType::Player, entityManager), camera(position, direction),
-	velocity(velocity)
+	: Entity(EntityType::Player, entityManager), charClass(charClass),
+	displayName(displayName), camera(position, direction), velocity(velocity)
 {
 	assert(portraitID >= 0);
 
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->maxRunSpeed = maxRunSpeed;
-	this->displayName = displayName;
 	this->gender = gender;
 	this->raceName = raceName;
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
 	this->portraitID = portraitID;
 }
 
@@ -83,7 +80,7 @@ CharacterRaceName Player::getRaceName() const
 
 const CharacterClass &Player::getCharacterClass() const
 {
-	return *this->charClass.get();
+	return this->charClass;
 }
 
 const Double3 &Player::getDirection() const

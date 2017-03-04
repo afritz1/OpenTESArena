@@ -12,14 +12,11 @@
 #include "TextCinematicPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/TextAssets.h"
-#include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterRace.h"
-#include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
-#include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -31,19 +28,16 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
-#include "../Rendering/Rect3D.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
-#include "../World/VoxelBuilder.h"
-#include "../World/VoxelData.h"
-#include "../World/VoxelGrid.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	const CharacterClass &charClass, const std::string &name, GenderName gender,
 	CharacterRaceName raceName)
-	: Panel(game), headOffsets()
+	: Panel(game), headOffsets(), gender(gender), charClass(charClass), 
+	raceName(raceName), name(name)
 {
 	this->nameTextBox = [game, name]()
 	{
@@ -115,224 +109,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 		auto gameDataFunction = [this, charClass, name, gender, raceName](Game *game)
 		{
-			// Make placeholders here for the game data. They'll be more informed
-			// in the future once the player has a place in the world and the options
-			// menu has settings for the renderer.
-			std::unique_ptr<EntityManager> entityManager(new EntityManager());
-
-			Double3 position = Double3(1.50, 1.70, 2.50); // Arbitrary player height.
-			Double3 direction = Double3(1.0, 0.0, 1.0).normalized();
-			Double3 velocity = Double3(0.0, 0.0, 0.0);
-
-			// Some arbitrary max speeds.
-			double maxWalkSpeed = 2.0;
-			double maxRunSpeed = 8.0;
-
-			std::unique_ptr<Player> player(new Player(name, gender, raceName,
-				charClass, this->portraitIndex, position, direction, velocity,
-				maxWalkSpeed, maxRunSpeed, *entityManager.get()));
-
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
 			renderer.initializeWorldRendering(
 				game->getOptions().getResolutionScale(), false);
 
-			// Send some textures and test geometry to renderer memory. Eventually
-			// this will be moved out to another data class, maybe stored in the game
-			// data object.
-			/*auto &textureManager = game->getTextureManager();
-			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-			std::vector<const SDL_Surface*> surfaces =
-			{
-				// Texture indices:
-				// 0: city wall
-				textureManager.getSurface("CITYWALL.IMG"),
-
-				// 1-3: grounds
-				textureManager.getSurfaces("NORM1.SET").at(0),
-				textureManager.getSurfaces("NORM1.SET").at(1),
-				textureManager.getSurfaces("NORM1.SET").at(2),
-
-				// 4-5: gates
-				textureManager.getSurface("DLGT.IMG"),
-				textureManager.getSurface("DRGT.IMG"),
-
-				// 6-9: tavern + door
-				textureManager.getSurfaces("MTAVERN.SET").at(0),
-				textureManager.getSurfaces("MTAVERN.SET").at(1),
-				textureManager.getSurfaces("MTAVERN.SET").at(2),
-				textureManager.getSurface("DTAV.IMG"),
-
-				// 10-15: temple + door
-				textureManager.getSurfaces("MTEMPLE.SET").at(0),
-				textureManager.getSurfaces("MTEMPLE.SET").at(1),
-				textureManager.getSurfaces("MTEMPLE.SET").at(2),
-				textureManager.getSurfaces("MTEMPLE.SET").at(3),
-				textureManager.getSurfaces("MTEMPLE.SET").at(4),
-				textureManager.getSurface("DTEP.IMG"),
-
-				// 16-21: Mages' Guild + door
-				textureManager.getSurfaces("MMUGUILD.SET").at(0),
-				textureManager.getSurfaces("MMUGUILD.SET").at(1),
-				textureManager.getSurfaces("MMUGUILD.SET").at(2),
-				textureManager.getSurfaces("MMUGUILD.SET").at(3),
-				textureManager.getSurfaces("MMUGUILD.SET").at(4),
-				textureManager.getSurface("DMU.IMG"),
-
-				// 22-25: Equipment store + door
-				textureManager.getSurfaces("MEQUIP.SET").at(0),
-				textureManager.getSurfaces("MEQUIP.SET").at(1),
-				textureManager.getSurfaces("MEQUIP.SET").at(2),
-				textureManager.getSurface("DEQ.IMG"),
-
-				// 26-29: Noble house + door
-				textureManager.getSurfaces("MNOBLE.SET").at(0),
-				textureManager.getSurfaces("MNOBLE.SET").at(1),
-				textureManager.getSurfaces("MNOBLE.SET").at(2),
-				textureManager.getSurface("DNB1.IMG")
-			};
-
-			std::vector<int> textureIndices;
-
-			for (int i = 0; i < static_cast<int>(surfaces.size()); ++i)
-			{
-				const SDL_Surface *surface = surfaces.at(i);
-				int textureIndex = renderer.addTexture(
-					static_cast<uint32_t*>(surface->pixels), surface->w, surface->h);
-
-				textureIndices.push_back(textureIndex);
-			}
-
-			// Arbitrary random seed for texture indices.
-			Random random(2);
-			
-			// Ground.
-			for (int k = 0; k < worldDepth; ++k)
-			{
-				for (int i = 0; i < worldWidth; ++i)
-				{
-					Rect3D rect = VoxelBuilder::makeCeiling(i, 0, k);
-					int textureIndex = textureIndices.at(1 + random.next(3));
-					renderer.updateVoxel(i, 0, k,
-						std::vector<Rect3D>{ rect }, textureIndex);
-				}
-			}
-
-			// Near X and far X walls.
-			for (int j = 1; j < worldHeight; ++j)
-			{
-				int textureIndex = textureIndices.at(0);
-				for (int k = 0; k < worldDepth; ++k)
-				{
-					std::vector<Rect3D> block = VoxelBuilder::makeBlock(0, j, k);
-					renderer.updateVoxel(0, j, k, block, textureIndex);
-
-					block = VoxelBuilder::makeBlock(worldWidth - 1, j, k);
-					renderer.updateVoxel(worldWidth - 1, j, k, block, textureIndex);
-				}
-			}
-
-			// Near Z and far Z walls (ignoring existing corners).
-			for (int j = 1; j < worldHeight; ++j)
-			{
-				int textureIndex = textureIndices.at(0);
-				for (int i = 1; i < (worldWidth - 1); ++i)
-				{
-					std::vector<Rect3D> block = VoxelBuilder::makeBlock(i, j, 0);
-					renderer.updateVoxel(i, j, 0, block, textureIndex);
-
-					block = VoxelBuilder::makeBlock(i, j, worldDepth - 1);
-					renderer.updateVoxel(i, j, worldDepth - 1, block, textureIndex);
-				}
-			}
-
-			// Lambda for adding simple voxel buildings.
-			auto makeBuilding = [&renderer, &random, &textureIndices](int cellX,
-				int cellZ, int width, int height, int depth, const std::vector<int> &indices)
-			{
-				const int cellY = 1;
-
-				for (int k = 0; k < depth; ++k)
-				{
-					for (int j = 0; j < height; ++j)
-					{
-						for (int i = 0; i < width; ++i)
-						{
-							const int x = cellX + i;
-							const int y = cellY + j;
-							const int z = cellZ + k;
-
-							const std::vector<Rect3D> block = VoxelBuilder::makeBlock(x, y, z);
-							const int textureIndex = textureIndices.at(indices.at(random.next(
-								static_cast<int>(indices.size()))));
-
-							renderer.updateVoxel(x, y, z, block, textureIndex);
-						}
-					}
-				}
-			};
-
-			// Add some simple buildings around. This data should come from a "World" or 
-			// "CityData" class sometime.
-			// Tavern #1
-			makeBuilding(3, 5, 5, 2, 6, { 6, 7, 8 });
-			makeBuilding(3, 6, 1, 1, 1, { 9 });
-
-			// Tavern #2
-			makeBuilding(3, 13, 7, 1, 5, { 6, 7, 8 });
-			makeBuilding(6, 13, 1, 1, 1, { 9 });
-
-			// Temple #1
-			makeBuilding(11, 4, 6, 2, 5, { 10, 11, 12, 13, 14 });
-			makeBuilding(11, 6, 1, 1, 1, { 15 });
-
-			// Mage's Guild #1
-			makeBuilding(12, 12, 5, 2, 4, { 16, 17, 18, 19, 20 });
-			makeBuilding(15, 12, 1, 1, 1, { 21 });
-
-			// Equipment store #1
-			makeBuilding(20, 4, 5, 1, 7, { 22, 23, 24 });
-			makeBuilding(20, 8, 1, 1, 1, { 25 });
-
-			// Equipment store #2
-			makeBuilding(11, 19, 6, 2, 6, { 22, 23, 24 });
-			makeBuilding(13, 19, 1, 1, 1, { 25 });
-
-			// Noble house #1
-			makeBuilding(21, 15, 6, 2, 8, { 26, 27, 28 });
-			makeBuilding(21, 17, 1, 1, 1, { 29 });
-
-			// Add a city gate with some walls.
-			makeBuilding(8, 0, 1, 1, 1, { 4 });
-			makeBuilding(9, 0, 1, 1, 1, { 5 });
-			makeBuilding(1, 1, 7, worldHeight - 1, 1, { 0 });
-			makeBuilding(10, 1, 3, worldHeight - 1, 1, { 0 });
-
-			// -- test -- Add sprite textures, used later in GameWorldPanel::tick().
-			const SDL_Surface *surface = textureManager.getSurfaces("BARTEND.DFA").at(0);
-			renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
-				surface->w, surface->h);
-			surface = textureManager.getSurfaces("BARTEND.DFA").at(1);
-			renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
-				surface->w, surface->h);
-
-			// Add lights. They are expensive to update every frame because they cover
-			// so many voxels, so the tick method should only update moving ones in practice.
-			// The intensity (reach) of a light also determines its memory usage.
-			for (int k = 1; k < worldDepth - 1; k += 8)
-			{
-				for (int i = 1; i < worldWidth - 1; i += 8)
-				{
-					renderer.updateLight(
-						(i - 1) + ((k - 1) * (worldWidth - 1)),
-						Double3(i + 0.90, 1.50, k + 0.20),
-						Double3(1.0, 0.80, 0.40),
-						6.0);
-				}
-			}*/
-
-			// Add some distinctive test textures.
+			// Add some distinctive wall textures for testing.
 			auto &textureManager = this->getGame()->getTextureManager();
 			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 			std::vector<const SDL_Surface*> surfaces = {
@@ -346,54 +128,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
 					surface->w, surface->h);
 			}
-			// -- end test --
 
-			// Voxel grid with some arbitrary dimensions.
-			const int gridWidth = 32;
-			const int gridHeight = 5;
-			const int gridDepth = 32;
-			const double voxelHeight = 1.0;
-			std::unique_ptr<VoxelGrid> voxelGrid(new VoxelGrid(
-				gridWidth, gridHeight, gridDepth, voxelHeight));
-
-			// Add some voxel data for the voxel IDs to refer to.
-			voxelGrid->addVoxelData(VoxelData(0, 0));
-			voxelGrid->addVoxelData(VoxelData(1, 1));
-			voxelGrid->addVoxelData(VoxelData(2, 2));
-
-			const double gameTime = 0.0; // In seconds. Also affects sun position.
-			const double viewDistance = 15.0;
-			std::unique_ptr<GameData> gameData(new GameData(
-				std::move(player), std::move(entityManager), 
-				std::move(voxelGrid), gameTime, viewDistance));
-
-			// -- test --
-
-			// Set random voxels. These voxel IDs will refer to voxel data.
-			char *voxels = gameData->getVoxelGrid().getVoxels();
-			Random random(0);
-
-			for (int k = 0; k < gridDepth; ++k)
-			{
-				for (int i = 0; i < gridWidth; ++i)
-				{
-					// Ground.
-					const int j = 0;
-					const int index = i + (j * gridWidth) + (k * gridWidth * gridHeight);
-					voxels[index] = 1 + random.next(3);
-				}
-			}
-
-			for (int n = 0; n < 200; ++n)
-			{
-				const int x = random.next(gridWidth);
-				const int y = 1 + random.next(gridHeight - 1);
-				const int z = random.next(gridDepth);
-
-				const int index = x + (y * gridWidth) + (z * gridWidth * gridHeight);
-				voxels[index] = 1 + random.next(3);
-			}
-			// -- end test --
+			// Generate the test world data.
+			std::unique_ptr<GameData> gameData = GameData::createDefault(
+				name, gender, raceName, charClass, this->portraitIndex);
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
@@ -475,10 +213,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
 
-	this->gender = std::unique_ptr<GenderName>(new GenderName(gender));
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(raceName));
-	this->name = name;
 	this->portraitIndex = 0;
 }
 
@@ -539,17 +273,17 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(
-		*this->gender.get(), *this->raceName.get(), false);
+		this->gender, this->raceName, false);
 	const std::string &bodyFilename = PortraitFile::getBody(
-		*this->gender.get(), *this->raceName.get());
+		this->gender, this->raceName);
 	const std::string &shirtFilename = PortraitFile::getShirt(
-		*this->gender.get(), this->charClass->canCastMagic());
-	const std::string &pantsFilename = PortraitFile::getPants(*this->gender.get());
+		this->gender, this->charClass.canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(this->gender);
 
 	// Get pixel offsets for each clothes texture.
 	const Int2 &shirtOffset = PortraitFile::getShirtOffset(
-		*this->gender.get(), this->charClass->canCastMagic());
-	const Int2 &pantsOffset = PortraitFile::getPantsOffset(*this->gender.get());
+		this->gender, this->charClass.canCastMagic());
+	const Int2 &pantsOffset = PortraitFile::getPantsOffset(this->gender);
 
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(portraitIndex);

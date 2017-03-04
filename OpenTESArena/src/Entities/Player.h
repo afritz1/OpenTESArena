@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Camera3D.h"
+#include "CharacterClass.h"
 #include "Entity.h"
 
 // The player is an entity with no sprite, and has extra data pertaining to 
@@ -12,15 +13,13 @@
 // Though the player is not rendered, they are still considered part of the
 // entity manager for purposes such as physics calculation and AI behavior.
 
-class CharacterClass;
-
 enum class CharacterRaceName;
 enum class GenderName;
 
 class Player : public Entity
 {
 private:
-	std::unique_ptr<CharacterClass> charClass;
+	CharacterClass charClass;
 	Camera3D camera;
 	Double3 velocity;
 	double maxWalkSpeed, maxRunSpeed;
@@ -28,7 +27,6 @@ private:
 	CharacterRaceName raceName;
 	std::string displayName;
 	int portraitID;
-	// Attributes can be put in an inherited class.
 	// Other stats...
 public:
 	// Default constructor.
