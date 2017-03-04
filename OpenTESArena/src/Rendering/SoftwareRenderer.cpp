@@ -820,19 +820,23 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		double *depth = this->zBuffer.data();
 		for (int y = drawStart; y < drawEnd; ++y)
 		{
-			// Vertical texture coordinate.
-			const double v = static_cast<double>(y - projectedStart) /
-				static_cast<double>(projectedEnd - projectedStart);
-
-			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-			const Double3 color(texel.x, texel.y, texel.z);
-
 			const int index = x + (y * this->width);
-			pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
-			depth[index] = zDistance;
+
+			if (zDistance <= depth[index])
+			{
+				// Vertical texture coordinate.
+				const double v = static_cast<double>(y - projectedStart) /
+					static_cast<double>(projectedEnd - projectedStart);
+
+				// Y position in texture.
+				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
+				depth[index] = zDistance;
+			}
 		}
 	}
 
@@ -905,21 +909,20 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		double *depth = this->zBuffer.data();
 		for (int y = drawStart; y < drawEnd; ++y)
 		{
-			// Vertical texture coordinate.
-			const double v = static_cast<double>(y - projectedStart) /
-				static_cast<double>(projectedEnd - projectedStart);
-
-			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-			const Double3 color(texel.x, texel.y, texel.z);
-
 			const int index = x + (y * this->width);
 
-			// Draw if less than the current depth.
-			if (zDistance < depth[index])
+			if (zDistance <= depth[index])
 			{
+				// Vertical texture coordinate.
+				const double v = static_cast<double>(y - projectedStart) /
+					static_cast<double>(projectedEnd - projectedStart);
+
+				// Y position in texture.
+				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const Double3 color(texel.x, texel.y, texel.z);
+
 				pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
 				depth[index] = zDistance;
 			}
@@ -1010,7 +1013,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
 	std::thread sortThread([this] { this->updateVisibleFlats(); });
-	
+
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);
 
