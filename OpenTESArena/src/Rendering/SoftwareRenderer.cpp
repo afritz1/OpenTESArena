@@ -272,6 +272,16 @@ void SoftwareRenderer::updateVisibleFlats()
 			this->visibleFlats.push_back(std::make_pair(&flat, projectionData));
 		}
 	}
+
+	// Sort the visible flat data farthest to nearest (this may be relevant for
+	// transparencies).
+	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
+		[](const std::pair<const Flat*, Flat::ProjectionData> &a,
+			const std::pair<const Flat*, Flat::ProjectionData> &b)
+	{
+		return std::min(a.second.leftZ, a.second.rightZ) >
+			std::min(b.second.leftZ, b.second.rightZ);
+	});
 }
 
 Double3 SoftwareRenderer::castRay(const Double3 &direction,
@@ -955,7 +965,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		static_cast<int>(this->startCellReal.x),
 		static_cast<int>(this->startCellReal.y),
 		static_cast<int>(this->startCellReal.z));
-	
+
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
@@ -980,32 +990,64 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		}
 	};
 
-	// Clear screen (this could potentially be multi-threaded).
-	const Double3 skyColor(0.40, 0.65, 1.0);
-	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), skyColor.toRGB());
-	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
-
-	// Erase the visible flats list and re-calculate them.
-	this->updateVisibleFlats();
-
-	// Sort the visible flat data farthest to nearest (this may be relevant for
-	// transparencies).
-	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
-		[](const std::pair<const Flat*, Flat::ProjectionData> &a,
-			const std::pair<const Flat*, Flat::ProjectionData> &b)
+	// Lambda for clearing some rows on the frame buffer quickly.
+	auto clearRows = [this](int startY, int endY)
 	{
-		return std::min(a.second.leftZ, a.second.rightZ) >
-			std::min(b.second.leftZ, b.second.rightZ);
-	});
+		const int startIndex = startY * this->width;
+		const int endIndex = endY * this->width;
+
+		// Clear some color rows.
+		const auto colorBegin = this->colorBuffer.begin() + startIndex;
+		const auto colorEnd = this->colorBuffer.begin() + endIndex;
+		std::fill(colorBegin, colorEnd, this->fogColor.toRGB());
+
+		// Clear some depth rows.
+		const auto depthBegin = this->zBuffer.begin() + startIndex;
+		const auto depthEnd = this->zBuffer.begin() + endIndex;
+		std::fill(depthBegin, depthEnd, std::numeric_limits<double>::infinity());
+	};
+
+	// Start a thread for refreshing the visible flats. This should erase the old list,
+	// calculate a new list, and sort it by depth.
+	std::thread sortThread([this] { this->updateVisibleFlats(); });
+
+	// Prepare clear threads.
+	std::vector<std::thread> clearThreads(this->renderThreadCount);
+
+	// Start the clear threads.
+	for (int i = 0; i < this->renderThreadCount; ++i)
+	{
+		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
+		// the start and stop coordinates are correct for all resolutions.
+		const double blockSize = heightReal / static_cast<double>(this->renderThreadCount);
+		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
+		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
+
+		// Make sure the rounding is correct.
+		assert(startY >= 0);
+		assert(endY <= this->height);
+
+		clearThreads[i] = std::thread(clearRows, startY, endY);
+	}
+
+	// Wait for the clear threads to finish.
+	for (auto &thread : clearThreads)
+	{
+		thread.join();
+	}
+
+	// Wait for the sorting thread to finish.
+	sortThread.join();
 
 	// Prepare render threads.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);
 
-	// Start the render threads. "blockSize" is the approximate number of columns per thread.
-	// Rounding is involved so the start and stop coordinates are correct for all resolutions.
-	const double blockSize = widthReal / static_cast<double>(this->renderThreadCount);
+	// Start the render threads.
 	for (int i = 0; i < this->renderThreadCount; ++i)
 	{
+		// "blockSize" is the approximate number of columns per thread. Rounding is involved so 
+		// the start and stop coordinates are correct for all resolutions.
+		const double blockSize = widthReal / static_cast<double>(this->renderThreadCount);
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
