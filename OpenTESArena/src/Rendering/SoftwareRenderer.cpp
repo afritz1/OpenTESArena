@@ -1010,12 +1010,12 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
 	std::thread sortThread([this] { this->updateVisibleFlats(); });
+	
+	// Prepare render threads. These are used for clearing the frame buffer and rendering.
+	std::vector<std::thread> renderThreads(this->renderThreadCount);
 
-	// Prepare clear threads.
-	std::vector<std::thread> clearThreads(this->renderThreadCount);
-
-	// Start the clear threads.
-	for (int i = 0; i < this->renderThreadCount; ++i)
+	// Start clearing the frame buffer with the render threads.
+	for (size_t i = 0; i < renderThreads.size(); ++i)
 	{
 		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
@@ -1027,11 +1027,11 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		assert(startY >= 0);
 		assert(endY <= this->height);
 
-		clearThreads[i] = std::thread(clearRows, startY, endY);
+		renderThreads[i] = std::thread(clearRows, startY, endY);
 	}
 
-	// Wait for the clear threads to finish.
-	for (auto &thread : clearThreads)
+	// Wait for the render threads to finish clearing.
+	for (auto &thread : renderThreads)
 	{
 		thread.join();
 	}
@@ -1039,11 +1039,8 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 	// Wait for the sorting thread to finish.
 	sortThread.join();
 
-	// Prepare render threads.
-	std::vector<std::thread> renderThreads(this->renderThreadCount);
-
-	// Start the render threads.
-	for (int i = 0; i < this->renderThreadCount; ++i)
+	// Start rendering the scene with the render threads.
+	for (size_t i = 0; i < renderThreads.size(); ++i)
 	{
 		// "blockSize" is the approximate number of columns per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
@@ -1058,7 +1055,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		renderThreads[i] = std::thread(renderColumns, startX, endX);
 	}
 
-	// Wait for the render threads to finish.
+	// Wait for the render threads to finish rendering.
 	for (auto &thread : renderThreads)
 	{
 		thread.join();
