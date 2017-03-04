@@ -129,12 +129,29 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
+	const bool isCOL = extension.compare(".COL") == 0;
 	const bool isIMG = extension.compare(".IMG") == 0;
 	const bool isMNU = extension.compare(".MNU") == 0;
 
 	SDL_Surface *surface = nullptr;
 
-	if (isIMG || isMNU)
+	if (isCOL)
+	{
+		// A palette was requested as the primary image. Convert it to a surface.
+		Palette colPalette;
+		COLFile::toPalette(filename, colPalette);
+
+		assert(colPalette.size() == 256);
+		surface = Surface::createSurfaceWithFormat(16, 16, Renderer::DEFAULT_BPP, 
+			Renderer::DEFAULT_PIXELFORMAT);
+		
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		for (size_t i = 0; i < colPalette.size(); ++i)
+		{
+			pixels[i] = colPalette[i].toARGB();
+		}
+	}
+	else if (isIMG || isMNU)
 	{
 		// Decide if the IMG will use its own palette or not.
 		const Palette *palette = useBuiltInPalette ? nullptr : 

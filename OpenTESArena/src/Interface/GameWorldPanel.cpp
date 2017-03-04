@@ -667,20 +667,26 @@ void GameWorldPanel::tick(double dt)
 	// Animate the game world.
 	// - Later, this should be more explicit about what it's updating exactly.
 	// - Entity AI, spells flying, doors opening/closing, etc.
-	auto &gameData = this->getGame()->getGameData();
+	auto &game = *this->getGame();
+	auto &gameData = game.getGameData();
 	gameData.incrementGameTime(dt);
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
-	auto &game = *this->getGame();
 	player.tick(game, dt);
 
 	// Update renderer members that are refreshed each frame.
-	auto &renderer = this->getGame()->getRenderer();
+	auto &renderer = game.getRenderer();
 	renderer.updateCamera(player.getPosition(), player.getDirection(), 
 		this->getGame()->getOptions().getVerticalFOV());
 	//renderer.updateGameTime(gameData.getGameTime()); // To do.
 	renderer.updateFogDistance(gameData.getFogDistance());
+
+	// Technically, the sky palette only needs to be updated when the scene changes.
+	auto &textureManager = game.getTextureManager();
+	const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
+	renderer.updateSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels), 
+		skyPalette->w * skyPalette->h);
 
 	// -- test -- update test sprites.
 	/*const Double3 playerRight = player.getFrame().getRight();

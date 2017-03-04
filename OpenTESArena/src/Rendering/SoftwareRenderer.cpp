@@ -47,10 +47,6 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->startCellReal = Double3();
 	this->startCell = Int3();
 
-	// Pick an arbitrary fog color. Later, the DAYTIME.COL palette should be used
-	// for sky color interpolation as the day progresses.
-	this->fogColor = Double3(0.45, 0.75, 1.0);
-
 	// -- test --
 	// Throw some test flats into the world.
 	for (int k = 4; k < 16; ++k)
@@ -92,6 +88,16 @@ void SoftwareRenderer::setFovY(double fovY)
 void SoftwareRenderer::setFogDistance(double fogDistance)
 {
 	this->fogDistance = fogDistance;
+}
+
+void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
+{
+	this->skyPalette = std::vector<Double3>(count);
+
+	for (size_t i = 0; i < this->skyPalette.size(); ++i)
+	{
+		this->skyPalette[i] = Double3::fromRGB(colors[i]);
+	}
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -595,6 +601,12 @@ void SoftwareRenderer::updateVisibleFlats()
 	}
 }*/
 
+const Double3 &SoftwareRenderer::getFogColor() const
+{
+	// To do: associate this with the current game time.
+	return this->skyPalette.at(this->skyPalette.size() / 2);
+}
+
 void SoftwareRenderer::castRay(const Double2 &direction,
 	const VoxelGrid &voxelGrid, int x)
 {
@@ -815,6 +827,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
+		const Double3 &fogColor = this->getFogColor();
 
 		// Draw each wall pixel in the column.
 		uint32_t *pixels = this->colorBuffer.data();
@@ -835,7 +848,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 				const Double3 color(texel.x, texel.y, texel.z);
 
-				pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
+				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 				depth[index] = zDistance;
 			}
 		}
@@ -905,6 +918,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
+		const Double3 &fogColor = this->getFogColor();
 
 		uint32_t *pixels = this->colorBuffer.data();
 		double *depth = this->zBuffer.data();
@@ -924,7 +938,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 				const Double3 color(texel.x, texel.y, texel.z);
 
-				pixels[index] = color.lerp(this->fogColor, fogPercent).clamped().toRGB();
+				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 				depth[index] = zDistance;
 			}
 		}
@@ -1004,7 +1018,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 		// Clear some color rows.
 		const auto colorBegin = this->colorBuffer.begin() + startIndex;
 		const auto colorEnd = this->colorBuffer.begin() + endIndex;
-		std::fill(colorBegin, colorEnd, this->fogColor.toRGB());
+		std::fill(colorBegin, colorEnd, this->getFogColor().toRGB());
 
 		// Clear some depth rows.
 		const auto depthBegin = this->zBuffer.begin() + startIndex;

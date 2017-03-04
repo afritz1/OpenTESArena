@@ -58,15 +58,18 @@ private:
 	std::unordered_map<int, Flat> flats;
 	std::vector<std::pair<const Flat*, Flat::ProjectionData>> visibleFlats;
 	std::vector<TextureData> textures;
+	std::vector<Double3> skyPalette; // Colors for each time of day.
 	Matrix4d transform; // Transformation matrix for 3D point projection.
 	Double3 eye, forward; // Camera position and forward vector (forward.y used for Y-shearing).
 	Double3 startCellReal; // Initial voxel as a float type.
-	Double3 fogColor;
 	Int3 startCell; // Initial voxel for ray casting.
 	double fovY; // Vertical field of view.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
+
+	// Gets the fog color (usually based on the time of day).
+	const Double3 &getFogColor() const;
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
@@ -93,6 +96,10 @@ public:
 
 	// Sets the distance at which the fog is maximum.
 	void setFogDistance(double fogDistance);
+
+	// Sets the sky palette to use with sky colors based on the time of day.
+	// For dungeons, this would probably just be one black pixel.
+	void setSkyPalette(const uint32_t *colors, int count);
 
 	// Adds a texture and returns its assigned ID (index).
 	int addTexture(const uint32_t *pixels, int width, int height);

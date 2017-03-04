@@ -117,6 +117,7 @@ public:
 	void updateCamera(const Double3 &eye, const Double3 &direction, double fovY);
 	void updateGameTime(double gameTime);
 	void updateFogDistance(double fogDistance);
+	void updateSkyPalette(const uint32_t *colors, int count);
 	int addTexture(const uint32_t *pixels, int width, int height);
 	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
 		const std::vector<int> &textureIndices);

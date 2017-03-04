@@ -403,6 +403,12 @@ void Renderer::updateFogDistance(double fogDistance)
 	this->softwareRenderer->setFogDistance(fogDistance);
 }
 
+void Renderer::updateSkyPalette(const uint32_t *colors, int count)
+{
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setSkyPalette(colors, count);
+}
+
 int Renderer::addTexture(const uint32_t *pixels, int width, int height)
 {
 	assert(this->softwareRenderer.get() != nullptr);
