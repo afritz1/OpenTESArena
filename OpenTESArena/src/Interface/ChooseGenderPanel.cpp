@@ -4,7 +4,6 @@
 
 #include "ChooseGenderPanel.h"
 
-#include "Button.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
 #include "PopUp.h"
@@ -89,7 +88,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 			game->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
 				game, charClass)));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->maleButton = [charClass, name]()
@@ -101,7 +100,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 				game, charClass, name, GenderName::Male));
 			game->setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, 175, 35, function));
 	}();
 
 	this->femaleButton = [charClass, name]()
@@ -113,7 +112,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 				game, charClass, name, GenderName::Female));
 			game->setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, 175, 35, function));
 	}();
 }
 

@@ -4,7 +4,6 @@
 
 #include "ImagePanel.h"
 
-#include "Button.h"
 #include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -21,7 +20,7 @@ ImagePanel::ImagePanel(Game *game, const std::string &paletteName,
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button>(new Button(endingAction));
+		return std::unique_ptr<Button<>>(new Button<>(endingAction));
 	}();
 
 	this->secondsToDisplay = secondsToDisplay;

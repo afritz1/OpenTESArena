@@ -4,7 +4,6 @@
 
 #include "AutomapPanel.h"
 
-#include "Button.h"
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -42,7 +41,7 @@ AutomapPanel::AutomapPanel(Game *game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 }
 

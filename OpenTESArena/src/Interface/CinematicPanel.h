@@ -4,19 +4,19 @@
 #include <functional>
 #include <string>
 
+#include "Button.h"
 #include "Panel.h"
 
 // Designed for sets of images (i.e., videos) that play one after another and
 // eventually lead to another panel. Skipping is available, too.
 
-class Button;
 class Game;
 class Renderer;
 
 class CinematicPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> skipButton;
+	std::unique_ptr<Button<>> skipButton;
 	std::string paletteName;
 	std::string sequenceName;
 	double secondsPerImage, currentSeconds;

@@ -6,7 +6,6 @@
 #include "GameWorldPanel.h"
 
 #include "AutomapPanel.h"
-#include "Button.h"
 #include "CharacterPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
@@ -107,7 +106,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> automapPanel(new AutomapPanel(game));
 			game->setPanel(std::move(automapPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->characterSheetButton = []()
@@ -117,7 +116,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
 			game->setPanel(std::move(sheetPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->logbookButton = []()
@@ -127,7 +126,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
 			game->setPanel(std::move(logbookPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->pauseButton = []()
@@ -137,7 +136,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game->setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->worldMapButton = []()
@@ -147,7 +146,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> mapPanel(new WorldMapPanel(game));
 			game->setPanel(std::move(mapPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	// Default to classic mode for now. Eventually, "modern" mode will be

@@ -4,7 +4,6 @@
 
 #include "LoadGamePanel.h"
 
-#include "Button.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
@@ -52,7 +51,7 @@ LoadGamePanel::LoadGamePanel(Game *game)
 				std::unique_ptr<Panel>(new MainMenuPanel(game));
 			game->setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 }
 

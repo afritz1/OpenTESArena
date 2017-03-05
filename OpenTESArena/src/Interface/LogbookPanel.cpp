@@ -4,7 +4,6 @@
 
 #include "LogbookPanel.h"
 
-#include "Button.h"
 #include "GameWorldPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -48,7 +47,7 @@ LogbookPanel::LogbookPanel(Game *game)
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(game));
 			game->setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, 34, 14, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, 34, 14, function));
 	}();
 }
 

@@ -5,7 +5,6 @@
 
 #include "TextCinematicPanel.h"
 
-#include "Button.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -77,7 +76,7 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button>(new Button(endingAction));
+		return std::unique_ptr<Button<>>(new Button<>(endingAction));
 	}();
 
 	this->secondsPerImage = secondsPerImage;

@@ -5,7 +5,6 @@
 
 #include "ChooseClassPanel.h"
 
-#include "Button.h"
 #include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
 #include "ListBox.h"
@@ -97,7 +96,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
 			game->setPanel(std::move(creationPanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->upButton = [this]
@@ -113,7 +112,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 				this->classesListBox->scrollUp();
 			}
 		};
-		return std::unique_ptr<Button>(new Button(center, w, h, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, w, h, function));
 	}();
 
 	this->downButton = [this]
@@ -131,7 +130,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 				this->classesListBox->scrollDown();
 			}
 		};
-		return std::unique_ptr<Button>(new Button(center, w, h, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, w, h, function));
 	}();
 
 	this->acceptButton = [this]
@@ -142,7 +141,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 				game, *this->charClass.get()));
 			game->setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 

@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
 
@@ -11,7 +12,6 @@
 // This is the character portrait panel that shows the player's attributes and
 // derived stats.
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -20,7 +20,7 @@ class CharacterPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
-	std::unique_ptr<Button> doneButton, nextPageButton;
+	std::unique_ptr<Button<>> doneButton, nextPageButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterPanel(Game *game);

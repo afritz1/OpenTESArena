@@ -3,6 +3,7 @@
 
 #include <array>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Math/Rect.h"
 
@@ -12,7 +13,6 @@
 // - The original: compass, portrait, stat bars, and buttons with original mouse.
 // - A modern version: only compass and stat bars with free-look mouse.
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -22,7 +22,7 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button> automapButton, characterSheetButton, logbookButton, 
+	std::unique_ptr<Button<>> automapButton, characterSheetButton, logbookButton, 
 		pauseButton, worldMapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	PlayerInterface playerInterface;

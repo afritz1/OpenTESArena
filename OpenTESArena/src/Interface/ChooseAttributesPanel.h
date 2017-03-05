@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
 #include "../Math/Vector2.h"
@@ -15,7 +16,6 @@
 
 // Maybe there could be a "LevelUpPanel" for that instead.
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -26,7 +26,7 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
-	std::unique_ptr<Button> backToRaceButton, doneButton, incrementPortraitButton, 
+	std::unique_ptr<Button<>> backToRaceButton, doneButton, incrementPortraitButton, 
 		decrementPortraitButton;
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;

@@ -3,10 +3,10 @@
 
 #include <string>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
 
-class Button;
 class Renderer;
 class TextBox;
 class Texture;
@@ -16,7 +16,7 @@ class ChooseGenderPanel : public Panel
 private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
-	std::unique_ptr<Button> backToNameButton, maleButton, femaleButton;
+	std::unique_ptr<Button<>> backToNameButton, maleButton, femaleButton;
 	CharacterClass charClass;
 	std::string name;
 public:

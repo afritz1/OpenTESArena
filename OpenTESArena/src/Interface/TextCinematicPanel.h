@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 
 // Very similar to a cinematic panel, only now it's designed for cinematics with
@@ -19,7 +20,6 @@
 // paragraph. The text argument does not need any special formatting other than
 // newlines built in as usual.
 
-class Button;
 class Game;
 class Renderer;
 class TextBox;
@@ -28,7 +28,7 @@ class TextCinematicPanel : public Panel
 {
 private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
-	std::unique_ptr<Button> skipButton;
+	std::unique_ptr<Button<>> skipButton;
 	std::string sequenceName;
 	double secondsPerImage, currentImageSeconds;
 	int imageIndex, textIndex;

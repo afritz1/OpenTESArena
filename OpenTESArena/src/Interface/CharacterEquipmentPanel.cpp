@@ -4,7 +4,6 @@
 
 #include "CharacterEquipmentPanel.h"
 
-#include "Button.h"
 #include "CharacterPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -95,7 +94,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 			std::unique_ptr<Panel> characterPanel(new CharacterPanel(game));
 			game->setPanel(std::move(characterPanel));
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->spellbookButton = []()
@@ -108,7 +107,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->dropButton = []()
@@ -121,7 +120,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->scrollDownButton = []()
@@ -133,7 +132,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	this->scrollUpButton = []()
@@ -145,7 +144,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.

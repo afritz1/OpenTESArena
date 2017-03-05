@@ -6,18 +6,17 @@
 #include <string>
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 
 // Halfway between a CinematicPanel and an ImagePanel, this panel displays still 
 // images one at a time and allows only the escape button to fully skip until the
 // end, unlike the CinematicPanel. Mouse clicks, etc. will skip one image.
 
-class Button;
-
 class ImageSequencePanel : public Panel
 {
 private:
-	std::unique_ptr<Button> skipButton;
+	std::unique_ptr<Button<>> skipButton;
 	std::vector<std::string> paletteNames;
 	std::vector<std::string> textureNames;
 	std::vector<double> imageDurations;

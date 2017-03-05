@@ -1,9 +1,9 @@
 #ifndef WORLD_MAP_PANEL_H
 #define WORLD_MAP_PANEL_H
 
+#include "Button.h"
 #include "Panel.h"
 
-class Button;
 class Renderer;
 
 enum class ProvinceName;
@@ -11,7 +11,7 @@ enum class ProvinceName;
 class WorldMapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> backToGameButton, provinceButton;
+	std::unique_ptr<Button<>> backToGameButton, provinceButton;
 	std::unique_ptr<ProvinceName> provinceName; // Null until a province is clicked.
 public:
 	WorldMapPanel(Game *game);

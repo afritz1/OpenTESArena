@@ -3,9 +3,9 @@
 
 #include <string>
 
+#include "Button.h"
 #include "Panel.h"
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -14,7 +14,7 @@ class PauseMenuPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox,
 		optionsTextBox, optionsShadowTextBox;
-	std::unique_ptr<Button> loadButton, exitButton, newButton, saveButton, resumeButton,
+	std::unique_ptr<Button<>> loadButton, exitButton, newButton, saveButton, resumeButton,
 		optionsButton, musicUpButton, musicDownButton, soundUpButton, soundDownButton;
 
 	void updateMusicText(double volume);

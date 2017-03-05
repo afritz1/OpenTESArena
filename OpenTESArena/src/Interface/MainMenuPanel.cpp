@@ -5,7 +5,6 @@
 
 #include "MainMenuPanel.h"
 
-#include "Button.h"
 #include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
 #include "ImageSequencePanel.h"
@@ -37,7 +36,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
 			game->setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	this->newButton = []()
@@ -95,7 +94,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			game->setPanel(std::move(cinematicPanel));
 			game->setMusic(MusicName::EvilIntro);
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	this->exitButton = []()
@@ -110,7 +109,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			e.quit.timestamp = 0;
             SDL_PushEvent(&e);
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	// The game data should not be active on the main menu.

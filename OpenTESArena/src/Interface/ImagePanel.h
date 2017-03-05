@@ -4,19 +4,19 @@
 #include <functional>
 #include <string>
 
+#include "Button.h"
 #include "Panel.h"
 
 // For rendering still images in a similar fashion to a cinematic, only now
 // it's one image.
 
-class Button;
 class Game;
 class Renderer;
 
 class ImagePanel : public Panel
 {
 private:
-	std::unique_ptr<Button> skipButton;
+	std::unique_ptr<Button<>> skipButton;
 	std::string paletteName;
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;

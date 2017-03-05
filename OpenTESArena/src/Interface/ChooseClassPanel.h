@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
@@ -12,7 +13,6 @@
 // list that says nothing about the classes (thus requiring the manual for 
 // information). I think it's better to have tooltips.
 
-class Button;
 class ListBox;
 class Renderer;
 class Surface;
@@ -25,7 +25,7 @@ private:
 
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
-	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
+	std::unique_ptr<Button<>> backToClassCreationButton, upButton, downButton, acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClass> charClasses;
 

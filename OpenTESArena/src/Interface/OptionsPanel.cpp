@@ -5,7 +5,6 @@
 
 #include "OptionsPanel.h"
 
-#include "Button.h"
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -70,7 +69,7 @@ OptionsPanel::OptionsPanel(Game *game)
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game->setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->fpsUpButton = [this]()
@@ -87,7 +86,7 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			this->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->fpsDownButton = [this]()
@@ -104,7 +103,7 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			this->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 }
 

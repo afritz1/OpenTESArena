@@ -3,10 +3,10 @@
 
 #include <vector>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -15,7 +15,7 @@ class CharacterEquipmentPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
-	std::unique_ptr<Button> backToStatsButton, spellbookButton, dropButton,
+	std::unique_ptr<Button<>> backToStatsButton, spellbookButton, dropButton,
 		scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:

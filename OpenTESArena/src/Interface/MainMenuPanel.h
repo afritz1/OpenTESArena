@@ -1,15 +1,15 @@
 #ifndef MAIN_MENU_PANEL_H
 #define MAIN_MENU_PANEL_H
 
+#include "Button.h"
 #include "Panel.h"
 
-class Button;
 class Renderer;
 
 class MainMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<Button> loadButton, newButton, exitButton;
+	std::unique_ptr<Button<>> loadButton, newButton, exitButton;
 public:
 	MainMenuPanel(Game *game);
 	virtual ~MainMenuPanel();

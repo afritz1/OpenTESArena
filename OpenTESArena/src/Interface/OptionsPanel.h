@@ -1,11 +1,11 @@
 #ifndef OPTIONS_PANEL_H
 #define OPTIONS_PANEL_H
 
+#include "Button.h"
 #include "Panel.h"
 
 // Arena doesn't have an options menu, so I made one up!
 
-class Button;
 class Renderer;
 class TextBox;
 
@@ -15,7 +15,7 @@ private:
 	static const std::string FPS_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, fpsTextBox;
-	std::unique_ptr<Button> backToPauseButton, fpsUpButton, fpsDownButton;
+	std::unique_ptr<Button<>> backToPauseButton, fpsUpButton, fpsDownButton;
 
 	void updateFPSText(int fps);
 public:

@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
 
@@ -15,7 +16,6 @@
 
 // No numbers or symbols (i.e., @, #, $) are allowed in the name for now.
 
-class Button;
 class Renderer;
 class TextBox;
 class Texture;
@@ -27,7 +27,7 @@ private:
 
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
-	std::unique_ptr<Button> backToClassButton, acceptButton;
+	std::unique_ptr<Button<>> backToClassButton, acceptButton;
 	CharacterClass charClass;
 	std::string name;
 public:

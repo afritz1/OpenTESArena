@@ -5,7 +5,6 @@
 
 #include "ProvinceMapPanel.h"
 
-#include "Button.h"
 #include "ProvinceButtonName.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -92,7 +91,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->travelButton = []()
@@ -106,7 +105,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 
 	this->backToWorldMapButton = []()
@@ -121,7 +120,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
 }
 

@@ -5,7 +5,6 @@
 
 #include "ImageSequencePanel.h"
 
-#include "Button.h"
 #include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -28,7 +27,7 @@ ImageSequencePanel::ImageSequencePanel(Game *game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button>(new Button(endingAction));
+		return std::unique_ptr<Button<>>(new Button<>(endingAction));
 	}();
 
 	this->currentSeconds = 0.0;

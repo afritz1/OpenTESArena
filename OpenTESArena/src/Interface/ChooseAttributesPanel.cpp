@@ -4,7 +4,6 @@
 
 #include "ChooseAttributesPanel.h"
 
-#include "Button.h"
 #include "ChooseRacePanel.h"
 #include "GameWorldPanel.h"
 #include "TextAlignment.h"
@@ -98,7 +97,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				game, charClass, name, gender));
 			game->setPanel(std::move(racePanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	this->doneButton = [this, charClass, name, gender, raceName]()
@@ -177,7 +176,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			game->setMusic(MusicName::Vision);
 		};
 
-		return std::unique_ptr<Button>(new Button(center, width, height, cinematicFunction));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, cinematicFunction));
 	}();
 
 	this->incrementPortraitButton = [this]()
@@ -189,7 +188,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			this->portraitID = (this->portraitID == 9) ? 0 : (this->portraitID + 1);
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	this->decrementPortraitButton = [this]()
@@ -201,7 +200,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			this->portraitID = (this->portraitID == 0) ? 9 : (this->portraitID - 1);
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.

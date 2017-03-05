@@ -4,7 +4,6 @@
 
 #include "WorldMapPanel.h"
 
-#include "Button.h"
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
@@ -34,7 +33,7 @@ WorldMapPanel::WorldMapPanel(Game *game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button>(new Button(center, width, height, function));
+		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
 	}();
 
 	this->provinceButton = [this]()
@@ -45,7 +44,7 @@ WorldMapPanel::WorldMapPanel(Game *game)
 				game, Province(*this->provinceName.get())));
 			game->setPanel(std::move(provincePanel));
 		};
-		return std::unique_ptr<Button>(new Button(function));
+		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
 	// Leave province name null until one is selected.
