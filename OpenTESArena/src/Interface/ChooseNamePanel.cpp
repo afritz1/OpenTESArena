@@ -12,7 +12,6 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClass.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -30,7 +29,7 @@
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
 ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
-	: Panel(game)
+	: Panel(game), charClass(charClass)
 {
 	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
 		PopUpType::Parchment, 300, 60, game->getTextureManager(),
@@ -92,9 +91,6 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 		};
 		return std::unique_ptr<Button>(new Button(function));
 	}();
-
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->name = std::string();
 }
 
 ChooseNamePanel::~ChooseNamePanel()

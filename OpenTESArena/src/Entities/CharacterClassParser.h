@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
-// This class will need to switch from parsing "classes.txt" to the original
-// Arena data files.
+#include "CharacterClass.h"
 
-class CharacterClass;
+// This class will need to switch from parsing "classes.txt" to the original
+// Arena data files eventually.
 
 class CharacterClassParser
 {
@@ -20,7 +20,7 @@ private:
 	CharacterClassParser(const CharacterClassParser&) = delete;
 	~CharacterClassParser() = delete;
 public:
-	static std::vector<std::unique_ptr<CharacterClass>> parse();
+	static std::vector<CharacterClass> parse();
 };
 
 #endif

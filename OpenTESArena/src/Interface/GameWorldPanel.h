@@ -4,6 +4,7 @@
 #include <array>
 
 #include "Panel.h"
+#include "../Math/Rect.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 
@@ -12,7 +13,6 @@
 // - A modern version: only compass and stat bars with free-look mouse.
 
 class Button;
-class Rect;
 class Renderer;
 class TextBox;
 
@@ -24,7 +24,7 @@ private:
 	std::unique_ptr<TextBox> playerNameTextBox;
 	std::unique_ptr<Button> automapButton, characterSheetButton, logbookButton, 
 		pauseButton, worldMapButton;
-	std::array<std::unique_ptr<Rect>, 9> nativeCursorRegions;
+	std::array<Rect, 9> nativeCursorRegions;
 	PlayerInterface playerInterface;
 
 	// Modifies the values in the native cursor regions array so rectangles in

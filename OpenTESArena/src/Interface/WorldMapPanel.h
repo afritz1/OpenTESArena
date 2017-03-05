@@ -12,7 +12,7 @@ class WorldMapPanel : public Panel
 {
 private:
 	std::unique_ptr<Button> backToGameButton, provinceButton;
-	std::unique_ptr<ProvinceName> provinceName;
+	std::unique_ptr<ProvinceName> provinceName; // Null until a province is clicked.
 public:
 	WorldMapPanel(Game *game);
 	virtual ~WorldMapPanel();

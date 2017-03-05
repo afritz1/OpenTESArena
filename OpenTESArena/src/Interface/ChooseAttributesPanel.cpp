@@ -131,7 +131,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 			// Generate the test world data.
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
-				name, gender, raceName, charClass, this->portraitIndex);
+				name, gender, raceName, charClass, this->portraitID);
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
@@ -187,7 +187,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		int height = 42;
 		auto function = [this](Game *game)
 		{
-			this->portraitIndex = (this->portraitIndex == 9) ? 0 : (this->portraitIndex + 1);
+			this->portraitID = (this->portraitID == 9) ? 0 : (this->portraitID + 1);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -199,7 +199,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		int height = 42;
 		auto function = [this](Game *game)
 		{
-			this->portraitIndex = (this->portraitIndex == 0) ? 9 : (this->portraitIndex - 1);
+			this->portraitID = (this->portraitID == 0) ? 9 : (this->portraitID - 1);
 		};
 		return std::unique_ptr<Button>(new Button(center, width, height, function));
 	}();
@@ -213,7 +213,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
 
-	this->portraitIndex = 0;
+	this->portraitID = 0;
 }
 
 ChooseAttributesPanel::~ChooseAttributesPanel()
@@ -286,9 +286,9 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const Int2 &pantsOffset = PortraitFile::getPantsOffset(this->gender);
 
 	// Draw the current portrait and clothes.
-	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
+	const Int2 &headOffset = this->headOffsets.at(this->portraitID);
 	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet)).at(this->portraitIndex);
+		PaletteFile::fromName(PaletteName::CharSheet)).at(this->portraitID);
 	const auto &body = textureManager.getTexture(bodyFilename);
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);

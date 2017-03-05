@@ -20,7 +20,6 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
@@ -317,10 +316,10 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 				const int mouseX = mousePosition.x;
 
 				// Native cursor regions for turning (scaled to the current window).
-				const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
-				const Rect &topRight = *this->nativeCursorRegions.at(2).get();
-				const Rect &middleLeft = *this->nativeCursorRegions.at(3).get();
-				const Rect &middleRight = *this->nativeCursorRegions.at(5).get();
+				const Rect &topLeft = this->nativeCursorRegions.at(0);
+				const Rect &topRight = this->nativeCursorRegions.at(2);
+				const Rect &middleLeft = this->nativeCursorRegions.at(3);
+				const Rect &middleRight = this->nativeCursorRegions.at(5);
 
 				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
 				double percent = 0.0;
@@ -471,12 +470,12 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			const int mouseY = mousePosition.y;
 
 			// Native cursor regions for motion (scaled to the current window).
-			const Rect &topLeft = *this->nativeCursorRegions.at(0).get();
-			const Rect &top = *this->nativeCursorRegions.at(1).get();
-			const Rect &topRight = *this->nativeCursorRegions.at(2).get();
-			const Rect &bottomLeft = *this->nativeCursorRegions.at(6).get();
-			const Rect &bottom = *this->nativeCursorRegions.at(7).get();
-			const Rect &bottomRight = *this->nativeCursorRegions.at(8).get();
+			const Rect &topLeft = this->nativeCursorRegions.at(0);
+			const Rect &top = this->nativeCursorRegions.at(1);
+			const Rect &topRight = this->nativeCursorRegions.at(2);
+			const Rect &bottomLeft = this->nativeCursorRegions.at(6);
+			const Rect &bottom = this->nativeCursorRegions.at(7);
+			const Rect &bottomRight = this->nativeCursorRegions.at(8);
 
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
@@ -637,7 +636,7 @@ void GameWorldPanel::updateCursorRegions(int width, int height)
 		const int height = static_cast<int>(std::ceil(
 			static_cast<double>(rect.getHeight()) * yScale));
 
-		return std::unique_ptr<Rect>(new Rect(x, y, width, height));
+		return Rect(x, y, width, height);
 	};
 
 	// Top row.
@@ -868,7 +867,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// See which arrow cursor region the native mouse is in.
 		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
 		{
-			if (this->nativeCursorRegions.at(i)->contains(mousePosition))
+			if (this->nativeCursorRegions.at(i).contains(mousePosition))
 			{
 				return textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors)).at(i);

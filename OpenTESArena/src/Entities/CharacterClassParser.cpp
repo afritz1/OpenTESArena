@@ -1,10 +1,9 @@
 #include <cassert>
-#include <map>
 #include <sstream>
+#include <unordered_map>
 
 #include "CharacterClassParser.h"
 
-#include "CharacterClass.h"
 #include "CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
@@ -13,27 +12,27 @@
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
 
-const std::map<std::string, CharacterClassCategoryName> CharacterClassParserCategories =
+const std::unordered_map<std::string, CharacterClassCategoryName> CharacterClassParserCategories =
 {
 	{ "Mage", CharacterClassCategoryName::Mage },
 	{ "Thief", CharacterClassCategoryName::Thief },
 	{ "Warrior", CharacterClassCategoryName::Warrior }
 };
 
-const std::map<std::string, bool> CharacterClassParserMagicBooleans =
+const std::unordered_map<std::string, bool> CharacterClassParserMagicBooleans =
 {
 	{ "True", true },
 	{ "False", false }
 };
 
-const std::map<std::string, ArmorMaterialType> CharacterClassParserArmors =
+const std::unordered_map<std::string, ArmorMaterialType> CharacterClassParserArmors =
 {
 	{ "Leather", ArmorMaterialType::Leather },
 	{ "Chain", ArmorMaterialType::Chain },
 	{ "Plate", ArmorMaterialType::Plate }
 };
 
-const std::map<std::string, ShieldType> CharacterClassParserShields =
+const std::unordered_map<std::string, ShieldType> CharacterClassParserShields =
 {
 	{ "Buckler", ShieldType::Buckler },
 	{ "Round", ShieldType::Round },
@@ -41,7 +40,7 @@ const std::map<std::string, ShieldType> CharacterClassParserShields =
 	{ "Tower", ShieldType::Tower }
 };
 
-const std::map<std::string, WeaponType> CharacterClassParserWeapons =
+const std::unordered_map<std::string, WeaponType> CharacterClassParserWeapons =
 {
 	{ "BattleAxe", WeaponType::BattleAxe },
 	{ "Broadsword", WeaponType::Broadsword },
@@ -67,7 +66,7 @@ const std::map<std::string, WeaponType> CharacterClassParserWeapons =
 const std::string CharacterClassParser::PATH = "data/text/";
 const std::string CharacterClassParser::FILENAME = "classes.txt";
 
-std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
+std::vector<CharacterClass> CharacterClassParser::parse()
 {
 	// This parser is very simple right now. All text must have the exact amount
 	// of spacing and commas, and there must be a new line at the end of the file.
@@ -84,7 +83,7 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 	const std::string any = "Any";
 	const std::string none = "None";
 
-	std::vector<std::unique_ptr<CharacterClass>> classes;
+	std::vector<CharacterClass> classes;
 	std::istringstream iss(text);
 	std::string line;
 
@@ -297,9 +296,8 @@ std::vector<std::unique_ptr<CharacterClass>> CharacterClassParser::parse()
 			}
 		}
 
-		classes.push_back(std::unique_ptr<CharacterClass>(new CharacterClass(
-			displayName, categoryName, castsMagic, startingHealth, healthDice,
-			allowedArmors, allowedShields, allowedWeapons)));
+		classes.push_back(CharacterClass(displayName, categoryName, castsMagic, 
+			startingHealth, healthDice, allowedArmors, allowedShields, allowedWeapons));
 	}
 
 	return classes;

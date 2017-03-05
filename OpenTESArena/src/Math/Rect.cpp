@@ -9,11 +9,11 @@ Rect::Rect(int x, int y, int width, int height)
 	assert(width >= 0);
 	assert(height >= 0);
 
-	this->rect = std::unique_ptr<SDL_Rect>(new SDL_Rect());
-	this->rect->x = x;
-	this->rect->y = y;
-	this->rect->w = width;
-	this->rect->h = height;
+	this->rect = SDL_Rect();
+	this->rect.x = x;
+	this->rect.y = y;
+	this->rect.w = width;
+	this->rect.h = height;
 }
 
 Rect::Rect(int width, int height)
@@ -23,7 +23,7 @@ Rect::Rect()
 	: Rect(0, 0, 0, 0) { }
 
 Rect::Rect(const Rect &rectangle)
-	: Rect(rectangle.rect->x, rectangle.rect->y, rectangle.rect->w, rectangle.rect->h) { }
+	: Rect(rectangle.rect.x, rectangle.rect.y, rectangle.rect.w, rectangle.rect.h) { }
 
 Rect::~Rect()
 {
@@ -32,17 +32,17 @@ Rect::~Rect()
 
 int Rect::getWidth() const
 {
-	return this->rect->w;
+	return this->rect.w;
 }
 
 int Rect::getHeight() const
 {
-	return this->rect->h;
+	return this->rect.h;
 }
 
 int Rect::getLeft() const
 {
-	return this->rect->x;
+	return this->rect.x;
 }
 
 int Rect::getRight() const
@@ -52,7 +52,7 @@ int Rect::getRight() const
 
 int Rect::getTop() const
 {
-	return this->rect->y;
+	return this->rect.y;
 }
 
 int Rect::getBottom() const
@@ -94,27 +94,27 @@ bool Rect::isEmpty() const
 
 const SDL_Rect *Rect::getRect() const
 {
-	return this->isEmpty() ? nullptr : this->rect.get();
+	return this->isEmpty() ? nullptr : (&this->rect);
 }
 
 void Rect::setX(int x)
 {
-	this->rect->x = x;
+	this->rect.x = x;
 }
 
 void Rect::setY(int y)
 {
-	this->rect->y = y;
+	this->rect.y = y;
 }
 
 void Rect::setWidth(int width)
 {
-	this->rect->w = width;
+	this->rect.w = width;
 }
 
 void Rect::setHeight(int height)
 {
-	this->rect->h = height;
+	this->rect.h = height;
 }
 
 bool Rect::contains(const Int2 &point) const

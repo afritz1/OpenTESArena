@@ -23,7 +23,6 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../World/Province.h"
 #include "../World/ProvinceName.h"
 
 namespace std
@@ -80,7 +79,7 @@ namespace
 }
 
 ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
-	: Panel(game)
+	: Panel(game), province(province)
 {
 	this->searchButton = []()
 	{
@@ -124,8 +123,6 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 		};
 		return std::unique_ptr<Button>(new Button(x, y, width, height, function));
 	}();
-
-	this->province = std::unique_ptr<Province>(new Province(province));
 }
 
 ProvinceMapPanel::~ProvinceMapPanel()
@@ -212,7 +209,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Get the texture name for this province.
 	auto provinceTextureName = ProvinceMapTextureNames.at(
-		this->province->getProvinceName());	
+		this->province.getProvinceName());
 
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(

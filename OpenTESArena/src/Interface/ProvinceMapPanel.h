@@ -2,9 +2,9 @@
 #define PROVINCE_MAP_PANEL_H
 
 #include "Panel.h"
+#include "../World/Province.h"
 
 class Button;
-class Province;
 class Renderer;
 
 enum class ProvinceButtonName;
@@ -13,7 +13,7 @@ class ProvinceMapPanel : public Panel
 {
 private:
 	std::unique_ptr<Button> searchButton, travelButton, backToWorldMapButton;
-	std::unique_ptr<Province> province;
+	Province province;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 public:

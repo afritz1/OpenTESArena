@@ -3,14 +3,14 @@
 
 #include <memory>
 
-#include "../Math/Vector2.h"
+#include "SDL.h"
 
-struct SDL_Rect;
+#include "../Math/Vector2.h"
 
 class Rect
 {
 private:
-	std::unique_ptr<SDL_Rect> rect;
+	SDL_Rect rect;
 
 	bool isEmpty() const;
 public:

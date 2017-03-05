@@ -11,7 +11,6 @@
 #include "ListBox.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClass.h"
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterClassParser.h"
@@ -43,9 +42,9 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
-		[](const std::unique_ptr<CharacterClass> &a, const std::unique_ptr<CharacterClass> &b)
+		[](const CharacterClass &a, const CharacterClass &b)
 	{
-		return a->getDisplayName().compare(b->getDisplayName()) < 0;
+		return a.getDisplayName().compare(b.getDisplayName()) < 0;
 	});
 
 	this->titleTextBox = [game]()
@@ -78,7 +77,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 		// This depends on the character classes being already sorted.
 		for (const auto &item : this->charClasses)
 		{
-			elements.push_back(item->getDisplayName());
+			elements.push_back(item.getDisplayName());
 		}
 
 		return std::unique_ptr<ListBox>(new ListBox(
@@ -191,7 +190,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
 				this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
-					*this->charClasses.at(index).get()));
+					this->charClasses.at(index)));
 				this->acceptButton->click(this->getGame());
 			}
 		}
@@ -366,7 +365,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	auto tooltipIter = this->tooltipTextures.find(tooltipIndex);
 	if (tooltipIter == this->tooltipTextures.end())
 	{
-		const auto &characterClass = *this->charClasses.at(tooltipIndex).get();
+		const auto &characterClass = this->charClasses.at(tooltipIndex);
 
 		const std::string text = characterClass.getDisplayName() + " (" +
 			CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class)\n" +

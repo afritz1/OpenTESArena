@@ -4,9 +4,9 @@
 #include <string>
 
 #include "Panel.h"
+#include "../Entities/CharacterClass.h"
 
 class Button;
-class CharacterClass;
 class Renderer;
 class TextBox;
 class Texture;
@@ -17,7 +17,7 @@ private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
 	std::unique_ptr<Button> backToNameButton, maleButton, femaleButton;
-	std::unique_ptr<CharacterClass> charClass;
+	CharacterClass charClass;
 	std::string name;
 public:
 	ChooseGenderPanel(Game *game, const CharacterClass &charClass,

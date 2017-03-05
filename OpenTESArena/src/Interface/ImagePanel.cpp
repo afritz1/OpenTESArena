@@ -17,15 +17,13 @@
 ImagePanel::ImagePanel(Game *game, const std::string &paletteName, 
 	const std::string &textureName, double secondsToDisplay,
 	const std::function<void(Game*)> &endingAction)
-	: Panel(game)
+	: Panel(game), paletteName(paletteName), textureName(textureName)
 {
 	this->skipButton = [&endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
-	this->paletteName = paletteName;
-	this->textureName = textureName;
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
 }

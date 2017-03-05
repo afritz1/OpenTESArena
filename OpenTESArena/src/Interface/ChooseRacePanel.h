@@ -4,12 +4,12 @@
 #include <string>
 
 #include "Panel.h"
+#include "../Entities/CharacterClass.h"
 
 // Skip the nitty-gritty details like the confirmation box and province details
 // for now. Just click on a province and go.
 
 class Button;
-class CharacterClass;
 class Renderer;
 class TextBox;
 class Texture;
@@ -24,9 +24,9 @@ private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button> backToGenderButton, acceptButton;
-	std::unique_ptr<CharacterClass> charClass;
-	std::unique_ptr<GenderName> gender;
 	std::unique_ptr<CharacterRaceName> raceName; // Null until a province is clicked.
+	CharacterClass charClass;
+	GenderName gender;
 	std::string name;
 	bool initialTextBoxVisible;
 

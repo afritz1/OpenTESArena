@@ -33,7 +33,7 @@ private:
 	GenderName gender;
 	CharacterRaceName raceName;
 	std::string name;
-	int portraitIndex;
+	int portraitID;
 public:
 	ChooseAttributesPanel(Game *game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender, CharacterRaceName raceName);

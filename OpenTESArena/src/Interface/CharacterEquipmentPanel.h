@@ -7,12 +7,8 @@
 #include "../Math/Vector2.h"
 
 class Button;
-class CharacterClass;
 class Renderer;
 class TextBox;
-
-enum class CharacterRaceName;
-enum class GenderName;
 
 class CharacterEquipmentPanel : public Panel
 {

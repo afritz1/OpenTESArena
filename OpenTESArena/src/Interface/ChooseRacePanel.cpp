@@ -11,9 +11,6 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClass.h"
-#include "../Entities/CharacterRaceName.h"
-#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -33,7 +30,7 @@
 
 ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
-	: Panel(game)
+	: Panel(game), charClass(charClass), name(name), gender(gender)
 {
 	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
 		PopUpType::Parchment, 240, 60, game->getTextureManager(),
@@ -78,9 +75,6 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 		return std::unique_ptr<Button>(new Button(function));
 	}();
 
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->name = name;
-	this->gender = std::unique_ptr<GenderName>(new GenderName(gender));
 	this->raceName = nullptr;
 	this->initialTextBoxVisible = true;
 }

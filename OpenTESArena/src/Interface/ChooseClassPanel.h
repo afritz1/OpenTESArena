@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
@@ -12,7 +13,6 @@
 // information). I think it's better to have tooltips.
 
 class Button;
-class CharacterClass;
 class ListBox;
 class Renderer;
 class Surface;
@@ -27,8 +27,10 @@ private:
 	std::unique_ptr<ListBox> classesListBox;
 	std::unique_ptr<Button> backToClassCreationButton, upButton, downButton, acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
-	std::vector<std::unique_ptr<CharacterClass>> charClasses;
-	std::unique_ptr<CharacterClass> charClass; // Chosen class for "accept" button.
+	std::vector<CharacterClass> charClasses;
+
+	// Chosen class for "accept" button (intentionally nullable).
+	std::unique_ptr<CharacterClass> charClass;
 
 	std::string getClassArmors(const CharacterClass &characterClass) const;
 	std::string getClassShields(const CharacterClass &characterClass) const;

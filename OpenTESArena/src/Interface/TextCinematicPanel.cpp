@@ -25,7 +25,7 @@
 TextCinematicPanel::TextCinematicPanel(Game *game, 
 	const std::string &sequenceName, const std::string &text, 
 	double secondsPerImage, const std::function<void(Game*)> &endingAction)
-	: Panel(game)
+	: Panel(game), sequenceName(sequenceName)
 {
 	// Text cannot be empty.
 	assert(text.size() > 0);
@@ -80,7 +80,6 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
-	this->sequenceName = sequenceName;
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
 	this->imageIndex = 0;

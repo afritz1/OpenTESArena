@@ -11,7 +11,6 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClass.h"
 #include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
@@ -29,7 +28,7 @@
 
 ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass,
 	const std::string &name)
-	: Panel(game)
+	: Panel(game), charClass(charClass), name(name)
 {
 	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
 		PopUpType::Parchment, 180, 40, game->getTextureManager(),
@@ -116,9 +115,6 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		};
 		return std::unique_ptr<Button>(new Button(center, 175, 35, function));
 	}();
-
-	this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(charClass));
-	this->name = name;
 }
 
 ChooseGenderPanel::~ChooseGenderPanel()

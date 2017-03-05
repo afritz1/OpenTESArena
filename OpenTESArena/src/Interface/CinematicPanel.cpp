@@ -13,15 +13,13 @@
 CinematicPanel::CinematicPanel(Game *game,
 	const std::string &sequenceName, const std::string &paletteName,
 	double secondsPerImage, const std::function<void(Game*)> &endingAction)
-	: Panel(game)
+	: Panel(game), paletteName(paletteName), sequenceName(sequenceName)
 {
 	this->skipButton = [&endingAction]()
 	{
 		return std::unique_ptr<Button>(new Button(endingAction));
 	}();
 
-	this->paletteName = paletteName;
-	this->sequenceName = sequenceName;
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
