@@ -26,8 +26,8 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
-	std::unique_ptr<Button<>> backToRaceButton, doneButton, incrementPortraitButton, 
-		decrementPortraitButton;
+	std::unique_ptr<Button<>> backToRaceButton, doneButton;
+	std::unique_ptr<Button<bool>> portraitButton;
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;
 	GenderName gender;

@@ -11,8 +11,8 @@ enum class ProvinceName;
 class WorldMapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> backToGameButton, provinceButton;
-	std::unique_ptr<ProvinceName> provinceName; // Null until a province is clicked.
+	std::unique_ptr<Button<>> backToGameButton;
+	std::unique_ptr<Button<ProvinceName>> provinceButton;
 public:
 	WorldMapPanel(Game *game);
 	virtual ~WorldMapPanel();

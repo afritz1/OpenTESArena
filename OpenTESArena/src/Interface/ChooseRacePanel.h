@@ -23,8 +23,8 @@ class ChooseRacePanel : public Panel
 private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
-	std::unique_ptr<Button<>> backToGenderButton, acceptButton;
-	std::unique_ptr<CharacterRaceName> raceName; // Null until a province is clicked.
+	std::unique_ptr<Button<>> backToGenderButton;
+	std::unique_ptr<Button<CharacterRaceName>> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
 	std::string name;

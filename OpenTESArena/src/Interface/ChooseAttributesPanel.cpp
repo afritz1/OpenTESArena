@@ -179,28 +179,29 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		return std::unique_ptr<Button<>>(new Button<>(center, width, height, cinematicFunction));
 	}();
 
-	this->incrementPortraitButton = [this]()
+	this->portraitButton = [this]()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
-		auto function = [this](Game *game)
+		auto function = [this](Game *game, bool increment)
 		{
-			this->portraitID = (this->portraitID == 9) ? 0 : (this->portraitID + 1);
-		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
-	}();
+			const int minID = 0;
+			const int maxID = 9;
 
-	this->decrementPortraitButton = [this]()
-	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
-		int width = 60;
-		int height = 42;
-		auto function = [this](Game *game)
-		{
-			this->portraitID = (this->portraitID == 0) ? 9 : (this->portraitID - 1);
+			if (increment)
+			{
+				this->portraitID = (this->portraitID == maxID) ? 
+					minID : (this->portraitID + 1);
+			}
+			else
+			{
+				this->portraitID = (this->portraitID == minID) ? 
+					maxID : (this->portraitID - 1);
+			}
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<bool>>(new Button<bool>(
+			center, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.
@@ -245,17 +246,17 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		{
 			this->doneButton->click(this->getGame());
 		}
-		else if (this->incrementPortraitButton->contains(mouseOriginalPoint))
+		else if (this->portraitButton->contains(mouseOriginalPoint))
 		{
-			this->incrementPortraitButton->click(this->getGame());
+			this->portraitButton->click(this->getGame(), true);
 		}
 	}
 
 	if (rightClick)
 	{
-		if (this->decrementPortraitButton->contains(mouseOriginalPoint))
+		if (this->portraitButton->contains(mouseOriginalPoint))
 		{
-			this->decrementPortraitButton->click(this->getGame());
+			this->portraitButton->click(this->getGame(), false);
 		}
 	}	
 }

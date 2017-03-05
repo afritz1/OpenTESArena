@@ -22,8 +22,10 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button<>> automapButton, characterSheetButton, logbookButton, 
-		pauseButton, worldMapButton;
+	std::unique_ptr<Button<>> characterSheetButton, drawWeaponButton, stealButton,
+		statusButton, magicButton, logbookButton, useItemButton, campButton,
+		scrollUpButton, scrollDownButton, pauseButton;
+	std::unique_ptr<Button<bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	PlayerInterface playerInterface;
 

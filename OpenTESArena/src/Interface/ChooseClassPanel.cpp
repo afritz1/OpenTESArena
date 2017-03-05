@@ -135,21 +135,18 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	this->acceptButton = [this]
 	{
-		auto function = [this](Game *game)
+		auto function = [this](Game *game, const CharacterClass &charClass)
 		{
-			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(
-				game, *this->charClass.get()));
+			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(game, charClass));
 			game->setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<const CharacterClass&>>(
+			new Button<const CharacterClass&>(function));
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
 	// Generating them all at once here is too slow in debug mode.
 	assert(this->tooltipTextures.size() == 0);
-
-	// Don't initialize the character class until one is clicked.
-	assert(this->charClass.get() == nullptr);
 }
 
 ChooseClassPanel::~ChooseClassPanel()
@@ -188,9 +185,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
-				this->charClass = std::unique_ptr<CharacterClass>(new CharacterClass(
-					this->charClasses.at(index)));
-				this->acceptButton->click(this->getGame());
+				this->acceptButton->click(this->getGame(), this->charClasses.at(index));
 			}
 		}
 		else if (mouseWheelUp)

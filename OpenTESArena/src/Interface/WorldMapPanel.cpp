@@ -38,17 +38,15 @@ WorldMapPanel::WorldMapPanel(Game *game)
 
 	this->provinceButton = [this]()
 	{
-		auto function = [this](Game *game)
+		auto function = [this](Game *game, ProvinceName provinceName)
 		{
 			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(
-				game, Province(*this->provinceName.get())));
+				game, Province(provinceName)));
 			game->setPanel(std::move(provincePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<ProvinceName>>(
+			new Button<ProvinceName>(function));
 	}();
-
-	// Leave province name null until one is selected.
-	this->provinceName = nullptr;
 }
 
 WorldMapPanel::~WorldMapPanel()
@@ -89,12 +87,8 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 			if (clickArea.contains(mouseOriginalPoint))
 			{
-				// Save the clicked province's name.
-				this->provinceName = std::unique_ptr<ProvinceName>(new ProvinceName(
-					provinceName));
-
 				// Go to the province panel.
-				this->provinceButton->click(this->getGame());
+				this->provinceButton->click(this->getGame(), provinceName);
 				break;
 			}
 		}

@@ -119,6 +119,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		auto function = [](Game *game)
 		{
 			// Nothing yet.
+			// This should eventually take an index parameter that points to which item
+			// in the list to drop.
 		};
 		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();

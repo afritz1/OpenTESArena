@@ -80,13 +80,13 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
-	this->acceptButton = [this, charClass]()
+	this->acceptButton = [this]()
 	{
-		auto function = [this, charClass](Game *game)
+		auto function = [this](Game *game)
 		{
-			std::unique_ptr<Panel> racePanel(new ChooseGenderPanel(
-				game, charClass, this->name));
-			game->setPanel(std::move(racePanel));
+			std::unique_ptr<Panel> genderPanel(new ChooseGenderPanel(
+				game, this->charClass, this->name));
+			game->setPanel(std::move(genderPanel));
 		};
 		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();

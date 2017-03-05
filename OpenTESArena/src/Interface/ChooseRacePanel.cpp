@@ -52,29 +52,29 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			game->getRenderer()));
 	}();
 
-	this->backToGenderButton = [charClass, name]()
+	this->backToGenderButton = [this]()
 	{
-		auto function = [charClass, name](Game *game)
+		auto function = [this](Game *game)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
-				game, charClass, name));
+				game, this->charClass, this->name));
 			game->setPanel(std::move(namePanel));
 		};
 		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
-	this->acceptButton = [this, gender, charClass, name]()
+	this->acceptButton = [this]()
 	{
-		auto function = [this, gender, charClass, name](Game *game)
+		auto function = [this](Game *game, CharacterRaceName raceName)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
-				game, charClass, name, gender, *this->raceName.get()));
+				game, this->charClass, this->name, this->gender, raceName));
 			game->setPanel(std::move(attributesPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<CharacterRaceName>>(
+			new Button<CharacterRaceName>(function));
 	}();
 
-	this->raceName = nullptr;
 	this->initialTextBoxVisible = true;
 }
 
@@ -135,12 +135,8 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 			if (clickArea.contains(mouseOriginalPoint) &&
 				(provinceName != ProvinceName::ImperialProvince))
 			{
-				// Save the clicked province's race.
-				this->raceName = std::unique_ptr<CharacterRaceName>(new CharacterRaceName(
-					province.getRaceName()));
-
 				// Go to the attributes panel.
-				this->acceptButton->click(this->getGame());
+				this->acceptButton->click(this->getGame(), province.getRaceName());
 				break;
 			}
 		}

@@ -25,12 +25,10 @@ private:
 
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
-	std::unique_ptr<Button<>> backToClassCreationButton, upButton, downButton, acceptButton;
+	std::unique_ptr<Button<>> backToClassCreationButton, upButton, downButton;
+	std::unique_ptr<Button<const CharacterClass&>> acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClass> charClasses;
-
-	// Chosen class for "accept" button (intentionally nullable).
-	std::unique_ptr<CharacterClass> charClass;
 
 	std::string getClassArmors(const CharacterClass &characterClass) const;
 	std::string getClassShields(const CharacterClass &characterClass) const;
