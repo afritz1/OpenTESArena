@@ -50,8 +50,10 @@ The most recent builds can be found in the [releases](https://github.com/afritz1
 - Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
 
 #### Obtaining a MIDI sound patches library:
-- The easiest way is to download one of the eawpats packages from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab and place the extracted eawpats folder into your `data` folder.
+- The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
 - If you would like to use a different sound patches library, simply edit `Soundfont` in `options/options.txt` to point to another existing MIDI `.cfg` file.
+
+If you receive an error about "alcOpenDevice" on Windows, you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
 ## Building from source
 
