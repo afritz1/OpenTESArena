@@ -134,6 +134,13 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 	{
 		this->velocity = this->velocity.normalized() * maxSpeed;
 	}
+
+	// If the velocity is near zero, set it to zero. This fixes a problem where 
+	// the velocity could remain at a tiny magnitude and never reach zero.
+	if (this->velocity.length() < EPSILON)
+	{
+		this->velocity = Double3(0.0f, 0.0f, 0.0f);
+	}
 }
 
 void Player::tick(Game &game, double dt)
