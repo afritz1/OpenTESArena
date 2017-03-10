@@ -19,7 +19,6 @@
 
 class CharacterClass;
 
-enum class CharacterRaceName;
 enum class GenderName;
 
 class GameData
@@ -39,7 +38,7 @@ public:
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
-		GenderName gender, CharacterRaceName raceName, const CharacterClass &charClass,
+		GenderName gender, int raceID, const CharacterClass &charClass,
 		int portraitID);
 
 	Player &getPlayer();

@@ -8,9 +8,9 @@
 #include "../Entities/BodyPartName.h"
 
 BodyArmorArtifactData::BodyArmorArtifactData(const std::string &displayName, 
-	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+	const std::string &flavorText, const std::vector<int> &provinceIDs, 
 	const ArmorMaterial *armorMaterial, BodyPartName partName)
-	: ArmorArtifactData(displayName, flavorText, provinces)
+	: ArmorArtifactData(displayName, flavorText, provinceIDs)
 {
 	this->armorMaterial = armorMaterial->clone();
 	this->partName = partName;
@@ -24,7 +24,7 @@ BodyArmorArtifactData::~BodyArmorArtifactData()
 std::unique_ptr<ArtifactData> BodyArmorArtifactData::clone() const
 {
 	return std::unique_ptr<ArtifactData>(new BodyArmorArtifactData(
-		this->getDisplayName(), this->getFlavorText(), this->getProvinces(),
+		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
 		this->getArmorMaterial(), this->getBodyPartName()));
 }
 

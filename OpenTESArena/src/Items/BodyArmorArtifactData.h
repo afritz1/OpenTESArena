@@ -18,7 +18,7 @@ private:
 	BodyPartName partName;
 public:
 	BodyArmorArtifactData(const std::string &displayName,
-		const std::string &flavorText, const std::vector<ProvinceName> &provinces,
+		const std::string &flavorText, const std::vector<int> &provinceIDs,
 		const ArmorMaterial *armorMaterial, BodyPartName partName);
 	virtual ~BodyArmorArtifactData();
 

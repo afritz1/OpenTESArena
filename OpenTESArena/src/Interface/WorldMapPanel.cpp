@@ -17,8 +17,26 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../World/Province.h"
-#include "../World/ProvinceName.h"
+
+namespace
+{
+	// Mouse click areas for the world map, ordered by how Arena originally
+	// indexes them (read top left to bottom right on world map, center province 
+	// is last).
+	// - Eventually replace this with an index into the IMG file.
+	const std::vector<Rect> ProvinceClickAreas =
+	{
+		Rect(52, 51, 44, 11),
+		Rect(72, 75, 50, 11),
+		Rect(142, 44, 34, 11),
+		Rect(222, 84, 52, 11),
+		Rect(37, 149, 49, 19),
+		Rect(106, 147, 49, 10),
+		Rect(148, 127, 37, 11),
+		Rect(216, 144, 55, 12),
+		Rect(133, 105, 83, 11)
+	};
+}
 
 WorldMapPanel::WorldMapPanel(Game *game)
 	: Panel(game)
@@ -38,14 +56,12 @@ WorldMapPanel::WorldMapPanel(Game *game)
 
 	this->provinceButton = [this]()
 	{
-		auto function = [this](Game *game, ProvinceName provinceName)
+		auto function = [this](Game *game, int provinceID)
 		{
-			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(
-				game, Province(provinceName)));
+			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(game, provinceID));
 			game->setPanel(std::move(provincePanel));
 		};
-		return std::unique_ptr<Button<ProvinceName>>(
-			new Button<ProvinceName>(function));
+		return std::unique_ptr<Button<int>>(new Button<int>(function));
 	}();
 }
 
@@ -80,15 +96,15 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 		}
 
 		// Listen for map clicks.
-		for (const auto provinceName : Province::getAllProvinceNames())
+		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
+		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
 		{
-			Province province(provinceName);
-			const Rect &clickArea = province.getWorldMapClickArea();
+			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
 
 			if (clickArea.contains(mouseOriginalPoint))
 			{
 				// Go to the province panel.
-				this->provinceButton->click(this->getGame(), provinceName);
+				this->provinceButton->click(this->getGame(), provinceID);
 				break;
 			}
 		}

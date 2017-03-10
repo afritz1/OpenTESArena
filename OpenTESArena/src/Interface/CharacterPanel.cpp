@@ -9,8 +9,9 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/CIFFile.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClass.h"
-#include "../Entities/CharacterRace.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -50,8 +51,9 @@ CharacterPanel::CharacterPanel(Game *game)
 	{
 		Int2 origin(10, 17);
 		Color color(199, 199, 199);
-		std::string text = CharacterRace(game->getGameData().getPlayer()
-			.getRaceName()).toString();
+		auto &player = game->getGameData().getPlayer();
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::RaceNamesSingular.at(player.getRaceID()));
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -112,7 +114,7 @@ CharacterPanel::CharacterPanel(Game *game)
 	// Get pixel offsets for each head.
 	const auto &player = this->getGame()->getGameData().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceName(), false);
+		player.getGenderName(), player.getRaceID(), false);
 	CIFFile cifFile(headsFilename, Palette());
 
 	for (int i = 0; i < cifFile.getImageCount(); ++i)
@@ -175,9 +177,9 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceName(), false);
+		player.getGenderName(), player.getRaceID(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
-		player.getGenderName(), player.getRaceName());
+		player.getGenderName(), player.getRaceID());
 	const std::string &shirtFilename = PortraitFile::getShirt(
 		player.getGenderName(), player.getCharacterClass().canCastMagic());
 	const std::string &pantsFilename = PortraitFile::getPants(player.getGenderName());

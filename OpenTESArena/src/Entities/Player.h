@@ -13,7 +13,6 @@
 // Though the player is not rendered, they are still considered part of the
 // entity manager for purposes such as physics calculation and AI behavior.
 
-enum class CharacterRaceName;
 enum class GenderName;
 
 class Player : public Entity
@@ -24,14 +23,14 @@ private:
 	Double3 velocity;
 	double maxWalkSpeed, maxRunSpeed;
 	GenderName gender;
-	CharacterRaceName raceName;
+	int raceID;
 	std::string displayName;
 	int portraitID;
 	// Other stats...
 public:
 	// Default constructor.
 	Player(const std::string &displayName, GenderName gender,
-		CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
+		int raceID, const CharacterClass &charClass, int portraitID,
 		const Double3 &position, const Double3 &direction, const Double3 &velocity, 
 		double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager);
 
@@ -45,7 +44,7 @@ public:
 	std::string getFirstName() const;
 	int getPortraitID() const;
 	GenderName getGenderName() const;
-	CharacterRaceName getRaceName() const;
+	int getRaceID() const;
 	const CharacterClass &getCharacterClass() const;
 
 	// Gets the direction the player is facing.

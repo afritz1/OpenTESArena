@@ -7,7 +7,6 @@
 
 // This static class gets the filenames for images relevant to character portraits.
 
-enum class CharacterRaceName;
 enum class GenderName;
 
 class PortraitFile
@@ -19,11 +18,10 @@ private:
 public:
 	// Gets the heads filename for a given gender, race, and whether the heads
 	// are for the character sheet (not trimmed) or the game interface (trimmed).
-	static const std::string &getHeads(GenderName gender, 
-		CharacterRaceName race, bool trimmed);
+	static std::string getHeads(GenderName gender, int raceID, bool trimmed);
 
 	// Gets the unclothed character background filename for a given gender and race.
-	static const std::string &getBody(GenderName gender, CharacterRaceName race);
+	static std::string getBody(GenderName gender, int raceID);
 
 	// Gets the shirt image filename for a given gender and magic affinity.
 	static const std::string &getShirt(GenderName gender, bool magic);

@@ -4,7 +4,6 @@
 
 #include "Player.h"
 
-#include "CharacterRaceName.h"
 #include "EntityType.h"
 #include "GenderName.h"
 #include "../Game/Game.h"
@@ -13,7 +12,7 @@
 #include "../Utilities/String.h"
 
 Player::Player(const std::string &displayName, GenderName gender,
-	CharacterRaceName raceName, const CharacterClass &charClass, int portraitID,
+	int raceID, const CharacterClass &charClass, int portraitID,
 	const Double3 &position, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
 	: Entity(EntityType::Player, entityManager), charClass(charClass),
@@ -24,7 +23,7 @@ Player::Player(const std::string &displayName, GenderName gender,
 	this->maxWalkSpeed = maxWalkSpeed;
 	this->maxRunSpeed = maxRunSpeed;
 	this->gender = gender;
-	this->raceName = raceName;
+	this->raceID = raceID;
 	this->portraitID = portraitID;
 }
 
@@ -36,7 +35,7 @@ Player::~Player()
 std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
 {
 	return std::unique_ptr<Entity>(new Player(
-		this->getDisplayName(), this->getGenderName(), this->getRaceName(),
+		this->getDisplayName(), this->getGenderName(), this->getRaceID(),
 		this->getCharacterClass(), this->getPortraitID(), this->getPosition(),
 		this->camera.getDirection(), this->velocity, this->maxWalkSpeed,
 		this->maxRunSpeed, entityManager));
@@ -73,9 +72,9 @@ GenderName Player::getGenderName() const
 	return this->gender;
 }
 
-CharacterRaceName Player::getRaceName() const
+int Player::getRaceID() const
 {
-	return this->raceName;
+	return this->raceID;
 }
 
 const CharacterClass &Player::getCharacterClass() const

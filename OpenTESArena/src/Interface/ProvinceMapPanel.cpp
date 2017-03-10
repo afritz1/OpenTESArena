@@ -22,7 +22,6 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../World/ProvinceName.h"
 
 namespace std
 {
@@ -32,15 +31,6 @@ namespace std
 	struct hash<ProvinceButtonName>
 	{
 		size_t operator()(const ProvinceButtonName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-
-	template <>
-	struct hash<ProvinceName>
-	{
-		size_t operator()(const ProvinceName &x) const
 		{
 			return static_cast<size_t>(x);
 		}
@@ -63,26 +53,27 @@ namespace
 		{ ProvinceButtonName::BackToWorldMap, Rect(72, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) }
 	};
 
-	const std::unordered_map<ProvinceName, TextureName> ProvinceMapTextureNames =
+	// Province textures ordered by how the original Arena accesses them.
+	const std::vector<TextureName> ProvinceMapTextureNames =
 	{
-		{ ProvinceName::BlackMarsh, TextureName::BlackMarshMap },
-		{ ProvinceName::Elsweyr, TextureName::ElsweyrMap },
-		{ ProvinceName::Hammerfell, TextureName::HammerfellMap },
-		{ ProvinceName::HighRock, TextureName::HighRockMap },
-		{ ProvinceName::ImperialProvince, TextureName::ImperialProvinceMap },
-		{ ProvinceName::Morrowind, TextureName::MorrowindMap },
-		{ ProvinceName::Skyrim, TextureName::SkyrimMap },
-		{ ProvinceName::SummersetIsle, TextureName::SummersetIsleMap },
-		{ ProvinceName::Valenwood, TextureName::ValenwoodMap }
+		TextureName::HighRockMap,
+		TextureName::HammerfellMap,
+		TextureName::SkyrimMap,
+		TextureName::MorrowindMap,
+		TextureName::SummersetIsleMap,
+		TextureName::ValenwoodMap,
+		TextureName::ElsweyrMap,
+		TextureName::BlackMarshMap,
+		TextureName::ImperialProvinceMap
 	};
 }
 
-ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
-	: Panel(game), province(province)
+ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
+	: Panel(game)
 {
 	this->searchButton = []()
 	{
-		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Search);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Search);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -96,7 +87,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 
 	this->travelButton = []()
 	{
-		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Travel);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Travel);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -110,7 +101,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 
 	this->backToWorldMapButton = []()
 	{
-		const auto &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::BackToWorldMap);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::BackToWorldMap);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -122,6 +113,8 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, const Province &province)
 		};
 		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
+
+	this->provinceID = provinceID;
 }
 
 ProvinceMapPanel::~ProvinceMapPanel()
@@ -207,8 +200,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get the texture name for this province.
-	auto provinceTextureName = ProvinceMapTextureNames.at(
-		this->province.getProvinceName());
+	auto provinceTextureName = ProvinceMapTextureNames.at(this->provinceID);
 
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(

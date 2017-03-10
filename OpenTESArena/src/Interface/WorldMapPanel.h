@@ -6,13 +6,11 @@
 
 class Renderer;
 
-enum class ProvinceName;
-
 class WorldMapPanel : public Panel
 {
 private:
 	std::unique_ptr<Button<>> backToGameButton;
-	std::unique_ptr<Button<ProvinceName>> provinceButton;
+	std::unique_ptr<Button<int>> provinceButton;
 public:
 	WorldMapPanel(Game *game);
 	virtual ~WorldMapPanel();

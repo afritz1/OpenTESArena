@@ -10,8 +10,8 @@
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
 #include "../Assets/CIFFile.h"
+#include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
-#include "../Entities/CharacterRace.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -33,10 +33,9 @@
 #include "../Utilities/String.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
-	const CharacterClass &charClass, const std::string &name, GenderName gender,
-	CharacterRaceName raceName)
-	: Panel(game), headOffsets(), gender(gender), charClass(charClass), 
-	raceName(raceName), name(name)
+	const CharacterClass &charClass, const std::string &name, 
+	GenderName gender, int raceID)
+	: Panel(game), headOffsets(), gender(gender), charClass(charClass), name(name)
 {
 	this->nameTextBox = [game, name]()
 	{
@@ -55,11 +54,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			game->getRenderer()));
 	}();
 
-	this->raceTextBox = [game, raceName]()
+	this->raceTextBox = [game, raceID]()
 	{
 		Int2 origin(10, 17);
 		Color color(199, 199, 199);
-		std::string text = CharacterRace(raceName).toString();
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::RaceNamesSingular.at(raceID));
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -100,13 +100,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		return std::unique_ptr<Button<>>(new Button<>(function));
 	}();
 
-	this->doneButton = [this, charClass, name, gender, raceName]()
+	this->doneButton = [this, charClass, name, gender, raceID]()
 	{
 		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 12;
 
-		auto gameDataFunction = [this, charClass, name, gender, raceName](Game *game)
+		auto gameDataFunction = [this, charClass, name, gender, raceID](Game *game)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
@@ -130,7 +130,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 			// Generate the test world data.
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
-				name, gender, raceName, charClass, this->portraitID);
+				name, gender, raceID, charClass, this->portraitID);
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
@@ -205,7 +205,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	}();
 
 	// Get pixel offsets for each head.
-	const std::string &headsFilename = PortraitFile::getHeads(gender, raceName, false);
+	const std::string &headsFilename = PortraitFile::getHeads(gender, raceID, false);
 	CIFFile cifFile(headsFilename, Palette());
 
 	for (int i = 0; i < cifFile.getImageCount(); ++i)
@@ -213,6 +213,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
 
+	this->raceID = raceID;
 	this->portraitID = 0;
 }
 
@@ -273,9 +274,9 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(
-		this->gender, this->raceName, false);
+		this->gender, this->raceID, false);
 	const std::string &bodyFilename = PortraitFile::getBody(
-		this->gender, this->raceName);
+		this->gender, this->raceID);
 	const std::string &shirtFilename = PortraitFile::getShirt(
 		this->gender, this->charClass.canCastMagic());
 	const std::string &pantsFilename = PortraitFile::getPants(this->gender);

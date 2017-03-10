@@ -4,14 +4,18 @@
 
 #include "TextAssets.h"
 
+#include "ExeUnpacker.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
 
 TextAssets::TextAssets()
-	: templateDat()
 {
+	// Decompress A.EXE and place it in a string for later use.
+	ExeUnpacker exe("A.EXE");
+	this->aExe = exe.getText();
+
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
 	this->parseTemplateDat();
 }
@@ -81,6 +85,25 @@ void TextAssets::parseTemplateDat()
 
 	// Remove the one empty string added at the start (when key is "").
 	this->templateDat.erase("");
+}
+
+const std::string &TextAssets::getAExeSegment(const std::pair<int, int> &offsetAndSize)
+{
+	// Check if the segment has been loaded.
+	auto segmentIter = this->aExeSegments.find(offsetAndSize);
+
+	if (segmentIter != this->aExeSegments.end())
+	{
+		return segmentIter->second;
+	}
+	else
+	{
+		// Load the segment and return it.
+		std::string segment = this->aExe.substr(offsetAndSize.first, offsetAndSize.second);
+		segmentIter = this->aExeSegments.insert(std::make_pair(
+			offsetAndSize, std::move(segment))).first;
+		return segmentIter->second;
+	}
 }
 
 const std::string &TextAssets::getTemplateDatText(const std::string &key)

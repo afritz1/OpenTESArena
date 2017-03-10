@@ -3,12 +3,8 @@
 #include "ArtifactData.h"
 
 ArtifactData::ArtifactData(const std::string &displayName, const std::string &flavorText, 
-	const std::vector<ProvinceName> &provinces)
-{
-	this->displayName = displayName;
-	this->flavorText = flavorText;
-	this->provinces = provinces;
-}
+	const std::vector<int> &provinceIDs)
+	: displayName(displayName), flavorText(flavorText), provinceIDs(provinceIDs) { }
 
 ArtifactData::~ArtifactData()
 {
@@ -25,7 +21,7 @@ const std::string &ArtifactData::getFlavorText() const
 	return this->flavorText;
 }
 
-const std::vector<ProvinceName> &ArtifactData::getProvinces() const
+const std::vector<int> &ArtifactData::getProvinceIDs() const
 {
-	return this->provinces;
+	return this->provinceIDs;
 }

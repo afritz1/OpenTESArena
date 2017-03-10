@@ -7,13 +7,12 @@
 // or a shield artifact.
 
 enum class ArmorType;
-enum class ProvinceName;
 
 class ArmorArtifactData : public ArtifactData
 {
 public:
 	ArmorArtifactData(const std::string &displayName,
-		const std::string &flavorText, const std::vector<ProvinceName> &provinces);
+		const std::string &flavorText, const std::vector<int> &provinceIDs);
 	virtual ~ArmorArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const = 0;

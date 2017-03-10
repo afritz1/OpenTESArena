@@ -19,7 +19,6 @@
 class Renderer;
 class TextBox;
 
-enum class CharacterRaceName;
 enum class GenderName;
 
 class ChooseAttributesPanel : public Panel
@@ -31,12 +30,12 @@ private:
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;
 	GenderName gender;
-	CharacterRaceName raceName;
+	int raceID;
 	std::string name;
 	int portraitID;
 public:
 	ChooseAttributesPanel(Game *game, const CharacterClass &charClass, 
-		const std::string &name, GenderName gender, CharacterRaceName raceName);
+		const std::string &name, GenderName gender, int raceID);
 	virtual ~ChooseAttributesPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

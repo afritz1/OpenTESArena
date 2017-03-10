@@ -10,6 +10,8 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -24,8 +26,26 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../World/Province.h"
-#include "../World/ProvinceName.h"
+
+namespace
+{
+	// Mouse click areas for the world map, ordered by how Arena originally
+	// indexes them (read top left to bottom right on world map, center province 
+	// is last).
+	// - Eventually replace this with an index into the IMG file.
+	const std::vector<Rect> ProvinceClickAreas =
+	{
+		Rect(52, 51, 44, 11),
+		Rect(72, 75, 50, 11),
+		Rect(142, 44, 34, 11),
+		Rect(222, 84, 52, 11),
+		Rect(37, 149, 49, 19),
+		Rect(106, 147, 49, 10),
+		Rect(148, 127, 37, 11),
+		Rect(216, 144, 55, 12),
+		Rect(133, 105, 83, 11)
+	};
+}
 
 ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
@@ -65,14 +85,13 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 
 	this->acceptButton = [this]()
 	{
-		auto function = [this](Game *game, CharacterRaceName raceName)
+		auto function = [this](Game *game, int raceID)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
-				game, this->charClass, this->name, this->gender, raceName));
+				game, this->charClass, this->name, this->gender, raceID));
 			game->setPanel(std::move(attributesPanel));
 		};
-		return std::unique_ptr<Button<CharacterRaceName>>(
-			new Button<CharacterRaceName>(function));
+		return std::unique_ptr<Button<int>>(new Button<int>(function));
 	}();
 
 	this->initialTextBoxVisible = true;
@@ -126,26 +145,30 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 			.nativePointToOriginal(mousePosition);
 
 		// Listen for map clicks.
-		for (const auto provinceName : Province::getAllProvinceNames())
+		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
+		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
 		{
-			Province province(provinceName);
-			const Rect &clickArea = province.getWorldMapClickArea();
+			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
 
-			// Ignore the Imperial race because it is not implemented yet.
-			if (clickArea.contains(mouseOriginalPoint) &&
-				(provinceName != ProvinceName::ImperialProvince))
+			// Ignore the Imperial province.
+			if (clickArea.contains(mouseOriginalPoint) && 
+				(provinceID != (ProvinceClickAreas.size() - 1)))
 			{
 				// Go to the attributes panel.
-				this->acceptButton->click(this->getGame(), province.getRaceName());
+				this->acceptButton->click(this->getGame(), provinceID);
 				break;
 			}
 		}
 	}	
 }
 
-void ChooseRacePanel::drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer)
+void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
-	const std::string raceName = Province(provinceName).getRaceDisplayName(true);
+	// Get the race name associated with the province.
+	assert(provinceID != (ProvinceClickAreas.size() - 1));
+	const std::string &raceName = this->getGame()->getTextAssets().getAExeSegment(
+		ExeStrings::RaceNamesPlural.at(provinceID));
+
 	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
 
 	Texture tooltip(Panel::createTooltip("Land of the " + raceName, font, renderer));
@@ -199,20 +222,20 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw hovered province tooltip.
 	if (!this->initialTextBoxVisible)
 	{
-		auto mouseOriginalPosition = this->getGame()->getRenderer()
+		auto mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(this->getMousePosition());
 
 		// Draw tooltip if the mouse is in a province.
-		for (const auto provinceName : Province::getAllProvinceNames())
+		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
+		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
 		{
-			Province province(provinceName);
-			const Rect &clickArea = province.getWorldMapClickArea();
+			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
 
-			// Ignore the Imperial race for now as it is not implemented.
-			if (clickArea.contains(mouseOriginalPosition) &&
-				(provinceName != ProvinceName::ImperialProvince))
+			// Ignore the Imperial province.
+			if (clickArea.contains(mouseOriginalPoint) &&
+				(provinceID != (ProvinceClickAreas.size() - 1)))
 			{
-				this->drawProvinceTooltip(provinceName, renderer);
+				this->drawProvinceTooltip(provinceID, renderer);
 			}
 		}
 	}

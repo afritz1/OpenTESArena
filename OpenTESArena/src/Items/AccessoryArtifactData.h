@@ -5,7 +5,6 @@
 
 enum class AccessoryType;
 enum class MetalType;
-enum class ProvinceName;
 
 class AccessoryArtifactData : public ArtifactData
 {
@@ -14,7 +13,7 @@ private:
 	MetalType metalType;
 public:
 	AccessoryArtifactData(const std::string &displayName, 
-		const std::string &flavorText, const std::vector<ProvinceName> &provinces,
+		const std::string &flavorText, const std::vector<int> &provinceIDs,
 		AccessoryType accessoryType, MetalType metalType);
 	virtual ~AccessoryArtifactData();
 

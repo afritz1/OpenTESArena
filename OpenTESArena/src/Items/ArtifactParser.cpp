@@ -27,9 +27,8 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
-#include "../World/ProvinceName.h"
 
-const std::map<std::string, ItemType> ArtifactParserItemTypes =
+/*const std::map<std::string, ItemType> ArtifactParserItemTypes =
 {
 	{ "Accessory", ItemType::Accessory },
 	{ "Armor", ItemType::Armor },
@@ -149,47 +148,22 @@ const std::map<std::string, MetalType> ArtifactParserMetalTypes =
 	{ "Ebony", MetalType::Ebony }
 };
 
-const std::map<std::string, ProvinceName> ArtifactParserProvinces =
-{
-	{ "BlackMarsh", ProvinceName::BlackMarsh },
-	{ "Elsweyr", ProvinceName::Elsweyr },
-	{ "Hammerfell", ProvinceName::Hammerfell },
-	{ "HighRock", ProvinceName::HighRock },
-	{ "ImperialProvince", ProvinceName::ImperialProvince },
-	{ "Morrowind", ProvinceName::Morrowind },
-	{ "Skyrim", ProvinceName::Skyrim },
-	{ "SummersetIsle", ProvinceName::SummersetIsle },
-	{ "Valenwood", ProvinceName::Valenwood }
-};
-
 // These paths might be obsolete soon.
 const std::string ArtifactParser::PATH = "data/text/";
 const std::string ArtifactParser::FILENAME = "artifacts.txt";
 
-std::vector<ProvinceName> ArtifactParser::parseProvinces(
-	const std::vector<std::string> &provinceTokens)
-{
-	std::vector<ProvinceName> provinces;
-	for (const auto &provinceToken : provinceTokens)
-	{
-		provinces.push_back(ArtifactParserProvinces.at(provinceToken));
-	}
-
-	return provinces;
-}
-
 std::unique_ptr<ArtifactData> ArtifactParser::makeAccessory(const std::string &displayName,
-	const std::string &description, const std::vector<ProvinceName> &provinces,
+	const std::string &description, const std::vector<int> &provinceIDs,
 	const std::string &accessoryTypeToken, const std::string &metalToken)
 {
 	const auto accessoryType = ArtifactParserAccessoryTypes.at(accessoryTypeToken);
 	const auto metalType = ArtifactParserMetalTypes.at(metalToken);
 	return std::unique_ptr<ArtifactData>(new AccessoryArtifactData(
-		displayName, description, provinces, accessoryType, metalType));
+		displayName, description, provinceIDs, accessoryType, metalType));
 }
 
 std::unique_ptr<ArtifactData> ArtifactParser::makeBodyArmor(const std::string &displayName,
-	const std::string &description, const std::vector<ProvinceName> &provinces,
+	const std::string &description, const std::vector<int> &provinceIDs,
 	const std::string &partNameToken, const std::string &materialToken)
 {
 	const auto partName = ArtifactParserBodyArmorParts.at(partNameToken);
@@ -215,36 +189,36 @@ std::unique_ptr<ArtifactData> ArtifactParser::makeBodyArmor(const std::string &d
 	assert(armorMaterial.get() != nullptr);
 
 	return std::unique_ptr<ArtifactData>(new BodyArmorArtifactData(
-		displayName, description, provinces, armorMaterial.get(), partName));
+		displayName, description, provinceIDs, armorMaterial.get(), partName));
 }
 
 std::unique_ptr<ArtifactData> ArtifactParser::makeMiscellaneous(const std::string &displayName,
-	const std::string &description, const std::vector<ProvinceName> &provinces,
+	const std::string &description, const std::vector<int> &provinceIDs,
 	const std::string &miscTypeToken)
 {
 	const auto miscType = ArtifactParserMiscellaneousTypes.at(miscTypeToken);
 	return std::unique_ptr<ArtifactData>(new MiscellaneousArtifactData(displayName,
-		description, provinces, miscType));
+		description, provinceIDs, miscType));
 }
 
 std::unique_ptr<ArtifactData> ArtifactParser::makeShield(const std::string &displayName,
-	const std::string &description, const std::vector<ProvinceName> &provinces,
+	const std::string &description, const std::vector<int> &provinceIDs,
 	const std::string &shieldTypeToken, const std::string &metalToken)
 {
 	const auto shieldType = ArtifactParserShieldTypes.at(shieldTypeToken);
 	const auto metalType = ArtifactParserMetalTypes.at(metalToken);
 	return std::unique_ptr<ArtifactData>(new ShieldArtifactData(displayName,
-		description, provinces, shieldType, metalType));
+		description, provinceIDs, shieldType, metalType));
 }
 
 std::unique_ptr<ArtifactData> ArtifactParser::makeWeapon(const std::string &displayName,
-	const std::string &description, const std::vector<ProvinceName> &provinces,
+	const std::string &description, const std::vector<int> &provinceIDs,
 	const std::string &weaponTypeToken, const std::string &metalToken)
 {
 	const auto weaponType = ArtifactParserWeaponTypes.at(weaponTypeToken);
 	const auto metalType = ArtifactParserMetalTypes.at(metalToken);
 	return std::unique_ptr<ArtifactData>(new WeaponArtifactData(displayName,
-		description, provinces, weaponType, metalType));
+		description, provinceIDs, weaponType, metalType));
 }
 
 std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
@@ -326,13 +300,6 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 			"Artifact Parser", "Invalid item type \"" + itemTypeToken + "\" for \"" +
 			displayName + "\".");
 
-		for (const auto &province : provinceTokens)
-		{
-			Debug::check(ArtifactParserProvinces.find(province) != ArtifactParserProvinces.end(),
-				"Artifact Parser", "Invalid province \"" + province + "\" for \"" +
-				displayName + "\".");
-		}
-
 		// Create the artifact data based on the item type.
 		const auto itemType = ArtifactParserItemTypes.at(itemTypeToken);
 		auto provinces = ArtifactParser::parseProvinces(provinceTokens);
@@ -392,4 +359,4 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 	}
 
 	return artifacts;
-}
+}*/

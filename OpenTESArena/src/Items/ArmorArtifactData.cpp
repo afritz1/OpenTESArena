@@ -5,8 +5,8 @@
 #include "ItemType.h"
 
 ArmorArtifactData::ArmorArtifactData(const std::string &displayName,
-	const std::string &flavorText, const std::vector<ProvinceName> &provinces)
-	: ArtifactData(displayName, flavorText, provinces) 
+	const std::string &flavorText, const std::vector<int> &provinceIDs)
+	: ArtifactData(displayName, flavorText, provinceIDs)
 { 
 
 }

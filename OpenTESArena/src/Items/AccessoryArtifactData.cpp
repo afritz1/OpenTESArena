@@ -7,9 +7,9 @@
 #include "MetalType.h"
 
 AccessoryArtifactData::AccessoryArtifactData(const std::string &displayName, 
-	const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+	const std::string &flavorText, const std::vector<int> &provinceIDs, 
 	AccessoryType accessoryType, MetalType metalType)
-	: ArtifactData(displayName, flavorText, provinces)
+	: ArtifactData(displayName, flavorText, provinceIDs)
 {
 	this->accessoryType = accessoryType;
 	this->metalType = metalType;
@@ -23,7 +23,7 @@ AccessoryArtifactData::~AccessoryArtifactData()
 std::unique_ptr<ArtifactData> AccessoryArtifactData::clone() const
 {
 	return std::unique_ptr<ArtifactData>(new AccessoryArtifactData(
-		this->getDisplayName(), this->getFlavorText(), this->getProvinces(),
+		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
 		this->getAccessoryType(), this->getMetalType()));
 }
 

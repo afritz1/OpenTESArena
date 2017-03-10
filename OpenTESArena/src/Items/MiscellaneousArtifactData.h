@@ -14,7 +14,7 @@ private:
 	MiscellaneousItemType miscItemType;
 public:
 	MiscellaneousArtifactData(const std::string &displayName,
-		const std::string &flavorText, const std::vector<ProvinceName> &provinces, 
+		const std::string &flavorText, const std::vector<int> &provinceIDs, 
 		MiscellaneousItemType miscItemType);
 	virtual ~MiscellaneousArtifactData();
 

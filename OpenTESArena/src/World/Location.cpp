@@ -5,7 +5,6 @@
 
 #include "ClimateName.h"
 #include "LocationType.h"
-#include "ProvinceName.h"
 
 // Display names for each type of location. It's for things like the greeting 
 // message when entering a city.
@@ -21,11 +20,11 @@ const std::map<LocationType, std::string> LocationTypeDisplayNames =
 	{ LocationType::Unique, "Unique" }
 };
 
-Location::Location(const std::string &name, ProvinceName provinceName, 
+Location::Location(const std::string &name, int provinceID, 
 	LocationType locationType, ClimateName climateName)
 {
 	this->name = name;
-	this->provinceName = provinceName;
+	this->provinceID = provinceID;
 	this->locationType = locationType;
 	this->climateName = climateName;
 }
@@ -35,9 +34,9 @@ Location::~Location()
 
 }
 
-ProvinceName Location::getProvinceName() const
+int Location::getProvinceID() const
 {
-	return this->provinceName;
+	return this->provinceID;
 }
 
 LocationType Location::getLocationType() const

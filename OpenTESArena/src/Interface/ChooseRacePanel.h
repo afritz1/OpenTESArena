@@ -14,9 +14,7 @@ class Renderer;
 class TextBox;
 class Texture;
 
-enum class CharacterRaceName;
 enum class GenderName;
-enum class ProvinceName;
 
 class ChooseRacePanel : public Panel
 {
@@ -24,13 +22,13 @@ private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button<>> backToGenderButton;
-	std::unique_ptr<Button<CharacterRaceName>> acceptButton;
+	std::unique_ptr<Button<int>> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
 	std::string name;
 	bool initialTextBoxVisible;
 
-	void drawProvinceTooltip(ProvinceName provinceName, Renderer &renderer);
+	void drawProvinceTooltip(int provinceID, Renderer &renderer);
 public:
 	ChooseRacePanel(Game *game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender);

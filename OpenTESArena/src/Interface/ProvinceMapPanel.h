@@ -3,7 +3,6 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../World/Province.h"
 
 class Renderer;
 
@@ -13,11 +12,11 @@ class ProvinceMapPanel : public Panel
 {
 private:
 	std::unique_ptr<Button<>> searchButton, travelButton, backToWorldMapButton;
-	Province province;
+	int provinceID;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 public:
-	ProvinceMapPanel(Game *game, const Province &province);
+	ProvinceMapPanel(Game *game, int provinceID);
 	virtual ~ProvinceMapPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

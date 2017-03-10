@@ -14,23 +14,22 @@
 // flavor text.
 
 enum class ItemType;
-enum class ProvinceName;
 
 class ArtifactData
 {
 private:
 	std::string displayName, flavorText;
-	std::vector<ProvinceName> provinces;
+	std::vector<int> provinceIDs;
 public:
 	ArtifactData(const std::string &displayName, const std::string &flavorText,
-		const std::vector<ProvinceName> &provinces);
+		const std::vector<int> &provinceIDs);
 	virtual ~ArtifactData();
 
 	virtual std::unique_ptr<ArtifactData> clone() const = 0;
 
 	const std::string &getDisplayName() const;
 	const std::string &getFlavorText() const;
-	const std::vector<ProvinceName> &getProvinces() const;
+	const std::vector<int> &getProvinceIDs() const;
 
 	virtual ItemType getItemType() const = 0;
 };

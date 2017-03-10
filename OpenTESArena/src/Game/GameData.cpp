@@ -32,8 +32,7 @@ GameData::~GameData()
 }
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
-	GenderName gender, CharacterRaceName raceName, const CharacterClass &charClass,
-	int portraitID)
+	GenderName gender, int raceID, const CharacterClass &charClass, int portraitID)
 {
 	// Create some dummy data for the test world.
 	EntityManager entityManager;
@@ -45,7 +44,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const double maxWalkSpeed = 2.0;
 	const double maxRunSpeed = 8.0;
 
-	Player player(playerName, gender, raceName, charClass, portraitID, 
+	Player player(playerName, gender, raceID, charClass, portraitID,
 		position, direction, velocity, maxWalkSpeed, maxRunSpeed, entityManager);
 
 	// Voxel grid with some arbitrary dimensions.
