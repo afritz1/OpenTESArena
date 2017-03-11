@@ -6,20 +6,18 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 
-// All buttons take a pointer to the current game state, and can also have some
-// optional arguments, too.
-
-class Game;
+// A button encapsulates some callback functionality. It usually modifies the
+// game state, but could also modify something small in a panel instead.
 
 template <class... Args>
 class Button
 {
 private:
-	std::function<void(Game*, Args...)> function;
+	std::function<void(Args...)> function;
 	int x, y, width, height;
 public:
 	Button(int x, int y, int width, int height,
-		const std::function<void(Game*, Args...)> &function)
+		const std::function<void(Args...)> &function)
 	{
 		this->function = function;
 		this->x = x;
@@ -29,12 +27,12 @@ public:
 	}
 
 	Button(const Int2 &center, int width, int height,
-		const std::function<void(Game*, Args...)> &function)
+		const std::function<void(Args...)> &function)
 		: Button(center.x - (width / 2), center.y - (height / 2),
 			width, height, function) { }
 
 	// "Hidden" button, intended only as a hotkey.
-	Button(const std::function<void(Game*, Args...)> &function)
+	Button(const std::function<void(Args...)> &function)
 		: Button(0, 0, 1, 1, function) { }
 
 	virtual ~Button()
@@ -70,9 +68,9 @@ public:
 	}
 
 	// Calls the button's function.
-	void click(Game *game, Args... args)
+	void click(Args... args)
 	{
-		this->function(game, args...);
+		this->function(args...);
 	}
 };
 

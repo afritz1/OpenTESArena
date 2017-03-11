@@ -51,7 +51,7 @@ LoadGamePanel::LoadGamePanel(Game *game)
 				std::unique_ptr<Panel>(new MainMenuPanel(game));
 			game->setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 }
 

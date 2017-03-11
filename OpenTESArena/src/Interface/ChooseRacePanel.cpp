@@ -72,26 +72,31 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			game->getRenderer()));
 	}();
 
-	this->backToGenderButton = [this]()
+	this->backToGenderButton = []()
 	{
-		auto function = [this](Game *game)
+		auto function = [](Game *game, const CharacterClass &charClass, 
+			const std::string &name)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
-				game, this->charClass, this->name));
+				game, charClass, name));
 			game->setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>>(
+			new Button<Game*, const CharacterClass&, const std::string&>(function));
 	}();
 
-	this->acceptButton = [this]()
+	this->acceptButton = []()
 	{
-		auto function = [this](Game *game, int raceID)
+		auto function = [](Game *game, const CharacterClass &charClass,
+			const std::string &name, GenderName gender, int raceID)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
-				game, this->charClass, this->name, this->gender, raceID));
+				game, charClass, name, gender, raceID));
 			game->setPanel(std::move(attributesPanel));
 		};
-		return std::unique_ptr<Button<int>>(new Button<int>(function));
+		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&, 
+			GenderName, int>>(new Button<Game*, const CharacterClass&, const std::string&, 
+				GenderName, int>(function));
 	}();
 
 	this->initialTextBoxVisible = true;
@@ -136,7 +141,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	// Interact with the map screen instead.
 	if (escapePressed)
 	{
-		this->backToGenderButton->click(this->getGame());
+		this->backToGenderButton->click(this->getGame(), this->charClass, this->name);
 	}
 	else if (leftClick)
 	{
@@ -155,7 +160,8 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 				(provinceID != (ProvinceClickAreas.size() - 1)))
 			{
 				// Go to the attributes panel.
-				this->acceptButton->click(this->getGame(), provinceID);
+				this->acceptButton->click(this->getGame(), this->charClass,
+					this->name, this->gender, provinceID);
 				break;
 			}
 		}

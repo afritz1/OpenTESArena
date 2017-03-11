@@ -16,7 +16,7 @@ CinematicPanel::CinematicPanel(Game *game,
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<>>(new Button<>(endingAction));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
 	}();
 
 	this->secondsPerImage = secondsPerImage;

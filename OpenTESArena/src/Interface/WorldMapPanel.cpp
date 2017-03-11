@@ -51,17 +51,18 @@ WorldMapPanel::WorldMapPanel(Game *game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, width, height, function));
 	}();
 
-	this->provinceButton = [this]()
+	this->provinceButton = []()
 	{
-		auto function = [this](Game *game, int provinceID)
+		auto function = [](Game *game, int provinceID)
 		{
 			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(game, provinceID));
 			game->setPanel(std::move(provincePanel));
 		};
-		return std::unique_ptr<Button<int>>(new Button<int>(function));
+		return std::unique_ptr<Button<Game*, int>>(new Button<Game*, int>(function));
 	}();
 }
 

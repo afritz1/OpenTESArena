@@ -21,8 +21,9 @@ class ChooseRacePanel : public Panel
 private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> initialTextBox;
-	std::unique_ptr<Button<>> backToGenderButton;
-	std::unique_ptr<Button<int>> acceptButton;
+	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>> backToGenderButton;
+	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&, 
+		GenderName, int>> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
 	std::string name;

@@ -96,52 +96,55 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
 			game->setPanel(std::move(creationPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
-	this->upButton = [this]
+	this->upButton = []
 	{
 		Int2 center(68, 22);
 		int w = 8;
 		int h = 8;
-		auto function = [this](Game *game)
+		auto function = [](ChooseClassPanel *panel)
 		{
 			// Scroll the list box up one if able.
-			if (this->classesListBox->getScrollIndex() > 0)
+			if (panel->classesListBox->getScrollIndex() > 0)
 			{
-				this->classesListBox->scrollUp();
+				panel->classesListBox->scrollUp();
 			}
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, w, h, function));
+		return std::unique_ptr<Button<ChooseClassPanel*>>(
+			new Button<ChooseClassPanel*>(center, w, h, function));
 	}();
 
-	this->downButton = [this]
+	this->downButton = []
 	{
 		Int2 center(68, 117);
 		int w = 8;
 		int h = 8;
-		auto function = [this](Game *game)
+		auto function = [](ChooseClassPanel *panel)
 		{
 			// Scroll the list box down one if able.
-			if (this->classesListBox->getScrollIndex() <
-				(this->classesListBox->getElementCount() -
-					this->classesListBox->getMaxDisplayedCount()))
+			const int scrollIndex = panel->classesListBox->getScrollIndex();
+			const int elementCount = panel->classesListBox->getElementCount();
+			const int maxDisplayedCount = panel->classesListBox->getMaxDisplayedCount();
+			if (scrollIndex < (elementCount - maxDisplayedCount))
 			{
-				this->classesListBox->scrollDown();
+				panel->classesListBox->scrollDown();
 			}
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, w, h, function));
+		return std::unique_ptr<Button<ChooseClassPanel*>>(
+			new Button<ChooseClassPanel*>(center, w, h, function));
 	}();
 
-	this->acceptButton = [this]
+	this->acceptButton = []
 	{
-		auto function = [this](Game *game, const CharacterClass &charClass)
+		auto function = [](Game *game, const CharacterClass &charClass)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(game, charClass));
 			game->setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<const CharacterClass&>>(
-			new Button<const CharacterClass&>(function));
+		return std::unique_ptr<Button<Game*, const CharacterClass&>>(
+			new Button<Game*, const CharacterClass&>(function));
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
@@ -190,11 +193,11 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (mouseWheelUp)
 		{
-			this->upButton->click(this->getGame());
+			this->upButton->click(this);
 		}
 		else if (mouseWheelDown)
 		{
-			this->downButton->click(this->getGame());
+			this->downButton->click(this);
 		}
 	}
 
@@ -203,11 +206,11 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		// Check scroll buttons (they are outside the list box to the left).
 		if (this->upButton->contains(mouseOriginalPoint))
 		{
-			this->upButton->click(this->getGame());
+			this->upButton->click(this);
 		}
 		else if (this->downButton->contains(mouseOriginalPoint))
 		{
-			this->downButton->click(this->getGame());
+			this->downButton->click(this);
 		}
 	}
 }

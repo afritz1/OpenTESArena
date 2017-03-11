@@ -20,7 +20,7 @@ ImagePanel::ImagePanel(Game *game, const std::string &paletteName,
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<>>(new Button<>(endingAction));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
 	}();
 
 	this->secondsToDisplay = secondsToDisplay;

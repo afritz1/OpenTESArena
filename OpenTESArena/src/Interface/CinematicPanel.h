@@ -16,7 +16,7 @@ class Renderer;
 class CinematicPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> skipButton;
+	std::unique_ptr<Button<Game*>> skipButton;
 	std::string paletteName;
 	std::string sequenceName;
 	double secondsPerImage, currentSeconds;

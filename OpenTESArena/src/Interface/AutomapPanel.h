@@ -12,7 +12,7 @@ class TextBox;
 class AutomapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> backToGameButton;
+	std::unique_ptr<Button<Game*>> backToGameButton;
 	// Name of location...
 
 	// Listen for when the LMB is held on a compass direction.

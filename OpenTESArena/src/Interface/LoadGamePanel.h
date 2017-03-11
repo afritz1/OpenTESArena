@@ -12,7 +12,7 @@ class LoadGamePanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> underConstructionTextBox;
-	std::unique_ptr<Button<>> backButton;
+	std::unique_ptr<Button<Game*>> backButton;
 	// up/down arrow buttons, saved game buttons...
 public:
 	// This could get the game data boolean from the game state itself to determine

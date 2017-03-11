@@ -97,7 +97,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				game, charClass, name, gender));
 			game->setPanel(std::move(racePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
 	this->doneButton = [this, charClass, name, gender, raceID]()
@@ -176,32 +176,33 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			game->setMusic(MusicName::Vision);
 		};
 
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, cinematicFunction));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, width, height, cinematicFunction));
 	}();
 
-	this->portraitButton = [this]()
+	this->portraitButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		int width = 60;
 		int height = 42;
-		auto function = [this](Game *game, bool increment)
+		auto function = [](ChooseAttributesPanel *panel, bool increment)
 		{
 			const int minID = 0;
 			const int maxID = 9;
 
 			if (increment)
 			{
-				this->portraitID = (this->portraitID == maxID) ? 
-					minID : (this->portraitID + 1);
+				panel->portraitID = (panel->portraitID == maxID) ?
+					minID : (panel->portraitID + 1);
 			}
 			else
 			{
-				this->portraitID = (this->portraitID == minID) ? 
-					maxID : (this->portraitID - 1);
+				panel->portraitID = (panel->portraitID == minID) ?
+					maxID : (panel->portraitID - 1);
 			}
 		};
-		return std::unique_ptr<Button<bool>>(new Button<bool>(
-			center, width, height, function));
+		return std::unique_ptr<Button<ChooseAttributesPanel*, bool>>(
+			new Button<ChooseAttributesPanel*, bool>(center, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.
@@ -249,7 +250,8 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->portraitButton->contains(mouseOriginalPoint))
 		{
-			this->portraitButton->click(this->getGame(), true);
+			// Pass 'true' to increment the portrait ID.
+			this->portraitButton->click(this, true);
 		}
 	}
 
@@ -257,7 +259,8 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 	{
 		if (this->portraitButton->contains(mouseOriginalPoint))
 		{
-			this->portraitButton->click(this->getGame(), false);
+			// Pass 'false' to decrement the portrait ID.
+			this->portraitButton->click(this, false);
 		}
 	}	
 }

@@ -78,7 +78,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			// Nothing yet.
 		};
@@ -92,7 +92,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			// Nothing yet.
 		};
@@ -111,7 +111,8 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, width, height, function));
 	}();
 
 	this->provinceID = provinceID;
@@ -147,11 +148,11 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 		if (this->searchButton->contains(mouseOriginalPoint))
 		{
-			this->searchButton->click(this->getGame());
+			this->searchButton->click();
 		}
 		else if (this->travelButton->contains(mouseOriginalPoint))
 		{
-			this->travelButton->click(this->getGame());
+			this->travelButton->click();
 		}
 		else if (this->backToWorldMapButton->contains(mouseOriginalPoint))
 		{

@@ -88,7 +88,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 			game->setPanel(std::move(mainMenuPanel));
 			game->setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
 	this->generateButton = []()
@@ -100,7 +100,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
 			game->setPanel(std::move(classPanel));*/
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, 175, 35, function));
 	}();
 
 	this->selectButton = []()
@@ -111,7 +112,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
 			game->setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, 175, 35, function));
 	}();
 }
 

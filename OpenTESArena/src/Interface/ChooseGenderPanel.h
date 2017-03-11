@@ -16,7 +16,9 @@ class ChooseGenderPanel : public Panel
 private:
 	std::unique_ptr<Texture> parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
-	std::unique_ptr<Button<>> backToNameButton, maleButton, femaleButton;
+	std::unique_ptr<Button<Game*, const CharacterClass&>> backToNameButton;
+	std::unique_ptr<Button<Game*, const CharacterClass&, 
+		const std::string&>> maleButton, femaleButton;
 	CharacterClass charClass;
 	std::string name;
 public:

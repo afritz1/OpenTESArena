@@ -90,12 +90,13 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
 			game->setPanel(std::move(sheetPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(14, 166, 40, 29, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(14, 166, 40, 29, function));
 	}();
 
 	this->drawWeaponButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Draw weapon.");
 		};
@@ -104,7 +105,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->stealButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Steal.");
 		};
@@ -113,7 +114,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->statusButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Status.");
 		};
@@ -122,7 +123,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->magicButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Magic.");
 		};
@@ -136,12 +137,13 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
 			game->setPanel(std::move(logbookPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(118, 175, 29, 22, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(118, 175, 29, 22, function));
 	}();
 
 	this->useItemButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Use item.");
 		};
@@ -150,7 +152,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->campButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			Debug::mention("Game", "Camp.");
 		};
@@ -159,13 +161,13 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->scrollUpButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](GameWorldPanel *panel)
 		{
 			// Nothing yet.
 		};
 
 		// Y position is based on height of interface image.
-		return std::unique_ptr<Button<>>(new Button<>(
+		return std::unique_ptr<Button<GameWorldPanel*>>(new Button<GameWorldPanel*>(
 			208, 
 			(Renderer::ORIGINAL_HEIGHT - 53) + 3, 
 			9, 
@@ -175,13 +177,13 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->scrollDownButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](GameWorldPanel *panel)
 		{
 			// Nothing yet.
 		};
 
 		// Y position is based on height of interface image.
-		return std::unique_ptr<Button<>>(new Button<>(
+		return std::unique_ptr<Button<GameWorldPanel*>>(new Button<GameWorldPanel*>(
 			208,
 			(Renderer::ORIGINAL_HEIGHT - 53) + 44,
 			9,
@@ -196,7 +198,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game->setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
 	this->mapButton = []()
@@ -214,8 +216,8 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				game->setPanel(std::move(worldMapPanel));
 			}
 		};
-		return std::unique_ptr<Button<bool>>(
-			new Button<bool>(118, 151, 29, 22, function));
+		return std::unique_ptr<Button<Game*, bool>>(
+			new Button<Game*, bool>(118, 151, 29, 22, function));
 	}();
 
 	// Default to classic mode for now. Eventually, "modern" mode will be
@@ -273,7 +275,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->drawWeaponButton->contains(originalPosition))
 		{
-			this->drawWeaponButton->click(this->getGame());
+			this->drawWeaponButton->click();
 		}
 		else if (this->mapButton->contains(originalPosition))
 		{
@@ -281,15 +283,15 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->stealButton->contains(originalPosition))
 		{
-			this->stealButton->click(this->getGame());
+			this->stealButton->click();
 		}
 		else if (this->statusButton->contains(originalPosition))
 		{
-			this->statusButton->click(this->getGame());
+			this->statusButton->click();
 		}
 		else if (this->magicButton->contains(originalPosition))
 		{
-			this->magicButton->click(this->getGame());
+			this->magicButton->click();
 		}
 		else if (this->logbookButton->contains(originalPosition))
 		{
@@ -297,11 +299,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->useItemButton->contains(originalPosition))
 		{
-			this->useItemButton->click(this->getGame());
+			this->useItemButton->click();
 		}
 		else if (this->campButton->contains(originalPosition))
 		{
-			this->campButton->click(this->getGame());
+			this->campButton->click();
 		}
 
 		// Later... any entities in the world clicked?

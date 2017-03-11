@@ -69,24 +69,23 @@ OptionsPanel::OptionsPanel(Game *game)
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game->setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
-	this->fpsUpButton = [this]()
+	this->fpsUpButton = []()
 	{
 		int x = 85;
 		int y = 41;
 		int width = 8;
 		int height = 8;
-		auto function = [this](Game *game)
+		auto function = [](Options &options, OptionsPanel *panel)
 		{
-			auto &options = game->getOptions();
 			const int newFPS = options.getTargetFPS() + 5;
 			options.setTargetFPS(newFPS);
-
-			this->updateFPSText(newFPS);
+			panel->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Options&, OptionsPanel*>>(
+			new Button<Options&, OptionsPanel*>(x, y, width, height, function));
 	}();
 
 	this->fpsDownButton = [this]()
@@ -95,15 +94,14 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = this->fpsUpButton->getY() + this->fpsUpButton->getHeight();
 		int width = this->fpsUpButton->getWidth();
 		int height = this->fpsUpButton->getHeight();
-		auto function = [this](Game *game)
+		auto function = [](Options &options, OptionsPanel *panel)
 		{
-			auto &options = game->getOptions();
 			const int newFPS = std::max(options.getTargetFPS() - 5, options.MIN_FPS);
 			options.setTargetFPS(newFPS);
-
-			this->updateFPSText(newFPS);
+			panel->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Options&, OptionsPanel*>>(
+			new Button<Options&, OptionsPanel*>(x, y, width, height, function));
 	}();
 }
 
@@ -154,11 +152,11 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		// Check for various button clicks.
 		if (this->fpsUpButton->contains(mouseOriginalPoint))
 		{
-			this->fpsUpButton->click(this->getGame());
+			this->fpsUpButton->click(this->getGame()->getOptions(), this);
 		}
 		else if (this->fpsDownButton->contains(mouseOriginalPoint))
 		{
-			this->fpsDownButton->click(this->getGame());
+			this->fpsDownButton->click(this->getGame()->getOptions(), this);
 		}
 	}
 }

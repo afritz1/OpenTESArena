@@ -6,6 +6,7 @@
 
 // Arena doesn't have an options menu, so I made one up!
 
+class Options;
 class Renderer;
 class TextBox;
 
@@ -15,7 +16,8 @@ private:
 	static const std::string FPS_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, fpsTextBox;
-	std::unique_ptr<Button<>> backToPauseButton, fpsUpButton, fpsDownButton;
+	std::unique_ptr<Button<Game*>> backToPauseButton;
+	std::unique_ptr<Button<Options&, OptionsPanel*>> fpsUpButton, fpsDownButton;
 
 	void updateFPSText(int fps);
 public:

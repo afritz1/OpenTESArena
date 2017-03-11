@@ -103,7 +103,7 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			game->getRenderer()));
 	}();
 
-	this->optionsShadowTextBox = [this, game]()
+	this->optionsShadowTextBox = [game]()
 	{
 		Int2 center(233, 97);
 		Color color(101, 77, 24);
@@ -128,14 +128,15 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
 			game->setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, 64, 29, function));
 	}();
 
 	this->exitButton = []()
 	{
 		int x = 193;
 		int y = 118;
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			SDL_Event evt;
 			evt.quit.type = SDL_QUIT;
@@ -157,7 +158,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			game->setPanel(std::move(mainMenuPanel));
 			game->setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 65, 29, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, 65, 29, function));
 	}();
 
 	this->saveButton = []()
@@ -170,7 +172,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
 			//game->setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, 64, 29, function));
 	}();
 
 	this->resumeButton = []()
@@ -182,7 +185,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, 64, 29, function));
 	}();
 
 	this->optionsButton = []()
@@ -194,79 +198,76 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
 			game->setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 145, 14, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, 145, 14, function));
 	}();
 
-	this->musicUpButton = [this]()
+	this->musicUpButton = []()
 	{
 		int x = 119;
 		int y = 79;
-		auto function = [this](Game *game)
+		auto function = [](Options &options, AudioManager &audioManager,
+			PauseMenuPanel *panel)
 		{
-			Options &options = game->getOptions();
 			options.setMusicVolume(std::min(options.getMusicVolume() + 0.050, 1.0));
-
-			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
-			this->updateMusicText(options.getMusicVolume());
+			panel->updateMusicText(options.getMusicVolume());
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 17, 9, function));
+		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
+			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
 	}();
 
-	this->musicDownButton = [this]()
+	this->musicDownButton = []()
 	{
 		int x = 119;
 		int y = 104;
-		auto function = [this](Game *game)
+		auto function = [](Options &options, AudioManager &audioManager,
+			PauseMenuPanel *panel)
 		{
-			Options &options = game->getOptions();
 			options.setMusicVolume(std::max(options.getMusicVolume() - 0.050, 0.0));
-
-			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
-			this->updateMusicText(options.getMusicVolume());
+			panel->updateMusicText(options.getMusicVolume());
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 17, 9, function));
+		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
+			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
 	}();
 
-	this->soundUpButton = [this]()
+	this->soundUpButton = []()
 	{
 		int x = 46;
 		int y = 79;
-		auto function = [this](Game *game)
+		auto function = [](Options &options, AudioManager &audioManager,
+			PauseMenuPanel *panel)
 		{
-			Options &options = game->getOptions();
 			options.setSoundVolume(std::min(options.getSoundVolume() + 0.050, 1.0));
-
-			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
-			this->updateSoundText(options.getSoundVolume());
+			panel->updateSoundText(options.getSoundVolume());
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 17, 9, function));
+		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
+			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
 	}();
 
-	this->soundDownButton = [this]()
+	this->soundDownButton = []()
 	{
 		int x = 46;
 		int y = 104;
-		auto function = [this](Game *game)
+		auto function = [](Options &options, AudioManager &audioManager,
+			PauseMenuPanel *panel)
 		{
-			Options &options = game->getOptions();
 			options.setSoundVolume(std::max(options.getSoundVolume() - 0.050, 0.0));
-
-			AudioManager &audioManager = game->getAudioManager();
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
-			this->updateSoundText(options.getSoundVolume());
+			panel->updateSoundText(options.getSoundVolume());
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 17, 9, function));
+		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
+			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
 	}();
 }
 
@@ -338,6 +339,9 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
+		auto &options = this->getGame()->getOptions();
+		auto &audioManager = this->getGame()->getAudioManager();
+
 		// See if any of the buttons are clicked.
 		// (This code is getting kind of bad now. Maybe use a vector?)
 		if (this->loadButton->contains(mouseOriginalPoint))
@@ -346,7 +350,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
-			this->exitButton->click(this->getGame());
+			this->exitButton->click();
 		}
 		else if (this->newButton->contains(mouseOriginalPoint))
 		{
@@ -366,19 +370,19 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->musicUpButton->contains(mouseOriginalPoint))
 		{
-			this->musicUpButton->click(this->getGame());
+			this->musicUpButton->click(options, audioManager, this);
 		}
 		else if (this->musicDownButton->contains(mouseOriginalPoint))
 		{
-			this->musicDownButton->click(this->getGame());
+			this->musicDownButton->click(options, audioManager, this);
 		}
 		else if (this->soundUpButton->contains(mouseOriginalPoint))
 		{
-			this->soundUpButton->click(this->getGame());
+			this->soundUpButton->click(options, audioManager, this);
 		}
 		else if (this->soundDownButton->contains(mouseOriginalPoint))
 		{
-			this->soundDownButton->click(this->getGame());
+			this->soundDownButton->click(options, audioManager, this);
 		}
 	}
 }

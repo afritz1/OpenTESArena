@@ -96,7 +96,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 			std::unique_ptr<Panel> characterPanel(new CharacterPanel(game));
 			game->setPanel(std::move(characterPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, width, height, function));
 	}();
 
 	this->spellbookButton = []()
@@ -105,9 +106,10 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		int y = 188;
 		int width = 76;
 		int height = 12;
-		auto function = [](Game *game)
+		auto function = []()
 		{
 			// Nothing yet.
+			// Might eventually take an argument for a panel?
 		};
 		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
 	}();
@@ -118,13 +120,13 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		int y = 188;
 		int width = 48;
 		int height = 12;
-		auto function = [](Game *game)
+		auto function = [](Game *game, int index)
 		{
 			// Nothing yet.
-			// This should eventually take an index parameter that points to which item
-			// in the list to drop.
+			// The index parameter will point to which item in the list to drop.
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game*, int>>(
+			new Button<Game*, int>(x, y, width, height, function));
 	}();
 
 	this->scrollDownButton = []()
@@ -132,11 +134,12 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		Int2 center(16, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](Game *game)
+		auto function = [](CharacterEquipmentPanel* panel)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<CharacterEquipmentPanel*>>(
+			new Button<CharacterEquipmentPanel*>(center, width, height, function));
 	}();
 
 	this->scrollUpButton = []()
@@ -144,11 +147,12 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		Int2 center(152, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](Game *game)
+		auto function = [](CharacterEquipmentPanel* panel)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<CharacterEquipmentPanel*>>(
+			new Button<CharacterEquipmentPanel*>(center, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.
@@ -195,19 +199,20 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->spellbookButton->contains(mouseOriginalPoint))
 		{
-			this->spellbookButton->click(this->getGame());
+			this->spellbookButton->click();
 		}
 		else if (this->dropButton->contains(mouseOriginalPoint))
 		{
-			this->dropButton->click(this->getGame());
+			// Eventually give the index of the clicked item instead.
+			this->dropButton->click(this->getGame(), 0);
 		}
 		else if (this->scrollUpButton->contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton->click(this->getGame());
+			this->scrollUpButton->click(this);
 		}
 		else if (this->scrollDownButton->contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton->click(this->getGame());
+			this->scrollDownButton->click(this);
 		}
 	}
 }

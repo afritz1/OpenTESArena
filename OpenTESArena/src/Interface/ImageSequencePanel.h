@@ -16,7 +16,7 @@
 class ImageSequencePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> skipButton;
+	std::unique_ptr<Button<Game*>> skipButton;
 	std::vector<std::string> paletteNames;
 	std::vector<std::string> textureNames;
 	std::vector<double> imageDurations;

@@ -36,7 +36,8 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
 			game->setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, width, height, function));
 	}();
 
 	this->newButton = []()
@@ -94,7 +95,8 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			game->setPanel(std::move(cinematicPanel));
 			game->setMusic(MusicName::EvilIntro);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, width, height, function));
 	}();
 
 	this->exitButton = []()
@@ -102,7 +104,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 		Int2 center(168, 158);
 		int width = 45;
 		int height = 20;
-		auto function = [](Game *game)
+		auto function = []()
 		{
             SDL_Event e;
 			e.quit.type = SDL_QUIT;
@@ -140,7 +142,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (ePressed)
 	{
-		this->exitButton->click(this->getGame());
+		this->exitButton->click();
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -162,7 +164,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->exitButton->contains(mouseOriginalPoint))
 		{
-			this->exitButton->click(this->getGame());
+			this->exitButton->click();
 		}
 	}
 }

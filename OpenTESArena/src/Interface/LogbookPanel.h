@@ -11,7 +11,7 @@ class LogbookPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> titleTextBox;
-	std::unique_ptr<Button<>> backButton;
+	std::unique_ptr<Button<Game*>> backButton;
 public:
 	LogbookPanel(Game *game);
 	virtual ~LogbookPanel();

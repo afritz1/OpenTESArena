@@ -9,8 +9,8 @@ class Renderer;
 class WorldMapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> backToGameButton;
-	std::unique_ptr<Button<int>> provinceButton;
+	std::unique_ptr<Button<Game*>> backToGameButton;
+	std::unique_ptr<Button<Game*, int>> provinceButton;
 public:
 	WorldMapPanel(Game *game);
 	virtual ~WorldMapPanel();

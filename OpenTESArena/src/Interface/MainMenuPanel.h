@@ -9,7 +9,8 @@ class Renderer;
 class MainMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> loadButton, newButton, exitButton;
+	std::unique_ptr<Button<Game*>> loadButton, newButton;
+	std::unique_ptr<Button<>> exitButton;
 public:
 	MainMenuPanel(Game *game);
 	virtual ~MainMenuPanel();

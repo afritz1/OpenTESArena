@@ -11,7 +11,8 @@ enum class ProvinceButtonName;
 class ProvinceMapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<>> searchButton, travelButton, backToWorldMapButton;
+	std::unique_ptr<Button<>> searchButton, travelButton;
+	std::unique_ptr<Button<Game*>> backToWorldMapButton;
 	int provinceID;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);

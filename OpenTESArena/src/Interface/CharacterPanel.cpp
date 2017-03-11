@@ -94,7 +94,8 @@ CharacterPanel::CharacterPanel(Game *game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(center, width, height, function));
 	}();
 
 	this->nextPageButton = []()
@@ -108,7 +109,8 @@ CharacterPanel::CharacterPanel(Game *game)
 			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(game));
 			game->setPanel(std::move(equipmentPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game*>>(
+			new Button<Game*>(x, y, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.
