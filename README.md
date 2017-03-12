@@ -1,6 +1,6 @@
 # OpenTESArena
 
-This open-source project aims to be a modern engine reimplementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows and Linux.
+This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows and Linux.
 
 - Version: 0.2.0
 - License: MIT
@@ -33,9 +33,7 @@ I've been experimenting with various methods of rendering looking for the right 
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
-This project shares a similar name with the Quake III-based [OpenArena](https://github.com/OpenArena), though the two projects are unrelated.
-
-Check out the Projects tab to see what's currently on the to-do list. Open a pull request if you'd like to contribute.
+Check out the Projects tab to see what's currently on the to-do list, and the Wiki for a more in-depth project scope. Open a pull request if you'd like to contribute.
 
 ## Installation
 
@@ -72,58 +70,6 @@ If you receive an error about "alcOpenDevice" on Windows, you will need to downl
 - Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
-
-## Scope
-
-Current priority (~0.2.0 - ~0.3.0):
-- Considerations for software rendering
-
-Next priority (~0.3.0 - ~0.10.0):
-- Better pop-up functionality (chain pop-ups together, yes/no buttons)
-- Character creation questions
-- Clicking in game world
-- Collision detection
-- More light functionality (give a sprite ownership of a light)
-- Options menu
-
-Later (~0.10.0 - ...):
-- Automap
-- Class rules and traits
-- Doors and secret walls
-- Enemies
-- Game interface button behavior
-- Inventory and containers
-- Levels and experience
-- Load artifact data
-- Load class data (to replace classes.txt)
-- Load locations data
-- Load unpacked Arena executable data
-- Modern (Daggerfall-like) interface option with free-look camera
-- Random test cities and dungeons
-- Redesigned water and lava (to replace vanilla screen animations)
-- Reflections in windows and water
-- Weapon attacks (hold RMB to swing)
-
-Outside scope (until much later):
-- Adaptive super-sampling
-- (new) Custom class creation
-- (new) Followers
-- (new) Imperial race
-- (new) Journal tabs
-- Loading/saving redesign
-- Main and side quests
-- Modding
-- (new) New kinds of stores
-- Original city/dungeon data
-- Pickpocketing
-- Scripting
-- Services (bartender, priest, shopkeeper, wizard)
-- Spells
-- Sprite variation (clothes/hair/skin colors)
-- (new) UI scale
-- Vulkan
-- Wandering people
-- Wilderness (seed-based chunk generation)
 
 ## Resources
 
