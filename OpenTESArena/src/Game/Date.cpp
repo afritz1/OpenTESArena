@@ -8,14 +8,12 @@
 #include "../Utilities/Debug.h"
 
 Date::Date(const Year &year, const Month &month, const Weekday &weekday, int day)
+	: year(year), month(month), weekday(weekday)
 {
 	// Programmer error if the day is ever out of range.
 	assert(day >= 1);
 	assert(day <= 30);
 
-	this->year = std::unique_ptr<Year>(new Year(year));
-	this->month = std::unique_ptr<Month>(new Month(month));
-	this->weekday = std::unique_ptr<Weekday>(new Weekday(weekday));
 	this->day = day;
 }
 
@@ -26,17 +24,17 @@ Date::~Date()
 
 const Year &Date::getYear() const
 {
-	return *this->year.get();
+	return this->year;
 }
 
 const Month &Date::getMonth() const
 {
-	return *this->month.get();
+	return this->month;
 }
 
 const Weekday &Date::getWeekday() const
 {
-	return *this->weekday.get();
+	return this->weekday;
 }
 
 int Date::getDayNumber() const
@@ -112,5 +110,5 @@ void Date::incrementMonth()
 
 void Date::incrementYear()
 {
-	this->year->incrementYear();
+	this->year.incrementYear();
 }

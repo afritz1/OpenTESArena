@@ -1,8 +1,11 @@
 #ifndef DATE_H
 #define DATE_H
 
-#include <memory>
 #include <string>
+
+#include "Month.h"
+#include "Weekday.h"
+#include "Year.h"
 
 // The Date class manages all the data needed to define a particular day in the game.
 
@@ -10,16 +13,12 @@
 // they can be properly incremented? Those strings will need to be read from the Arena
 // executable.
 
-class Month;
-class Weekday;
-class Year;
-
 class Date
 {
 private:
-	std::unique_ptr<Year> year;
-	std::unique_ptr<Month> month;
-	std::unique_ptr<Weekday> weekday;
+	Year year;
+	Month month;
+	Weekday weekday;
 	int day;
 	// Seconds? Minutes? Maybe put that in a "TimeOfDay" class.
 
