@@ -92,12 +92,6 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	assert(this->palettes.find(paletteName) != this->palettes.end());
 }
 
-bool TextureManager::paletteIsBuiltIn(const std::string &paletteName) const
-{
-	const std::string &builtInName = PaletteFile::fromName(PaletteName::BuiltIn);
-	return paletteName.compare(builtInName) == 0;
-}
-
 SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	const std::string &paletteName)
 {
@@ -113,7 +107,7 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	}
 
 	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = this->paletteIsBuiltIn(paletteName);
+	const bool useBuiltInPalette = Palette::isBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
 	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
@@ -141,14 +135,14 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 		Palette colPalette;
 		COLFile::toPalette(filename, colPalette);
 
-		assert(colPalette.size() == 256);
+		assert(colPalette.get().size() == 256);
 		surface = Surface::createSurfaceWithFormat(16, 16, Renderer::DEFAULT_BPP, 
 			Renderer::DEFAULT_PIXELFORMAT);
 		
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		for (size_t i = 0; i < colPalette.size(); ++i)
+		for (size_t i = 0; i < colPalette.get().size(); ++i)
 		{
-			pixels[i] = colPalette[i].toARGB();
+			pixels[i] = colPalette.get()[i].toARGB();
 		}
 	}
 	else if (isIMG || isMNU)
@@ -194,7 +188,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 		return textureIter->second;
 	}
 	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = this->paletteIsBuiltIn(paletteName);
+	const bool useBuiltInPalette = Palette::isBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
 	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
@@ -267,7 +261,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	}
 
 	// Do not use a built-in palette for surface sets.
-	Debug::check(!this->paletteIsBuiltIn(paletteName), "Texture Manager",
+	Debug::check(!Palette::isBuiltIn(paletteName), "Texture Manager",
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.
@@ -431,7 +425,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 
 	// Do not use a built-in palette for texture sets.
-	Debug::check(!this->paletteIsBuiltIn(paletteName), "Texture Manager",
+	Debug::check(!Palette::isBuiltIn(paletteName), "Texture Manager",
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.

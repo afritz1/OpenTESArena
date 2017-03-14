@@ -226,7 +226,7 @@ void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 		const uint8_t r = *(ptr + 0);
 		const uint8_t g = *(ptr + 1);
 		const uint8_t b = *(ptr + 2);
-		dstPalette.at(i) = Color(r, g, b, 255);
+		dstPalette.get()[i] = Color(r, g, b, 255);
 	}
 }
 
@@ -300,7 +300,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	std::transform(decompPixels, decompPixels + decomp.size(), image.get(),
 		[&palette](uint8_t col) -> uint32_t
 	{
-		return palette[col].toARGB();
+		return palette.get()[col].toARGB();
 	});
 
 	return std::move(image);
@@ -436,7 +436,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 	std::transform(framePixels, framePixels + initialFrame.size(), image.get(),
 		[&palette](uint8_t col) -> uint32_t
 	{
-		return palette[col].toARGB();
+		return palette.get()[col].toARGB();
 	});
 
 	return std::move(image);

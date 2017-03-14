@@ -111,7 +111,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		std::transform(data, data + (width * height), this->pixels.get(),
 			[&paletteRef](uint8_t col) -> uint32_t
 		{
-			return paletteRef[col].toARGB();
+			return paletteRef.get()[col].toARGB();
 		});
 	};
 
@@ -177,10 +177,10 @@ void IMGFile::readPalette(const uint8_t *paletteData, Palette &dstPalette)
 	uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t g = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t b = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
-	dstPalette[0] = Color(r, g, b, 0);
+	dstPalette.get()[0] = Color(r, g, b, 0);
 
 	// Remaining are solid, so give them 255 alpha.
-	std::generate(dstPalette.begin() + 1, dstPalette.end(),
+	std::generate(dstPalette.get().begin() + 1, dstPalette.get().end(),
 		[&paletteData]() -> Color
 	{
 		uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;

@@ -56,10 +56,10 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 		uint8_t r = *(iter++);
 		uint8_t g = *(iter++);
 		uint8_t b = *(iter++);
-		dstPalette[0] = Color(r, g, b, 0);
+		dstPalette.get()[0] = Color(r, g, b, 0);
 
 		// Remaining are solid, so give them 255 alpha.
-		std::generate(dstPalette.begin() + 1, dstPalette.end(),
+		std::generate(dstPalette.get().begin() + 1, dstPalette.get().end(),
 			[&iter]() -> Color
 		{
 			uint8_t r = *(iter++);
@@ -72,7 +72,7 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 	{
 		// Generate a monochrome palette. Entry 0 is filled with 0 already, so skip it.
 		uint8_t count = 0;
-		std::generate(dstPalette.begin() + 1, dstPalette.end(),
+		std::generate(dstPalette.get().begin() + 1, dstPalette.get().end(),
 			[&count]() -> Color
 		{
 			uint8_t c = ++count;

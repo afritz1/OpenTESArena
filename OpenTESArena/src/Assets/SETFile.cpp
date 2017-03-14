@@ -38,7 +38,7 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 			this->chunks.at(chunkIndex).get(),
 			[&palette](uint8_t col) -> uint32_t
 		{
-			return palette[col].toARGB();
+			return palette.get()[col].toARGB();
 		});
 	}
 }

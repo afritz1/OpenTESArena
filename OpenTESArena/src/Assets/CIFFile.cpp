@@ -95,7 +95,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
+				return palette.get()[col].toARGB();
 			});
 
 			offset += (headerSize + len);
@@ -129,7 +129,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
+				return palette.get()[col].toARGB();
 			});
 
 			offset += (headerSize + len);
@@ -166,7 +166,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
+				return palette.get()[col].toARGB();
 			});
 
 			offset += (headerSize + len);
@@ -189,7 +189,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::transform(imagePixels, imagePixels + len, dstPixels,
 				[&palette](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
+				return palette.get()[col].toARGB();
 			});
 		}
 	}
@@ -219,7 +219,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::transform(imagePixels, imagePixels + len, dstPixels,
 				[&palette](uint8_t col) -> uint32_t
 			{
-				return palette[col].toARGB();
+				return palette.get()[col].toARGB();
 			});
 
 			// Skip to the next image header.

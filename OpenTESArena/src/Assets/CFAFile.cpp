@@ -155,7 +155,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 		std::transform(frame.begin(), frame.begin() + frame.size(), pixels,
 			[&palette](uint8_t col) -> uint32_t
 		{
-			return palette[col].toARGB();
+			return palette.get()[col].toARGB();
 		});
 	}
 }

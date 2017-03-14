@@ -38,9 +38,6 @@ private:
 
 	// Helper method for loading a palette file into the palettes map.
 	void loadPalette(const std::string &paletteName);
-
-	// Returns whether the given palette name is "built-in" or not.
-	bool paletteIsBuiltIn(const std::string &paletteName) const;
 public:
 	TextureManager(Renderer &renderer);
 	~TextureManager();
