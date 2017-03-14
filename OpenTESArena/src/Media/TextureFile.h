@@ -21,6 +21,7 @@ private:
 public:
 	static const std::string &fromName(TextureName textureName);
 	static const std::string &fromName(TextureSequenceName sequenceName);
+	static const std::string &provinceMapFromID(int provinceID);
 };
 
 #endif

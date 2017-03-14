@@ -52,20 +52,6 @@ namespace
 		{ ProvinceButtonName::Travel, Rect(53, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
 		{ ProvinceButtonName::BackToWorldMap, Rect(72, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) }
 	};
-
-	// Province textures ordered by how the original Arena accesses them.
-	const std::vector<TextureName> ProvinceMapTextureNames =
-	{
-		TextureName::HighRockMap,
-		TextureName::HammerfellMap,
-		TextureName::SkyrimMap,
-		TextureName::MorrowindMap,
-		TextureName::SummersetIsleMap,
-		TextureName::ValenwoodMap,
-		TextureName::ElsweyrMap,
-		TextureName::BlackMarshMap,
-		TextureName::ImperialProvinceMap
-	};
 }
 
 ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
@@ -199,13 +185,10 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Get the texture name for this province.
-	auto provinceTextureName = ProvinceMapTextureNames.at(this->provinceID);
-
+	
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
-		TextureFile::fromName(provinceTextureName), 
+		TextureFile::provinceMapFromID(this->provinceID), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mapBackground.get());
 

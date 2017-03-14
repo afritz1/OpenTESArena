@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 #include <unordered_map>
 
@@ -99,17 +100,8 @@ namespace
 		{ TextureName::LabyrinthianSplash, "LABRINTH.IMG" },
 		{ TextureName::MurkwoodSplash, "MIRKWOOD.IMG" },
 
-		// Maps.
+		// Maps (province maps are stored in a separate container).
 		{ TextureName::Automap, "AUTOMAP.IMG" },
-		{ TextureName::BlackMarshMap, "BLAKMRSH.IMG" },
-		{ TextureName::ElsweyrMap, "ELSWEYR.IMG" },
-		{ TextureName::HammerfellMap, "HAMERFEL.IMG" },
-		{ TextureName::HighRockMap, "HIGHROCK.IMG" },
-		{ TextureName::ImperialProvinceMap, "IMPERIAL.IMG" },
-		{ TextureName::MorrowindMap, "MOROWIND.IMG" },
-		{ TextureName::SkyrimMap, "SKYRIM.IMG" },
-		{ TextureName::SummersetIsleMap, "SUMERSET.IMG" },
-		{ TextureName::ValenwoodMap, "VALNWOOD.IMG" },
 		{ TextureName::WorldMap, "TAMRIEL.MNU" },
 
 		// Map icons.
@@ -170,16 +162,37 @@ namespace
 		{ TextureSequenceName::Warhaft, "WARHAFT.FLC" },
 		{ TextureSequenceName::Warrior, "WARRIOR.CEL" }
 	};
+
+	// The filename of each province, ordered by how they are indexed in Arena
+	// (that is, read top left to bottom right, with the center province last).
+	std::array<std::string, 9> ProvinceMapFilenames = 
+	{
+		"HIGHROCK.IMG",
+		"HAMERFEL.IMG",
+		"SKYRIM.IMG",
+		"MOROWIND.IMG",
+		"SUMERSET.IMG",
+		"VALNWOOD.IMG",
+		"ELSWEYR.IMG",
+		"BLAKMRSH.IMG",
+		"IMPERIAL.IMG"
+	};
 }
 
 const std::string &TextureFile::fromName(TextureName textureName)
 {
-	const auto &filename = TextureFilenames.at(textureName);
+	const std::string &filename = TextureFilenames.at(textureName);
 	return filename;
 }
 
 const std::string &TextureFile::fromName(TextureSequenceName sequenceName)
 {
-	const auto &filename = TextureSequenceFilenames.at(sequenceName);
+	const std::string &filename = TextureSequenceFilenames.at(sequenceName);
+	return filename;
+}
+
+const std::string &TextureFile::provinceMapFromID(int provinceID)
+{
+	const std::string &filename = ProvinceMapFilenames.at(provinceID);
 	return filename;
 }

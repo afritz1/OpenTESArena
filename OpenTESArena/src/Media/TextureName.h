@@ -78,17 +78,8 @@ enum class TextureName
 	LabyrinthianSplash,
 	MurkwoodSplash,
 
-	// Maps.
+	// Maps (province maps are accessed by ID, not texture name).
 	Automap,
-	BlackMarshMap,
-	ElsweyrMap,
-	HammerfellMap,
-	HighRockMap,
-	ImperialProvinceMap,
-	MorrowindMap,
-	SkyrimMap,
-	SummersetIsleMap,
-	ValenwoodMap,
 	WorldMap, // World map without location dots and with exit text.
 
 	// Map icons.
