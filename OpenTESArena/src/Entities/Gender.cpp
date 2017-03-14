@@ -1,4 +1,3 @@
-#include <cassert>
 #include <map>
 
 #include "Gender.h"
@@ -11,23 +10,8 @@ const std::map<GenderName, std::string> GenderDisplayNames =
 	{ GenderName::Male, "Male" }
 };
 
-Gender::Gender(GenderName genderName)
+const std::string &Gender::toString(GenderName genderName)
 {
-	this->genderName = genderName;
-}
-
-Gender::~Gender()
-{
-
-}
-
-GenderName Gender::getGenderName() const
-{
-	return this->genderName;
-}
-
-std::string Gender::toString() const
-{
-	std::string displayName = GenderDisplayNames.at(this->getGenderName());
+	const std::string &displayName = GenderDisplayNames.at(genderName);
 	return displayName;
 }

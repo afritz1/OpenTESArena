@@ -3,21 +3,19 @@
 
 #include <string>
 
-// This class is mostly for implementing the "toString()" method for class categories. 
-// Otherwise, the character class has two methods which fight over a similar name.
+// This static class exists mostly for implementing the "toString()" method for 
+// class categories. Otherwise, the character class would have two methods which 
+// fight over a similar name.
 
 enum class CharacterClassCategoryName;
 
 class CharacterClassCategory
 {
 private:
-	CharacterClassCategoryName categoryName;
+	CharacterClassCategory() = delete;
+	~CharacterClassCategory() = delete;
 public:
-	CharacterClassCategory(CharacterClassCategoryName categoryName);
-	~CharacterClassCategory();
-
-	CharacterClassCategoryName getCategoryName() const;
-	std::string toString() const;
+	static const std::string &toString(CharacterClassCategoryName categoryName);
 };
 
 #endif

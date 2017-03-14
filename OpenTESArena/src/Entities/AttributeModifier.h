@@ -3,23 +3,19 @@
 
 #include <string>
 
-// This class is just for toString purposes. Obtaining the modifier value is a simple
-// function, and can be done in the PrimaryAttribute class because it's the same for
-// all modifiers.
+// This static class is just for toString() purposes. Obtaining the modifier value is a 
+// simple function, and can be done in the PrimaryAttribute class because it's the same 
+// for all modifiers.
 
 enum class AttributeModifierName;
-enum class PrimaryAttributeName;
 
 class AttributeModifier
 {
 private:
-	AttributeModifierName modifierName;
+	AttributeModifier() = delete;
+	~AttributeModifier() = delete;
 public:
-	AttributeModifier(AttributeModifierName modifierName);
-	~AttributeModifier();
-
-	AttributeModifierName getModifierName() const;
-	std::string toString() const;
+	static const std::string &toString(AttributeModifierName modifierName);
 };
 
 #endif

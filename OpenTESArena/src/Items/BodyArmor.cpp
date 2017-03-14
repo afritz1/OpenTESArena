@@ -116,7 +116,7 @@ std::string BodyArmor::typeToString() const
 
 ArmorType BodyArmor::getArmorType() const
 {
-	auto armorType = BodyPart(this->getPartName()).getArmorType();
+	ArmorType armorType = BodyPart::getArmorType(this->getPartName());
 	return armorType;
 }
 

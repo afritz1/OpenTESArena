@@ -40,6 +40,6 @@ const ArmorMaterial *BodyArmorArtifactData::getArmorMaterial() const
 
 ArmorType BodyArmorArtifactData::getArmorType() const
 {
-	auto armorType = BodyPart(this->getBodyPartName()).getArmorType();
+	ArmorType armorType = BodyPart::getArmorType(this->getBodyPartName());
 	return armorType;
 }

@@ -1,4 +1,3 @@
-#include <cassert>
 #include <map>
 
 #include "CharacterClassCategory.h"
@@ -12,23 +11,8 @@ const std::map<CharacterClassCategoryName, std::string> CharacterClassCategoryDi
 	{ CharacterClassCategoryName::Warrior, "Warrior" }
 };
 
-CharacterClassCategory::CharacterClassCategory(CharacterClassCategoryName categoryName)
+const std::string &CharacterClassCategory::toString(CharacterClassCategoryName categoryName)
 {
-	this->categoryName = categoryName;
-}
-
-CharacterClassCategory::~CharacterClassCategory()
-{
-
-}
-
-CharacterClassCategoryName CharacterClassCategory::getCategoryName() const
-{
-	return this->categoryName;
-}
-
-std::string CharacterClassCategory::toString() const
-{
-	auto displayName = CharacterClassCategoryDisplayNames.at(this->getCategoryName());
+	const std::string &displayName = CharacterClassCategoryDisplayNames.at(categoryName);
 	return displayName;
 }

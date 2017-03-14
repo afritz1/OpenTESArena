@@ -1,4 +1,3 @@
-#include <cassert>
 #include <map>
 
 #include "AttributeModifier.h"
@@ -16,23 +15,8 @@ const std::map<AttributeModifierName, std::string> AttributeModifierDisplayNames
 	{ AttributeModifierName::Charisma, "Charisma" }
 };
 
-AttributeModifier::AttributeModifier(AttributeModifierName modifierName)
+const std::string &AttributeModifier::toString(AttributeModifierName modifierName)
 {
-	this->modifierName = modifierName;
-}
-
-AttributeModifier::~AttributeModifier()
-{
-
-}
-
-AttributeModifierName AttributeModifier::getModifierName() const
-{
-	return this->modifierName;
-}
-
-std::string AttributeModifier::toString() const
-{
-	auto displayName = AttributeModifierDisplayNames.at(this->getModifierName());
+	const std::string &displayName = AttributeModifierDisplayNames.at(modifierName);
 	return displayName;
 }

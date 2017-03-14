@@ -12,13 +12,11 @@ enum class CardinalDirectionName;
 class CardinalDirection
 {
 private:
-	CardinalDirectionName directionName;
+	CardinalDirection() = delete;
+	~CardinalDirection() = delete;
 public:
-	CardinalDirection(const Double2 &direction);
-	~CardinalDirection();
-
-	CardinalDirectionName getDirectionName() const;
-	std::string toString() const;
+	static CardinalDirectionName getDirectionName(const Double2 &direction);
+	static const std::string &toString(CardinalDirectionName directionName);
 };
 
 #endif

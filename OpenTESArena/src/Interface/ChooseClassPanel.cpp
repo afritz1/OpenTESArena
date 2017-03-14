@@ -365,7 +365,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 		const auto &characterClass = this->charClasses.at(tooltipIndex);
 
 		const std::string text = characterClass.getDisplayName() + " (" +
-			CharacterClassCategory(characterClass.getClassCategoryName()).toString() + " class)\n" +
+			CharacterClassCategory::toString(characterClass.getClassCategoryName()) + " class)\n" +
 			"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
 			"Health: " + std::to_string(characterClass.getStartingHealth()) +
 			" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +

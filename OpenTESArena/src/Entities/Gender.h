@@ -3,18 +3,17 @@
 
 #include <string>
 
+// Static class for converting a gender name to a string.
+
 enum class GenderName;
 
 class Gender
 {
 private:
-	GenderName genderName;
+	Gender() = delete;
+	~Gender() = delete;
 public:
-	Gender(GenderName genderName);
-	~Gender();
-
-	GenderName getGenderName() const;
-	std::string toString() const;
+	static const std::string &toString(GenderName genderName);
 };
 
 #endif

@@ -20,7 +20,7 @@ const std::map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-CardinalDirection::CardinalDirection(const Double2 &direction)
+CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	assert(direction.isNormalized());
@@ -93,21 +93,11 @@ CardinalDirection::CardinalDirection(const Double2 &direction)
 		throw std::runtime_error("Invalid direction for CardinalDirection.");
 	}
 
-	this->directionName = name;
+	return name;
 }
 
-CardinalDirection::~CardinalDirection()
+const std::string &CardinalDirection::toString(CardinalDirectionName directionName)
 {
-
-}
-
-CardinalDirectionName CardinalDirection::getDirectionName() const
-{
-	return this->directionName;
-}
-
-std::string CardinalDirection::toString() const
-{
-	auto displayName = CardinalDirectionDisplayNames.at(this->getDirectionName());
+	const std::string &displayName = CardinalDirectionDisplayNames.at(directionName);
 	return displayName;
 }

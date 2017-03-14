@@ -1,4 +1,3 @@
-#include <cassert>
 #include <map>
 
 #include "BodyPart.h"
@@ -28,29 +27,14 @@ const std::map<BodyPartName, ArmorType> BodyPartArmors =
 	{ BodyPartName::Feet, ArmorType::Boots }
 };
 
-BodyPart::BodyPart(BodyPartName partName)
+ArmorType BodyPart::getArmorType(BodyPartName partName)
 {
-	this->partName = partName;
-}
-
-BodyPart::~BodyPart()
-{
-
-}
-
-BodyPartName BodyPart::getPartName() const
-{
-	return this->partName;
-}
-
-ArmorType BodyPart::getArmorType() const
-{
-	auto armorType = BodyPartArmors.at(this->getPartName());
+	ArmorType armorType = BodyPartArmors.at(partName);
 	return armorType;
 }
 
-std::string BodyPart::toString() const
+const std::string &BodyPart::toString(BodyPartName partName)
 {
-	auto displayName = BodyPartDisplayNames.at(this->getPartName());
+	const std::string &displayName = BodyPartDisplayNames.at(partName);
 	return displayName;
 }
