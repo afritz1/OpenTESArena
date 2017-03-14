@@ -37,9 +37,6 @@ private:
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 
-	// Waits the given number of milliseconds.
-	void delay(int ms);
-
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
 

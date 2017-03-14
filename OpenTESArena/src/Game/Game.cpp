@@ -142,12 +142,6 @@ void Game::setGameData(std::unique_ptr<GameData> gameData)
 	this->gameData = std::move(gameData);
 }
 
-void Game::delay(int ms)
-{
-	assert(ms >= 0);
-	SDL_Delay(static_cast<uint32_t>(ms));
-}
-
 void Game::resizeWindow(int width, int height)
 {
 	// Resize the window, and the 3D renderer if initialized.
@@ -223,13 +217,12 @@ void Game::loop()
 	const int maximumMS = 1000 / Options::MIN_FPS;
 
 	int thisTime = SDL_GetTicks();
-	int lastTime = thisTime;
 
 	// Primary game loop.
 	bool running = true;
 	while (running)
 	{
-		lastTime = thisTime;
+		const int lastTime = thisTime;
 		thisTime = SDL_GetTicks();
 
 		// Fastest allowed frame time in milliseconds.
@@ -239,7 +232,7 @@ void Game::loop()
 		int frameTime = thisTime - lastTime;
 		if (frameTime < minimumMS)
 		{
-			this->delay(minimumMS - frameTime);
+			SDL_Delay(static_cast<uint32_t>(minimumMS - frameTime));
 			thisTime = SDL_GetTicks();
 			frameTime = thisTime - lastTime;
 		}
