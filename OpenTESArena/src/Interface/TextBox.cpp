@@ -145,8 +145,8 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	uint32_t *pixels = static_cast<uint32_t*>(this->surface->pixels);
 	const int pixelCount = textureWidth * textureHeight;
 	const uint32_t black = SDL_MapRGBA(this->surface->format, 0, 0, 0, 0);
-	const uint32_t desiredColor = SDL_MapRGBA(this->surface->format, textColor.getR(),
-		textColor.getG(), textColor.getB(), textColor.getA());
+	const uint32_t desiredColor = SDL_MapRGBA(this->surface->format, textColor.r,
+		textColor.g, textColor.b, textColor.a);
 
 	for (int i = 0; i < pixelCount; ++i)
 	{

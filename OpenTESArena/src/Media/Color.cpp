@@ -2,18 +2,18 @@
 
 #include "../Math/Random.h"
 
-const Color Color::Red = Color(255, 0, 0, 255);
-const Color Color::Green = Color(0, 255, 0, 255);
-const Color Color::Blue = Color(0, 0, 255, 255);
-const Color Color::Cyan = Color(0, 255, 255, 255);
-const Color Color::Magenta = Color(255, 0, 255, 255);
-const Color Color::Yellow = Color(255, 255, 0, 255);
-const Color Color::Black = Color(0, 0, 0, 255);
-const Color Color::White = Color(255, 255, 255, 255);
-const Color Color::Gray = Color(127, 127, 127, 255);
-const Color Color::Transparent = Color(0, 0, 0, 0);
+const Color Color::Red(255, 0, 0, 255);
+const Color Color::Green(0, 255, 0, 255);
+const Color Color::Blue(0, 0, 255, 255);
+const Color Color::Cyan(0, 255, 255, 255);
+const Color Color::Magenta(255, 0, 255, 255);
+const Color Color::Yellow(255, 255, 0, 255);
+const Color Color::Black(0, 0, 0, 255);
+const Color Color::White(255, 255, 255, 255);
+const Color Color::Gray(127, 127, 127, 255);
+const Color Color::Transparent(0, 0, 0, 0);
 
-Color::Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	this->r = r;
 	this->g = g;
@@ -21,7 +21,7 @@ Color::Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 	this->a = a;
 }
 
-Color::Color(unsigned char r, unsigned char g, unsigned char b)
+Color::Color(uint8_t r, uint8_t g, uint8_t b)
 	: Color(r, g, b, 255) { }
 
 Color::Color()
@@ -34,65 +34,45 @@ Color::~Color()
 
 Color Color::randomRGBA(Random &random)
 {
-	unsigned char r = static_cast<unsigned char>(random.next(256));
-	unsigned char g = static_cast<unsigned char>(random.next(256));
-	unsigned char b = static_cast<unsigned char>(random.next(256));
-	unsigned char a = static_cast<unsigned char>(random.next(256));
+	uint8_t r = static_cast<uint8_t>(random.next(256));
+	uint8_t g = static_cast<uint8_t>(random.next(256));
+	uint8_t b = static_cast<uint8_t>(random.next(256));
+	uint8_t a = static_cast<uint8_t>(random.next(256));
 	return Color(r, g, b, a);
 }
 
 Color Color::randomRGB(Random &random)
 {
-	unsigned char r = static_cast<unsigned char>(random.next(256));
-	unsigned char g = static_cast<unsigned char>(random.next(256));
-	unsigned char b = static_cast<unsigned char>(random.next(256));
+	uint8_t r = static_cast<uint8_t>(random.next(256));
+	uint8_t g = static_cast<uint8_t>(random.next(256));
+	uint8_t b = static_cast<uint8_t>(random.next(256));
 	return Color(r, g, b);
 }
 
-Color Color::fromARGB(unsigned int argb)
+Color Color::fromARGB(uint32_t argb)
 {
 	return Color(
-		static_cast<unsigned char>(argb >> 16),
-		static_cast<unsigned char>(argb >> 8),
-		static_cast<unsigned char>(argb),
-		static_cast<unsigned char>(argb >> 24));
+		static_cast<uint8_t>(argb >> 16),
+		static_cast<uint8_t>(argb >> 8),
+		static_cast<uint8_t>(argb),
+		static_cast<uint8_t>(argb >> 24));
 }
 
-Color Color::fromRGBA(unsigned int rgba)
+Color Color::fromRGBA(uint32_t rgba)
 {
 	return Color(
-		static_cast<unsigned char>(rgba >> 24),
-		static_cast<unsigned char>(rgba >> 16),
-		static_cast<unsigned char>(rgba >> 8),
-		static_cast<unsigned char>(rgba));
+		static_cast<uint8_t>(rgba >> 24),
+		static_cast<uint8_t>(rgba >> 16),
+		static_cast<uint8_t>(rgba >> 8),
+		static_cast<uint8_t>(rgba));
 }
 
-Color Color::fromRGB(unsigned int rgb)
+Color Color::fromRGB(uint32_t rgb)
 {
 	return Color(
-		static_cast<unsigned char>(rgb >> 16),
-		static_cast<unsigned char>(rgb >> 8),
-		static_cast<unsigned char>(rgb));
-}
-
-unsigned char Color::getR() const
-{
-	return this->r;
-}
-
-unsigned char Color::getG() const
-{
-	return this->g;
-}
-
-unsigned char Color::getB() const
-{
-	return this->b;
-}
-
-unsigned char Color::getA() const
-{
-	return this->a;
+		static_cast<uint8_t>(rgb >> 16),
+		static_cast<uint8_t>(rgb >> 8),
+		static_cast<uint8_t>(rgb));
 }
 
 std::string Color::toString() const
@@ -104,46 +84,47 @@ std::string Color::toString() const
 		std::to_string(this->a) + std::string("]");
 }
 
-unsigned int Color::toARGB() const
+uint32_t Color::toARGB() const
 {
-	return static_cast<unsigned int>(
+	return static_cast<uint32_t>(
 		(this->r << 16) | (this->g << 8) | (this->b) | (this->a << 24));
 }
 
-unsigned int Color::toRGBA() const
+uint32_t Color::toRGBA() const
 {
-	return static_cast<unsigned int>(
+	return static_cast<uint32_t>(
 		(this->r << 24) | (this->g << 16) | (this->b << 8) | (this->a));
 }
 
-unsigned int Color::toRGB() const
+uint32_t Color::toRGB() const
 {
-	return static_cast<unsigned int>(
+	return static_cast<uint32_t>(
 		(this->r << 16) | (this->g << 8) | (this->b));
 }
 
-Color Color::operator +(const Color &c) const
+Color Color::operator+(const Color &c) const
 {
 	return Color(this->r + c.r, this->g + c.g, this->b + c.b, this->a + c.a);
 }
 
-Color Color::operator -(const Color &c) const
+Color Color::operator-(const Color &c) const
 {
 	return Color(this->r - c.r, this->g - c.g, this->b - c.b, this->a - c.a);
 }
 
-bool Color::operator ==(const Color &c) const
+bool Color::operator==(const Color &c) const
 {
-	return (this->a == c.a) && (this->r == c.r) && (this->g == c.g) &&
-		(this->b == c.b);
+	return (this->r == c.r) && (this->g == c.g) && (this->b == c.b) &&
+		(this->a == c.a);
 }
 
-bool Color::operator !=(const Color &c) const
+bool Color::operator!=(const Color &c) const
 {
-	return !((*this) == c);
+	return (this->r != c.r) || (this->g != c.g) || (this->b != c.b) ||
+		(this->a != c.a);
 }
 
-Color Color::clamped(unsigned char low, unsigned char high) const
+Color Color::clamped(uint8_t low, uint8_t high) const
 {
 	return Color(
 		(this->r > high) ? high : ((this->r < low) ? low : this->r),
@@ -154,7 +135,7 @@ Color Color::clamped(unsigned char low, unsigned char high) const
 
 Color Color::clamped() const
 {
-	const unsigned char low = 0;
-	const unsigned char high = 255;
+	const uint8_t low = 0;
+	const uint8_t high = 255;
 	return this->clamped(low, high);
 }
