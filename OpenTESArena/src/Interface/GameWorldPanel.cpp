@@ -744,11 +744,9 @@ void GameWorldPanel::tick(double dt)
 	auto &player = gameData.getPlayer();
 	player.tick(game, dt);
 
-	// Update renderer members that are refreshed each frame.
+	// Update renderer members that are refreshed each frame. Fog distance is
+	// probably changed infrequently, so it should go elsewhere.
 	auto &renderer = game.getRenderer();
-	renderer.updateCamera(player.getPosition(), player.getDirection(), 
-		this->getGame()->getOptions().getVerticalFOV());
-	//renderer.updateGameTime(gameData.getGameTime()); // To do.
 	renderer.updateFogDistance(gameData.getFogDistance());
 
 	// Technically, the sky palette only needs to be updated when the scene changes.
@@ -797,7 +795,10 @@ void GameWorldPanel::render(Renderer &renderer)
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
 	auto &gameData = this->getGame()->getGameData();
-	renderer.renderWorld(gameData.getVoxelGrid());
+	const auto &player = gameData.getPlayer();
+	const auto &options = this->getGame()->getOptions();
+	renderer.renderWorld(player.getPosition(), player.getDirection(),
+		options.getVerticalFOV(), gameData.getGameTime(), gameData.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -816,7 +817,6 @@ void GameWorldPanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	const auto &player = this->getGame()->getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceID(), true);
 	const auto &portrait = textureManager.getTextures(headsFilename)

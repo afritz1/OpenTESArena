@@ -35,17 +35,8 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 		this->renderThreadCount = 1;
 	}
 
-	// Initialize camera values to "empty".
-	this->transform = Matrix4d();
-	this->eye = Double3();
-	this->forward = Double3();
-	this->fovY = 0.0;
-
+	// Fog distance is zero by default.
 	this->fogDistance = 0.0;
-
-	// Initialize start cell to "empty".
-	this->startCellReal = Double3();
-	this->startCell = Int3();
 
 	// -- test --
 	// Throw some test flats into the world.
@@ -67,22 +58,6 @@ SoftwareRenderer::~SoftwareRenderer()
 const uint32_t *SoftwareRenderer::getPixels() const
 {
 	return this->colorBuffer.data();
-}
-
-void SoftwareRenderer::setEye(const Double3 &eye)
-{
-	this->eye = eye;
-}
-
-void SoftwareRenderer::setForward(const Double3 &forward)
-{
-	// All camera axes should be normalized.
-	this->forward = forward.normalized();
-}
-
-void SoftwareRenderer::setFovY(double fovY)
-{
-	this->fovY = fovY;
 }
 
 void SoftwareRenderer::setFogDistance(double fogDistance)
@@ -205,7 +180,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->height = height;
 }
 
-void SoftwareRenderer::updateVisibleFlats()
+void SoftwareRenderer::updateVisibleFlats(double cameraElevation, const Matrix4d &transform)
 {
 	this->visibleFlats.clear();
 
@@ -228,15 +203,14 @@ void SoftwareRenderer::updateVisibleFlats()
 		const Double3 bottomRight = flat.position + flatRightScaled;
 
 		// Transform the points to camera space (projection * view).
-		Double4 p1 = this->transform * Double4(topLeft.x, topLeft.y, topLeft.z, 1.0);
-		Double4 p2 = this->transform * Double4(topRight.x, topRight.y, topRight.z, 1.0);
-		Double4 p3 = this->transform * Double4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0);
-		Double4 p4 = this->transform * Double4(bottomRight.x, bottomRight.y, bottomRight.z, 1.0);
+		Double4 p1 = transform * Double4(topLeft.x, topLeft.y, topLeft.z, 1.0);
+		Double4 p2 = transform * Double4(topRight.x, topRight.y, topRight.z, 1.0);
+		Double4 p3 = transform * Double4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0);
+		Double4 p4 = transform * Double4(bottomRight.x, bottomRight.y, bottomRight.z, 1.0);
 
 		// Create fresh projection data for the flat by projecting the points to the 
 		// viewing plane. Also take camera elevation into account.
 		Flat::ProjectionData projectionData;
-		const double cameraElevation = this->forward.y;
 
 		// Get Z distances.
 		projectionData.leftZ = p1.z;
@@ -607,8 +581,8 @@ const Double3 &SoftwareRenderer::getFogColor() const
 	return this->skyPalette.at(this->skyPalette.size() / 2);
 }
 
-void SoftwareRenderer::castRay(const Double2 &direction,
-	const VoxelGrid &voxelGrid, int x)
+void SoftwareRenderer::castRay(int x, const Double3 &eye, const Double2 &direction,
+	const Matrix4d &transform, double cameraElevation, const VoxelGrid &voxelGrid)
 {
 	// This is the "classic" 2.5D version of ray casting, based on Lode Vandevenne's 
 	// ray caster. It will also need to allow multiple floors, variable eye height,
@@ -635,28 +609,41 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	const bool nonNegativeDirX = direction.x >= 0.0;
 	const bool nonNegativeDirZ = direction.y >= 0.0;
 
+	// Constant DDA-related values. The Y component also needs to take voxel height
+	// into account because voxel height is both a floor and level-dependent variable.
+	// - Technically, these could be moved out of the ray casting method, but they
+	//   are not a performance concern for now. It's just to minimize renderer state.
+	const Double3 startCellReal(
+		std::floor(eye.x),
+		std::floor(eye.y / voxelGrid.getVoxelHeight()),
+		std::floor(eye.z));
+	const Int3 startCell(
+		static_cast<int>(startCellReal.x),
+		static_cast<int>(startCellReal.y),
+		static_cast<int>(startCellReal.z));
+
 	int stepX, stepZ;
 	double sideDistX, sideDistZ;
 	if (nonNegativeDirX)
 	{
 		stepX = 1;
-		sideDistX = (this->startCellReal.x + 1.0 - this->eye.x) * deltaDistX;
+		sideDistX = (startCellReal.x + 1.0 - eye.x) * deltaDistX;
 	}
 	else
 	{
 		stepX = -1;
-		sideDistX = (this->eye.x - this->startCellReal.x) * deltaDistX;
+		sideDistX = (eye.x - startCellReal.x) * deltaDistX;
 	}
 
 	if (nonNegativeDirZ)
 	{
 		stepZ = 1;
-		sideDistZ = (this->startCellReal.z + 1.0 - this->eye.z) * deltaDistZ;
+		sideDistZ = (startCellReal.z + 1.0 - eye.z) * deltaDistZ;
 	}
 	else
 	{
 		stepZ = -1;
-		sideDistZ = (this->eye.z - this->startCellReal.z) * deltaDistZ;
+		sideDistZ = (eye.z - startCellReal.z) * deltaDistZ;
 	}
 
 	// Make a copy of the initial side distances for the special case of ending in
@@ -669,9 +656,9 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	const int gridHeight = voxelGrid.getHeight();
 	const int gridDepth = voxelGrid.getDepth();
 
-	int cellX = this->startCell.x;
-	const int cellY = this->startCell.y; // Constant for now.
-	int cellZ = this->startCell.z;
+	int cellX = startCell.x;
+	const int cellY = startCell.y; // Constant for now.
+	int cellZ = startCell.z;
 
 	// Axis enum. Eventually, Y will be added for floors and ceilings.
 	enum class Axis { X, Z };
@@ -722,8 +709,7 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	if (hitID > 0)
 	{
 		// Boolean for whether the stepping stopped in the first voxel.
-		const bool stoppedInFirstVoxel = (cellX == this->startCell.x) &&
-			(cellZ == this->startCell.z);
+		const bool stoppedInFirstVoxel = (cellX == startCell.x) && (cellZ == startCell.z);
 
 		// The "z-distance" from the camera to the wall. It's a special case if the
 		// stepping stopped in the first voxel.
@@ -746,8 +732,8 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		else
 		{
 			zDistance = (axis == Axis::X) ?
-				(static_cast<double>(cellX) - this->eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
-				(static_cast<double>(cellZ) - this->eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+				(static_cast<double>(cellX) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
+				(static_cast<double>(cellZ) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
 		}
 
 		// Boolean for whether the intersected voxel face is a back face.
@@ -755,9 +741,9 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 
 		// 3D hit point on the wall from casting a ray along the XZ plane.
 		const Double3 hitPoint(
-			this->eye.x + (dirX * zDistance),
-			this->eye.y,
-			this->eye.z + (dirZ * zDistance));
+			eye.x + (dirX * zDistance),
+			eye.y,
+			eye.z + (dirZ * zDistance));
 
 		// Horizontal texture coordinate (constant for all wall pixels in a column).
 		// - Remember to watch out for the edge cases where u == 1.0, resulting in an
@@ -780,23 +766,12 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 		const Double3 floorPoint(hitPoint.x, std::floor(hitPoint.y), hitPoint.z);
 
 		// Transform the points to camera space (projection * view).
-		Double4 p1 = this->transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
-		Double4 p2 = this->transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
+		Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
+		Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
 
 		// Convert to normalized coordinates.
 		p1 = p1 / p1.w;
 		p2 = p2 / p2.w;
-
-		// Camera elevation, as I call it, is simply the Y component of the player's 3D direction.
-		// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing), and 
-		// its magnitude must be clamped less than 1 because 1 would imply the player is looking 
-		// straight up or down, which is impossible (the viewing frustum would have a volume of 0). 
-		// Its value could be clamped within some range, like [-0.3, 0.3], depending on how far 
-		// the player should be able to look up and down, and how tolerable the skewing is.
-		// - This value will usually be non-zero in the "modern" interface mode.
-		// - Maybe it should involve the angle between horizontal and vertical, because if
-		//   the player is looking halfway between, then the elevation would be sqrt(2) / 2.
-		const double cameraElevation = this->forward.y;
 
 		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
 		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
@@ -945,7 +920,8 @@ void SoftwareRenderer::castRay(const Double2 &direction,
 	}
 }
 
-void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
+void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double fovY,
+	double gameTime, const VoxelGrid &voxelGrid)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -954,42 +930,42 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 
 	// Constant camera values. UnitY is the "global up" vector.
 	// Assume "this->forward" is normalized.
-	const Double3 right = this->forward.cross(Double3::UnitY).normalized();
-	const Double3 up = right.cross(this->forward).normalized();
+	const Double3 right = forward.cross(Double3::UnitY).normalized();
+	const Double3 up = right.cross(forward).normalized();
 
 	// Zoom of the camera, based on vertical field of view.
-	const double zoom = 1.0 / std::tan((this->fovY * 0.5) * DEG_TO_RAD);
+	const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
 
 	// Refresh transformation matrix (model matrix isn't required because it's just 
 	// the identity matrix).
-	Matrix4d view = Matrix4d::view(this->eye, this->forward, right, up);
-	Matrix4d projection = Matrix4d::perspective(this->fovY, aspect, 
+	const Matrix4d view = Matrix4d::view(eye, forward, right, up);
+	const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
 		SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
-	this->transform = projection * view;
+	const Matrix4d transform = projection * view;
+
+	// Camera elevation, as I call it, is simply the Y component of the player's 3D direction.
+	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing), and 
+	// its magnitude must be clamped less than 1 because 1 would imply the player is looking 
+	// straight up or down, which is impossible (the viewing frustum would have a volume of 0). 
+	// Its value could be clamped within some range, like [-0.3, 0.3], depending on how far 
+	// the player should be able to look up and down, and how tolerable the skewing is.
+	// - This value will usually be non-zero in the "modern" interface mode.
+	// - Maybe it should involve the angle between horizontal and vertical, because if
+	//   the player is looking halfway between, then the elevation would be sqrt(2) / 2.
+	const double cameraElevation = forward.y;
 
 	// Constant camera values for 2D (camera elevation is this->forward.y).
-	const Double2 forward2D = Double2(this->forward.x, this->forward.z).normalized();
+	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
 	const Double2 right2D = Double2(right.x, right.z).normalized();
 
 	// "Forward" component of the camera for generating rays with.
 	const Double2 forwardComp = forward2D * zoom;
 
-	// Constant DDA-related values. The Y component also needs to take voxel height
-	// into account because voxel height is a level-dependent variable.
-	this->startCellReal = Double3(
-		std::floor(this->eye.x),
-		std::floor(this->eye.y / voxelGrid.getVoxelHeight()),
-		std::floor(this->eye.z));
-	this->startCell = Int3(
-		static_cast<int>(this->startCellReal.x),
-		static_cast<int>(this->startCellReal.y),
-		static_cast<int>(this->startCellReal.z));
-
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
-	auto renderColumns = [this, &voxelGrid, widthReal, aspect, &forwardComp,
-		&right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, &voxelGrid, widthReal, aspect, &transform,
+		cameraElevation, &forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1005,7 +981,7 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 			const Double2 direction = forwardComp + rightComp;
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->castRay(direction, voxelGrid, x);
+			this->castRay(x, eye, direction, transform, cameraElevation, voxelGrid);
 		}
 	};
 
@@ -1028,7 +1004,10 @@ void SoftwareRenderer::render(const VoxelGrid &voxelGrid)
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this] { this->updateVisibleFlats(); });
+	std::thread sortThread([this, cameraElevation, &transform]
+	{ 
+		this->updateVisibleFlats(cameraElevation, transform);
+	});
 
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);

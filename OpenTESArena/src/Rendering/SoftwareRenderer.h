@@ -59,11 +59,6 @@ private:
 	std::vector<std::pair<const Flat*, Flat::ProjectionData>> visibleFlats;
 	std::vector<TextureData> textures;
 	std::vector<Double3> skyPalette; // Colors for each time of day.
-	Matrix4d transform; // Transformation matrix for 3D point projection.
-	Double3 eye, forward; // Camera position and forward vector (forward.y used for Y-shearing).
-	Double3 startCellReal; // Initial voxel as a float type.
-	Int3 startCell; // Initial voxel for ray casting.
-	double fovY; // Vertical field of view.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
@@ -77,10 +72,14 @@ private:
 
 	// Casts a 2D ray from the default start point (eye) and writes color into
 	// the given column.
-	void castRay(const Double2 &direction, const VoxelGrid &voxelGrid, int x);
+	void castRay(int x, const Double3 &eye, const Double2 &direction,
+		const Matrix4d &transform, double cameraElevation, 
+		const VoxelGrid &voxelGrid);
 
 	// Refreshes the list of flats that are within the viewing frustum.
-	void updateVisibleFlats();
+	// "cameraElevation" is the Y-shearing component of the projection plane, and 
+	// "transform" is the projection + view matrix.
+	void updateVisibleFlats(double cameraElevation, const Matrix4d &transform);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
@@ -88,11 +87,6 @@ public:
 	// Gets a pointer to the frame buffer's pixels in ARGB8888 format.
 	// Intended for writing to a separate hardware texture with.
 	const uint32_t *getPixels() const;
-
-	// Methods for setting various camera values.
-	void setEye(const Double3 &eye);
-	void setForward(const Double3 &forward);
-	void setFovY(double fovY);
 
 	// Sets the distance at which the fog is maximum.
 	void setFogDistance(double fogDistance);
@@ -120,7 +114,8 @@ public:
 	void resize(int width, int height);
 
 	// Draws the scene to the internal frame buffer.
-	void render(const VoxelGrid &voxelGrid);
+	void render(const Double3 &eye, const Double3 &forward, double fovY, 
+		double gameTime, const VoxelGrid &voxelGrid);
 };
 
 #endif

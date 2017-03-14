@@ -114,8 +114,6 @@ public:
 	// Helper methods for interacting with render memory.
 	// - Eventually, the geometry methods here will be separated into "static" and
 	//   "dynamic" groups; static geometry is fixed to a voxel, dynamic is arbitrary.
-	void updateCamera(const Double3 &eye, const Double3 &direction, double fovY);
-	void updateGameTime(double gameTime);
 	void updateFogDistance(double fogDistance);
 	void updateSkyPalette(const uint32_t *colors, int count);
 	int addTexture(const uint32_t *pixels, int width, int height);
@@ -148,7 +146,8 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const VoxelGrid &voxelGrid);
+	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
+		double gameTime, const VoxelGrid &voxelGrid);
 
 	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);

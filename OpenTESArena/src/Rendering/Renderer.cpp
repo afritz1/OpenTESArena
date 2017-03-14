@@ -382,21 +382,6 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		renderWidth, renderHeight));
 }
 
-void Renderer::updateCamera(const Double3 &eye, const Double3 &direction, double fovY)
-{
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setEye(eye);
-	this->softwareRenderer->setForward(direction);
-	this->softwareRenderer->setFovY(fovY);
-}
-
-void Renderer::updateGameTime(double gameTime)
-{
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->updateGameTime(gameTime);
-	Debug::crash("Renderer", "updateGameTime() not implemented.");
-}
-
 void Renderer::updateFogDistance(double fogDistance)
 {
 	assert(this->softwareRenderer.get() != nullptr);
@@ -578,13 +563,14 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect);
 }
 
-void Renderer::renderWorld(const VoxelGrid &voxelGrid)
+void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
+	double gameTime, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
 
 	// Render the game world to a frame buffer.
-	this->softwareRenderer->render(voxelGrid);
+	this->softwareRenderer->render(eye, forward, fovY, gameTime, voxelGrid);
 
 	int renderWidth;
 	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);
