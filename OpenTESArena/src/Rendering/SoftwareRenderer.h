@@ -22,6 +22,8 @@ class VoxelGrid;
 class SoftwareRenderer
 {
 private:
+	enum class Axis { X, Y, Z };
+
 	struct TextureData
 	{
 		std::vector<Double4> pixels;
@@ -74,6 +76,12 @@ private:
 	// the given column.
 	void castRay(int x, const Double3 &eye, const Double2 &direction,
 		const Matrix4d &transform, double cameraElevation, 
+		const VoxelGrid &voxelGrid);
+
+	// Casts a 2D ray that steps through the current floor, rendering all voxels
+	// in the XZ column of each voxel.
+	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
+		const Matrix4d &transform, double cameraElevation,
 		const VoxelGrid &voxelGrid);
 
 	// Refreshes the list of flats that are within the viewing frustum.
