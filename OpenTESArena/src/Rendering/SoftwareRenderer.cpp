@@ -44,7 +44,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	{
 		for (int i = 4; i < 16; ++i)
 		{
-			this->addFlat(Double3(i, 1.0, k), Double2(-1.0, 0.0), 0.8, 0.9, i % 3);
+			this->addFlat(Double3(i, 1.0, k), Double2(-1.0, 0.0), 0.8, 0.9, i % 7);
 		}
 	}
 	// -- end test --
@@ -938,9 +938,11 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// - 'y1' and 'y2' are projected Y coordinates.
 	// - 'z' is the column's Z depth.
 	// - 'u' is the U texture coordinate between 0 and 1.
+	// - 'topV' and 'bottomV' are the start and end V texture coordinates.
 	auto drawWallColumn = [](int x, double y1, double y2, double z, double u,
-		const TextureData &texture, double fogDistance, const Double3 &fogColor,
-		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *output)
+		double topV, double bottomV, const TextureData &texture, double fogDistance, 
+		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer, 
+		uint32_t *output)
 	{
 		// Get the start and end Y pixel coordinates of the projected points (potentially
 		// outside the top or bottom of the screen).
@@ -966,9 +968,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 			if (z <= depthBuffer[index])
 			{
-				// Vertical texture coordinate.
-				const double v = static_cast<double>(y - projectedStart) /
+				// Percent stepped from beginning to end on the column.
+				const double yPercent = static_cast<double>(y - projectedStart) /
 					static_cast<double>(projectedEnd - projectedStart);
+
+				// Vertical texture coordinate.
+				const double v = topV + ((bottomV - topV) * yPercent);
 
 				// Y position in texture.
 				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
@@ -1049,6 +1054,10 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// Axis of the most recently intersected voxel face (X by default).
 	Axis axis = Axis::X;
 
+	// Previous hit point of the ray caster. Default is the camera's eye (this should
+	// be adjusted to prevent projection problems).
+	Double2 prevPoint(eye.x, eye.z);
+
 	// Pointer to voxel ID grid data.
 	const char *voxels = voxelGrid.getVoxels();
 
@@ -1058,13 +1067,13 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 	while (voxelIsValid)
 	{
-		// Boolean for whether the stepping stopped in the first voxel.
-		const bool stoppedInFirstVoxel = (cellX == startCell.x) && (cellZ == startCell.z);
+		// Boolean for whether the stepping is in the first voxel.
+		const bool inFirstVoxel = (cellX == startCell.x) && (cellZ == startCell.z);
 
 		// The "z-distance" from the camera to the wall. It's a special case if the
 		// stepping stopped in the first voxel.
 		double zDistance;
-		if (stoppedInFirstVoxel)
+		if (inFirstVoxel)
 		{
 			if (initialSideDistX < initialSideDistZ)
 			{
@@ -1085,7 +1094,10 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		}
 
 		// Boolean for whether the intersected voxel face is a back face.
-		const bool backFace = stoppedInFirstVoxel;
+		// - To do: this can only be true on the first voxel *sometimes*, when the player's
+		//   camera is contained within the bounding box of the wall. Make this be a 
+		//   function of that instead.
+		const bool backFace = inFirstVoxel;
 
 		// Render each voxel in the XZ column.
 		for (int voxelY = 0; voxelY < voxelGrid.getHeight(); ++voxelY)
@@ -1119,10 +1131,20 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
 			}
 
+			// Get the voxel data associated with the voxel ID. Subtract one because
+			// the minimum hit ID is 1 and voxel data indices start at 0.
+			const VoxelData &voxelData = voxelGrid.getVoxelData(hitID - 1);			
+
 			// Generate a point on the ceiling edge and floor edge of the wall relative
-			// to the hit point.
-			const Double3 ceilingPoint(hitX, std::ceil(static_cast<double>(voxelY + 1)), hitZ);
-			const Double3 floorPoint(hitX, std::floor(static_cast<double>(voxelY)), hitZ);
+			// to the hit point, accounting for the Y thickness of the wall as well.
+			const Double3 floorPoint(
+				hitX, 
+				static_cast<double>(voxelY) + voxelData.yOffset, 
+				hitZ);
+			const Double3 ceilingPoint(
+				hitX, 
+				static_cast<double>(voxelY) + voxelData.yOffset + voxelData.ySize,
+				hitZ);
 
 			// Transform the points to camera space (projection * view).
 			Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
@@ -1140,12 +1162,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
 			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
 
-			const TextureData &texture = this->textures[hitID - 1];
+			const TextureData &texture = this->textures[voxelData.sideID];
 			const Double3 &fogColor = this->getFogColor();
 
-			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, texture, 
-				this->fogDistance, fogColor, this->width, this->height, 
-				this->zBuffer.data(), this->colorBuffer.data());
+			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, voxelData.topV, 
+				voxelData.bottomV, texture, this->fogDistance, fogColor, this->width, 
+				this->height, this->zBuffer.data(), this->colorBuffer.data());
 		}
 
 		// Decide which voxel in the XZ plane to step to next.

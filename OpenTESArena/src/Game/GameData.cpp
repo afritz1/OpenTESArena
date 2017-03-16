@@ -51,13 +51,23 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int gridWidth = 32;
 	const int gridHeight = 5;
 	const int gridDepth = 32;
+
+	// This height value is pretty obsolete now. Voxel height only affects the main floor,
+	// and even then, not all voxels in Arena obey it.
 	const double voxelHeight = 1.0;
+
+	// Make an empty voxel grid with the given dimensions.
 	VoxelGrid voxelGrid(gridWidth, gridHeight, gridDepth, voxelHeight);
 
 	// Add some voxel data for the voxel IDs to refer to.
+	const int voxelDataCount = 7;
 	voxelGrid.addVoxelData(VoxelData(0, 0));
 	voxelGrid.addVoxelData(VoxelData(1, 1));
 	voxelGrid.addVoxelData(VoxelData(2, 2));
+	voxelGrid.addVoxelData(VoxelData(3, 3, 0.0, 0.25, 0.75, 1.0));
+	voxelGrid.addVoxelData(VoxelData(4, 4, 0.25, 0.25, 0.50, 0.75));
+	voxelGrid.addVoxelData(VoxelData(5, 5, 0.50, 0.25, 0.25, 0.50));
+	voxelGrid.addVoxelData(VoxelData(6, 6, 0.75, 0.25, 0.0, 0.25));
 
 	char *voxels = voxelGrid.getVoxels();
 	Random random(0);
@@ -76,12 +86,13 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 
 	for (int n = 0; n < 200; ++n)
 	{
+		// Random voxels in the air.
 		const int x = random.next(gridWidth);
 		const int y = 1 + random.next(gridHeight - 1);
 		const int z = random.next(gridDepth);
 
 		const int index = x + (y * gridWidth) + (z * gridWidth * gridHeight);
-		voxels[index] = 1 + random.next(3);
+		voxels[index] = 1 + random.next(voxelDataCount);
 	}
 
 	const double gameTime = 0.0; // In seconds. Affects time of day.

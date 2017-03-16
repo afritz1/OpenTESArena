@@ -119,7 +119,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			std::vector<const SDL_Surface*> surfaces = {
 				textureManager.getSurfaces("CASA.SET").at(3),
 				textureManager.getSurfaces("CASF.SET").at(3),
-				textureManager.getSurfaces("CASH.SET").at(3)
+				textureManager.getSurfaces("CASH.SET").at(3),
+				textureManager.getSurfaces("CASE.SET").at(3),
+				textureManager.getSurfaces("CASL.SET").at(1),
+				textureManager.getSurfaces("CASK.SET").at(2),
+				textureManager.getSurfaces("CASI.SET").at(3)
 			};
 
 			for (const auto *surface : surfaces)
