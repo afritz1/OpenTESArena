@@ -987,6 +987,177 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		}
 	};
 
+	// Eventually, merge floor and ceiling rendering into the same lambda. Their texture
+	// coordinates are effectively mirrored, and they share the same texel, so that 
+	// recalculation could be avoided.
+	// - That lambda would take the same nearPoint and farPoint, but with two 'y' values
+	//   instead of one.
+
+	// Lambda for drawing a column of floor pixels (not in the first voxel).
+	// Right now, it renders near to far.
+	// - 'x' is the screen column.
+	// - 'y' is the height of the floor.
+	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
+	auto drawFloorColumn = [](int x, double y, const Double2 &nearPoint,
+		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform,
+		double cameraElevation, const TextureData &texture, double fogDistance,
+		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer,
+		uint32_t *output)
+	{
+		// Transform the floor points to camera space (projection * view).
+		// - Note that the near and far points are switched for floor rendering (for now).
+		Double4 p1 = transform * Double4(nearPoint.x, y, nearPoint.y, 1.0);
+		Double4 p2 = transform * Double4(farPoint.x, y, farPoint.y, 1.0);
+
+		// Convert to normalized coordinates.
+		p1 = p1 / p1.w;
+		p2 = p2 / p2.w;
+
+		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// correct aspect ratio.
+		// - Since the ray cast guarantees the intersection to be in the correct column
+		//   of the screen, only the Y coordinates need to be projected.
+		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+		// Get the start and end Y pixel coordinates of the projected points (potentially
+		// outside the top or bottom of the screen).
+		const double heightReal = static_cast<double>(frameHeight);
+		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
+		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
+
+		// Clamp the Y coordinates for where the floor starts and stops on the screen.
+		const int drawStart = std::max(0, projectedStart);
+		const int drawEnd = std::min(frameHeight, projectedEnd);
+
+		// Distance to the near and far points.
+		const double nearZ = (nearPoint - eye).length();
+		const double farZ = (farPoint - eye).length();
+
+		// Draw the column to the output buffer.
+		for (int y = drawStart; y < drawEnd; ++y)
+		{
+			const int index = x + (y * frameWidth);
+
+			// Percent stepped from beginning to end on the column.
+			const double yPercent = static_cast<double>(y - projectedStart) /
+				static_cast<double>(projectedEnd - projectedStart);
+
+			// Interpolate between the near and far point.
+			const Double2 currentPoint = nearPoint + ((farPoint - nearPoint) * yPercent);
+			const double z = nearZ + ((farZ - nearZ) * yPercent);
+
+			// Linearly interpolated fog.
+			const double fogPercent = std::min(z / fogDistance, 1.0);
+
+			if (z <= depthBuffer[index])
+			{
+				// Horizontal texture coordinate.
+				const double u = currentPoint.y - std::floor(currentPoint.y);
+
+				// Horizontal offset in texture.
+				const int textureX = static_cast<int>(u *
+					static_cast<double>(texture.width)) % texture.width;
+
+				// Vertical texture coordinate.
+				const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
+
+				// Y position in texture.
+				const int textureY = static_cast<int>(v *
+					static_cast<double>(texture.height)) % texture.height;
+
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depthBuffer[index] = z;
+			}
+		}
+	};
+
+	// Lambda for drawing a column of ceiling pixels (not in the first voxel).
+	// Right now, it renders far to near.
+	// - 'x' is the screen column.
+	// - 'y' is the height of the floor.
+	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
+	auto drawCeilingColumn = [](int x, double y, const Double2 &nearPoint,
+		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform, 
+		double cameraElevation, const TextureData &texture, double fogDistance, 
+		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer, 
+		uint32_t *output)
+	{
+		// Transform the floor points to camera space (projection * view).
+		Double4 p1 = transform * Double4(farPoint.x, y, farPoint.y, 1.0);
+		Double4 p2 = transform * Double4(nearPoint.x, y, nearPoint.y, 1.0);
+
+		// Convert to normalized coordinates.
+		p1 = p1 / p1.w;
+		p2 = p2 / p2.w;
+
+		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// correct aspect ratio.
+		// - Since the ray cast guarantees the intersection to be in the correct column
+		//   of the screen, only the Y coordinates need to be projected.
+		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+		// Get the start and end Y pixel coordinates of the projected points (potentially
+		// outside the top or bottom of the screen).
+		const double heightReal = static_cast<double>(frameHeight);
+		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
+		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
+
+		// Clamp the Y coordinates for where the floor starts and stops on the screen.
+		const int drawStart = std::max(0, projectedStart);
+		const int drawEnd = std::min(frameHeight, projectedEnd);
+
+		// Distance to the near and far points.
+		const double nearZ = (nearPoint - eye).length();
+		const double farZ = (farPoint - eye).length();
+		
+		// Draw the column to the output buffer.
+		for (int y = drawStart; y < drawEnd; ++y)
+		{
+			const int index = x + (y * frameWidth);
+
+			// Percent stepped from beginning to end on the column.
+			const double yPercent = static_cast<double>(y - projectedStart) /
+				static_cast<double>(projectedEnd - projectedStart);
+
+			// Interpolate between the near and far point.
+			const Double2 currentPoint = farPoint + ((nearPoint - farPoint) * yPercent);
+			const double z = farZ + ((nearZ - farZ) * yPercent);
+
+			// Linearly interpolated fog.
+			const double fogPercent = std::min(z / fogDistance, 1.0);
+
+			if (z <= depthBuffer[index])
+			{
+				// Horizontal texture coordinate.
+				const double u = currentPoint.y - std::floor(currentPoint.y);
+
+				// Horizontal offset in texture.
+				const int textureX = static_cast<int>(u *
+					static_cast<double>(texture.width)) % texture.width;
+
+				// Vertical texture coordinate.
+				const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
+
+				// Y position in texture.
+				const int textureY = static_cast<int>(v * 
+					static_cast<double>(texture.height)) % texture.height;
+
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depthBuffer[index] = z;
+			}
+		}
+	};
+
 	// Because 2D vectors use "X" and "Y", the Z component is actually
 	// aliased as "Y", which is a minor annoyance.
 	const double dirX = direction.x;
@@ -1037,114 +1208,72 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		sideDistZ = (eye.z - startCellReal.z) * deltaDistZ;
 	}
 
-	// Make a copy of the initial side distances for the special case of ending in
-	// the first voxel. This is the oblique distance though, so some changes will
-	// be necessary.
-	const double initialSideDistX = sideDistX;
-	const double initialSideDistZ = sideDistZ;
-
-	const int gridWidth = voxelGrid.getWidth();
-	const int gridHeight = voxelGrid.getHeight();
-	const int gridDepth = voxelGrid.getDepth();
-
-	int cellX = startCell.x;
-	const int cellY = startCell.y; // Constant for now.
-	int cellZ = startCell.z;
-
-	// Axis of the most recently intersected voxel face (X by default).
-	Axis axis = Axis::X;
-
-	// Previous hit point of the ray caster. Default is the camera's eye (this should
-	// be adjusted to prevent projection problems).
-	Double2 prevPoint(eye.x, eye.z);
-
 	// Pointer to voxel ID grid data.
 	const char *voxels = voxelGrid.getVoxels();
 
-	// Step through the voxel grid while the current coordinate is valid.
-	bool voxelIsValid = (cellX >= 0) && (cellY >= 0) && (cellZ >= 0) &&
-		(cellX < gridWidth) && (cellY < gridHeight) && (cellZ < gridDepth);
+	// The Z distance from the camera to the wall, and the axis of the intersected
+	// voxel face. The first Z distance is a special case, so it's brought outside 
+	// the DDA loop.
+	double zDistance;
+	Axis axis;
 
-	while (voxelIsValid)
+	// Verify that the initial voxel coordinate is within the world bounds.
+	bool voxelIsValid = (startCell.x >= 0) && (startCell.y >= 0) && (startCell.z >= 0) &&
+		(startCell.x < voxelGrid.getWidth()) && (startCell.y < voxelGrid.getHeight()) && 
+		(startCell.z < voxelGrid.getDepth());
+
+	if (voxelIsValid)
 	{
-		// Boolean for whether the stepping is in the first voxel.
-		const bool inFirstVoxel = (cellX == startCell.x) && (cellZ == startCell.z);
+		// Get the initial voxel ID and see how it should be rendered.
+		const char initialVoxelID = voxels[startCell.x + (startCell.y * voxelGrid.getWidth()) +
+			(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
 
-		// The "z-distance" from the camera to the wall. It's a special case if the
-		// stepping stopped in the first voxel.
-		double zDistance;
-		if (inFirstVoxel)
+		// Decide how far the wall is, and which axis (voxel face) was hit.
+		if (sideDistX < sideDistZ)
 		{
-			if (initialSideDistX < initialSideDistZ)
-			{
-				zDistance = initialSideDistX;
-				axis = Axis::X;
-			}
-			else
-			{
-				zDistance = initialSideDistZ;
-				axis = Axis::Z;
-			}
+			zDistance = sideDistX;
+			axis = Axis::X;
 		}
 		else
 		{
-			zDistance = (axis == Axis::X) ?
-				(static_cast<double>(cellX) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
-				(static_cast<double>(cellZ) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+			zDistance = sideDistZ;
+			axis = Axis::Z;
 		}
 
-		// Boolean for whether the intersected voxel face is a back face.
-		// - To do: this can only be true on the first voxel *sometimes*, when the player's
-		//   camera is contained within the bounding box of the wall. Make this be a 
-		//   function of that instead.
-		const bool backFace = inFirstVoxel;
+		// X and Z coordinates for the initial wall hit. This will be used with the
+		// player's position for drawing the floor and ceiling.
+		const double initialFarPointX = eye.x + (dirX * zDistance);
+		const double initialFarPointZ = eye.z + (dirZ * zDistance);
 
-		// Render each voxel in the XZ column.
-		for (int voxelY = 0; voxelY < voxelGrid.getHeight(); ++voxelY)
+		// If the initial voxel's ID is not air, render it.
+		if (initialVoxelID > 0)
 		{
-			// Voxel ID of the current voxel in the column. Zero is "air".
-			const char hitID = voxels[cellX + (voxelY * gridWidth) + 
-				(cellZ * gridWidth * gridHeight)];
+			const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelID - 1);
 
-			// If the voxel is air, don't render it.
-			if (hitID == 0)
-			{
-				continue;
-			}
-
-			// X and Z coordinates on the wall from casting a ray along the XZ plane.
-			const double hitX = eye.x + (dirX * zDistance);
-			const double hitZ = eye.z + (dirZ * zDistance);
-
-			// Horizontal texture coordinate (constant for all wall pixels in a column).
-			// - Remember to watch out for the edge cases where u == 1.0, resulting in an
-			//   out-of-bounds texel access. Maybe use std::nextafter() for ~0.9999999?
+			// Horizontal texture coordinate for the initial wall column. It is always
+			// a back face, so the texture coordinates are reversed.
 			double u;
 			if (axis == Axis::X)
 			{
-				const double uVal = hitZ - std::floor(hitZ);
-				u = (nonNegativeDirX ^ backFace) ? uVal : (1.0 - uVal);
+				const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
+				u = nonNegativeDirX ? (1.0 - uVal) : uVal;
 			}
 			else
 			{
-				const double uVal = hitX - std::floor(hitX);
-				u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
+				const double uVal = initialFarPointX - std::floor(initialFarPointX);
+				u = nonNegativeDirZ ? uVal : (1.0 - uVal);
 			}
-
-			// Get the voxel data associated with the voxel ID. Subtract one because
-			// the minimum hit ID is 1 and voxel data indices start at 0.
-			const VoxelData &voxelData = voxelGrid.getVoxelData(hitID - 1);			
 
 			// Generate a point on the ceiling edge and floor edge of the wall relative
 			// to the hit point, accounting for the Y thickness of the wall as well.
 			const Double3 floorPoint(
-				hitX, 
-				static_cast<double>(voxelY) + voxelData.yOffset, 
-				hitZ);
+				initialFarPointX,
+				startCellReal.y + initialVoxelData.yOffset,
+				initialFarPointZ);
 			const Double3 ceilingPoint(
-				hitX, 
-				static_cast<double>(voxelY) + voxelData.yOffset + voxelData.ySize,
-				hitZ);
+				initialFarPointX,
+				startCellReal.y + initialVoxelData.yOffset + initialVoxelData.ySize,
+				initialFarPointZ);
 
 			// Transform the points to camera space (projection * view).
 			Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
@@ -1162,28 +1291,151 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
 			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
 
-			const TextureData &texture = this->textures[voxelData.sideID];
+			const TextureData &texture = this->textures[initialVoxelData.sideID];
 			const Double3 &fogColor = this->getFogColor();
 
-			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, voxelData.topV, 
-				voxelData.bottomV, texture, this->fogDistance, fogColor, this->width, 
+			// Draw the back-face wall column.
+			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
+				initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
 				this->height, this->zBuffer.data(), this->colorBuffer.data());
 		}
+
+		// Render the voxels below the camera.
+		for (int voxelY = 0; voxelY < startCell.y; ++voxelY)
+		{
+			// To do...
+		}
+
+		// Render the voxels above the camera.
+		for (int voxelY = startCell.y; voxelY < voxelGrid.getHeight(); ++voxelY)
+		{
+			// To do...
+		}
+	}
+
+	// The current voxel coordinate in the DDA loop. For all intents and purposes,
+	// the Y cell coordinate is constant.
+	Int3 cell(startCell.x, startCell.y, startCell.z);
+
+	// Step through the voxel grid while the current coordinate is valid.
+	while (voxelIsValid)
+	{
+		// X and Z coordinates on the wall from casting a ray along the XZ plane. This is 
+		// used with the next DDA point ("far point") to draw the floor and ceiling.
+		const double nearPointX = eye.x + (dirX * zDistance);
+		const double nearPointZ = eye.z + (dirZ * zDistance);
+
+		// Store the cell coordinates, axis, and Z distance for wall rendering, not 
+		// floor and ceiling rendering.
+		const int savedCellX = cell.x;
+		const int savedCellZ = cell.z;
+		const Axis savedAxis = axis;
+		const double wallDistance = zDistance;
 
 		// Decide which voxel in the XZ plane to step to next.
 		if (sideDistX < sideDistZ)
 		{
 			sideDistX += deltaDistX;
-			cellX += stepX;
+			cell.x += stepX;
 			axis = Axis::X;
-			voxelIsValid &= (cellX >= 0) && (cellX < gridWidth);
+			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
-			cellZ += stepZ;
+			cell.z += stepZ;
 			axis = Axis::Z;
-			voxelIsValid &= (cellZ >= 0) && (cellZ < gridDepth);
+			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
+		}
+
+		// Update Z distance of the hit point. The X and Z cell coordinates have been 
+		// updated by the DDA stepping.
+		zDistance = (axis == Axis::X) ?
+			(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
+			(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+
+		// Far point (where the next wall hit would be). Used with the near point.
+		const double farPointX = eye.x + (dirX * zDistance);
+		const double farPointZ = eye.z + (dirZ * zDistance);
+
+		// Render each voxel in the XZ column.
+		for (int voxelY = 0; voxelY < voxelGrid.getHeight(); ++voxelY)
+		{
+			// Voxel ID of the current voxel in the column. Zero is "air".
+			const char hitID = voxels[savedCellX + (voxelY * voxelGrid.getWidth()) +
+				(savedCellZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+
+			// If the voxel is air, don't render it.
+			if (hitID == 0)
+			{
+				continue;
+			}
+
+			// Horizontal texture coordinate (constant for all wall pixels in a column).
+			// - Remember to watch out for the edge cases where u == 1.0, resulting in an
+			//   out-of-bounds texel access. Maybe use std::nextafter() for ~0.9999999?
+			double u;
+			if (savedAxis == Axis::X)
+			{
+				const double uVal = nearPointZ - std::floor(nearPointZ);
+				u = nonNegativeDirX ? uVal : (1.0 - uVal);
+			}
+			else
+			{
+				const double uVal = nearPointX - std::floor(nearPointX);
+				u = nonNegativeDirZ ? (1.0 - uVal) : uVal;
+			}
+
+			// Get the voxel data associated with the voxel ID. Subtract one because
+			// the minimum hit ID is 1 and voxel data indices start at 0.
+			const VoxelData &voxelData = voxelGrid.getVoxelData(hitID - 1);
+
+			// Generate a point on the ceiling edge and floor edge of the wall relative
+			// to the hit point, accounting for the Y thickness of the wall as well.
+			const Double3 wallFloor(
+				nearPointX,
+				static_cast<double>(voxelY) + voxelData.yOffset,
+				nearPointZ);
+			const Double3 wallCeiling(
+				nearPointX,
+				static_cast<double>(voxelY) + voxelData.yOffset + voxelData.ySize,
+				nearPointZ);
+
+			// Transform the wall points to camera space (projection * view).
+			Double4 p1 = transform * Double4(wallCeiling.x, wallCeiling.y, wallCeiling.z, 1.0);
+			Double4 p2 = transform * Double4(wallFloor.x, wallFloor.y, wallFloor.z, 1.0);
+
+			// Convert to normalized coordinates.
+			p1 = p1 / p1.w;
+			p2 = p2 / p2.w;
+
+			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+			// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+			// correct aspect ratio.
+			// - Since the ray cast guarantees the intersection to be in the correct column
+			//   of the screen, only the Y coordinates need to be projected.
+			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+			const TextureData &texture = this->textures[voxelData.sideID];
+			const Double3 &fogColor = this->getFogColor();
+
+			drawWallColumn(x, projectedY1, projectedY2, wallDistance, u, voxelData.topV,
+				voxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
+				this->height, this->zBuffer.data(), this->colorBuffer.data());
+
+			// Draw the floor and ceiling.
+			const TextureData &floorCeilingTexture = this->textures[voxelData.floorAndCeilingID];
+
+			drawFloorColumn(x, wallFloor.y, Double2(nearPointX, nearPointZ),
+				Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
+				cameraElevation, floorCeilingTexture, fogDistance, fogColor, this->width,
+				this->height, this->zBuffer.data(), this->colorBuffer.data());
+
+			drawCeilingColumn(x, wallCeiling.y, Double2(nearPointX, nearPointZ),
+				Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
+				cameraElevation, floorCeilingTexture, fogDistance, fogColor, this->width,
+				this->height, this->zBuffer.data(), this->colorBuffer.data());
 		}
 	}
 }
