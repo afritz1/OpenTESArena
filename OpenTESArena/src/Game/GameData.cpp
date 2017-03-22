@@ -52,12 +52,8 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int gridHeight = 5;
 	const int gridDepth = 32;
 
-	// This height value is pretty obsolete now. Voxel height only affects the main floor,
-	// and even then, not all voxels in Arena obey it.
-	const double voxelHeight = 1.0;
-
 	// Make an empty voxel grid with the given dimensions.
-	VoxelGrid voxelGrid(gridWidth, gridHeight, gridDepth, voxelHeight);
+	VoxelGrid voxelGrid(gridWidth, gridHeight, gridDepth);
 
 	// Add some voxel data for the voxel IDs to refer to.
 	const int voxelDataCount = 7;

@@ -609,13 +609,12 @@ void SoftwareRenderer::castRay(int x, const Double3 &eye, const Double2 &directi
 	const bool nonNegativeDirX = direction.x >= 0.0;
 	const bool nonNegativeDirZ = direction.y >= 0.0;
 
-	// Constant DDA-related values. The Y component also needs to take voxel height
-	// into account because voxel height is both a floor and level-dependent variable.
+	// Constant DDA-related values.
 	// - Technically, these could be moved out of the ray casting method, but they
 	//   are not a performance concern for now. It's just to minimize renderer state.
 	const Double3 startCellReal(
 		std::floor(eye.x),
-		std::floor(eye.y / voxelGrid.getVoxelHeight()),
+		std::floor(eye.y),
 		std::floor(eye.z));
 	const Int3 startCell(
 		static_cast<int>(startCellReal.x),
@@ -1171,13 +1170,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	const bool nonNegativeDirX = direction.x >= 0.0;
 	const bool nonNegativeDirZ = direction.y >= 0.0;
 
-	// Constant DDA-related values. The Y component also needs to take voxel height
-	// into account because voxel height is both a floor and level-dependent variable.
+	// Constant DDA-related values.
 	// - Technically, these could be moved out of the ray casting method, but they
 	//   are not a performance concern for now. It's just to minimize renderer state.
 	const Double3 startCellReal(
 		std::floor(eye.x),
-		std::floor(eye.y / voxelGrid.getVoxelHeight()),
+		std::floor(eye.y),
 		std::floor(eye.z));
 	const Int3 startCell(
 		static_cast<int>(startCellReal.x),

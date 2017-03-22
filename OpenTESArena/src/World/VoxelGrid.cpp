@@ -2,9 +2,7 @@
 
 #include "VoxelGrid.h"
 
-const double VoxelGrid::DEFAULT_VOXEL_HEIGHT = 1.0;
-
-VoxelGrid::VoxelGrid(int width, int height, int depth, double voxelHeight)
+VoxelGrid::VoxelGrid(int width, int height, int depth)
 {
 	const int voxelCount = width * height * depth;
 	this->voxels = std::vector<char>(voxelCount);
@@ -13,11 +11,7 @@ VoxelGrid::VoxelGrid(int width, int height, int depth, double voxelHeight)
 	this->width = width;
 	this->height = height;
 	this->depth = depth;
-	this->voxelHeight = voxelHeight;
 }
-
-VoxelGrid::VoxelGrid(int width, int height, int depth)
-	: VoxelGrid(width, height, depth, VoxelGrid::DEFAULT_VOXEL_HEIGHT) { }
 
 VoxelGrid::~VoxelGrid()
 {
@@ -37,11 +31,6 @@ int VoxelGrid::getHeight() const
 int VoxelGrid::getDepth() const
 {
 	return this->depth;
-}
-
-double VoxelGrid::getVoxelHeight() const
-{
-	return this->voxelHeight;
 }
 
 char *VoxelGrid::getVoxels()

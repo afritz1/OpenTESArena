@@ -11,14 +11,10 @@
 class VoxelGrid
 {
 private:
-	static const double DEFAULT_VOXEL_HEIGHT;
-
 	std::vector<char> voxels;
 	std::vector<VoxelData> voxelData;
 	int width, height, depth;
-	double voxelHeight; // No need for voxel width or depth; always 1.
 public:
-	VoxelGrid(int width, int height, int depth, double voxelHeight);
 	VoxelGrid(int width, int height, int depth);
 	~VoxelGrid();
 
@@ -26,9 +22,6 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	int getDepth() const;
-
-	// Gets the height (Y size) of each voxel.
-	double getVoxelHeight() const;
 
 	// Gets a pointer to the voxel grid data.
 	char *getVoxels();
