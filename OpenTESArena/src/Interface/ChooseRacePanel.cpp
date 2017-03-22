@@ -26,6 +26,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 namespace
 {
@@ -59,8 +60,25 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	{
 		Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 100);
 		Color color(48, 12, 12);
-		std::string text = "From where dost thou hail,\n" +
-			name + "\nthe\n" + charClass.getDisplayName() + "?";
+
+		std::string text = [game, charClass, name]()
+		{
+			std::string segment = game->getTextAssets().getAExeSegment(
+				ExeStrings::ChooseRace);
+
+			segment = String::replace(segment, '\r', '\n');
+
+			// Replace first "%s" with player name.
+			size_t index = segment.find("%s");
+			segment.replace(index, 2, name);
+
+			// Replace second "%s" with character class.
+			index = segment.find("%s");
+			segment.replace(index, 2, charClass.getDisplayName());
+
+			return segment;
+		}();
+
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(

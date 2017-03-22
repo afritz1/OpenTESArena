@@ -10,6 +10,8 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -24,6 +26,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	: Panel(game)
@@ -36,7 +39,11 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
-		std::string text("How do you wish\nto select your class?");
+
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseClassCreation);
+		text = String::replace(text, '\r', '\n');
+
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(

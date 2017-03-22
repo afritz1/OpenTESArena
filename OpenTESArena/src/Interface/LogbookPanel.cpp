@@ -7,6 +7,8 @@
 #include "GameWorldPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -27,7 +29,8 @@ LogbookPanel::LogbookPanel(Game *game)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
 		Color color(255, 207, 12);
-		std::string text = "Your logbook is empty.";
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::LogbookIsEmpty);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(

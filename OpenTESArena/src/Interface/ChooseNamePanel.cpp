@@ -11,6 +11,8 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -24,6 +26,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
@@ -39,7 +42,10 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 		int x = 26;
 		int y = 82;
 		Color color(48, 12, 12);
-		std::string text = "What will be thy name, " + charClass.getDisplayName() + "?";
+		
+		std::string text = game->getTextAssets().getAExeSegment(ExeStrings::ChooseName);
+		text = String::replace(text, "%s", charClass.getDisplayName());
+
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(

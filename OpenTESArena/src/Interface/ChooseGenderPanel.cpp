@@ -10,6 +10,8 @@
 #include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
@@ -37,7 +39,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 		Color color(48, 12, 12);
-		std::string text = "Choose thy gender...";
+		std::string text = game->getTextAssets().getAExeSegment(ExeStrings::ChooseGender);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
