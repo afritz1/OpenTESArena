@@ -985,15 +985,11 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			}
 		}
 	};
-
-	// Eventually, merge floor and ceiling rendering into the same lambda. Their texture
-	// coordinates are effectively mirrored, and they share the same texel, so that 
-	// recalculation could be avoided.
-	// - That lambda would take the same nearPoint and farPoint, but with two 'y' values
-	//   instead of one.
-
+	
 	// Lambda for drawing a column of floor pixels (not in the first voxel).
-	// Right now, it renders near to far.
+	// Right now, it renders near to far. Floors and ceilings can't be rendered in the 
+	// same loop because they have different projected properties (like size on screen) 
+	// due to the perspective transformation not preserving parallel lines.
 	// - 'x' is the screen column.
 	// - 'y' is the height of the floor.
 	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
@@ -1315,8 +1311,9 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// the Y cell coordinate is constant.
 	Int3 cell(startCell.x, startCell.y, startCell.z);
 
-	// Step through the voxel grid while the current coordinate is valid.
-	while (voxelIsValid)
+	// Step through the voxel grid while the current coordinate is valid and
+	// the distance stepped is less than the distance at which fog is maximum.
+	while (voxelIsValid && (zDistance < this->fogDistance))
 	{
 		// X and Z coordinates on the wall from casting a ray along the XZ plane. This is 
 		// used with the next DDA point ("far point") to draw the floor and ceiling.
