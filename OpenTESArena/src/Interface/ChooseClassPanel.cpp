@@ -10,6 +10,8 @@
 #include "ListBox.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterClassParser.h"
@@ -51,7 +53,8 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 		int x = 89;
 		int y = 32;
 		Color color(211, 211, 211);
-		std::string text = "Choose thy class...";
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseClassList);
 		auto &font = game->getFontManager().getFont(FontName::C);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(

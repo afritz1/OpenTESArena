@@ -12,10 +12,15 @@ namespace ExeStrings
 {
 // Character creation.
 const std::pair<int, int> ChooseClassCreation(0x00035a80, 37);
+const std::pair<int, int> ChooseClassCreationGenerate(0x0003f637, 8);
+const std::pair<int, int> ChooseClassCreationSelect(0x0003f641, 6);
 const std::pair<int, int> ClassQuestionsIntro(0x00035aa7, 175);
 const std::pair<int, int> SuggestedRace(0x00035bb1, 75);
+const std::pair<int, int> ChooseClassList(0x0003f61a, 19);
 const std::pair<int, int> ChooseName(0x00035b58, 26);
 const std::pair<int, int> ChooseGender(0x00035b74, 20);
+const std::pair<int, int> ChooseGenderMale(0x0003f652, 4);
+const std::pair<int, int> ChooseGenderFemale(0x0003f658, 6);
 const std::pair<int, int> ChooseRace(0x00035b8a, 37);
 const std::pair<int, int> ConfirmRace(0x00035bff, 74);
 const std::pair<int, int> FinalRaceMessage(0x00035ce0, 67);

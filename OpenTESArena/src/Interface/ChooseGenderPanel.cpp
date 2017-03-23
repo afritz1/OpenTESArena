@@ -55,7 +55,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
-		std::string text = "Male";
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseGenderMale);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -71,7 +72,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
-		std::string text = "Female";
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseGenderFemale);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(

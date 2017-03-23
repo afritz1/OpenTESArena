@@ -59,7 +59,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		Color color(48, 12, 12);
-		std::string text("Generate");
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseClassCreationGenerate);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -75,7 +76,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		Color color(48, 12, 12);
-		std::string text("Select");
+		std::string text = game->getTextAssets().getAExeSegment(
+			ExeStrings::ChooseClassCreationSelect);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
