@@ -581,349 +581,13 @@ const Double3 &SoftwareRenderer::getFogColor() const
 	return this->skyPalette.at(this->skyPalette.size() / 2);
 }
 
-void SoftwareRenderer::castRay(int x, const Double3 &eye, const Double2 &direction,
-	const Matrix4d &transform, double cameraElevation, const VoxelGrid &voxelGrid)
-{
-	// This is the "classic" 2.5D version of ray casting, based on Lode Vandevenne's 
-	// ray caster. It will also need to allow multiple floors, variable eye height,
-	// and flats with arbitrary angles around the Y axis (doors, etc.). I think a
-	// 2D depth buffer will be required, too.
-
-	// Some floating point behavior assumptions:
-	// -> (value / 0.0) == infinity
-	// -> (value / infinity) == 0.0
-	// -> (int)(-0.8) == 0
-	// -> (int)floor(-0.8) == -1
-	// -> (int)ceil(-0.8) == 0
-
-	// Because 2D vectors use "X" and "Y", the Z component is actually
-	// aliased as "Y", which is a minor annoyance.
-	const double dirX = direction.x;
-	const double dirZ = direction.y;
-	const double dirXSquared = direction.x * direction.x;
-	const double dirZSquared = direction.y * direction.y;
-
-	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
-	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
-
-	const bool nonNegativeDirX = direction.x >= 0.0;
-	const bool nonNegativeDirZ = direction.y >= 0.0;
-
-	// Constant DDA-related values.
-	// - Technically, these could be moved out of the ray casting method, but they
-	//   are not a performance concern for now. It's just to minimize renderer state.
-	const Double3 startCellReal(
-		std::floor(eye.x),
-		std::floor(eye.y),
-		std::floor(eye.z));
-	const Int3 startCell(
-		static_cast<int>(startCellReal.x),
-		static_cast<int>(startCellReal.y),
-		static_cast<int>(startCellReal.z));
-
-	int stepX, stepZ;
-	double sideDistX, sideDistZ;
-	if (nonNegativeDirX)
-	{
-		stepX = 1;
-		sideDistX = (startCellReal.x + 1.0 - eye.x) * deltaDistX;
-	}
-	else
-	{
-		stepX = -1;
-		sideDistX = (eye.x - startCellReal.x) * deltaDistX;
-	}
-
-	if (nonNegativeDirZ)
-	{
-		stepZ = 1;
-		sideDistZ = (startCellReal.z + 1.0 - eye.z) * deltaDistZ;
-	}
-	else
-	{
-		stepZ = -1;
-		sideDistZ = (eye.z - startCellReal.z) * deltaDistZ;
-	}
-
-	// Make a copy of the initial side distances for the special case of ending in
-	// the first voxel. This is the oblique distance though, so some changes will
-	// be necessary.
-	const double initialSideDistX = sideDistX;
-	const double initialSideDistZ = sideDistZ;
-
-	const int gridWidth = voxelGrid.getWidth();
-	const int gridHeight = voxelGrid.getHeight();
-	const int gridDepth = voxelGrid.getDepth();
-
-	int cellX = startCell.x;
-	const int cellY = startCell.y; // Constant for now.
-	int cellZ = startCell.z;
-
-	// Axis of the most recently intersected voxel face (X by default).
-	Axis axis = Axis::X;
-
-	// Pointer to voxel ID grid data.
-	const char *voxels = voxelGrid.getVoxels();
-
-	// Voxel ID of a hit voxel, if any. Zero is "air".
-	char hitID = 0;
-
-	// Step through the voxel grid while the current coordinate is valid.
-	bool voxelIsValid = (cellX >= 0) && (cellY >= 0) && (cellZ >= 0) &&
-		(cellX < gridWidth) && (cellY < gridHeight) && (cellZ < gridDepth);
-
-	while (voxelIsValid)
-	{
-		// Get the index of the current voxel in the voxel grid.
-		const int gridIndex = cellX + (cellY * gridWidth) +
-			(cellZ * gridWidth * gridHeight);
-
-		// Check if the current voxel is solid.
-		const char voxelID = voxels[gridIndex];
-
-		if (voxelID > 0)
-		{
-			hitID = voxelID;
-			break;
-		}
-
-		if (sideDistX < sideDistZ)
-		{
-			sideDistX += deltaDistX;
-			cellX += stepX;
-			axis = Axis::X;
-			voxelIsValid &= (cellX >= 0) && (cellX < gridWidth);
-		}
-		else
-		{
-			sideDistZ += deltaDistZ;
-			cellZ += stepZ;
-			axis = Axis::Z;
-			voxelIsValid &= (cellZ >= 0) && (cellZ < gridDepth);
-		}
-	}
-
-	// If hit ID is positive, a wall was hit.
-	if (hitID > 0)
-	{
-		// Boolean for whether the stepping stopped in the first voxel.
-		const bool stoppedInFirstVoxel = (cellX == startCell.x) && (cellZ == startCell.z);
-
-		// The "z-distance" from the camera to the wall. It's a special case if the
-		// stepping stopped in the first voxel.
-		double zDistance;
-		if (stoppedInFirstVoxel)
-		{
-			// To do: figure out the correct initial side distance calculation.
-			// - Maybe try to avoid a square root with direction?
-			if (initialSideDistX < initialSideDistZ)
-			{
-				zDistance = initialSideDistX;
-				axis = Axis::X;
-			}
-			else
-			{
-				zDistance = initialSideDistZ;
-				axis = Axis::Z;
-			}
-		}
-		else
-		{
-			zDistance = (axis == Axis::X) ?
-				(static_cast<double>(cellX) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
-				(static_cast<double>(cellZ) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
-		}
-
-		// Boolean for whether the intersected voxel face is a back face.
-		const bool backFace = stoppedInFirstVoxel;
-
-		// 3D hit point on the wall from casting a ray along the XZ plane.
-		const Double3 hitPoint(
-			eye.x + (dirX * zDistance),
-			eye.y,
-			eye.z + (dirZ * zDistance));
-
-		// Horizontal texture coordinate (constant for all wall pixels in a column).
-		// - Remember to watch out for the edge cases where u == 1.0, resulting in an
-		//   out-of-bounds texel access. Maybe use std::nextafter() for ~0.9999999?
-		double u;
-		if (axis == Axis::X)
-		{
-			const double uVal = hitPoint.z - std::floor(hitPoint.z);
-			u = (nonNegativeDirX ^ backFace) ? uVal : (1.0 - uVal);
-		}
-		else
-		{
-			const double uVal = hitPoint.x - std::floor(hitPoint.x);
-			u = (nonNegativeDirZ ^ backFace) ? (1.0 - uVal) : uVal;
-		}
-
-		// Generate a point on the ceiling edge and floor edge of the wall relative
-		// to the hit point.
-		const Double3 ceilingPoint(hitPoint.x, std::ceil(hitPoint.y), hitPoint.z);
-		const Double3 floorPoint(hitPoint.x, std::floor(hitPoint.y), hitPoint.z);
-
-		// Transform the points to camera space (projection * view).
-		Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
-		Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
-
-		// Convert to normalized coordinates.
-		p1 = p1 / p1.w;
-		p2 = p2 / p2.w;
-
-		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
-		// correct aspect ratio.
-		// - Since the ray cast guarantees the intersection to be in the correct column
-		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
-
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(this->height);
-		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
-
-		// Clamp the Y coordinates for where the wall starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(this->height, projectedEnd);
-
-		// The texture associated with the voxel ID. Subtract 1 because the lowest hit ID
-		// is 1 and textures start at 0.
-		const TextureData &texture = this->textures[hitID - 1];
-
-		// X position in texture (temporarily using modulo to protect against edge cases 
-		// where u == 1.0; it should be fixed in the u calculation instead).
-		const int textureX = static_cast<int>(u *
-			static_cast<double>(texture.width)) % texture.width;
-
-		// Linearly interpolated fog.
-		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
-		const Double3 &fogColor = this->getFogColor();
-
-		// Draw each wall pixel in the column.
-		uint32_t *pixels = this->colorBuffer.data();
-		double *depth = this->zBuffer.data();
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * this->width);
-
-			if (zDistance <= depth[index])
-			{
-				// Vertical texture coordinate.
-				const double v = static_cast<double>(y - projectedStart) /
-					static_cast<double>(projectedEnd - projectedStart);
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
-
-				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depth[index] = zDistance;
-			}
-		}
-	}
-
-	// Floor/ceiling...
-	// - I wonder how it should start if no wall was hit. Maybe project the floor based on
-	//   where the stepping stopped to get a Y coordinate?
-	// - Do not depend on when a wall on the current floor is hit. Floor/ceiling casting
-	//   can continue as far as it needs to.
-
-	// Sprites.
-	// - Sprites *could* be done outside the ray casting loop, though they would need to be
-	//   parallelized a bit differently then. Here, it is easy to parallelize by column,
-	//   so it might be faster in practice, even if a little redundant work is done.
-
-	// - To do: go through all of this again and verify the math for correctness.
-	for (const auto &pair : this->visibleFlats)
-	{
-		const Flat &flat = *pair.first;
-		const Flat::ProjectionData &projectionData = pair.second;
-
-		// X percent across the screen.
-		const double xPercent = static_cast<double>(x) /
-			static_cast<double>(this->width);
-
-		// Find where the column is within the X range of the flat.
-		const double xRangePercent = (xPercent - projectionData.rightX) /
-			(projectionData.leftX - projectionData.rightX);
-
-		// Don't render the flat if the X range percent is invalid.
-		if ((xRangePercent < 0.0) || (xRangePercent >= 1.0))
-		{
-			continue;
-		}
-
-		// Horizontal texture coordinate in the flat.
-		const double u = xRangePercent;
-
-		// Interpolate the projected Y coordinates based on the X range.
-		const double projectedY1 = projectionData.topRightY +
-			((projectionData.topLeftY - projectionData.topRightY) * xRangePercent);
-		const double projectedY2 = projectionData.bottomRightY +
-			((projectionData.bottomLeftY - projectionData.bottomRightY) * xRangePercent);
-
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(this->height);
-		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
-
-		// Clamp the Y coordinates for where the wall starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(this->height, projectedEnd);
-
-		// The texture associated with the voxel ID.
-		const TextureData &texture = this->textures[flat.textureID];
-
-		// X position in texture (temporarily using modulo to protect against edge cases 
-		// where u == 1.0; it should be fixed in the u calculation instead).
-		const int textureX = static_cast<int>(u *
-			static_cast<double>(texture.width)) % texture.width;
-
-		const double nearZ = std::min(projectionData.leftZ, projectionData.rightZ);
-		const double farZ = std::max(projectionData.leftZ, projectionData.rightZ);
-		const double zDistance = nearZ + ((farZ - nearZ) * xRangePercent);
-
-		// Linearly interpolated fog.
-		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
-		const Double3 &fogColor = this->getFogColor();
-
-		uint32_t *pixels = this->colorBuffer.data();
-		double *depth = this->zBuffer.data();
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * this->width);
-
-			if (zDistance <= depth[index])
-			{
-				// Vertical texture coordinate.
-				const double v = static_cast<double>(y - projectedStart) /
-					static_cast<double>(projectedEnd - projectedStart);
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
-
-				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depth[index] = zDistance;
-			}
-		}
-	}
-}
-
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
 	const Matrix4d &transform, double cameraElevation, const VoxelGrid &voxelGrid)
 {
-	// This method of rendering is more expensive than the cheap 2.5D ray casting, as it 
-	// does not stop at the first wall intersection, and it also renders walls above and 
-	// below, but it is more correct as a result. Assume "direction" is normalized.
+	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
+	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
+	// intersection, and it also renders walls above and below, but it is more correct 
+	// as a result. Assume "direction" is normalized.
 
 	// Some floating point behavior assumptions:
 	// -> (value / 0.0) == infinity
@@ -1433,6 +1097,97 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				this->height, this->zBuffer.data(), this->colorBuffer.data());
 		}
 	}
+
+	// Sprites.
+	// - Maybe put the sprite drawing into a lambda, so the required parameters are
+	//   easier to understand?
+	// - Sprites *could* be done outside the ray casting loop, though they would need to be
+	//   parallelized a bit differently then. Here, it is easy to parallelize by column,
+	//   so it might be faster in practice, even if a little redundant work is done.
+
+	// - To do: go through all of this again and verify the math for correctness.
+	for (const auto &pair : this->visibleFlats)
+	{
+		const Flat &flat = *pair.first;
+		const Flat::ProjectionData &projectionData = pair.second;
+
+		// X percent across the screen.
+		const double xPercent = static_cast<double>(x) /
+			static_cast<double>(this->width);
+
+		// Find where the column is within the X range of the flat.
+		// - I think somewhere in here it should use perspective correct depth instead
+		//   of a simple "affine" depth.
+		const double xRangePercent = (xPercent - projectionData.rightX) /
+			(projectionData.leftX - projectionData.rightX);
+
+		// Don't render the flat if the X range percent is invalid.
+		if ((xRangePercent < 0.0) || (xRangePercent >= 1.0))
+		{
+			continue;
+		}
+
+		// Horizontal texture coordinate in the flat.
+		const double u = xRangePercent;
+
+		// Interpolate the projected Y coordinates based on the X range.
+		const double projectedY1 = projectionData.topRightY +
+			((projectionData.topLeftY - projectionData.topRightY) * xRangePercent);
+		const double projectedY2 = projectionData.bottomRightY +
+			((projectionData.bottomLeftY - projectionData.bottomRightY) * xRangePercent);
+
+		// Get the start and end Y pixel coordinates of the projected points (potentially
+		// outside the top or bottom of the screen).
+		const double heightReal = static_cast<double>(this->height);
+		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
+		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
+
+		// Clamp the Y coordinates for where the wall starts and stops on the screen.
+		const int drawStart = std::max(0, projectedStart);
+		const int drawEnd = std::min(this->height, projectedEnd);
+
+		// The texture associated with the voxel ID.
+		const TextureData &texture = this->textures[flat.textureID];
+
+		// X position in texture (temporarily using modulo to protect against edge cases 
+		// where u == 1.0; it should be fixed in the u calculation instead).
+		const int textureX = static_cast<int>(u *
+			static_cast<double>(texture.width)) % texture.width;
+
+		const double nearZ = std::min(projectionData.leftZ, projectionData.rightZ);
+		const double farZ = std::max(projectionData.leftZ, projectionData.rightZ);
+
+		// I think this calculation isn't robust enough. It's like affine texture mapping,
+		// but for depth...
+		const double zDistance = nearZ + ((farZ - nearZ) * xRangePercent);
+
+		// Linearly interpolated fog.
+		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
+		const Double3 &fogColor = this->getFogColor();
+
+		uint32_t *pixels = this->colorBuffer.data();
+		double *depth = this->zBuffer.data();
+		for (int y = drawStart; y < drawEnd; ++y)
+		{
+			const int index = x + (y * this->width);
+
+			if (zDistance <= depth[index])
+			{
+				// Vertical texture coordinate.
+				const double v = static_cast<double>(y - projectedStart) /
+					static_cast<double>(projectedEnd - projectedStart);
+
+				// Y position in texture.
+				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depth[index] = zDistance;
+			}
+		}
+	}
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double fovY,
@@ -1493,11 +1248,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 			// Calculate the ray direction through the pixel.
 			// - If un-normalized, it uses the Z distance, but the insides of voxels
 			//   don't look right then.
-			//const Double2 direction = forwardComp + rightComp;
 			const Double2 direction = (forwardComp + rightComp).normalized();
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			//this->castRay(x, eye, direction, transform, cameraElevation, voxelGrid);
 			this->castColumnRay(x, eye, direction, transform, cameraElevation, voxelGrid);
 		}
 	};

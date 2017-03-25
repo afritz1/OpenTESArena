@@ -72,12 +72,6 @@ private:
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
-	// Casts a 2D ray from the default start point (eye) and writes color into
-	// the given column.
-	void castRay(int x, const Double3 &eye, const Double2 &direction,
-		const Matrix4d &transform, double cameraElevation, 
-		const VoxelGrid &voxelGrid);
-
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
