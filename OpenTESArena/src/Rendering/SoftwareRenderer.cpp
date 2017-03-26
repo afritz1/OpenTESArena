@@ -184,6 +184,9 @@ void SoftwareRenderer::updateVisibleFlats(double cameraElevation, const Matrix4d
 {
 	this->visibleFlats.clear();
 
+	// This is essentially a visible sprite determination algorithm mixed with a 
+	// trimmed-down vertex shader. It goes through all the flats and sees if they 
+	// would be at least partially visible in the view frustum each frame.
 	for (const auto &pair : this->flats)
 	{
 		const Flat &flat = pair.second;
@@ -233,8 +236,10 @@ void SoftwareRenderer::updateVisibleFlats(double cameraElevation, const Matrix4d
 
 		// The flat is visible if at least one of the Z values is positive and
 		// the vertical edges are within bounds.
-		const bool leftZPositive = projectionData.leftZ > 0.0;
-		const bool rightZPositive = projectionData.rightZ > 0.0;
+		const bool leftZPositive = projectionData.leftZ > SoftwareRenderer::NEAR_PLANE;
+		const bool rightZPositive = projectionData.rightZ > SoftwareRenderer::NEAR_PLANE;
+		const bool closeEnough = (projectionData.leftZ < SoftwareRenderer::FAR_PLANE) ||
+			(projectionData.rightZ < SoftwareRenderer::FAR_PLANE);
 		const bool rightEdgeVisible =
 			(projectionData.rightX >= 0.0) || (projectionData.rightX < 1.0) &&
 			((projectionData.topRightY < 1.0) || (projectionData.bottomRightY >= 0.0));
@@ -248,7 +253,8 @@ void SoftwareRenderer::updateVisibleFlats(double cameraElevation, const Matrix4d
 		//   so that flats intersecting the viewing plane are rendered correctly. For example,
 		//   clipping anything with negative Z and interpolating the new texture coordinates...? 
 		//   Just an idea. Right now it throws away flats partially behind the view plane.
-		if ((leftZPositive && rightZPositive) && (rightEdgeVisible || leftEdgeVisible))
+		if ((leftZPositive && rightZPositive && closeEnough) &&
+			(rightEdgeVisible || leftEdgeVisible))
 		{
 			this->visibleFlats.push_back(std::make_pair(&flat, projectionData));
 		}
