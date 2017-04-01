@@ -136,6 +136,17 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
 				name, gender, raceID, charClass, this->portraitID);
 
+			// Fog distance is changed infrequently, so it can go here in scene creation.
+			// It's not an expensive operation for the software renderer.
+			renderer.setFogDistance(gameData->getFogDistance());
+
+			// The sky palette is used to color the sky and fog. The renderer chooses
+			// which color to use based on the time of day. Interiors should just have
+			// one pixel as the sky palette (usually black).
+			const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
+			renderer.setSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels),
+				skyPalette->w * skyPalette->h);
+
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
 		};

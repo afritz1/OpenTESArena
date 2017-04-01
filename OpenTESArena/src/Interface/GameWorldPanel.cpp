@@ -744,17 +744,6 @@ void GameWorldPanel::tick(double dt)
 	auto &player = gameData.getPlayer();
 	player.tick(game, dt);
 
-	// Update renderer members that are refreshed each frame. Fog distance is
-	// probably changed infrequently, so it should go elsewhere.
-	auto &renderer = game.getRenderer();
-	renderer.setFogDistance(gameData.getFogDistance());
-
-	// Technically, the sky palette only needs to be updated when the scene changes.
-	auto &textureManager = game.getTextureManager();
-	const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
-	renderer.setSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels), 
-		skyPalette->w * skyPalette->h);
-
 	// -- test -- update test sprites.
 	/*const Double3 playerRight = player.getFrame().getRight();
 	const Float3 spriteRight(
