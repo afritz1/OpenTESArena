@@ -65,8 +65,9 @@ private:
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
 
-	// Gets the fog color (based on the time of day).
-	const Double3 &getFogColor(double daytimePercent) const;
+	// Gets the fog color (based on the time of day). It returns a value instead of
+	// a reference because it interpolates between two colors for a smoother transition.
+	Double3 getFogColor(double daytimePercent) const;
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).

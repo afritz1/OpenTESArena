@@ -598,11 +598,20 @@ void SoftwareRenderer::updateVisibleFlats(double cameraElevation, const Matrix4d
 	}
 }*/
 
-const Double3 &SoftwareRenderer::getFogColor(double daytimePercent) const
+Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
 {
-	const size_t index = static_cast<size_t>(
-		static_cast<double>(this->skyPalette.size()) * daytimePercent);
-	return this->skyPalette.at(index);
+	// Get the real index (not the integer index), so the color can be interpolated
+	// between two samples.
+	const double realIndex = static_cast<double>(this->skyPalette.size()) * daytimePercent;
+
+	const size_t index = static_cast<size_t>(realIndex);
+	const size_t nextIndex = (index + 1) % this->skyPalette.size();
+
+	const Double3 &color = this->skyPalette[index];
+	const Double3 &nextColor = this->skyPalette[nextIndex];
+
+	const double percent = realIndex - std::floor(realIndex);
+	return color.lerp(nextColor, percent);
 }
 
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
