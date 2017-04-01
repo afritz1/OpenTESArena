@@ -550,13 +550,13 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
-	double gameTime, const VoxelGrid &voxelGrid)
+	double daytimePercent, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
 
 	// Render the game world to a frame buffer.
-	this->softwareRenderer->render(eye, forward, fovY, gameTime, voxelGrid);
+	this->softwareRenderer->render(eye, forward, fovY, daytimePercent, voxelGrid);
 
 	int renderWidth;
 	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);

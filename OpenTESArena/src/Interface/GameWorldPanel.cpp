@@ -667,7 +667,8 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Int2 windowDims = renderer.getWindowDimensions();
 	const double resolutionScale = this->getGame()->getOptions().getResolutionScale();
 
-	const auto &player = this->getGame()->getGameData().getPlayer();
+	auto &gameData = this->getGame()->getGameData();
+	const auto &player = gameData.getPlayer();
 	const Double3 &position = player.getPosition();
 	const Double3 &direction = player.getDirection();
 
@@ -787,7 +788,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	const auto &player = gameData.getPlayer();
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getVerticalFOV(), gameData.getGameTime(), gameData.getVoxelGrid());
+		options.getVerticalFOV(), gameData.getDaytimePercent(), 
+		gameData.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

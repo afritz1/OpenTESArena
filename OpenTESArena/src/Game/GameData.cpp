@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 #include "GameData.h"
 
@@ -8,6 +9,8 @@
 #include "../Math/Random.h"
 #include "../Utilities/Debug.h"
 #include "../World/VoxelGrid.h"
+
+const double GameData::SECONDS_PER_DAY = 120.0; // Arbitrary value for testing.
 
 GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
 	double gameTime, double fogDistance)
@@ -122,6 +125,12 @@ std::vector<char> &GameData::getCollisionGrid()
 double GameData::getGameTime() const
 {
 	return this->gameTime;
+}
+
+double GameData::getDaytimePercent() const
+{
+	return std::fmod(this->getGameTime(), GameData::SECONDS_PER_DAY) /
+		GameData::SECONDS_PER_DAY;
 }
 
 double GameData::getFogDistance() const

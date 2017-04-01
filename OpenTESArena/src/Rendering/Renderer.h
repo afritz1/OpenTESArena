@@ -150,7 +150,7 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
-		double gameTime, const VoxelGrid &voxelGrid);
+		double daytimePercent, const VoxelGrid &voxelGrid);
 
 	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);

@@ -24,6 +24,9 @@ enum class GenderName;
 class GameData
 {
 private:
+	// The number of real-time seconds that an in-game day lasts.
+	static const double SECONDS_PER_DAY;
+
 	Player player;
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
@@ -46,6 +49,11 @@ public:
 	VoxelGrid &getVoxelGrid();
 	std::vector<char> &getCollisionGrid(); // 3D array.
 	double getGameTime() const;
+
+	// Gets a 0->1 value representing how far along the current day is. 
+	// 0.0 is 12:00am and 0.50 is noon.
+	double getDaytimePercent() const;
+
 	double getFogDistance() const;
 
 	void incrementGameTime(double dt);

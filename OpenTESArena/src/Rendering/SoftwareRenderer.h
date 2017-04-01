@@ -65,8 +65,8 @@ private:
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadCount; // Number of threads to use for rendering.
 
-	// Gets the fog color (usually based on the time of day).
-	const Double3 &getFogColor() const;
+	// Gets the fog color (based on the time of day).
+	const Double3 &getFogColor(double daytimePercent) const;
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
@@ -75,7 +75,7 @@ private:
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
-		const Matrix4d &transform, double cameraElevation,
+		const Matrix4d &transform, double cameraElevation, double daytimePercent,
 		const VoxelGrid &voxelGrid);
 
 	// Refreshes the list of flats that are within the viewing frustum.
@@ -128,7 +128,7 @@ public:
 
 	// Draws the scene to the internal frame buffer.
 	void render(const Double3 &eye, const Double3 &forward, double fovY, 
-		double gameTime, const VoxelGrid &voxelGrid);
+		double daytimePercent, const VoxelGrid &voxelGrid);
 };
 
 #endif
