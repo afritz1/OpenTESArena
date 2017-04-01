@@ -111,20 +111,23 @@ public:
 	// overwritten with the new one.
 	void initializeWorldRendering(double resolutionScale, bool fullGameWindow);
 
-	// Helper methods for interacting with render memory.
-	// - Eventually, the geometry methods here will be separated into "static" and
-	//   "dynamic" groups; static geometry is fixed to a voxel, dynamic is arbitrary.
-	void updateFogDistance(double fogDistance);
-	void updateSkyPalette(const uint32_t *colors, int count);
+	// Helper methods for changing data in the 3D renderer. Some data, like the voxel
+	// grid, are passed each frame by reference.
+	// - 'add' methods return an ID that references the new object.
+	// - 'update' methods take optional parameters for updating, ignoring null ones.
+	// - 'remove' methods delete an object from renderer memory if it exists.
+	int addFlat(const Double3 &position, const Double2 &direction, double width,
+		double height, int textureID);
+	int addLight(const Double3 &point, const Double3 &color, double intensity);
 	int addTexture(const uint32_t *pixels, int width, int height);
-	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
-		const std::vector<int> &textureIndices);
-	void updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
-		int textureIndex);
-	void updateSprite(int spriteID, const Rect3D &rect, int textureIndex);
-	void removeSprite(int spriteID);
-	void updateLight(int lightID, const Double3 &point, const Double3 &color, double intensity);
-	void removeLight(int lightID);
+	void updateFlat(int id, const Double3 *position, const Double2 *direction,
+		const double *width, const double *height, const int *textureID);
+	void updateLight(int id, const Double3 *point, const Double3 *color,
+		const double *intensity);
+	void setFogDistance(double fogDistance);
+	void setSkyPalette(const uint32_t *colors, int count);
+	void removeFlat(int id);
+	void removeLight(int id);
 
 	// Fills the desired frame buffer with the draw color, or default black/transparent.
 	void clearNative(const Color &color);

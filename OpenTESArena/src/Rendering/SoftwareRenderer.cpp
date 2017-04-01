@@ -60,19 +60,33 @@ const uint32_t *SoftwareRenderer::getPixels() const
 	return this->colorBuffer.data();
 }
 
-void SoftwareRenderer::setFogDistance(double fogDistance)
+int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
+	double width, double height, int textureID)
 {
-	this->fogDistance = fogDistance;
+	// Search for the next available flat ID.
+	int id = 0;
+	while (this->flats.find(id) != this->flats.end())
+	{
+		id++;
+	}
+
+	SoftwareRenderer::Flat flat;
+	flat.position = position;
+	flat.direction = direction;
+	flat.width = width;
+	flat.height = height;
+	flat.textureID = textureID;
+
+	// Add the flat (sprite, door, store sign, etc.).
+	this->flats.insert(std::make_pair(id, flat));
+
+	return id;
 }
 
-void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
+int SoftwareRenderer::addLight(const Double3 &point, const Double3 &color, double intensity)
 {
-	this->skyPalette = std::vector<Double3>(count);
-
-	for (size_t i = 0; i < this->skyPalette.size(); ++i)
-	{
-		this->skyPalette[i] = Double3::fromRGB(colors[i]);
-	}
+	Debug::crash("Software Renderer", "addLight() not implemented.");
+	return -1;
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -97,29 +111,6 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	this->textures.push_back(std::move(texture));
 
 	return static_cast<int>(this->textures.size() - 1);
-}
-
-int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
-	double width, double height, int textureID)
-{
-	// Search for the next available flat ID.
-	int id = 0;
-	while (this->flats.find(id) != this->flats.end())
-	{
-		id++;
-	}
-
-	SoftwareRenderer::Flat flat;
-	flat.position = position;
-	flat.direction = direction;
-	flat.width = width;
-	flat.height = height;
-	flat.textureID = textureID;
-
-	// Add the flat (sprite, door, store sign, etc.).
-	this->flats.insert(std::make_pair(id, flat));
-
-	return id;
 }
 
 void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2 *direction,
@@ -158,6 +149,27 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2
 	}
 }
 
+void SoftwareRenderer::updateLight(int id, const Double3 *point,
+	const Double3 *color, const double *intensity)
+{
+	Debug::crash("Software Renderer", "updateLight() not implemented.");
+}
+
+void SoftwareRenderer::setFogDistance(double fogDistance)
+{
+	this->fogDistance = fogDistance;
+}
+
+void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
+{
+	this->skyPalette = std::vector<Double3>(count);
+
+	for (size_t i = 0; i < this->skyPalette.size(); ++i)
+	{
+		this->skyPalette[i] = Double3::fromRGB(colors[i]);
+	}
+}
+
 void SoftwareRenderer::removeFlat(int id)
 {
 	// Make sure the flat exists before removing it.
@@ -166,6 +178,11 @@ void SoftwareRenderer::removeFlat(int id)
 		"Cannot remove a non-existent flat (" + std::to_string(id) + ").");
 
 	this->flats.erase(flatIter);
+}
+
+void SoftwareRenderer::removeLight(int id)
+{
+	Debug::crash("Software Renderer", "removeLight() not implemented.");
 }
 
 void SoftwareRenderer::resize(int width, int height)

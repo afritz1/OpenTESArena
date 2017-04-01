@@ -90,6 +90,26 @@ public:
 	// Intended for writing to a separate hardware texture with.
 	const uint32_t *getPixels() const;
 
+	// Adds a flat and returns its assigned ID.
+	int addFlat(const Double3 &position, const Double2 &direction, double width,
+		double height, int textureID);
+
+	// Adds a light and returns its assigned ID.
+	int addLight(const Double3 &point, const Double3 &color, double intensity);
+
+	// Adds a texture and returns its assigned ID (index).
+	int addTexture(const uint32_t *pixels, int width, int height);
+
+	// Updates various data for a flat. If a value doesn't need updating, pass null.
+	// Causes an error if no ID matches.
+	void updateFlat(int id, const Double3 *position, const Double2 *direction,
+		const double *width, const double *height, const int *textureID);
+
+	// Updates various data for a light. If a value doesn't need updating, pass null.
+	// Causes an error if no ID matches.
+	void updateLight(int id, const Double3 *point, const Double3 *color,
+		const double *intensity);
+
 	// Sets the distance at which the fog is maximum.
 	void setFogDistance(double fogDistance);
 
@@ -97,20 +117,11 @@ public:
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
 
-	// Adds a texture and returns its assigned ID (index).
-	int addTexture(const uint32_t *pixels, int width, int height);
-
-	// Adds a flat and returns its assigned ID.
-	int addFlat(const Double3 &position, const Double2 &direction, double width,
-		double height, int textureID);
-
-	// Updates various data for a flat. If a value doesn't need updating, pass null.
-	// Causes an error if no ID matches.
-	void updateFlat(int id, const Double3 *position, const Double2 *direction,
-		const double *width, const double *height, const int *textureID);
-
 	// Removes a flat. Causes an error if no ID matches.
 	void removeFlat(int id);
+
+	// Removes a light. Causes an error if no ID matches.
+	void removeLight(int id);
 
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);

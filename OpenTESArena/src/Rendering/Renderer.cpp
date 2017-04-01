@@ -382,16 +382,18 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		renderWidth, renderHeight));
 }
 
-void Renderer::updateFogDistance(double fogDistance)
+int Renderer::addFlat(const Double3 &position, const Double2 &direction, 
+	double width, double height, int textureID)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setFogDistance(fogDistance);
+	return this->softwareRenderer->addFlat(position, direction,
+		width, height, textureID);
 }
 
-void Renderer::updateSkyPalette(const uint32_t *colors, int count)
+int Renderer::addLight(const Double3 &point, const Double3 &color, double intensity)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setSkyPalette(colors, count);
+	return this->softwareRenderer->addLight(point, color, intensity);
 }
 
 int Renderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -400,49 +402,43 @@ int Renderer::addTexture(const uint32_t *pixels, int width, int height)
 	return this->softwareRenderer->addTexture(pixels, width, height);
 }
 
-void Renderer::updateVoxel(int x, int y, int z, const std::vector<Rect3D> &rects,
-	const std::vector<int> &textureIndices)
+void Renderer::updateFlat(int id, const Double3 *position, const Double2 *direction, 
+	const double *width, const double *height, const int *textureID)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndices);
-	Debug::crash("Renderer", "updateVoxel() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->updateFlat(id, position, direction,
+		width, height, textureID);
 }
 
-void Renderer::updateVoxel(int x, int y, int z,
-	const std::vector<Rect3D> &rects, int textureIndex)
+void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
+	const double *intensity)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueVoxelUpdate(x, y, z, rects, textureIndex);
-	Debug::crash("Renderer", "updateVoxel() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->updateLight(id, point, color, intensity);
 }
 
-void Renderer::updateSprite(int spriteID, const Rect3D &rect, int textureIndex)
+void Renderer::setFogDistance(double fogDistance)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueSpriteUpdate(spriteID, rect, textureIndex);
-	Debug::crash("Renderer", "updateSprite() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setFogDistance(fogDistance);
 }
 
-void Renderer::removeSprite(int spriteID)
+void Renderer::setSkyPalette(const uint32_t *colors, int count)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueSpriteRemoval(spriteID);
-	Debug::crash("Renderer", "removeSprite() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setSkyPalette(colors, count);
 }
 
-void Renderer::updateLight(int lightID, const Double3 &point,
-	const Double3 &color, double intensity)
+void Renderer::removeFlat(int id)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueLightUpdate(lightID, point, color, intensity);
-	Debug::crash("Renderer", "updateLight() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->removeFlat(id);
 }
 
-void Renderer::removeLight(int lightID)
+void Renderer::removeLight(int id)
 {
-	//assert(this->clProgram.get() != nullptr);
-	//this->clProgram->queueLightRemoval(lightID);
-	Debug::crash("Renderer", "removeLight() not implemented.");
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->removeLight(id);
 }
 
 void Renderer::clearNative(const Color &color)
