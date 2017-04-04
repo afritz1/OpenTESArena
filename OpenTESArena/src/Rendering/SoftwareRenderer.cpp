@@ -616,7 +616,7 @@ Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
 
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
 	const Matrix4d &transform, double cameraElevation, double daytimePercent, 
-	const VoxelGrid &voxelGrid)
+	const Double3 &fogColor, const VoxelGrid &voxelGrid)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
 	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
@@ -984,7 +984,6 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
 
 			const TextureData &texture = this->textures[initialVoxelData.sideID];
-			const Double3 &fogColor = this->getFogColor(daytimePercent);
 
 			// Draw the back-face wall column.
 			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
@@ -1111,7 +1110,6 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
 
 			const TextureData &texture = this->textures[voxelData.sideID];
-			const Double3 &fogColor = this->getFogColor(daytimePercent);
 
 			drawWallColumn(x, projectedY1, projectedY2, wallDistance, u, voxelData.topV,
 				voxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
@@ -1197,7 +1195,6 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
-		const Double3 &fogColor = this->getFogColor(daytimePercent);
 
 		uint32_t *pixels = this->colorBuffer.data();
 		double *depth = this->zBuffer.data();
@@ -1265,11 +1262,14 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// "Forward" component of the camera for generating rays with.
 	const Double2 forwardComp = forward2D * zoom;
 
+	// Calculate fog color (also used for sky).
+	const Double3 fogColor = this->getFogColor(daytimePercent);
+
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, &voxelGrid, widthReal, aspect, &transform,
-		cameraElevation, daytimePercent, &forwardComp, &right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, &fogColor, widthReal,
+		aspect, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1286,12 +1286,12 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->castColumnRay(x, eye, direction, transform, cameraElevation, 
-				daytimePercent, voxelGrid);
+				daytimePercent, fogColor, voxelGrid);
 		}
 	};
 
 	// Lambda for clearing some rows on the frame buffer quickly.
-	auto clearRows = [this, daytimePercent](int startY, int endY)
+	auto clearRows = [this, &fogColor](int startY, int endY)
 	{
 		const int startIndex = startY * this->width;
 		const int endIndex = endY * this->width;
@@ -1299,7 +1299,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 		// Clear some color rows.
 		const auto colorBegin = this->colorBuffer.begin() + startIndex;
 		const auto colorEnd = this->colorBuffer.begin() + endIndex;
-		std::fill(colorBegin, colorEnd, this->getFogColor(daytimePercent).toRGB());
+		std::fill(colorBegin, colorEnd, fogColor.toRGB());
 
 		// Clear some depth rows.
 		const auto depthBegin = this->zBuffer.begin() + startIndex;

@@ -77,7 +77,7 @@ private:
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
 		const Matrix4d &transform, double cameraElevation, double daytimePercent,
-		const VoxelGrid &voxelGrid);
+		const Double3& fogColor, const VoxelGrid &voxelGrid);
 
 	// Refreshes the list of flats that are within the viewing frustum.
 	// "cameraElevation" is the Y-shearing component of the projection plane, and 
