@@ -5,11 +5,10 @@
 
 #include "../Math/Vector3.h"
 
-// Entities are anything in the world that isn't part of the voxel grid. Every 
-// entity has a world position and a unique referencing ID. 
+// Entities are any non-player objects in the world that aren't part of the 
+// voxel grid. Every entity has a world position and a unique referencing ID. 
 
-// Not all entities have a sprite (such as the player), and not all sprites turn to 
-// face the camera (such as doors and portcullises).
+// Not all sprites turn to face the camera (such as doors and portcullises).
 
 class EntityManager;
 class Game;
@@ -20,10 +19,12 @@ class Entity
 {
 private:
 	int id;
-	EntityType entityType;
 public:
-	Entity(EntityType entityType, EntityManager &entityManager);
+	Entity(EntityManager &entityManager);
+	Entity(const Entity&) = delete;
 	virtual ~Entity();
+
+	Entity &operator=(const Entity&) = delete;
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	

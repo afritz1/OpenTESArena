@@ -1,45 +1,33 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <memory>
-
 #include "Camera3D.h"
 #include "CharacterClass.h"
-#include "Entity.h"
 
-// The player is an entity with no sprite, and has extra data pertaining to 
-// selected spells, weapon animation, and more.
-
-// Though the player is not rendered, they are still considered part of the
-// entity manager for purposes such as physics calculation and AI behavior.
+class Game;
 
 enum class GenderName;
 
-class Player : public Entity
+class Player
 {
 private:
 	CharacterClass charClass;
 	Camera3D camera;
 	Double3 velocity;
-	double maxWalkSpeed, maxRunSpeed;
+	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	GenderName gender;
 	int raceID;
 	std::string displayName;
 	int portraitID;
 	// Other stats...
 public:
-	// Default constructor.
-	Player(const std::string &displayName, GenderName gender,
-		int raceID, const CharacterClass &charClass, int portraitID,
-		const Double3 &position, const Double3 &direction, const Double3 &velocity, 
-		double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager);
+	Player(const std::string &displayName, GenderName gender, int raceID,
+		const CharacterClass &charClass, int portraitID, const Double3 &position,
+		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
+		double maxRunSpeed);
+	~Player();
 
-	virtual ~Player();
-
-	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const override;
-	virtual EntityType getEntityType() const override;
-	virtual const Double3 &getPosition() const override;
-
+	const Double3 &getPosition() const;
 	const std::string &getDisplayName() const;
 	std::string getFirstName() const;
 	int getPortraitID() const;
@@ -63,12 +51,12 @@ public:
 	void rotate(double dx, double dy, double hSensitivity, double vSensitivity);
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, 
-	// and delta time, as well as whether the entity is running. The direction could 
-	// have had its magnitude based on its length, but this way is more explicit.
+	// and delta time, as well as whether the player is running.
 	void accelerate(const Double3 &direction, double magnitude,
 		bool isRunning, double dt);
 
-	virtual void tick(Game &game, double dt) override;
+	// Tick the player by delta time for motion, etc..
+	void tick(Game &game, double dt);
 };
 
 #endif

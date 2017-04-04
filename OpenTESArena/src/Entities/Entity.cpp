@@ -5,10 +5,9 @@
 #include "EntityManager.h"
 #include "EntityType.h"
 
-Entity::Entity(EntityType entityType, EntityManager &entityManager)
+Entity::Entity(EntityManager &entityManager)
 {
 	this->id = entityManager.nextID();
-	this->entityType = entityType;
 }
 
 Entity::~Entity()

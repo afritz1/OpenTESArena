@@ -8,15 +8,14 @@
 #include "GenderName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
-#include "../Math/Quaternion.h"
 #include "../Utilities/String.h"
 
-Player::Player(const std::string &displayName, GenderName gender,
-	int raceID, const CharacterClass &charClass, int portraitID,
-	const Double3 &position, const Double3 &direction, const Double3 &velocity,
-	double maxWalkSpeed, double maxRunSpeed, EntityManager &entityManager)
-	: Entity(EntityType::Player, entityManager), charClass(charClass),
-	displayName(displayName), camera(position, direction), velocity(velocity)
+Player::Player(const std::string &displayName, GenderName gender, int raceID, 
+	const CharacterClass &charClass, int portraitID, const Double3 &position, 
+	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed, 
+	double maxRunSpeed)
+	: charClass(charClass), displayName(displayName), camera(position, direction), 
+	velocity(velocity)
 {
 	assert(portraitID >= 0);
 
@@ -30,20 +29,6 @@ Player::Player(const std::string &displayName, GenderName gender,
 Player::~Player()
 {
 
-}
-
-std::unique_ptr<Entity> Player::clone(EntityManager &entityManager) const
-{
-	return std::unique_ptr<Entity>(new Player(
-		this->getDisplayName(), this->getGenderName(), this->getRaceID(),
-		this->getCharacterClass(), this->getPortraitID(), this->getPosition(),
-		this->camera.getDirection(), this->velocity, this->maxWalkSpeed,
-		this->maxRunSpeed, entityManager));
-}
-
-EntityType Player::getEntityType() const
-{
-	return EntityType::Player;
 }
 
 const Double3 &Player::getPosition() const
@@ -136,7 +121,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 
 	// If the velocity is near zero, set it to zero. This fixes a problem where 
 	// the velocity could remain at a tiny magnitude and never reach zero.
-	if (this->velocity.length() < EPSILON)
+	if (this->velocity.length() < 0.001)
 	{
 		this->velocity = Double3(0.0f, 0.0f, 0.0f);
 	}

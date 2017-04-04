@@ -42,7 +42,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const double maxRunSpeed = 8.0;
 
 	Player player(playerName, gender, raceID, charClass, portraitID,
-		position, direction, velocity, maxWalkSpeed, maxRunSpeed, entityManager);
+		position, direction, velocity, maxWalkSpeed, maxRunSpeed);
 
 	// Voxel grid with some arbitrary dimensions.
 	const int gridWidth = 32;
