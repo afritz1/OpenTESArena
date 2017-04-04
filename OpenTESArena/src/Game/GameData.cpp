@@ -19,12 +19,6 @@ GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&v
 {
 	Debug::mention("GameData", "Initializing.");
 
-	// Initialize collision grid to empty.
-	const int worldVolume = this->voxelGrid.getWidth() * this->voxelGrid.getHeight() *
-		this->voxelGrid.getDepth();
-	this->collisionGrid = std::vector<char>(worldVolume);
-	std::fill(this->collisionGrid.begin(), this->collisionGrid.end(), 0);
-
 	this->gameTime = gameTime;
 	this->fogDistance = fogDistance;
 }
@@ -115,11 +109,6 @@ EntityManager &GameData::getEntityManager()
 VoxelGrid &GameData::getVoxelGrid()
 {
 	return this->voxelGrid;
-}
-
-std::vector<char> &GameData::getCollisionGrid()
-{
-	return this->collisionGrid;
 }
 
 double GameData::getGameTime() const

@@ -30,7 +30,6 @@ private:
 	Player player;
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
-	std::vector<char> collisionGrid;
 	double gameTime, fogDistance;
 	// province... location... weather...
 	// date...
@@ -47,7 +46,6 @@ public:
 	Player &getPlayer();
 	EntityManager &getEntityManager();
 	VoxelGrid &getVoxelGrid();
-	std::vector<char> &getCollisionGrid(); // 3D array.
 	double getGameTime() const;
 
 	// Gets a 0->1 value representing how far along the current day is. 
