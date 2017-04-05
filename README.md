@@ -22,6 +22,7 @@ Here are some hotkeys in the game world:
 - N - automap
 
 <br/>
+
 ![Preview](Preview.PNG)
 <br/>
 
