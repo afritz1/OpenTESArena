@@ -30,8 +30,8 @@ private:
 		int width, height;
 	};
 
-	// A flat is a 2D surface always facing perpendicular to the Y axis. It might be 
-	// a door, sprite, store sign, etc..
+	// A flat is a 2D surface always facing perpendicular to the Y axis (not necessarily
+	// facing the camera). It might be a door, sprite, store sign, etc..
 	struct Flat
 	{
 		Double3 position; // Center of bottom edge.
@@ -39,15 +39,19 @@ private:
 		double width, height;
 		int textureID;
 
-		struct ProjectionData
+		// A flat's projection consists of two vertical line segments that are interpolated
+		// between by the renderer.
+		struct Projection
 		{
-			// Four corners of the flat projected onto the viewing plane. These aren't 
-			// stored as 2-component vectors because there are some duplicates.
-			double leftX, rightX;
-			double topLeftY, topRightY, bottomLeftY, bottomRightY;
+			// An edge represents a projected column on the screen in XY screen coordinates 
+			// (that is, (0, 0) is at the center). Z is true distance from the camera in the
+			// XZ plane. U is for horizontal texture coordinates (in case of line clipping).
+			struct Edge
+			{
+				double x, topY, bottomY, z, u;
+			};
 
-			// Z-distances for left edge and right edge, for distance comparisons.
-			double leftZ, rightZ;
+			Edge left, right;
 		};
 	};
 
@@ -58,7 +62,7 @@ private:
 	std::vector<uint32_t> colorBuffer;
 	std::vector<double> zBuffer;
 	std::unordered_map<int, Flat> flats;
-	std::vector<std::pair<const Flat*, Flat::ProjectionData>> visibleFlats;
+	std::vector<std::pair<const Flat*, Flat::Projection>> visibleFlats;
 	std::vector<TextureData> textures;
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
@@ -82,7 +86,8 @@ private:
 	// Refreshes the list of flats that are within the viewing frustum.
 	// "cameraElevation" is the Y-shearing component of the projection plane, and 
 	// "transform" is the projection + view matrix.
-	void updateVisibleFlats(double cameraElevation, const Matrix4d &transform);
+	void updateVisibleFlats(const Double3 &eye, double cameraElevation, 
+		const Matrix4d &transform);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
