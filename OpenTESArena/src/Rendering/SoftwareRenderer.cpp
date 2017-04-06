@@ -749,9 +749,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		const int drawStart = std::max(0, projectedStart);
 		const int drawEnd = std::min(frameHeight, projectedEnd);
 
-		// Distance to the near and far points.
+		// True distance to the near and far points.
 		const double nearZ = (nearPoint - eye).length();
 		const double farZ = (farPoint - eye).length();
+
+		// Values for perspective-correct interpolation.
+		const double nearZRecip = 1.0 / nearZ;
+		const double farZRecip = 1.0 / farZ;
+		const Double2 nearPointDiv = nearPoint * nearZRecip;
+		const Double2 farPointDiv = farPoint * farZRecip;
 
 		// Draw the column to the output buffer.
 		for (int y = drawStart; y < drawEnd; ++y)
@@ -763,7 +769,9 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				static_cast<double>(projectedEnd - projectedStart);
 
 			// Interpolate between the near and far point.
-			const Double2 currentPoint = nearPoint + ((farPoint - nearPoint) * yPercent);
+			const Double2 currentPoint =
+				(nearPointDiv + ((farPointDiv - nearPointDiv) * yPercent)) /
+				(nearZRecip + ((farZRecip - nearZRecip) * yPercent));
 			const double z = nearZ + ((farZ - nearZ) * yPercent);
 
 			// Linearly interpolated fog.
@@ -831,9 +839,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		const int drawStart = std::max(0, projectedStart);
 		const int drawEnd = std::min(frameHeight, projectedEnd);
 
-		// Distance to the near and far points.
+		// True distance to the near and far points.
 		const double nearZ = (nearPoint - eye).length();
 		const double farZ = (farPoint - eye).length();
+
+		// Values for perspective-correct interpolation.
+		const double nearZRecip = 1.0 / nearZ;
+		const double farZRecip = 1.0 / farZ;
+		const Double2 nearPointDiv = nearPoint * nearZRecip;
+		const Double2 farPointDiv = farPoint * farZRecip;
 		
 		// Draw the column to the output buffer.
 		for (int y = drawStart; y < drawEnd; ++y)
@@ -845,7 +859,9 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				static_cast<double>(projectedEnd - projectedStart);
 
 			// Interpolate between the near and far point.
-			const Double2 currentPoint = farPoint + ((nearPoint - farPoint) * yPercent);
+			const Double2 currentPoint =
+				(farPointDiv + ((nearPointDiv - farPointDiv) * yPercent)) /
+				(farZRecip + ((nearZRecip - farZRecip) * yPercent));
 			const double z = farZ + ((nearZ - farZ) * yPercent);
 
 			// Linearly interpolated fog.
@@ -1181,8 +1197,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			continue;
 		}
 
-		// Horizontal texture coordinate in the flat.
-		// - This should eventually use perspective-correct mapping instead of affine mapping.
+		// Horizontal texture coordinate in the flat. This actually doesn't need
+		// perspective-correctness after all.
 		const double u = flatProjection.right.u + 
 			((flatProjection.left.u - flatProjection.right.u) * xRangePercent);
 
