@@ -1030,18 +1030,216 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
 				initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
 				this->height, this->zBuffer.data(), this->colorBuffer.data());
+
+			// Near point for the floor and ceiling.
+			const Double2 nearPoint(
+				eye.x + (dirX * SoftwareRenderer::NEAR_PLANE), 
+				eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
+
+			// Texture for floor and ceiling.
+			const TextureData &floorAndCeilingTexture = 
+				this->textures[initialVoxelData.floorAndCeilingID];
+
+			// These special cases only apply for the voxel the camera is in, because
+			// the renderer always draws columns from top to bottom (for now).
+			
+			// Draw the floor as a floor if above, and as a ceiling if below.
+			if (eye.y > (startCellReal.y + initialVoxelData.yOffset))
+			{
+				drawFloorColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
+			else
+			{
+				drawCeilingColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
+
+			// Draw the ceiling as a ceiling if below, and as a floor if above.
+			if (eye.y > (startCellReal.y + initialVoxelData.yOffset + initialVoxelData.ySize))
+			{
+				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
+			else
+			{
+				drawFloorColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
 		}
 
 		// Render the voxels below the camera.
 		for (int voxelY = 0; voxelY < startCell.y; ++voxelY)
 		{
-			// To do...
+			// Get the initial voxel ID and see how it should be rendered.
+			const char initialVoxelIDBelow = voxels[startCell.x + (voxelY * voxelGrid.getWidth()) +
+				(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
+
+			// If the initial voxel's ID is not air, render it.
+			if (initialVoxelIDBelow > 0)
+			{
+				const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelIDBelow - 1);
+
+				// Horizontal texture coordinate for the initial wall column. It is always
+				// a back face, so the texture coordinates are reversed.
+				double u;
+				if (axis == Axis::X)
+				{
+					const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
+					u = nonNegativeDirX ? (1.0 - uVal) : uVal;
+				}
+				else
+				{
+					const double uVal = initialFarPointX - std::floor(initialFarPointX);
+					u = nonNegativeDirZ ? uVal : (1.0 - uVal);
+				}
+
+				// Generate a point on the ceiling edge and floor edge of the wall relative
+				// to the hit point, accounting for the Y thickness of the wall as well.
+				const Double3 floorPoint(
+					initialFarPointX,
+					static_cast<double>(voxelY) + initialVoxelData.yOffset,
+					initialFarPointZ);
+				const Double3 ceilingPoint(
+					initialFarPointX,
+					static_cast<double>(voxelY) + initialVoxelData.yOffset + initialVoxelData.ySize,
+					initialFarPointZ);
+
+				// Transform the points to camera space (projection * view).
+				Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
+				Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
+
+				// Convert to normalized coordinates.
+				p1 = p1 / p1.w;
+				p2 = p2 / p2.w;
+
+				// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+				// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+				// correct aspect ratio.
+				// - Since the ray cast guarantees the intersection to be in the correct column
+				//   of the screen, only the Y coordinates need to be projected.
+				const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+				const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+				const TextureData &texture = this->textures[initialVoxelData.sideID];
+
+				// Draw the back-face wall column.
+				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
+					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
+					this->height, this->zBuffer.data(), this->colorBuffer.data());
+
+				// Near point for the floor and ceiling.
+				const Double2 nearPoint(
+					eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
+					eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
+
+				// Texture for floor and ceiling.
+				const TextureData &floorAndCeilingTexture =
+					this->textures[initialVoxelData.floorAndCeilingID];
+
+				// Draw the floor.
+				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+
+				// Draw the ceiling.
+				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
 		}
 
 		// Render the voxels above the camera.
-		for (int voxelY = startCell.y; voxelY < voxelGrid.getHeight(); ++voxelY)
+		for (int voxelY = (startCell.y + 1); voxelY < voxelGrid.getHeight(); ++voxelY)
 		{
-			// To do...
+			// Get the initial voxel ID and see how it should be rendered.
+			const char initialVoxelIDAbove = voxels[startCell.x + (voxelY * voxelGrid.getWidth()) +
+				(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
+
+			// If the initial voxel's ID is not air, render it.
+			if (initialVoxelIDAbove > 0)
+			{
+				const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelIDAbove - 1);
+
+				// Horizontal texture coordinate for the initial wall column. It is always
+				// a back face, so the texture coordinates are reversed.
+				double u;
+				if (axis == Axis::X)
+				{
+					const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
+					u = nonNegativeDirX ? (1.0 - uVal) : uVal;
+				}
+				else
+				{
+					const double uVal = initialFarPointX - std::floor(initialFarPointX);
+					u = nonNegativeDirZ ? uVal : (1.0 - uVal);
+				}
+
+				// Generate a point on the ceiling edge and floor edge of the wall relative
+				// to the hit point, accounting for the Y thickness of the wall as well.
+				const Double3 floorPoint(
+					initialFarPointX,
+					static_cast<double>(voxelY) + initialVoxelData.yOffset,
+					initialFarPointZ);
+				const Double3 ceilingPoint(
+					initialFarPointX,
+					static_cast<double>(voxelY) + initialVoxelData.yOffset + initialVoxelData.ySize,
+					initialFarPointZ);
+
+				// Transform the points to camera space (projection * view).
+				Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
+				Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
+
+				// Convert to normalized coordinates.
+				p1 = p1 / p1.w;
+				p2 = p2 / p2.w;
+
+				// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
+				// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+				// correct aspect ratio.
+				// - Since the ray cast guarantees the intersection to be in the correct column
+				//   of the screen, only the Y coordinates need to be projected.
+				const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
+				const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+
+				const TextureData &texture = this->textures[initialVoxelData.sideID];
+
+				// Draw the back-face wall column.
+				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
+					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
+					this->height, this->zBuffer.data(), this->colorBuffer.data());
+
+				// Near point for the floor and ceiling.
+				const Double2 nearPoint(
+					eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
+					eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
+
+				// Texture for floor and ceiling.
+				const TextureData &floorAndCeilingTexture =
+					this->textures[initialVoxelData.floorAndCeilingID];
+
+				// Draw the floor.
+				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+
+				// Draw the ceiling.
+				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
+					Double2(eye.x, eye.z), transform, cameraElevation, floorAndCeilingTexture,
+					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
+					this->colorBuffer.data());
+			}
 		}
 	}
 
