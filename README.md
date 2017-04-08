@@ -10,8 +10,6 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 This project is early in development.
 
-The OpenCL rendering code has been torn out (since OpenCL isn't really a graphics API), so the game world isn't being rendered right now. I'll be developing a software renderer instead for purposes of faster prototyping and general ease of use.
-
 No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some hotkeys in the game world:
