@@ -409,6 +409,98 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		setVoxel(13, 1, k, bridge1ID);
 	}
 
+	// Add sprites.
+	const SDL_Surface *tree1 = textureManager.getSurface("NPINE1.IMG");
+	const SDL_Surface *tree2 = textureManager.getSurface("NPINE4.IMG");
+	const SDL_Surface *statue = textureManager.getSurface("NSTATUE1.IMG");
+	const SDL_Surface *lampPost = textureManager.getSurface("NLAMP1DA.IMG");
+	const SDL_Surface *woman = textureManager.getSurfaces("FMGEN01.CFA").at(6);
+	const SDL_Surface *man = textureManager.getSurfaces("MLGEN01W.CFA").at(6);
+	const int tree1TextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(tree1->pixels), tree1->w, tree1->h);
+	const int tree2TextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(tree2->pixels), tree2->w, tree2->h);
+	const int statueTextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(statue->pixels), statue->w, statue->h);
+	const int lampPostTextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(lampPost->pixels), lampPost->w, lampPost->h);
+	const int womanTextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(woman->pixels), woman->w, woman->h);
+	const int manTextureID = renderer.addTexture(
+		static_cast<const uint32_t*>(man->pixels), man->w, man->h);
+	const double tree1Scale = 2.0;
+	const double tree2Scale = 2.0;
+	const double statueScale = 1.0;
+	const double lampPostScale = 0.90;
+	const double womanScale = 0.80;
+	const double manScale = 0.80;
+	renderer.addFlat(
+		Double3(2.50, 1.0, 21.50),
+		Double2(1.0, 0.0),
+		0.88 * tree1Scale,
+		1.37 * tree1Scale,
+		tree1TextureID);
+	renderer.addFlat(
+		Double3(9.50, 1.0, 21.50),
+		Double2(1.0, 0.0),
+		0.66 * tree2Scale,
+		1.32 * tree2Scale,
+		tree2TextureID);
+	renderer.addFlat(
+		Double3(2.50, 1.0, 2.50),
+		Double2(1.0, 0.0),
+		0.66 * tree2Scale,
+		1.32 * tree2Scale,
+		tree2TextureID);
+	renderer.addFlat(
+		Double3(20.50, 1.0, 21.50),
+		Double2(1.0, 0.0),
+		0.88 * tree1Scale,
+		1.37 * tree1Scale,
+		tree1TextureID);
+	renderer.addFlat(
+		Double3(6.50, 1.0, 12.50),
+		Double2(1.0, 0.0),
+		0.74 * statueScale,
+		1.38 * statueScale,
+		statueTextureID);
+	renderer.addFlat(
+		Double3(5.50, 1.0, 10.50),
+		Double2(1.0, 0.0),
+		0.64 * lampPostScale,
+		1.03 * lampPostScale,
+		lampPostTextureID);
+	renderer.addFlat(
+		Double3(9.50, 1.0, 14.50),
+		Double2(1.0, 0.0),
+		0.64 * lampPostScale,
+		1.03 * lampPostScale,
+		lampPostTextureID);
+	renderer.addFlat(
+		Double3(18.50, 1.0, 9.50),
+		Double2(1.0, 0.0),
+		0.64 * lampPostScale,
+		1.03 * lampPostScale,
+		lampPostTextureID);
+	renderer.addFlat(
+		Double3(17.50, 1.0, 14.50),
+		Double2(1.0, 0.0),
+		0.64 * lampPostScale,
+		1.03 * lampPostScale,
+		lampPostTextureID);
+	renderer.addFlat(
+		Double3(4.50, 1.0, 13.50),
+		Double2(1.0, 0.0),
+		0.44 * womanScale,
+		1.04 * womanScale,
+		womanTextureID);
+	renderer.addFlat(
+		Double3(4.50, 1.0, 11.50),
+		Double2(1.0, 0.0),
+		0.52 * manScale,
+		0.99 * manScale,
+		manTextureID);
+
 	// Fog distance is changed infrequently, so it can go here in scene creation.
 	// It's not an expensive operation for the software renderer.
 	const double fogDistance = 18.0;

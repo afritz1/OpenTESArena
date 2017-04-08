@@ -745,32 +745,13 @@ void GameWorldPanel::tick(double dt)
 	auto &player = gameData.getPlayer();
 	player.tick(game, dt);
 
-	// -- test -- update test sprites.
-	/*const Double3 playerRight = player.getFrame().getRight();
-	const Float3 spriteRight(
-		static_cast<float>(-playerRight.x),
-		static_cast<float>(-playerRight.y),
-		static_cast<float>(-playerRight.z));
-
-	static int index = 0;
-	for (int k = 1; k < gameData.getWorldDepth() - 1; k += 8)
+	// Update test sprites (eventually iterate over all entities in entity manager instead).
+	auto &renderer = game.getRenderer();
+	const Double2 spriteDirection = -player.getGroundDirection();
+	for (int i = 0; i < 11; ++i)
 	{
-		for (int i = 1; i < gameData.getWorldWidth() - 1; i += 8)
-		{
-			Rect3D rect = Rect3D::fromFrame(
-				Float3(i + 0.50f, 1.0f, k + 0.50f),
-				spriteRight,
-				Float3(0.0f, 1.0f, 0.0f),
-				(44.0f / 66.0f) * 0.75f,
-				1.0f * 0.75f);
-			renderer.updateSprite(
-				(i - 1) + ((k - 1) * (gameData.getWorldWidth() - 1)),
-				rect,
-				30 + ((index / 8) % 2));
-		}
+		renderer.updateFlat(i, nullptr, &spriteDirection, nullptr, nullptr, nullptr);
 	}
-	index++;*/
-	// -- end test --
 }
 
 void GameWorldPanel::render(Renderer &renderer)
