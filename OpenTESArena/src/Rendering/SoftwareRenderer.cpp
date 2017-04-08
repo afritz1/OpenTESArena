@@ -1283,6 +1283,26 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// the Y cell coordinate is constant.
 	Int3 cell(startCell.x, startCell.y, startCell.z);
 
+	// Step forward in the grid once to leave the initial voxel.
+	if (sideDistX < sideDistZ)
+	{
+		sideDistX += deltaDistX;
+		cell.x += stepX;
+		axis = Axis::X;
+		voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
+	}
+	else
+	{
+		sideDistZ += deltaDistZ;
+		cell.z += stepZ;
+		axis = Axis::Z;
+		voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
+	}
+
+	zDistance = (axis == Axis::X) ?
+		(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
+		(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+
 	// Step through the voxel grid while the current coordinate is valid and
 	// the distance stepped is less than the distance at which fog is maximum.
 	while (voxelIsValid && (zDistance < this->fogDistance))
