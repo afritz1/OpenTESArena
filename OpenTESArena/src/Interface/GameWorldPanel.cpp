@@ -224,6 +224,8 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	// an option for a free-look camera like Daggerfall.
 	this->playerInterface = PlayerInterface::Classic;
 
+	this->showDebug = false;
+
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game->getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.x, screenDims.y);
@@ -249,10 +251,17 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	bool escapePressed = (e.type == SDL_KEYDOWN) &&
 		(e.key.keysym.sym == SDLK_ESCAPE);
+	bool f4Pressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_F4);
 
 	if (escapePressed)
 	{
 		this->pauseButton->click(this->getGame());
+	}
+	else if (f4Pressed)
+	{
+		// Toggle debug display.
+		this->showDebug = !this->showDebug;
 	}
 
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -779,8 +788,11 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Set original frame buffer blending to true.
 	renderer.useTransparencyBlending(true);
 
-	// Draw some debug text.
-	this->drawDebugText(renderer);
+	// Draw some optional debug text.
+	if (this->showDebug)
+	{
+		this->drawDebugText(renderer);
+	}
 
 	// Draw game world interface.
 	const auto &gameInterface = textureManager.getTexture(
