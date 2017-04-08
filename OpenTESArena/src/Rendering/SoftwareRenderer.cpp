@@ -677,7 +677,10 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		{
 			const int index = x + (y * frameWidth);
 
-			if (z <= depthBuffer[index])
+			// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
+			// walls sharing the same Z value. More strict drawing rules (voxel face priority?) 
+			// would be a better fix for this.
+			if (z <= (depthBuffer[index] - EPSILON))
 			{
 				// Percent stepped from beginning to end on the column.
 				const double yPercent = static_cast<double>(y - projectedStart) /
