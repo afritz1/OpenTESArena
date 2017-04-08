@@ -690,10 +690,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
 
-				output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
+				// Draw only if the texel is not transparent.
+				if (texel.w > 0.0)
+				{
+					const Double3 color(texel.x, texel.y, texel.z);
+
+					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					depthBuffer[index] = z;
+				}
 			}
 		}
 	};
@@ -783,10 +788,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 					static_cast<double>(texture.height)) % texture.height;
 
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
 
-				output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
+				// Draw only if the texel is not transparent.
+				if (texel.w > 0.0)
+				{
+					const Double3 color(texel.x, texel.y, texel.z);
+
+					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					depthBuffer[index] = z;
+				}
 			}
 		}
 	};
@@ -873,10 +883,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 					static_cast<double>(texture.height)) % texture.height;
 
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
 
-				output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
+				// Draw only if the texel is not transparent.
+				if (texel.w > 0.0)
+				{
+					const Double3 color(texel.x, texel.y, texel.z);
+
+					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					depthBuffer[index] = z;
+				}
 			}
 		}
 	};
@@ -1477,10 +1492,15 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-				const Double3 color(texel.x, texel.y, texel.z);
 
-				pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depth[index] = zDistance;
+				// Draw only if the texel is not transparent.
+				if (texel.w > 0.0)
+				{
+					const Double3 color(texel.x, texel.y, texel.z);
+
+					pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					depth[index] = zDistance;
+				}
 			}
 		}
 	}
