@@ -11,16 +11,19 @@
 class VoxelData
 {
 public:
-	int sideID, floorAndCeilingID;
+	int sideID, floorID, ceilingID;
 	double yOffset, ySize; // Offset from bottom of voxel, and "thickness" in Y.
 	double topV, bottomV; // V texture coordinates between 0.0 and 1.0.
 
-	VoxelData(int sideID, int floorAndCeilingID, double yOffset, double ySize,
+	VoxelData(int sideID, int floorID, int ceilingID, double yOffset, double ySize,
 		double topV, double bottomV);
 
 	// Default constructor for most voxels; a Y offset of 0.0 and Y size of 1.0, 
 	// with the default texture coordinates.
-	VoxelData(int sideID, int floorAndCeilingID);
+	VoxelData(int sideID, int floorID, int ceilingID);
+
+	// Default constructor for a 1x1x1 voxel with all sides using the same texture.
+	VoxelData(int id);
 
 	~VoxelData();
 };

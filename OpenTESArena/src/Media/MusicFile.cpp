@@ -53,7 +53,7 @@ namespace
 		{ MusicName::Sneaking, "SNEAKING.XMI" },
 		{ MusicName::Snowing, "SNOWING.XMI" },
 		{ MusicName::Square, "SQUARE.XMI" },
-		{ MusicName::SunnyDay, "SUNNYDAY.XMI" },
+		{ MusicName::SunnyDay, "SUNNYDAY.XFM" },
 		{ MusicName::Swimming, "SWIMMING.XMI" },
 		{ MusicName::Tavern, "TAVERN.XMI" },
 		{ MusicName::Temple, "TEMPLE.XMI" },

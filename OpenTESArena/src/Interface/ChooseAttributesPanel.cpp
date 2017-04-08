@@ -113,39 +113,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			renderer.initializeWorldRendering(
 				game->getOptions().getResolutionScale(), false);
 
-			// Add some distinctive wall textures for testing.
-			auto &textureManager = this->getGame()->getTextureManager();
-			textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-			std::vector<const SDL_Surface*> surfaces = {
-				textureManager.getSurfaces("CASA.SET").at(3),
-				textureManager.getSurfaces("CASF.SET").at(3),
-				textureManager.getSurfaces("CASH.SET").at(3),
-				textureManager.getSurfaces("CASE.SET").at(3),
-				textureManager.getSurfaces("CASL.SET").at(1),
-				textureManager.getSurfaces("CASK.SET").at(2),
-				textureManager.getSurfaces("CASI.SET").at(3)
-			};
-
-			for (const auto *surface : surfaces)
-			{
-				renderer.addTexture(static_cast<uint32_t*>(surface->pixels), 
-					surface->w, surface->h);
-			}
-
 			// Generate the test world data.
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
-				name, gender, raceID, charClass, this->portraitID);
-
-			// Fog distance is changed infrequently, so it can go here in scene creation.
-			// It's not an expensive operation for the software renderer.
-			renderer.setFogDistance(gameData->getFogDistance());
-
-			// The sky palette is used to color the sky and fog. The renderer chooses
-			// which color to use based on the time of day. Interiors should just have
-			// one pixel as the sky palette (usually black).
-			const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
-			renderer.setSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels),
-				skyPalette->w * skyPalette->h);
+				name, gender, raceID, charClass, this->portraitID,
+				game->getTextureManager(), renderer);
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
@@ -155,7 +126,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gameWorldPanel));
-			game->setMusic(MusicName::Overcast);
+			game->setMusic(MusicName::SunnyDay);
 		};
 
 		auto cinematicFunction = [gameDataFunction, gameFunction](Game *game)

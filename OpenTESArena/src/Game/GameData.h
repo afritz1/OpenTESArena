@@ -18,6 +18,8 @@
 // need to load data into the game data object.
 
 class CharacterClass;
+class Renderer;
+class TextureManager;
 
 enum class GenderName;
 
@@ -41,7 +43,7 @@ public:
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
 		GenderName gender, int raceID, const CharacterClass &charClass,
-		int portraitID);
+		int portraitID, TextureManager &textureManager, Renderer &renderer);
 
 	Player &getPlayer();
 	EntityManager &getEntityManager();
