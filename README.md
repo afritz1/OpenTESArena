@@ -2,7 +2,7 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows and Linux.
 
-- Version: 0.2.0
+- Version: 0.3.0
 - License: MIT
 - IRC: #opentesarena on [webchat.freenode.net](https://webchat.freenode.net/)
 
