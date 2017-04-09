@@ -12,12 +12,15 @@ This project is early in development.
 
 No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
-Here are some hotkeys in the game world:
+Here are some keys in the game world:
+- WASD - move and turn. Hold LCtrl to strafe with A and D.
+- Space and C - move up and down
 - Esc - pause menu
-- Tab - character sheet and inventory
-- M - world map (click on provinces for province maps)
+- Tab - character sheet
 - L - logbook
+- M - world map (click on provinces for province maps)
 - N - automap
+- F4 - toggle debug text
 
 <br/>
 
