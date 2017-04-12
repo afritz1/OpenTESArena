@@ -38,6 +38,7 @@ private:
 		Double2 direction; // In XZ plane.
 		double width, height;
 		int textureID;
+		bool flipped;
 
 		// A flat's projection consists of two vertical line segments that are interpolated
 		// between by the renderer.
@@ -109,7 +110,8 @@ public:
 	// Updates various data for a flat. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.
 	void updateFlat(int id, const Double3 *position, const Double2 *direction,
-		const double *width, const double *height, const int *textureID);
+		const double *width, const double *height, const int *textureID,
+		const bool *flipped);
 
 	// Updates various data for a light. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.

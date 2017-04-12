@@ -65,6 +65,7 @@ int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
 	flat.width = width;
 	flat.height = height;
 	flat.textureID = textureID;
+	flat.flipped = false; // The initial value doesn't matter, it's updated frequently.
 
 	// Add the flat (sprite, door, store sign, etc.).
 	this->flats.insert(std::make_pair(id, flat));
@@ -103,7 +104,7 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 }
 
 void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2 *direction,
-	const double *width, const double *height, const int *textureID)
+	const double *width, const double *height, const int *textureID, const bool *flipped)
 {
 	const auto flatIter = this->flats.find(id);
 	Debug::check(flatIter != this->flats.end(), "Software Renderer",
@@ -135,6 +136,11 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2
 	if (textureID != nullptr)
 	{
 		flat.textureID = *textureID;
+	}
+
+	if (flipped != nullptr)
+	{
+		flat.flipped = *flipped;
 	}
 }
 
@@ -1488,7 +1494,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 		// X position in texture (temporarily using modulo to protect against edge cases 
 		// where u == 1.0; it should be fixed in the u calculation instead).
-		const int textureX = static_cast<int>(u *
+		const int textureX = static_cast<int>((flat.flipped ? (1.0 - u) : u) *
 			static_cast<double>(texture.width)) % texture.width;
 
 		// I think this needs to be perspective correct. Currently, it's like affine

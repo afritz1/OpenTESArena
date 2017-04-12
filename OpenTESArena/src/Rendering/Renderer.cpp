@@ -403,11 +403,12 @@ int Renderer::addTexture(const uint32_t *pixels, int width, int height)
 }
 
 void Renderer::updateFlat(int id, const Double3 *position, const Double2 *direction, 
-	const double *width, const double *height, const int *textureID)
+	const double *width, const double *height, const int *textureID,
+	const bool *flipped)
 {
 	assert(this->softwareRenderer.get() != nullptr);
 	this->softwareRenderer->updateFlat(id, position, direction,
-		width, height, textureID);
+		width, height, textureID, flipped);
 }
 
 void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 

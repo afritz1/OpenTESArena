@@ -759,7 +759,7 @@ void GameWorldPanel::tick(double dt)
 	const Double2 spriteDirection = -player.getGroundDirection();
 	for (int i = 0; i < 11; ++i)
 	{
-		renderer.updateFlat(i, nullptr, &spriteDirection, nullptr, nullptr, nullptr);
+		renderer.updateFlat(i, nullptr, &spriteDirection, nullptr, nullptr, nullptr, nullptr);
 	}
 }
 

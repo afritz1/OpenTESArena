@@ -121,7 +121,8 @@ public:
 	int addLight(const Double3 &point, const Double3 &color, double intensity);
 	int addTexture(const uint32_t *pixels, int width, int height);
 	void updateFlat(int id, const Double3 *position, const Double2 *direction,
-		const double *width, const double *height, const int *textureID);
+		const double *width, const double *height, const int *textureID,
+		const bool *flipped);
 	void updateLight(int id, const Double3 *point, const Double3 *color,
 		const double *intensity);
 	void setFogDistance(double fogDistance);
