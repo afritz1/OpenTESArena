@@ -13,6 +13,7 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Entities/CharacterClass.h"
+#include "../Entities/Entity.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -743,9 +744,7 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerTurning(dt);
 	this->handlePlayerMovement(dt);
 
-	// Animate the game world.
-	// - Later, this should be more explicit about what it's updating exactly.
-	// - Entity AI, spells flying, doors opening/closing, etc.
+	// Tick the game world time.
 	auto &game = *this->getGame();
 	auto &gameData = game.getGameData();
 	gameData.incrementGameTime(dt);
@@ -754,12 +753,21 @@ void GameWorldPanel::tick(double dt)
 	auto &player = gameData.getPlayer();
 	player.tick(game, dt);
 
-	// Update test sprites (eventually iterate over all entities in entity manager instead).
-	auto &renderer = game.getRenderer();
-	const Double2 spriteDirection = -player.getGroundDirection();
-	for (int i = 0; i < 11; ++i)
+	// Update entities and their state in the renderer.
+	auto &entityManager = gameData.getEntityManager();
+	for (auto *entity : entityManager.getAllEntities())
 	{
-		renderer.updateFlat(i, nullptr, &spriteDirection, nullptr, nullptr, nullptr, nullptr);
+		// Tick entity state.
+		entity->tick(game, dt);
+
+		// Update entity flat properties for rendering.
+		auto &renderer = game.getRenderer();
+		const Double3 position = entity->getPosition();
+		const Double2 direction = -player.getGroundDirection(); // Entity::facesPlayer()?
+		const int textureID = entity->getTextureID();
+		const bool flipped = entity->getFlipped();
+		renderer.updateFlat(entity->getID(), &position, &direction, nullptr, nullptr, 
+			&textureID, &flipped);
 	}
 }
 

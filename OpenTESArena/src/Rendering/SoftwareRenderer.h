@@ -97,12 +97,12 @@ public:
 	// Intended for writing to a separate hardware texture with.
 	const uint32_t *getPixels() const;
 
-	// Adds a flat and returns its assigned ID.
-	int addFlat(const Double3 &position, const Double2 &direction, double width,
+	// Adds a flat. Causes an error if the ID exists.
+	void addFlat(int id, const Double3 &position, const Double2 &direction, double width,
 		double height, int textureID);
 
-	// Adds a light and returns its assigned ID.
-	int addLight(const Double3 &point, const Double3 &color, double intensity);
+	// Adds a light. Causes an error if the ID exists.
+	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
 
 	// Adds a texture and returns its assigned ID (index).
 	int addTexture(const uint32_t *pixels, int width, int height);

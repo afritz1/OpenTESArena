@@ -21,6 +21,9 @@ public:
 	// Gets an entity pointer, given their ID. Returns null if no ID matches.
 	Entity *at(int id) const;
 
+	// Gets all entities of all types.
+	std::vector<Entity*> getAllEntities() const;
+
 	// Gets all entities of the given type.
 	std::vector<Entity*> getEntities(EntityType entityType) const;
 

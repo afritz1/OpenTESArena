@@ -32,6 +32,8 @@ public:
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const = 0;
 	
+	// Gets the unique ID for the entity. This value is also used in the renderer to
+	// find which flat is associated with the entity.
 	int getID() const;
 
 	// Gets the texture ID for the current animation frame, to be used by the software 

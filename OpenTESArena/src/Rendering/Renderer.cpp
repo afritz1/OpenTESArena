@@ -382,18 +382,18 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		renderWidth, renderHeight));
 }
 
-int Renderer::addFlat(const Double3 &position, const Double2 &direction, 
+void Renderer::addFlat(int id, const Double3 &position, const Double2 &direction, 
 	double width, double height, int textureID)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	return this->softwareRenderer->addFlat(position, direction,
+	this->softwareRenderer->addFlat(id, position, direction,
 		width, height, textureID);
 }
 
-int Renderer::addLight(const Double3 &point, const Double3 &color, double intensity)
+void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	return this->softwareRenderer->addLight(point, color, intensity);
+	this->softwareRenderer->addLight(id, point, color, intensity);
 }
 
 int Renderer::addTexture(const uint32_t *pixels, int width, int height)

@@ -49,15 +49,12 @@ const uint32_t *SoftwareRenderer::getPixels() const
 	return this->colorBuffer.data();
 }
 
-int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
+void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &direction,
 	double width, double height, int textureID)
 {
-	// Search for the next available flat ID.
-	int id = 0;
-	while (this->flats.find(id) != this->flats.end())
-	{
-		id++;
-	}
+	// Verify that the ID is not already in use.
+	Debug::check(this->flats.find(id) == this->flats.end(), "Software Renderer",
+		"Flat ID \"" + std::to_string(id) + "\" already taken.");
 
 	SoftwareRenderer::Flat flat;
 	flat.position = position;
@@ -69,14 +66,12 @@ int SoftwareRenderer::addFlat(const Double3 &position, const Double2 &direction,
 
 	// Add the flat (sprite, door, store sign, etc.).
 	this->flats.insert(std::make_pair(id, flat));
-
-	return id;
 }
 
-int SoftwareRenderer::addLight(const Double3 &point, const Double3 &color, double intensity)
+void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &color, 
+	double intensity)
 {
 	Debug::crash("Software Renderer", "addLight() not implemented.");
-	return -1;
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)

@@ -6,7 +6,10 @@
 
 #include "GameData.h"
 
+#include "../Entities/Animation.h"
+#include "../Entities/Doodad.h"
 #include "../Entities/EntityManager.h"
+#include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
@@ -39,7 +42,6 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Create some dummy data for the test world.
-	EntityManager entityManager;
 
 	// Some arbitrary player values.
 	const Double3 position = Double3(1.50, 1.70, 12.50);
@@ -409,97 +411,97 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		setVoxel(13, 1, k, bridge1ID);
 	}
 
-	// Add sprites.
-	const SDL_Surface *tree1 = textureManager.getSurface("NPINE1.IMG");
-	const SDL_Surface *tree2 = textureManager.getSurface("NPINE4.IMG");
-	const SDL_Surface *statue = textureManager.getSurface("NSTATUE1.IMG");
-	const SDL_Surface *lampPost = textureManager.getSurface("NLAMP1DA.IMG");
-	const SDL_Surface *woman = textureManager.getSurfaces("FMGEN01.CFA").at(6);
-	const SDL_Surface *man = textureManager.getSurfaces("MLGEN01W.CFA").at(6);
-	const int tree1TextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(tree1->pixels), tree1->w, tree1->h);
-	const int tree2TextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(tree2->pixels), tree2->w, tree2->h);
-	const int statueTextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(statue->pixels), statue->w, statue->h);
-	const int lampPostTextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(lampPost->pixels), lampPost->w, lampPost->h);
-	const int womanTextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(woman->pixels), woman->w, woman->h);
-	const int manTextureID = renderer.addTexture(
-		static_cast<const uint32_t*>(man->pixels), man->w, man->h);
+	// Lambdas for adding a new texture to the renderer and returning the assigned ID.
+	auto addTexture = [&textureManager, &renderer](const std::string &filename)
+	{
+		const SDL_Surface *surface = textureManager.getSurface(filename);
+		return renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+			surface->w, surface->h);
+	};
+
+	auto addTextures = [&textureManager, &renderer](const std::string &filename)
+	{
+		const std::vector<SDL_Surface*> &surfaces = textureManager.getSurfaces(filename);
+
+		std::vector<int> textureIDs;
+		for (const auto *surface : surfaces)
+		{
+			const int textureID = renderer.addTexture(
+				static_cast<const uint32_t*>(surface->pixels), surface->w, surface->h);
+			textureIDs.push_back(textureID);
+		}
+
+		return textureIDs;
+	};
+
+	// Flat texture properties.
+	const int tree1TextureID = addTexture("NPINE1.IMG");
+	const int tree2TextureID = addTexture("NPINE4.IMG");
+	const int statueTextureID = addTexture("NSTATUE1.IMG");
+	const std::vector<int> lampPostTextureIDs = addTextures("NLAMP1.DFA");
+	const std::vector<int> womanTextureIDs = addTextures("FMGEN01.CFA");
+	const std::vector<int> manTextureIDs = addTextures("MLGEN01W.CFA");
+
 	const double tree1Scale = 2.0;
 	const double tree2Scale = 2.0;
 	const double statueScale = 1.0;
 	const double lampPostScale = 0.90;
 	const double womanScale = 0.80;
 	const double manScale = 0.80;
-	renderer.addFlat(
-		Double3(2.50, 1.0, 21.50),
-		Double2(1.0, 0.0),
-		0.88 * tree1Scale,
-		1.37 * tree1Scale,
-		tree1TextureID);
-	renderer.addFlat(
-		Double3(9.50, 1.0, 21.50),
-		Double2(1.0, 0.0),
-		0.66 * tree2Scale,
-		1.32 * tree2Scale,
-		tree2TextureID);
-	renderer.addFlat(
-		Double3(2.50, 1.0, 2.50),
-		Double2(1.0, 0.0),
-		0.66 * tree2Scale,
-		1.32 * tree2Scale,
-		tree2TextureID);
-	renderer.addFlat(
-		Double3(20.50, 1.0, 21.50),
-		Double2(1.0, 0.0),
-		0.88 * tree1Scale,
-		1.37 * tree1Scale,
-		tree1TextureID);
-	renderer.addFlat(
-		Double3(6.50, 1.0, 12.50),
-		Double2(1.0, 0.0),
-		0.74 * statueScale,
-		1.38 * statueScale,
-		statueTextureID);
-	renderer.addFlat(
-		Double3(5.50, 1.0, 10.50),
-		Double2(1.0, 0.0),
-		0.64 * lampPostScale,
-		1.03 * lampPostScale,
-		lampPostTextureID);
-	renderer.addFlat(
-		Double3(9.50, 1.0, 14.50),
-		Double2(1.0, 0.0),
-		0.64 * lampPostScale,
-		1.03 * lampPostScale,
-		lampPostTextureID);
-	renderer.addFlat(
-		Double3(18.50, 1.0, 9.50),
-		Double2(1.0, 0.0),
-		0.64 * lampPostScale,
-		1.03 * lampPostScale,
-		lampPostTextureID);
-	renderer.addFlat(
-		Double3(17.50, 1.0, 14.50),
-		Double2(1.0, 0.0),
-		0.64 * lampPostScale,
-		1.03 * lampPostScale,
-		lampPostTextureID);
-	renderer.addFlat(
-		Double3(4.50, 1.0, 13.50),
-		Double2(1.0, 0.0),
-		0.44 * womanScale,
-		1.04 * womanScale,
-		womanTextureID);
-	renderer.addFlat(
-		Double3(4.50, 1.0, 11.50),
-		Double2(1.0, 0.0),
-		0.52 * manScale,
-		0.99 * manScale,
-		manTextureID);
+
+	// Lambdas for adding entities to the entity manager and renderer (they can have
+	// more parameters in the future as entities grow more complex).
+	EntityManager entityManager;
+
+	auto addDoodad = [&entityManager, &renderer](const Double3 &position, double width,
+		double height, const std::vector<int> &textureIDs)
+	{
+		const double timePerFrame = 0.10;
+		Animation animation(textureIDs, timePerFrame, true);
+
+		std::unique_ptr<Doodad> doodad(new Doodad(position, animation, entityManager));
+
+		// Assign the entity ID with the first texture.
+		renderer.addFlat(doodad->getID(), position, Double2::UnitX, 
+			width, height, textureIDs.at(0));
+
+		entityManager.add(std::move(doodad));
+	};
+
+	auto addNonPlayer = [&entityManager, &renderer](const Double3 &position,
+		const Double2 &direction, double width, double height,
+		const std::vector<int> &textureIDs)
+	{
+		std::vector<Animation> animations;
+
+		const double timePerFrame = 0.33;
+		animations.push_back(Animation(textureIDs, timePerFrame, true));
+
+		std::unique_ptr<NonPlayer> nonPlayer(new NonPlayer(
+			position, direction, animations, entityManager));
+
+		// Assign the entity ID with the first texture.
+		renderer.addFlat(nonPlayer->getID(), position, direction,
+			width, height, textureIDs.at(0));
+
+		entityManager.add(std::move(nonPlayer));
+	};
+
+	// Add entities.
+	addDoodad(Double3(2.50, 1.0, 21.50), 0.88 * tree1Scale, 1.37 * tree1Scale, { tree1TextureID });
+	addDoodad(Double3(9.50, 1.0, 21.50), 0.66 * tree2Scale, 1.32 * tree2Scale, { tree2TextureID });
+	addDoodad(Double3(2.50, 1.0, 2.50), 0.66 * tree2Scale, 1.32 * tree2Scale, { tree2TextureID });
+	addDoodad(Double3(20.50, 1.0, 21.50), 0.88 * tree1Scale, 1.37 * tree1Scale, { tree1TextureID });
+	addDoodad(Double3(6.50, 1.0, 12.50), 0.74 * statueScale, 1.38 * statueScale, { statueTextureID });
+	addDoodad(Double3(5.50, 1.0, 10.50), 0.64 * lampPostScale, 1.03 * lampPostScale, lampPostTextureIDs);
+	addDoodad(Double3(9.50, 1.0, 14.50), 0.64 * lampPostScale, 1.03 * lampPostScale, lampPostTextureIDs);
+	addDoodad(Double3(18.50, 1.0, 9.50), 0.64 * lampPostScale, 1.03 * lampPostScale, lampPostTextureIDs);
+	addDoodad(Double3(17.50, 1.0, 14.50), 0.64 * lampPostScale, 1.03 * lampPostScale, lampPostTextureIDs);
+
+	addNonPlayer(Double3(4.50, 1.0, 13.50), Double2(1.0, 0.0),
+		0.44 * womanScale, 1.04 * womanScale, womanTextureIDs);
+	addNonPlayer(Double3(4.50, 1.0, 11.50), Double2(1.0, 0.0),
+		0.52 * manScale, 0.99 * manScale, manTextureIDs);
 
 	// Fog distance is changed infrequently, so it can go here in scene creation.
 	// It's not an expensive operation for the software renderer.

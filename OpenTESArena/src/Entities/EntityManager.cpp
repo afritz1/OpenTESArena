@@ -27,6 +27,19 @@ Entity *EntityManager::at(int id) const
 		entityIter->second.get() : nullptr;
 }
 
+std::vector<Entity*> EntityManager::getAllEntities() const
+{
+	std::vector<Entity*> entityPtrs;
+
+	for (const auto &pair : this->entities)
+	{
+		Entity *entity = pair.second.get();
+		entityPtrs.push_back(entity);
+	}
+
+	return entityPtrs;
+}
+
 std::vector<Entity*> EntityManager::getEntities(EntityType entityType) const
 {
 	std::vector<Entity*> entityPtrs;
