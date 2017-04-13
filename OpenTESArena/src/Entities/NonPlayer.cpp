@@ -8,12 +8,9 @@ NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
 	const std::vector<Animation> &moveAnimations,
 	const Animation &attackAnimation, const Animation &deathAnimation, 
 	EntityManager &entityManager)
-	: Entity(entityManager), camera(position, direction), idleAnimations(idleAnimations),
-	moveAnimations(moveAnimations), attackAnimation(attackAnimation), 
-	deathAnimation(deathAnimation)
-{
-	this->velocity = Double2(0.0, 0.0);
-}
+	: Entity(entityManager), camera(position, direction), velocity(0.0, 0.0),
+	idleAnimations(idleAnimations), moveAnimations(moveAnimations), 
+	attackAnimation(attackAnimation), deathAnimation(deathAnimation) { }
 
 NonPlayer::~NonPlayer()
 {
