@@ -1,11 +1,19 @@
 #include "NonPlayer.h"
 
-#include "Animation.h"
 #include "EntityType.h"
+#include "../Math/Constants.h"
 
 NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
-	const std::vector<Animation> &animations, EntityManager &entityManager)
-	: Entity(entityManager), camera(position, direction), animations(animations) { }
+	const std::vector<Animation> &idleAnimations,
+	const std::vector<Animation> &moveAnimations,
+	const Animation &attackAnimation, const Animation &deathAnimation, 
+	EntityManager &entityManager)
+	: Entity(entityManager), camera(position, direction), idleAnimations(idleAnimations),
+	moveAnimations(moveAnimations), attackAnimation(attackAnimation), 
+	deathAnimation(deathAnimation)
+{
+	this->velocity = Double2(0.0, 0.0);
+}
 
 NonPlayer::~NonPlayer()
 {
@@ -15,7 +23,25 @@ NonPlayer::~NonPlayer()
 std::unique_ptr<Entity> NonPlayer::clone(EntityManager &entityManager) const
 {
 	return std::unique_ptr<NonPlayer>(new NonPlayer(
-		this->camera.position, this->camera.direction, this->animations, entityManager));
+		this->camera.position, this->camera.direction, this->idleAnimations, 
+		this->moveAnimations, this->attackAnimation, this->deathAnimation, entityManager));
+}
+
+NonPlayer::AnimationType NonPlayer::getAnimationType() const
+{
+	// Death animation should override moving animation.
+
+	// If moving, return Move.
+	if (this->velocity.length() > EPSILON)
+	{
+		return NonPlayer::AnimationType::Move;
+	}
+	else
+	{
+		return NonPlayer::AnimationType::Idle;
+	}
+
+	// Check combat state eventually.
 }
 
 EntityType NonPlayer::getEntityType() const
@@ -36,7 +62,7 @@ bool NonPlayer::facesPlayer() const
 void NonPlayer::tick(Game &game, double dt)
 {
 	// Animate first animation for now. It will depend on player position eventually.
-	Animation &animation = this->animations.at(0);
+	Animation &animation = this->idleAnimations.at(0);
 	animation.tick(dt);
 	this->textureID = animation.getCurrentID();
 }

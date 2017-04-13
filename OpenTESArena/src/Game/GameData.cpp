@@ -439,7 +439,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int tree2TextureID = addTexture("NPINE4.IMG");
 	const int statueTextureID = addTexture("NSTATUE1.IMG");
 	const std::vector<int> lampPostTextureIDs = addTextures("NLAMP1.DFA");
-	const std::vector<int> womanTextureIDs = addTextures("FMGEN01.CFA");
+	const std::vector<int> womanTextureIDs = addTextures("FMGEN01.CFA"); // To do: Allow sub-ranges.
 	const std::vector<int> manTextureIDs = addTextures("MLGEN01W.CFA");
 
 	const double tree1Scale = 2.0;
@@ -470,19 +470,26 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 
 	auto addNonPlayer = [&entityManager, &renderer](const Double3 &position,
 		const Double2 &direction, double width, double height,
-		const std::vector<int> &textureIDs)
+		const std::vector<int> &idleIDs, const std::vector<int> &moveIDs,
+		const std::vector<int> &attackIDs, const std::vector<int> &deathIDs)
 	{
-		std::vector<Animation> animations;
+		// Eventually, "idleIDs" and "moveIDs" should be vector<vector<int>>.
+		std::vector<Animation> idleAnimations, moveAnimations;
 
 		const double timePerFrame = 0.33;
-		animations.push_back(Animation(textureIDs, timePerFrame, true));
+		idleAnimations.push_back(Animation(idleIDs, timePerFrame, true));
+		moveAnimations.push_back(Animation(moveIDs, timePerFrame, true));
+
+		Animation attackAnimation(attackIDs, timePerFrame, false);
+		Animation deathAnimation(deathIDs, timePerFrame, false);
 
 		std::unique_ptr<NonPlayer> nonPlayer(new NonPlayer(
-			position, direction, animations, entityManager));
+			position, direction, idleAnimations, moveAnimations, attackAnimation, 
+			deathAnimation, entityManager));
 
 		// Assign the entity ID with the first texture.
 		renderer.addFlat(nonPlayer->getID(), position, direction,
-			width, height, textureIDs.at(0));
+			width, height, idleIDs.at(0));
 
 		entityManager.add(std::move(nonPlayer));
 	};
@@ -499,9 +506,9 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	addDoodad(Double3(17.50, 1.0, 14.50), 0.64 * lampPostScale, 1.03 * lampPostScale, lampPostTextureIDs);
 
 	addNonPlayer(Double3(4.50, 1.0, 13.50), Double2(1.0, 0.0),
-		0.44 * womanScale, 1.04 * womanScale, womanTextureIDs);
+		0.44 * womanScale, 1.04 * womanScale, womanTextureIDs, womanTextureIDs, {}, {});
 	addNonPlayer(Double3(4.50, 1.0, 11.50), Double2(1.0, 0.0),
-		0.52 * manScale, 0.99 * manScale, manTextureIDs);
+		0.52 * manScale, 0.99 * manScale, manTextureIDs, manTextureIDs, {}, {});
 
 	// Fog distance is changed infrequently, so it can go here in scene creation.
 	// It's not an expensive operation for the software renderer.

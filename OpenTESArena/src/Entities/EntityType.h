@@ -4,12 +4,15 @@
 // An entity type determines the behavior of an entity when time is ticking or when 
 // they are interacted with.
 
-// Containers are: treasure chests, piles, corpses, etc..
+// Containers are: treasure chests, piles, etc..
 // Doodads are: furniture, trees, light posts, sign posts, junk, staff pieces, etc..
 // Doors are: swinging doors, raising portcullises.
 // Non-players are: anything with an AI (an NPC or creature).
 // Projectiles are: flying objects or spells.
 // Transitions are: a sprite entrance to somewhere, like a den.
+
+// Should a non-player be converted to a container on death? Maybe not. When activated,
+// they should behave like a container instead of an actor.
 
 // Activation:
 // Some entities can be "activated"; that is, friendly non-players can be talked to,
