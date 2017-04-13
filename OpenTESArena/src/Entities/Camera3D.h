@@ -42,6 +42,11 @@ public:
 	// Pitches and yaws the camera relative to a fixed "global up" vector. "dx" affects 
 	// left/right, "dy" affects up/down.
 	void rotate(double dx, double dy);
+
+	// Recalculates the camera so it faces the given point. The "global up" vector
+	// is used in the process of generating the new 3D frame, so do not give a point
+	// directly above or below the camera.
+	void lookAt(const Double3 &point);
 };
 
 #endif

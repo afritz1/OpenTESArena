@@ -20,6 +20,9 @@ public:
 
 	// A simple method for turning the camera around a "global up" vector.
 	void rotate(double degrees);
+
+	// Recalculates the camera so it faces the given point.
+	void lookAt(const Double2 &point);
 };
 
 #endif

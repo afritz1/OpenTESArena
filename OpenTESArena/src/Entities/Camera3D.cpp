@@ -96,3 +96,18 @@ void Camera3D::rotate(double dx, double dy)
 	this->pitch(lookUpRads/* / zoom*/);
 	this->yaw(-lookRightRads/* / zoom*/);
 }
+
+void Camera3D::lookAt(const Double3 &point)
+{
+	const Double3 newForward = (point - this->position).normalized();
+	const Double3 newRight = newForward.cross(Double3::UnitY).normalized();
+	const Double3 newUp = newRight.cross(newForward).normalized();
+
+	// Only accept the change if it's valid.
+	if (std::isfinite(newUp.length()))
+	{
+		this->forward = newForward;
+		this->right = newRight;
+		this->up = newUp;
+	}
+}
