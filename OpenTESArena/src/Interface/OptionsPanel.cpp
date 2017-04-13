@@ -6,6 +6,8 @@
 #include "OptionsPanel.h"
 
 #include "PauseMenuPanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -43,6 +45,22 @@ OptionsPanel::OptionsPanel(Game *game)
 			game->getRenderer()));
 	}();
 
+	this->backToPauseTextBox = [game]()
+	{
+		Int2 center(Renderer::ORIGINAL_WIDTH - 30, Renderer::ORIGINAL_HEIGHT - 15);
+		auto color = Color::White;
+		std::string text("Return");
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Center;
+		return std::unique_ptr<TextBox>(new TextBox(
+			center,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
 	this->fpsTextBox = [game]()
 	{
 		int x = 20;
@@ -64,12 +82,14 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->backToPauseButton = []()
 	{
+		Int2 center(Renderer::ORIGINAL_WIDTH - 30, Renderer::ORIGINAL_HEIGHT - 15);
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game->setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(
+			center, 40, 16, function));
 	}();
 
 	this->fpsUpButton = []()
@@ -78,14 +98,14 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = 41;
 		int width = 8;
 		int height = 8;
-		auto function = [](Options &options, OptionsPanel *panel)
+		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const int newFPS = options.getTargetFPS() + 5;
 			options.setTargetFPS(newFPS);
 			panel->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button<Options&, OptionsPanel*>>(
-			new Button<Options&, OptionsPanel*>(x, y, width, height, function));
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
 
 	this->fpsDownButton = [this]()
@@ -94,14 +114,14 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = this->fpsUpButton->getY() + this->fpsUpButton->getHeight();
 		int width = this->fpsUpButton->getWidth();
 		int height = this->fpsUpButton->getHeight();
-		auto function = [](Options &options, OptionsPanel *panel)
+		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const int newFPS = std::max(options.getTargetFPS() - 5, options.MIN_FPS);
 			options.setTargetFPS(newFPS);
 			panel->updateFPSText(newFPS);
 		};
-		return std::unique_ptr<Button<Options&, OptionsPanel*>>(
-			new Button<Options&, OptionsPanel*>(x, y, width, height, function));
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
 }
 
@@ -152,11 +172,15 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		// Check for various button clicks.
 		if (this->fpsUpButton->contains(mouseOriginalPoint))
 		{
-			this->fpsUpButton->click(this->getGame()->getOptions(), this);
+			this->fpsUpButton->click(this, this->getGame()->getOptions());
 		}
 		else if (this->fpsDownButton->contains(mouseOriginalPoint))
 		{
-			this->fpsDownButton->click(this->getGame()->getOptions(), this);
+			this->fpsDownButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->backToPauseButton->contains(mouseOriginalPoint))
+		{
+			this->backToPauseButton->click(this->getGame());
 		}
 	}
 }
@@ -181,9 +205,17 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(arrows.get(), this->fpsUpButton->getX(),
 		this->fpsUpButton->getY());
 
-	// Draw text: title, fps.
+	Texture returnBackground(PopUp::create(PopUpType::Custom1,
+		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
+		textureManager, renderer));
+	renderer.drawToOriginal(returnBackground.get(), this->backToPauseButton->getX(),
+		this->backToPauseButton->getY());
+
+	// Draw text: title, return, fps.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawToOriginal(this->backToPauseTextBox->getTexture(),
+		this->backToPauseTextBox->getX(), this->backToPauseTextBox->getY());
 	renderer.drawToOriginal(this->fpsTextBox->getTexture(),
 		this->fpsTextBox->getX(), this->fpsTextBox->getY());
 

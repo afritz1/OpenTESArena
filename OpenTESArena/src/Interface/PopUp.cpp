@@ -170,6 +170,33 @@ SDL_Texture *PopUp::create(PopUpType type, int width, int height,
 		pixels[(surface->w - 2) + ((surface->h - 1) * surface->w)] = bottomColor;
 		pixels[(surface->w - 1) + ((surface->h - 1) * surface->w)] = bottomRightColor;
 	}
+	else if (type == PopUpType::Custom1)
+	{
+		const uint32_t fillColor = SDL_MapRGBA(surface->format, 85, 85, 97, 255);
+		const uint32_t lightBorder = SDL_MapRGBA(surface->format, 125, 125, 145, 255);
+		const uint32_t darkBorder = SDL_MapRGBA(surface->format, 40, 40, 48, 255);
+
+		// Fill with light gray color.
+		SDL_FillRect(surface, nullptr, fillColor);
+
+		// Color edges.
+		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+		for (int x = 0; x < surface->w; ++x)
+		{
+			pixels[x] = lightBorder;
+			pixels[x + ((surface->h - 1) * surface->w)] = darkBorder;
+		}
+
+		for (int y = 0; y < surface->h; ++y)
+		{
+			pixels[y * surface->w] = darkBorder;
+			pixels[(surface->w - 1) + (y * surface->w)] = lightBorder;
+		}
+
+		// Color corners.
+		pixels[0] = fillColor;
+		pixels[(surface->w - 1) + ((surface->h - 1) * surface->w)] = fillColor;
+	}
 	else
 	{
 		Debug::crash("Pop Up", "Unrecognized pop-up type.");

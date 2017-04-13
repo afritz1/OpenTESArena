@@ -6,7 +6,8 @@
 enum class PopUpType
 {
 	Dark,
-	Parchment
+	Parchment,
+	Custom1 // Light gray with borders, used for options button.
 };
 
 #endif

@@ -10,6 +10,8 @@
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
+#include "PopUp.h"
+#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -428,16 +430,11 @@ void PauseMenuPanel::render(Renderer &renderer)
 	}
 
 	// Cover up the detail slider with a new options background.
-	Color optionsBackground(85, 85, 97);
-	Color optionsLightBorder(125, 125, 145);
-	Color optionsDarkBorder(40, 40, 48);
-	renderer.fillOriginalRect(optionsBackground, 162, 89, 145, 14);
-	renderer.drawOriginalLine(optionsLightBorder, 162, 89, 306, 89);
-	renderer.drawOriginalLine(optionsLightBorder, 306, 89, 306, 102);
-	renderer.drawOriginalLine(optionsDarkBorder, 162, 102, 305, 102);
-	renderer.drawOriginalLine(optionsDarkBorder, 162, 90, 162, 102);
-	renderer.drawOriginalPixel(optionsBackground, 162, 89);
-	renderer.drawOriginalPixel(optionsBackground, 306, 102);
+	Texture optionsBackground(PopUp::create(PopUpType::Custom1,
+		this->optionsButton->getWidth(), this->optionsButton->getHeight(),
+		textureManager, renderer));
+	renderer.drawToOriginal(optionsBackground.get(), this->optionsButton->getX(),
+		this->optionsButton->getY());
 
 	// Draw text: player's name, music volume, sound volume, options.
 	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),

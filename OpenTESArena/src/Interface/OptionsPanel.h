@@ -15,9 +15,9 @@ class OptionsPanel : public Panel
 private:
 	static const std::string FPS_TEXT;
 
-	std::unique_ptr<TextBox> titleTextBox, fpsTextBox;
+	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox;
 	std::unique_ptr<Button<Game*>> backToPauseButton;
-	std::unique_ptr<Button<Options&, OptionsPanel*>> fpsUpButton, fpsDownButton;
+	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton;
 
 	void updateFPSText(int fps);
 public:
