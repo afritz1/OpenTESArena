@@ -292,7 +292,6 @@ template class Vector2i<short>;
 template class Vector2i<unsigned short>;
 template class Vector2i<int>;
 template class Vector2i<unsigned int>;
-template class Vector2i<size_t>;
 
 template class Vector2f<float>;
 template class Vector2f<double>;

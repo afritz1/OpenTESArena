@@ -89,7 +89,6 @@ typedef Vector4i<short> Short4;
 typedef Vector4i<unsigned short> Ushort4;
 typedef Vector4i<int> Int4;
 typedef Vector4i<unsigned int> Uint4;
-typedef Vector4i<size_t> Size_t4;
 
 typedef Vector4f<float> Float4;
 typedef Vector4f<double> Double4;

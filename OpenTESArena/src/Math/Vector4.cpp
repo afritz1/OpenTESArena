@@ -312,7 +312,6 @@ template class Vector4i<short>;
 template class Vector4i<unsigned short>;
 template class Vector4i<int>;
 template class Vector4i<unsigned int>;
-template class Vector4i<size_t>;
 
 template class Vector4f<float>;
 template class Vector4f<double>;

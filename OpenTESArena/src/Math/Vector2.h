@@ -92,7 +92,6 @@ typedef Vector2i<short> Short2;
 typedef Vector2i<unsigned short> Ushort2;
 typedef Vector2i<int> Int2;
 typedef Vector2i<unsigned int> Uint2;
-typedef Vector2i<size_t> Size_t2;
 
 typedef Vector2f<float> Float2;
 typedef Vector2f<double> Double2;

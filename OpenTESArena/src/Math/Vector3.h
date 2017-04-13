@@ -95,13 +95,13 @@ public:
 };
 
 // The template instantiations are at the end of the .cpp file.
+// - size_t vector types cause issues with GCC 4.8.4 32-bit (identical to unsigned int).
 typedef Vector3i<char> Char3;
 typedef Vector3i<unsigned char> Uchar3;
 typedef Vector3i<short> Short3;
 typedef Vector3i<unsigned short> Ushort3;
 typedef Vector3i<int> Int3;
 typedef Vector3i<unsigned int> Uint3;
-typedef Vector3i<size_t> Size_t3;
 
 typedef Vector3f<float> Float3;
 typedef Vector3f<double> Double3;
