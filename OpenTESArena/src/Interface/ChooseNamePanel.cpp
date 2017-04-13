@@ -7,8 +7,6 @@
 
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
-#include "PopUp.h"
-#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -33,8 +31,8 @@ const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 	: Panel(game), charClass(charClass)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
-		PopUpType::Parchment, 300, 60, game->getTextureManager(),
+	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+		Texture::PatternType::Parchment, 300, 60, game->getTextureManager(),
 		game->getRenderer())));
 
 	this->titleTextBox = [game, charClass]()

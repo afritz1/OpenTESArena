@@ -10,8 +10,6 @@
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
-#include "PopUp.h"
-#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -430,7 +428,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	}
 
 	// Cover up the detail slider with a new options background.
-	Texture optionsBackground(PopUp::create(PopUpType::Custom1,
+	Texture optionsBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->optionsButton->getWidth(), this->optionsButton->getHeight(),
 		textureManager, renderer));
 	renderer.drawToOriginal(optionsBackground.get(), this->optionsButton->getX(),

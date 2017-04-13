@@ -6,8 +6,6 @@
 
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
-#include "PopUp.h"
-#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -31,8 +29,8 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	: Panel(game)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
-		PopUpType::Parchment, 180, 40, game->getTextureManager(), 
+	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+		Texture::PatternType::Parchment, 180, 40, game->getTextureManager(), 
 		game->getRenderer())));
 
 	this->titleTextBox = [game]()

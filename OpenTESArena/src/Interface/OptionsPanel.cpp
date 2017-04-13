@@ -6,8 +6,6 @@
 #include "OptionsPanel.h"
 
 #include "PauseMenuPanel.h"
-#include "PopUp.h"
-#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -205,7 +203,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(arrows.get(), this->fpsUpButton->getX(),
 		this->fpsUpButton->getY());
 
-	Texture returnBackground(PopUp::create(PopUpType::Custom1,
+	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
 		textureManager, renderer));
 	renderer.drawToOriginal(returnBackground.get(), this->backToPauseButton->getX(),

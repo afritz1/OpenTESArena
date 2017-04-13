@@ -6,8 +6,6 @@
 
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
-#include "PopUp.h"
-#include "PopUpType.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -52,8 +50,8 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
 	: Panel(game), charClass(charClass), name(name), gender(gender)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(PopUp::create(
-		PopUpType::Parchment, 240, 60, game->getTextureManager(),
+	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+		Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),
 		game->getRenderer())));
 
 	this->initialTextBox = [game, charClass, name]()
