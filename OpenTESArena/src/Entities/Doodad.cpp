@@ -27,6 +27,11 @@ const Double3 &Doodad::getPosition() const
 	return this->position;
 }
 
+bool Doodad::facesPlayer() const
+{
+	return true;
+}
+
 void Doodad::tick(Game &game, double dt)
 {
 	// Animate.

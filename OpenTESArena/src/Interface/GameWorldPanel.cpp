@@ -760,13 +760,15 @@ void GameWorldPanel::tick(double dt)
 		// Tick entity state.
 		entity->tick(game, dt);
 
-		// Update entity flat properties for rendering.
+		// Update entity flat properties for rendering. Only update the flat's direction
+		// if they face the player each frame (like a sprite).
 		auto &renderer = game.getRenderer();
 		const Double3 position = entity->getPosition();
-		const Double2 direction = -player.getGroundDirection(); // Entity::facesPlayer()?
+		const Double2 direction = -player.getGroundDirection();
 		const int textureID = entity->getTextureID();
 		const bool flipped = entity->getFlipped();
-		renderer.updateFlat(entity->getID(), &position, &direction, nullptr, nullptr, 
+		renderer.updateFlat(entity->getID(), &position, 
+			entity->facesPlayer() ? &direction : nullptr, nullptr, nullptr, 
 			&textureID, &flipped);
 	}
 }

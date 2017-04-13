@@ -28,6 +28,11 @@ const Double3 &NonPlayer::getPosition() const
 	return this->camera.position;
 }
 
+bool NonPlayer::facesPlayer() const
+{
+	return true;
+}
+
 void NonPlayer::tick(Game &game, double dt)
 {
 	// Animate first animation for now. It will depend on player position eventually.

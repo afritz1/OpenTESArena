@@ -53,6 +53,9 @@ public:
 	// while the position of NPCs is at the center of their feet.
 	virtual const Double3 &getPosition() const = 0;
 
+	// Returns whether the entity's 3D flat faces the player (like a sprite).
+	virtual bool facesPlayer() const = 0;
+
 	// Animates the entity's state by delta time.
 	virtual void tick(Game &game, double dt) = 0;
 };
