@@ -37,6 +37,7 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 namespace
 {
@@ -683,15 +684,14 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Double3 &direction = player.getDirection();
 
 	TextBox tempText(2, 2, Color::White,
-		"Screen: " + std::to_string(windowDims.x) + "x" +
-		std::to_string(windowDims.y) + "\n" +
-		"Resolution scale: " + std::to_string(resolutionScale) + "\n" +
-		"X: " + std::to_string(position.x) + "\n" +
-		"Y: " + std::to_string(position.y) + "\n" +
-		"Z: " + std::to_string(position.z) + "\n" +
-		"DirX: " + std::to_string(direction.x) + "\n" +
-		"DirY: " + std::to_string(direction.y) + "\n" +
-		"DirZ: " + std::to_string(direction.z),
+		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
+		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
+		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
+		"Y: " + String::fixedPrecision(position.y, 5) + "\n" +
+		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
+		"DirX: " + String::fixedPrecision(direction.x, 5) + "\n" +
+		"DirY: " + String::fixedPrecision(direction.y, 5) + "\n" +
+		"DirZ: " + String::fixedPrecision(direction.z, 5),
 		this->getGame()->getFontManager().getFont(FontName::D),
 		TextAlignment::Left, renderer);
 	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());

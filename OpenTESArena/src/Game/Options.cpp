@@ -3,6 +3,7 @@
 #include "Options.h"
 
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 const int Options::MIN_FPS = 15;
 const double Options::MIN_RESOLUTION_SCALE = 0.10;
@@ -21,8 +22,9 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 		std::to_string(Options::MIN_FPS) + ".");
 	Debug::check((resolutionScale >= Options::MIN_RESOLUTION_SCALE) && 
 		(resolutionScale <= Options::MAX_RESOLUTION_SCALE), "Options",
-		"Resolution scale must be between " + std::to_string(Options::MIN_RESOLUTION_SCALE) +
-		" and " + std::to_string(Options::MAX_RESOLUTION_SCALE) + ".");
+		"Resolution scale must be between " + 
+		String::fixedPrecision(Options::MIN_RESOLUTION_SCALE, 2) + " and " + 
+		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
 	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options",
 		"Field of view must be between 0.0 and 180.0 exclusive.");
 	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");

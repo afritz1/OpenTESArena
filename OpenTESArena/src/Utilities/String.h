@@ -1,9 +1,10 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <vector>
+#include <iomanip>
 #include <sstream>
 #include <string>
+#include <vector>
 
 // This static class offers various string operations and conversions.
 
@@ -39,17 +40,30 @@ public:
 	static std::string replace(const std::string &str, char a, char b);
 
 	// Creates a new string with all "a" substrings replaced by "b" strings.
-	static std::string replace(const std::string &str, const std::string &a, 
+	static std::string replace(const std::string &str, const std::string &a,
 		const std::string &b);
 
-	// Turns an integral value into a hex string.
+	// Converts an integral value to a hex string.
 	template <typename T>
-	static std::string toHexString(T val)
+	static std::string toHexString(T value)
 	{
 		static_assert(std::is_integral<T>::value, "String::toHexString given non-integral type.");
-		std::stringstream sstr;
-		sstr << std::hex << val;
-		return sstr.str();
+
+		std::stringstream ss;
+		ss << std::hex << value;
+		return ss.str();
+	}
+
+	// Converts a floating-point value to a string with a set number of decimal places.
+	template <typename T>
+	static std::string fixedPrecision(T value, int precision)
+	{
+		static_assert(std::is_floating_point<T>::value,
+			"String::fixedPrecision given non-floating-point type.");
+
+		std::stringstream ss;
+		ss << std::fixed << std::setprecision(precision) << value;
+		return ss.str();
 	}
 };
 

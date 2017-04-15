@@ -1,7 +1,5 @@
 #include <algorithm>
 #include <cassert>
-#include <iomanip>
-#include <sstream>
 
 #include "SDL.h"
 
@@ -23,6 +21,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
@@ -87,11 +86,8 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = 65;
 		auto color = Color::White;
 
-		std::stringstream ss;
-		ss << OptionsPanel::RESOLUTION_SCALE_TEXT;
-		ss << std::fixed << std::setprecision(2) << game->getOptions().getResolutionScale();
-
-		const std::string text = ss.str();
+		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT + 
+			String::fixedPrecision(game->getOptions().getResolutionScale(), 2);
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -222,11 +218,8 @@ void OptionsPanel::updateResolutionScaleText(double resolutionScale)
 
 	this->resolutionScaleTextBox = [this, resolutionScale]()
 	{
-		std::stringstream ss;
-		ss << OptionsPanel::RESOLUTION_SCALE_TEXT;
-		ss << std::fixed << std::setprecision(2) << resolutionScale;
-
-		const std::string text = ss.str();
+		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
+			String::fixedPrecision(resolutionScale, 2);
 		auto &fontManager = this->getGame()->getFontManager();
 
 		return std::unique_ptr<TextBox>(new TextBox(
