@@ -3,7 +3,7 @@
 # Graphics.
 # - If Fullscreen is True, then screen width and height are ignored.
 # - Resolution scale is the percent of the screen resolution used to
-#   render the game world. Accepted values are between 0.25 and 1.0.
+#   render the game world. Accepted values are between 0.10 and 1.0.
 # - Default letterbox aspect is 1.60. "Stretched" aspect for simulating 
 #   the look on 640x480 monitors is 1.33.
 ScreenWidth=1280

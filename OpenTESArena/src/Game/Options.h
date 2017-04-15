@@ -37,6 +37,8 @@ public:
 	~Options();
 
 	static const int MIN_FPS;
+	static const double MIN_RESOLUTION_SCALE;
+	static const double MAX_RESOLUTION_SCALE;
 
 	int getScreenWidth() const;
 	int getScreenHeight() const;

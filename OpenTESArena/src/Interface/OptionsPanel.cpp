@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cassert>
+#include <iomanip>
+#include <sstream>
 
 #include "SDL.h"
 
@@ -23,6 +25,7 @@
 #include "../Rendering/Texture.h"
 
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
+const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
 
 OptionsPanel::OptionsPanel(Game *game)
 	: Panel(game)
@@ -78,6 +81,29 @@ OptionsPanel::OptionsPanel(Game *game)
 			game->getRenderer()));
 	}();
 
+	this->resolutionScaleTextBox = [game]()
+	{
+		int x = 20;
+		int y = 65;
+		auto color = Color::White;
+
+		std::stringstream ss;
+		ss << OptionsPanel::RESOLUTION_SCALE_TEXT;
+		ss << std::fixed << std::setprecision(2) << game->getOptions().getResolutionScale();
+
+		const std::string text = ss.str();
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
 	this->backToPauseButton = []()
 	{
 		Int2 center(Renderer::ORIGINAL_WIDTH - 30, Renderer::ORIGINAL_HEIGHT - 15);
@@ -121,6 +147,48 @@ OptionsPanel::OptionsPanel(Game *game)
 		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
+
+	this->resolutionScaleUpButton = []()
+	{
+		int x = 120;
+		int y = 61;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			const double newResolutionScale = std::min(
+				options.getResolutionScale() + 0.05, options.MAX_RESOLUTION_SCALE);
+			options.setResolutionScale(newResolutionScale);
+			panel->updateResolutionScaleText(newResolutionScale);
+
+			// Resize the game world rendering.
+			const Int2 windowDimensions = renderer.getWindowDimensions();
+			renderer.resize(windowDimensions.x, windowDimensions.y, newResolutionScale);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+	}();
+
+	this->resolutionScaleDownButton = [this]()
+	{
+		int x = this->resolutionScaleUpButton->getX();
+		int y = this->resolutionScaleUpButton->getY() + this->resolutionScaleUpButton->getHeight();
+		int width = this->resolutionScaleUpButton->getWidth();
+		int height = this->resolutionScaleUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			const double newResolutionScale = std::max(
+				options.getResolutionScale() - 0.05, options.MIN_RESOLUTION_SCALE);
+			options.setResolutionScale(newResolutionScale);
+			panel->updateResolutionScaleText(newResolutionScale);
+
+			// Resize the game world rendering.
+			const Int2 windowDimensions = renderer.getWindowDimensions();
+			renderer.resize(windowDimensions.x, windowDimensions.y, newResolutionScale);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+	}();
 }
 
 OptionsPanel::~OptionsPanel()
@@ -144,6 +212,30 @@ void OptionsPanel::updateFPSText(int fps)
 			text,
 			fontManager.getFont(this->fpsTextBox->getFontName()),
 			this->fpsTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
+void OptionsPanel::updateResolutionScaleText(double resolutionScale)
+{
+	assert(this->resolutionScaleTextBox.get() != nullptr);
+
+	this->resolutionScaleTextBox = [this, resolutionScale]()
+	{
+		std::stringstream ss;
+		ss << OptionsPanel::RESOLUTION_SCALE_TEXT;
+		ss << std::fixed << std::setprecision(2) << resolutionScale;
+
+		const std::string text = ss.str();
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->resolutionScaleTextBox->getX(),
+			this->resolutionScaleTextBox->getY(),
+			this->resolutionScaleTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->resolutionScaleTextBox->getFontName()),
+			this->resolutionScaleTextBox->getAlignment(),
 			this->getGame()->getRenderer()));
 	}();
 }
@@ -176,6 +268,16 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		{
 			this->fpsDownButton->click(this, this->getGame()->getOptions());
 		}
+		else if (this->resolutionScaleUpButton->contains(mouseOriginalPoint))
+		{
+			this->resolutionScaleUpButton->click(this, this->getGame()->getOptions(),
+				this->getGame()->getRenderer());
+		}
+		else if (this->resolutionScaleDownButton->contains(mouseOriginalPoint))
+		{
+			this->resolutionScaleDownButton->click(this, this->getGame()->getOptions(),
+				this->getGame()->getRenderer());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -202,6 +304,8 @@ void OptionsPanel::render(Renderer &renderer)
 		PaletteFile::fromName(PaletteName::CharSheet));
 	renderer.drawToOriginal(arrows.get(), this->fpsUpButton->getX(),
 		this->fpsUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->resolutionScaleUpButton->getX(),
+		this->resolutionScaleUpButton->getY());
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
@@ -216,6 +320,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->backToPauseTextBox->getX(), this->backToPauseTextBox->getY());
 	renderer.drawToOriginal(this->fpsTextBox->getTexture(),
 		this->fpsTextBox->getX(), this->fpsTextBox->getY());
+	renderer.drawToOriginal(this->resolutionScaleTextBox->getTexture(),
+		this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

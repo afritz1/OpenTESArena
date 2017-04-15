@@ -5,6 +5,8 @@
 #include "../Utilities/Debug.h"
 
 const int Options::MIN_FPS = 15;
+const double Options::MIN_RESOLUTION_SCALE = 0.10;
+const double Options::MAX_RESOLUTION_SCALE = 1.0;
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
@@ -15,9 +17,12 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	// Make sure each of the values is in a valid range.
 	Debug::check(screenWidth > 0, "Options", "Screen width must be positive.");
 	Debug::check(screenHeight > 0, "Options", "Screen height must be positive.");
-	Debug::check(targetFPS >= Options::MIN_FPS, "Options", "Target FPS must be at least 15.");
-	Debug::check((resolutionScale >= 0.25) && (resolutionScale <= 1.0), "Options",
-		"Resolution scale must be between 0.25 and 1.0.");
+	Debug::check(targetFPS >= Options::MIN_FPS, "Options", "Target FPS must be at least " +
+		std::to_string(Options::MIN_FPS) + ".");
+	Debug::check((resolutionScale >= Options::MIN_RESOLUTION_SCALE) && 
+		(resolutionScale <= Options::MAX_RESOLUTION_SCALE), "Options",
+		"Resolution scale must be between " + std::to_string(Options::MIN_RESOLUTION_SCALE) +
+		" and " + std::to_string(Options::MAX_RESOLUTION_SCALE) + ".");
 	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options",
 		"Field of view must be between 0.0 and 180.0 exclusive.");
 	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
@@ -159,6 +164,9 @@ void Options::setTargetFPS(int targetFPS)
 
 void Options::setResolutionScale(double percent)
 {
+	assert(percent >= Options::MIN_RESOLUTION_SCALE);
+	assert(percent <= Options::MAX_RESOLUTION_SCALE);
+
 	this->resolutionScale = percent;
 }
 

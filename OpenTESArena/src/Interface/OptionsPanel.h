@@ -14,12 +14,17 @@ class OptionsPanel : public Panel
 {
 private:
 	static const std::string FPS_TEXT;
+	static const std::string RESOLUTION_SCALE_TEXT;
 
-	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox;
+	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox, 
+		resolutionScaleTextBox;
 	std::unique_ptr<Button<Game*>> backToPauseButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton;
+	std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>> resolutionScaleUpButton, 
+		resolutionScaleDownButton;
 
 	void updateFPSText(int fps);
+	void updateResolutionScaleText(double resolutionScale);
 public:
 	OptionsPanel(Game *game);
 	virtual ~OptionsPanel();
