@@ -16,11 +16,9 @@ const double SoftwareRenderer::FAR_PLANE = 1000.0;
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
-	// Initialize 2D frame buffers.
+	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
-	this->colorBuffer = std::vector<uint32_t>(pixelCount);
 	this->zBuffer = std::vector<double>(pixelCount);
-	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), 0);
 	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
 
 	this->width = width;
@@ -42,11 +40,6 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 SoftwareRenderer::~SoftwareRenderer()
 {
 
-}
-
-const uint32_t *SoftwareRenderer::getPixels() const
-{
-	return this->colorBuffer.data();
 }
 
 void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &direction,
@@ -178,9 +171,7 @@ void SoftwareRenderer::removeLight(int id)
 void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;
-	this->colorBuffer.resize(pixelCount);
 	this->zBuffer.resize(pixelCount);
-	std::fill(this->colorBuffer.begin(), this->colorBuffer.end(), 0);
 	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
 
 	this->width = width;
@@ -631,7 +622,7 @@ Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
 
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
 	const Matrix4d &transform, double cameraElevation, double daytimePercent, 
-	const Double3 &fogColor, const VoxelGrid &voxelGrid)
+	const Double3 &fogColor, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
 	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
@@ -1039,7 +1030,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			// Draw the back-face wall column.
 			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
 				initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-				this->height, this->zBuffer.data(), this->colorBuffer.data());
+				this->height, this->zBuffer.data(), colorBuffer);
 		}
 
 		// Near point for the floor and ceiling.
@@ -1062,14 +1053,14 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawFloorColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
 					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 			else
 			{
 				drawCeilingColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
 					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 		}
 
@@ -1085,14 +1076,14 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 			else
 			{
 				drawFloorColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 		}
 
@@ -1154,7 +1145,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				// Draw the back-face wall column.
 				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
 					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), this->colorBuffer.data());
+					this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Near point for the floor and ceiling.
@@ -1172,7 +1163,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 
 			// Draw ceiling if the ID is not air.
@@ -1185,7 +1176,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 		}
 
@@ -1247,7 +1238,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				// Draw the back-face wall column.
 				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
 					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), this->colorBuffer.data());
+					this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Near point for the floor and ceiling.
@@ -1265,7 +1256,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 
 			// Draw ceiling if the ID is not air.
@@ -1278,7 +1269,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
 					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
 					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					this->colorBuffer.data());
+					colorBuffer);
 			}
 		}
 	}
@@ -1408,7 +1399,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				drawWallColumn(x, projectedY1, projectedY2, wallDistance, u, voxelData.topV,
 					voxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), this->colorBuffer.data());
+					this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Draw the floor if the ID is not air.
@@ -1420,7 +1411,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawFloorColumn(x, wallFloor.y, Double2(nearPointX, nearPointZ),
 					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
 					cameraElevation, floorTexture, fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), this->colorBuffer.data());
+					this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Draw the ceiling if the ID is not air.
@@ -1432,7 +1423,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				drawCeilingColumn(x, wallCeiling.y, Double2(nearPointX, nearPointZ),
 					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
 					cameraElevation, ceilingTexture, fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), this->colorBuffer.data());
+					this->height, this->zBuffer.data(), colorBuffer);
 			}
 		}
 	}
@@ -1500,7 +1491,6 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
 
-		uint32_t *pixels = this->colorBuffer.data();
 		double *depth = this->zBuffer.data();
 		for (int y = drawStart; y < drawEnd; ++y)
 		{
@@ -1522,7 +1512,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 				{
 					const Double3 color(texel.x, texel.y, texel.z);
 
-					pixels[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 					depth[index] = zDistance;
 				}
 			}
@@ -1531,7 +1521,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double fovY,
-	double daytimePercent, const VoxelGrid &voxelGrid)
+	double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -1577,8 +1567,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, &fogColor, widthReal,
-		aspect, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, &fogColor, 
+		widthReal, aspect, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1595,19 +1585,19 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->castColumnRay(x, eye, direction, transform, cameraElevation, 
-				daytimePercent, fogColor, voxelGrid);
+				daytimePercent, fogColor, voxelGrid, colorBuffer);
 		}
 	};
 
 	// Lambda for clearing some rows on the frame buffer quickly.
-	auto clearRows = [this, &fogColor](int startY, int endY)
+	auto clearRows = [this, colorBuffer, &fogColor](int startY, int endY)
 	{
 		const int startIndex = startY * this->width;
 		const int endIndex = endY * this->width;
 
 		// Clear some color rows.
-		const auto colorBegin = this->colorBuffer.begin() + startIndex;
-		const auto colorEnd = this->colorBuffer.begin() + endIndex;
+		uint32_t *colorBegin = colorBuffer + startIndex;
+		uint32_t *colorEnd = colorBuffer + endIndex;
 		std::fill(colorBegin, colorEnd, fogColor.toRGB());
 
 		// Clear some depth rows.

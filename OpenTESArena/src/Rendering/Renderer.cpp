@@ -555,19 +555,23 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
+	
+	// Lock the game world texture and give the pixel pointer to the software renderer.
+	// - Supposedly this is faster than SDL_UpdateTexture(). In any case, there's one
+	//   less frame buffer to take care of.
+	uint32_t *gameWorldPixels;
+	int gameWorldPitch;
+	int status = SDL_LockTexture(this->gameWorldTexture, nullptr, 
+		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
+	Debug::check(status == 0, "Renderer", "Could not lock game world texture, " +
+		std::string(SDL_GetError()));
 
-	// Render the game world to a frame buffer.
-	this->softwareRenderer->render(eye, forward, fovY, daytimePercent, voxelGrid);
+	// Render the game world to the game world frame buffer.
+	this->softwareRenderer->render(eye, forward, fovY, daytimePercent, 
+		voxelGrid, gameWorldPixels);
 
-	int renderWidth;
-	SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &renderWidth, nullptr);
-
-	// Send the ARGB8888 pixels to the game world texture. Later, this step can be 
-	// skipped once using a graphics API.
-	const uint32_t *pixels = this->softwareRenderer->getPixels();
-	const int pitch = renderWidth * sizeof(*pixels);
-	SDL_UpdateTexture(this->gameWorldTexture, nullptr,
-		static_cast<const void*>(pixels), pitch);
+	// Update the game world texture with the new ARGB8888 pixels.
+	SDL_UnlockTexture(this->gameWorldTexture);
 
 	// Now copy to the native frame buffer (stretching if needed).
 	const int screenWidth = this->getWindowDimensions().x;

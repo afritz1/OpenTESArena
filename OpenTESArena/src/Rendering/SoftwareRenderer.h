@@ -60,7 +60,6 @@ private:
 	static const double NEAR_PLANE;
 	static const double FAR_PLANE;
 
-	std::vector<uint32_t> colorBuffer;
 	std::vector<double> zBuffer;
 	std::unordered_map<int, Flat> flats;
 	std::vector<std::pair<const Flat*, Flat::Projection>> visibleFlats;
@@ -82,7 +81,7 @@ private:
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
 		const Matrix4d &transform, double cameraElevation, double daytimePercent,
-		const Double3& fogColor, const VoxelGrid &voxelGrid);
+		const Double3& fogColor, const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 
 	// Refreshes the list of flats that are within the viewing frustum.
 	// "cameraElevation" is the Y-shearing component of the projection plane, and 
@@ -92,10 +91,6 @@ private:
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
-
-	// Gets a pointer to the frame buffer's pixels in ARGB8888 format.
-	// Intended for writing to a separate hardware texture with.
-	const uint32_t *getPixels() const;
 
 	// Adds a flat. Causes an error if the ID exists.
 	void addFlat(int id, const Double3 &position, const Double2 &direction, double width,
@@ -134,9 +129,9 @@ public:
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);
 
-	// Draws the scene to the internal frame buffer.
+	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &forward, double fovY, 
-		double daytimePercent, const VoxelGrid &voxelGrid);
+		double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 };
 
 #endif
