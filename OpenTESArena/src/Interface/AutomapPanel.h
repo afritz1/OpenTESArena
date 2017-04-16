@@ -5,22 +5,28 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Math/Vector2.h"
 
 class Renderer;
 class TextBox;
+class Texture;
+class VoxelGrid;
 
 class AutomapPanel : public Panel
 {
 private:
+	std::unique_ptr<TextBox> locationTextBox;
 	std::unique_ptr<Button<Game*>> backToGameButton;
-	// Name of location...
+	std::unique_ptr<Texture> mapTexture;
+	Double2 automapCenter; // Displayed XZ coordinate offset from (0, 0).
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game *game);
+	AutomapPanel(Game *game, const Double2 &playerPosition, const Double2 &playerDirection,
+		const VoxelGrid &voxelGrid, const std::string &locationName);
 	virtual ~AutomapPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -209,7 +209,14 @@ GameWorldPanel::GameWorldPanel(Game *game)
 		{
 			if (goToAutomap)
 			{
-				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game));
+				auto &player = game->getGameData().getPlayer();
+				auto &voxelGrid = game->getGameData().getVoxelGrid();
+				const std::string locationName("Test City"); // Keep location in game data?
+				const Double3 position = player.getPosition();
+
+				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game,
+					Double2(position.x, position.z), player.getGroundDirection(),
+					voxelGrid, locationName));
 				game->setPanel(std::move(automapPanel));
 			}
 			else
