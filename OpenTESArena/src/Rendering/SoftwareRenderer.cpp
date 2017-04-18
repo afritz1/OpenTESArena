@@ -1528,38 +1528,32 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
 
-	// Constant camera values. UnitY is the "global up" vector.
-	// Assume "forward" is normalized.
-	const Double3 right = forward.cross(Double3::UnitY).normalized();
-	const Double3 up = right.cross(forward).normalized();
+	// Camera values for rendering. We trick the 2.5D ray caster into thinking the player 
+	// is always looking straight forward, but we use the forward vector's Y component (the
+	// camera elevation) to offset projected coordinates. Assume "forward" is normalized.
+	const Double3 forwardXZ = Double3(forward.x, 0.0, forward.z).normalized();
+	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
+	const Double3 up = Double3::UnitY;
 
 	// Zoom of the camera, based on vertical field of view.
 	const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
 
 	// Refresh transformation matrix (model matrix isn't required because it's just 
 	// the identity matrix).
-	const Matrix4d view = Matrix4d::view(eye, forward, right, up);
+	const Matrix4d view = Matrix4d::view(eye, forwardXZ, rightXZ, up);
 	const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
 		SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
 	const Matrix4d transform = projection * view;
 
-	// Camera elevation, as I call it, is simply the Y component of the player's 3D direction.
-	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing), and 
-	// its magnitude must be clamped less than 1 because 1 would imply the player is looking 
-	// straight up or down, which is impossible (the viewing frustum would have a volume of 0). 
-	// Its value could be clamped within some range, like [-0.3, 0.3], depending on how far 
-	// the player should be able to look up and down, and how tolerable the skewing is.
-	// - This value will usually be non-zero in the "modern" interface mode.
-	// - Maybe it should involve the angle between horizontal and vertical, because if
-	//   the player is looking halfway between, then the elevation would be sqrt(2) / 2.
+	// Camera elevation, as I call it, involves the Y component of the player's 3D direction. 
+	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing). Its 
+	// magnitude must be clamped less than 1 because 1 would imply the player is looking 
+	// straight up or down, which is impossible (the viewing frustum would have a volume of 0).
 	const double cameraElevation = forward.y;
 
-	// Constant camera values for 2D (camera elevation is this->forward.y).
-	const Double2 forward2D = Double2(forward.x, forward.z).normalized();
-	const Double2 right2D = Double2(right.x, right.z).normalized();
-
-	// "Forward" component of the camera for generating rays with.
-	const Double2 forwardComp = forward2D * zoom;
+	// Camera values for generating 2D rays with.
+	const Double2 forwardComp = Double2(forwardXZ.x, forwardXZ.z).normalized() * zoom;
+	const Double2 right2D = Double2(rightXZ.x, rightXZ.z).normalized() * aspect;
 
 	// Calculate fog color (also used for sky).
 	const Double3 fogColor = this->getFogColor(daytimePercent);
@@ -1568,7 +1562,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
 	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, &fogColor, 
-		widthReal, aspect, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
+		widthReal, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1576,7 +1570,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 			const double xPercent = static_cast<double>(x) / widthReal;
 
 			// "Right" component of the ray direction, based on current screen X.
-			const Double2 rightComp = right2D * (aspect * ((2.0 * xPercent) - 1.0));
+			const Double2 rightComp = right2D * ((2.0 * xPercent) - 1.0);
 
 			// Calculate the ray direction through the pixel.
 			// - If un-normalized, it uses the Z distance, but the insides of voxels

@@ -165,10 +165,10 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 		// Y position is based on height of interface image.
 		return std::unique_ptr<Button<GameWorldPanel*>>(new Button<GameWorldPanel*>(
-			208, 
-			(Renderer::ORIGINAL_HEIGHT - 53) + 3, 
-			9, 
-			9, 
+			208,
+			(Renderer::ORIGINAL_HEIGHT - 53) + 3,
+			9,
+			9,
 			function));
 	}();
 
@@ -272,84 +272,89 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	const auto &renderer = this->getGame()->getRenderer();
 
-	// Get mouse position relative to letterbox coordinates.
-	const Int2 originalPosition = renderer.nativePointToOriginal(
-		this->getMousePosition());
-
-	if (leftClick)
+	// Handle input events based on which player interface mode is active.
+	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
+	if (playerInterface == PlayerInterface::Classic)
 	{
-		// Was an interface button clicked?
-		if (this->characterSheetButton->contains(originalPosition))
+		// Get mouse position relative to letterbox coordinates.
+		const Int2 originalPosition = renderer.nativePointToOriginal(
+			this->getMousePosition());
+
+		if (leftClick)
 		{
-			this->characterSheetButton->click(this->getGame());
+			// Was an interface button clicked?
+			if (this->characterSheetButton->contains(originalPosition))
+			{
+				this->characterSheetButton->click(this->getGame());
+			}
+			else if (this->drawWeaponButton->contains(originalPosition))
+			{
+				this->drawWeaponButton->click();
+			}
+			else if (this->mapButton->contains(originalPosition))
+			{
+				this->mapButton->click(this->getGame(), true);
+			}
+			else if (this->stealButton->contains(originalPosition))
+			{
+				this->stealButton->click();
+			}
+			else if (this->statusButton->contains(originalPosition))
+			{
+				this->statusButton->click();
+			}
+			else if (this->magicButton->contains(originalPosition))
+			{
+				this->magicButton->click();
+			}
+			else if (this->logbookButton->contains(originalPosition))
+			{
+				this->logbookButton->click(this->getGame());
+			}
+			else if (this->useItemButton->contains(originalPosition))
+			{
+				this->useItemButton->click();
+			}
+			else if (this->campButton->contains(originalPosition))
+			{
+				this->campButton->click();
+			}
+
+			// Later... any entities in the world clicked?
 		}
-		else if (this->drawWeaponButton->contains(originalPosition))
+		else if (rightClick)
 		{
-			this->drawWeaponButton->click();
+			if (this->mapButton->contains(originalPosition))
+			{
+				this->mapButton->click(this->getGame(), false);
+			}
 		}
-		else if (this->mapButton->contains(originalPosition))
+
+		bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_n);
+		bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_l);
+		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_TAB);
+		bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+			(e.key.keysym.sym == SDLK_m);
+
+		if (automapHotkeyPressed)
 		{
 			this->mapButton->click(this->getGame(), true);
 		}
-		else if (this->stealButton->contains(originalPosition))
-		{
-			this->stealButton->click();
-		}
-		else if (this->statusButton->contains(originalPosition))
-		{
-			this->statusButton->click();
-		}
-		else if (this->magicButton->contains(originalPosition))
-		{
-			this->magicButton->click();
-		}
-		else if (this->logbookButton->contains(originalPosition))
+		else if (logbookHotkeyPressed)
 		{
 			this->logbookButton->click(this->getGame());
 		}
-		else if (this->useItemButton->contains(originalPosition))
+		else if (sheetHotkeyPressed)
 		{
-			this->useItemButton->click();
+			this->characterSheetButton->click(this->getGame());
 		}
-		else if (this->campButton->contains(originalPosition))
-		{
-			this->campButton->click();
-		}
-
-		// Later... any entities in the world clicked?
-	}
-	else if (rightClick)
-	{
-		if (this->mapButton->contains(originalPosition))
+		else if (worldMapHotkeyPressed)
 		{
 			this->mapButton->click(this->getGame(), false);
 		}
-	}
-
-	bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_n);
-	bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_l);
-	bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_TAB);
-	bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_m);
-
-	if (automapHotkeyPressed)
-	{
-		this->mapButton->click(this->getGame(), true);
-	}
-	else if (logbookHotkeyPressed)
-	{
-		this->logbookButton->click(this->getGame());
-	}
-	else if (sheetHotkeyPressed)
-	{
-		this->characterSheetButton->click(this->getGame());
-	}
-	else if (worldMapHotkeyPressed)
-	{
-		this->mapButton->click(this->getGame(), false);
 	}
 }
 
@@ -384,7 +389,7 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 		bool left = keys[SDL_SCANCODE_A] != 0;
 		bool right = keys[SDL_SCANCODE_D] != 0;
 		bool lCtrl = keys[SDL_SCANCODE_LCTRL] != 0;
-		
+
 		// Mouse turning takes priority over key turning.
 		if (leftClick)
 		{
@@ -472,7 +477,7 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 			// Pitch and/or yaw the camera.
 			const auto &options = this->getGame()->getOptions();
 			auto &player = this->getGame()->getGameData().getPlayer();
-			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(), 
+			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(),
 				options.getVerticalSensitivity());
 		}
 	}
@@ -603,7 +608,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
 
 			// Change the player's velocity if valid.
-			if (std::isfinite(accelDirection.length()) && 
+			if (std::isfinite(accelDirection.length()) &&
 				std::isfinite(accelMagnitude))
 			{
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
@@ -731,7 +736,7 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
 
-	renderer.drawToOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT - 
+	renderer.drawToOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT -
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
@@ -829,8 +834,8 @@ void GameWorldPanel::tick(double dt)
 		const Double2 direction = -player.getGroundDirection();
 		const int textureID = entity->getTextureID();
 		const bool flipped = entity->getFlipped();
-		renderer.updateFlat(entity->getID(), &position, 
-			entity->facesPlayer() ? &direction : nullptr, nullptr, nullptr, 
+		renderer.updateFlat(entity->getID(), &position,
+			entity->facesPlayer() ? &direction : nullptr, nullptr, nullptr,
 			&textureID, &flipped);
 	}
 }
@@ -850,7 +855,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const auto &player = gameData.getPlayer();
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getVerticalFOV(), gameData.getDaytimePercent(), 
+		options.getVerticalFOV(), gameData.getDaytimePercent(),
 		gameData.getVoxelGrid());
 
 	// Set screen palette.
@@ -865,22 +870,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	{
 		this->drawDebugText(renderer);
 	}
-
-	// Draw game world interface.
-	const auto &gameInterface = textureManager.getTexture(
-		TextureFile::fromName(TextureName::GameWorldInterface));
-	renderer.drawToOriginal(gameInterface.get(), 0,
-		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
-
-	// Draw player portrait.
-	const auto &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceID(), true);
-	const auto &portrait = textureManager.getTextures(headsFilename)
-		.at(player.getPortraitID());
-	const auto &status = textureManager.getTextures(
-		TextureFile::fromName(TextureName::StatusGradients)).at(0);
-	renderer.drawToOriginal(status.get(), 14, 166);
-	renderer.drawToOriginal(portrait.get(), 14, 166);
 
 	// Draw compass slider based on player direction. +X is north, +Z is east.
 	auto *compassSlider = textureManager.getSurface(
@@ -898,7 +887,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a 
 		// small "pop-in" when turning from N to NE, because N is drawn in two places, 
 		// but the second place (offset == 256) has tick marks where "NE" should be.
-		const int xOffset = static_cast<int>(240.0 + 
+		const int xOffset = static_cast<int>(240.0 +
 			std::round(256.0 * (angle / (2.0 * PI)))) % 256;
 
 		SDL_Rect clipRect;
@@ -925,84 +914,113 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
-	// If the player's class can't use magic, show the darkened spell icon.
-	if (!player.getCharacterClass().canCastMagic())
+	// Continue drawing more interface objects if in classic mode.
+	const auto playerInterface = options.getPlayerInterface();
+	if (playerInterface == PlayerInterface::Classic)
 	{
-		const auto &nonMagicIcon = textureManager.getTexture(
-			TextureFile::fromName(TextureName::NoSpell));
-		renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
-	}
+		// Draw game world interface.
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface));
+		renderer.drawToOriginal(gameInterface.get(), 0,
+			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
-	// Draw text: player name.
-	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
-		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+		// Draw player portrait.
+		const auto &headsFilename = PortraitFile::getHeads(
+			player.getGenderName(), player.getRaceID(), true);
+		const auto &portrait = textureManager.getTextures(headsFilename)
+			.at(player.getPortraitID());
+		const auto &status = textureManager.getTextures(
+			TextureFile::fromName(TextureName::StatusGradients)).at(0);
+		renderer.drawToOriginal(status.get(), 14, 166);
+		renderer.drawToOriginal(portrait.get(), 14, 166);
 
-	// Check if the mouse is over one of the buttons for tooltips.
-	const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+		// If the player's class can't use magic, show the darkened spell icon.
+		if (!player.getCharacterClass().canCastMagic())
+		{
+			const auto &nonMagicIcon = textureManager.getTexture(
+				TextureFile::fromName(TextureName::NoSpell));
+			renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
+		}
 
-	if (this->characterSheetButton->contains(originalPosition))
-	{
-		this->drawTooltip("Character Sheet", renderer);
-	}
-	else if (this->drawWeaponButton->contains(originalPosition))
-	{
-		this->drawTooltip("Draw/Sheathe Weapon", renderer);
-	}
-	else if (this->mapButton->contains(originalPosition))
-	{
-		this->drawTooltip("Automap/World Map", renderer);
-	}
-	else if (this->stealButton->contains(originalPosition))
-	{
-		this->drawTooltip("Steal", renderer);
-	}
-	else if (this->statusButton->contains(originalPosition))
-	{
-		this->drawTooltip("Status", renderer);
-	}
-	else if (this->magicButton->contains(originalPosition) &&
-		player.getCharacterClass().canCastMagic())
-	{
-		this->drawTooltip("Cast Magic", renderer);
-	}
-	else if (this->logbookButton->contains(originalPosition))
-	{
-		this->drawTooltip("Logbook", renderer);
-	}
-	else if (this->useItemButton->contains(originalPosition))
-	{
-		this->drawTooltip("Use Item", renderer);
-	}
-	else if (this->campButton->contains(originalPosition))
-	{
-		this->drawTooltip("Camp", renderer);
+		// Draw text: player name.
+		renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
+			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+
+		// Check if the mouse is over one of the buttons for tooltips.
+		const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+
+		if (this->characterSheetButton->contains(originalPosition))
+		{
+			this->drawTooltip("Character Sheet", renderer);
+		}
+		else if (this->drawWeaponButton->contains(originalPosition))
+		{
+			this->drawTooltip("Draw/Sheathe Weapon", renderer);
+		}
+		else if (this->mapButton->contains(originalPosition))
+		{
+			this->drawTooltip("Automap/World Map", renderer);
+		}
+		else if (this->stealButton->contains(originalPosition))
+		{
+			this->drawTooltip("Steal", renderer);
+		}
+		else if (this->statusButton->contains(originalPosition))
+		{
+			this->drawTooltip("Status", renderer);
+		}
+		else if (this->magicButton->contains(originalPosition) &&
+			player.getCharacterClass().canCastMagic())
+		{
+			this->drawTooltip("Cast Magic", renderer);
+		}
+		else if (this->logbookButton->contains(originalPosition))
+		{
+			this->drawTooltip("Logbook", renderer);
+		}
+		else if (this->useItemButton->contains(originalPosition))
+		{
+			this->drawTooltip("Use Item", renderer);
+		}
+		else if (this->campButton->contains(originalPosition))
+		{
+			this->drawTooltip("Camp", renderer);
+		}
 	}
 
 	// Scale the original frame buffer onto the native one.
-	// This shouldn't be done for the game world interface because it needs to
-	// clamp to the screen edges, not the letterbox edges. 
-	// Fix this eventually... again.
+	// - This shouldn't be done for the game world interface because it needs to clamp 
+	//   to the screen edges, not the letterbox edges. Fix this eventually... again.
 	renderer.drawOriginalToNative();
 
 	// Draw cursor, depending on its position on the screen.
 	const Int2 mousePosition = this->getMousePosition();
 
-	const Texture &cursor = [this, &mousePosition, &textureManager]()
+	const Texture &cursor = [this, &mousePosition, playerInterface, &textureManager]()
 		-> const Texture& // Interesting how this return type isn't deduced in MSVC.
 	{
-		// See which arrow cursor region the native mouse is in.
-		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
+		// If using the modern interface, just use the default arrow cursor.
+		if (playerInterface == PlayerInterface::Modern)
 		{
-			if (this->nativeCursorRegions.at(i).contains(mousePosition))
-			{
-				return textureManager.getTextures(
-					TextureFile::fromName(TextureName::ArrowCursors)).at(i);
-			}
+			return textureManager.getTextures(
+				TextureFile::fromName(TextureName::ArrowCursors)).at(4);
 		}
+		else
+		{
+			// See which arrow cursor region the native mouse is in.
+			for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
+			{
+				if (this->nativeCursorRegions.at(i).contains(mousePosition))
+				{
+					return textureManager.getTextures(
+						TextureFile::fromName(TextureName::ArrowCursors)).at(i);
+				}
+			}
 
-	// If not in any of the arrow regions, use the default sword cursor.
-	return textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor));
+			// If not in any of the arrow regions, use the default sword cursor.
+			return textureManager.getTexture(
+				TextureFile::fromName(TextureName::SwordCursor));
+		}
 	}();
 
 	renderer.drawToNative(cursor.get(), mousePosition.x, mousePosition.y,
