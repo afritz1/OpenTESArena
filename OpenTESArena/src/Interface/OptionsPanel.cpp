@@ -26,6 +26,7 @@
 
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
+const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
 
 OptionsPanel::OptionsPanel(Game *game)
 	: Panel(game)
@@ -89,6 +90,27 @@ OptionsPanel::OptionsPanel(Game *game)
 
 		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT + 
 			String::fixedPrecision(game->getOptions().getResolutionScale(), 2);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->playerInterfaceTextBox = [this, game]()
+	{
+		int x = 20;
+		int y = 85;
+		auto color = Color::White;
+
+		const auto &options = game->getOptions();
+		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
+			this->getPlayerInterfaceString(options.getPlayerInterface());
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -190,11 +212,40 @@ OptionsPanel::OptionsPanel(Game *game)
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
 			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
 	}();
+
+	this->playerInterfaceButton = []()
+	{
+		int x = 136;
+		int y = 86;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			// Toggle the player interface option.
+			auto newPlayerInterface = (options.getPlayerInterface() == PlayerInterface::Classic) ?
+				PlayerInterface::Modern : PlayerInterface::Classic;
+			options.setPlayerInterface(newPlayerInterface);
+			panel->updatePlayerInterfaceText(newPlayerInterface);
+
+			// Resize the game world rendering.
+			const Int2 windowDimensions = renderer.getWindowDimensions();
+			const bool fullGameWindow = newPlayerInterface == PlayerInterface::Modern;
+			renderer.resize(windowDimensions.x, windowDimensions.y,
+				options.getResolutionScale(), fullGameWindow);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+	}();
 }
 
 OptionsPanel::~OptionsPanel()
 {
 
+}
+
+std::string OptionsPanel::getPlayerInterfaceString(PlayerInterface playerInterface) const
+{
+	return (playerInterface == PlayerInterface::Classic) ? "Classic" : "Modern";
 }
 
 void OptionsPanel::updateFPSText(int fps)
@@ -238,6 +289,27 @@ void OptionsPanel::updateResolutionScaleText(double resolutionScale)
 	}();
 }
 
+void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
+{
+	assert(this->playerInterfaceTextBox.get() != nullptr);
+
+	this->playerInterfaceTextBox = [this, playerInterface]()
+	{
+		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
+			this->getPlayerInterfaceString(playerInterface);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->playerInterfaceTextBox->getX(),
+			this->playerInterfaceTextBox->getY(),
+			this->playerInterfaceTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->playerInterfaceTextBox->getFontName()),
+			this->playerInterfaceTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
 	bool escapePressed = (e.type == SDL_KEYDOWN) &&
@@ -276,6 +348,11 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 			this->resolutionScaleDownButton->click(this, this->getGame()->getOptions(),
 				this->getGame()->getRenderer());
 		}
+		else if (this->playerInterfaceButton->contains(mouseOriginalPoint))
+		{
+			this->playerInterfaceButton->click(this, this->getGame()->getOptions(),
+				this->getGame()->getRenderer());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -305,6 +382,12 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(arrows.get(), this->resolutionScaleUpButton->getX(),
 		this->resolutionScaleUpButton->getY());
 
+	Texture playerInterfaceBackground(Texture::generate(Texture::PatternType::Custom1,
+		this->playerInterfaceButton->getWidth(), this->playerInterfaceButton->getHeight(),
+		textureManager, renderer));
+	renderer.drawToOriginal(playerInterfaceBackground.get(), this->playerInterfaceButton->getX(),
+		this->playerInterfaceButton->getY());
+
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
 		textureManager, renderer));
@@ -320,6 +403,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->fpsTextBox->getX(), this->fpsTextBox->getY());
 	renderer.drawToOriginal(this->resolutionScaleTextBox->getTexture(),
 		this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY());
+	renderer.drawToOriginal(this->playerInterfaceTextBox->getTexture(),
+		this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
