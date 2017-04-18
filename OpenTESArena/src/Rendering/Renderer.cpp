@@ -288,7 +288,7 @@ SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
 	return SDL_CreateTextureFromSurface(this->renderer, surface);
 }
 
-void Renderer::resize(int width, int height, double resolutionScale)
+void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)
 {
 	// The window's dimensions are resized automatically. The renderer's are not.
 	const auto *nativeSurface = this->getWindowSurface();
@@ -303,6 +303,8 @@ void Renderer::resize(int width, int height, double resolutionScale)
 		SDL_TEXTUREACCESS_TARGET, width, height);
 	Debug::check(this->nativeTexture != nullptr, "Renderer",
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
+
+	this->fullGameWindow = fullGameWindow;
 
 	// Rebuild the 3D renderer if initialized.
 	if (this->softwareRenderer.get() != nullptr)

@@ -10,6 +10,7 @@
 #include "GameData.h"
 #include "Options.h"
 #include "OptionsParser.h"
+#include "PlayerInterface.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
 #include "../Math/Vector2.h"
@@ -145,7 +146,9 @@ void Game::setGameData(std::unique_ptr<GameData> gameData)
 void Game::resizeWindow(int width, int height)
 {
 	// Resize the window, and the 3D renderer if initialized.
-	this->renderer->resize(width, height, this->getOptions().getResolutionScale());
+	auto &options = this->getOptions();
+	const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+	this->renderer->resize(width, height, options.getResolutionScale(), fullGameWindow);
 }
 
 void Game::handleEvents(bool &running)

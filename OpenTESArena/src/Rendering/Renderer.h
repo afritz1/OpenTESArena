@@ -89,7 +89,7 @@ public:
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
 
 	// Resizes the renderer dimensions.
-	void resize(int width, int height, double resolutionScale);
+	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(SDL_Surface *icon);

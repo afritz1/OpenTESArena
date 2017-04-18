@@ -10,6 +10,7 @@
 #include "TextBox.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Game/PlayerInterface.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -159,7 +160,9 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			renderer.resize(windowDimensions.x, windowDimensions.y, newResolutionScale);
+			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			renderer.resize(windowDimensions.x, windowDimensions.y, 
+				newResolutionScale, fullGameWindow);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
 			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
@@ -180,7 +183,9 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			renderer.resize(windowDimensions.x, windowDimensions.y, newResolutionScale);
+			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			renderer.resize(windowDimensions.x, windowDimensions.y, 
+				newResolutionScale, fullGameWindow);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
 			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));

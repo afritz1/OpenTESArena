@@ -16,6 +16,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Game/PlayerInterface.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -110,8 +111,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
+			const bool fullGameWindow =
+				game->getOptions().getPlayerInterface() == PlayerInterface::Modern;
 			renderer.initializeWorldRendering(
-				game->getOptions().getResolutionScale(), false);
+				game->getOptions().getResolutionScale(), fullGameWindow);
 
 			// Generate the test world data.
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
