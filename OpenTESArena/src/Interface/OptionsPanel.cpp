@@ -27,6 +27,7 @@
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
 const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
+const std::string OptionsPanel::VERTICAL_FOV_TEXT = "Vertical FOV: ";
 
 OptionsPanel::OptionsPanel(Game *game)
 	: Panel(game)
@@ -102,7 +103,7 @@ OptionsPanel::OptionsPanel(Game *game)
 			game->getRenderer()));
 	}();
 
-	this->playerInterfaceTextBox = [this, game]()
+	this->playerInterfaceTextBox = [game]()
 	{
 		int x = 20;
 		int y = 85;
@@ -110,7 +111,27 @@ OptionsPanel::OptionsPanel(Game *game)
 
 		const auto &options = game->getOptions();
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			this->getPlayerInterfaceString(options.getPlayerInterface());
+			OptionsPanel::getPlayerInterfaceString(options.getPlayerInterface());
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->verticalFOVTextBox = [game]()
+	{
+		int x = 20;
+		int y = 105;
+		auto color = Color::White;
+
+		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
+			String::fixedPrecision(game->getOptions().getVerticalFOV(), 1);
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -236,6 +257,40 @@ OptionsPanel::OptionsPanel(Game *game)
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
 			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
 	}();
+
+	this->verticalFOVUpButton = []()
+	{
+		int x = 105;
+		int y = 101;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0, 
+				options.MAX_VERTICAL_FOV);
+			options.setVerticalFOV(newVerticalFOV);
+			panel->updateVerticalFOVText(newVerticalFOV);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->verticalFOVDownButton = [this]()
+	{
+		int x = this->verticalFOVUpButton->getX();
+		int y = this->verticalFOVUpButton->getY() + this->verticalFOVUpButton->getHeight();
+		int width = this->verticalFOVUpButton->getWidth();
+		int height = this->verticalFOVUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newVerticalFOV = std::max(options.getVerticalFOV() - 5.0,
+				options.MIN_VERTICAL_FOV);
+			options.setVerticalFOV(newVerticalFOV);
+			panel->updateVerticalFOVText(newVerticalFOV);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
 }
 
 OptionsPanel::~OptionsPanel()
@@ -243,7 +298,7 @@ OptionsPanel::~OptionsPanel()
 
 }
 
-std::string OptionsPanel::getPlayerInterfaceString(PlayerInterface playerInterface) const
+std::string OptionsPanel::getPlayerInterfaceString(PlayerInterface playerInterface)
 {
 	return (playerInterface == PlayerInterface::Classic) ? "Classic" : "Modern";
 }
@@ -310,6 +365,27 @@ void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
 	}();
 }
 
+void OptionsPanel::updateVerticalFOVText(double verticalFOV)
+{
+	assert(this->verticalFOVTextBox.get() != nullptr);
+
+	this->verticalFOVTextBox = [this, verticalFOV]()
+	{
+		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
+			String::fixedPrecision(verticalFOV, 1);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->verticalFOVTextBox->getX(),
+			this->verticalFOVTextBox->getY(),
+			this->verticalFOVTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->verticalFOVTextBox->getFontName()),
+			this->verticalFOVTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
 	bool escapePressed = (e.type == SDL_KEYDOWN) &&
@@ -353,6 +429,14 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 			this->playerInterfaceButton->click(this, this->getGame()->getOptions(),
 				this->getGame()->getRenderer());
 		}
+		else if (this->verticalFOVUpButton->contains(mouseOriginalPoint))
+		{
+			this->verticalFOVUpButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->verticalFOVDownButton->contains(mouseOriginalPoint))
+		{
+			this->verticalFOVDownButton->click(this, this->getGame()->getOptions());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -381,6 +465,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->fpsUpButton->getY());
 	renderer.drawToOriginal(arrows.get(), this->resolutionScaleUpButton->getX(),
 		this->resolutionScaleUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->verticalFOVUpButton->getX(),
+		this->verticalFOVUpButton->getY());
 
 	Texture playerInterfaceBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->playerInterfaceButton->getWidth(), this->playerInterfaceButton->getHeight(),
@@ -394,7 +480,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(returnBackground.get(), this->backToPauseButton->getX(),
 		this->backToPauseButton->getY());
 
-	// Draw text: title, return, fps.
+	// Draw text.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawToOriginal(this->backToPauseTextBox->getTexture(),
@@ -405,6 +491,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY());
 	renderer.drawToOriginal(this->playerInterfaceTextBox->getTexture(),
 		this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY());
+	renderer.drawToOriginal(this->verticalFOVTextBox->getTexture(),
+		this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

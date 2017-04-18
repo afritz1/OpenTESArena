@@ -8,6 +8,8 @@
 const int Options::MIN_FPS = 15;
 const double Options::MIN_RESOLUTION_SCALE = 0.10;
 const double Options::MAX_RESOLUTION_SCALE = 1.0;
+const double Options::MIN_VERTICAL_FOV = 40.0;
+const double Options::MAX_VERTICAL_FOV = 150.0;
 
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
@@ -26,8 +28,11 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 		"Resolution scale must be between " + 
 		String::fixedPrecision(Options::MIN_RESOLUTION_SCALE, 2) + " and " + 
 		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
-	Debug::check((verticalFOV > 0.0) && (verticalFOV < 180.0), "Options",
-		"Field of view must be between 0.0 and 180.0 exclusive.");
+	Debug::check((verticalFOV >= Options::MIN_VERTICAL_FOV) && 
+		(verticalFOV <= Options::MAX_VERTICAL_FOV), "Options",
+		"Field of view must be between " + 
+		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + " and " +
+		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
 	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
 	Debug::check(cursorScale > 0.0, "Options", "Cursor scale must be positive.");
 	Debug::check(hSensitivity > 0.0, "Options", "Horizontal sensitivity must be positive.");
@@ -181,8 +186,8 @@ void Options::setResolutionScale(double percent)
 
 void Options::setVerticalFOV(double fov)
 {
-	assert(fov > 0.0);
-	assert(fov < 180.0);
+	assert(fov >= Options::MIN_VERTICAL_FOV);
+	assert(fov <= Options::MAX_VERTICAL_FOV);
 
 	this->verticalFOV = fov;
 }

@@ -18,19 +18,22 @@ private:
 	static const std::string FPS_TEXT;
 	static const std::string RESOLUTION_SCALE_TEXT;
 	static const std::string PLAYER_INTERFACE_TEXT;
+	static const std::string VERTICAL_FOV_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox, 
-		resolutionScaleTextBox, playerInterfaceTextBox;
+		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox;
 	std::unique_ptr<Button<Game*>> backToPauseButton;
-	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton;
+	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton,
+		verticalFOVUpButton, verticalFOVDownButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>> resolutionScaleUpButton, 
 		resolutionScaleDownButton, playerInterfaceButton;
 
-	std::string getPlayerInterfaceString(PlayerInterface playerInterface) const;
+	static std::string getPlayerInterfaceString(PlayerInterface playerInterface);
 
 	void updateFPSText(int fps);
 	void updateResolutionScaleText(double resolutionScale);
 	void updatePlayerInterfaceText(PlayerInterface playerInterface);
+	void updateVerticalFOVText(double verticalFOV);
 public:
 	OptionsPanel(Game *game);
 	virtual ~OptionsPanel();

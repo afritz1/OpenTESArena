@@ -43,6 +43,8 @@ public:
 	static const int MIN_FPS;
 	static const double MIN_RESOLUTION_SCALE;
 	static const double MAX_RESOLUTION_SCALE;
+	static const double MIN_VERTICAL_FOV;
+	static const double MAX_VERTICAL_FOV;
 
 	int getScreenWidth() const;
 	int getScreenHeight() const;
