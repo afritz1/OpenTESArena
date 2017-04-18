@@ -265,6 +265,33 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		this->showDebug = !this->showDebug;
 	}
 
+	// Listen for hotkeys.
+	bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_n);
+	bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_l);
+	bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_TAB);
+	bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
+		(e.key.keysym.sym == SDLK_m);
+
+	if (automapHotkeyPressed)
+	{
+		this->mapButton->click(this->getGame(), true);
+	}
+	else if (logbookHotkeyPressed)
+	{
+		this->logbookButton->click(this->getGame());
+	}
+	else if (sheetHotkeyPressed)
+	{
+		this->characterSheetButton->click(this->getGame());
+	}
+	else if (worldMapHotkeyPressed)
+	{
+		this->mapButton->click(this->getGame(), false);
+	}
+
 	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
 		(e.button.button == SDL_BUTTON_LEFT);
 	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
@@ -328,32 +355,6 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			{
 				this->mapButton->click(this->getGame(), false);
 			}
-		}
-
-		bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_n);
-		bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_l);
-		bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_TAB);
-		bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_m);
-
-		if (automapHotkeyPressed)
-		{
-			this->mapButton->click(this->getGame(), true);
-		}
-		else if (logbookHotkeyPressed)
-		{
-			this->logbookButton->click(this->getGame());
-		}
-		else if (sheetHotkeyPressed)
-		{
-			this->characterSheetButton->click(this->getGame());
-		}
-		else if (worldMapHotkeyPressed)
-		{
-			this->mapButton->click(this->getGame(), false);
 		}
 	}
 }
