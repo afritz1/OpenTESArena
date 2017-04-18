@@ -6,6 +6,9 @@
 #   render the game world. Accepted values are between 0.10 and 1.0.
 # - Default letterbox aspect is 1.60. "Stretched" aspect for simulating 
 #   the look on 640x480 monitors is 1.33.
+# - If ModernInterface is False, the in-game interface uses Arena's classic 
+#   layout. If True, it uses a minimalistic interface with free-look 
+#   similar to Daggerfall's.
 ScreenWidth=1280
 ScreenHeight=720
 Fullscreen=False
@@ -14,6 +17,7 @@ ResolutionScale=0.50
 VerticalFieldOfView=60.0
 LetterboxAspect=1.60
 CursorScale=2.0
+ModernInterface=False
 
 # Input.
 # - Look sensitivity is normally between 5.0 and 15.0.

@@ -23,6 +23,7 @@ private:
 	static const std::string VERTICAL_FOV_KEY;
 	static const std::string LETTERBOX_ASPECT_KEY;
 	static const std::string CURSOR_SCALE_KEY;
+	static const std::string MODERN_INTERFACE_KEY;
 
 	// Input.
 	static const std::string H_SENSITIVITY_KEY;

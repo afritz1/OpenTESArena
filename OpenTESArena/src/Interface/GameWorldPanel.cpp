@@ -18,6 +18,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Game/PlayerInterface.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -55,12 +56,6 @@ namespace
 	const Rect BottomRightRegion(179, 119, 141, 28);
 	const Rect UiBottomRegion(0, 147, 320, 53);
 }
-
-enum class PlayerInterface
-{
-	Classic,
-	Modern
-};
 
 GameWorldPanel::GameWorldPanel(Game *game)
 	: Panel(game)

@@ -6,6 +6,8 @@
 // Settings found in the options menu are saved in this object, which should live in
 // the game state object since it persists for the lifetime of the program.
 
+enum class PlayerInterface;
+
 class Options
 {
 private:
@@ -17,6 +19,7 @@ private:
 	double verticalFOV; // In degrees.
 	double letterboxAspect;
 	double cursorScale;
+	PlayerInterface playerInterface;
 
 	// Input.
 	double hSensitivity, vSensitivity;
@@ -31,9 +34,10 @@ private:
 	bool skipIntro;
 public:
 	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
-		int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect, 
-		double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont, 
-		double musicVolume, double soundVolume, int soundChannels, bool skipIntro);
+		int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
+		double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
+		double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
+		PlayerInterface playerInterface);
 	~Options();
 
 	static const int MIN_FPS;
@@ -56,6 +60,7 @@ public:
 	int getSoundChannelCount() const;
 	const std::string &getArenaPath() const;
 	bool introIsSkipped() const;
+	PlayerInterface getPlayerInterface() const;
 
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
@@ -73,6 +78,7 @@ public:
 	void setSoundChannelCount(int count);
 	void setArenaPath(std::string path);
 	void setSkipIntro(bool skip);
+	void setPlayerInterface(PlayerInterface playerInterface);
 };
 
 #endif

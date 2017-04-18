@@ -12,7 +12,8 @@ const double Options::MAX_RESOLUTION_SCALE = 1.0;
 Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
 	double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
-	double musicVolume, double soundVolume, int soundChannels, bool skipIntro)
+	double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
+	PlayerInterface playerInterface)
 	: arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
@@ -51,6 +52,7 @@ Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool
 	this->soundVolume = soundVolume;
 	this->soundChannels = soundChannels;
 	this->skipIntro = skipIntro;
+	this->playerInterface = playerInterface;
 }
 
 Options::~Options()
@@ -136,6 +138,11 @@ const std::string &Options::getArenaPath() const
 bool Options::introIsSkipped() const
 {
 	return this->skipIntro;
+}
+
+PlayerInterface Options::getPlayerInterface() const
+{
+	return this->playerInterface;
 }
 
 void Options::setScreenWidth(int width)
@@ -234,4 +241,9 @@ void Options::setArenaPath(std::string path)
 void Options::setSkipIntro(bool skip)
 {
 	this->skipIntro = skip;
+}
+
+void Options::setPlayerInterface(PlayerInterface playerInterface)
+{
+	this->playerInterface = playerInterface;
 }

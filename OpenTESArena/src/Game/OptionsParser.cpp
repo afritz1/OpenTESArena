@@ -3,6 +3,7 @@
 #include "OptionsParser.h"
 
 #include "Options.h"
+#include "PlayerInterface.h"
 #include "../Utilities/KvpTextMap.h"
 
 const std::string OptionsParser::PATH = "options/";
@@ -16,6 +17,7 @@ const std::string OptionsParser::RESOLUTION_SCALE_KEY = "ResolutionScale";
 const std::string OptionsParser::VERTICAL_FOV_KEY = "VerticalFieldOfView";
 const std::string OptionsParser::LETTERBOX_ASPECT_KEY = "LetterboxAspect";
 const std::string OptionsParser::CURSOR_SCALE_KEY = "CursorScale";
+const std::string OptionsParser::MODERN_INTERFACE_KEY = "ModernInterface";
 const std::string OptionsParser::H_SENSITIVITY_KEY = "HorizontalSensitivity";
 const std::string OptionsParser::V_SENSITIVITY_KEY = "VerticalSensitivity";
 const std::string OptionsParser::MUSIC_VOLUME_KEY = "MusicVolume";
@@ -42,6 +44,7 @@ std::unique_ptr<Options> OptionsParser::parse()
 	double verticalFOV = textMap.getDouble(OptionsParser::VERTICAL_FOV_KEY);
 	double letterboxAspect = textMap.getDouble(OptionsParser::LETTERBOX_ASPECT_KEY);
 	double cursorScale = textMap.getDouble(OptionsParser::CURSOR_SCALE_KEY);
+	bool modernInterface = textMap.getBoolean(OptionsParser::MODERN_INTERFACE_KEY);
 
 	// Input.
 	double hSensitivity = textMap.getDouble(OptionsParser::H_SENSITIVITY_KEY);
@@ -59,8 +62,9 @@ std::unique_ptr<Options> OptionsParser::parse()
 	
 	return std::unique_ptr<Options>(new Options(std::move(arenaPath),
 		screenWidth, screenHeight, fullscreen, targetFPS, resolutionScale, verticalFOV,
-		letterboxAspect, cursorScale, hSensitivity, vSensitivity, std::move(soundfont), 
-		musicVolume, soundVolume, soundChannels, skipIntro));
+		letterboxAspect, cursorScale, hSensitivity, vSensitivity, std::move(soundfont),
+		musicVolume, soundVolume, soundChannels, skipIntro,
+		modernInterface ? PlayerInterface::Modern : PlayerInterface::Classic));
 }
 
 void OptionsParser::save(const Options &options)
