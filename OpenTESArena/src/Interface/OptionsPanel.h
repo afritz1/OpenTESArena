@@ -7,6 +7,7 @@
 // Arena doesn't have an options menu, so I made one up!
 
 class Options;
+class Player;
 class Renderer;
 class TextBox;
 
@@ -26,7 +27,8 @@ private:
 	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>> resolutionScaleUpButton, 
-		resolutionScaleDownButton, playerInterfaceButton;
+		resolutionScaleDownButton;
+	std::unique_ptr<Button<OptionsPanel*, Options&, Player&, Renderer&>> playerInterfaceButton;
 
 	static std::string getPlayerInterfaceString(PlayerInterface playerInterface);
 

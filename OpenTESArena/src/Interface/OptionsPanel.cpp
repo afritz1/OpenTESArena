@@ -8,7 +8,9 @@
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Entities/Player.h"
 #include "../Game/Game.h"
+#include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
 #include "../Math/Vector2.h"
@@ -240,7 +242,8 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = 86;
 		int width = 8;
 		int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel *panel, Options &options, 
+			Player &player, Renderer &renderer)
 		{
 			// Toggle the player interface option.
 			auto newPlayerInterface = (options.getPlayerInterface() == PlayerInterface::Classic) ?
@@ -248,14 +251,24 @@ OptionsPanel::OptionsPanel(Game *game)
 			options.setPlayerInterface(newPlayerInterface);
 			panel->updatePlayerInterfaceText(newPlayerInterface);
 
+			// If classic mode, make sure the player is looking straight forward.
+			// This is a restriction on the camera to retain the original feel.
+			if (newPlayerInterface == PlayerInterface::Classic)
+			{
+				const Double2 groundDirection = player.getGroundDirection();
+				const Double3 lookAtPoint = player.getPosition() +
+					Double3(groundDirection.x, 0.0, groundDirection.y);
+				player.lookAt(lookAtPoint);
+			}
+
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
 			const bool fullGameWindow = newPlayerInterface == PlayerInterface::Modern;
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				options.getResolutionScale(), fullGameWindow);
 		};
-		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
-			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Player&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Player&, Renderer&>(x, y, width, height, function));
 	}();
 
 	this->verticalFOVUpButton = []()
@@ -427,7 +440,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		else if (this->playerInterfaceButton->contains(mouseOriginalPoint))
 		{
 			this->playerInterfaceButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getRenderer());
+				this->getGame()->getGameData().getPlayer(), this->getGame()->getRenderer());
 		}
 		else if (this->verticalFOVUpButton->contains(mouseOriginalPoint))
 		{

@@ -94,6 +94,11 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 	this->camera.rotate(dx * (100.0 * hSensitivity), dy * (100.0 * vSensitivity));
 }
 
+void Player::lookAt(const Double3 &point)
+{
+	this->camera.lookAt(point);
+}
+
 void Player::accelerate(const Double3 &direction, double magnitude, 
 	bool isRunning, double dt)
 {

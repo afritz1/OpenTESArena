@@ -16,8 +16,6 @@
 class Renderer;
 class TextBox;
 
-enum class PlayerInterface;
-
 class GameWorldPanel : public Panel
 {
 private:
@@ -30,7 +28,6 @@ private:
 	std::unique_ptr<Button<Game*>> pauseButton;
 	std::unique_ptr<Button<Game*, bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
-	PlayerInterface playerInterface;
 	bool showDebug;
 
 	// Modifies the values in the native cursor regions array so rectangles in

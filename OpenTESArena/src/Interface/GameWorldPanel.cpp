@@ -224,10 +224,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			new Button<Game*, bool>(118, 151, 29, 22, function));
 	}();
 
-	// Default to classic mode for now. Eventually, "modern" mode will be
-	// an option for a free-look camera like Daggerfall.
-	this->playerInterface = PlayerInterface::Classic;
-
+	// Default to no debug information displayed.
 	this->showDebug = false;
 
 	// Set all of the cursor regions relative to the current window.
@@ -366,7 +363,8 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 	// If right click is held, weapon is out, and mouse motion is significant, then
 	// get the swing direction and swing.
 
-	if (this->playerInterface == PlayerInterface::Classic)
+	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
+	if (playerInterface == PlayerInterface::Classic)
 	{
 		// Classic interface mode.
 		// Arena's mouse look is pretty clunky, and I much prefer the free-look model,
@@ -457,24 +455,17 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 	}
 	else
 	{
-		// Modern interface.
-		Debug::crash("Game World", "Modern interface not implemented.");
-
-		// Later in development, a 3D camera would be fun (more like Daggerfall), but 
-		// for now the objective is to more closely resemble the original game, so the
-		// rough draft 3D camera code below is commented out as a result.
-
-		// Make the camera look around.
-		/*int dx, dy;
-		const auto mouse = SDL_GetRelativeMouseState(&dx, &dy);
+		// Modern interface. Make the camera look around.
+		int dx, dy;
+		const uint32_t mouse = SDL_GetRelativeMouseState(&dx, &dy);
 
 		bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
 		bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-		bool turning = ((dx != 0) || (dy != 0)) && leftClick;
+		bool turning = ((dx != 0) || (dy != 0)) && (leftClick || rightClick);
 
 		if (turning)
 		{
-			auto dimensions = this->getGame()->getRenderer().getWindowDimensions();
+			const Int2 dimensions = this->getGame()->getRenderer().getWindowDimensions();
 			double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.x);
 			double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.y);
 
@@ -482,8 +473,8 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 			const auto &options = this->getGame()->getOptions();
 			auto &player = this->getGame()->getGameData().getPlayer();
 			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(), 
-				options.getVerticalSensitivity(), options.getVerticalFOV());
-		}*/
+				options.getVerticalSensitivity());
+		}
 	}
 }
 
@@ -493,7 +484,12 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	// 1) handleClassicMovement()
 	// 2) handleModernMovement()
 
-	if (this->playerInterface == PlayerInterface::Classic)
+	// Arbitrary movement speeds.
+	const double walkSpeed = 15.0;
+	const double runSpeed = 30.0;
+
+	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
+	if (playerInterface == PlayerInterface::Classic)
 	{
 		// Classic interface mode.
 		// Arena uses arrow keys, but let's use the left hand side of the keyboard 
@@ -517,10 +513,6 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// The original game didn't have sprinting, but it seems like something 
 		// relevant to do anyway (at least for development).
 		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
-
-		// Arbitrary movement speeds.
-		const double walkSpeed = 15.0;
-		const double runSpeed = 30.0;
 
 		auto &player = this->getGame()->getGameData().getPlayer();
 
@@ -656,8 +648,76 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	}
 	else
 	{
-		// Modern interface.
-		Debug::crash("Game World", "Modern interface not implemented.");
+		// Modern interface. Listen for WASD.
+		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
+		bool forward = keys[SDL_SCANCODE_W] != 0;
+		bool backward = keys[SDL_SCANCODE_S] != 0;
+		bool left = keys[SDL_SCANCODE_A] != 0;
+		bool right = keys[SDL_SCANCODE_D] != 0;
+
+		// The original game didn't have sprinting, but it seems like something 
+		// relevant to do anyway (at least for development).
+		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
+
+		auto &player = this->getGame()->getGameData().getPlayer();
+
+		// -- test --
+		// Some simple code to move the camera along the Y axis.
+		bool space = keys[SDL_SCANCODE_SPACE] != 0;
+		bool c = keys[SDL_SCANCODE_C] != 0;
+		if (space)
+		{
+			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
+		}
+		else if (c)
+		{
+			player.teleport(player.getPosition() - Double3(0.0, 0.5 * dt, 0.0));
+		}
+		// -- end test --
+
+		// Get some relevant player direction data (getDirection() isn't necessary here
+		// because the Y component is intentionally truncated).
+		const Double2 groundDirection = player.getGroundDirection();
+		const Double3 groundDirection3D = Double3(groundDirection.x, 0.0,
+			groundDirection.y).normalized();
+		const Double3 &rightDirection = player.getRight();
+
+		if (forward || backward || left || right)
+		{
+			// Calculate the acceleration direction based on input.
+			Double3 accelDirection(0.0, 0.0, 0.0);
+			if (forward)
+			{
+				accelDirection = accelDirection + groundDirection3D;
+			}
+			if (backward)
+			{
+				accelDirection = accelDirection - groundDirection3D;
+			}
+			if (right)
+			{
+				accelDirection = accelDirection + rightDirection;
+			}
+			if (left)
+			{
+				accelDirection = accelDirection - rightDirection;
+			}
+
+			// To do: check jump eventually once gravity and ground collision are implemented.
+
+			// Use a normalized direction.
+			accelDirection = accelDirection.normalized();
+
+			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// are independent of max speed.
+			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
+
+			// Change the player's velocity if valid.
+			if (std::isfinite(accelDirection.length()))
+			{
+				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+			}
+		}
 	}
 }
 

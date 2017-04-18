@@ -50,6 +50,9 @@ public:
 	// Rotates the player's camera based on some change in X (left/right) and Y (up/down).
 	void rotate(double dx, double dy, double hSensitivity, double vSensitivity);
 
+	// Recalculates the player's view so they look at a point.
+	void lookAt(const Double3 &point);
+
 	// Changes the velocity (as a force) given a normalized direction, magnitude, 
 	// and delta time, as well as whether the player is running.
 	void accelerate(const Double3 &direction, double magnitude,
