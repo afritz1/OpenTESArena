@@ -73,6 +73,9 @@ private:
 	// a reference because it interpolates between two colors for a smoother transition.
 	Double3 getFogColor(double daytimePercent) const;
 
+	// Gets the current sun direction based on the time of day.
+	Double3 getSunDirection(double daytimePercent) const;
+
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
@@ -81,7 +84,8 @@ private:
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
 		const Matrix4d &transform, double cameraElevation, double daytimePercent,
-		const Double3& fogColor, const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
+		const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
+		uint32_t *colorBuffer);
 
 	// Refreshes the list of flats that are within the viewing frustum.
 	// "cameraElevation" is the Y-shearing component of the projection plane, and 

@@ -620,9 +620,17 @@ Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
 	return color.lerp(nextColor, percent);
 }
 
+Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
+{
+	// The sun rises in the east (+Z) and sets in the west (-Z).
+	const double radians = daytimePercent * (2.0 * PI);
+	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
+}
+
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
 	const Matrix4d &transform, double cameraElevation, double daytimePercent, 
-	const Double3 &fogColor, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
+	const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
+	uint32_t *colorBuffer)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
 	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
@@ -1546,8 +1554,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	const Matrix4d transform = projection * view;
 
 	// Camera elevation, as I call it, involves the Y component of the player's 3D direction. 
-	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing). Its 
-	// magnitude must be clamped less than 1 because 1 would imply the player is looking 
+	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing). The player's
+	// Y direction magnitude must be clamped less than 1 because 1 would imply they are looking 
 	// straight up or down, which is impossible (the viewing frustum would have a volume of 0).
 	const double cameraElevation = forward.y;
 
@@ -1555,14 +1563,16 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	const Double2 forwardComp = Double2(forwardXZ.x, forwardXZ.z).normalized() * zoom;
 	const Double2 right2D = Double2(rightXZ.x, rightXZ.z).normalized() * aspect;
 
-	// Calculate fog color (also used for sky).
+	// Calculate fog color and sun direction. The fog color is also used for the sky.
 	const Double3 fogColor = this->getFogColor(daytimePercent);
+	const Double3 sunDirection = this->getSunDirection(daytimePercent);
 
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, &fogColor, 
-		widthReal, &transform, cameraElevation, &forwardComp, &right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, 
+		&fogColor, &sunDirection, widthReal, &transform, cameraElevation, 
+		&forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1579,7 +1589,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->castColumnRay(x, eye, direction, transform, cameraElevation, 
-				daytimePercent, fogColor, voxelGrid, colorBuffer);
+				daytimePercent, fogColor, sunDirection, voxelGrid, colorBuffer);
 		}
 	};
 
