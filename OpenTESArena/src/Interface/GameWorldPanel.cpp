@@ -93,11 +93,22 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->drawWeaponButton = []()
 	{
-		auto function = []()
+		auto function = [](Player &player)
 		{
-			Debug::mention("Game", "Draw weapon.");
+			WeaponAnimation &weaponAnimation = player.getWeaponAnimation();
+
+			if (weaponAnimation.isSheathed())
+			{
+				// Begin unsheathing the weapon.
+				weaponAnimation.setState(WeaponAnimation::State::Unsheathing);
+			}
+			else if (weaponAnimation.isIdle())
+			{
+				// Begin sheathing the weapon.
+				weaponAnimation.setState(WeaponAnimation::State::Sheathing);
+			}
 		};
-		return std::unique_ptr<Button<>>(new Button<>(88, 151, 29, 22, function));
+		return std::unique_ptr<Button<Player&>>(new Button<Player&>(88, 151, 29, 22, function));
 	}();
 
 	this->stealButton = []()
@@ -316,7 +327,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->drawWeaponButton->contains(originalPosition))
 			{
-				this->drawWeaponButton->click();
+				this->drawWeaponButton->click(this->getGame()->getGameData().getPlayer());
 			}
 			else if (this->mapButton->contains(originalPosition))
 			{
@@ -853,7 +864,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
 	auto &gameData = this->getGame()->getGameData();
-	const auto &player = gameData.getPlayer();
+	auto &player = gameData.getPlayer();
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getVerticalFOV(), gameData.getDaytimePercent(),
@@ -866,10 +877,22 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Set original frame buffer blending to true.
 	renderer.useTransparencyBlending(true);
 
-	// Draw some optional debug text.
-	if (this->showDebug)
+	// Display player's weapon if unsheathed.
+	const auto &weaponAnimation = player.getWeaponAnimation();
+	if (!weaponAnimation.isSheathed())
 	{
-		this->drawDebugText(renderer);
+		const int index = weaponAnimation.getFrameIndex();
+		std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
+		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
+
+		// -- temp (remove game interface ref when using .CIF file offset) --
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface));
+
+		// -- temp position (will use .CIF file offset eventually) --
+		renderer.drawToOriginal(weaponTexture.get(),
+			(Renderer::ORIGINAL_WIDTH / 2) - (weaponTexture.getWidth() / 2),
+			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight() - weaponTexture.getHeight());
 	}
 
 	// Draw compass slider based on player direction. +X is north, +Z is east.
@@ -987,6 +1010,12 @@ void GameWorldPanel::render(Renderer &renderer)
 		{
 			this->drawTooltip("Camp", renderer);
 		}
+	}
+
+	// Draw some optional debug text.
+	if (this->showDebug)
+	{
+		this->drawDebugText(renderer);
 	}
 
 	// Scale the original frame buffer onto the native one.

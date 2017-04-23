@@ -7,6 +7,7 @@
 #include "EntityType.h"
 #include "GenderName.h"
 #include "../Game/Game.h"
+#include "../Items/WeaponType.h"
 #include "../Math/Constants.h"
 #include "../Utilities/String.h"
 
@@ -15,7 +16,7 @@ Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed, 
 	double maxRunSpeed)
 	: charClass(charClass), displayName(displayName), camera(position, direction), 
-	velocity(velocity)
+	velocity(velocity), weaponAnimation(WeaponType::Fists /* Placeholder for now. */) 
 {
 	assert(portraitID >= 0);
 
@@ -81,6 +82,11 @@ Double2 Player::getGroundDirection() const
 {
 	const Double3 &direction = this->camera.getDirection();
 	return Double2(direction.x, direction.z).normalized();
+}
+
+WeaponAnimation &Player::getWeaponAnimation()
+{
+	return this->weaponAnimation;
 }
 
 void Player::teleport(const Double3 &position)
@@ -159,4 +165,7 @@ void Player::tick(Game &game, double dt)
 	{
 		this->accelerate(frictionDirection, frictionMagnitude, true, dt);
 	}
+
+	// Tick weapon animation.
+	this->weaponAnimation.tick(dt);
 }

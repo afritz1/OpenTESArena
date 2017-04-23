@@ -3,6 +3,7 @@
 
 #include "Camera3D.h"
 #include "CharacterClass.h"
+#include "WeaponAnimation.h"
 
 class Game;
 
@@ -13,6 +14,7 @@ class Player
 private:
 	CharacterClass charClass;
 	Camera3D camera;
+	WeaponAnimation weaponAnimation;
 	Double3 velocity;
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	GenderName gender;
@@ -43,6 +45,9 @@ public:
 
 	// Gets the bird's eye view of the player's direction (in the XZ plane).
 	Double2 getGroundDirection() const;
+
+	// Gets the player's weapon animation for displaying on-screen.
+	WeaponAnimation &getWeaponAnimation();
 
 	// Teleports the player to a point.
 	void teleport(const Double3 &position);

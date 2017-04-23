@@ -13,6 +13,7 @@
 // - The original: compass, portrait, stat bars, and buttons with original mouse.
 // - A modern version: only compass and stat bars with free-look mouse.
 
+class Player;
 class Renderer;
 class TextBox;
 
@@ -21,8 +22,9 @@ class GameWorldPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
 	std::unique_ptr<Button<Game*>> characterSheetButton;
-	std::unique_ptr<Button<>> drawWeaponButton, stealButton, statusButton,
-		magicButton, useItemButton, campButton;
+	std::unique_ptr<Button<Player&>> drawWeaponButton;
+	std::unique_ptr<Button<>> stealButton, statusButton, magicButton, 
+		useItemButton, campButton;
 	std::unique_ptr<Button<Game*>> logbookButton;
 	std::unique_ptr<Button<GameWorldPanel*>> scrollUpButton, scrollDownButton;
 	std::unique_ptr<Button<Game*>> pauseButton;

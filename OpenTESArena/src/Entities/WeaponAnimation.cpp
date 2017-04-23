@@ -63,7 +63,7 @@ namespace
 	};
 }
 
-const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 0.20;
+const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 15.0;
 
 WeaponAnimation::WeaponAnimation(WeaponType weaponType)
 {
@@ -95,6 +95,11 @@ bool WeaponAnimation::isSheathed() const
 	return this->state == WeaponAnimation::State::Sheathed;
 }
 
+bool WeaponAnimation::isIdle() const
+{
+	return this->state == WeaponAnimation::State::Idle;
+}
+
 const std::string &WeaponAnimation::getAnimationFilename() const
 {
 	const std::string &filename = WeaponTypeFilenames.at(this->weaponType);
@@ -112,20 +117,11 @@ int WeaponAnimation::getFrameIndex() const
 
 void WeaponAnimation::setState(WeaponAnimation::State state)
 {
+	// Switch to the beginning of the new range of indices. The combination of
+	// the state and range index will return a frame index. Do not retrieve the
+	// frame index when in the sheathed state.
 	this->state = state;
-
-	// Switch to the beginning of the new range of indices if not sheathed.
-	if (state != WeaponAnimation::State::Sheathed)
-	{
-		const std::vector<int> &indices = this->getCurrentRange();
-		this->rangeIndex = indices.front();
-	}
-	else
-	{
-		// This is the "bad" index during sheathed state. It references a valid frame,
-		// but it is not displayed, so it shouldn't be accessed.
-		this->rangeIndex = 0;
-	}
+	this->rangeIndex = 0;
 }
 
 void WeaponAnimation::tick(double dt)
@@ -148,18 +144,19 @@ void WeaponAnimation::tick(double dt)
 			// If the index is outside the range, decide which state is next.
 			if (this->rangeIndex >= indices.size())
 			{
+				// Start at the beginning of the new range. The range index is not
+				// used in the sheathed state.
+				this->rangeIndex = 0;
+
 				if (this->state == WeaponAnimation::State::Sheathing)
 				{
-					// Switching from sheathing to sheathed. The range index isn't used in 
-					// sheathed state.
+					// Switching from sheathing to sheathed.
 					this->state = WeaponAnimation::State::Sheathed;
-					this->rangeIndex = 0;
 				}
 				else
 				{
 					// Switching from unsheathing to idle, or from swing to idle.
 					this->state = WeaponAnimation::State::Idle;
-					this->rangeIndex = WeaponAnimationRanges.at(this->state).front();
 				}
 			}
 		}

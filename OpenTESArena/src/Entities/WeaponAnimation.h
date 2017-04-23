@@ -46,8 +46,12 @@ public:
 	WeaponAnimation(WeaponType weaponType);
 	~WeaponAnimation();
 
-	// Returns whether the weapon is currently displayed.
+	// Returns whether the weapon is currently sheathed (meaning it is not displayed).
 	bool isSheathed() const;
+
+	// Returns whether the weapon is currently not moving. This is relevant when
+	// determining if the state can safely be changed without interrupting something.
+	bool isIdle() const;
 
 	// Gets the filename associated with the weapon (i.e., AXE, HAMMER, etc.).
 	// This is used with the current index to determine which frame is drawn.
