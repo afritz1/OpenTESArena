@@ -53,17 +53,17 @@ namespace
 		{ WeaponAnimation::State::Sheathed, { } },
 		{ WeaponAnimation::State::Unsheathing, { 10, 11, 12 } },
 		{ WeaponAnimation::State::Idle, { 12 } },
-		{ WeaponAnimation::State::Forward, { 0, 1, 2, 3, 4 } },
+		{ WeaponAnimation::State::Forward, { 5, 6, 7, 8, 9 } },
 		{ WeaponAnimation::State::Down, { 0, 1, 2, 3, 4 } },
 		{ WeaponAnimation::State::Right, { 5, 6, 7, 8, 9 } },
-		{ WeaponAnimation::State::Left, { 5, 6, 7, 8, 9 } }, // Verify some of these ranges.
+		{ WeaponAnimation::State::Left, { 0, 1, 2, 3, 4 } },
 		{ WeaponAnimation::State::DownRight, { 5, 6, 7, 8, 9 } },
-		{ WeaponAnimation::State::DownLeft, { 5, 6, 7, 8, 9 } },
+		{ WeaponAnimation::State::DownLeft, { 0, 1, 2, 3, 4 } },
 		{ WeaponAnimation::State::Sheathing, { 12, 11, 10 } }
 	};
 }
 
-const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 15.0;
+const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 20.0;
 
 WeaponAnimation::WeaponAnimation(WeaponType weaponType)
 {

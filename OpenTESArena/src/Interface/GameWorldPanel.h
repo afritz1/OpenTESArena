@@ -2,6 +2,7 @@
 #define GAME_WORLD_PANEL_H
 
 #include <array>
+#include <vector>
 
 #include "Button.h"
 #include "Panel.h"
@@ -30,6 +31,7 @@ private:
 	std::unique_ptr<Button<Game*>> pauseButton;
 	std::unique_ptr<Button<Game*, bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
+	std::vector<Int2> weaponOffsets;
 	bool showDebug;
 
 	// Modifies the values in the native cursor regions array so rectangles in
@@ -37,10 +39,14 @@ private:
 	void updateCursorRegions(int width, int height);
 
 	// Handles input for the player camera.
-	void handlePlayerTurning(double dt);
+	void handlePlayerTurning(double dt, const Int2 &mouseDelta);
 	
 	// Handles input for player movement in the game world.
 	void handlePlayerMovement(double dt);
+
+	// Handles input for the player's attack. Takes the change in mouse position since
+	// the previous frame.
+	void handlePlayerAttack(const Int2 &mouseDelta);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);

@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 #include "SDL.h"
 
@@ -12,9 +13,12 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
+#include "../Assets/CIFFile.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
 #include "../Entities/Player.h"
+#include "../Game/CardinalDirection.h"
+#include "../Game/CardinalDirectionName.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -241,6 +245,18 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game->getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.x, screenDims.y);
+
+	// Load all the weapon offsets for the player's currently equipped weapon. If the
+	// player can ever change weapons in-game (i.e., with a hotkey), then this will
+	// need to be moved into update() instead.
+	const auto &weaponAnimation = game->getGameData().getPlayer().getWeaponAnimation();
+	const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
+	const CIFFile cifFile(weaponFilename, Palette());
+	
+	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	{
+		this->weaponOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
+	}
 }
 
 GameWorldPanel::~GameWorldPanel()
@@ -370,7 +386,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
-void GameWorldPanel::handlePlayerTurning(double dt)
+void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 {
 	// In the future, maybe this could be separated into two methods:
 	// 1) handleClassicTurning()
@@ -473,12 +489,14 @@ void GameWorldPanel::handlePlayerTurning(double dt)
 	else
 	{
 		// Modern interface. Make the camera look around.
-		int dx, dy;
-		const uint32_t mouse = SDL_GetRelativeMouseState(&dx, &dy);
+		// - Relative mouse state isn't called because it can only be called once per frame,
+		//   and its value is used in multiple places.
+		const int dx = mouseDelta.x;
+		const int dy = mouseDelta.y;
+		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
 
 		bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-		bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-		bool turning = ((dx != 0) || (dy != 0)) && (leftClick || rightClick);
+		bool turning = ((dx != 0) || (dy != 0)) && leftClick;
 
 		if (turning)
 		{
@@ -738,6 +756,76 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	}
 }
 
+void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
+{
+	// Only handle attacking if the player's weapon is currently idle.
+	auto &weaponAnimation = this->getGame()->getGameData().getPlayer().getWeaponAnimation();
+	if (weaponAnimation.isIdle())
+	{
+		// Relative mouse state isn't called because it only works once per frame, and it's
+		// used in multiple places.
+		const int dx = mouseDelta.x;
+		const int dy = mouseDelta.y;
+		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
+		const bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+
+		// If the mouse moves fast enough, it's considered an attack.
+		// - To do: normalize dx and dy so they're percentages. This way it works the same
+		//   for all resolutions.
+		const double distance = std::sqrt((dx * dx) + (dy * dy));
+		const bool isAttack = rightClick && (distance > 40.0);
+
+		if (isAttack)
+		{
+			// Convert the change in mouse coordinates to a vector. Reverse the change in
+			// y so that positive values are up.
+			const Double2 direction =
+				Double2(static_cast<double>(dx), static_cast<double>(-dy)).normalized();
+
+			// Calculate the direction the mouse moved in (let's use cardinal directions
+			// for convenience. This should be refined in the future, since cardinal
+			// directions use a different layout than the 3D coordinate system; that is,
+			// XY or XZ from the top-down perspective, for example).
+			CardinalDirectionName cardinalDirection =
+				CardinalDirection::getDirectionName(direction);
+
+			// Set the weapon animation state.
+			if (cardinalDirection == CardinalDirectionName::North)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Forward);
+			}
+			else if (cardinalDirection == CardinalDirectionName::NorthEast)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Right);
+			}
+			else if (cardinalDirection == CardinalDirectionName::East)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Right);
+			}
+			else if (cardinalDirection == CardinalDirectionName::SouthEast)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::DownRight);
+			}
+			else if (cardinalDirection == CardinalDirectionName::South)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Down);
+			}
+			else if (cardinalDirection == CardinalDirectionName::SouthWest)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::DownLeft);
+			}
+			else if (cardinalDirection == CardinalDirectionName::West)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Left);
+			}
+			else if (cardinalDirection == CardinalDirectionName::NorthWest)
+			{
+				weaponAnimation.setState(WeaponAnimation::State::Left);
+			}
+		}
+	}	
+}
+
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
@@ -819,8 +907,13 @@ void GameWorldPanel::tick(double dt)
 {
 	assert(this->getGame()->gameDataIsActive());
 
+	// Get the relative mouse state (can only be called once per frame).
+	int dx, dy;
+	SDL_GetRelativeMouseState(&dx, &dy);
+	const Int2 mouseDelta(dx, dy);
+
 	// Handle input for player motion.
-	this->handlePlayerTurning(dt);
+	this->handlePlayerTurning(dt, mouseDelta);
 	this->handlePlayerMovement(dt);
 
 	// Tick the game world time.
@@ -831,6 +924,9 @@ void GameWorldPanel::tick(double dt)
 	// Tick the player.
 	auto &player = gameData.getPlayer();
 	player.tick(game, dt);
+
+	// Handle input for the player's attack.
+	this->handlePlayerAttack(mouseDelta);
 
 	// Update entities and their state in the renderer.
 	auto &entityManager = gameData.getEntityManager();
@@ -877,22 +973,19 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Set original frame buffer blending to true.
 	renderer.useTransparencyBlending(true);
 
-	// Display player's weapon if unsheathed.
+	// Display player's weapon if unsheathed. The position also depends on whether
+	// the interface is in classic or modern mode.
+	const auto playerInterface = options.getPlayerInterface();
 	const auto &weaponAnimation = player.getWeaponAnimation();
 	if (!weaponAnimation.isSheathed())
 	{
 		const int index = weaponAnimation.getFrameIndex();
-		std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
+		const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
 		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
-
-		// -- temp (remove game interface ref when using .CIF file offset) --
-		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface));
-
-		// -- temp position (will use .CIF file offset eventually) --
-		renderer.drawToOriginal(weaponTexture.get(),
-			(Renderer::ORIGINAL_WIDTH / 2) - (weaponTexture.getWidth() / 2),
-			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight() - weaponTexture.getHeight());
+		const Int2 &weaponOffset = this->weaponOffsets.at(index);
+		renderer.drawToOriginal(weaponTexture.get(), weaponOffset.x, 
+			(playerInterface == PlayerInterface::Classic) ? weaponOffset.y : 
+			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
 	}
 
 	// Draw compass slider based on player direction. +X is north, +Z is east.
@@ -939,7 +1032,6 @@ void GameWorldPanel::render(Renderer &renderer)
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
 	// Continue drawing more interface objects if in classic mode.
-	const auto playerInterface = options.getPlayerInterface();
 	if (playerInterface == PlayerInterface::Classic)
 	{
 		// Draw game world interface.
