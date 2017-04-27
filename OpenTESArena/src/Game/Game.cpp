@@ -89,6 +89,11 @@ AudioManager &Game::getAudioManager()
 	return this->audioManager;
 }
 
+const InputManager &Game::getInputManager() const
+{
+	return this->inputManager;
+}
+
 FontManager &Game::getFontManager() const
 {
 	return *this->fontManager.get();
@@ -242,6 +247,9 @@ void Game::loop()
 
 		// Clamp the delta time to at most the maximum frame time.
 		const double dt = std::fmin(frameTime, maximumMS) / 1000.0;
+
+		// Update the input manager's state.
+		this->inputManager.update();
 
 		// Listen for input events.
 		this->handleEvents(running);

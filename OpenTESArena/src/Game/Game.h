@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "InputManager.h"
 #include "../Media/AudioManager.h"
 
 // This class holds the current game data, manages the primary game loop, and 
@@ -29,6 +30,7 @@ class Game
 {
 private:
 	AudioManager audioManager;
+	InputManager inputManager;
 	std::unique_ptr<FontManager> fontManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<Options> options;
@@ -54,6 +56,10 @@ public:
 
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();
+
+	// Gets the input manager for obtaining input state. This should be read-only for
+	// all classes except the Game class.
+	const InputManager &getInputManager() const;
 
 	// Gets the font manager object for creating text with.
 	FontManager &getFontManager() const;
