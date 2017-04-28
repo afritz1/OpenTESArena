@@ -121,8 +121,8 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			game,
-			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			PaletteFile::fromName(PaletteName::Default),
+			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			0.042,
 			changeToIntroStory));
 		game->setPanel(std::move(scrollingPanel));
@@ -162,8 +162,8 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 	{
 		std::unique_ptr<Panel> introBook(new CinematicPanel(
 			game,
-			TextureFile::fromName(TextureSequenceName::IntroBook),
 			PaletteFile::fromName(PaletteName::Default),
+			TextureFile::fromName(TextureSequenceName::IntroBook),
 			0.142, // Roughly 7 fps.
 			changeToTitle));
 		return std::move(introBook);
