@@ -983,8 +983,12 @@ void GameWorldPanel::render(Renderer &renderer)
 		const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
 		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
 		const Int2 &weaponOffset = this->weaponOffsets.at(index);
+
+		// Draw the current weapon image. Add 1 to the classic Y offset because Arena's
+		// renderer has an off-by-one bug, and a 1 pixel gap appears in my renderer unless 
+		// a small offset is added.
 		renderer.drawToOriginal(weaponTexture.get(), weaponOffset.x, 
-			(playerInterface == PlayerInterface::Classic) ? weaponOffset.y : 
+			(playerInterface == PlayerInterface::Classic) ? (weaponOffset.y + 1) : 
 			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
 	}
 
