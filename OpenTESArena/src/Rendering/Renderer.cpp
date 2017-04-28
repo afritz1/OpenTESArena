@@ -357,10 +357,9 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	this->fullGameWindow = fullGameWindow;
 
 	const int screenWidth = this->getWindowDimensions().x;
-	const int screenHeight = this->getWindowDimensions().y;
 
-	// Height of the game world view in pixels. Determined by whether the game 
-	// interface is visible or not.
+	// Height of the game world view in pixels, used in place of the screen height.
+	// Its value is a function of whether the game interface is visible or not.
 	const int viewHeight = this->getViewHeight();
 
 	// Make sure render dimensions are at least 1x1.

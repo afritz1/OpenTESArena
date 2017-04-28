@@ -23,8 +23,8 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 
 	// Read DFA header data.
 	const uint16_t imageCount = Bytes::getLE16(srcData.data());
-	const uint16_t unknown1 = Bytes::getLE16(srcData.data() + 2);
-	const uint16_t unknown2 = Bytes::getLE16(srcData.data() + 4);
+	//const uint16_t unknown1 = Bytes::getLE16(srcData.data() + 2); // Uncomment these when in use.
+	//const uint16_t unknown2 = Bytes::getLE16(srcData.data() + 4);
 	const uint16_t width = Bytes::getLE16(srcData.data() + 6);
 	const uint16_t height = Bytes::getLE16(srcData.data() + 8);
 	const uint16_t compressedLength = Bytes::getLE16(srcData.data() + 10); // First frame.

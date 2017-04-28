@@ -202,14 +202,11 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
+	// Read the flags and IMG file length. Skip the X and Y offsets and dimensions.
 	// No need to check for raw override. All given filenames should point to IMGs
-	// with "built-in" palettes, and none of those IMGs are in the raw override.	
-	uint16_t xoff = Bytes::getLE16(srcData.data());
-	uint16_t yoff = Bytes::getLE16(srcData.data() + 2);
-	uint16_t width = Bytes::getLE16(srcData.data() + 4);
-	uint16_t height = Bytes::getLE16(srcData.data() + 6);
-	uint16_t flags = Bytes::getLE16(srcData.data() + 8);
-	uint16_t len = Bytes::getLE16(srcData.data() + 10);
+	// with "built-in" palettes, and none of those IMGs are in the raw override.
+	const uint16_t flags = Bytes::getLE16(srcData.data() + 8);
+	const uint16_t len = Bytes::getLE16(srcData.data() + 10);
 
 	const int headerSize = 12;
 

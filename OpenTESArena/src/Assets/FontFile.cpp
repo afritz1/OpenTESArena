@@ -57,7 +57,7 @@ FontFile::FontFile(const std::string &filename)
 	// The character height is in the first byte.
 	const uint8_t charHeight = srcData.at(0);
 	const uint8_t *counts = srcData.data();
-	const uint16_t *lines = reinterpret_cast<uint16_t*>(srcData.data() + 95);
+	const uint16_t *lines = reinterpret_cast<const uint16_t*>(counts + 95);
 
 	std::array<FontElement, 96> symbols;
 	std::fill(symbols.begin(), symbols.end(), FontElement());
