@@ -10,7 +10,7 @@
 #include "../Rendering/Texture.h"
 
 CinematicPanel::CinematicPanel(Game *game,
-	const std::string &sequenceName, const std::string &paletteName,
+	const std::string &paletteName, const std::string &sequenceName,
 	double secondsPerImage, const std::function<void(Game*)> &endingAction)
 	: Panel(game), paletteName(paletteName), sequenceName(sequenceName)
 {

@@ -220,7 +220,6 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 
 std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
 {
-	int lengthCounter = 0;
 	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
 
 	// Sort as they are listed in the CharacterClassParser.
@@ -239,6 +238,7 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 		// Collect all allowed armor display names for the class.
 		for (int i = 0; i < armorCount; ++i)
 		{
+			int lengthCounter = 0;
 			const auto materialType = allowedArmors.at(i);
 			auto materialString = ArmorMaterial::typeToString(materialType);
 			lengthCounter += static_cast<int>(materialString.size());
@@ -266,7 +266,6 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 
 std::string ChooseClassPanel::getClassShields(const CharacterClass &characterClass) const
 {
-	int lengthCounter = 0;
 	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
 
 	// Sort as they are listed in the CharacterClassParser.
@@ -285,6 +284,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 		// Collect all allowed shield display names for the class.
 		for (int i = 0; i < shieldCount; ++i)
 		{
+			int lengthCounter = 0;
 			const auto shieldType = allowedShields.at(i);
 			auto dummyMetal = MetalType::Iron;
 			auto typeString = Shield(shieldType, dummyMetal).typeToString();
@@ -313,7 +313,6 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 
 std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
 {
-	int lengthCounter = 0;
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
 
 	// Sort as they are listed in the CharacterClassParser.
@@ -333,6 +332,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 		// Collect all allowed weapon display names for the class.
 		for (int i = 0; i < weaponCount; ++i)
 		{
+			int lengthCounter = 0;
 			const auto weaponType = allowedWeapons.at(i);
 			const auto dummyMetal = MetalType::Iron;
 			auto typeString = Weapon(weaponType, dummyMetal).typeToString();

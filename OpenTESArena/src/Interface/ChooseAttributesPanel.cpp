@@ -36,7 +36,7 @@
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	const CharacterClass &charClass, const std::string &name, 
 	GenderName gender, int raceID)
-	: Panel(game), headOffsets(), gender(gender), charClass(charClass), name(name)
+	: Panel(game), headOffsets(), charClass(charClass), gender(gender), name(name)
 {
 	this->nameTextBox = [game, name]()
 	{

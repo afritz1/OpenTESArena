@@ -8,9 +8,9 @@ NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
 	const std::vector<Animation> &moveAnimations,
 	const Animation &attackAnimation, const Animation &deathAnimation, 
 	EntityManager &entityManager)
-	: Entity(entityManager), camera(position, direction), velocity(0.0, 0.0),
-	idleAnimations(idleAnimations), moveAnimations(moveAnimations), 
-	attackAnimation(attackAnimation), deathAnimation(deathAnimation) { }
+	: Entity(entityManager), idleAnimations(idleAnimations), moveAnimations(moveAnimations),
+	attackAnimation(attackAnimation), deathAnimation(deathAnimation),
+	camera(position, direction), velocity(0.0, 0.0) { }
 
 NonPlayer::~NonPlayer()
 {

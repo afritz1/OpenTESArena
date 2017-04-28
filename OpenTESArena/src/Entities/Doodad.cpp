@@ -2,9 +2,9 @@
 
 #include "EntityType.h"
 
-Doodad::Doodad(const Double3 &position, const Animation &animation,
+Doodad::Doodad(const Animation &animation, const Double3 &position,
 	EntityManager &entityManager)
-	: Entity(entityManager), position(position), animation(animation) { }
+	: Entity(entityManager), animation(animation), position(position) { }
 
 Doodad::~Doodad()
 {
@@ -14,7 +14,7 @@ Doodad::~Doodad()
 std::unique_ptr<Entity> Doodad::clone(EntityManager &entityManager) const
 {
 	return std::unique_ptr<Doodad>(new Doodad(
-		this->position, this->animation, entityManager));
+		this->animation, this->position, entityManager));
 }
 
 EntityType Doodad::getEntityType() const

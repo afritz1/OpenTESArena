@@ -58,9 +58,9 @@ std::vector<Rect3D> VoxelBuilder::makeSizedBlock(int x, int y, int z, float y1, 
 	return rects;
 }
 
-std::vector<Rect3D> VoxelBuilder::makeBlock(int cellX, int cellY, int cellZ)
+std::vector<Rect3D> VoxelBuilder::makeBlock(int x, int y, int z)
 {
-	return VoxelBuilder::makeSizedBlock(cellX, cellY, cellZ, 0.0f, 1.0f);
+	return VoxelBuilder::makeSizedBlock(x, y, z, 0.0f, 1.0f);
 }
 
 Rect3D VoxelBuilder::makeCeiling(int x, int y, int z)

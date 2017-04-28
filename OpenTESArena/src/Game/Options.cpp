@@ -11,12 +11,12 @@ const double Options::MAX_RESOLUTION_SCALE = 1.0;
 const double Options::MIN_VERTICAL_FOV = 40.0;
 const double Options::MAX_VERTICAL_FOV = 150.0;
 
-Options::Options(std::string &&dataPath, int screenWidth, int screenHeight, bool fullscreen,
+Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
 	double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
 	double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
 	PlayerInterface playerInterface)
-	: arenaPath(std::move(dataPath)), soundfont(std::move(soundfont))
+	: arenaPath(std::move(arenaPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
 	Debug::check(screenWidth > 0, "Options", "Screen width must be positive.");
