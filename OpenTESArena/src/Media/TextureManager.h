@@ -19,6 +19,7 @@ struct SDL_Surface;
 class TextureManager
 {
 private:
+	Renderer &renderer;
 	std::unordered_map<std::string, Palette> palettes;
 
 	// The filename and palette name are concatenated when mapping to avoid using two 
@@ -27,7 +28,6 @@ private:
 	std::unordered_map<std::string, Texture> textures;
 	std::unordered_map<std::string, std::vector<SDL_Surface*>> surfaceSets;
 	std::unordered_map<std::string, std::vector<Texture>> textureSets;
-	Renderer &renderer;
 	std::string activePalette;
 
 	// Specialty method for loading a COL file into the palettes map.

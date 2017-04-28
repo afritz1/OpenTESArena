@@ -459,7 +459,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		const double timePerFrame = 0.10;
 		Animation animation(textureIDs, timePerFrame, true);
 
-		std::unique_ptr<Doodad> doodad(new Doodad(position, animation, entityManager));
+		std::unique_ptr<Doodad> doodad(new Doodad(animation, position, entityManager));
 
 		// Assign the entity ID with the first texture.
 		renderer.addFlat(doodad->getID(), position, Double2::UnitX, 

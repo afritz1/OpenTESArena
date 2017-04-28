@@ -7,10 +7,9 @@
 #include "../Math/Quaternion.h"
 
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
-	: position(position), forward(direction)
+	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
+	up(right.cross(forward).normalized()), position(position)
 {
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
 }
 
 const Double3 &Camera3D::getDirection() const

@@ -12,15 +12,15 @@ enum class GenderName;
 class Player
 {
 private:
-	CharacterClass charClass;
-	Camera3D camera;
-	WeaponAnimation weaponAnimation;
-	Double3 velocity;
-	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
+	std::string displayName;
 	GenderName gender;
 	int raceID;
-	std::string displayName;
+	CharacterClass charClass;
 	int portraitID;
+	Camera3D camera;
+	Double3 velocity;
+	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
+	WeaponAnimation weaponAnimation;
 	// Other stats...
 public:
 	Player(const std::string &displayName, GenderName gender, int raceID,

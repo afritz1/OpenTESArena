@@ -15,16 +15,10 @@ Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position, 
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed, 
 	double maxRunSpeed)
-	: charClass(charClass), displayName(displayName), camera(position, direction), 
-	velocity(velocity), weaponAnimation(WeaponType::Fists /* Placeholder for now. */) 
+	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass), portraitID(portraitID), camera(position, direction),
+	velocity(velocity), maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(WeaponType::Fists /* Placeholder for now. */)
 {
 	assert(portraitID >= 0);
-
-	this->maxWalkSpeed = maxWalkSpeed;
-	this->maxRunSpeed = maxRunSpeed;
-	this->gender = gender;
-	this->raceID = raceID;
-	this->portraitID = portraitID;
 }
 
 Player::~Player()

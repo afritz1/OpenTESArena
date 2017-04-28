@@ -15,7 +15,7 @@ private:
 	Animation animation;
 	Double3 position;
 public:
-	Doodad(const Double3 &position, const Animation &animation,
+	Doodad(const Animation &animation, const Double3 &position,
 		EntityManager &entityManager);
 	virtual ~Doodad();
 
