@@ -19,7 +19,7 @@ class Compression
 	~Compression() = delete;
 public:
 	// Uncompresses an RLE run of bytes.
-	static void decodeRLE(const uint8_t *src, uint32_t count, 
+	static void decodeRLE(const uint8_t *src, uint32_t stopCount,
 		std::vector<uint8_t> &out);
 
 	// Works with .IMG and .CIF type 4 files.

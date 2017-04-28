@@ -70,7 +70,7 @@ public:
 	// Sets the palette to use for subsequent images. The source of the palette can be
 	// from a loose .COL file, or can be built into an IMG. If the IMG does not have a 
 	// built-in palette, an error occurs.
-	void setPalette(const std::string &filename);
+	void setPalette(const std::string &paletteName);
 };
 
 #endif

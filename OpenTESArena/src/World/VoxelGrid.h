@@ -29,8 +29,8 @@ public:
 
 	// Gets the voxel data associated with an ID. If the voxel ID of air is 0,
 	// then pass the voxel ID minus 1 instead to get the first one.
-	VoxelData &getVoxelData(int index);
-	const VoxelData &getVoxelData(int index) const;
+	VoxelData &getVoxelData(int id);
+	const VoxelData &getVoxelData(int id) const;
 
 	// Adds a voxel data object and returns its assigned ID (index).
 	int addVoxelData(const VoxelData &voxelData);
