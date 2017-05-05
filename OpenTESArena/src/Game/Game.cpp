@@ -163,11 +163,9 @@ void Game::handleEvents(bool &running)
 	while (SDL_PollEvent(&e) != 0)
 	{
 		// Application events and window resizes are handled here.
-		bool applicationExit = (e.type == SDL_QUIT);
-		bool resized = (e.type == SDL_WINDOWEVENT) &&
-			(e.window.event == SDL_WINDOWEVENT_RESIZED);
-		bool takeScreenshot = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_PRINTSCREEN);
+		bool applicationExit = e.type == SDL_QUIT;
+		bool resized = this->inputManager.windowResized(e);
+		bool takeScreenshot = this->inputManager.keyPressed(e, SDLK_PRINTSCREEN);
 
 		if (applicationExit)
 		{

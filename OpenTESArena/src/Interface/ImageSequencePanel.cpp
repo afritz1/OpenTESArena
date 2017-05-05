@@ -41,14 +41,12 @@ ImageSequencePanel::~ImageSequencePanel()
 
 void ImageSequencePanel::handleEvent(const SDL_Event &e)
 {
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool skipAllHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool skipOneHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		((e.key.keysym.sym == SDLK_SPACE) ||
-		(e.key.keysym.sym == SDLK_RETURN) ||
-			(e.key.keysym.sym == SDLK_KP_ENTER));
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool skipAllHotkeyPressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool skipOneHotkeyPressed = inputManager.keyPressed(e, SDLK_SPACE) ||
+		inputManager.keyPressed(e, SDLK_RETURN) || 
+		inputManager.keyPressed(e, SDLK_KP_ENTER);
 
 	if (skipAllHotkeyPressed)
 	{

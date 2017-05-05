@@ -10,6 +10,7 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/FontManager.h"
@@ -113,22 +114,20 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 {
 	// Input will eventually depend on if the location pop-up is displayed, or
 	// if a location is selected.
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_RIGHT);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	if (escapePressed || rightClick)
 	{
 		this->backToWorldMapButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
-		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
@@ -162,7 +161,8 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 	Texture tooltip(Panel::createTooltip(text, font, renderer));
 
-	const Int2 mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
@@ -193,8 +193,10 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(mapBackground.get());
 
 	// Draw tooltip if the mouse is over a button.
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	auto mouseOriginalPosition = this->getGame()->getRenderer()
-		.nativePointToOriginal(this->getMousePosition());
+		.nativePointToOriginal(mousePosition);
 
 	for (const auto &pair : ProvinceButtonTooltips)
 	{
@@ -212,9 +214,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	auto mousePosition = this->getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

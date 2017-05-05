@@ -14,6 +14,7 @@
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
@@ -174,22 +175,20 @@ CharacterEquipmentPanel::~CharacterEquipmentPanel()
 
 void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 {
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool tabPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_TAB);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
 
 	if (escapePressed || tabPressed)
 	{
 		this->backToStatsButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
-		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
@@ -277,9 +276,11 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	const auto mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

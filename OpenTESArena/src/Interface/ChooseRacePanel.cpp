@@ -11,6 +11,7 @@
 #include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -125,22 +126,18 @@ ChooseRacePanel::~ChooseRacePanel()
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
 {
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_RIGHT);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	// Interact with the pop-up text box if visible.
 	// To do: find a better way to do this (via a stack of pop-ups?).
 	if (this->initialTextBoxVisible)
 	{
-		bool enterPressed = (e.type == SDL_KEYDOWN) &&
-			((e.key.keysym.sym == SDLK_RETURN) ||
-			(e.key.keysym.sym == SDLK_KP_ENTER));
-		bool spacePressed = (e.type == SDL_KEYDOWN) &&
-			(e.key.keysym.sym == SDLK_SPACE);
+		bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+			inputManager.keyPressed(e, SDLK_KP_ENTER);
+		bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
 
 		bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
 			spacePressed || escapePressed;
@@ -161,7 +158,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	}
 	else if (leftClick)
 	{
-		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
@@ -195,7 +192,8 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 
 	Texture tooltip(Panel::createTooltip("Land of the " + raceName, font, renderer));
 
-	const Int2 mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
@@ -241,11 +239,14 @@ void ChooseRacePanel::render(Renderer &renderer)
 			this->initialTextBox->getX(), this->initialTextBox->getY());
 	}
 
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+
 	// Draw hovered province tooltip.
 	if (!this->initialTextBoxVisible)
 	{
-		auto mouseOriginalPoint = this->getGame()->getRenderer()
-			.nativePointToOriginal(this->getMousePosition());
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+			.nativePointToOriginal(mousePosition);
 
 		// Draw tooltip if the mouse is in a province.
 		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
@@ -268,9 +269,9 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	auto mousePosition = this->getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

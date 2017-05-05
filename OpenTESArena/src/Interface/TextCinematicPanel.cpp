@@ -92,8 +92,8 @@ TextCinematicPanel::~TextCinematicPanel()
 
 void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
 	{
@@ -101,16 +101,12 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 		this->skipButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool spacePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_SPACE);
-	bool returnPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_RETURN);
-	bool numpadEnterPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_KP_ENTER);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
+	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+		inputManager.keyPressed(e, SDLK_KP_ENTER);
 
-	bool skipHotkeyPressed = spacePressed || returnPressed || numpadEnterPressed;
+	bool skipHotkeyPressed = spacePressed || enterPressed;
 
 	if (leftClick || skipHotkeyPressed)
 	{

@@ -34,16 +34,11 @@ protected:
 		const Font &font, Renderer &renderer);
 
 	Game *getGame() const;
-	double getCursorScale() const;
-	Int2 getMousePosition() const;
 public:
 	Panel(Game *game);
 	virtual ~Panel();
 
 	static std::unique_ptr<Panel> defaultPanel(Game *game);
-
-	// Sets whether the mouse should move during motion events (for player camera).
-	void setRelativeMouseMode(bool active);
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.

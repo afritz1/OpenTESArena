@@ -31,19 +31,14 @@ CinematicPanel::~CinematicPanel()
 
 void CinematicPanel::handleEvent(const SDL_Event &e)
 {
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool spacePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_SPACE);
-	bool returnPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_RETURN);
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool numpadEnterPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_KP_ENTER);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
+	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+		inputManager.keyPressed(e, SDLK_KP_ENTER);
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
-	bool skipHotkeyPressed = spacePressed || returnPressed || 
-		escapePressed || numpadEnterPressed;
+	bool skipHotkeyPressed = spacePressed || enterPressed || escapePressed;
 
 	if (leftClick || skipHotkeyPressed)
 	{

@@ -16,6 +16,7 @@
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Entities/CharacterClassParser.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
@@ -165,20 +166,19 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	// Eventually handle mouse motion: if mouse is over scroll bar and
 	// LMB state is down, move scroll bar to that Y position.
 
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
 	{
 		this->backToClassCreationButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool mouseWheelUp = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
-	bool mouseWheelDown = (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool mouseWheelUp = inputManager.mouseWheeledUp(e);
+	bool mouseWheelDown = inputManager.mouseWheeledDown(e);
 
-	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
@@ -386,7 +386,8 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 
 	const Texture &tooltip = tooltipIter->second;
 
-	const Int2 mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
@@ -429,8 +430,9 @@ void ChooseClassPanel::render(Renderer &renderer)
 		this->classesListBox->getPoint().y);
 
 	// Draw tooltip if over a valid element in the list box.
-	auto mouseOriginalPoint = renderer.nativePointToOriginal(
-		this->getMousePosition());
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	Int2 mouseOriginalPoint = renderer.nativePointToOriginal(mousePosition);
 
 	if (this->classesListBox->contains(mouseOriginalPoint))
 	{
@@ -447,9 +449,9 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	auto mousePosition = this->getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

@@ -12,6 +12,7 @@
 #include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -105,10 +106,10 @@ ChooseNamePanel::~ChooseNamePanel()
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
 {
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool enterPressed = (e.type == SDL_KEYDOWN) &&
-		((e.key.keysym.sym == SDLK_RETURN) || (e.key.keysym.sym == SDLK_KP_ENTER));
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+		inputManager.keyPressed(e, SDLK_KP_ENTER);
 
 	if (escapePressed)
 	{
@@ -120,6 +121,10 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	{
 		this->acceptButton->click(this->getGame(), this->charClass, this->name);
 	}
+
+	// --------------
+	// To do: either use the input manager with the code below, or use SDL text input.
+	// --------------
 
 	// Upper and lower case English characters.
 	const std::unordered_map<SDL_Keycode, std::pair<char, char>> letters =
@@ -251,9 +256,11 @@ void ChooseNamePanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	auto mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

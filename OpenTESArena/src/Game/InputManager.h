@@ -28,8 +28,14 @@ public:
 	bool mouseButtonReleased(const SDL_Event &e, uint8_t button) const;
 	bool mouseButtonIsDown(uint8_t button) const;
 	bool mouseButtonIsUp(uint8_t button) const;
+	bool mouseWheeledUp(const SDL_Event &e) const;
+	bool mouseWheeledDown(const SDL_Event &e) const;
+	bool windowResized(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
+
+	// Sets whether the mouse should move during motion events (for player camera).
+	void setRelativeMouseMode(bool active);
 
 	// Updates input values whose associated SDL functions should only be called once 
 	// per frame.

@@ -10,6 +10,7 @@
 #include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -62,27 +63,28 @@ LogbookPanel::~LogbookPanel()
 
 void LogbookPanel::handleEvent(const SDL_Event &e)
 {
-	const Int2 mousePosition = this->getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
-		.nativePointToOriginal(mousePosition);
-
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool lPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_l);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool lPressed = inputManager.keyPressed(e, SDLK_l);
 
 	if (escapePressed || lPressed)
 	{
 		this->backButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);		
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
-	if (leftClick && this->backButton->contains(mouseOriginalPoint))
+	if (leftClick)
 	{
-		this->backButton->click(this->getGame());
-	}	
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+			.nativePointToOriginal(mousePosition);
+
+		if (this->backButton->contains(mouseOriginalPoint))
+		{
+			this->backButton->click(this->getGame());
+		}
+	}
 }
 
 void LogbookPanel::render(Renderer &renderer)
@@ -97,7 +99,7 @@ void LogbookPanel::render(Renderer &renderer)
 
 	// Draw logbook background.
 	const auto &logbookBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Logbook), 
+		TextureFile::fromName(TextureName::Logbook),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(logbookBackground.get());
 
@@ -111,9 +113,11 @@ void LogbookPanel::render(Renderer &renderer)
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	auto mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

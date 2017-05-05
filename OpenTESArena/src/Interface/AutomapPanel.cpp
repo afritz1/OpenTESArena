@@ -10,6 +10,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
+#include "../Game/Options.h"
 #include "../Interface/TextAlignment.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -170,22 +171,20 @@ AutomapPanel::~AutomapPanel()
 
 void AutomapPanel::handleEvent(const SDL_Event &e)
 {
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool nPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_n);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool nPressed = inputManager.keyPressed(e, SDLK_n);
 
 	if (escapePressed || nPressed)
 	{
 		this->backToGameButton->click(this->getGame());
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
-		const Int2 mousePosition = this->getMousePosition();
+		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 			.nativePointToOriginal(mousePosition);
 
@@ -201,16 +200,17 @@ void AutomapPanel::handleMouse(double dt)
 {
 	static_cast<void>(dt);
 
-	const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
-	const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+	const auto &inputManager = this->getGame()->getInputManager();
+	const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
-	const Int2 mousePosition = this->getMousePosition();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// Check if the LMB is held on one of the compass directions.
 	if (leftClick)
 	{
+		// To do: scroll the map relative to delta time.
 		if (UpRegion.contains(mouseOriginalPoint))
 		{
 
@@ -236,7 +236,8 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 	Texture tooltip(Panel::createTooltip(text, font, renderer));
 
-	const Int2 mousePosition = this->getMousePosition();
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
@@ -278,7 +279,9 @@ void AutomapPanel::render(Renderer &renderer)
 		this->locationTextBox->getX(), this->locationTextBox->getY());
 
 	// Check if the mouse is over the compass directions for tooltips.
-	const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
 	if (UpRegion.contains(originalPosition))
 	{
@@ -305,12 +308,12 @@ void AutomapPanel::render(Renderer &renderer)
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap));
+	const auto &options = this->getGame()->getOptions();
 	const int cursorYOffset = static_cast<int>(
-		static_cast<double>(cursor.getHeight()) * this->getCursorScale());
-	const auto mousePosition = this->getMousePosition();
+		static_cast<double>(cursor.getHeight()) * options.getCursorScale());
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x,
 		mousePosition.y - cursorYOffset,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

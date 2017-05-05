@@ -52,6 +52,21 @@ bool InputManager::mouseButtonIsUp(uint8_t button) const
 	return (mouse & SDL_BUTTON(button)) == 0;
 }
 
+bool InputManager::mouseWheeledUp(const SDL_Event &e) const
+{
+	return (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
+}
+
+bool InputManager::mouseWheeledDown(const SDL_Event &e) const
+{
+	return (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
+}
+
+bool InputManager::windowResized(const SDL_Event &e) const
+{
+	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
+}
+
 Int2 InputManager::getMousePosition() const
 {
 	int x, y;
@@ -62,6 +77,12 @@ Int2 InputManager::getMousePosition() const
 Int2 InputManager::getMouseDelta() const
 {
 	return this->mouseDelta;
+}
+
+void InputManager::setRelativeMouseMode(bool active)
+{
+	SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
+	SDL_SetRelativeMouseMode(enabled);
 }
 
 void InputManager::update()

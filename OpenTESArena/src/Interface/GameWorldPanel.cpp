@@ -266,8 +266,8 @@ GameWorldPanel::~GameWorldPanel()
 
 void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
-	bool resized = (e.type == SDL_WINDOWEVENT) &&
-		(e.window.event == SDL_WINDOWEVENT_RESIZED);
+	const auto &inputManager = this->getGame()->getInputManager();
+	bool resized = inputManager.windowResized(e);
 
 	if (resized)
 	{
@@ -277,10 +277,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		this->updateCursorRegions(width, height);
 	}
 
-	bool escapePressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_ESCAPE);
-	bool f4Pressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_F4);
+	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
 
 	if (escapePressed)
 	{
@@ -293,14 +291,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 
 	// Listen for hotkeys.
-	bool automapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_n);
-	bool logbookHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_l);
-	bool sheetHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_TAB);
-	bool worldMapHotkeyPressed = (e.type == SDL_KEYDOWN) &&
-		(e.key.keysym.sym == SDLK_m);
+	bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
+	bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
+	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB);
+	bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
 
 	if (automapHotkeyPressed)
 	{
@@ -319,10 +313,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		this->mapButton->click(this->getGame(), false);
 	}
 
-	bool leftClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_LEFT);
-	bool rightClick = (e.type == SDL_MOUSEBUTTONDOWN) &&
-		(e.button.button == SDL_BUTTON_RIGHT);
+	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	const auto &renderer = this->getGame()->getRenderer();
 
@@ -331,8 +323,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	if (playerInterface == PlayerInterface::Classic)
 	{
 		// Get mouse position relative to letterbox coordinates.
-		const Int2 originalPosition = renderer.nativePointToOriginal(
-			this->getMousePosition());
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
 		if (leftClick)
 		{
@@ -395,6 +387,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	// Don't handle weapon swinging here. That can go in another method.
 	// If right click is held, weapon is out, and mouse motion is significant, then
 	// get the swing direction and swing.
+	const auto &inputManager = this->getGame()->getInputManager();
 
 	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
 	if (playerInterface == PlayerInterface::Classic)
@@ -410,18 +403,16 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// Listen for LMB, A, or D. Don't turn if Ctrl is held.
-		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
-		const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
-		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
-		bool left = keys[SDL_SCANCODE_A] != 0;
-		bool right = keys[SDL_SCANCODE_D] != 0;
-		bool lCtrl = keys[SDL_SCANCODE_LCTRL] != 0;
+		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// Mouse turning takes priority over key turning.
 		if (leftClick)
 		{
-			const Int2 mousePosition = this->getMousePosition();
+			const Int2 mousePosition = inputManager.getMousePosition();
 
 			// Strength of turning is determined by proximity of the mouse cursor to
 			// the left or right screen edge.
@@ -493,9 +484,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		//   and its value is used in multiple places.
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
-		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
 
-		bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+		bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		bool turning = ((dx != 0) || (dy != 0)) && leftClick;
 
 		if (turning)
@@ -519,6 +509,8 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	// 1) handleClassicMovement()
 	// 2) handleModernMovement()
 
+	const auto &inputManager = this->getGame()->getInputManager();
+
 	// Arbitrary movement speeds.
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
@@ -535,26 +527,24 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// affect velocity.
 
 		// Listen for mouse, WASD, and Ctrl.
-		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
-		const bool leftClick = (mouse & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
-		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
-		bool forward = keys[SDL_SCANCODE_W] != 0;
-		bool backward = keys[SDL_SCANCODE_S] != 0;
-		bool left = keys[SDL_SCANCODE_A] != 0;
-		bool right = keys[SDL_SCANCODE_D] != 0;
-		bool lCtrl = keys[SDL_SCANCODE_LCTRL] != 0;
+		bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
+		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
+		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// The original game didn't have sprinting, but it seems like something 
 		// relevant to do anyway (at least for development).
-		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
+		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
 		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// -- test --
 		// Some simple code to move the camera along the Y axis.
-		bool space = keys[SDL_SCANCODE_SPACE] != 0;
-		bool c = keys[SDL_SCANCODE_C] != 0;
+		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
+		bool c = inputManager.keyIsDown(SDL_SCANCODE_C);
 		if (space)
 		{
 			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
@@ -575,7 +565,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// Mouse movement takes priority over key movement.
 		if (leftClick)
 		{
-			const Int2 mousePosition = this->getMousePosition();
+			const Int2 mousePosition = inputManager.getMousePosition();
 			const int mouseX = mousePosition.x;
 			const int mouseY = mousePosition.y;
 
@@ -684,22 +674,21 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	else
 	{
 		// Modern interface. Listen for WASD.
-		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
-		bool forward = keys[SDL_SCANCODE_W] != 0;
-		bool backward = keys[SDL_SCANCODE_S] != 0;
-		bool left = keys[SDL_SCANCODE_A] != 0;
-		bool right = keys[SDL_SCANCODE_D] != 0;
+		bool forward = inputManager.keyIsDown(SDL_SCANCODE_W);
+		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
+		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
 
 		// The original game didn't have sprinting, but it seems like something 
 		// relevant to do anyway (at least for development).
-		bool isRunning = keys[SDL_SCANCODE_LSHIFT] != 0;
+		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
 		auto &player = this->getGame()->getGameData().getPlayer();
 
 		// -- test --
 		// Some simple code to move the camera along the Y axis.
-		bool space = keys[SDL_SCANCODE_SPACE] != 0;
-		bool c = keys[SDL_SCANCODE_C] != 0;
+		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
+		bool c = inputManager.keyIsDown(SDL_SCANCODE_C);
 		if (space)
 		{
 			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
@@ -766,8 +755,8 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 		// used in multiple places.
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
-		const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
-		const bool rightClick = (mouse & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+		const auto &inputManager = this->getGame()->getInputManager();
+		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
 		// If the mouse moves fast enough, it's considered an attack.
 		// - To do: normalize dx and dy so they're percentages. This way it works the same
@@ -907,10 +896,9 @@ void GameWorldPanel::tick(double dt)
 {
 	assert(this->getGame()->gameDataIsActive());
 
-	// Get the relative mouse state (can only be called once per frame).
-	int dx, dy;
-	SDL_GetRelativeMouseState(&dx, &dy);
-	const Int2 mouseDelta(dx, dy);
+	// Get the relative mouse state (can only be called once per frame).	
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
 
 	// Handle input for player motion.
 	this->handlePlayerTurning(dt, mouseDelta);
@@ -1035,6 +1023,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+
 	// Continue drawing more interface objects if in classic mode.
 	if (playerInterface == PlayerInterface::Classic)
 	{
@@ -1067,7 +1058,7 @@ void GameWorldPanel::render(Renderer &renderer)
 			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
 		// Check if the mouse is over one of the buttons for tooltips.
-		const Int2 originalPosition = renderer.nativePointToOriginal(this->getMousePosition());
+		const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
 		if (this->characterSheetButton->contains(originalPosition))
 		{
@@ -1120,8 +1111,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawOriginalToNative();
 
 	// Draw cursor, depending on its position on the screen.
-	const Int2 mousePosition = this->getMousePosition();
-
 	const Texture &cursor = [this, &mousePosition, playerInterface, &textureManager]()
 		-> const Texture& // Interesting how this return type isn't deduced in MSVC.
 	{
@@ -1150,8 +1139,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	}();
 
 	renderer.drawToNative(cursor.get(), mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * this->getCursorScale()),
-		static_cast<int>(cursor.getHeight() * this->getCursorScale()));
+		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
+		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 
 	// Set the transparency blending back to normal (off).
 	renderer.useTransparencyBlending(false);
