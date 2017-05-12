@@ -38,6 +38,7 @@ private:
 	// Miscellaneous.
 	static const std::string ARENA_PATH_KEY;
 	static const std::string SKIP_INTRO_KEY;
+	static const std::string SHOW_DEBUG_KEY;
 
 	OptionsParser() = delete;
 	OptionsParser(const OptionsParser&) = delete;

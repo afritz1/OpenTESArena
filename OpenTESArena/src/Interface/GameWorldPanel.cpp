@@ -239,9 +239,6 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			new Button<Game*, bool>(118, 151, 29, 22, function));
 	}();
 
-	// Default to no debug information displayed.
-	this->showDebug = false;
-
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game->getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.x, screenDims.y);
@@ -287,7 +284,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (f4Pressed)
 	{
 		// Toggle debug display.
-		this->showDebug = !this->showDebug;
+		auto &options = this->getGame()->getOptions();
+		options.setShowDebug(!options.debugIsShown());
 	}
 
 	// Listen for hotkeys.
@@ -1100,7 +1098,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	}
 
 	// Draw some optional debug text.
-	if (this->showDebug)
+	if (options.debugIsShown())
 	{
 		this->drawDebugText(renderer);
 	}

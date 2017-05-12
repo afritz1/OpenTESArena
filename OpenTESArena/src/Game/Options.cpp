@@ -15,7 +15,7 @@ Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, boo
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
 	double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
 	double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
-	PlayerInterface playerInterface)
+	PlayerInterface playerInterface, bool showDebug)
 	: arenaPath(std::move(arenaPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
@@ -58,6 +58,7 @@ Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, boo
 	this->soundChannels = soundChannels;
 	this->skipIntro = skipIntro;
 	this->playerInterface = playerInterface;
+	this->showDebug = showDebug;
 }
 
 Options::~Options()
@@ -148,6 +149,11 @@ bool Options::introIsSkipped() const
 PlayerInterface Options::getPlayerInterface() const
 {
 	return this->playerInterface;
+}
+
+bool Options::debugIsShown() const
+{
+	return this->showDebug;
 }
 
 void Options::setScreenWidth(int width)
@@ -251,4 +257,9 @@ void Options::setSkipIntro(bool skip)
 void Options::setPlayerInterface(PlayerInterface playerInterface)
 {
 	this->playerInterface = playerInterface;
+}
+
+void Options::setShowDebug(bool debug)
+{
+	this->showDebug = debug;
 }

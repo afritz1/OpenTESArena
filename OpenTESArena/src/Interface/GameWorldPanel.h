@@ -32,7 +32,6 @@ private:
 	std::unique_ptr<Button<Game*, bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
-	bool showDebug;
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.

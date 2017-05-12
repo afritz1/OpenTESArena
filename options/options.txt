@@ -35,3 +35,4 @@ SoundChannels=32
 # - Change "ArenaPath" to your desired path.
 ArenaPath=data/ARENA
 SkipIntro=False
+ShowDebug=False

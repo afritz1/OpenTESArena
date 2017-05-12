@@ -26,6 +26,7 @@ const std::string OptionsParser::SOUNDFONT_KEY = "Soundfont";
 const std::string OptionsParser::SOUND_CHANNELS_KEY = "SoundChannels";
 const std::string OptionsParser::ARENA_PATH_KEY = "ArenaPath";
 const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
+const std::string OptionsParser::SHOW_DEBUG_KEY = "ShowDebug";
 
 std::unique_ptr<Options> OptionsParser::parse()
 {
@@ -59,12 +60,14 @@ std::unique_ptr<Options> OptionsParser::parse()
 	// Miscellaneous.
 	std::string arenaPath = textMap.getString(OptionsParser::ARENA_PATH_KEY);
 	bool skipIntro = textMap.getBoolean(OptionsParser::SKIP_INTRO_KEY);
+	bool showDebug = textMap.getBoolean(OptionsParser::SHOW_DEBUG_KEY);
 	
 	return std::unique_ptr<Options>(new Options(std::move(arenaPath),
 		screenWidth, screenHeight, fullscreen, targetFPS, resolutionScale, verticalFOV,
 		letterboxAspect, cursorScale, hSensitivity, vSensitivity, std::move(soundfont),
 		musicVolume, soundVolume, soundChannels, skipIntro,
-		modernInterface ? PlayerInterface::Modern : PlayerInterface::Classic));
+		modernInterface ? PlayerInterface::Modern : PlayerInterface::Classic,
+		showDebug));
 }
 
 void OptionsParser::save(const Options &options)

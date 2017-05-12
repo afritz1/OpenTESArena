@@ -32,12 +32,13 @@ private:
 	// Miscellaneous.
 	std::string arenaPath; // "ARENA" data path.
 	bool skipIntro;
+	bool showDebug;
 public:
 	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
 		int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
 		double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
 		double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
-		PlayerInterface playerInterface);
+		PlayerInterface playerInterface, bool showDebug);
 	~Options();
 
 	static const int MIN_FPS;
@@ -63,6 +64,7 @@ public:
 	const std::string &getArenaPath() const;
 	bool introIsSkipped() const;
 	PlayerInterface getPlayerInterface() const;
+	bool debugIsShown() const;
 
 	void setScreenWidth(int width);
 	void setScreenHeight(int height);
@@ -81,6 +83,7 @@ public:
 	void setArenaPath(std::string path);
 	void setSkipIntro(bool skip);
 	void setPlayerInterface(PlayerInterface playerInterface);
+	void setShowDebug(bool debug);
 };
 
 #endif
