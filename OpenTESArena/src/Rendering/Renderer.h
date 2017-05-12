@@ -44,7 +44,6 @@ private:
 	SDL_Surface *getWindowSurface() const;
 public:
 	Renderer(int width, int height, bool fullscreen, double letterboxAspect);
-	Renderer(int width, int height, bool fullscreen);
 	~Renderer();
 
 	// Original screen dimensions.
@@ -90,6 +89,10 @@ public:
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+
+	// Sets the letterbox aspect. 1.60 is the default, and 1.33 is the "stretched"
+	// aspect for simulating tall pixels on a 640x480 display.
+	void setLetterboxAspect(double letterboxAspect);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(SDL_Surface *icon);

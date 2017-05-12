@@ -30,6 +30,10 @@ const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
 const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
 const std::string OptionsPanel::VERTICAL_FOV_TEXT = "Vertical FOV: ";
+const std::string OptionsPanel::CURSOR_SCALE_TEXT = "Cursor Scale: ";
+const std::string OptionsPanel::LETTERBOX_ASPECT_TEXT = "Letterbox Aspect: ";
+const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT = "H. Sensitivity: ";
+const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
 
 OptionsPanel::OptionsPanel(Game *game)
 	: Panel(game)
@@ -90,8 +94,7 @@ OptionsPanel::OptionsPanel(Game *game)
 		int x = 20;
 		int y = 65;
 		auto color = Color::White;
-
-		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT + 
+		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
 			String::fixedPrecision(game->getOptions().getResolutionScale(), 2);
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
@@ -110,7 +113,6 @@ OptionsPanel::OptionsPanel(Game *game)
 		int x = 20;
 		int y = 85;
 		auto color = Color::White;
-
 		const auto &options = game->getOptions();
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
 			OptionsPanel::getPlayerInterfaceString(options.getPlayerInterface());
@@ -131,9 +133,84 @@ OptionsPanel::OptionsPanel(Game *game)
 		int x = 20;
 		int y = 105;
 		auto color = Color::White;
-
 		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
 			String::fixedPrecision(game->getOptions().getVerticalFOV(), 1);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->cursorScaleTextBox = [game]()
+	{
+		int x = 20;
+		int y = 125;
+		auto color = Color::White;
+		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
+			String::fixedPrecision(game->getOptions().getCursorScale(), 1);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->letterboxAspectTextBox = [game]()
+	{
+		int x = 20;
+		int y = 145;
+		auto color = Color::White;
+		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
+			String::fixedPrecision(game->getOptions().getLetterboxAspect(), 2);
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->hSensitivityTextBox = [game]()
+	{
+		int x = 175;
+		int y = 45;
+		auto color = Color::White;
+		std::string text(OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(game->getOptions().getHorizontalSensitivity(), 1));
+		auto &font = game->getFontManager().getFont(FontName::Arena);
+		auto alignment = TextAlignment::Left;
+		return std::unique_ptr<TextBox>(new TextBox(
+			x,
+			y,
+			color,
+			text,
+			font,
+			alignment,
+			game->getRenderer()));
+	}();
+
+	this->vSensitivityTextBox = [game]()
+	{
+		int x = 175;
+		int y = 65;
+		auto color = Color::White;
+		std::string text(OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(game->getOptions().getVerticalSensitivity(), 1));
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Left;
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -206,7 +283,7 @@ OptionsPanel::OptionsPanel(Game *game)
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
 			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
-			renderer.resize(windowDimensions.x, windowDimensions.y, 
+			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
@@ -229,7 +306,7 @@ OptionsPanel::OptionsPanel(Game *game)
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
 			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
-			renderer.resize(windowDimensions.x, windowDimensions.y, 
+			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
@@ -242,7 +319,7 @@ OptionsPanel::OptionsPanel(Game *game)
 		int y = 86;
 		int width = 8;
 		int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options, 
+		auto function = [](OptionsPanel *panel, Options &options,
 			Player &player, Renderer &renderer)
 		{
 			// Toggle the player interface option.
@@ -279,8 +356,8 @@ OptionsPanel::OptionsPanel(Game *game)
 		int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
-			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0, 
-				options.MAX_VERTICAL_FOV);
+			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0,
+				Options::MAX_VERTICAL_FOV);
 			options.setVerticalFOV(newVerticalFOV);
 			panel->updateVerticalFOVText(newVerticalFOV);
 		};
@@ -297,9 +374,147 @@ OptionsPanel::OptionsPanel(Game *game)
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newVerticalFOV = std::max(options.getVerticalFOV() - 5.0,
-				options.MIN_VERTICAL_FOV);
+				Options::MIN_VERTICAL_FOV);
 			options.setVerticalFOV(newVerticalFOV);
 			panel->updateVerticalFOVText(newVerticalFOV);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->cursorScaleUpButton = []()
+	{
+		int x = 99;
+		int y = 121;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newCursorScale = std::min(options.getCursorScale() + 0.10,
+				Options::MAX_CURSOR_SCALE);
+			options.setCursorScale(newCursorScale);
+			panel->updateCursorScaleText(newCursorScale);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->cursorScaleDownButton = [this]()
+	{
+		int x = this->cursorScaleUpButton->getX();
+		int y = this->cursorScaleUpButton->getY() + this->cursorScaleUpButton->getHeight();
+		int width = this->cursorScaleUpButton->getWidth();
+		int height = this->cursorScaleUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newCursorScale = std::max(options.getCursorScale() - 0.10,
+				Options::MIN_CURSOR_SCALE);
+			options.setCursorScale(newCursorScale);
+			panel->updateCursorScaleText(newCursorScale);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->letterboxAspectUpButton = []()
+	{
+		int x = 120;
+		int y = 141;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			const double newLetterboxAspect = std::min(options.getLetterboxAspect() + 0.010,
+				Options::MAX_LETTERBOX_ASPECT);
+			options.setLetterboxAspect(newLetterboxAspect);
+			panel->updateLetterboxAspectText(newLetterboxAspect);
+			renderer.setLetterboxAspect(newLetterboxAspect);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+	}();
+
+	this->letterboxAspectDownButton = [this]()
+	{
+		int x = this->letterboxAspectUpButton->getX();
+		int y = this->letterboxAspectUpButton->getY() + this->letterboxAspectUpButton->getHeight();
+		int width = this->letterboxAspectUpButton->getWidth();
+		int height = this->letterboxAspectUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			const double newLetterboxAspect = std::max(options.getLetterboxAspect() - 0.010,
+				Options::MIN_LETTERBOX_ASPECT);
+			options.setLetterboxAspect(newLetterboxAspect);
+			panel->updateLetterboxAspectText(newLetterboxAspect);
+			renderer.setLetterboxAspect(newLetterboxAspect);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
+	}();
+
+	this->hSensitivityUpButton = []()
+	{
+		int x = 255;
+		int y = 41;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newHorizontalSensitivity = std::min(
+				options.getHorizontalSensitivity() + 0.50, Options::MAX_HORIZONTAL_SENSITIVITY);
+			options.setHorizontalSensitivity(newHorizontalSensitivity);
+			panel->updateHorizontalSensitivityText(newHorizontalSensitivity);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->hSensitivityDownButton = [this]()
+	{
+		int x = this->hSensitivityUpButton->getX();
+		int y = this->hSensitivityUpButton->getY() + this->hSensitivityUpButton->getHeight();
+		int width = this->hSensitivityUpButton->getWidth();
+		int height = this->hSensitivityUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newHorizontalSensitivity = std::max(
+				options.getHorizontalSensitivity() - 0.50, Options::MIN_HORIZONTAL_SENSITIVITY);
+			options.setHorizontalSensitivity(newHorizontalSensitivity);
+			panel->updateHorizontalSensitivityText(newHorizontalSensitivity);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->vSensitivityUpButton = [this]()
+	{
+		int x = 256;
+		int y = 61;
+		int width = 8;
+		int height = 8;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newVerticalSensitivity = std::min(
+				options.getVerticalSensitivity() + 0.50, Options::MAX_VERTICAL_SENSITIVITY);
+			options.setVerticalSensitivity(newVerticalSensitivity);
+			panel->updateVerticalSensitivityText(newVerticalSensitivity);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->vSensitivityDownButton = [this]()
+	{
+		int x = this->vSensitivityUpButton->getX();
+		int y = this->vSensitivityUpButton->getY() + this->vSensitivityUpButton->getHeight();
+		int width = this->vSensitivityUpButton->getWidth();
+		int height = this->vSensitivityUpButton->getHeight();
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			const double newVerticalSensitivity = std::max(
+				options.getVerticalSensitivity() - 0.50, Options::MIN_VERTICAL_SENSITIVITY);
+			options.setVerticalSensitivity(newVerticalSensitivity);
+			panel->updateVerticalSensitivityText(newVerticalSensitivity);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
@@ -399,6 +614,90 @@ void OptionsPanel::updateVerticalFOVText(double verticalFOV)
 	}();
 }
 
+void OptionsPanel::updateCursorScaleText(double cursorScale)
+{
+	assert(this->cursorScaleTextBox.get() != nullptr);
+
+	this->cursorScaleTextBox = [this, cursorScale]()
+	{
+		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
+			String::fixedPrecision(cursorScale, 1);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->cursorScaleTextBox->getX(),
+			this->cursorScaleTextBox->getY(),
+			this->cursorScaleTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->cursorScaleTextBox->getFontName()),
+			this->cursorScaleTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
+void OptionsPanel::updateLetterboxAspectText(double letterboxAspect)
+{
+	assert(this->letterboxAspectTextBox.get() != nullptr);
+
+	this->letterboxAspectTextBox = [this, letterboxAspect]()
+	{
+		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
+			String::fixedPrecision(letterboxAspect, 2);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->letterboxAspectTextBox->getX(),
+			this->letterboxAspectTextBox->getY(),
+			this->letterboxAspectTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->letterboxAspectTextBox->getFontName()),
+			this->letterboxAspectTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
+void OptionsPanel::updateHorizontalSensitivityText(double hSensitivity)
+{
+	assert(this->hSensitivityTextBox.get() != nullptr);
+
+	this->hSensitivityTextBox = [this, hSensitivity]()
+	{
+		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(hSensitivity, 1);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->hSensitivityTextBox->getX(),
+			this->hSensitivityTextBox->getY(),
+			this->hSensitivityTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->hSensitivityTextBox->getFontName()),
+			this->hSensitivityTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
+void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
+{
+	assert(this->vSensitivityTextBox.get() != nullptr);
+
+	this->vSensitivityTextBox = [this, vSensitivity]()
+	{
+		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(vSensitivity, 1);
+		auto &fontManager = this->getGame()->getFontManager();
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->vSensitivityTextBox->getX(),
+			this->vSensitivityTextBox->getY(),
+			this->vSensitivityTextBox->getTextColor(),
+			text,
+			fontManager.getFont(this->vSensitivityTextBox->getFontName()),
+			this->vSensitivityTextBox->getAlignment(),
+			this->getGame()->getRenderer()));
+	}();
+}
+
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -449,6 +748,40 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		{
 			this->verticalFOVDownButton->click(this, this->getGame()->getOptions());
 		}
+		else if (this->cursorScaleUpButton->contains(mouseOriginalPoint))
+		{
+			this->cursorScaleUpButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->cursorScaleDownButton->contains(mouseOriginalPoint))
+		{
+			this->cursorScaleDownButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->letterboxAspectUpButton->contains(mouseOriginalPoint))
+		{
+			this->letterboxAspectUpButton->click(this, this->getGame()->getOptions(),
+				this->getGame()->getRenderer());
+		}
+		else if (this->letterboxAspectDownButton->contains(mouseOriginalPoint))
+		{
+			this->letterboxAspectDownButton->click(this, this->getGame()->getOptions(),
+				this->getGame()->getRenderer());
+		}
+		else if (this->hSensitivityUpButton->contains(mouseOriginalPoint))
+		{
+			this->hSensitivityUpButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->hSensitivityDownButton->contains(mouseOriginalPoint))
+		{
+			this->hSensitivityDownButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->vSensitivityUpButton->contains(mouseOriginalPoint))
+		{
+			this->vSensitivityUpButton->click(this, this->getGame()->getOptions());
+		}
+		else if (this->vSensitivityDownButton->contains(mouseOriginalPoint))
+		{
+			this->vSensitivityDownButton->click(this, this->getGame()->getOptions());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -479,6 +812,14 @@ void OptionsPanel::render(Renderer &renderer)
 		this->resolutionScaleUpButton->getY());
 	renderer.drawToOriginal(arrows.get(), this->verticalFOVUpButton->getX(),
 		this->verticalFOVUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->cursorScaleUpButton->getX(),
+		this->cursorScaleUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->letterboxAspectUpButton->getX(),
+		this->letterboxAspectUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->hSensitivityUpButton->getX(),
+		this->hSensitivityUpButton->getY());
+	renderer.drawToOriginal(arrows.get(), this->vSensitivityUpButton->getX(),
+		this->vSensitivityUpButton->getY());
 
 	Texture playerInterfaceBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->playerInterfaceButton->getWidth(), this->playerInterfaceButton->getHeight(),
@@ -505,6 +846,14 @@ void OptionsPanel::render(Renderer &renderer)
 		this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY());
 	renderer.drawToOriginal(this->verticalFOVTextBox->getTexture(),
 		this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY());
+	renderer.drawToOriginal(this->cursorScaleTextBox->getTexture(),
+		this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY());
+	renderer.drawToOriginal(this->letterboxAspectTextBox->getTexture(),
+		this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY());
+	renderer.drawToOriginal(this->hSensitivityTextBox->getTexture(),
+		this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY());
+	renderer.drawToOriginal(this->vSensitivityTextBox->getTexture(),
+		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

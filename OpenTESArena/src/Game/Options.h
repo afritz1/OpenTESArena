@@ -46,6 +46,14 @@ public:
 	static const double MAX_RESOLUTION_SCALE;
 	static const double MIN_VERTICAL_FOV;
 	static const double MAX_VERTICAL_FOV;
+	static const double MIN_CURSOR_SCALE;
+	static const double MAX_CURSOR_SCALE;
+	static const double MIN_LETTERBOX_ASPECT;
+	static const double MAX_LETTERBOX_ASPECT;
+	static const double MIN_HORIZONTAL_SENSITIVITY;
+	static const double MAX_HORIZONTAL_SENSITIVITY;
+	static const double MIN_VERTICAL_SENSITIVITY;
+	static const double MAX_VERTICAL_SENSITIVITY;
 
 	int getScreenWidth() const;
 	int getScreenHeight() const;

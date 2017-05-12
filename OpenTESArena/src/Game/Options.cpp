@@ -10,6 +10,14 @@ const double Options::MIN_RESOLUTION_SCALE = 0.10;
 const double Options::MAX_RESOLUTION_SCALE = 1.0;
 const double Options::MIN_VERTICAL_FOV = 40.0;
 const double Options::MAX_VERTICAL_FOV = 150.0;
+const double Options::MIN_CURSOR_SCALE = 0.50;
+const double Options::MAX_CURSOR_SCALE = 8.0;
+const double Options::MIN_LETTERBOX_ASPECT = 0.75;
+const double Options::MAX_LETTERBOX_ASPECT = 3.0;
+const double Options::MIN_HORIZONTAL_SENSITIVITY = 0.50;
+const double Options::MAX_HORIZONTAL_SENSITIVITY = 50.0;
+const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
+const double Options::MAX_VERTICAL_SENSITIVITY = 50.0;
 
 Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
 	int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
@@ -33,10 +41,26 @@ Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, boo
 		"Field of view must be between " + 
 		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + " and " +
 		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
-	Debug::check(letterboxAspect > 0.0, "Options", "Letterbox aspect must be positive.");
-	Debug::check(cursorScale > 0.0, "Options", "Cursor scale must be positive.");
-	Debug::check(hSensitivity > 0.0, "Options", "Horizontal sensitivity must be positive.");
-	Debug::check(vSensitivity > 0.0, "Options", "Vertical sensitivity must be positive.");
+	Debug::check((letterboxAspect >= Options::MIN_LETTERBOX_ASPECT) &&
+		(letterboxAspect <= Options::MAX_LETTERBOX_ASPECT), "Options",
+		"Letterbox aspect must be between " +
+		String::fixedPrecision(Options::MIN_LETTERBOX_ASPECT, 2) + " and " +
+		String::fixedPrecision(Options::MAX_LETTERBOX_ASPECT, 2) + ".");
+	Debug::check((cursorScale >= Options::MIN_CURSOR_SCALE) &&
+		(cursorScale <= Options::MAX_CURSOR_SCALE), "Options",
+		"Cursor scale must be between " +
+		String::fixedPrecision(Options::MIN_CURSOR_SCALE, 1) + " and " +
+		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
+	Debug::check((hSensitivity >= Options::MIN_HORIZONTAL_SENSITIVITY) &&
+		(hSensitivity <= Options::MAX_HORIZONTAL_SENSITIVITY), "Options",
+		"Horizontal sensitivity must be between " +
+		String::fixedPrecision(Options::MIN_HORIZONTAL_SENSITIVITY, 1) + " and " +
+		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
+	Debug::check((vSensitivity >= Options::MIN_VERTICAL_SENSITIVITY) &&
+		(vSensitivity <= Options::MAX_VERTICAL_SENSITIVITY), "Options",
+		"Vertical sensitivity must be between " +
+		String::fixedPrecision(Options::MIN_VERTICAL_SENSITIVITY, 1) + " and " +
+		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
 	Debug::check((musicVolume >= 0.0) && (musicVolume <= 1.0), "Options",
 		"Music volume must be between 0.0 and 1.0.");
 	Debug::check((soundVolume >= 0.0) && (soundVolume <= 1.0), "Options",

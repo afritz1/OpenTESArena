@@ -68,10 +68,6 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	this->useTransparencyBlending(false);
 }
 
-Renderer::Renderer(int width, int height, bool fullscreen)
-	: Renderer(width, height, fullscreen, static_cast<double>(Renderer::ORIGINAL_WIDTH) /
-		static_cast<double>(Renderer::ORIGINAL_HEIGHT)) { }
-
 Renderer::~Renderer()
 {
 	Debug::mention("Renderer", "Closing.");
@@ -327,6 +323,11 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		// Resize 3D renderer.
 		this->softwareRenderer->resize(renderWidth, renderHeight);
 	}
+}
+
+void Renderer::setLetterboxAspect(double letterboxAspect)
+{
+	this->letterboxAspect = letterboxAspect;
 }
 
 void Renderer::setWindowIcon(SDL_Surface *icon)
