@@ -31,6 +31,7 @@ public:
 	bool mouseWheeledUp(const SDL_Event &e) const;
 	bool mouseWheeledDown(const SDL_Event &e) const;
 	bool windowResized(const SDL_Event &e) const;
+	bool applicationExit(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
 

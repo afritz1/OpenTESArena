@@ -67,6 +67,11 @@ bool InputManager::windowResized(const SDL_Event &e) const
 	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
 }
 
+bool InputManager::applicationExit(const SDL_Event &e) const
+{
+	return e.type == SDL_QUIT;
+}
+
 Int2 InputManager::getMousePosition() const
 {
 	int x, y;
