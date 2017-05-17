@@ -759,22 +759,21 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 		// If the mouse moves fast enough, it's considered an attack.
 		// - To do: normalize dx and dy so they're percentages. This way it works the same
 		//   for all resolutions.
-		const double distance = std::sqrt((dx * dx) + (dy * dy));
-		const bool isAttack = rightClick && (distance > 40.0);
+		const double mouseDistance = std::sqrt((dx * dx) + (dy * dy));
+		const bool isAttack = rightClick && (mouseDistance > 40.0);
 
 		if (isAttack)
 		{
 			// Convert the change in mouse coordinates to a vector. Reverse the change in
 			// y so that positive values are up.
-			const Double2 direction =
+			const Double2 mouseDirection =
 				Double2(static_cast<double>(dx), static_cast<double>(-dy)).normalized();
 
 			// Calculate the direction the mouse moved in (let's use cardinal directions
-			// for convenience. This should be refined in the future, since cardinal
-			// directions use a different layout than the 3D coordinate system; that is,
-			// XY or XZ from the top-down perspective, for example).
-			CardinalDirectionName cardinalDirection =
-				CardinalDirection::getDirectionName(direction);
+			// for convenience. Up means north (positive Y), right means east (positive X).
+			// This could be refined in the future).
+			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(
+				Double2(mouseDirection.y, mouseDirection.x));
 
 			// Set the weapon animation state.
 			if (cardinalDirection == CardinalDirectionName::North)

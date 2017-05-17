@@ -15,6 +15,12 @@ private:
 	CardinalDirection() = delete;
 	~CardinalDirection() = delete;
 public:
+	// Cardinal directions in the XZ plane (bird's eye view).
+	static const Double2 North;
+	static const Double2 South;
+	static const Double2 East;
+	static const Double2 West;
+
 	static CardinalDirectionName getDirectionName(const Double2 &direction);
 	static const std::string &toString(CardinalDirectionName directionName);
 };

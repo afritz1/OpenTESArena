@@ -20,26 +20,23 @@ const std::map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
+const Double2 CardinalDirection::North = Double2(1.0, 0.0);
+const Double2 CardinalDirection::South = Double2(-1.0, 0.0);
+const Double2 CardinalDirection::East = Double2(0.0, 1.0);
+const Double2 CardinalDirection::West = Double2(0.0, -1.0);
+
 CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	assert(direction.isNormalized());
 
-	const Double2 north(0.0, 1.0);
-	const Double2 south(0.0, -1.0);
-	const Double2 east(1.0, 0.0);
-	const Double2 west(-1.0, 0.0);
-	const Double2 northEast = north.slerp(east, 0.5);
-	const Double2 southEast = south.slerp(east, 0.5);
-	const Double2 southWest = south.slerp(west, 0.5);
-	const Double2 northWest = north.slerp(west, 0.5);
+	const Double2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
+	const Double2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
+	const Double2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
+	const Double2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
 
 	// The spherical interpolations should already be normalized if their parent vectors
 	// are normalized.
-	assert(north.isNormalized());
-	assert(south.isNormalized());
-	assert(east.isNormalized());
-	assert(west.isNormalized());
 	assert(northEast.isNormalized());
 	assert(southEast.isNormalized());
 	assert(southWest.isNormalized());
@@ -56,7 +53,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	// Find the cardinal direction closest to the given direction. Start with
 	// a default name and figure out the true one from there.
 	auto name = CardinalDirectionName::North;
-	if (isCloseEnoughTo(north))
+	if (isCloseEnoughTo(CardinalDirection::North))
 	{
 		name = CardinalDirectionName::North;
 	}
@@ -64,7 +61,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	{
 		name = CardinalDirectionName::NorthEast;
 	}
-	else if (isCloseEnoughTo(east))
+	else if (isCloseEnoughTo(CardinalDirection::East))
 	{
 		name = CardinalDirectionName::East;
 	}
@@ -72,7 +69,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	{
 		name = CardinalDirectionName::SouthEast;
 	}
-	else if (isCloseEnoughTo(south))
+	else if (isCloseEnoughTo(CardinalDirection::South))
 	{
 		name = CardinalDirectionName::South;
 	}
@@ -80,7 +77,7 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	{
 		name = CardinalDirectionName::SouthWest;
 	}
-	else if (isCloseEnoughTo(west))
+	else if (isCloseEnoughTo(CardinalDirection::West))
 	{
 		name = CardinalDirectionName::West;
 	}
