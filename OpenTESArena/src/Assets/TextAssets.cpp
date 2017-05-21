@@ -22,6 +22,9 @@ TextAssets::TextAssets()
 
 	// Read in QUESTION.TXT and create character question objects.
 	this->parseQuestionTxt();
+
+	// Read in DUNGEON.TXT and pair each dungeon name with its description.
+	this->parseDungeonTxt();
 }
 
 TextAssets::~TextAssets()
@@ -215,6 +218,70 @@ void TextAssets::parseQuestionTxt()
 	addQuestion(description, a, b, c);
 }
 
+void TextAssets::parseDungeonTxt()
+{
+	const std::string filename = "DUNGEON.TXT";
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	Debug::check(stream != nullptr, "Text Assets", "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	const auto fileSize = stream->tellg();
+	stream->seekg(0, std::ios::beg);
+
+	std::vector<char> bytes(fileSize);
+	stream->read(bytes.data(), fileSize);
+
+	const std::string text(bytes.data(), fileSize);
+
+	// Step line by line through the text, inserting data into the dungeon list.
+	std::istringstream iss(text);
+	std::string line, title, description;
+
+	while (std::getline(iss, line))
+	{
+		const char poundSign = '#';
+		if (line.at(0) == poundSign)
+		{
+			// Remove the newline from the end of the description.
+			if (description.at(description.size() - 1) == '\n')
+			{
+				description.pop_back();
+			}
+
+			// Put the collected data into the list and restart the title and description.
+			this->dungeonTxt.push_back(std::make_pair(title, description));
+			title.clear();
+			description.clear();
+		}
+		else if (title.empty())
+		{
+			// It's either the first line in the file or it's right after a '#', so it's 
+			// a dungeon name.
+			title = line;
+
+			// Remove the carriage return if it exists.
+			const size_t titleCarriageReturn = title.find('\r');
+			if (titleCarriageReturn != std::string::npos)
+			{
+				title = title.replace(titleCarriageReturn, 1, "");
+			}
+		}
+		else
+		{
+			// It's part of a dungeon description. Append it to the current description.
+			description += line;
+
+			// Replace the carriage return with a newline.
+			const size_t descriptionCarriageReturn = description.find('\r');
+			if (descriptionCarriageReturn != std::string::npos)
+			{
+				description = description.replace(descriptionCarriageReturn, 1, "\n");
+			}
+		}
+	}
+}
+
 const std::string &TextAssets::getAExeSegment(const std::pair<int, int> &offsetAndSize)
 {
 	// Check if the segment has been loaded.
@@ -247,4 +314,9 @@ const std::string &TextAssets::getTemplateDatText(const std::string &key)
 const std::vector<CharacterQuestion> &TextAssets::getQuestionTxtQuestions() const
 {
 	return this->questionTxt;
+}
+
+const std::vector<std::pair<std::string, std::string>> &TextAssets::getDungeonTxtDungeons() const
+{
+	return this->dungeonTxt;
 }

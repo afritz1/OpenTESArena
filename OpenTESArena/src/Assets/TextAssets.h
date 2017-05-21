@@ -33,12 +33,16 @@ private:
 	std::unordered_map<std::pair<int, int>, std::string> aExeSegments;
 	std::unordered_map<std::string, std::string> templateDat;
 	std::vector<CharacterQuestion> questionTxt;
+	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
 	void parseTemplateDat();
 
 	// Load QUESTION.TXT and separate each question by its number.
 	void parseQuestionTxt();
+
+	// Load DUNGEON.TXT and pair each dungeon name with its description.
+	void parseDungeonTxt();
 public:
 	TextAssets();
 	~TextAssets();
@@ -52,6 +56,11 @@ public:
 
 	// Returns all of the questions in QUESTION.TXT.
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
+
+	// Returns all of the main quest dungeon names paired with their description. 
+	// These are just the dungeons with a unique icon on the world map, not the 
+	// lesser dungeons.
+	const std::vector<std::pair<std::string, std::string>> &getDungeonTxtDungeons() const;
 };
 
 #endif
