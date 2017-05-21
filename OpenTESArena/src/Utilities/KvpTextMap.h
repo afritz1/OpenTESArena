@@ -14,6 +14,7 @@ class KvpTextMap
 	static const char COMMENT;
 
 	std::unordered_map<std::string, std::string> pairs;
+	std::string filename;
 
 	// Use this method to access the pairs, since it does error checking.
 	const std::string &getValue(const std::string &key) const;

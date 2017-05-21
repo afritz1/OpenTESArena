@@ -12,13 +12,16 @@ namespace
 	const std::unordered_map<std::string, bool> KvpTextMapBooleans =
 	{
 		{ "True", true },
-		{ "False", false }
+		{ "true", true },
+		{ "False", false },
+		{ "false", false }
 	};
 }
 
 const char KvpTextMap::COMMENT = '#';
 
 KvpTextMap::KvpTextMap(const std::string &filename)
+	: filename(filename)
 {
 	std::string text = File::toString(filename);
 	std::istringstream iss(text);
@@ -33,7 +36,7 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 
 		const char firstChar = line.at(0);
 		if ((firstChar == KvpTextMap::COMMENT) ||
-		    (firstChar == '\r'))
+			(firstChar == '\r'))
 		{
 			continue;
 		}
@@ -41,7 +44,7 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 		// There must be two tokens: the key and value.
 		std::vector<std::string> tokens = String::split(line, '=');
 		Debug::check(tokens.size() == 2, "KVP Text Map",
-			"Too many tokens at \"" + line + "\".");
+			"Too many tokens at \"" + line + "\" in " + filename + ".");
 
 		// The strings could be trimmed of whitespace also, but I want the parser to 
 		// be strict.
@@ -61,7 +64,7 @@ const std::string &KvpTextMap::getValue(const std::string &key) const
 {
 	const auto pairIter = this->pairs.find(key);
 	Debug::check(pairIter != this->pairs.end(), "KVP Text Map",
-		"Key \"" + key + "\" not found.");
+		"Key \"" + key + "\" not found in " + this->filename + ".");
 
 	return pairIter->second;
 }
@@ -70,8 +73,9 @@ bool KvpTextMap::getBoolean(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	const auto boolIter = KvpTextMapBooleans.find(value);
-	Debug::check(boolIter != KvpTextMapBooleans.end(), "KVP Text Map", 
-		"Boolean \"" + value + "\" must be either True or False.");
+	Debug::check(boolIter != KvpTextMapBooleans.end(), "KVP Text Map",
+		"\"" + value + "\" for \"" + key + "\" in " + this->filename +
+		" must be either true or false.");
 
 	return boolIter->second;
 }
