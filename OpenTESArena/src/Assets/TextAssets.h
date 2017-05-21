@@ -3,6 +3,9 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+#include "../Game/CharacterQuestion.h"
 
 // This class stores various plain text (human readable) data from Arena assets.
 
@@ -29,9 +32,13 @@ private:
 	std::string aExe;
 	std::unordered_map<std::pair<int, int>, std::string> aExeSegments;
 	std::unordered_map<std::string, std::string> templateDat;
+	std::vector<CharacterQuestion> questionTxt;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
 	void parseTemplateDat();
+
+	// Load QUESTION.TXT and separate each question by its number.
+	void parseQuestionTxt();
 public:
 	TextAssets();
 	~TextAssets();
@@ -42,6 +49,9 @@ public:
 
 	// Finds the text in TEMPLATE.DAT given a key (i.e., "#0000a").
 	const std::string &getTemplateDatText(const std::string &key);
+
+	// Returns all of the questions in QUESTION.TXT.
+	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
 };
 
 #endif
