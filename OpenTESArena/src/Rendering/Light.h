@@ -7,9 +7,6 @@
 
 // Helper class for managing lights in renderer memory.
 
-// The owner reference is managed elsewhere in the renderer. This class is just 
-// for the light's data.
-
 class Light
 {
 private:
