@@ -678,12 +678,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const int index = x + (y * frameWidth);
 
 			// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
-			// walls sharing the same Z value. More strict drawing rules (voxel face priority?) 
-			// would be a better fix for this.
+			// adjacent walls sharing the same Z value. More strict drawing rules (voxel
+			// stepping order?) might be a better fix for this.
 			if (z <= (depthBuffer[index] - EPSILON))
 			{
 				// Percent stepped from beginning to end on the column.
-				const double yPercent = static_cast<double>(y - projectedStart) /
+				const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
 					static_cast<double>(projectedEnd - projectedStart);
 
 				// Vertical texture coordinate.
@@ -762,7 +762,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const int index = x + (y * frameWidth);
 
 			// Percent stepped from beginning to end on the column.
-			const double yPercent = static_cast<double>(y - projectedStart) /
+			const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
 				static_cast<double>(projectedEnd - projectedStart);
 
 			// Interpolate between the near and far point.
@@ -857,7 +857,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			const int index = x + (y * frameWidth);
 
 			// Percent stepped from beginning to end on the column.
-			const double yPercent = static_cast<double>(y - projectedStart) /
+			const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
 				static_cast<double>(projectedEnd - projectedStart);
 
 			// Interpolate between the near and far point.
@@ -1577,7 +1577,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 		for (int x = startX; x < endX; ++x)
 		{
 			// X percent across the screen.
-			const double xPercent = static_cast<double>(x) / widthReal;
+			const double xPercent = (static_cast<double>(x) + 0.50) / widthReal;
 
 			// "Right" component of the ray direction, based on current screen X.
 			const Double2 rightComp = right2D * ((2.0 * xPercent) - 1.0);
