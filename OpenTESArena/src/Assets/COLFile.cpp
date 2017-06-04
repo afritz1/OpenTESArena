@@ -17,7 +17,7 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 
 	if (!stream)
 	{
-		Debug::mention("COLFile", "Failed to open palette \"" + filename + "\".");
+		DebugMention("Failed to open palette \"" + filename + "\".");
 		failed = true;
 	}
 	else
@@ -25,8 +25,8 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 		stream->read(reinterpret_cast<char*>(rawpal.data()), rawpal.size());
 		if (stream->gcount() != static_cast<std::streamsize>(rawpal.size()))
 		{
-			Debug::mention("COLFile", "Failed to read palette \"" +
-				filename + "\", got " + std::to_string(stream->gcount()) + " bytes.");
+			DebugMention("Failed to read palette \"" + filename + 
+				"\", got " + std::to_string(stream->gcount()) + " bytes.");
 			failed = true;
 		}
 	}
@@ -36,14 +36,14 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 		uint32_t ver = Bytes::getLE32(rawpal.data() + 4);
 		if (len != 776)
 		{
-			Debug::mention("COLFile", "Invalid length for palette \"" +
-				filename + "\" (" + std::to_string(len) + " bytes).");
+			DebugMention("Invalid length for palette \"" + filename + "\" (" + 
+				std::to_string(len) + " bytes).");
 			failed = true;
 		}
 		else if (ver != 0xB123)
 		{
-			Debug::mention("COLFile", "Invalid version for palette \"" +
-				filename + "\", 0x" + String::toHexString(ver) + ".");
+			DebugMention("Invalid version for palette \"" + filename + "\", 0x" + 
+				String::toHexString(ver) + ".");
 			failed = true;
 		}
 	}

@@ -78,7 +78,7 @@ WildMidiDevice::WildMidiDevice(const std::string &soundfont)
 {
 	sInitState = WildMidi_Init(soundfont.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
 	if (sInitState < 0)
-		Debug::mention("WildMidiDevice", "Failed to init WildMidi.");
+		DebugMention("Failed to init WildMidi.");
 	else
 		WildMidi_MasterVolume(100);
 }

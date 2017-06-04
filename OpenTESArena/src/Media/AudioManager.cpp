@@ -324,7 +324,7 @@ AudioManagerImpl::~AudioManagerImpl()
 
 void AudioManagerImpl::init(const Options &options)
 {
-	Debug::mention("Audio Manager", "Initializing.");
+	DebugMention("Initializing.");
 
 #ifdef HAVE_WILDMIDI
 	WildMidiDevice::init(options.getSoundfont());
@@ -332,14 +332,14 @@ void AudioManagerImpl::init(const Options &options)
 
 	// Start initializing the OpenAL device.
 	ALCdevice *device = alcOpenDevice(nullptr);
-	Debug::check(device != nullptr, "Audio Manager", "alcOpenDevice");
+	DebugAssert(device != nullptr, "alcOpenDevice");
 
 	// Create an OpenAL context.
 	ALCcontext *context = alcCreateContext(device, nullptr);
-	Debug::check(context != nullptr, "Audio Manager", "alcCreateContext");
+	DebugAssert(context != nullptr, "alcCreateContext");
 
 	ALCboolean success = alcMakeContextCurrent(context);
-	Debug::check(success == AL_TRUE, "Audio Manager", "alcMakeContextCurrent");
+	DebugAssert(success == AL_TRUE, "alcMakeContextCurrent");
 
 	double musicVolume = options.getMusicVolume();
 	double soundVolume = options.getSoundVolume();
@@ -368,7 +368,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 			mCurrentSong = MidiDevice::get().open(filename);
 		if (!mCurrentSong)
 		{
-			Debug::mention("Audio Manager", "Failed to play " + filename + ".");
+			DebugMention("Failed to play " + filename + ".");
 			return;
 		}
 
@@ -377,10 +377,12 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
-			Debug::mention("Audio Manager", "Playing music " + filename + ".");
+			DebugMention("Playing music " + filename + ".");
 		}
 		else
-			Debug::mention("Audio Manager", "Failed to init song stream.");
+		{
+			DebugMention("Failed to init song stream.");
+		}
 	}
 }
 

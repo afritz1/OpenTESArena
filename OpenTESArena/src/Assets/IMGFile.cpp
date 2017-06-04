@@ -35,7 +35,7 @@ namespace
 IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -91,8 +91,8 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		// This code might run even if the IMG doesn't have a palette, because
 		// some IMGs have no header and are not "raw" (like walls, for instance).
-		Debug::check((flags & 0x0100) != 0, "IMGFile",
-			"\"" + filename + "\" does not have a built-in palette.");
+		DebugAssert((flags & 0x0100) != 0, "\"" + filename + 
+			"\" does not have a built-in palette.");
 
 		// Read the palette data and write it to the destination palette.
 		IMGFile::readPalette(srcData.data() + headerSize + len, builtInPalette);
@@ -157,7 +157,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		}
 		else
 		{
-			Debug::crash("IMGFile", "Unrecognized IMG \"" + filename + "\".");
+			DebugCrash("Unrecognized IMG \"" + filename + "\".");
 		}
 	}
 }
@@ -193,7 +193,7 @@ void IMGFile::readPalette(const uint8_t *paletteData, Palette &dstPalette)
 void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "IMGFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -211,8 +211,8 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	const int headerSize = 12;
 
 	// Don't try to read a built-in palette is there isn't one.
-	Debug::check((flags & 0x0100) != 0, "IMGFile",
-		"\"" + filename + "\" has no built-in palette to extract.");
+	DebugAssert((flags & 0x0100) != 0, "\"" + filename + 
+		"\" has no built-in palette to extract.");
 
 	// Read the palette data and write it to the destination palette.
 	IMGFile::readPalette(srcData.data() + headerSize + len, dstPalette);

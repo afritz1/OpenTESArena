@@ -19,7 +19,7 @@ BufferView::~BufferView()
 size_t BufferView::allocate(size_t size)
 {
 	// Allocation request must be at least 1 byte.
-	Debug::check(size > 0, "Buffer View", "Allocation size must be positive.");
+	DebugAssert(size > 0, "Allocation size must be positive.");
 
 	// Offset in bytes to a suitable free block.
 	size_t offset = 0;
@@ -62,7 +62,7 @@ void BufferView::deallocate(size_t offset)
 {
 	// See if an allocation exists at the given offset.
 	const auto sizeIter = this->sizes.find(offset);
-	Debug::check(sizeIter != this->sizes.end(), "Buffer View",
+	DebugAssert(sizeIter != this->sizes.end(),
 		"Invalid index for deallocation (" + std::to_string(offset) + ").");
 
 	// Get size of block at offset.

@@ -27,7 +27,7 @@ TextureManager::TextureManager(Renderer &renderer)
 	: renderer(renderer), palettes(), surfaces(), textures(),
 	surfaceSets(), textureSets()
 {
-	Debug::mention("Texture Manager", "Initializing.");
+	DebugMention("Initializing.");
 
 	// Load default palette.
 	this->setPalette(PaletteFile::fromName(PaletteName::Default));
@@ -85,7 +85,7 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized palette \"" + paletteName + "\".");
+		DebugCrash("Unrecognized palette \"" + paletteName + "\".");
 	}
 
 	// Make sure everything above works as intended.
@@ -161,7 +161,7 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized surface format \"" + filename + "\".");
+		DebugCrash("Unrecognized surface format \"" + filename + "\".");
 	}
 
 	// Add the new surface and return it.
@@ -230,7 +230,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized texture format \"" + filename + "\".");
+		DebugCrash("Unrecognized texture format \"" + filename + "\".");
 	}
 
 	// Add the new texture and return it.
@@ -261,7 +261,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	}
 
 	// Do not use a built-in palette for surface sets.
-	Debug::check(!Palette::isBuiltIn(paletteName), "Texture Manager",
+	DebugAssert(!Palette::isBuiltIn(paletteName), 
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.
@@ -396,7 +396,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized surface list \"" + filename + "\".");
+		DebugCrash("Unrecognized surface list \"" + filename + "\".");
 	}
 
 	return surfaceSet;
@@ -425,7 +425,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 
 	// Do not use a built-in palette for texture sets.
-	Debug::check(!Palette::isBuiltIn(paletteName), "Texture Manager",
+	DebugAssert(!Palette::isBuiltIn(paletteName), 
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.
@@ -572,7 +572,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else
 	{
-		Debug::crash("Texture Manager", "Unrecognized texture list \"" + filename + "\".");
+		DebugCrash("Unrecognized texture list \"" + filename + "\".");
 	}
 
 	// Set alpha transparency on for each texture.

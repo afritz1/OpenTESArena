@@ -220,7 +220,7 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 	}
 	else
 	{
-		Debug::crash("Texture", "Unrecognized pattern type.");
+		DebugCrash("Unrecognized pattern type.");
 	}
 
 	SDL_Texture *texture = renderer.createTextureFromSurface(surface);

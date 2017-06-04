@@ -23,7 +23,7 @@ const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
 Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
 {
-	Debug::mention("Renderer", "Initializing.");
+	DebugMention("Initializing.");
 
 	assert(width > 0);
 	assert(height > 0);
@@ -40,7 +40,8 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
 				SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
 	}();
-	Debug::check(this->window != nullptr, "Renderer", "SDL_CreateWindow");
+
+	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
 
 	// Initialize renderer context.
 	this->renderer = this->createRenderer();
@@ -52,7 +53,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	// Initialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	Debug::check(this->nativeTexture != nullptr, "Renderer",
+	DebugAssert(this->nativeTexture != nullptr, 
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
 	// Initialize 320x200 frame buffer.
@@ -70,7 +71,7 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 
 Renderer::~Renderer()
 {
-	Debug::mention("Renderer", "Closing.");
+	DebugMention("Closing.");
 
 	SDL_DestroyWindow(this->window);
 
@@ -85,14 +86,14 @@ SDL_Renderer *Renderer::createRenderer()
 
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(
 		this->window, bestDriver, SDL_RENDERER_ACCELERATED);
-	Debug::check(rendererContext != nullptr, "Renderer", "SDL_CreateRenderer");
+	DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer");
 
 	// Set pixel interpolation hint.
 	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
 		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		Debug::mention("Renderer", "Could not set interpolation hint.");
+		DebugMention("Could not set interpolation hint.");
 	}
 
 	// Set the size of the render texture to be the size of the whole screen
@@ -103,18 +104,18 @@ SDL_Renderer *Renderer::createRenderer()
 	// (such as with Linux), so we retry with software.
 	if (!nativeSurface)
 	{
-		Debug::mention("Renderer", "Failed to initialize accelerated SDL_Renderer.");
-		Debug::mention("Renderer", "Trying software fallback.");
+		DebugMention("Failed to initialize accelerated SDL_Renderer.");
+		DebugMention("Trying software fallback.");
 
 		SDL_DestroyRenderer(rendererContext);
 
 		rendererContext = SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_SOFTWARE);
-		Debug::check(rendererContext != nullptr, "Renderer", "SDL_CreateRenderer software");
+		DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer software");
 
 		nativeSurface = this->getWindowSurface();
 	}
 
-	Debug::check(nativeSurface != nullptr, "Renderer", "SDL_GetWindowSurface");
+	DebugAssert(nativeSurface != nullptr, "SDL_GetWindowSurface");
 
 	// Set the device-independent resolution for rendering (i.e., the 
 	// "behind-the-scenes" resolution).
@@ -204,12 +205,11 @@ SDL_Surface *Renderer::getScreenshot() const
 
 	if (status == 0)
 	{
-		Debug::mention("Renderer", "Screenshot taken.");
+		DebugMention("Screenshot taken.");
 	}
 	else
 	{
-		Debug::crash("Renderer", "Couldn't take screenshot, " +
-			std::string(SDL_GetError()));
+		DebugCrash("Couldn't take screenshot, " + std::string(SDL_GetError()));
 	}
 
 	return screenshot;
@@ -288,8 +288,8 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 {
 	// The window's dimensions are resized automatically. The renderer's are not.
 	const auto *nativeSurface = this->getWindowSurface();
-	Debug::check(nativeSurface->w == width, "Renderer", "Mismatched resize widths.");
-	Debug::check(nativeSurface->h == height, "Renderer", "Mismatched resize heights.");
+	DebugAssert(nativeSurface->w == width, "Mismatched resize widths.");
+	DebugAssert(nativeSurface->h == height, "Mismatched resize heights.");
 
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
@@ -297,7 +297,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	SDL_DestroyTexture(this->nativeTexture);
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, width, height);
-	Debug::check(this->nativeTexture != nullptr, "Renderer",
+	DebugAssert(this->nativeTexture != nullptr, 
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
 
 	this->fullGameWindow = fullGameWindow;
@@ -317,7 +317,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		SDL_DestroyTexture(this->gameWorldTexture);
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 			SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-		Debug::check(this->gameWorldTexture != nullptr, "Renderer",
+		DebugAssert(this->gameWorldTexture != nullptr, 
 			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
 
 		// Resize 3D renderer.
@@ -349,8 +349,7 @@ void Renderer::useTransparencyBlending(bool blend)
 {
 	int status = SDL_SetTextureBlendMode(this->originalTexture,
 		blend ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-	Debug::check(status == 0, "Renderer", "Couldn't set blending mode, " +
-		std::string(SDL_GetError()));
+	DebugAssert(status == 0, "Couldn't set blending mode, " + std::string(SDL_GetError()));
 }
 
 void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow)
@@ -376,7 +375,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	// Initialize a new game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-	Debug::check(this->gameWorldTexture != nullptr, "Renderer",
+	DebugAssert(this->gameWorldTexture != nullptr, 
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering program.
@@ -565,7 +564,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	int gameWorldPitch;
 	int status = SDL_LockTexture(this->gameWorldTexture, nullptr, 
 		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
-	Debug::check(status == 0, "Renderer", "Could not lock game world texture, " +
+	DebugAssert(status == 0, "Couldn't lock game world texture, " +
 		std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.

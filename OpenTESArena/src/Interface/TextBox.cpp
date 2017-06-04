@@ -136,8 +136,8 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	}
 	else
 	{
-		Debug::crash("Text Box", "Alignment \"" +
-			std::to_string(static_cast<int>(alignment)) + "\" unrecognized.");
+		DebugCrash("Alignment \"" + std::to_string(static_cast<int>(alignment)) + 
+			"\" unrecognized.");
 	}
 
 	// Change all non-black pixels in the intermediate SDL surface to the desired 

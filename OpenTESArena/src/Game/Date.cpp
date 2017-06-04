@@ -91,13 +91,13 @@ void Date::incrementDay()
 
 void Date::incrementWeekday()
 {
-	Debug::crash("Date", "incrementWeekday() not implemented.");
+	DebugNotImplemented();
 	//this->weekday->incrementWeekday();
 }
 
 void Date::incrementMonth()
 {
-	Debug::crash("Date", "incrementMonth() not implemented.");
+	DebugNotImplemented();
 	/*bool isLastMonth = this->month->isLastMonthInYear();
 
 	this->month->incrementMonth();

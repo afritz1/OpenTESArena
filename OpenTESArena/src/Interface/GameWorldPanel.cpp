@@ -119,7 +119,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = []()
 		{
-			Debug::mention("Game", "Steal.");
+			DebugMention("Steal.");
 		};
 		return std::unique_ptr<Button<>>(new Button<>(147, 151, 29, 22, function));
 	}();
@@ -128,7 +128,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = []()
 		{
-			Debug::mention("Game", "Status.");
+			DebugMention("Status.");
 		};
 		return std::unique_ptr<Button<>>(new Button<>(177, 151, 29, 22, function));
 	}();
@@ -137,7 +137,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = []()
 		{
-			Debug::mention("Game", "Magic.");
+			DebugMention("Magic.");
 		};
 		return std::unique_ptr<Button<>>(new Button<>(88, 175, 29, 22, function));
 	}();
@@ -157,7 +157,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = []()
 		{
-			Debug::mention("Game", "Use item.");
+			DebugMention("Use item.");
 		};
 		return std::unique_ptr<Button<>>(new Button<>(147, 175, 29, 22, function));
 	}();
@@ -166,7 +166,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = []()
 		{
-			Debug::mention("Game", "Camp.");
+			DebugMention("Camp.");
 		};
 		return std::unique_ptr<Button<>>(new Button<>(177, 175, 29, 22, function));
 	}();

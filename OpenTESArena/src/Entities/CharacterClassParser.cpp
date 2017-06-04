@@ -184,35 +184,32 @@ std::vector<CharacterClass> CharacterClassParser::parse()
 		std::vector<std::string> weaponTokens = String::split(weapons);
 
 		// Verify that the strings each have a mapping.
-		Debug::check(CharacterClassParserCategories.find(category) !=
-			CharacterClassParserCategories.end(), "Character Class Parser",
+		DebugAssert(CharacterClassParserCategories.find(category) !=
+			CharacterClassParserCategories.end(), 
 			"Invalid class category \"" + category + "\".");
-		Debug::check(CharacterClassParserMagicBooleans.find(magicBoolean) !=
-			CharacterClassParserMagicBooleans.end(), "Character Class Parser",
+		DebugAssert(CharacterClassParserMagicBooleans.find(magicBoolean) !=
+			CharacterClassParserMagicBooleans.end(), 
 			"Invalid magic boolean \"" + magicBoolean + "\".");
 
 		for (const auto &armor : armorTokens)
 		{
 			bool condition = (armor == none) || (armor == any) ||
 				(CharacterClassParserArmors.find(armor) != CharacterClassParserArmors.end());
-			Debug::check(condition, "Character Class Parser",
-				"Invalid armor \"" + armor + "\".");
+			DebugAssert(condition, "Invalid armor \"" + armor + "\".");
 		}
 
 		for (const auto &shield : shieldTokens)
 		{
 			bool condition = (shield == none) || (shield == any) ||
 				(CharacterClassParserShields.find(shield) != CharacterClassParserShields.end());
-			Debug::check(condition, "Character Class Parser",
-				"Invalid shield \"" + shield + "\".");
+			DebugAssert(condition, "Invalid shield \"" + shield + "\".");
 		}
 
 		for (const auto &weapon : weaponTokens)
 		{
 			bool condition = (weapon == none) || (weapon == any) ||
 				(CharacterClassParserWeapons.find(weapon) != CharacterClassParserWeapons.end());
-			Debug::check(condition, "Character Class Parser",
-				"Invalid weapon \"" + weapon + "\".");
+			DebugAssert(condition, "Invalid weapon \"" + weapon + "\".");
 		}
 
 		// Convert the strings to recognized types.

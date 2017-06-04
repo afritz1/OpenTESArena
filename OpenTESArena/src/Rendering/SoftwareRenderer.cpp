@@ -29,7 +29,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->renderThreadCount = static_cast<int>(std::thread::hardware_concurrency());
 	if (this->renderThreadCount == 0)
 	{
-		Debug::mention("Software Renderer", "hardware_concurrency() returned 0.");
+		DebugMention("hardware_concurrency() returned 0.");
 		this->renderThreadCount = 1;
 	}
 
@@ -46,7 +46,7 @@ void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &d
 	double width, double height, int textureID)
 {
 	// Verify that the ID is not already in use.
-	Debug::check(this->flats.find(id) == this->flats.end(), "Software Renderer",
+	DebugAssert(this->flats.find(id) == this->flats.end(), 
 		"Flat ID \"" + std::to_string(id) + "\" already taken.");
 
 	SoftwareRenderer::Flat flat;
@@ -64,7 +64,7 @@ void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &d
 void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &color, 
 	double intensity)
 {
-	Debug::crash("Software Renderer", "addLight() not implemented.");
+	DebugNotImplemented();
 }
 
 int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
@@ -95,7 +95,7 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2
 	const double *width, const double *height, const int *textureID, const bool *flipped)
 {
 	const auto flatIter = this->flats.find(id);
-	Debug::check(flatIter != this->flats.end(), "Software Renderer",
+	DebugAssert(flatIter != this->flats.end(), 
 		"Cannot update a non-existent flat (" + std::to_string(id) + ").");
 
 	SoftwareRenderer::Flat &flat = flatIter->second;
@@ -135,7 +135,7 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2
 void SoftwareRenderer::updateLight(int id, const Double3 *point,
 	const Double3 *color, const double *intensity)
 {
-	Debug::crash("Software Renderer", "updateLight() not implemented.");
+	DebugNotImplemented();
 }
 
 void SoftwareRenderer::setFogDistance(double fogDistance)
@@ -157,7 +157,7 @@ void SoftwareRenderer::removeFlat(int id)
 {
 	// Make sure the flat exists before removing it.
 	const auto flatIter = this->flats.find(id);
-	Debug::check(flatIter != this->flats.end(), "Software Renderer",
+	DebugAssert(flatIter != this->flats.end(), 
 		"Cannot remove a non-existent flat (" + std::to_string(id) + ").");
 
 	this->flats.erase(flatIter);
@@ -165,7 +165,7 @@ void SoftwareRenderer::removeFlat(int id)
 
 void SoftwareRenderer::removeLight(int id)
 {
-	Debug::crash("Software Renderer", "removeLight() not implemented.");
+	DebugNotImplemented();
 }
 
 void SoftwareRenderer::resize(int width, int height)

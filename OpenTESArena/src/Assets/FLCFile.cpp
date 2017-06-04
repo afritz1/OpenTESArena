@@ -92,7 +92,7 @@ struct ChunkHeader
 FLCFile::FLCFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "FLCFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -114,7 +114,7 @@ FLCFile::FLCFile(const std::string &filename)
 	header.speed = Bytes::getLE32(srcData.data() + 16);
 
 	// This class will only support the format used by Arena (0xAF12) for now.
-	Debug::check(header.type == static_cast<int>(FileType::FLC_TYPE), "FLCFile",
+	DebugAssert(header.type == static_cast<int>(FileType::FLC_TYPE), 
 		"Unsupported file type \"" + std::to_string(header.type) + "\".");
 
 	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
@@ -191,7 +191,7 @@ FLCFile::FLCFile(const std::string &filename)
 		}
 		else
 		{
-			Debug::crash("FLCFile", "Unrecognized frame type \"" +
+			DebugCrash("Unrecognized frame type \"" +
 				std::to_string(static_cast<int>(frameHeader.type)) + "\".");
 		}
 
@@ -212,8 +212,8 @@ void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 {
 	// The number of elements (i.e., "groups" of pixels) should be one.
 	const uint16_t numberOfElements = Bytes::getLE16(chunkData);
-	Debug::check(numberOfElements == 1, "FLCFile",
-		"Unusual palette element count: " + std::to_string(numberOfElements) + ".");
+	DebugAssert(numberOfElements == 1, "Unusual palette element count: " + 
+		std::to_string(numberOfElements) + ".");
 
 	// Skip count and color count should both be ignored (one byte each).
 
@@ -286,7 +286,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 			}
 			else
 			{
-				Debug::crash("FLCFile", "Byte run error (packet cannot be zero).");
+				DebugCrash("Byte run error (packet cannot be zero).");
 			}
 		}
 	}
@@ -423,7 +423,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 			}
 			else
 			{
-				Debug::crash("FLCFile", "Delta packet type cannot be zero.");
+				DebugCrash("Delta packet type cannot be zero.");
 			}
 		}
 	}

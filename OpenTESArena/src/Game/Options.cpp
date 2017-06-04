@@ -27,45 +27,43 @@ Options::Options(std::string &&arenaPath, int screenWidth, int screenHeight, boo
 	: arenaPath(std::move(arenaPath)), soundfont(std::move(soundfont))
 {
 	// Make sure each of the values is in a valid range.
-	Debug::check(screenWidth > 0, "Options", "Screen width must be positive.");
-	Debug::check(screenHeight > 0, "Options", "Screen height must be positive.");
-	Debug::check(targetFPS >= Options::MIN_FPS, "Options", "Target FPS must be at least " +
+	DebugAssert(screenWidth > 0, "Screen width must be positive.");
+	DebugAssert(screenHeight > 0, "Screen height must be positive.");
+	DebugAssert(targetFPS >= Options::MIN_FPS, "Target FPS must be at least " +
 		std::to_string(Options::MIN_FPS) + ".");
-	Debug::check((resolutionScale >= Options::MIN_RESOLUTION_SCALE) && 
-		(resolutionScale <= Options::MAX_RESOLUTION_SCALE), "Options",
-		"Resolution scale must be between " + 
-		String::fixedPrecision(Options::MIN_RESOLUTION_SCALE, 2) + " and " + 
+	DebugAssert((resolutionScale >= Options::MIN_RESOLUTION_SCALE) &&
+		(resolutionScale <= Options::MAX_RESOLUTION_SCALE), "Resolution scale must be between " +
+		String::fixedPrecision(Options::MIN_RESOLUTION_SCALE, 2) + " and " +
 		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
-	Debug::check((verticalFOV >= Options::MIN_VERTICAL_FOV) && 
-		(verticalFOV <= Options::MAX_VERTICAL_FOV), "Options",
-		"Field of view must be between " + 
+	DebugAssert((verticalFOV >= Options::MIN_VERTICAL_FOV) &&
+		(verticalFOV <= Options::MAX_VERTICAL_FOV), "Field of view must be between " +
 		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + " and " +
 		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
-	Debug::check((letterboxAspect >= Options::MIN_LETTERBOX_ASPECT) &&
-		(letterboxAspect <= Options::MAX_LETTERBOX_ASPECT), "Options",
+	DebugAssert((letterboxAspect >= Options::MIN_LETTERBOX_ASPECT) &&
+		(letterboxAspect <= Options::MAX_LETTERBOX_ASPECT),
 		"Letterbox aspect must be between " +
 		String::fixedPrecision(Options::MIN_LETTERBOX_ASPECT, 2) + " and " +
 		String::fixedPrecision(Options::MAX_LETTERBOX_ASPECT, 2) + ".");
-	Debug::check((cursorScale >= Options::MIN_CURSOR_SCALE) &&
-		(cursorScale <= Options::MAX_CURSOR_SCALE), "Options",
+	DebugAssert((cursorScale >= Options::MIN_CURSOR_SCALE) &&
+		(cursorScale <= Options::MAX_CURSOR_SCALE),
 		"Cursor scale must be between " +
 		String::fixedPrecision(Options::MIN_CURSOR_SCALE, 1) + " and " +
 		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
-	Debug::check((hSensitivity >= Options::MIN_HORIZONTAL_SENSITIVITY) &&
-		(hSensitivity <= Options::MAX_HORIZONTAL_SENSITIVITY), "Options",
+	DebugAssert((hSensitivity >= Options::MIN_HORIZONTAL_SENSITIVITY) &&
+		(hSensitivity <= Options::MAX_HORIZONTAL_SENSITIVITY),
 		"Horizontal sensitivity must be between " +
 		String::fixedPrecision(Options::MIN_HORIZONTAL_SENSITIVITY, 1) + " and " +
 		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
-	Debug::check((vSensitivity >= Options::MIN_VERTICAL_SENSITIVITY) &&
-		(vSensitivity <= Options::MAX_VERTICAL_SENSITIVITY), "Options",
+	DebugAssert((vSensitivity >= Options::MIN_VERTICAL_SENSITIVITY) &&
+		(vSensitivity <= Options::MAX_VERTICAL_SENSITIVITY),
 		"Vertical sensitivity must be between " +
 		String::fixedPrecision(Options::MIN_VERTICAL_SENSITIVITY, 1) + " and " +
 		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
-	Debug::check((musicVolume >= 0.0) && (musicVolume <= 1.0), "Options",
+	DebugAssert((musicVolume >= 0.0) && (musicVolume <= 1.0),
 		"Music volume must be between 0.0 and 1.0.");
-	Debug::check((soundVolume >= 0.0) && (soundVolume <= 1.0), "Options",
+	DebugAssert((soundVolume >= 0.0) && (soundVolume <= 1.0),
 		"Sound volume must be between 0.0 and 1.0.");
-	Debug::check(soundChannels >= 1, "Options", "Must have at least one sound channel.");
+	DebugAssert(soundChannels >= 1, "Must have at least one sound channel.");
 
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;

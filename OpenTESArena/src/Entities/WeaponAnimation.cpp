@@ -68,8 +68,8 @@ const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 20.0;
 WeaponAnimation::WeaponAnimation(WeaponType weaponType)
 {
 	// Bows are not allowed because they have no animation.
-	Debug::check((weaponType != WeaponType::LongBow) && (weaponType != WeaponType::ShortBow),
-		"Weapon Animation", "Bows do not have weapon animations.");
+	DebugAssert((weaponType != WeaponType::LongBow) && (weaponType != WeaponType::ShortBow),
+		"Bows do not have weapon animations.");
 
 	this->state = WeaponAnimation::State::Sheathed;
 	this->weaponType = weaponType;

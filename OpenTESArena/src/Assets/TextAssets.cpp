@@ -37,7 +37,7 @@ void TextAssets::parseTemplateDat()
 	const std::string filename = "TEMPLATE.DAT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "Text Assets", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read TEMPLATE.DAT into a string.
 	stream->seekg(0, std::ios::end);
@@ -99,7 +99,7 @@ void TextAssets::parseQuestionTxt()
 	const std::string filename = "QUESTION.TXT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "Text Assets", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read QUESTION.TXT into a string.
 	stream->seekg(0, std::ios::end);
@@ -223,7 +223,7 @@ void TextAssets::parseDungeonTxt()
 	const std::string filename = "DUNGEON.TXT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "Text Assets", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -304,8 +304,8 @@ const std::string &TextAssets::getAExeSegment(const std::pair<int, int> &offsetA
 const std::string &TextAssets::getTemplateDatText(const std::string &key)
 {
 	const auto iter = this->templateDat.find(key);
-	Debug::check(iter != this->templateDat.end(),
-		"Text Assets", "TEMPLATE.DAT key \"" + key + "\" not found.");
+	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" + 
+		key + "\" not found.");
 
 	const std::string &value = iter->second;
 	return value;

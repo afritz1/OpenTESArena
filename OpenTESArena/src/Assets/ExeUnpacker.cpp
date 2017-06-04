@@ -87,7 +87,7 @@ namespace
 				if (bit)
 				{
 					// Right.
-					Debug::check(right != nullptr, "Bit Tree", "No right branch.");
+					DebugAssert(right != nullptr, "No right branch.");
 
 					// Check if it's a leaf.
 					if ((right->left.get() == nullptr) && (right->right.get() == nullptr))
@@ -101,7 +101,7 @@ namespace
 				else
 				{
 					// Left.
-					Debug::check(left != nullptr, "Bit Tree", "No left branch.");
+					DebugAssert(left != nullptr, "No left branch.");
 
 					// Check if it's a leaf.
 					if ((left->left.get() == nullptr) && (left->right.get() == nullptr))
@@ -190,10 +190,10 @@ namespace
 
 ExeUnpacker::ExeUnpacker(const std::string &filename)
 {
-	Debug::mention("Exe Unpacker", "Unpacking \"" + filename + "\".");
+	DebugMention("Unpacking \"" + filename + "\".");
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "Exe Unpacker", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -229,8 +229,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);
-	Debug::check(lastCompWord == 0xFFFF, "Exe Unpacker",
-		"Invalid last compressed word \"" + String::toHexString(lastCompWord) + "\".");
+	DebugAssert(lastCompWord == 0xFFFF, "Invalid last compressed word \"" + 
+		String::toHexString(lastCompWord) + "\".");
 
 	// Calculate length of decompressed data -- more precise method (for A.EXE).
 	const size_t decompLen = [compressedEnd]()

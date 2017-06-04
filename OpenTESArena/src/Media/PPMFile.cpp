@@ -15,8 +15,7 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 
 	// Make sure the PPM type is P3 (ASCII format).
 	std::string ppmType = String::trimLines(lines.at(0));
-	Debug::check(ppmType.compare("P3") == 0, "PPMFile",
-		"Unrecognized PPM type \"" + ppmType + "\".");
+	DebugAssert(ppmType.compare("P3") == 0, "Unrecognized PPM type \"" + ppmType + "\".");
 
 	// Skip the comment at index 1.
 
@@ -29,7 +28,7 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 	// Get the max color intensity (probably just 255).
 	const std::string &maxColor = lines.at(3);
 	const int maxColorValue = std::atoi(maxColor.c_str());
-	Debug::check(maxColorValue == 255, "PPMFile", "Unusual color max \"" +
+	DebugAssert(maxColorValue == 255, "Unusual color max \"" +
 		std::to_string(maxColorValue) + "\".");
 
 	// Start reading RGB components for each pixel.
@@ -43,9 +42,9 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 		const int componentCount = static_cast<int>(components.size());
 
 		// Verify that the length is a multiple of three (for R, G, and B).
-		Debug::check((componentCount % 3) == 0, "PPMFile",
-			"Incorrect component count at line " + std::to_string(y) + " (" +
-			std::to_string(components.size()) + "), should be multiple of 3.");
+		DebugAssert((componentCount % 3) == 0, "Incorrect component count at line " +
+			std::to_string(y) + " (" + std::to_string(components.size()) +
+			"), should be multiple of 3.");
 
 		uint32_t *pixelsPtr = pixels.get();
 		for (int x = 0; x < (componentCount - 2); x += 3)

@@ -12,7 +12,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	: pixels()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "DFAFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();

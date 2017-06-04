@@ -10,7 +10,7 @@ std::string File::toString(const std::string &filename)
 	std::ifstream ifs(filename.c_str(), std::ios::in |
 		std::ios::binary | std::ios::ate);
 
-	Debug::check(ifs.is_open(), "File", "Could not open \"" + filename + "\".");
+	DebugAssert(ifs.is_open(), "Could not open \"" + filename + "\".");
 
 	auto fileSize = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);

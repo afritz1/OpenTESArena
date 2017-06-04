@@ -26,7 +26,7 @@ GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&v
 	: player(std::move(player)), entityManager(std::move(entityManager)),
 	voxelGrid(std::move(voxelGrid))
 {
-	Debug::mention("GameData", "Initializing.");
+	DebugMention("Initializing.");
 
 	this->gameTime = gameTime;
 	this->fogDistance = fogDistance;
@@ -34,7 +34,7 @@ GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&v
 
 GameData::~GameData()
 {
-	Debug::mention("GameData", "Closing.");
+	DebugMention("Closing.");
 }
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,

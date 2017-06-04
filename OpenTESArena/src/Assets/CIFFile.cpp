@@ -28,7 +28,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	: pixels(), offsets(), dimensions()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "CIFFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -228,7 +228,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	}
 	else
 	{
-		Debug::crash("CIFFile", "Unrecognized flags " + std::to_string(flags) + ".");
+		DebugCrash("Unrecognized flags " + std::to_string(flags) + ".");
 	}
 }
 

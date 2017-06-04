@@ -45,7 +45,7 @@ FontFile::FontFile(const std::string &filename)
 	: characters()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "Font File", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -145,7 +145,7 @@ FontFile::~FontFile()
 
 int FontFile::getWidth(char c) const
 {
-	Debug::check((c >= 32) && (c <= 127), "Font File", "Character value \"" +
+	DebugAssert((c >= 32) && (c <= 127), "Character value \"" +
 		std::to_string(c) + "\" out of range (must be ASCII 32-127).");
 
 	// Space (ASCII 32) is at index 0.
@@ -159,7 +159,7 @@ int FontFile::getHeight() const
 
 uint32_t *FontFile::getPixels(char c) const
 {
-	Debug::check((c >= 32) && (c <= 127), "Font File", "Character value \"" +
+	DebugAssert((c >= 32) && (c <= 127), "Character value \"" +
 		std::to_string(c) + "\" out of range (must be ASCII 32-127).");
 
 	// Space (ASCII 32) is at index 0.

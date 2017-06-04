@@ -8,7 +8,7 @@
 MIFFile::MIFFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	Debug::check(stream != nullptr, "MIFFile", "Could not open \"" + filename + "\".");
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	const auto fileSize = stream->tellg();
@@ -47,7 +47,7 @@ MIFFile::MIFFile(const std::string &filename)
 	this->width = mapWidth;
 	this->depth = mapDepth;
 
-	Debug::crash("MIFFile", "Not implemented.");
+	DebugNotImplemented();
 }
 
 MIFFile::~MIFFile()

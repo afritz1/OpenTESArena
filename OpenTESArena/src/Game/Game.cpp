@@ -29,8 +29,7 @@
 
 Game::Game()
 {
-	Debug::mention("Game", "Initializing (Platform: " +
-		std::string(SDL_GetPlatform()) + ").");
+	DebugMention("Initializing (Platform: " + std::string(SDL_GetPlatform()) + ").");
 
 	// Load options from file.
 	this->options = OptionsParser::parse();
