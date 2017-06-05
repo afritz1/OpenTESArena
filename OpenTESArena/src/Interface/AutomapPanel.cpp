@@ -1,5 +1,7 @@
 #include <cassert>
 #include <cmath>
+#include <map>
+#include <vector>
 
 #include "SDL.h"
 
@@ -43,9 +45,24 @@ namespace
 	const Color AutomapFloorDown(0, 0, 255);
 	const Color AutomapWater(109, 138, 174);
 	const Color AutomapLava(255, 0, 0);
+
+	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
+	// These are offsets from the top-left corner of the 3x3 map pixel that the player 
+	// is in.
+	const std::map<CardinalDirectionName, std::vector<Int2>> AutomapPlayerArrowPatterns =
+	{
+		{ CardinalDirectionName::North, { Int2(1, 0), Int2(0, 1), Int2(2, 1) } },
+		{ CardinalDirectionName::NorthEast, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(2, 1), Int2(2, 2) } },
+		{ CardinalDirectionName::East, { Int2(1, 0), Int2(2, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::SouthEast, { Int2(2, 0), Int2(2, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
+		{ CardinalDirectionName::South, { Int2(0, 1), Int2(2, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::SouthWest, { Int2(0, 0), Int2(0, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
+		{ CardinalDirectionName::West, { Int2(1, 0), Int2(0, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
+	};
 }
 
-AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition, 
+AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 	const Double2 &playerDirection, const VoxelGrid &voxelGrid, const std::string &locationName)
 	: Panel(game), automapCenter(playerPosition)
 {
@@ -80,15 +97,15 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 
 	this->mapTexture = [this, &playerPosition, &playerDirection, &voxelGrid]()
 	{
-		// Create scratch surface. For the purposes of the automap, left to right is
-		// the Z axis, and up and down is the X axis, because north is +X in-game.
-		// - To do: the SDL_Surface should have 3x3 pixels per voxel, since the player arrow is 
-		//   drawn with 3 pixels in one automap "pixel". Therefore, it needs to be scaled by 3.
+		// Create scratch surface. For the purposes of the automap, the bottom left corner
+		// is (0, 0), left to right is the Z axis, and up and down is the X axis, because 
+		// north is +X in-game. It is scaled by 3 so that all directions of the player's 
+		// arrow are representable.
 		SDL_Surface *surface = Surface::createSurfaceWithFormat(
-			voxelGrid.getDepth(), voxelGrid.getWidth(), Renderer::DEFAULT_BPP,
+			voxelGrid.getDepth() * 3, voxelGrid.getWidth() * 3, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 
-		// Fill with transparent color.
+		// Fill with transparent color first.
 		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
 
 		// Lambda for returning the Y coordinate of the highest non-air voxel in a column.
@@ -112,14 +129,24 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 			return -1;
 		};
 
-		// For each automap pixel, walk from the highest Y to the lowest. The color depends 
-		// on the last height that was reached (y == -1 is water/lava, 0 is ground, etc.).
-		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		for (int x = 0; x < surface->h; ++x)
+		// Lambda for filling a square in the map surface.
+		auto drawSquare = [surface](int x, int z, uint32_t color)
 		{
-			for (int z = 0; z < surface->w; ++z)
+			SDL_Rect rect;
+			rect.x = z * 3;
+			rect.y = surface->h - 3 - (x * 3);
+			rect.w = 3;
+			rect.h = 3;
+
+			SDL_FillRect(surface, &rect, color);
+		};
+
+		// For each voxel, walk from the highest Y to the lowest. The color depends 
+		// on the final height that was reached (y == -1 is water/lava, 0 is ground, etc.).
+		for (int x = 0; x < voxelGrid.getWidth(); ++x)
+		{
+			for (int z = 0; z < voxelGrid.getDepth(); ++z)
 			{
-				const int index = z + ((surface->h - 1 - x) * surface->w);
 				const int yFloor = getYHitFloor(x, z);
 
 				// Decide which color the pixel will be. Do nothing if ground (y == 0), because
@@ -127,33 +154,52 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 				if (yFloor == -1)
 				{
 					// Water/lava.
-					pixels[index] = AutomapWater.toARGB();
+					drawSquare(x, z, AutomapWater.toARGB());
 				}
 				else if (yFloor > 0)
 				{
 					// Wall.
-					pixels[index] = AutomapWall.toARGB();
+					drawSquare(x, z, AutomapWall.toARGB());
 				}
 
-				// Other types eventually (doors, stairs, ...).
+				// To do: Other types eventually (red doors, blue/green stairs, ...). Some
+				// voxels have priority even if they are between voxels in a column, so this
+				// drawing loop will eventually need to find the highest priority color instead 
+				// of the first hit.
 			}
 		}
 
-		// Draw player last. The player arrow is three pixels, dependent on direction.
-		const Int2 playerVoxelPosition(
-			static_cast<int>(std::floor(playerPosition.x)),
-			static_cast<int>(std::floor(playerPosition.y)));
-		const CardinalDirectionName cardinalDirection = 
-			CardinalDirection::getDirectionName(playerDirection);
-
-		// Verify that the player is within the bounds of the map before drawing. Coordinates 
-		// are reversed because +X is north (up) and Z is aliased as Y.
-		if ((playerVoxelPosition.x >= 0) && (playerVoxelPosition.x < surface->h) &&
-			(playerVoxelPosition.y >= 0) && (playerVoxelPosition.y < surface->w))
+		// Lambda for drawing the player's arrow in the automap. It's drawn differently 
+		// depending on their direction.
+		auto drawPlayer = [surface](int x, int z, const Double2 &direction)
 		{
-			const int index = playerVoxelPosition.y + 
-				((surface->h - 1 - playerVoxelPosition.x) * surface->w);
-			pixels[index] = AutomapPlayer.toARGB();
+			const CardinalDirectionName cardinalDirection =
+				CardinalDirection::getDirectionName(direction);
+
+			const int surfaceX = z * 3;
+			const int surfaceY = surface->h - 3 - (x * 3);
+
+			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+
+			// Draw the player's arrow within the 3x3 map pixel.
+			const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
+			for (auto &offset : offsets)
+			{
+				const int index = (surfaceX + offset.x) +
+					((surfaceY + offset.y) * surface->w);
+				pixels[index] = AutomapPlayer.toARGB();
+			}
+		};
+
+		const int playerVoxelX = static_cast<int>(std::floor(playerPosition.x));
+		const int playerVoxelZ = static_cast<int>(std::floor(playerPosition.y));
+
+		// Draw player last. Verify that the player is within the bounds of the map 
+		// before drawing.
+		if ((playerVoxelX >= 0) && (playerVoxelX < voxelGrid.getWidth()) &&
+			(playerVoxelZ >= 0) && (playerVoxelZ < voxelGrid.getDepth()))
+		{
+			drawPlayer(playerVoxelX, playerVoxelZ, playerDirection);
 		}
 
 		auto &renderer = this->getGame()->getRenderer();
@@ -271,8 +317,8 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(automapBackground.get());
 
 	// Draw automap.
-	renderer.drawToOriginal(this->mapTexture->get(), 25, 40, 
-		this->mapTexture->getWidth() * 3, this->mapTexture->getHeight() * 3);
+	renderer.drawToOriginal(this->mapTexture->get(), 25, 40,
+		this->mapTexture->getWidth(), this->mapTexture->getHeight());
 
 	// Draw text: title.
 	renderer.drawToOriginal(this->locationTextBox->getTexture(),
