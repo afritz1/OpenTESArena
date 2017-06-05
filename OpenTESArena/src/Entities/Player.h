@@ -6,6 +6,7 @@
 #include "WeaponAnimation.h"
 
 class Game;
+class VoxelGrid;
 
 enum class GenderName;
 
@@ -22,6 +23,9 @@ private:
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	WeaponAnimation weaponAnimation;
 	// Other stats...
+
+	// Change the player's velocity based on collision with objects in the world.
+	void handleCollision(const VoxelGrid &voxelGrid, double dt);
 public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,

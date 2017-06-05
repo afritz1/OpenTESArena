@@ -22,3 +22,9 @@ VoxelData::~VoxelData()
 {
 
 }
+
+bool VoxelData::isAir() const
+{
+	return (this->sideID == 0) && (this->floorID == 0) &&
+		(this->ceilingID == 0);
+}

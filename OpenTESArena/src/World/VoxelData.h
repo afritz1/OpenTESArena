@@ -5,6 +5,8 @@
 // Since there will only be a few kinds of voxel data per world, their size
 // can be much larger than just a byte or two.
 
+// A voxel is "air" if all of its IDs are zero.
+
 // Perhaps much later, when voxel destruction spells like Passwall are added, 
 // more data could be added here that represents a percentage of "fade".
 
@@ -26,6 +28,9 @@ public:
 	VoxelData(int id);
 
 	~VoxelData();
+
+	// Returns whether all of the voxel's sides have an ID of zero.
+	bool isAir() const;
 };
 
 #endif
