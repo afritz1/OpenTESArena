@@ -42,9 +42,9 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	assert(southWest.isNormalized());
 	assert(northWest.isNormalized());
 
-	// Each direction gets an eighth of the circle's area. In dot product terms,
-	// that's an allowance of 0.25 deviation from the direction.
-	const double deviation = 0.25;
+	// Each direction gets an equal slice of the circle's area.
+	// (I'm not sure why the deviation is 1/12th; at a glance it should be 1/8th).
+	const double deviation = 1.0 / 12.0;
 	auto isCloseEnoughTo = [deviation, &direction](const Double2 &cardinalDirection)
 	{
 		return direction.dot(cardinalDirection) >= (1.0 - deviation);
