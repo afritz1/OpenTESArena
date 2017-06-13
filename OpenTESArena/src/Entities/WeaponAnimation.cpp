@@ -63,7 +63,7 @@ namespace
 	};
 }
 
-const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 20.0;
+const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 18.0;
 
 WeaponAnimation::WeaponAnimation(WeaponType weaponType)
 {
@@ -133,9 +133,9 @@ void WeaponAnimation::tick(double dt)
 		this->currentTime += dt;
 
 		// Update the index if current time has passed the time per frame.
-		if (this->currentTime >= this->timePerFrame)
+		while (this->currentTime >= this->timePerFrame)
 		{
-			this->currentTime = 0.0;
+			this->currentTime -= this->timePerFrame;
 			this->rangeIndex++;
 
 			// Get the current range of frame indices.
