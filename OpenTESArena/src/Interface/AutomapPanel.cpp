@@ -69,12 +69,14 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 	this->locationTextBox = [game, &locationName]()
 	{
 		Int2 center(120, 28);
-		Color color(56, 16, 12); // Shadow color is (150, 101, 52).
+		Color color(56, 16, 12);
+		Color shadowColor(150, 101, 52);
 		auto &font = game->getFontManager().getFont(FontName::A);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
+			shadowColor,
 			locationName,
 			font,
 			alignment,
@@ -321,6 +323,8 @@ void AutomapPanel::render(Renderer &renderer)
 		this->mapTexture->getWidth(), this->mapTexture->getHeight());
 
 	// Draw text: title.
+	renderer.drawToOriginal(this->locationTextBox->getShadowTexture(),
+		this->locationTextBox->getX() + 2, this->locationTextBox->getY() + 2);
 	renderer.drawToOriginal(this->locationTextBox->getTexture(),
 		this->locationTextBox->getX(), this->locationTextBox->getY());
 

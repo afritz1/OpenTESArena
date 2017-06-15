@@ -22,12 +22,16 @@ class TextBox
 {
 private:
 	SDL_Surface *surface; // For ListBox compatibility. Identical to "texture".
-	SDL_Texture *texture;
+	SDL_Texture *texture, *shadowTexture;
 	Color textColor;
 	FontName fontName;
 	TextAlignment alignment;
 	int x, y;
 public:
+	TextBox(int x, int y, const Color &textColor, const Color &shadowColor,
+		const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer);
+	TextBox(const Int2 &center, const Color &textColor, const Color &shadowColor, 
+		const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer);
 	TextBox(int x, int y, const Color &textColor, const std::string &text,
 		const Font &font, TextAlignment alignment, Renderer &renderer);
 	TextBox(const Int2 &center, const Color &textColor, const std::string &text,
@@ -41,6 +45,9 @@ public:
 	const Color &getTextColor() const;
 	SDL_Surface *getSurface() const;
 	SDL_Texture *getTexture() const;
+
+	// Gets the copy of the text box texture that uses the shadow color for text.
+	SDL_Texture *getShadowTexture() const;
 };
 
 #endif

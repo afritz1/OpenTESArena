@@ -14,8 +14,7 @@ class TextBox;
 class PauseMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox,
-		optionsTextBox, optionsShadowTextBox;
+	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
 	std::unique_ptr<Button<Game*>> loadButton;
 	std::unique_ptr<Button<>> exitButton;
 	std::unique_ptr<Button<Game*>> newButton, saveButton, resumeButton, optionsButton;

@@ -91,28 +91,14 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 	{
 		Int2 center(234, 96);
 		Color color(215, 158, 4);
+		Color shadowColor(101, 77, 24);
 		std::string text("OPTIONS");
 		auto &font = game->getFontManager().getFont(FontName::Arena);
 		auto alignment = TextAlignment::Center;
 		return std::unique_ptr<TextBox>(new TextBox(
 			center,
 			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
-	}();
-
-	this->optionsShadowTextBox = [game]()
-	{
-		Int2 center(233, 97);
-		Color color(101, 77, 24);
-		std::string text("OPTIONS");
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
+			shadowColor,
 			text,
 			font,
 			alignment,
@@ -440,8 +426,8 @@ void PauseMenuPanel::render(Renderer &renderer)
 		this->musicTextBox->getX(), this->musicTextBox->getY());
 	renderer.drawToOriginal(this->soundTextBox->getTexture(),
 		this->soundTextBox->getX(), this->soundTextBox->getY());
-	renderer.drawToOriginal(this->optionsShadowTextBox->getTexture(),
-		this->optionsShadowTextBox->getX(), this->optionsShadowTextBox->getY());
+	renderer.drawToOriginal(this->optionsTextBox->getShadowTexture(),
+		this->optionsTextBox->getX() - 1, this->optionsTextBox->getY() + 1);
 	renderer.drawToOriginal(this->optionsTextBox->getTexture(),
 		this->optionsTextBox->getX(), this->optionsTextBox->getY());
 

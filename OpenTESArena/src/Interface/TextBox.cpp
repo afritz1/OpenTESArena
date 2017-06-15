@@ -10,8 +10,8 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
-	const Font &font, TextAlignment alignment, Renderer &renderer)
+TextBox::TextBox(int x, int y, const Color &textColor, const Color &shadowColor, 
+	const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer)
 	: textColor(textColor)
 {
 	this->x = x;
@@ -136,33 +136,52 @@ TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
 	}
 	else
 	{
-		DebugCrash("Alignment \"" + std::to_string(static_cast<int>(alignment)) + 
+		DebugCrash("Alignment \"" + std::to_string(static_cast<int>(alignment)) +
 			"\" unrecognized.");
 	}
 
-	// Change all non-black pixels in the intermediate SDL surface to the desired 
-	// text color.
+	// Make a temporary surface for use with the shadow texture.
+	SDL_Surface *shadowSurface = [this]()
+	{
+		SDL_Surface *tempSurface = Surface::createSurfaceWithFormat(
+			this->surface->w, this->surface->h, 
+			this->surface->format->BitsPerPixel, this->surface->format->format);
+		SDL_memcpy(tempSurface->pixels, this->surface->pixels,
+			this->surface->h * this->surface->pitch);
+
+		return tempSurface;
+	}();
+
+	// Change all non-black pixels in the scratch SDL surfaces to the desired 
+	// text colors.
 	uint32_t *pixels = static_cast<uint32_t*>(this->surface->pixels);
+	uint32_t *shadowPixels = static_cast<uint32_t*>(shadowSurface->pixels);
 	const int pixelCount = textureWidth * textureHeight;
 	const uint32_t black = SDL_MapRGBA(this->surface->format, 0, 0, 0, 0);
 	const uint32_t desiredColor = SDL_MapRGBA(this->surface->format, textColor.r,
 		textColor.g, textColor.b, textColor.a);
+	const uint32_t desiredShadowColor = SDL_MapRGBA(shadowSurface->format, 
+		shadowColor.r, shadowColor.g, shadowColor.b, shadowColor.a);
 
 	for (int i = 0; i < pixelCount; ++i)
 	{
 		if (pixels[i] != black)
 		{
 			pixels[i] = desiredColor;
+			shadowPixels[i] = desiredShadowColor;
 		}
 	}
 
-	// Create the destination SDL texture (keeping the surface's color key).
+	// Create the destination SDL textures (keeping the surfaces' color keys).
 	this->texture = renderer.createTextureFromSurface(this->surface);
+	this->shadowTexture = renderer.createTextureFromSurface(shadowSurface);
+
+	SDL_FreeSurface(shadowSurface);
 }
 
-TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text,
-	const Font &font, TextAlignment alignment, Renderer &renderer)
-	: TextBox(center.x, center.y, textColor, text, font, alignment, renderer)
+TextBox::TextBox(const Int2 &center, const Color &textColor, const Color &shadowColor, 
+	const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer)
+	: TextBox(center.x, center.y, textColor, shadowColor, text, font, alignment, renderer)
 {
 	// Just shift the resulting text box coordinates left and up to center it.
 	int width, height;
@@ -172,10 +191,19 @@ TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &
 	this->y -= height / 2;
 }
 
+TextBox::TextBox(int x, int y, const Color &textColor, const std::string &text,
+	const Font &font, TextAlignment alignment, Renderer &renderer)
+	: TextBox(x, y, textColor, Color::Black, text, font, alignment, renderer) { }
+
+TextBox::TextBox(const Int2 &center, const Color &textColor, const std::string &text,
+	const Font &font, TextAlignment alignment, Renderer &renderer)
+	: TextBox(center, textColor, Color::Black, text, font, alignment, renderer) { }
+
 TextBox::~TextBox()
 {
 	SDL_FreeSurface(this->surface);
 	SDL_DestroyTexture(this->texture);
+	SDL_DestroyTexture(this->shadowTexture);
 }
 
 int TextBox::getX() const
@@ -211,4 +239,9 @@ SDL_Surface *TextBox::getSurface() const
 SDL_Texture *TextBox::getTexture() const
 {
 	return this->texture;
+}
+
+SDL_Texture *TextBox::getShadowTexture() const
+{
+	return this->shadowTexture;
 }
