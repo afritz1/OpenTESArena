@@ -49,12 +49,13 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 		uint32_t *pixelsPtr = pixels.get();
 		for (int x = 0; x < (componentCount - 2); x += 3)
 		{
+			const uint8_t a = 255;
 			const uint8_t r = std::atoi(components.at(x).c_str());
 			const uint8_t g = std::atoi(components.at(x + 1).c_str());
 			const uint8_t b = std::atoi(components.at(x + 2).c_str());
 
-			// Write the pixel to the buffer in 0x00RRGGBB format.
-			pixelsPtr[(x / 3) + (y * width)] = (r << 16) | (g << 8) | b;
+			// Write the pixel to the buffer in 0xAARRGGBB format.
+			pixelsPtr[(x / 3) + (y * width)] = (a << 24) | (r << 16) | (g << 8) | b;
 		}
 	}
 

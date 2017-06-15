@@ -55,12 +55,13 @@ Game::Game()
 	// Load various plain text assets.
 	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
 
-	// Set window icon.
+	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
 	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
 	SDL_Surface *icon = Surface::createSurfaceWithFormatFrom(iconPixels.get(),
 		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
+	SDL_SetColorKey(icon, SDL_TRUE, SDL_MapRGBA(icon->format, 0, 0, 0, 255));
 	this->renderer->setWindowIcon(icon);
 	SDL_FreeSurface(icon);
 
