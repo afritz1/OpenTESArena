@@ -6,6 +6,7 @@
 #include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
+#include "../Rendering/Texture.h"
 
 // If Escape is pressed here, just go to the class list (even if the user went
 // the answer questions path instead).
@@ -18,14 +19,13 @@
 
 class Renderer;
 class TextBox;
-class Texture;
 
 class ChooseNamePanel : public Panel
 {
 private:
 	static const int MAX_NAME_LENGTH;
 
-	std::unique_ptr<Texture> parchment;
+	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	std::unique_ptr<Button<Game*>> backToClassButton;
 	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>> acceptButton;

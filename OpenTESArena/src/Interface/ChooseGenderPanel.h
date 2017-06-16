@@ -6,15 +6,15 @@
 #include "Button.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
+#include "../Rendering/Texture.h"
 
 class Renderer;
 class TextBox;
-class Texture;
 
 class ChooseGenderPanel : public Panel
 {
 private:
-	std::unique_ptr<Texture> parchment;
+	Texture parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
 	std::unique_ptr<Button<Game*, const CharacterClass&>> backToNameButton;
 	std::unique_ptr<Button<Game*, const CharacterClass&, 

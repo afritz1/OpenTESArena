@@ -24,15 +24,14 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass,
 	const std::string &name)
 	: Panel(game), charClass(charClass), name(name)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+	this->parchment = Texture(Texture::generate(
 		Texture::PatternType::Parchment, 180, 40, game->getTextureManager(),
-		game->getRenderer())));
+		game->getRenderer()));
 
 	this->genderTextBox = [game]()
 	{
@@ -176,12 +175,12 @@ void ChooseGenderPanel::render(Renderer &renderer)
 
 	// Draw parchments: title, male, and female.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -
-		(this->parchment->getWidth() / 2);
+		(this->parchment.getWidth() / 2);
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) -
-		(this->parchment->getHeight() / 2);
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY - 20);
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 20);
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 60);
+		(this->parchment.getHeight() / 2);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, male, and female.
 	renderer.drawToOriginal(this->genderTextBox->getTexture(),

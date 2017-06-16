@@ -6,10 +6,10 @@
 #include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
+#include "../Rendering/Texture.h"
 
 class Renderer;
 class TextBox;
-class Texture;
 class VoxelGrid;
 
 class AutomapPanel : public Panel
@@ -17,7 +17,7 @@ class AutomapPanel : public Panel
 private:
 	std::unique_ptr<TextBox> locationTextBox;
 	std::unique_ptr<Button<Game*>> backToGameButton;
-	std::unique_ptr<Texture> mapTexture;
+	Texture mapTexture;
 	Double2 automapCenter; // Displayed XZ coordinate offset from (0, 0).
 
 	// Listen for when the LMB is held on a compass direction.

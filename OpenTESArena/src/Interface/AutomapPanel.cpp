@@ -25,7 +25,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
@@ -205,7 +204,7 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 		}
 
 		auto &renderer = this->getGame()->getRenderer();
-		std::unique_ptr<Texture> texture(new Texture(renderer.createTextureFromSurface(surface)));
+		Texture texture(renderer.createTextureFromSurface(surface));
 		SDL_FreeSurface(surface);
 
 		return texture;
@@ -319,8 +318,8 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(automapBackground.get());
 
 	// Draw automap.
-	renderer.drawToOriginal(this->mapTexture->get(), 25, 40,
-		this->mapTexture->getWidth(), this->mapTexture->getHeight());
+	renderer.drawToOriginal(this->mapTexture.get(), 25, 40,
+		this->mapTexture.getWidth(), this->mapTexture.getHeight());
 
 	// Draw text: title.
 	renderer.drawToOriginal(this->locationTextBox->getShadowTexture(),

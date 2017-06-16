@@ -24,7 +24,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
 namespace
@@ -51,9 +50,9 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
 	: Panel(game), charClass(charClass), name(name), gender(gender)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+	this->parchment = Texture(Texture::generate(
 		Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),
-		game->getRenderer())));
+		game->getRenderer()));
 
 	this->initialTextBox = [game, charClass, name]()
 	{
@@ -232,9 +231,9 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw visible parchments and text.
 	if (this->initialTextBoxVisible)
 	{
-		renderer.drawToOriginal(this->parchment->get(),
-			(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2) - 1,
-			(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2) - 1);
+		renderer.drawToOriginal(this->parchment.get(),
+			(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1,
+			(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) - 1);
 		renderer.drawToOriginal(this->initialTextBox->getTexture(),
 			this->initialTextBox->getX(), this->initialTextBox->getY());
 	}

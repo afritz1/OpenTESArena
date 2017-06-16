@@ -24,7 +24,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
@@ -32,9 +31,9 @@ const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 	: Panel(game), charClass(charClass)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+	this->parchment = Texture(Texture::generate(
 		Texture::PatternType::Parchment, 300, 60, game->getTextureManager(),
-		game->getRenderer())));
+		game->getRenderer()));
 
 	this->titleTextBox = [game, charClass]()
 	{
@@ -240,9 +239,9 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.drawToOriginal(background.get());
 
 	// Draw parchment: title.
-	renderer.drawToOriginal(this->parchment->get(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment->getWidth() / 2),
-		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment->getHeight() / 2));
+	renderer.drawToOriginal(this->parchment.get(),
+		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2),
+		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2));
 
 	// Draw text: title, name.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),

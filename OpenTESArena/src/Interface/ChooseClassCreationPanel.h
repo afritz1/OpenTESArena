@@ -5,6 +5,7 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Rendering/Texture.h"
 
 // This panel is for the "How do you wish to select your class?" screen.
 
@@ -13,12 +14,11 @@
 
 class Renderer;
 class TextBox;
-class Texture;
 
 class ChooseClassCreationPanel : public Panel
 {
 private:
-	std::unique_ptr<Texture> parchment;
+	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
 	std::unique_ptr<Button<Game*>> backToMainMenuButton, generateButton, selectButton;
 

@@ -10,6 +10,11 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 
+Texture::Texture()
+{
+	this->texture = nullptr;
+}
+
 Texture::Texture(SDL_Texture *texture)
 {
 	assert(texture != nullptr);
@@ -24,7 +29,17 @@ Texture::Texture(Texture &&texture)
 
 Texture::~Texture()
 {
-	SDL_DestroyTexture(this->texture);
+	if (this->texture != nullptr)
+	{
+		SDL_DestroyTexture(this->texture);
+	}
+}
+
+Texture &Texture::operator=(Texture &&texture)
+{
+	this->texture = texture.texture;
+	texture.texture = nullptr;
+	return *this;
 }
 
 SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
@@ -231,6 +246,8 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 
 int Texture::getWidth() const
 {
+	assert(this->texture != nullptr);
+
 	int width;
 	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, nullptr);
 
@@ -239,6 +256,8 @@ int Texture::getWidth() const
 
 int Texture::getHeight() const
 {
+	assert(this->texture != nullptr);
+
 	int height;
 	SDL_QueryTexture(this->texture, nullptr, nullptr, nullptr, &height);
 

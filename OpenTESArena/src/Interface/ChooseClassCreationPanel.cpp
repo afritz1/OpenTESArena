@@ -24,15 +24,14 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 	: Panel(game)
 {
-	this->parchment = std::unique_ptr<Texture>(new Texture(Texture::generate(
+	this->parchment = Texture(Texture::generate(
 		Texture::PatternType::Parchment, 180, 40, game->getTextureManager(), 
-		game->getRenderer())));
+		game->getRenderer()));
 
 	this->titleTextBox = [game]()
 	{
@@ -196,13 +195,13 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	// Draw parchments: title, generate, select.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
-		(this->parchment->getWidth() / 2);
+		(this->parchment.getWidth() / 2);
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
-		(this->parchment->getHeight() / 2);
+		(this->parchment.getHeight() / 2);
 
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY - 20);
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 20);
-	renderer.drawToOriginal(this->parchment->get(), parchmentX, parchmentY + 60);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
+	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, generate, select.
 	renderer.drawToOriginal(this->titleTextBox->getTexture(),
