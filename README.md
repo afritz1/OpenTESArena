@@ -35,7 +35,7 @@ I've been experimenting with various methods of rendering looking for the right 
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
 
-Check out the Projects tab to see what's currently on the to-do list, and the Wiki for a more in-depth project scope. Open a pull request if you'd like to contribute.
+Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
 ## Installation
 
