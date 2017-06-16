@@ -39,21 +39,34 @@ Check out the Projects tab to see what's currently on the to-do list, and the Wi
 
 ## Installation
 
-The most recent builds can be found in the [releases](https://github.com/afritz1/OpenTESArena/releases) tab. The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find where the MIDI config and game files are.
+The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find where the MIDI config and game files are.
 
-#### Installing the Arena game data (Windows, Linux + WINE):
+#### Windows
+- Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
 - Extract Arena106Setup.zip.
 - Run Arena106.exe.
-- Pick a destination folder anywhere.
-- Install.
+- Pick a destination folder anywhere and install.
 - Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
+- If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
-#### Obtaining a MIDI sound patches library:
+#### Linux (Ubuntu 16.04)
+Substitute `<version>` with the current version number (i.e., `0.4.0`), and `<arch>` with the desired architecture (`32` or `64`).
+```bash
+sudo apt-get install wget unzip rar
+wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
+wget https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-<version>/opentesarena-<version>-Linux<arch>.tar.gz
+tar xvzf opentesarena-<version>-Linux<arch>.tar.gz
+cd opentesarena-<version>/data
+unzip ../../Arena106Setup.zip
+rar x Arena106.exe
+cd ..
+./run.sh
+```
+
+#### Obtaining a MIDI sound patches library (for music):
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
 - If you would like to use a different sound patches library, simply edit `Soundfont` in `options/options.txt` to point to another existing MIDI `.cfg` file.
-
-If you receive an error about "alcOpenDevice" on Windows, you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
 ## Building from source
 
