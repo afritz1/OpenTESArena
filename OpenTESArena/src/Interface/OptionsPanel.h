@@ -46,6 +46,8 @@ private:
 	void updateLetterboxAspectText(double letterboxAspect);
 	void updateHorizontalSensitivityText(double hSensitivity);
 	void updateVerticalSensitivityText(double vSensitivity);
+
+	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	OptionsPanel(Game *game);
 	virtual ~OptionsPanel();

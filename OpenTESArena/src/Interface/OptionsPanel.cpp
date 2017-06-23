@@ -698,6 +698,25 @@ void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
 	}();
 }
 
+void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
+{
+	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
+
+	Texture tooltip(Panel::createTooltip(text, font, renderer));
+
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 originalPosition = renderer.nativePointToOriginal(
+		inputManager.getMousePosition());
+	const int mouseX = originalPosition.x;
+	const int mouseY = originalPosition.y;
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+		(mouseX + 8) : (mouseX - tooltip.getWidth());
+	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+		mouseY : (mouseY - tooltip.getHeight());
+
+	renderer.drawToOriginal(tooltip.get(), x, y);
+}
+
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -855,14 +874,57 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawToOriginal(this->vSensitivityTextBox->getTexture(),
 		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
 
+	const auto &inputManager = this->getGame()->getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+
+	// Draw tooltips for certain things.
+	const Rect resolutionScaleRect(
+		this->resolutionScaleTextBox->getX(),
+		this->resolutionScaleTextBox->getY(),
+		this->resolutionScaleTextBox->getSurface()->w,
+		this->resolutionScaleTextBox->getSurface()->h);
+	const Rect playerInterfaceRect(
+		this->playerInterfaceTextBox->getX(),
+		this->playerInterfaceTextBox->getY(),
+		this->playerInterfaceTextBox->getSurface()->w,
+		this->playerInterfaceTextBox->getSurface()->h);
+	const Rect letterboxAspectRect(
+		this->letterboxAspectTextBox->getX(),
+		this->letterboxAspectTextBox->getY(),
+		this->letterboxAspectTextBox->getSurface()->w,
+		this->letterboxAspectTextBox->getSurface()->h);
+	const Rect vSensitivityRect(
+		this->vSensitivityTextBox->getX(),
+		this->vSensitivityTextBox->getY(),
+		this->vSensitivityTextBox->getSurface()->w,
+		this->vSensitivityTextBox->getSurface()->h);
+
+	if (resolutionScaleRect.contains(originalPosition))
+	{
+		this->drawTooltip("Percent of the window resolution\nto use for 3D rendering.", renderer);
+	}
+	else if (playerInterfaceRect.contains(originalPosition))
+	{
+		this->drawTooltip("Modern mode uses a new minimal\ninterface with free-look.", renderer);
+	}
+	else if (letterboxAspectRect.contains(originalPosition))
+	{
+		this->drawTooltip(std::string("1.60 represents the 'unaltered' look,\n") +
+			"and 1.33 represents the 'tall pixels'\n" +
+			"look on a 640x480 monitor.", renderer);
+	}
+	else if (vSensitivityRect.contains(originalPosition))
+	{
+		this->drawTooltip("Only affects vertical camera look\nin modern interface mode.", renderer);
+	}
+
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
 
 	// Draw cursor.
 	const auto &cursor = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor));
-	const auto &inputManager = this->getGame()->getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
 	const auto &options = this->getGame()->getOptions();
 	renderer.drawToNative(cursor.get(),
 		mousePosition.x, mousePosition.y,
