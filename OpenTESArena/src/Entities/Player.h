@@ -13,6 +13,16 @@ enum class GenderName;
 class Player
 {
 private:
+	static const double HEIGHT; // Distance from player's feet to head.
+	static const double STEPPING_HEIGHT; // Allowed change in height for stepping on stairs.
+	static const double JUMP_VELOCITY; // Instantaneous change in Y velocity when jumping.
+	
+	// Magnitude of -Y acceleration in the air.
+	static const double GRAVITY;
+
+	// Friction for slowing the player down on ground.
+	static const double FRICTION;
+
 	std::string displayName;
 	GenderName gender;
 	int raceID;
@@ -24,8 +34,17 @@ private:
 	WeaponAnimation weaponAnimation;
 	// Other stats...
 
-	// Change the player's velocity based on collision with objects in the world.
+	// Gets the voxel coordinates of the player.
+	Int3 getVoxelPosition() const;
+
+	// Gets the Y position of the player's feet.
+	double getFeetY() const;
+
+	// Changes the player's velocity based on collision with objects in the world.
 	void handleCollision(const VoxelGrid &voxelGrid, double dt);
+
+	// Updates the player's position and velocity based on interactions with the world.
+	void updatePhysics(const VoxelGrid &voxelGrid, double dt);
 public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
@@ -50,8 +69,14 @@ public:
 	// Gets the bird's eye view of the player's direction (in the XZ plane).
 	Double2 getGroundDirection() const;
 
+	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
+	double getJumpMagnitude() const;
+
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();
+
+	// Returns whether the player is standing on ground and with no Y velocity.
+	bool onGround(const VoxelGrid &voxelGrid) const;
 
 	// Teleports the player to a point.
 	void teleport(const Double3 &position);
@@ -66,6 +91,10 @@ public:
 	// and delta time, as well as whether the player is running.
 	void accelerate(const Double3 &direction, double magnitude,
 		bool isRunning, double dt);
+
+	// Changes the velocity instantly. Intended for instantaneous acceleration like 
+	// jumping.
+	void accelerateInstant(const Double3 &direction, double magnitude);
 
 	// Tick the player by delta time for motion, etc..
 	void tick(Game &game, double dt);

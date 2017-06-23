@@ -14,6 +14,12 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
+const double Player::HEIGHT = 0.70;
+const double Player::STEPPING_HEIGHT = 0.25;
+const double Player::JUMP_VELOCITY = 3.0;
+const double Player::GRAVITY = 9.81;
+const double Player::FRICTION = 4.0;
+
 Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
@@ -83,9 +89,67 @@ Double2 Player::getGroundDirection() const
 	return Double2(direction.x, direction.z).normalized();
 }
 
+double Player::getJumpMagnitude() const
+{
+	return Player::JUMP_VELOCITY;
+}
+
 WeaponAnimation &Player::getWeaponAnimation()
 {
 	return this->weaponAnimation;
+}
+
+Int3 Player::getVoxelPosition() const
+{
+	return Int3(
+		static_cast<int>(std::floor(this->camera.position.x)),
+		static_cast<int>(std::floor(this->camera.position.y)),
+		static_cast<int>(std::floor(this->camera.position.z)));
+}
+
+double Player::getFeetY() const
+{
+	return this->camera.position.y - Player::HEIGHT;
+}
+
+bool Player::onGround(const VoxelGrid &voxelGrid) const
+{
+	// To do: find a non-hack way to do this.
+
+	return true;
+
+	// This function seems kind of like a hack right now, since the player's feet
+	// will frequently be at Y == 1.0, which is one voxel above the ground, and
+	// it won't be considered as "on ground" unless it checks the voxel underneath
+	// of this particular Y position (due to the rounding rules being used).
+	/*const double feetY = this->getFeetY();
+	const double feetVoxelYPos = std::floor(feetY);
+	const bool closeEnoughToLowerVoxel = std::abs(feetY - feetVoxelYPos) < EPSILON;
+	const Int3 feetVoxel(
+		static_cast<int>(std::floor(this->camera.position.x)),
+		static_cast<int>(feetVoxelYPos) - (closeEnoughToLowerVoxel ? 1 : 0),
+		static_cast<int>(std::floor(this->camera.position.z)));
+
+	const bool insideWorld = [&feetVoxel, &voxelGrid]()
+	{
+		return (feetVoxel.x >= 0) && (feetVoxel.x < voxelGrid.getWidth()) &&
+			(feetVoxel.y >= 0) && (feetVoxel.y < voxelGrid.getHeight()) &&
+			(feetVoxel.z >= 0) && (feetVoxel.z < voxelGrid.getDepth());
+	}();
+
+	// Don't try to dereference the voxel grid if the player's feet are outside.
+	if (insideWorld)
+	{
+		const char feetVoxelID = voxelGrid.getVoxels()[feetVoxel.x +
+			(feetVoxel.y * voxelGrid.getWidth()) +
+			(feetVoxel.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(feetVoxelID);
+
+		return (this->velocity.y == 0.0) && !voxelData.isAir() &&
+			(feetY >= (feetVoxelYPos + voxelData.yOffset)) &&
+			(feetY <= (feetVoxelYPos + voxelData.yOffset + voxelData.ySize));
+	}
+	else return false;*/
 }
 
 void Player::teleport(const Double3 &position)
@@ -106,12 +170,6 @@ void Player::lookAt(const Double3 &point)
 
 void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 {
-	// To do: Y collision (player standing height == ...?).
-	const Int3 playerVoxel(
-		static_cast<int>(std::floor(this->camera.position.x)),
-		static_cast<int>(std::floor(this->camera.position.y)),
-		static_cast<int>(std::floor(this->camera.position.z)));
-
 	auto getVoxel = [&voxelGrid](int x, int y, int z)
 	{
 		// Voxels outside the world are air.
@@ -129,18 +187,27 @@ void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 		}
 	};
 
+	const double feetY = this->getFeetY();
+
+	// Coordinates of the base of the voxel the feet are in.
+	const double feetVoxelYPos = std::floor(feetY + (this->velocity.y * dt));
+
+	// Get the voxel data for each voxel the player would touch on each axis.
+	const Int3 playerVoxel = this->getVoxelPosition();
 	const VoxelData &xVoxel = getVoxel(
 		static_cast<int>(std::floor(this->camera.position.x + (this->velocity.x * dt))),
 		playerVoxel.y,
+		playerVoxel.z);
+	const VoxelData &yVoxel = getVoxel(
+		playerVoxel.x,
+		static_cast<int>(feetVoxelYPos),
 		playerVoxel.z);
 	const VoxelData &zVoxel = getVoxel(
 		playerVoxel.x,
 		playerVoxel.y,
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
 
-	// To do: use an axis-aligned bounding box instead of a point, and take the voxel data
-	// Y size and offset into consideration as well. There should be collision detection
-	// from the player's feet to the player's head.
+	// Check horizontal collisions.
 	if (!xVoxel.isAir())
 	{
 		this->velocity.x = 0.0;
@@ -150,6 +217,11 @@ void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 	{
 		this->velocity.z = 0.0;
 	}
+
+	// To do: Y collision (snap Y position above ground if inside ground?).
+	this->velocity.y = 0.0;
+
+	// To do: use an axis-aligned bounding box or cylinder instead of a point.
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude,
@@ -161,20 +233,20 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 	assert(direction.isNormalized());
 
 	// Simple Euler integration for updating velocity.
-	Double3 newVelocity = this->velocity + ((direction * magnitude) * dt);
+	Double3 newVelocity = this->velocity + (direction * (magnitude * dt));
 
 	if (std::isfinite(newVelocity.length()))
 	{
 		this->velocity = newVelocity;
 	}
 
-	// Don't let the velocity be greater than the max speed for the current 
-	// movement state (i.e., walking/running). This will change once jumping
-	// and gravity are implemented.
+	// Don't let the horizontal velocity be greater than the max speed for the 
+	// current movement state (i.e., walking/running).
 	double maxSpeed = isRunning ? this->maxRunSpeed : this->maxWalkSpeed;
-	if (this->velocity.length() > maxSpeed)
+	Double2 velocityXZ(this->velocity.x, this->velocity.z);
+	if (velocityXZ.length() > maxSpeed)
 	{
-		this->velocity = this->velocity.normalized() * maxSpeed;
+		velocityXZ = velocityXZ.normalized() * maxSpeed;
 	}
 
 	// If the velocity is near zero, set it to zero. This fixes a problem where 
@@ -185,15 +257,26 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 	}
 }
 
-void Player::tick(Game &game, double dt)
+void Player::accelerateInstant(const Double3 &direction, double magnitude)
 {
-	assert(dt >= 0.0);
+	assert(direction.isNormalized());
+	
+	const Double3 additiveVelocity = direction * magnitude;
 
-	// To do: acceleration from gravity.
+	if (std::isfinite(additiveVelocity.length()))
+	{
+		this->velocity = this->velocity + additiveVelocity;
+	}
+}
+
+void Player::updatePhysics(const VoxelGrid &voxelGrid, double dt)
+{
+	// Acceleration from gravity (always).
+	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
 
 	// Change the player's velocity based on collision.
-	this->handleCollision(game.getGameData().getVoxelGrid(), dt);
-	
+	this->handleCollision(voxelGrid, dt);
+
 	// Simple Euler integration for updating the player's position.
 	Double3 newPosition = this->camera.position + (this->velocity * dt);
 
@@ -203,20 +286,25 @@ void Player::tick(Game &game, double dt)
 		this->camera.position = newPosition;
 	}
 
-	// Slow down the player with some imaginary friction (as a force). Once jumping 
-	// is implemented, change this to affect the ground direction and Y directions 
-	// separately.
-	const double friction = 8.0;
-	Double3 frictionDirection = -this->velocity.normalized();
-	double frictionMagnitude = (this->velocity.length() * 0.5) * friction;
-
-	// Change the velocity if friction is valid.
-	if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > EPSILON))
+	if (this->onGround(voxelGrid))
 	{
-		this->accelerate(frictionDirection, frictionMagnitude, true, dt);
-	}
+		// Slow down the player's horizontal velocity with some friction.
+		Double2 velocityXZ(this->velocity.x, this->velocity.z);
+		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
+		double frictionMagnitude = velocityXZ.length() * Player::FRICTION;
 
-	// To do: clamp player above y = 0 (including standing height).
+		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > EPSILON))
+		{
+			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y),
+				frictionMagnitude, true, dt);
+		}
+	}
+}
+
+void Player::tick(Game &game, double dt)
+{
+	// Update player position and velocity due to collisions.
+	this->updatePhysics(game.getGameData().getVoxelGrid(), dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

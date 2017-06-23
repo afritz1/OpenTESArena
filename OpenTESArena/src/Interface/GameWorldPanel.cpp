@@ -531,6 +531,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
 		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// The original game didn't have sprinting, but it seems like something 
@@ -538,20 +539,6 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
 		auto &player = this->getGame()->getGameData().getPlayer();
-
-		// -- test --
-		// Some simple code to move the camera along the Y axis.
-		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
-		bool c = inputManager.keyIsDown(SDL_SCANCODE_C);
-		if (space)
-		{
-			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
-		}
-		else if (c)
-		{
-			player.teleport(player.getPosition() - Double3(0.0, 0.5 * dt, 0.0));
-		}
-		// -- end test --
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -561,7 +548,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		const Double3 &rightDirection = player.getRight();
 
 		// Mouse movement takes priority over key movement.
-		if (leftClick)
+		if (leftClick && player.onGround(this->getGame()->getGameData().getVoxelGrid()))
 		{
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const int mouseX = mousePosition.x;
@@ -625,35 +612,45 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// are independent of max speed.
 			double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
 
+			// Check for jumping first (so the player can't slide jump on the first frame).
+			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+			if (rightClick)
+			{
+				// Jump.
+				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+			}
 			// Change the player's velocity if valid.
-			if (std::isfinite(accelDirection.length()) &&
+			else if (std::isfinite(accelDirection.length()) &&
 				std::isfinite(accelMagnitude))
 			{
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
 			}
 		}
-		else if (forward || backward || ((left || right) && lCtrl))
+		else if ((forward || backward || ((left || right) && lCtrl) || space) &&
+			player.onGround(this->getGame()->getGameData().getVoxelGrid()))
 		{
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
+
 			if (forward)
 			{
 				accelDirection = accelDirection + groundDirection3D;
 			}
+
 			if (backward)
 			{
 				accelDirection = accelDirection - groundDirection3D;
 			}
+
 			if (right)
 			{
 				accelDirection = accelDirection + rightDirection;
 			}
+
 			if (left)
 			{
 				accelDirection = accelDirection - rightDirection;
 			}
-
-			// To do: check jump eventually once gravity and ground collision are implemented.
 
 			// Use a normalized direction.
 			accelDirection = accelDirection.normalized();
@@ -662,8 +659,14 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// are independent of max speed.
 			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
 
+			// Check for jumping first (so the player can't slide jump on the first frame).
+			if (space)
+			{
+				// Jump.
+				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+			}
 			// Change the player's velocity if valid.
-			if (std::isfinite(accelDirection.length()))
+			else if (std::isfinite(accelDirection.length()))
 			{
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
 			}
@@ -676,26 +679,13 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		bool backward = inputManager.keyIsDown(SDL_SCANCODE_S);
 		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
+		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 
 		// The original game didn't have sprinting, but it seems like something 
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
 		auto &player = this->getGame()->getGameData().getPlayer();
-
-		// -- test --
-		// Some simple code to move the camera along the Y axis.
-		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
-		bool c = inputManager.keyIsDown(SDL_SCANCODE_C);
-		if (space)
-		{
-			player.teleport(player.getPosition() + Double3(0.0, 0.5 * dt, 0.0));
-		}
-		else if (c)
-		{
-			player.teleport(player.getPosition() - Double3(0.0, 0.5 * dt, 0.0));
-		}
-		// -- end test --
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -704,28 +694,31 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
 
-		if (forward || backward || left || right)
+		if ((forward || backward || left || right || space) &&
+			player.onGround(this->getGame()->getGameData().getVoxelGrid()))
 		{
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
+
 			if (forward)
 			{
 				accelDirection = accelDirection + groundDirection3D;
 			}
+
 			if (backward)
 			{
 				accelDirection = accelDirection - groundDirection3D;
 			}
+
 			if (right)
 			{
 				accelDirection = accelDirection + rightDirection;
 			}
+
 			if (left)
 			{
 				accelDirection = accelDirection - rightDirection;
 			}
-
-			// To do: check jump eventually once gravity and ground collision are implemented.
 
 			// Use a normalized direction.
 			accelDirection = accelDirection.normalized();
@@ -734,8 +727,14 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// are independent of max speed.
 			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
 
-			// Change the player's velocity if valid.
-			if (std::isfinite(accelDirection.length()))
+			// Check for jumping first (so the player can't slide jump on the first frame).
+			if (space)
+			{
+				// Jump.
+				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+			}
+			// Change the player's horizontal velocity if valid.
+			else if (std::isfinite(accelDirection.length()))
 			{
 				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
 			}
