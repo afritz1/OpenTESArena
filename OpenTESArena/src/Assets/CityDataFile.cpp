@@ -94,7 +94,7 @@ CityDataFile::~CityDataFile()
 
 }
 
-const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
+const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
 	DebugAssert(index < CityDataFile::PROVINCE_COUNT, "Province index out of range.");
 

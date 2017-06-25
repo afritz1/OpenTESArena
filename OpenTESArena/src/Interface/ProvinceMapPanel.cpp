@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cassert>
+#include <limits>
 #include <unordered_map>
 
 #include "SDL.h"
@@ -9,6 +11,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
+#include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -174,6 +177,28 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	renderer.drawToOriginal(tooltip.get(), x, y);
 }
 
+void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &center,
+	Renderer &renderer)
+{
+	TextBox textBox(
+		center - Int2(0, 10),
+		Color(158, 0, 0),
+		Color(48, 48, 48),
+		name,
+		this->getGame()->getFontManager().getFont(FontName::Arena),
+		TextAlignment::Center,
+		renderer);
+
+	// Clamp to screen edges, with some extra space on the left and right.
+	const int x = std::max(std::min(textBox.getX(), 
+		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
+	const int y = std::max(std::min(textBox.getY(),
+		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h), 0);
+
+	renderer.drawToOriginal(textBox.getShadowTexture(), x + 1, y);
+	renderer.drawToOriginal(textBox.getTexture(), x, y);
+}
+
 void ProvinceMapPanel::render(Renderer &renderer)
 {
 	assert(this->getGame()->gameDataIsActive());
@@ -185,24 +210,120 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-	
+
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
-		TextureFile::provinceMapFromID(this->provinceID), 
+		TextureFile::provinceMapFromID(this->provinceID),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mapBackground.get());
 
-	// Draw tooltip if the mouse is over a button.
+	// Draw location icons, and find which place is closest to the mouse cursor.
+	// Ignore blank locations (ones that are zeroed out in the center province).
+	const auto &cityStateIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CityStateIcon),
+		TextureFile::provinceMapFromID(this->provinceID));
+	const auto &townIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::TownIcon),
+		TextureFile::provinceMapFromID(this->provinceID));
+	const auto &villageIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::VillageIcon),
+		TextureFile::provinceMapFromID(this->provinceID));
+
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	auto mouseOriginalPosition = this->getGame()->getRenderer()
+	const Int2 originalPosition = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
+	const auto &province = this->getGame()->getCityDataFile()
+		.getProvinceData(this->provinceID);
+
+	// Initialize the closest position to something very far away (watch out for
+	// integer multiplication overflow; that's why it's using short max).
+	Int2 closestPosition(std::numeric_limits<short>::max(), std::numeric_limits<short>::max());
+
+	// Lambda for comparing distances of two location points to the mouse position.
+	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](const Int2 &point)
+	{
+		const int diffX = point.x - originalPosition.x;
+		const int diffY = point.y - originalPosition.y;
+		const int closestDiffX = closestPosition.x - originalPosition.x;
+		const int closestDiffY = closestPosition.y - originalPosition.y;
+
+		const double distance = std::sqrt((diffX * diffX) + (diffY * diffY));
+		const double closestDistance = std::sqrt(
+			(closestDiffX * closestDiffX) + (closestDiffY * closestDiffY));
+
+		return distance < closestDistance;
+	};
+
+	std::string closestName;
+
+	// Draw city-state icons.
+	for (const auto &cityState : province.cityStates)
+	{
+		if (cityState.name.front() != '\0') // Ignore empty names.
+		{
+			const Int2 point(cityState.x, cityState.y);
+
+			renderer.drawToOriginal(cityStateIcon.get(),
+				point.x - (cityStateIcon.getWidth() / 2),
+				point.y - (cityStateIcon.getHeight() / 2));
+
+			if (closerThanCurrentClosest(point))
+			{
+				closestPosition = point;
+				closestName = std::string(cityState.name.data());
+			}
+		}
+	}
+
+	// Draw town icons.
+	for (const auto &town : province.towns)
+	{
+		if (town.name.front() != '\0')
+		{
+			const Int2 point(town.x, town.y);
+
+			renderer.drawToOriginal(townIcon.get(),
+				point.x - (townIcon.getWidth() / 2),
+				point.y - (townIcon.getHeight() / 2));
+
+			if (closerThanCurrentClosest(point))
+			{
+				closestPosition = point;
+				closestName = std::string(town.name.data());
+			}
+		}
+	}
+
+	// Draw village icons.
+	for (const auto &village : province.villages)
+	{
+		if (village.name.front() != '\0')
+		{
+			const Int2 point(village.x, village.y);
+
+			renderer.drawToOriginal(villageIcon.get(),
+				point.x - (villageIcon.getWidth() / 2),
+				point.y - (villageIcon.getHeight() / 2));
+
+			if (closerThanCurrentClosest(point))
+			{
+				closestPosition = point;
+				closestName = std::string(village.name.data());
+			}
+		}
+	}
+
+	// Draw name of the location closest to the mouse cursor.
+	this->drawLocationName(closestName, closestPosition, renderer);
+
+	// Draw tooltip if the mouse is over a button.
 	for (const auto &pair : ProvinceButtonTooltips)
 	{
 		const Rect &clickArea = ProvinceButtonClickAreas.at(pair.first);
 
-		if (clickArea.contains(mouseOriginalPosition))
+		if (clickArea.contains(originalPosition))
 		{
 			this->drawButtonTooltip(pair.first, renderer);
 		}

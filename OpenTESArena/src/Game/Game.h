@@ -16,6 +16,7 @@
 
 // Game members should be available through a getter so panels can access them.
 
+class CityDataFile;
 class GameData;
 class FontManager;
 class Options;
@@ -38,6 +39,7 @@ private:
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
+	std::unique_ptr<CityDataFile> cityDataFile;
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
@@ -83,6 +85,9 @@ public:
 
 	// Gets the text assets object for loading Arena-related text files.
 	TextAssets &getTextAssets() const;
+
+	// Gets the data object for world map locations.
+	CityDataFile &getCityDataFile() const;
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel).

@@ -11,6 +11,7 @@
 #include "Options.h"
 #include "OptionsParser.h"
 #include "PlayerInterface.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
 #include "../Math/Vector2.h"
@@ -54,6 +55,9 @@ Game::Game()
 
 	// Load various plain text assets.
 	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
+
+	// Load city data file.
+	this->cityDataFile = std::unique_ptr<CityDataFile>(new CityDataFile("CITYDATA.00"));
 
 	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
@@ -130,6 +134,11 @@ TextureManager &Game::getTextureManager() const
 TextAssets &Game::getTextAssets() const
 {
 	return *this->textAssets.get();
+}
+
+CityDataFile &Game::getCityDataFile() const
+{
+	return *this->cityDataFile.get();
 }
 
 void Game::setPanel(std::unique_ptr<Panel> nextPanel)

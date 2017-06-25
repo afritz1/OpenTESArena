@@ -16,6 +16,11 @@ private:
 	int provinceID;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
+
+	// Draws the name of a location in the province. Intended for the location
+	// closest to the mouse cursor.
+	void drawLocationName(const std::string &name, const Int2 &center,
+		Renderer &renderer);
 public:
 	ProvinceMapPanel(Game *game, int provinceID);
 	virtual ~ProvinceMapPanel();
