@@ -43,6 +43,12 @@ public:
 	static std::string replace(const std::string &str, const std::string &a,
 		const std::string &b);
 
+	// Converts each ASCII character in the given string to uppercase.
+	static std::string toUppercase(const std::string &str);
+
+	// Converts each ASCII character in the given string to lowercase.
+	static std::string toLowercase(const std::string &str);
+
 	// Converts an integral value to a hex string.
 	template <typename T>
 	static std::string toHexString(T value)

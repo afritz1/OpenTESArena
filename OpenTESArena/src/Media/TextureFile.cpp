@@ -162,21 +162,6 @@ namespace
 		{ TextureSequenceName::Warhaft, "WARHAFT.FLC" },
 		{ TextureSequenceName::Warrior, "WARRIOR.CEL" }
 	};
-
-	// The filename of each province, ordered by how they are indexed in Arena
-	// (that is, read top left to bottom right, with the center province last).
-	std::array<std::string, 9> ProvinceMapFilenames = 
-	{
-		"HIGHROCK.IMG",
-		"HAMERFEL.IMG",
-		"SKYRIM.IMG",
-		"MOROWIND.IMG",
-		"SUMERSET.IMG",
-		"VALNWOOD.IMG",
-		"ELSWEYR.IMG",
-		"BLAKMRSH.IMG",
-		"IMPERIAL.IMG"
-	};
 }
 
 const std::string &TextureFile::fromName(TextureName textureName)
@@ -188,11 +173,5 @@ const std::string &TextureFile::fromName(TextureName textureName)
 const std::string &TextureFile::fromName(TextureSequenceName sequenceName)
 {
 	const std::string &filename = TextureSequenceFilenames.at(sequenceName);
-	return filename;
-}
-
-const std::string &TextureFile::provinceMapFromID(int provinceID)
-{
-	const std::string &filename = ProvinceMapFilenames.at(provinceID);
 	return filename;
 }

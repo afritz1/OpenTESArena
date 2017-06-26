@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "String.h"
 
 std::vector<std::string> String::split(const std::string &str, char separator)
@@ -125,6 +127,30 @@ std::string String::replace(const std::string &str, const std::string &a,
 	{
 		newStr.replace(index, a.size(), b);
 		index += b.size();
+	}
+
+	return newStr;
+}
+
+std::string String::toUppercase(const std::string &str)
+{
+	std::string newStr(str);
+
+	for (auto &c : newStr)
+	{
+		c = std::toupper(c);
+	}
+
+	return newStr;
+}
+
+std::string String::toLowercase(const std::string &str)
+{
+	std::string newStr(str);
+
+	for (auto &c : newStr)
+	{
+		c = std::tolower(c);
 	}
 
 	return newStr;

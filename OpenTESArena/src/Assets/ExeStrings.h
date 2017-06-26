@@ -58,9 +58,8 @@ const std::vector<std::pair<int, int>> WarriorClassNames =
 	{ 0x0003e1e3, 6 }
 };
 
-// Province names.
-// - Ordered by appearance on the world map reading from top left to bottom right, 
-//   with the center province last.
+// Province names, ordered by appearance on the world map reading from left to right, 
+// with the center province last.
 const std::vector<std::pair<int, int>> ProvinceNames =
 {
 	{ 0x000392f8, 9 },
@@ -72,6 +71,20 @@ const std::vector<std::pair<int, int>> ProvinceNames =
 	{ 0x00039544, 7 },
 	{ 0x000395a6, 11 },
 	{ 0x00039608, 17 }
+};
+
+// Province .IMG backgrounds, ordered the same as province names.
+const std::vector<std::pair<int, int>> ProvinceIMGFilenames =
+{
+	{ 0x0003fdfa, 12 },
+	{ 0x0003fe07, 12 },
+	{ 0x0003fe14, 10 },
+	{ 0x0003fe1f, 12 },
+	{ 0x0003fe2c, 12 },
+	{ 0x0003fe39, 12 },
+	{ 0x0003fe46, 11 },
+	{ 0x0003fe52, 12 },
+	{ 0x0003fe5f, 12 }
 };
 
 // Race names. Ordered the same as provinces.

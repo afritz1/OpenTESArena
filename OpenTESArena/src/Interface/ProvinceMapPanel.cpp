@@ -12,6 +12,8 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -26,6 +28,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 namespace std
 {
@@ -190,7 +193,7 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 		renderer);
 
 	// Clamp to screen edges, with some extra space on the left and right.
-	const int x = std::max(std::min(textBox.getX(), 
+	const int x = std::max(std::min(textBox.getX(),
 		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
 	const int y = std::max(std::min(textBox.getY(),
 		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h), 0);
@@ -211,23 +214,30 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
+	// Get the filename of the province map.
+	const std::string backgroundFilename = [this]()
+	{
+		const std::string &filename = this->getGame()->getTextAssets().getAExeSegment(
+			ExeStrings::ProvinceIMGFilenames.at(this->provinceID));
+
+		// Set all characters to uppercase because the texture manager expects 
+		// extensions to be uppercase, and most filenames in A.EXE are lowercase.
+		return String::toUppercase(filename);
+	}();
+
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
-		TextureFile::provinceMapFromID(this->provinceID),
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(mapBackground.get());
 
 	// Draw location icons, and find which place is closest to the mouse cursor.
-	// Ignore blank locations (ones that are zeroed out in the center province).
+	// Ignore locations with no name (ones that are zeroed out in the center province).
 	const auto &cityStateIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CityStateIcon),
-		TextureFile::provinceMapFromID(this->provinceID));
+		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
 	const auto &townIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::TownIcon),
-		TextureFile::provinceMapFromID(this->provinceID));
+		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
 	const auto &villageIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::VillageIcon),
-		TextureFile::provinceMapFromID(this->provinceID));
+		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
