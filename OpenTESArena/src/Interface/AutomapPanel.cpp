@@ -36,6 +36,9 @@ namespace
 	const Rect LeftRegion(245, 41, 14, 14);
 	const Rect RightRegion(284, 41, 14, 14);
 
+	// The "canvas" area for drawing automap content.
+	const Rect DrawingArea(25, 40, 179, 125);
+
 	// Colors for automap pixels. Ground pixels (y == 0) are transparent.
 	const Color AutomapPlayer(247, 255, 0);
 	const Color AutomapWall(130, 89, 48);
@@ -63,7 +66,7 @@ namespace
 
 AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 	const Double2 &playerDirection, const VoxelGrid &voxelGrid, const std::string &locationName)
-	: Panel(game), automapCenter(playerPosition)
+	: Panel(game), automapOffset(playerPosition)
 {
 	this->locationTextBox = [game, &locationName]()
 	{
@@ -184,7 +187,7 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 
 			// Draw the player's arrow within the 3x3 map pixel.
 			const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
-			for (auto &offset : offsets)
+			for (const auto &offset : offsets)
 			{
 				const int index = (surfaceX + offset.x) +
 					((surfaceY + offset.y) * surface->w);
@@ -257,22 +260,25 @@ void AutomapPanel::handleMouse(double dt)
 	// Check if the LMB is held on one of the compass directions.
 	if (leftClick)
 	{
-		// To do: scroll the map relative to delta time.
+		const double scrollSpeed = 100.0;
+
+		// Modify the automap offset based on input. Use the custom coordinate system
+		// with +X as north and +Z as east (aliased as Y).
 		if (UpRegion.contains(mouseOriginalPoint))
 		{
-
+			this->automapOffset = this->automapOffset + (Double2::UnitX * (scrollSpeed * dt));
 		}
 		else if (DownRegion.contains(mouseOriginalPoint))
 		{
-
+			this->automapOffset = this->automapOffset - (Double2::UnitX * (scrollSpeed * dt));
 		}
 		else if (RightRegion.contains(mouseOriginalPoint))
 		{
-
+			this->automapOffset = this->automapOffset + (Double2::UnitY * (scrollSpeed * dt));
 		}
 		else if (LeftRegion.contains(mouseOriginalPoint))
 		{
-
+			this->automapOffset = this->automapOffset - (Double2::UnitY * (scrollSpeed * dt));
 		}
 	}
 }
@@ -317,9 +323,20 @@ void AutomapPanel::render(Renderer &renderer)
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawToOriginal(automapBackground.get());
 
-	// Draw automap.
-	renderer.drawToOriginal(this->mapTexture.get(), 25, 40,
-		this->mapTexture.getWidth(), this->mapTexture.getHeight());
+	// Only draw the part of the automap within the drawing area.
+	renderer.setClipRect(DrawingArea.getRect());
+
+	// Draw automap. Remember that +X is north and +Z is east (aliased as Y), and that
+	// the map texture is scaled by 3 (for the 3x3 player pixel).
+	const int offsetX = static_cast<int>(std::floor(this->automapOffset.y * 3.0));
+	const int offsetY = static_cast<int>(std::floor(this->automapOffset.x * 3.0));
+	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
+	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY - 
+		this->mapTexture.getHeight();
+	renderer.drawToOriginal(this->mapTexture.get(), mapX, mapY);
+
+	// Reset renderer clipping to normal.
+	renderer.setClipRect(nullptr);
 
 	// Draw text: title.
 	renderer.drawToOriginal(this->locationTextBox->getShadowTexture(),

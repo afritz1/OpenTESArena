@@ -108,6 +108,10 @@ public:
 	// so only set it to true when the original frame buffer needs transparency.
 	void useTransparencyBlending(bool blend);
 
+	// Sets the clip rectangle of the renderer so that pixels outside the specified area
+	// will not be rendered. If rect is null, then clipping is disabled.
+	void setClipRect(const SDL_Rect *rect);
+
 	// Initialize the renderer for the game world. The "fullGameWindow" argument 
 	// determines whether to render a "fullscreen" 3D image or just the part above 
 	// the game interface. If there is an existing renderer in memory, it will be 

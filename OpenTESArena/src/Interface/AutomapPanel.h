@@ -18,7 +18,7 @@ private:
 	std::unique_ptr<TextBox> locationTextBox;
 	std::unique_ptr<Button<Game*>> backToGameButton;
 	Texture mapTexture;
-	Double2 automapCenter; // Displayed XZ coordinate offset from (0, 0).
+	Double2 automapOffset; // Displayed XZ coordinate offset from (0, 0).
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);

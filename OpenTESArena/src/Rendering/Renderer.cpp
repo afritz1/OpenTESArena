@@ -352,6 +352,11 @@ void Renderer::useTransparencyBlending(bool blend)
 	DebugAssert(status == 0, "Couldn't set blending mode, " + std::string(SDL_GetError()));
 }
 
+void Renderer::setClipRect(const SDL_Rect *rect)
+{
+	SDL_RenderSetClipRect(this->renderer, rect);
+}
+
 void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow)
 {
 	this->fullGameWindow = fullGameWindow;
