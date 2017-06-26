@@ -232,22 +232,12 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Draw location icons, and find which place is closest to the mouse cursor.
 	// Ignore locations with no name (ones that are zeroed out in the center province).
-	const auto &cityStateIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
-	const auto &townIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
-	const auto &villageIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
-
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = this->getGame()->getRenderer()
 		.nativePointToOriginal(mousePosition);
 
-	const auto &province = this->getGame()->getCityDataFile()
-		.getProvinceData(this->provinceID);
-
-	// Initialize the closest position to something very far away (watch out for
+	// Initialize the current closest position to something very far away (watch out for
 	// integer multiplication overflow; that's why it's using short max).
 	Int2 closestPosition(std::numeric_limits<short>::max(), std::numeric_limits<short>::max());
 
@@ -268,67 +258,59 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	std::string closestName;
 
-	// Draw city-state icons.
-	for (const auto &cityState : province.cityStates)
+	// Lambda for drawing a location icon and refreshing the closest location data.
+	auto drawIcon = [&closestPosition, &closestName, &closerThanCurrentClosest, &renderer](
+		const CityDataFile::ProvinceData::LocationData &location, const Texture &icon)
 	{
-		if (cityState.name.front() != '\0') // Ignore empty names.
+		// Only check locations with names.
+		if (location.name.front() != '\0')
 		{
-			const Int2 point(cityState.x, cityState.y);
+			const Int2 point(location.x, location.y);
 
-			renderer.drawToOriginal(cityStateIcon.get(),
-				point.x - (cityStateIcon.getWidth() / 2),
-				point.y - (cityStateIcon.getHeight() / 2));
+			renderer.drawToOriginal(icon.get(),
+				point.x - (icon.getWidth() / 2),
+				point.y - (icon.getHeight() / 2));
 
 			if (closerThanCurrentClosest(point))
 			{
 				closestPosition = point;
-				closestName = std::string(cityState.name.data());
+				closestName = std::string(location.name.data());
 			}
 		}
+	};
+
+	const auto &cityStateIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
+	const auto &townIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
+	const auto &villageIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
+
+	const auto &province = this->getGame()->getCityDataFile()
+		.getProvinceData(this->provinceID);
+
+	// Draw city-state icons.
+	for (const auto &cityState : province.cityStates)
+	{
+		drawIcon(cityState, cityStateIcon);
 	}
 
 	// Draw town icons.
 	for (const auto &town : province.towns)
 	{
-		if (town.name.front() != '\0')
-		{
-			const Int2 point(town.x, town.y);
-
-			renderer.drawToOriginal(townIcon.get(),
-				point.x - (townIcon.getWidth() / 2),
-				point.y - (townIcon.getHeight() / 2));
-
-			if (closerThanCurrentClosest(point))
-			{
-				closestPosition = point;
-				closestName = std::string(town.name.data());
-			}
-		}
+		drawIcon(town, townIcon);
 	}
 
 	// Draw village icons.
 	for (const auto &village : province.villages)
 	{
-		if (village.name.front() != '\0')
-		{
-			const Int2 point(village.x, village.y);
-
-			renderer.drawToOriginal(villageIcon.get(),
-				point.x - (villageIcon.getWidth() / 2),
-				point.y - (villageIcon.getHeight() / 2));
-
-			if (closerThanCurrentClosest(point))
-			{
-				closestPosition = point;
-				closestName = std::string(village.name.data());
-			}
-		}
+		drawIcon(village, villageIcon);
 	}
 
-	// Draw name of the location closest to the mouse cursor.
+	// Draw the name of the location closest to the mouse cursor.
 	this->drawLocationName(closestName, closestPosition, renderer);
 
-	// Draw tooltip if the mouse is over a button.
+	// Draw a tooltip if the mouse is over a button.
 	for (const auto &pair : ProvinceButtonTooltips)
 	{
 		const Rect &clickArea = ProvinceButtonClickAreas.at(pair.first);
