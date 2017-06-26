@@ -248,8 +248,6 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 
 void AutomapPanel::handleMouse(double dt)
 {
-	static_cast<void>(dt);
-
 	const auto &inputManager = this->getGame()->getInputManager();
 	const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
