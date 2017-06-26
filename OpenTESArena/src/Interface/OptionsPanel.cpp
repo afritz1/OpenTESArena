@@ -879,42 +879,21 @@ void OptionsPanel::render(Renderer &renderer)
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
 	// Draw tooltips for certain things.
-	const Rect resolutionScaleRect(
-		this->resolutionScaleTextBox->getX(),
-		this->resolutionScaleTextBox->getY(),
-		this->resolutionScaleTextBox->getSurface()->w,
-		this->resolutionScaleTextBox->getSurface()->h);
-	const Rect playerInterfaceRect(
-		this->playerInterfaceTextBox->getX(),
-		this->playerInterfaceTextBox->getY(),
-		this->playerInterfaceTextBox->getSurface()->w,
-		this->playerInterfaceTextBox->getSurface()->h);
-	const Rect letterboxAspectRect(
-		this->letterboxAspectTextBox->getX(),
-		this->letterboxAspectTextBox->getY(),
-		this->letterboxAspectTextBox->getSurface()->w,
-		this->letterboxAspectTextBox->getSurface()->h);
-	const Rect vSensitivityRect(
-		this->vSensitivityTextBox->getX(),
-		this->vSensitivityTextBox->getY(),
-		this->vSensitivityTextBox->getSurface()->w,
-		this->vSensitivityTextBox->getSurface()->h);
-
-	if (resolutionScaleRect.contains(originalPosition))
+	if (this->resolutionScaleTextBox->getRect().contains(originalPosition))
 	{
 		this->drawTooltip("Percent of the window resolution\nto use for 3D rendering.", renderer);
 	}
-	else if (playerInterfaceRect.contains(originalPosition))
+	else if (this->playerInterfaceTextBox->getRect().contains(originalPosition))
 	{
 		this->drawTooltip("Modern mode uses a new minimal\ninterface with free-look.", renderer);
 	}
-	else if (letterboxAspectRect.contains(originalPosition))
+	else if (this->letterboxAspectTextBox->getRect().contains(originalPosition))
 	{
 		this->drawTooltip(std::string("1.60 represents the 'unaltered' look,\n") +
 			"and 1.33 represents the 'tall pixels'\n" +
 			"look on a 640x480 monitor.", renderer);
 	}
-	else if (vSensitivityRect.contains(originalPosition))
+	else if (this->vSensitivityTextBox->getRect().contains(originalPosition))
 	{
 		this->drawTooltip("Only affects vertical camera look\nin modern interface mode.", renderer);
 	}

@@ -10,6 +10,7 @@
 // Redesigned for use with the font system using Arena assets.
 
 class Font;
+class Rect;
 class Renderer;
 
 enum class FontName;
@@ -43,6 +44,11 @@ public:
 	TextAlignment getAlignment() const;
 	FontName getFontName() const;
 	const Color &getTextColor() const;
+
+	// Gets the bounding box around the text box's content. Useful for tooltips when hovering
+	// over it with the mouse.
+	Rect getRect() const;
+
 	SDL_Surface *getSurface() const;
 	SDL_Texture *getTexture() const;
 

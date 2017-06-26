@@ -231,6 +231,11 @@ const Color &TextBox::getTextColor() const
 	return this->textColor;
 }
 
+Rect TextBox::getRect() const
+{
+	return Rect(this->x, this->y, this->surface->w, this->surface->h);
+}
+
 SDL_Surface *TextBox::getSurface() const
 {
 	return this->surface;
