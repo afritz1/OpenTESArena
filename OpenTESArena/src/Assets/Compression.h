@@ -95,7 +95,7 @@ public:
 		std::fill(dst, out.end(), 0);
 	}
 
-	// Works with .IMG and .CIF type 8 files.
+	// Works with type 8 .IMG and .CIF files, and voxel data in .MIF files.
 	template <typename T>
 	static void decodeType08(T src, T srcend, std::vector<uint8_t> &out)
 	{

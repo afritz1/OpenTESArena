@@ -9,22 +9,54 @@
 // and which voxels have which IDs, as well as some other data. It is normally paired with 
 // an INF file that tells which textures to use, among other things.
 
-// It seems to be composed of a map header and an array of levels.
+// It is composed of a map header and an array of levels.
 
 class MIFFile
 {
-private:
+public:
 	struct Level
 	{
-		uint16_t size; // Size of the compressed level in bytes.
+		struct Lock
+		{
+			int x, y, lockLevel;
+		};
+
+		struct Trigger
+		{
+			int x, y, textIndex, soundIndex;
+		};
+
 		std::string name, info; // Name of level, and associated INF filename.
-		uint8_t numf; // Unknown, possibly an ID for something. Usually 9, 7, or 6.
+		int numf; // Number of floor (and wall?) textures.
 
-		// Various data, not always present. "flor" and "map1" are probably always present.
-		std::vector<uint8_t> targ, trig, lock, flor, map1, map2, loot;
+		// Various data, not always present. FLOR and MAP1 are probably always present.
+		std::vector<uint8_t> flor, loot, map1, map2, targ;
+		std::vector<MIFFile::Level::Lock> lock;
+		std::vector<MIFFile::Level::Trigger> trig;
+
+		// Primary method for decoding .MIF level tag data. This method calls all the lower-
+		// level loading methods for each tag as needed. The return value is the offset from 
+		// the current LEVL tag to where the next LEVL tag would be.
+		int load(const uint8_t *levelStart);
+
+		// Loading methods for each .MIF level tag (FLOR, MAP1, etc.), called by Level::load(). 
+		// The return value is the offset from the current tag to where the next tag would be.
+		static int loadFLOR(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadINFO(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadLOCK(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadLOOT(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadMAP1(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadMAP2(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadNAME(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadNUMF(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadTARG(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadTRIG(MIFFile::Level &level, const uint8_t *tagStart);
 	};
-
+private:
 	int width, depth;
+	std::vector<MIFFile::Level> levels;
+	// Should a vector of levels be exposed, or does the caller want a nicer format?
+	// VoxelGrid? Array of VoxelData?
 public:
 	MIFFile(const std::string &filename);
 	~MIFFile();
@@ -33,11 +65,17 @@ public:
 	int getWidth() const;
 	int getDepth() const;
 
-	// Eventually...
-	// - 2D voxel data per floor (flor, map1, map2), per level.
-	// - Name and INF of a level.
-	// - ID of a level (numf?)
-	// - Target(?), Triggers(?), Lock (locked doors?), Loot (loot piles? Quest items?).
+	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
+	// to be in a nicer format before handing it over to the rest of the program).
+	const std::vector<MIFFile::Level> &getLevels() const;
+
+	// To do:
+	// - Voxel data per floor (flor, map1, map2), per level.
+	// - Name and .INF of a level.
+	// - Texture count per level (numf)
+	// - Lock locations and lock levels per level.
+	// - Trigger locations per level.
+	// - Target(?), Loot(loot piles? Quest items?).
 };
 
 #endif
