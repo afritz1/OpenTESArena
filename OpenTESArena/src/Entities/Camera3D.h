@@ -25,6 +25,9 @@ private:
 public:
 	Double3 position;
 
+	// Minimum limit for keeping the Y direction from looking straight up or down.
+	static const double MIN_Y_LIMIT;
+
 	// Default constructor for the player's camera. The axes are generated based on 
 	// the given normalized direction.
 	Camera3D(const Double3 &position, const Double3 &direction);
@@ -40,7 +43,9 @@ public:
 	Matrix4d getViewMatrix() const;
 
 	// Pitches and yaws the camera relative to a fixed "global up" vector. "dx" affects 
-	// left/right, "dy" affects up/down.
+	// left/right, "dy" affects up/down, and "yLimit" affects how high or low the camera 
+	// can look (clamped to some minimum value to prevent breaking the cross product).
+	void rotate(double dx, double dy, double yLimit);
 	void rotate(double dx, double dy);
 
 	// Recalculates the camera so it faces the given point. The "global up" vector

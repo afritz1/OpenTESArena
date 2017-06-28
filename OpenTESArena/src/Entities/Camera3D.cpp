@@ -6,11 +6,11 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 
+const double Camera3D::MIN_Y_LIMIT = 0.10;
+
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
-	up(right.cross(forward).normalized()), position(position)
-{
-}
+	up(right.cross(forward).normalized()), position(position) { }
 
 const Double3 &Camera3D::getDirection() const
 {
@@ -61,9 +61,10 @@ void Camera3D::yaw(double radians)
 	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Camera3D::rotate(double dx, double dy)
+void Camera3D::rotate(double dx, double dy, double yLimit)
 {
 	assert(std::isfinite(this->forward.length()));
+	assert(yLimit >= Camera3D::MIN_Y_LIMIT);
 
 	double lookRightRads = dx * DEG_TO_RAD;
 	double lookUpRads = dy * DEG_TO_RAD;
@@ -83,9 +84,8 @@ void Camera3D::rotate(double dx, double dy)
 
 	// Clamp the range that the camera can tilt up or down to avoid breaking
 	// the vector cross product at extreme angles.
-	const double MIN_UP_TILT_DEG = 0.10;
-	const double zenithMaxDec = MIN_UP_TILT_DEG * DEG_TO_RAD;
-	const double zenithMinDec = (180.0 - MIN_UP_TILT_DEG) * DEG_TO_RAD;
+	const double zenithMaxDec = yLimit * DEG_TO_RAD;
+	const double zenithMinDec = (180.0 - yLimit) * DEG_TO_RAD;
 
 	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
 		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
@@ -94,6 +94,11 @@ void Camera3D::rotate(double dx, double dy)
 	//const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
 	this->pitch(lookUpRads/* / zoom*/);
 	this->yaw(-lookRightRads/* / zoom*/);
+}
+
+void Camera3D::rotate(double dx, double dy)
+{
+	this->rotate(dx, dy, Camera3D::MIN_Y_LIMIT);
 }
 
 void Camera3D::lookAt(const Double3 &point)
