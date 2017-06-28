@@ -4,6 +4,7 @@
 
 #include "Options.h"
 #include "PlayerInterface.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/KvpTextMap.h"
 
 const std::string OptionsParser::PATH = "options/";
@@ -32,6 +33,8 @@ std::unique_ptr<Options> OptionsParser::parse()
 {
 	// Path to the options file.
 	std::string fullPath(OptionsParser::PATH + OptionsParser::FILENAME);
+
+	DebugMention("Reading \"" + fullPath + "\".");
 
 	// Read in all the key-value pairs from the options file.
 	KvpTextMap textMap(fullPath);
