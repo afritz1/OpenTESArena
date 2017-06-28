@@ -31,9 +31,9 @@ void Animation::tick(double dt)
 		this->currentTime += dt;
 
 		// Step to the next ID if its duration has passed.
-		if (this->currentTime >= this->timePerFrame)
+		while (this->currentTime >= this->timePerFrame)
 		{
-			this->currentTime = 0.0;
+			this->currentTime -= this->timePerFrame;
 			this->index++;
 
 			// Return to the beginning if at the end and looping is enabled.
