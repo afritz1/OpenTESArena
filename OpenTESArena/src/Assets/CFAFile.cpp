@@ -40,7 +40,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 
 	// Line buffer (generously over-allocated for demuxing).
 	std::vector<uint8_t> encoded(widthUncompressed + 16);
-	std::memset(encoded.data(), 0, encoded.size());
+	std::fill(encoded.begin(), encoded.end(), 0);
 
 	// Index values from demuxing are stored here each pass, and are
 	// eventually translated into color indices.

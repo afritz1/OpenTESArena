@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <unordered_map>
 
@@ -138,7 +139,7 @@ int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Allocate space for this floor, using 2 bytes per voxel.
 	level.flor = std::vector<uint8_t>(uncompressedSize);
-	std::memset(level.flor.data(), 0, level.flor.size());
+	std::fill(level.flor.begin(), level.flor.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
@@ -203,7 +204,7 @@ int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Allocate space for this floor, using 2 bytes per voxel.
 	level.map1 = std::vector<uint8_t>(uncompressedSize);
-	std::memset(level.map1.data(), 0, level.map1.size());
+	std::fill(level.map1.begin(), level.map1.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
@@ -219,7 +220,7 @@ int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Allocate space for this floor, using 2 bytes per voxel.
 	level.map2 = std::vector<uint8_t>(uncompressedSize);
-	std::memset(level.map2.data(), 0, level.map2.size());
+	std::fill(level.map2.begin(), level.map2.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
