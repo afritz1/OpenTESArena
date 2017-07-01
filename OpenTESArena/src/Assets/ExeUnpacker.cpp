@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -14,6 +15,21 @@
 
 namespace
 {
+	// Performance optimization for bit reading (replaces the unnecessary heap 
+	// allocation of std::vector<bool>). Use BitVector::bitsUsed instead of 
+	// BitVector::bits.size().
+	struct BitVector
+	{
+		std::array<bool, 9> bits;
+		int bitsUsed;
+
+		BitVector()
+		{
+			std::fill(this->bits.begin(), this->bits.end(), false);
+			this->bitsUsed = 0;
+		}
+	};
+
 	// A simple binary tree for retrieving a decoded value, given a vector of bits.
 	class BitTree
 	{
@@ -74,20 +90,22 @@ namespace
 		}
 
 		// Returns a pointer to a decoded value in the tree, or null if no entry exists.
-		const int *get(const std::vector<bool> &bits)
+		const int *get(const BitVector &bitVector)
 		{
 			const int *value = nullptr;
 			const BitTree::Node *left = this->root.left.get();
 			const BitTree::Node *right = this->root.right.get();
 
 			// Walk the tree.
-			for (const bool bit : bits)
+			for (int i = 0; i < bitVector.bitsUsed; i++)
 			{
+				const bool bit = bitVector.bits.at(i);
+
 				// Decide which branch to use.
 				if (bit)
 				{
 					// Right.
-					DebugAssert(right != nullptr, "No right branch.");
+					assert(right != nullptr);
 
 					// Check if it's a leaf.
 					if ((right->left.get() == nullptr) && (right->right.get() == nullptr))
@@ -101,7 +119,7 @@ namespace
 				else
 				{
 					// Left.
-					DebugAssert(left != nullptr, "No left branch.");
+					assert(left != nullptr);
 
 					// Check if it's a leaf.
 					if ((left->left.get() == nullptr) && (left->right.get() == nullptr))
@@ -294,21 +312,46 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 		{
 			// "Duplication" mode.
 			// Calculate which bytes in the decompressed data to duplicate and append.
-			std::vector<bool> copyBits;
+			BitVector copyBits;
 			const int *copyPtr = nullptr;
 
 			// Read bits until they match a bit tree leaf.
 			while (copyPtr == nullptr)
 			{
-				copyBits.push_back(getNextBit());
+				copyBits.bits.at(copyBits.bitsUsed) = getNextBit();
+				copyBits.bitsUsed++;
 				copyPtr = bitTree1.get(copyBits);
 			}
 
 			// Calculate the number of bytes in the decompressed data to copy.
 			uint16_t copyCount = 0;
 
+			// Lambda for comparing a bit vector's equality with the special case.
+			auto matchesSpecialCase = [](const BitVector &bitVector)
+			{
+				const std::vector<bool> &specialCase = Duplication1.at(11);
+				const bool equalSize = bitVector.bitsUsed == specialCase.size();
+
+				if (!equalSize)
+				{
+					return false;
+				}
+				else
+				{
+					for (int i = 0; i < bitVector.bitsUsed; i++)
+					{
+						if (bitVector.bits.at(i) != specialCase.at(i))
+						{
+							return false;
+						}
+					}
+
+					return true;
+				}
+			};
+
 			// Check for the special bit vector case "011100".
-			if (copyBits == Duplication1.at(11))
+			if (matchesSpecialCase(copyBits))
 			{
 				// Read a compressed byte.
 				const uint8_t encryptedByte = getNextByte();
@@ -342,13 +385,14 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			// If the copy count is not 2, decode the most significant byte.
 			if (copyCount != 2)
 			{
-				std::vector<bool> offsetBits;
+				BitVector offsetBits;
 				const int* offsetPtr = nullptr;
 
 				// Read bits until they match a bit tree leaf.
 				while (offsetPtr == nullptr)
 				{
-					offsetBits.push_back(getNextBit());
+					offsetBits.bits.at(offsetBits.bitsUsed) = getNextBit();
+					offsetBits.bitsUsed++;
 					offsetPtr = bitTree2.get(offsetBits);
 				}
 
