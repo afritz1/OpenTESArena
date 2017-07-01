@@ -83,15 +83,14 @@ private:
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
-		const Matrix4d &transform, double cameraElevation, double daytimePercent,
+		const Matrix4d &transform, double yShear, double daytimePercent,
 		const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
 		uint32_t *colorBuffer);
 
-	// Refreshes the list of flats that are within the viewing frustum.
-	// "cameraElevation" is the Y-shearing component of the projection plane, and 
-	// "transform" is the projection + view matrix.
-	void updateVisibleFlats(const Double3 &eye, double cameraElevation, 
-		const Matrix4d &transform);
+	// Refreshes the list of flats that are within the viewing frustum. "yShear" is the 
+	// Y-shearing component of the projection plane, and "transform" is the projection * 
+	// view matrix.
+	void updateVisibleFlats(const Double3 &eye, double yShear, const Matrix4d &transform);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();

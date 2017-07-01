@@ -178,7 +178,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->height = height;
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double cameraElevation, 
+void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double yShear,
 	const Matrix4d &transform)
 {
 	this->visibleFlats.clear();
@@ -269,14 +269,14 @@ void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double cameraEleva
 		// by 0.5 to apply the correct aspect ratio. Calculate true distances from the camera 
 		// to the left and right edges in the XZ plane.
 		flatProjection.left.x = 0.50 + (blPoint.x * 0.50);
-		flatProjection.left.topY = (0.50 + cameraElevation) - (tlPoint.y * 0.50);
-		flatProjection.left.bottomY = (0.50 + cameraElevation) - (blPoint.y * 0.50);
+		flatProjection.left.topY = (0.50 + yShear) - (tlPoint.y * 0.50);
+		flatProjection.left.bottomY = (0.50 + yShear) - (blPoint.y * 0.50);
 		flatProjection.left.z = (Double2(bottomLeft.x, bottomLeft.z) - eye2D).length();
 		flatProjection.left.u = leftU;
 
 		flatProjection.right.x = 0.50 + (brPoint.x * 0.50);
-		flatProjection.right.topY = (0.50 + cameraElevation) - (trPoint.y * 0.50);
-		flatProjection.right.bottomY = (0.50 + cameraElevation) - (brPoint.y * 0.50);
+		flatProjection.right.topY = (0.50 + yShear) - (trPoint.y * 0.50);
+		flatProjection.right.bottomY = (0.50 + yShear) - (brPoint.y * 0.50);
 		flatProjection.right.z = (Double2(bottomRight.x, bottomRight.z) - eye2D).length();
 		flatProjection.right.u = rightU;
 
@@ -628,7 +628,7 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 }
 
 void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
-	const Matrix4d &transform, double cameraElevation, double daytimePercent, 
+	const Matrix4d &transform, double yShear, double daytimePercent,
 	const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
 	uint32_t *colorBuffer)
 {
@@ -715,7 +715,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
 	auto drawFloorColumn = [](int x, double y, const Double2 &nearPoint,
 		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform,
-		double cameraElevation, const TextureData &texture, double fogDistance,
+		double yShear, const TextureData &texture, double fogDistance,
 		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer,
 		uint32_t *output)
 	{
@@ -729,12 +729,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		p2 = p2 / p2.w;
 
 		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 		// correct aspect ratio.
 		// - Since the ray cast guarantees the intersection to be in the correct column
 		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 		// Get the start and end Y pixel coordinates of the projected points (potentially
 		// outside the top or bottom of the screen).
@@ -811,7 +811,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
 	auto drawCeilingColumn = [](int x, double y, const Double2 &nearPoint,
 		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform, 
-		double cameraElevation, const TextureData &texture, double fogDistance, 
+		double yShear, const TextureData &texture, double fogDistance,
 		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer, 
 		uint32_t *output)
 	{
@@ -824,12 +824,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		p2 = p2 / p2.w;
 
 		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 		// correct aspect ratio.
 		// - Since the ray cast guarantees the intersection to be in the correct column
 		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 		// Get the start and end Y pixel coordinates of the projected points (potentially
 		// outside the top or bottom of the screen).
@@ -1023,12 +1023,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		p2 = p2 / p2.w;
 
 		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 		// correct aspect ratio.
 		// - Since the ray cast guarantees the intersection to be in the correct column
 		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 		// Draw wall if the ID is not air.
 		if (initialVoxelData.sideID > 0)
@@ -1059,16 +1059,14 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			if (eye.y > (startCellReal.y + initialVoxelData.yOffset))
 			{
 				drawFloorColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
-					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 			else
 			{
 				drawCeilingColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
-					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 		}
 
@@ -1082,16 +1080,14 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			if (eye.y > (startCellReal.y + initialVoxelData.yOffset + initialVoxelData.ySize))
 			{
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 			else
 			{
 				drawFloorColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 		}
 
@@ -1138,12 +1134,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			p2 = p2 / p2.w;
 
 			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 			// correct aspect ratio.
 			// - Since the ray cast guarantees the intersection to be in the correct column
 			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 			// Draw wall if the ID is not air.
 			if (initialVoxelData.sideID > 0)
@@ -1169,9 +1165,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				// Draw the floor.
 				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Draw ceiling if the ID is not air.
@@ -1182,9 +1177,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				// Draw the ceiling.
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 		}
 
@@ -1231,12 +1225,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			p2 = p2 / p2.w;
 
 			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 			// correct aspect ratio.
 			// - Since the ray cast guarantees the intersection to be in the correct column
 			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 			// Draw wall if the ID is not air.
 			if (initialVoxelData.sideID > 0)
@@ -1262,9 +1256,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				// Draw the floor.
 				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, floorTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 
 			// Draw ceiling if the ID is not air.
@@ -1275,9 +1268,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				// Draw the ceiling.
 				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, cameraElevation, ceilingTexture,
-					this->fogDistance, fogColor, this->width, this->height, this->zBuffer.data(),
-					colorBuffer);
+					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
+					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
 			}
 		}
 	}
@@ -1393,12 +1385,12 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 			p2 = p2 / p2.w;
 
 			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add camera elevation for "fake" looking up and down. Multiply by 0.5 to apply the 
+			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
 			// correct aspect ratio.
 			// - Since the ray cast guarantees the intersection to be in the correct column
 			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + cameraElevation) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + cameraElevation) - (p2.y * 0.50);
+			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
+			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
 
 			// Draw wall if the ID is not air.
 			if (voxelData.sideID > 0)
@@ -1418,8 +1410,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				drawFloorColumn(x, wallFloor.y, Double2(nearPointX, nearPointZ),
 					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
-					cameraElevation, floorTexture, fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), colorBuffer);
+					yShear, floorTexture, fogDistance, fogColor, this->width, this->height, 
+					this->zBuffer.data(), colorBuffer);
 			}
 
 			// Draw the ceiling if the ID is not air.
@@ -1430,8 +1422,8 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 				drawCeilingColumn(x, wallCeiling.y, Double2(nearPointX, nearPointZ),
 					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
-					cameraElevation, ceilingTexture, fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), colorBuffer);
+					yShear, ceilingTexture, fogDistance, fogColor, this->width, this->height, 
+					this->zBuffer.data(), colorBuffer);
 			}
 		}
 	}
@@ -1536,9 +1528,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
 
-	// Camera values for rendering. We trick the 2.5D ray caster into thinking the player 
-	// is always looking straight forward, but we use the forward vector's Y component (the
-	// camera elevation) to offset projected coordinates. Assume "forward" is normalized.
+	// Camera values for rendering. We trick the 2.5D ray caster into thinking the player is 
+	// always looking straight forward, but we use the Y component of the player's direction 
+	// to offset projected coordinates via Y-shearing. Assume "forward" is normalized.
 	const Double3 forwardXZ = Double3(forward.x, 0.0, forward.z).normalized();
 	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
 	const Double3 up = Double3::UnitY;
@@ -1553,11 +1545,35 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 		SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
 	const Matrix4d transform = projection * view;
 
-	// Camera elevation, as I call it, involves the Y component of the player's 3D direction. 
-	// In 2.5D rendering, it affects "fake" looking up and down (a.k.a. Y-shearing). The player's
-	// Y direction magnitude must be clamped less than 1 because 1 would imply they are looking 
-	// straight up or down, which is impossible (the viewing frustum would have a volume of 0).
-	const double cameraElevation = forward.y;
+	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
+	// player's 3D direction and field of view. First get the player's angle relative to the 
+	// horizon, then get the tangent of that angle. The Y component of the player's direction
+	// must be clamped less than 1 because 1 would imply they are looking straight up or down, 
+	// which is impossible in 2.5D rendering (the vertical line segment of the view frustum 
+	// would be infinitely high or low). The camera code should take care of the clamping for us.
+	const double yShear = [&forward, zoom]()
+	{
+		// Get the length of the forward vector's projection onto the XZ plane.
+		const double xzProjection = std::sqrt((forward.x * forward.x) + (forward.z * forward.z));
+
+		// Get the angle of the player's direction above or below the XZ plane.
+		double angleRadians = (forward.y >= 0.0) ? 
+			std::acos(xzProjection) : -std::acos(xzProjection);
+
+		// Check for infinities and NaNs here due to some edge cases where Y values 
+		// close to zero become NaNs in normalized vectors (like the player's direction).
+		if (!std::isfinite(angleRadians))
+		{
+			angleRadians = 0.0;
+		}
+
+		// Get the number of screen heights to translate all projected Y coordinates by, 
+		// relative to the current zoom. As a reference, this should be some value roughly 
+		// between -1.0 and 1.0 for "acceptable skewing" at a vertical FOV of 90.0. If the 
+		// camera is not clamped, this could theoretically be between -infinity and infinity, 
+		// but it would result in far too much skewing.
+		return std::tan(angleRadians) * zoom;
+	}();
 
 	// Camera values for generating 2D rays with.
 	const Double2 forwardComp = Double2(forwardXZ.x, forwardXZ.z).normalized() * zoom;
@@ -1571,7 +1587,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
 	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, 
-		&fogColor, &sunDirection, widthReal, &transform, cameraElevation, 
+		&fogColor, &sunDirection, widthReal, &transform, yShear,
 		&forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
@@ -1588,7 +1604,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 			const Double2 direction = (forwardComp + rightComp).normalized();
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->castColumnRay(x, eye, direction, transform, cameraElevation, 
+			this->castColumnRay(x, eye, direction, transform, yShear,
 				daytimePercent, fogColor, sunDirection, voxelGrid, colorBuffer);
 		}
 	};
@@ -1612,9 +1628,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this, eye, cameraElevation, &transform]
+	std::thread sortThread([this, eye, yShear, &transform]
 	{ 
-		this->updateVisibleFlats(eye, cameraElevation, transform);
+		this->updateVisibleFlats(eye, yShear, transform);
 	});
 
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.

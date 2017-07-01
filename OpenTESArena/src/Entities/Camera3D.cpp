@@ -6,7 +6,11 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 
-const double Camera3D::MIN_Y_LIMIT = 0.10;
+// The intention with using 45 degrees is to have the software renderer translate the
+// projected Y coordinates by +/- one screen height at a vertical field of view of 90.0. 
+// That's an arbitrary value I'm basing the Y-shearing on, just to have some kind of 
+// "identity" for everything else to be relative to.
+const double Camera3D::MIN_Y_LIMIT = (PI / 4.0) * RAD_TO_DEG;
 
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
