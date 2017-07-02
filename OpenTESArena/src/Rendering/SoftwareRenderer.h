@@ -30,6 +30,23 @@ private:
 		int width, height;
 	};
 
+	// Helper struct for keeping shading data organized in the renderer. These values are
+	// computed once per frame.
+	struct ShadingInfo
+	{
+		// Fog colors for the horizon and zenith to interpolate sky color between.
+		Double3 horizonFogColor, zenithFogColor;
+
+		// Light and direction of the sun.
+		Double3 sunColor, sunDirection;
+
+		// Global ambient light percent.
+		double ambient;
+
+		ShadingInfo(const Double3 &horizonFogColor, const Double3 &zenithFogColor,
+			const Double3 &sunColor, const Double3 &sunDirection, double ambient);
+	};
+
 	// A flat is a 2D surface always facing perpendicular to the Y axis (not necessarily
 	// facing the camera). It might be a door, sprite, store sign, etc..
 	struct Flat

@@ -11,6 +11,14 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
+SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonFogColor, const Double3 &zenithFogColor,
+	const Double3 &sunColor, const Double3 &sunDirection, double ambient)
+	: horizonFogColor(horizonFogColor), zenithFogColor(zenithFogColor),
+	sunColor(sunColor), sunDirection(sunDirection)
+{
+	this->ambient = ambient;
+}
+
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 
