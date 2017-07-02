@@ -28,6 +28,7 @@ private:
 	{
 		std::vector<Double4> pixels;
 		int width, height;
+		bool containsTransparency; // For occlusion culling.
 	};
 
 	// Helper struct for keeping shading data organized in the renderer. These values are

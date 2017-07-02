@@ -84,6 +84,10 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	texture.width = width;
 	texture.height = height;
 
+	// Initialize the transparency boolean to false, and set it to true if any
+	// non-opaque texels exist in the texture.
+	texture.containsTransparency = false;
+
 	// Convert ARGB color from integer to double-precision format for speed.
 	// This does waste an extreme amount of memory (32 bytes per pixel!), but
 	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
@@ -92,6 +96,15 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	for (int i = 0; i < pixelCount; ++i)
 	{
 		texturePixels[i] = Double4::fromARGB(pixels[i]);
+
+		// Set the transparency boolean if the texture contains any non-opaque texels
+		// (like with hedges). This only affects how occlusion culling is handled, and 
+		// isn't used with partially transparent texels because that would require a
+		// reordering of how voxels are rendered.
+		if (!texture.containsTransparency && (texturePixels[i].w < 1.0))
+		{
+			texture.containsTransparency = true;
+		}
 	}
 
 	this->textures.push_back(std::move(texture));
