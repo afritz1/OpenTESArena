@@ -1574,19 +1574,29 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// would be infinitely high or low). The camera code should take care of the clamping for us.
 	const double yShear = [&forward, zoom]()
 	{
-		// Get the length of the forward vector's projection onto the XZ plane.
-		const double xzProjection = std::sqrt((forward.x * forward.x) + (forward.z * forward.z));
-
-		// Get the angle of the player's direction above or below the XZ plane.
-		double angleRadians = (forward.y >= 0.0) ? 
-			std::acos(xzProjection) : -std::acos(xzProjection);
-
-		// Check for infinities and NaNs here due to some edge cases where Y values 
-		// close to zero become NaNs in normalized vectors (like the player's direction).
-		if (!std::isfinite(angleRadians))
+		// Get the vertical angle of the player's direction.
+		const double angleRadians = [&forward]()
 		{
-			angleRadians = 0.0;
-		}
+			// Get the length of the forward vector's projection onto the XZ plane.
+			const double xzProjection = std::sqrt(
+				(forward.x * forward.x) + (forward.z * forward.z));
+
+			if (forward.y > 0.0)
+			{
+				// Above the horizon.
+				return std::acos(xzProjection);
+			}
+			else if (forward.y < 0.0)
+			{
+				// Below the horizon.
+				return -std::acos(xzProjection);
+			}
+			else
+			{
+				// At the horizon.
+				return 0.0;
+			}
+		}();
 
 		// Get the number of screen heights to translate all projected Y coordinates by, 
 		// relative to the current zoom. As a reference, this should be some value roughly 
