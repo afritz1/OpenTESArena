@@ -62,3 +62,6 @@ CMakeCache.txt
 CMakeFiles/
 Makefile
 cmake_install.cmake
+
+# Files Intellij CLion
+.idea/
