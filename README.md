@@ -14,7 +14,6 @@ No jumping or collision yet. A few of the menus work, including some of characte
 
 Here are some keys in the game world:
 - WASD - move and turn. Hold LCtrl to strafe with A and D.
-- Space and C - move up and down
 - Esc - pause menu
 - Tab - character sheet
 - L - logbook
@@ -44,8 +43,7 @@ The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find whe
 #### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
-- Extract Arena106Setup.zip.
-- Run Arena106.exe.
+- Extract Arena106Setup.zip and run Arena106.exe.
 - Pick a destination folder anywhere and install.
 - Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
 - If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
@@ -81,10 +79,10 @@ cd ..
 - Use CMake to generate your project files in `build`, then compile the executable.
 
 #### Running the executable:
-- Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
+- Verify that the `data` and `options` folders are in the same folder as the executable, and that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
 
 ## Resources
 
-The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for finding information all about Arena. There are [various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) available such as WinArena for browsing Arena's content, and there is a very detailed manual as well, so you'll probably want to take a look at a copy from [here](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities). I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay.
+The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for finding information all about Arena. There are [various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) available such as WinArena for browsing Arena's content, and there is a very detailed manual as well, so you'll probably want to take a look at a copy from [here](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities). I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay. Here's the YouTube [channel](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw) where I post project updates.
