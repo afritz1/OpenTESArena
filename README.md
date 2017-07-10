@@ -81,7 +81,6 @@ cd ..
 - Use CMake to generate your project files in `build`, then compile the executable.
 
 #### Running the executable:
-- Copy the `data` and `options` folders to where the executable is in the `build` directory.
 - Verify that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If there is a bug or technical problem in the program, check out the issues tab!
