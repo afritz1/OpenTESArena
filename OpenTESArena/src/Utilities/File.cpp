@@ -12,12 +12,21 @@ std::string File::toString(const std::string &filename)
 
 	DebugAssert(ifs.is_open(), "Could not open \"" + filename + "\".");
 
-	auto fileSize = ifs.tellg();
+	const auto fileSize = ifs.tellg();
 	ifs.seekg(0, std::ios::beg);
 
 	std::vector<char> bytes(fileSize);
-	ifs.read(&bytes.at(0), fileSize);
+	ifs.read(bytes.data(), fileSize);
 	ifs.close();
 
-	return std::string(&bytes.at(0), fileSize);
+	return std::string(bytes.data(), fileSize);
+}
+
+bool File::exists(const std::string &filename)
+{
+	std::ifstream ifs(filename);
+	const bool isOpen = ifs.good();
+
+	ifs.close();
+	return isOpen;
 }

@@ -14,17 +14,15 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssets.h"
 #include "../Interface/Panel.h"
-#include "../Math/Vector2.h"
-#include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PPMFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/File.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -35,7 +33,11 @@ Game::Game()
 	// Load options from file.
 	this->options = OptionsParser::parse();
 
-	// Initialize virtual file system using the Arena path in the options file.
+	// Verify that GLOBAL.BSA (the most important Arena file) exists.
+	DebugAssert(File::exists(this->options->getArenaPath() + "/GLOBAL.BSA"),
+		"\"" + this->options->getArenaPath() + "\" not a valid ARENA path.");
+
+	// Initialize virtual file system using the Arena path in the options file.	
 	VFS::Manager::get().initialize(std::string(this->options->getArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.

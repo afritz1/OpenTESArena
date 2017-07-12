@@ -12,6 +12,9 @@ private:
 public:
 	// Reads a file into a string.
 	static std::string toString(const std::string &filename);
+
+	// Checks that a file exists.
+	static bool exists(const std::string &filename);
 };
 
 #endif
