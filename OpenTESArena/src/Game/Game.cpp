@@ -63,7 +63,7 @@ Game::Game()
 
 	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
-	auto iconPixels = PPMFile::read("data/icon.ppm", iconWidth, iconHeight);
+	auto iconPixels = PPMFile::read(std::string(SDL_GetBasePath()) + "data/icon.ppm", iconWidth, iconHeight);
 	SDL_Surface *icon = Surface::createSurfaceWithFormatFrom(iconPixels.get(),
 		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);

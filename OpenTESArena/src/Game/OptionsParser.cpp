@@ -1,4 +1,5 @@
 #include <cassert>
+#include <SDL_filesystem.h>
 
 #include "OptionsParser.h"
 
@@ -32,7 +33,7 @@ const std::string OptionsParser::SHOW_DEBUG_KEY = "ShowDebug";
 std::unique_ptr<Options> OptionsParser::parse()
 {
 	// Path to the options file.
-	std::string fullPath(OptionsParser::PATH + OptionsParser::FILENAME);
+	std::string fullPath(std::string(SDL_GetBasePath()) + OptionsParser::PATH + OptionsParser::FILENAME);
 
 	DebugMention("Reading \"" + fullPath + "\".");
 
