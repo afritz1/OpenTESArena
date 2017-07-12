@@ -23,6 +23,7 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
+#include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -30,11 +31,33 @@ Game::Game()
 {
 	DebugMention("Initializing (Platform: " + std::string(SDL_GetPlatform()) + ").");
 
+	// Get the current working directory. This is most relevant for platforms
+	// like macOS, where the base path might be in the app's own "Resources" folder.
+	this->basePath = []()
+	{
+		char *basePathPtr = SDL_GetBasePath();
+
+		if (basePathPtr == nullptr)
+		{
+			DebugMention("SDL_GetBasePath() not available on this platform.");
+			basePathPtr = SDL_strdup("./");
+		}			
+
+		const std::string basePathString(basePathPtr);
+		SDL_free(basePathPtr);
+
+		// Convert Windows backslashes to forward slashes.
+		return String::replace(basePathString, '\\', '/');
+	}();
+
 	// Load options from file.
-	this->options = OptionsParser::parse();
+	this->options = OptionsParser::parse(this->basePath + 
+		OptionsParser::PATH + OptionsParser::FILENAME);
 
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
-	DebugAssert(File::exists(this->options->getArenaPath() + "/GLOBAL.BSA"),
+	const std::string globalBsaPath = this->basePath +
+		this->options->getArenaPath() + "/GLOBAL.BSA";
+	DebugAssert(File::exists(globalBsaPath),
 		"\"" + this->options->getArenaPath() + "\" not a valid ARENA path.");
 
 	// Initialize virtual file system using the Arena path in the options file.	
@@ -63,13 +86,13 @@ Game::Game()
 
 	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
-	auto iconPixels = PPMFile::read(std::string(SDL_GetBasePath()) + "data/icon.ppm", iconWidth, iconHeight);
-	SDL_Surface *icon = Surface::createSurfaceWithFormatFrom(iconPixels.get(),
+	std::unique_ptr<uint32_t[]> iconPixels = PPMFile::read(
+		this->basePath + "data/icon.ppm", iconWidth, iconHeight);
+	Surface icon(Surface::createSurfaceWithFormatFrom(iconPixels.get(),
 		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
-		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT);
-	SDL_SetColorKey(icon, SDL_TRUE, SDL_MapRGBA(icon->format, 0, 0, 0, 255));
-	this->renderer->setWindowIcon(icon);
-	SDL_FreeSurface(icon);
+		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT));
+	SDL_SetColorKey(icon.get(), SDL_TRUE, SDL_MapRGBA(icon.get()->format, 0, 0, 0, 255));
+	this->renderer->setWindowIcon(icon.get());
 
 	// Initialize panel and music to default.
 	this->panel = Panel::defaultPanel(this);

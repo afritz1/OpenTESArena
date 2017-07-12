@@ -1,5 +1,4 @@
 #include <cassert>
-#include <SDL_filesystem.h>
 
 #include "OptionsParser.h"
 
@@ -30,15 +29,12 @@ const std::string OptionsParser::ARENA_PATH_KEY = "ArenaPath";
 const std::string OptionsParser::SKIP_INTRO_KEY = "SkipIntro";
 const std::string OptionsParser::SHOW_DEBUG_KEY = "ShowDebug";
 
-std::unique_ptr<Options> OptionsParser::parse()
+std::unique_ptr<Options> OptionsParser::parse(const std::string &filename)
 {
-	// Path to the options file.
-	std::string fullPath(std::string(SDL_GetBasePath()) + OptionsParser::PATH + OptionsParser::FILENAME);
-
-	DebugMention("Reading \"" + fullPath + "\".");
+	DebugMention("Reading \"" + filename + "\".");
 
 	// Read in all the key-value pairs from the options file.
-	KvpTextMap textMap(fullPath);
+	KvpTextMap textMap(filename);
 	
 	// Graphics.
 	int screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);

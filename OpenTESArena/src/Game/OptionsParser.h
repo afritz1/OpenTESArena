@@ -11,9 +11,6 @@ class Options;
 class OptionsParser
 {
 private:
-	static const std::string PATH;
-	static const std::string FILENAME;
-
 	// Graphics.
 	static const std::string SCREEN_WIDTH_KEY;
 	static const std::string SCREEN_HEIGHT_KEY;
@@ -44,7 +41,11 @@ private:
 	OptionsParser(const OptionsParser&) = delete;
 	~OptionsParser() = delete;
 public:
-	static std::unique_ptr<Options> parse();
+	static const std::string PATH;
+	static const std::string FILENAME;
+
+	// Reads in the options text file and converts it to an Options object.
+	static std::unique_ptr<Options> parse(const std::string &filename);
 
 	// Overwrite the options text file with a new options object.
 	static void save(const Options &options);

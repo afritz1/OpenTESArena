@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <memory>
+#include <string>
 
 #include "InputManager.h"
 #include "../Media/AudioManager.h"
@@ -40,6 +41,7 @@ private:
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 	std::unique_ptr<CityDataFile> cityDataFile;
+	std::string basePath;
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
