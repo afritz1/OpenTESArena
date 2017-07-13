@@ -43,10 +43,10 @@ public:
 	static void check(bool condition, const char *__file__, int lineNumber, 
 		const std::string &message);
 
-#define DebugMention(message) Debug::mention(__FILE__, __LINE__, std::string(message))
-#define DebugWarning(message) Debug::warning(__FILE__, __LINE__, std::string(message))
-#define DebugCrash(message) Debug::crash(__FILE__, __LINE__, std::string(message))
-#define DebugAssert(condition, message) Debug::check(condition, __FILE__, __LINE__, std::string(message))
+#define DebugMention(message) Debug::mention(__FILE__, __LINE__, message)
+#define DebugWarning(message) Debug::warning(__FILE__, __LINE__, message)
+#define DebugCrash(message) Debug::crash(__FILE__, __LINE__, message)
+#define DebugAssert(condition, message) Debug::check(condition, __FILE__, __LINE__, message)
 #define DebugNotImplemented() Debug::crash(__FILE__, __LINE__, "Not implemented.")
 };
 
