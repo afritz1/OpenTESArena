@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdint>
 #include <deque>
+#include <functional>
 #include <string>
 #include <thread>
 #include <vector>
