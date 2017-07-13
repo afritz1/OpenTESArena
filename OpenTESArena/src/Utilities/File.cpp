@@ -1,5 +1,8 @@
+#include <cctype>
 #include <fstream>
 #include <vector>
+
+#include "SDL_platform.h"
 
 #include "File.h"
 
@@ -29,4 +32,29 @@ bool File::exists(const std::string &filename)
 
 	ifs.close();
 	return isOpen;
+}
+
+bool File::pathIsRelative(const std::string &filename)
+{
+	DebugAssert(filename.size() > 0, "Path cannot be empty.");
+
+	// See which platform we're running on by comparing with names provided by SDL.
+	const std::string platformName(SDL_GetPlatform());
+
+	if (platformName == "Windows")
+	{
+		// Can't be absolute without a colon at index 1.
+		if (filename.size() < 2)
+		{
+			return true;
+		}
+
+		// Needs a drive letter and a colon to be absolute.
+		return !(std::isalpha(filename.front()) && (filename.at(1) == ':'));
+	}
+	else
+	{
+		// Needs a leading forward slash to be absolute.
+		return filename.front() != '/';
+	}
 }

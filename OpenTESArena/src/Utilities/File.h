@@ -15,6 +15,9 @@ public:
 
 	// Checks that a file exists.
 	static bool exists(const std::string &filename);
+
+	// Checks if the path to a file is relative or absolute.
+	static bool pathIsRelative(const std::string &filename);
 };
 
 #endif
