@@ -41,7 +41,7 @@ private:
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 	std::unique_ptr<CityDataFile> cityDataFile;
-	std::string basePath;
+	std::string basePath, optionsPath;
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);

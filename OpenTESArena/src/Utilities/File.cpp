@@ -58,3 +58,17 @@ bool File::pathIsRelative(const std::string &filename)
 		return filename.front() != '/';
 	}
 }
+
+void File::copy(const std::string &srcFilename, const std::string &dstFilename)
+{
+	std::ifstream ifs(srcFilename, std::ios::binary);
+	std::ofstream ofs(dstFilename, std::ios::binary);
+
+	DebugAssert(ifs.is_open(), "Cannot open \"" + srcFilename + "\" for copying.");
+
+	// Copy the source file to the destination.
+	ofs << ifs.rdbuf();
+
+	ifs.close();
+	ofs.close();
+}

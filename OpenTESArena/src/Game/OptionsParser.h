@@ -41,7 +41,6 @@ private:
 	OptionsParser(const OptionsParser&) = delete;
 	~OptionsParser() = delete;
 public:
-	static const std::string PATH;
 	static const std::string FILENAME;
 
 	// Reads in the options text file and converts it to an Options object.

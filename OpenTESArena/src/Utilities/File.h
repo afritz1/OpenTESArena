@@ -18,6 +18,9 @@ public:
 
 	// Checks if the path to a file is relative or absolute.
 	static bool pathIsRelative(const std::string &filename);
+
+	// Copies a file to a destination file.
+	static void copy(const std::string &srcFilename, const std::string &dstFilename);
 };
 
 #endif

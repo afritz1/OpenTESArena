@@ -41,7 +41,7 @@ Game::Game()
 		{
 			DebugMention("SDL_GetBasePath() not available on this platform.");
 			basePathPtr = SDL_strdup("./");
-		}			
+		}
 
 		const std::string basePathString(basePathPtr);
 		SDL_free(basePathPtr);
@@ -50,18 +50,80 @@ Game::Game()
 		return String::replace(basePathString, '\\', '/');
 	}();
 
-	// Load options from file.
-	this->options = OptionsParser::parse(this->basePath + 
-		OptionsParser::PATH + OptionsParser::FILENAME);
+	// Get the path to the options folder. This is platform-dependent and points to the
+	// "preferences directory" so it's always writable. Append "options.txt" to access
+	// the file itself.
+	this->optionsPath = []()
+	{
+		// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
+		char *optionsPathPtr = SDL_GetPrefPath("OpenTESArena", "options");
+
+		if (optionsPathPtr == nullptr)
+		{
+			DebugMention("SDL_GetPrefPath() not available on this platform.");
+			optionsPathPtr = SDL_strdup("options/");
+		}
+
+		const std::string optionsPathString(optionsPathPtr);
+		SDL_free(optionsPathPtr);
+
+		// Convert Windows backslashes to forward slashes.
+		return String::replace(optionsPathString, '\\', '/');
+	}();
+
+	// Parse the desired options.txt.
+	this->options = [this]()
+	{
+		// We want any local copy of "options/options.txt" to override the one
+		// in the preferences directory for development purposes. At some point,
+		// options.txt should be hardcoded in the executable and generated in the
+		// preferences directory if it doesn't exist either there or locally.
+		const std::string desiredOptionsPath = [this]()
+		{
+			const std::string localOptionsPath(this->basePath + "options/" + OptionsParser::FILENAME);
+			const std::string prefsOptionsPath(this->optionsPath + OptionsParser::FILENAME);
+
+			// Look for the local "options/options.txt" first.
+			if (File::exists(localOptionsPath))
+			{
+				DebugMention("Using local \"options/" + OptionsParser::FILENAME +
+					"\" (intended for development purposes).");
+				return localOptionsPath;
+			}
+			else
+			{
+				// Create "<PrefsOptionsPath>/options.txt" if it doesn't exist.
+				if (!File::exists(prefsOptionsPath))
+				{
+					// @todo: generate new options.txt via hardcoded text in executable.
+					/*DebugMention("Created " + OptionsParser::FILENAME + " in \"" +
+						prefsOptionsPath + "\".");*/
+					DebugNotImplemented();
+				}
+
+				return prefsOptionsPath;
+			}
+		}();
+
+		return OptionsParser::parse(desiredOptionsPath);
+	}();
 
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
-	const std::string globalBsaPath = this->basePath +
-		this->options->getArenaPath() + "/GLOBAL.BSA";
+	const bool arenaPathIsRelative = File::pathIsRelative(
+		this->getOptions().getArenaPath());
+	const std::string globalBsaPath = [this, arenaPathIsRelative]()
+	{
+		// Include the base path if the ArenaPath is relative.
+		return (arenaPathIsRelative ? this->basePath : "") +
+			this->options->getArenaPath() + "/GLOBAL.BSA";
+	}();
+
 	DebugAssert(File::exists(globalBsaPath),
 		"\"" + this->options->getArenaPath() + "\" not a valid ARENA path.");
 
 	// Initialize virtual file system using the Arena path in the options file.	
-	VFS::Manager::get().initialize(std::string(this->options->getArenaPath()));
+	VFS::Manager::get().initialize(std::string(
+		(arenaPathIsRelative ? this->basePath : "") + this->options->getArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.
 	this->audioManager.init(*this->options.get());

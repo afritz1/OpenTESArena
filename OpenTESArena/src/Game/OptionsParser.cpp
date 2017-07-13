@@ -7,7 +7,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/KvpTextMap.h"
 
-const std::string OptionsParser::PATH = "options/";
+// The path to the options folder is platform-dependent (see SDL_GetPrefPath).
 const std::string OptionsParser::FILENAME = "options.txt";
 
 const std::string OptionsParser::SCREEN_WIDTH_KEY = "ScreenWidth";
