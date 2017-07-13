@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <SDL_messagebox.h>
 
 #include "Debug.h"
 
@@ -63,7 +64,7 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 {
 	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
 		lineNumber, message);
-	std::getchar();
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), NULL);
 	exit(EXIT_FAILURE);
 }
 
