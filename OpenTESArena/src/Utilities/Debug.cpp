@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <SDL_messagebox.h>
 
 #include "Debug.h"
 
@@ -39,7 +40,7 @@ std::string Debug::getShorterPath(const char *__file__)
 	return shortPath;
 }
 
-void Debug::write(Debug::MessageType type, const std::string &filePath, 
+void Debug::write(Debug::MessageType type, const std::string &filePath,
 	int lineNumber, const std::string &message)
 {
 	const std::string &messageType = DebugMessageTypeNames.at(type);
@@ -49,13 +50,13 @@ void Debug::write(Debug::MessageType type, const std::string &filePath,
 
 void Debug::mention(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Info, Debug::getShorterPath(__file__), 
+	Debug::write(Debug::MessageType::Info, Debug::getShorterPath(__file__),
 		lineNumber, message);
 }
 
 void Debug::warning(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Warning, Debug::getShorterPath(__file__), 
+	Debug::write(Debug::MessageType::Warning, Debug::getShorterPath(__file__),
 		lineNumber, message);
 }
 
@@ -63,11 +64,16 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 {
 	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
 		lineNumber, message);
-	std::getchar();
+    const std::string platformName(SDL_GetPlatform());
+    if (platformName == "Mac OS X") {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), nullptr);
+    } else {
+        std::getchar();
+    }
 	exit(EXIT_FAILURE);
 }
 
-void Debug::check(bool condition, const char *__file__, int lineNumber, 
+void Debug::check(bool condition, const char *__file__, int lineNumber,
 	const std::string &message)
 {
 	if (!condition)
