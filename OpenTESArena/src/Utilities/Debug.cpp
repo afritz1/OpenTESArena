@@ -66,7 +66,7 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 		lineNumber, message);
     const std::string platformName(SDL_GetPlatform());
     if (platformName == "Mac OS X") {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), NULL);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), nullptr);
     } else {
         std::getchar();
     }
