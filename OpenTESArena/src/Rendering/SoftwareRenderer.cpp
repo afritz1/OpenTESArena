@@ -11,12 +11,14 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
-SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonFogColor, const Double3 &zenithFogColor,
-	const Double3 &sunColor, const Double3 &sunDirection, double ambient)
-	: horizonFogColor(horizonFogColor), zenithFogColor(zenithFogColor),
+SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor, 
+	const Double3 &zenithSkyColor, const Double3 &sunColor, 
+	const Double3 &sunDirection, double ambient, double fogDistance)
+	: horizonSkyColor(horizonSkyColor), zenithSkyColor(zenithSkyColor),
 	sunColor(sunColor), sunDirection(sunDirection)
 {
 	this->ambient = ambient;
+	this->fogDistance = fogDistance;
 }
 
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
@@ -648,10 +650,905 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 }
 
-void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &direction, 
-	const Matrix4d &transform, double yShear, double daytimePercent,
-	const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
-	uint32_t *colorBuffer)
+double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &transform, 
+	double yShear)
+{
+	// Project the 3D point to camera space.
+	Double4 projected = transform * Double4(point.x, point.y, point.z, 1.0);
+
+	// Convert the projected Y to normalized coordinates.
+	projected.y /= projected.w;
+
+	// Calculate the Y position relative to the center row of the screen, and offset it by 
+	// the Y-shear. Multiply by 0.5 for the correct aspect ratio.
+	return (0.50 + yShear) - (projected.y * 0.50);
+}
+
+void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
+	double projectedYEnd, double z, double u, double topV, double bottomV, 
+	const TextureData &texture, const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, 
+	double *depthBuffer, uint32_t *colorBuffer)
+{
+	// Horizontal offset in texture.
+	const int textureX = static_cast<int>(u *
+		static_cast<double>(texture.width)) % texture.width;
+
+	// Linearly interpolated fog.
+	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
+	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frameWidth);
+
+		// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
+		// adjacent walls sharing the same Z value. More strict drawing rules (voxel
+		// stepping order? Occlusion culling?) might be a better fix for this.
+		if (z <= (depthBuffer[index] - EPSILON))
+		{
+			// Percent stepped from beginning to end on the column.
+			const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
+				static_cast<double>(projectedYEnd - projectedYStart);
+
+			// Vertical texture coordinate.
+			const double v = topV + ((bottomV - topV) * yPercent);
+
+			// Y position in texture.
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+
+			// Draw only if the texel is not transparent.
+			if (texel.w > 0.0)
+			{
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depthBuffer[index] = z;
+			}
+		}
+	}
+}
+
+void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart,
+	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
+	double startZ, double endZ, const TextureData &texture, const ShadingInfo &shadingInfo,
+	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+{
+	// Values for perspective-correct interpolation.
+	const double startZRecip = 1.0 / startZ;
+	const double endZRecip = 1.0 / endZ;
+	const Double2 startPointDiv = startPoint * startZRecip;
+	const Double2 endPointDiv = endPoint * endZRecip;
+
+	// Fog color to interpolate with.
+	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frameWidth);
+
+		// Percent stepped from beginning to end on the column.
+		const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
+			static_cast<double>(projectedYEnd - projectedYStart);
+
+		// Interpolate between the near and far point.
+		const Double2 currentPoint =
+			(startPointDiv + ((endPointDiv - startPointDiv) * yPercent)) /
+			(startZRecip + ((endZRecip - startZRecip) * yPercent));
+		const double z = startZ + ((endZ - startZ) * yPercent);
+
+		// Linearly interpolated fog.
+		const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
+
+		if (z <= depthBuffer[index])
+		{
+			// Horizontal texture coordinate.
+			const double u = currentPoint.y - std::floor(currentPoint.y);
+
+			// Horizontal offset in texture.
+			const int textureX = static_cast<int>(u *
+				static_cast<double>(texture.width)) % texture.width;
+
+			// Vertical texture coordinate.
+			const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
+
+			// Y position in texture.
+			const int textureY = static_cast<int>(v *
+				static_cast<double>(texture.height)) % texture.height;
+
+			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+
+			// Draw only if the texel is not transparent.
+			if (texel.w > 0.0)
+			{
+				const Double3 color(texel.x, texel.y, texel.z);
+
+				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depthBuffer[index] = z;
+			}
+		}
+	}
+}
+
+void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+	WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
+	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
+	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+{
+	// This method handles some special cases such as drawing the back-faces of wall sides.
+
+	// When clamping Y values for drawing ranges, subtract 0.5 from starts and add 0.5 to 
+	// ends before converting to integers because the drawing methods sample at the center 
+	// of pixels. The clamping function depends on which side of the range is being clamped; 
+	// either way, the drawing range should be contained within the projected range at the 
+	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
+
+	const double heightReal = static_cast<double>(frameHeight);
+
+	// Y position at the base of the player's voxel.
+	const double playerYFloor = std::floor(playerY);
+
+	// Voxel Y of the player.
+	const int playerVoxelY = static_cast<int>(playerYFloor);
+
+	// Horizontal texture coordinate for the inner wall. Shared between all voxels in this
+	// voxel column.
+	const double u = [&farPoint, wallNormal]()
+	{
+		if (wallNormal == WallNormal::PositiveX)
+		{
+			return 1.0 - (farPoint.y - std::floor(farPoint.y));
+		}
+		else if (wallNormal == WallNormal::NegativeX)
+		{
+			return farPoint.y - std::floor(farPoint.y);
+		}
+		else if (wallNormal == WallNormal::PositiveZ)
+		{
+			return farPoint.x - std::floor(farPoint.x);
+		}
+		else
+		{
+			return 1.0 - (farPoint.x - std::floor(farPoint.x));
+		}
+	}();
+
+	auto drawPlayersVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, wallNormal, &nearPoint, 
+		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, 
+		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
+	{
+		const int voxelY = static_cast<int>(playerYFloor);
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x, 
+			playerYFloor + voxelData.yOffset + voxelData.ySize, 
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			playerYFloor + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			playerYFloor + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			playerYFloor + voxelData.yOffset,
+			nearPoint.y);
+
+		// Y position of the player relative to the base of the voxel.
+		const double playerYRelative = playerY - playerYFloor;
+
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+		
+		// Decide which order to draw each pixel column in, based on the player's Y position.
+		if (playerYRelative > (voxelData.yOffset + voxelData.ySize))
+		{
+			// Above wall (drawing order matters).
+			const int ceilingStart = std::min(std::max(0, 
+				static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingStart;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = wallEnd;
+			const int floorEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+
+			// 1) Ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Inner wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+		else if (playerYRelative < voxelData.yOffset)
+		{
+			// Below wall (drawing order matters).
+			const int ceilingStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingEnd;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(nearFloorScreenY - 0.50))), frameHeight);
+			const int floorEnd = wallEnd;
+
+			// 1) Floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Inner wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+		else
+		{
+			// Inside wall (drawing order does not matter).
+			const int ceilingStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingEnd;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = wallEnd;
+			const int floorEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+
+			// 1) Inner ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Inner wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+	};
+
+	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
+		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset,
+			nearPoint.y);
+		
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+		
+		const int ceilingStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
+		const int ceilingEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
+		const int wallStart = ceilingStart;
+		const int wallEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+		const int floorStart = wallEnd;
+		const int floorEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+		
+		// 1) Ceiling.
+		if (voxelData.ceilingID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 2) Inner wall.
+		if (voxelData.sideID > 0)
+		{
+			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
+				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 3) Inner floor.
+		if (voxelData.floorID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+	};
+
+	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, wallNormal, &nearPoint, &farPoint,
+		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
+		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset,
+			nearPoint.y);
+
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+
+		const int ceilingStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+		const int ceilingEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+		const int wallStart = ceilingEnd;
+		const int wallEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+		const int floorStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(nearFloorScreenY - 0.50))), frameHeight);
+		const int floorEnd = wallEnd;
+
+		// 1) Floor.
+		if (voxelData.floorID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 2) Inner wall.
+		if (voxelData.sideID > 0)
+		{
+			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
+				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 3) Inner ceiling.
+		if (voxelData.ceilingID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+	};
+
+	// Draw the voxel that the player is in first.
+	drawPlayersVoxel();
+
+	// Draw voxels below the player.
+	for (int voxelY = (playerVoxelY - 1); voxelY >= 0; voxelY--)
+	{
+		drawInitialVoxelBelow(voxelY);
+	}
+
+	// Draw voxels above the player.
+	for (int voxelY = (playerVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	{
+		drawInitialVoxelAbove(voxelY);
+	}
+}
+
+void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+	WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
+	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
+	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+{
+	// Much of the code here is duplicated from the initial voxel column drawing method, but
+	// there are a couple differences, like the horizontal texture coordinate being flipped,
+	// and the drawing orders being slightly modified. The reason for having so much code is
+	// so we cover all the different ray casting cases efficiently. The initial voxel column 
+	// drawing is its own method because it's the only one that needs to handle back-faces of 
+	// wall sides.
+
+	// When clamping Y values for drawing ranges, subtract 0.5 from starts and add 0.5 to 
+	// ends before converting to integers because the drawing methods sample at the center 
+	// of pixels. The clamping function depends on which side of the range is being clamped; 
+	// either way, the drawing range should be contained within the projected range at the 
+	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
+
+	const double heightReal = static_cast<double>(frameHeight);
+
+	// Y position at the base of the player's voxel.
+	const double playerYFloor = std::floor(playerY);
+
+	// Voxel Y of the player.
+	const int playerVoxelY = static_cast<int>(playerYFloor);
+
+	// Horizontal texture coordinate for the wall. Shared between all voxels in this
+	// voxel column.
+	const double u = [&nearPoint, wallNormal]()
+	{
+		if (wallNormal == WallNormal::PositiveX)
+		{
+			return nearPoint.y - std::floor(nearPoint.y);
+		}
+		else if (wallNormal == WallNormal::NegativeX)
+		{
+			return 1.0 - (nearPoint.y - std::floor(nearPoint.y));
+		}
+		else if (wallNormal == WallNormal::PositiveZ)
+		{
+			return 1.0 - (nearPoint.x - std::floor(nearPoint.x));
+		}
+		else
+		{
+			return nearPoint.x - std::floor(nearPoint.x);
+		}
+	}();
+
+	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures,
+		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
+	{
+		const int voxelY = static_cast<int>(playerYFloor);
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			playerYFloor + voxelData.yOffset + voxelData.ySize,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			playerYFloor + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			playerYFloor + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			playerYFloor + voxelData.yOffset,
+			nearPoint.y);
+
+		// Y position of the player relative to the base of the voxel.
+		const double playerYRelative = playerY - playerYFloor;
+
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+
+		// Decide which order to draw each pixel column in, based on the player's Y position.
+		if (playerYRelative > (voxelData.yOffset + voxelData.ySize))
+		{
+			// Above voxel (draw inner floor last).
+			const int ceilingStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingEnd;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
+			const int floorEnd = wallEnd;
+
+			// 1) Ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+		else if (playerYRelative < voxelData.yOffset)
+		{
+			// Below voxel (draw inner ceiling last).
+			const int ceilingStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingStart;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = wallEnd;
+			const int floorEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+
+			// 1) Wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+		else
+		{
+			// Between top and bottom (draw wall first).
+			const int ceilingStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+			const int ceilingEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+			const int wallStart = ceilingStart;
+			const int wallEnd = std::min(std::max(0,
+				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			const int floorStart = std::min(std::max(0,
+				static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
+			const int floorEnd = wallEnd;
+
+			// 1) Wall.
+			if (voxelData.sideID > 0)
+			{
+				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 2) Inner ceiling.
+			if (voxelData.ceilingID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
+					farCeilingScreenY, nearPoint, farPoint, nearZ, farZ,
+					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+
+			// 3) Inner floor.
+			if (voxelData.floorID > 0)
+			{
+				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+					depthBuffer, colorBuffer);
+			}
+		}
+	};
+
+	auto drawVoxelBelow = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
+		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset,
+			nearPoint.y);
+
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+
+		const int ceilingStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
+		const int ceilingEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
+		const int wallStart = ceilingEnd;
+		const int wallEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+		const int floorStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
+		const int floorEnd = wallEnd;
+
+		// 1) Ceiling.
+		if (voxelData.ceilingID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 2) Wall.
+		if (voxelData.sideID > 0)
+		{
+			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 3) Inner floor.
+		if (voxelData.floorID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+	};
+
+	auto drawVoxelAbove = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
+		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// 3D points to be used for rendering columns once they are projected.
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset + voxelData.ySize,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			voxelYReal + voxelData.yOffset,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + voxelData.yOffset,
+			nearPoint.y);
+
+		// Y screen positions of the projections (unclamped; potentially outside the screen).
+		// Once they are clamped and are converted to integers, then they are suitable for 
+		// defining drawing ranges.
+		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+			farCeilingPoint, transform, yShear) * heightReal;
+		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+			nearCeilingPoint, transform, yShear) * heightReal;
+		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+			farFloorPoint, transform, yShear) * heightReal;
+		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+			nearFloorPoint, transform, yShear) * heightReal;
+
+		const int ceilingStart = std::min(std::max(0,
+			static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
+		const int ceilingEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
+		const int wallStart = ceilingStart;
+		const int wallEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+		const int floorStart = wallEnd;
+		const int floorEnd = std::min(std::max(0,
+			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+
+		// 1) Floor.
+		if (voxelData.floorID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, nearFloorScreenY,
+				farFloorScreenY, nearPoint, farPoint, nearZ, farZ,
+				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+
+		// 2) Wall.
+		if (voxelData.sideID > 0)
+		{
+			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+		
+		// 3) Inner ceiling.
+		if (voxelData.ceilingID > 0)
+		{
+			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
+				farCeilingScreenY, nearPoint, farPoint, nearZ, farZ,
+				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
+				depthBuffer, colorBuffer);
+		}
+	};
+
+	// Draw voxel straight ahead first.
+	drawVoxel();
+
+	// Draw voxels below the voxel.
+	for (int voxelY = (playerVoxelY - 1); voxelY >= 0; voxelY--)
+	{
+		drawVoxelBelow(voxelY);
+	}
+
+	// Draw voxels above the voxel.
+	for (int voxelY = (playerVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	{
+		drawVoxelAbove(voxelY);
+	}
+}
+
+void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direction,
+	const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
+	const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
 	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
@@ -664,261 +1561,6 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// -> (int)(-0.8) == 0
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
-
-	// Lambda for drawing a column of wall pixels.
-	// - 'x' is the screen column.
-	// - 'y1' and 'y2' are projected Y coordinates.
-	// - 'z' is the column's Z depth.
-	// - 'u' is the U texture coordinate between 0 and 1.
-	// - 'topV' and 'bottomV' are the start and end V texture coordinates.
-	auto drawWallColumn = [](int x, double y1, double y2, double z, double u,
-		double topV, double bottomV, const TextureData &texture, double fogDistance, 
-		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer, 
-		uint32_t *output)
-	{
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(frameHeight);
-		const int projectedStart = static_cast<int>(std::round(y1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(y2 * heightReal));
-
-		// Clamp the Y coordinates for where the wall starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(frameHeight, projectedEnd);
-
-		// Horizontal offset in texture.
-		const int textureX = static_cast<int>(u * 
-			static_cast<double>(texture.width)) % texture.width;
-
-		// Linearly interpolated fog.
-		const double fogPercent = std::min(z / fogDistance, 1.0);
-
-		// Draw the column to the output buffer.
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * frameWidth);
-
-			// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
-			// adjacent walls sharing the same Z value. More strict drawing rules (voxel
-			// stepping order?) might be a better fix for this.
-			if (z <= (depthBuffer[index] - EPSILON))
-			{
-				// Percent stepped from beginning to end on the column.
-				const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
-					static_cast<double>(projectedEnd - projectedStart);
-
-				// Vertical texture coordinate.
-				const double v = topV + ((bottomV - topV) * yPercent);
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-
-				// Draw only if the texel is not transparent.
-				if (texel.w > 0.0)
-				{
-					const Double3 color(texel.x, texel.y, texel.z);
-
-					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-					depthBuffer[index] = z;
-				}
-			}
-		}
-	};
-	
-	// Lambda for drawing a column of floor pixels (not in the first voxel).
-	// Right now, it renders near to far. Floors and ceilings can't be rendered in the 
-	// same loop because they have different projected properties (like size on screen) 
-	// due to the perspective transformation not preserving parallel lines.
-	// - 'x' is the screen column.
-	// - 'y' is the height of the floor.
-	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
-	auto drawFloorColumn = [](int x, double y, const Double2 &nearPoint,
-		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform,
-		double yShear, const TextureData &texture, double fogDistance,
-		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer,
-		uint32_t *output)
-	{
-		// Transform the floor points to camera space (projection * view).
-		// - Note that the near and far points are switched for floor rendering (for now).
-		Double4 p1 = transform * Double4(nearPoint.x, y, nearPoint.y, 1.0);
-		Double4 p2 = transform * Double4(farPoint.x, y, farPoint.y, 1.0);
-
-		// Convert to normalized coordinates.
-		p1 = p1 / p1.w;
-		p2 = p2 / p2.w;
-
-		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-		// correct aspect ratio.
-		// - Since the ray cast guarantees the intersection to be in the correct column
-		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(frameHeight);
-		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
-
-		// Clamp the Y coordinates for where the floor starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(frameHeight, projectedEnd);
-
-		// True distance to the near and far points.
-		const double nearZ = (nearPoint - eye).length();
-		const double farZ = (farPoint - eye).length();
-
-		// Values for perspective-correct interpolation.
-		const double nearZRecip = 1.0 / nearZ;
-		const double farZRecip = 1.0 / farZ;
-		const Double2 nearPointDiv = nearPoint * nearZRecip;
-		const Double2 farPointDiv = farPoint * farZRecip;
-
-		// Draw the column to the output buffer.
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * frameWidth);
-
-			// Percent stepped from beginning to end on the column.
-			const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
-				static_cast<double>(projectedEnd - projectedStart);
-
-			// Interpolate between the near and far point.
-			const Double2 currentPoint =
-				(nearPointDiv + ((farPointDiv - nearPointDiv) * yPercent)) /
-				(nearZRecip + ((farZRecip - nearZRecip) * yPercent));
-			const double z = nearZ + ((farZ - nearZ) * yPercent);
-
-			// Linearly interpolated fog.
-			const double fogPercent = std::min(z / fogDistance, 1.0);
-
-			if (z <= depthBuffer[index])
-			{
-				// Horizontal texture coordinate.
-				const double u = currentPoint.y - std::floor(currentPoint.y);
-
-				// Horizontal offset in texture.
-				const int textureX = static_cast<int>(u *
-					static_cast<double>(texture.width)) % texture.width;
-
-				// Vertical texture coordinate.
-				const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v *
-					static_cast<double>(texture.height)) % texture.height;
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-
-				// Draw only if the texel is not transparent.
-				if (texel.w > 0.0)
-				{
-					const Double3 color(texel.x, texel.y, texel.z);
-
-					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-					depthBuffer[index] = z;
-				}
-			}
-		}
-	};
-
-	// Lambda for drawing a column of ceiling pixels (not in the first voxel).
-	// Right now, it renders far to near.
-	// - 'x' is the screen column.
-	// - 'y' is the height of the floor.
-	// - 'nearPoint' and 'farPoint' are XZ world points that share 'y'.
-	auto drawCeilingColumn = [](int x, double y, const Double2 &nearPoint,
-		const Double2 &farPoint, const Double2 &eye, const Matrix4d &transform, 
-		double yShear, const TextureData &texture, double fogDistance,
-		const Double3 &fogColor, int frameWidth, int frameHeight, double *depthBuffer, 
-		uint32_t *output)
-	{
-		// Transform the floor points to camera space (projection * view).
-		Double4 p1 = transform * Double4(farPoint.x, y, farPoint.y, 1.0);
-		Double4 p2 = transform * Double4(nearPoint.x, y, nearPoint.y, 1.0);
-
-		// Convert to normalized coordinates.
-		p1 = p1 / p1.w;
-		p2 = p2 / p2.w;
-
-		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-		// correct aspect ratio.
-		// - Since the ray cast guarantees the intersection to be in the correct column
-		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(frameHeight);
-		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
-
-		// Clamp the Y coordinates for where the floor starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(frameHeight, projectedEnd);
-
-		// True distance to the near and far points.
-		const double nearZ = (nearPoint - eye).length();
-		const double farZ = (farPoint - eye).length();
-
-		// Values for perspective-correct interpolation.
-		const double nearZRecip = 1.0 / nearZ;
-		const double farZRecip = 1.0 / farZ;
-		const Double2 nearPointDiv = nearPoint * nearZRecip;
-		const Double2 farPointDiv = farPoint * farZRecip;
-		
-		// Draw the column to the output buffer.
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * frameWidth);
-
-			// Percent stepped from beginning to end on the column.
-			const double yPercent = (static_cast<double>(y - projectedStart) + 0.50) /
-				static_cast<double>(projectedEnd - projectedStart);
-
-			// Interpolate between the near and far point.
-			const Double2 currentPoint =
-				(farPointDiv + ((nearPointDiv - farPointDiv) * yPercent)) /
-				(farZRecip + ((nearZRecip - farZRecip) * yPercent));
-			const double z = farZ + ((nearZ - farZ) * yPercent);
-
-			// Linearly interpolated fog.
-			const double fogPercent = std::min(z / fogDistance, 1.0);
-
-			if (z <= depthBuffer[index])
-			{
-				// Horizontal texture coordinate.
-				const double u = currentPoint.y - std::floor(currentPoint.y);
-
-				// Horizontal offset in texture.
-				const int textureX = static_cast<int>(u *
-					static_cast<double>(texture.width)) % texture.width;
-
-				// Vertical texture coordinate.
-				const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v * 
-					static_cast<double>(texture.height)) % texture.height;
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-
-				// Draw only if the texel is not transparent.
-				if (texel.w > 0.0)
-				{
-					const Double3 color(texel.x, texel.y, texel.z);
-
-					output[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-					depthBuffer[index] = z;
-				}
-			}
-		}
-	};
 
 	// Because 2D vectors use "X" and "Y", the Z component is actually
 	// aliased as "Y", which is a minor annoyance.
@@ -972,11 +1614,11 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 	// Pointer to voxel ID grid data.
 	const char *voxels = voxelGrid.getVoxels();
 
-	// The Z distance from the camera to the wall, and the axis of the intersected
-	// voxel face. The first Z distance is a special case, so it's brought outside 
-	// the DDA loop.
+	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
+	// voxel face. The first Z distance is a special case, so it's brought outside the 
+	// DDA loop.
 	double zDistance;
-	Axis axis;
+	WallNormal wallNormal;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
 	bool voxelIsValid = (startCell.x >= 0) && (startCell.y >= 0) && (startCell.z >= 0) &&
@@ -989,469 +1631,103 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 		const char initialVoxelID = voxels[startCell.x + (startCell.y * voxelGrid.getWidth()) +
 			(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
 
-		// Decide how far the wall is, and which axis (voxel face) was hit.
+		// Decide how far the wall is, and which voxel face was hit.
 		if (sideDistX < sideDistZ)
 		{
 			zDistance = sideDistX;
-			axis = Axis::X;
+			wallNormal = nonNegativeDirX ? WallNormal::NegativeX : WallNormal::PositiveX;
 		}
 		else
 		{
 			zDistance = sideDistZ;
-			axis = Axis::Z;
+			wallNormal = nonNegativeDirZ ? WallNormal::NegativeZ : WallNormal::PositiveZ;
 		}
 
-		// X and Z coordinates for the initial wall hit. This will be used with the
-		// player's position for drawing the floor and ceiling.
-		const double initialFarPointX = eye.x + (dirX * zDistance);
-		const double initialFarPointZ = eye.z + (dirZ * zDistance);
-
-		// Get the voxel data referenced by the voxel ID. An ID of zero references the
-		// "empty voxel", which has air for each voxel face.
-		const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelID);
-
-		// Horizontal texture coordinate for the initial wall column. It is always
-		// a back face, so the texture coordinates are reversed.
-		double u;
-		if (axis == Axis::X)
-		{
-			const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
-			u = nonNegativeDirX ? (1.0 - uVal) : uVal;
-		}
-		else
-		{
-			const double uVal = initialFarPointX - std::floor(initialFarPointX);
-			u = nonNegativeDirZ ? uVal : (1.0 - uVal);
-		}
-
-		// Generate a point on the ceiling edge and floor edge of the wall relative
-		// to the hit point, accounting for the Y thickness of the wall as well.
-		const Double3 floorPoint(
-			initialFarPointX,
-			startCellReal.y + initialVoxelData.yOffset,
-			initialFarPointZ);
-		const Double3 ceilingPoint(
-			initialFarPointX,
-			startCellReal.y + initialVoxelData.yOffset + initialVoxelData.ySize,
-			initialFarPointZ);
-
-		// Transform the points to camera space (projection * view).
-		Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
-		Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
-
-		// Convert to normalized coordinates.
-		p1 = p1 / p1.w;
-		p2 = p2 / p2.w;
-
-		// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-		// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-		// correct aspect ratio.
-		// - Since the ray cast guarantees the intersection to be in the correct column
-		//   of the screen, only the Y coordinates need to be projected.
-		const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-		const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-		// Draw wall if the ID is not air.
-		if (initialVoxelData.sideID > 0)
-		{
-			const TextureData &texture = this->textures[initialVoxelData.sideID - 1];
-
-			// Draw the back-face wall column.
-			drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
-				initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-				this->height, this->zBuffer.data(), colorBuffer);
-		}
-
-		// Near point for the floor and ceiling.
-		const Double2 nearPoint(
-			eye.x + (dirX * SoftwareRenderer::NEAR_PLANE), 
+		// The initial near point is directly in front of the player in the near Z 
+		// camera plane.
+		const Double2 initialNearPoint(
+			eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
 			eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
 
-		// These special cases only apply for the voxel the camera is in, because
-		// the renderer always draws columns from top to bottom (for now).
+		// The initial far point is the wall hit. This is used with the player's position 
+		// for drawing the initial floor and ceiling.
+		const Double2 initialFarPoint(
+			eye.x + (dirX * zDistance),
+			eye.z + (dirZ * zDistance));
 
-		// Draw floor if the ID is not air.
-		if (initialVoxelData.floorID > 0)
-		{
-			// Texture for floor.
-			const TextureData &floorTexture = this->textures[initialVoxelData.floorID - 1];
-
-			// Draw the floor as a floor if above, and as a ceiling if below.
-			if (eye.y > (startCellReal.y + initialVoxelData.yOffset))
-			{
-				drawFloorColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
-					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-			else
-			{
-				drawCeilingColumn(x, floorPoint.y, Double2(floorPoint.x, floorPoint.z), nearPoint,
-					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-		}
-
-		// Draw ceiling if the ID is not air.
-		if (initialVoxelData.ceilingID > 0)
-		{
-			// Texture for ceiling.
-			const TextureData &ceilingTexture = this->textures[initialVoxelData.ceilingID - 1];
-
-			// Draw the ceiling as a ceiling if below, and as a floor if above.
-			if (eye.y > (startCellReal.y + initialVoxelData.yOffset + initialVoxelData.ySize))
-			{
-				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-			else
-			{
-				drawFloorColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-		}
-
-		// Render the voxels below the camera.
-		for (int voxelY = 0; voxelY < startCell.y; ++voxelY)
-		{
-			// Get the initial voxel ID and see how it should be rendered.
-			const char initialVoxelIDBelow = voxels[startCell.x + (voxelY * voxelGrid.getWidth()) +
-				(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-
-			const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelIDBelow);
-
-			// Horizontal texture coordinate for the initial wall column. It is always
-			// a back face, so the texture coordinates are reversed.
-			double u;
-			if (axis == Axis::X)
-			{
-				const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
-				u = nonNegativeDirX ? (1.0 - uVal) : uVal;
-			}
-			else
-			{
-				const double uVal = initialFarPointX - std::floor(initialFarPointX);
-				u = nonNegativeDirZ ? uVal : (1.0 - uVal);
-			}
-
-			// Generate a point on the ceiling edge and floor edge of the wall relative
-			// to the hit point, accounting for the Y thickness of the wall as well.
-			const Double3 floorPoint(
-				initialFarPointX,
-				static_cast<double>(voxelY) + initialVoxelData.yOffset,
-				initialFarPointZ);
-			const Double3 ceilingPoint(
-				initialFarPointX,
-				static_cast<double>(voxelY) + initialVoxelData.yOffset + initialVoxelData.ySize,
-				initialFarPointZ);
-
-			// Transform the points to camera space (projection * view).
-			Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
-			Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
-
-			// Convert to normalized coordinates.
-			p1 = p1 / p1.w;
-			p2 = p2 / p2.w;
-
-			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-			// correct aspect ratio.
-			// - Since the ray cast guarantees the intersection to be in the correct column
-			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-			// Draw wall if the ID is not air.
-			if (initialVoxelData.sideID > 0)
-			{
-				const TextureData &texture = this->textures[initialVoxelData.sideID - 1];
-
-				// Draw the back-face wall column.
-				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
-					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), colorBuffer);
-			}
-
-			// Near point for the floor and ceiling.
-			const Double2 nearPoint(
-				eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
-				eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
-
-			// Draw floor if the ID is not air.
-			if (initialVoxelData.floorID > 0)
-			{
-				// Texture for floor.
-				const TextureData &floorTexture = this->textures[initialVoxelData.floorID - 1];
-
-				// Draw the floor.
-				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-
-			// Draw ceiling if the ID is not air.
-			if (initialVoxelData.ceilingID > 0)
-			{
-				// Texture for ceiling.
-				const TextureData &ceilingTexture = this->textures[initialVoxelData.ceilingID - 1];
-
-				// Draw the ceiling.
-				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-		}
-
-		// Render the voxels above the camera.
-		for (int voxelY = (startCell.y + 1); voxelY < voxelGrid.getHeight(); ++voxelY)
-		{
-			// Get the initial voxel ID and see how it should be rendered.
-			const char initialVoxelIDAbove = voxels[startCell.x + (voxelY * voxelGrid.getWidth()) +
-				(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-
-			const VoxelData &initialVoxelData = voxelGrid.getVoxelData(initialVoxelIDAbove);
-
-			// Horizontal texture coordinate for the initial wall column. It is always
-			// a back face, so the texture coordinates are reversed.
-			double u;
-			if (axis == Axis::X)
-			{
-				const double uVal = initialFarPointZ - std::floor(initialFarPointZ);
-				u = nonNegativeDirX ? (1.0 - uVal) : uVal;
-			}
-			else
-			{
-				const double uVal = initialFarPointX - std::floor(initialFarPointX);
-				u = nonNegativeDirZ ? uVal : (1.0 - uVal);
-			}
-
-			// Generate a point on the ceiling edge and floor edge of the wall relative
-			// to the hit point, accounting for the Y thickness of the wall as well.
-			const Double3 floorPoint(
-				initialFarPointX,
-				static_cast<double>(voxelY) + initialVoxelData.yOffset,
-				initialFarPointZ);
-			const Double3 ceilingPoint(
-				initialFarPointX,
-				static_cast<double>(voxelY) + initialVoxelData.yOffset + initialVoxelData.ySize,
-				initialFarPointZ);
-
-			// Transform the points to camera space (projection * view).
-			Double4 p1 = transform * Double4(ceilingPoint.x, ceilingPoint.y, ceilingPoint.z, 1.0);
-			Double4 p2 = transform * Double4(floorPoint.x, floorPoint.y, floorPoint.z, 1.0);
-
-			// Convert to normalized coordinates.
-			p1 = p1 / p1.w;
-			p2 = p2 / p2.w;
-
-			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-			// correct aspect ratio.
-			// - Since the ray cast guarantees the intersection to be in the correct column
-			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-			// Draw wall if the ID is not air.
-			if (initialVoxelData.sideID > 0)
-			{
-				const TextureData &texture = this->textures[initialVoxelData.sideID - 1];
-
-				// Draw the back-face wall column.
-				drawWallColumn(x, projectedY1, projectedY2, zDistance, u, initialVoxelData.topV,
-					initialVoxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), colorBuffer);
-			}
-
-			// Near point for the floor and ceiling.
-			const Double2 nearPoint(
-				eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
-				eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
-
-			// Draw floor if the ID is not air.
-			if (initialVoxelData.floorID > 0)
-			{
-				// Texture for floor.
-				const TextureData &floorTexture = this->textures[initialVoxelData.floorID - 1];
-
-				// Draw the floor.
-				drawFloorColumn(x, floorPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, floorTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-
-			// Draw ceiling if the ID is not air.
-			if (initialVoxelData.ceilingID > 0)
-			{
-				// Texture for ceiling.
-				const TextureData &ceilingTexture = this->textures[initialVoxelData.ceilingID - 1];
-
-				// Draw the ceiling.
-				drawCeilingColumn(x, ceilingPoint.y, nearPoint, Double2(floorPoint.x, floorPoint.z),
-					Double2(eye.x, eye.z), transform, yShear, ceilingTexture, this->fogDistance, 
-					fogColor, this->width, this->height, this->zBuffer.data(), colorBuffer);
-			}
-		}
+		// Draw all voxels in a column at the player's XZ coordinate.
+		SoftwareRenderer::drawInitialVoxelColumn(x, startCell.x, startCell.z, eye.y,
+			wallNormal, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			zDistance, transform, yShear, shadingInfo, voxelGrid, this->textures, this->width, 
+			this->height, this->zBuffer.data(), colorBuffer);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
 	// the Y cell coordinate is constant.
 	Int3 cell(startCell.x, startCell.y, startCell.z);
 
-	// Step forward in the grid once to leave the initial voxel.
-	if (sideDistX < sideDistZ)
+	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
+	// distance for the current edge point.
+	auto doDDAStep = [&sideDistX, &sideDistZ, &cell, &wallNormal, &voxelIsValid, &zDistance,
+		deltaDistX, deltaDistZ, stepX, stepZ, dirX, dirZ, nonNegativeDirX, nonNegativeDirZ,
+		&eye, &voxelGrid]()
 	{
-		sideDistX += deltaDistX;
-		cell.x += stepX;
-		axis = Axis::X;
-		voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
-	}
-	else
-	{
-		sideDistZ += deltaDistZ;
-		cell.z += stepZ;
-		axis = Axis::Z;
-		voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
-	}
-
-	zDistance = (axis == Axis::X) ?
-		(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
-		(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
-
-	// Step through the voxel grid while the current coordinate is valid and
-	// the distance stepped is less than the distance at which fog is maximum.
-	while (voxelIsValid && (zDistance < this->fogDistance))
-	{
-		// X and Z coordinates on the wall from casting a ray along the XZ plane. This is 
-		// used with the next DDA point ("far point") to draw the floor and ceiling.
-		const double nearPointX = eye.x + (dirX * zDistance);
-		const double nearPointZ = eye.z + (dirZ * zDistance);
-
-		// Store the cell coordinates, axis, and Z distance for wall rendering, not 
-		// floor and ceiling rendering.
-		const int savedCellX = cell.x;
-		const int savedCellZ = cell.z;
-		const Axis savedAxis = axis;
-		const double wallDistance = zDistance;
-
-		// Decide which voxel in the XZ plane to step to next.
 		if (sideDistX < sideDistZ)
 		{
 			sideDistX += deltaDistX;
 			cell.x += stepX;
-			axis = Axis::X;
+			wallNormal = nonNegativeDirX ? WallNormal::NegativeX : WallNormal::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
 			cell.z += stepZ;
-			axis = Axis::Z;
+			wallNormal = nonNegativeDirZ ? WallNormal::NegativeZ : WallNormal::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
 		}
 
-		// Update Z distance of the hit point. The X and Z cell coordinates have been 
-		// updated by the DDA stepping.
-		zDistance = (axis == Axis::X) ?
+		zDistance = ((wallNormal == WallNormal::PositiveX) || (wallNormal == WallNormal::NegativeX)) ?
 			(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
 			(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+	};
 
-		// Far point (where the next wall hit would be). Used with the near point.
-		const double farPointX = eye.x + (dirX * zDistance);
-		const double farPointZ = eye.z + (dirZ * zDistance);
+	// Step forward in the grid once to leave the initial voxel and update the Z distance.
+	doDDAStep();
 
-		// Render each voxel in the XZ column.
-		for (int voxelY = 0; voxelY < voxelGrid.getHeight(); ++voxelY)
-		{
-			// Voxel ID of the current voxel in the column. Zero points to the "air" voxel.
-			const char voxelID = voxels[savedCellX + (voxelY * voxelGrid.getWidth()) +
-				(savedCellZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+	// Step through the voxel grid while the current coordinate is valid and
+	// the distance stepped is less than the distance at which fog is maximum.
+	while (voxelIsValid && (zDistance < this->fogDistance))
+	{
+		// Store the cell coordinates, axis, and Z distance for wall rendering. The
+		// loop needs to do another DDA step to calculate the far point.
+		const int savedCellX = cell.x;
+		const int savedCellZ = cell.z;
+		const WallNormal savedNormal = wallNormal;
+		const double wallDistance = zDistance;
 
-			// Get the voxel data associated with the voxel ID.
-			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
+		doDDAStep();
 
-			// Horizontal texture coordinate (constant for all wall pixels in a column).
-			// - Remember to watch out for the edge cases where u == 1.0, resulting in an
-			//   out-of-bounds texel access. Maybe use std::nextafter() for ~0.9999999?
-			double u;
-			if (savedAxis == Axis::X)
-			{
-				const double uVal = nearPointZ - std::floor(nearPointZ);
-				u = nonNegativeDirX ? uVal : (1.0 - uVal);
-			}
-			else
-			{
-				const double uVal = nearPointX - std::floor(nearPointX);
-				u = nonNegativeDirZ ? (1.0 - uVal) : uVal;
-			}
+		// Near and far points in the XZ plane. The near point is where the wall is, and 
+		// the far point is used with the near point for drawing the floor and ceiling.
+		const Double2 nearPoint(
+			eye.x + (dirX * wallDistance),
+			eye.z + (dirZ * wallDistance));
+		const Double2 farPoint(
+			eye.x + (dirX * zDistance),
+			eye.z + (dirZ * zDistance));
 
-			// Generate a point on the ceiling edge and floor edge of the wall relative
-			// to the hit point, accounting for the Y thickness of the wall as well.
-			const Double3 wallFloor(
-				nearPointX,
-				static_cast<double>(voxelY) + voxelData.yOffset,
-				nearPointZ);
-			const Double3 wallCeiling(
-				nearPointX,
-				static_cast<double>(voxelY) + voxelData.yOffset + voxelData.ySize,
-				nearPointZ);
-
-			// Transform the wall points to camera space (projection * view).
-			Double4 p1 = transform * Double4(wallCeiling.x, wallCeiling.y, wallCeiling.z, 1.0);
-			Double4 p2 = transform * Double4(wallFloor.x, wallFloor.y, wallFloor.z, 1.0);
-
-			// Convert to normalized coordinates.
-			p1 = p1 / p1.w;
-			p2 = p2 / p2.w;
-
-			// Translate the Y coordinates relative to the center of Y projection (y == 0.5).
-			// Add Y-shearing for "fake" looking up and down. Multiply by 0.5 to apply the 
-			// correct aspect ratio.
-			// - Since the ray cast guarantees the intersection to be in the correct column
-			//   of the screen, only the Y coordinates need to be projected.
-			const double projectedY1 = (0.50 + yShear) - (p1.y * 0.50);
-			const double projectedY2 = (0.50 + yShear) - (p2.y * 0.50);
-
-			// Draw wall if the ID is not air.
-			if (voxelData.sideID > 0)
-			{
-				const TextureData &texture = this->textures[voxelData.sideID - 1];
-
-				drawWallColumn(x, projectedY1, projectedY2, wallDistance, u, voxelData.topV,
-					voxelData.bottomV, texture, this->fogDistance, fogColor, this->width,
-					this->height, this->zBuffer.data(), colorBuffer);
-			}
-
-			// Draw the floor if the ID is not air.
-			if (voxelData.floorID > 0)
-			{
-				// Texture for floor.
-				const TextureData &floorTexture = this->textures[voxelData.floorID - 1];
-
-				drawFloorColumn(x, wallFloor.y, Double2(nearPointX, nearPointZ),
-					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
-					yShear, floorTexture, fogDistance, fogColor, this->width, this->height, 
-					this->zBuffer.data(), colorBuffer);
-			}
-
-			// Draw the ceiling if the ID is not air.
-			if (voxelData.ceilingID > 0)
-			{
-				// Texture for ceiling.
-				const TextureData &ceilingTexture = this->textures[voxelData.ceilingID - 1];
-
-				drawCeilingColumn(x, wallCeiling.y, Double2(nearPointX, nearPointZ),
-					Double2(farPointX, farPointZ), Double2(eye.x, eye.z), transform,
-					yShear, ceilingTexture, fogDistance, fogColor, this->width, this->height, 
-					this->zBuffer.data(), colorBuffer);
-			}
-		}
+		// Draw all voxels in a column at the given XZ coordinate.
+		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, eye.y, savedNormal,
+			nearPoint, farPoint, wallDistance, zDistance, transform, yShear, shadingInfo, 
+			voxelGrid, this->textures, this->width, this->height, this->zBuffer.data(), 
+			colorBuffer);
 	}
 
-	// Sprites.
-	// - Maybe put the sprite drawing into a lambda, so the required parameters are
-	//   easier to understand?
+	// Flats (sprites, doors, diagonal walls, fences, etc.).
+	// - Maybe put the drawing into a lambda, so the required parameters are easier 
+	//   to understand?
 	// - Sprites *could* be done outside the ray casting loop, though they would need to be
 	//   parallelized a bit differently then. Here, it is easy to parallelize by column,
 	//   so it might be faster in practice, even if a little redundant work is done.
@@ -1511,6 +1787,7 @@ void SoftwareRenderer::castColumnRay(int x, const Double3 &eye, const Double2 &d
 
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
+		const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
 		double *depth = this->zBuffer.data();
 		for (int y = drawStart; y < drawEnd; ++y)
@@ -1610,16 +1887,30 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	const Double2 forwardComp = Double2(forwardXZ.x, forwardXZ.z).normalized() * zoom;
 	const Double2 right2D = Double2(rightXZ.x, rightXZ.z).normalized() * aspect;
 
-	// Calculate fog color and sun direction. The fog color is also used for the sky.
-	const Double3 fogColor = this->getFogColor(daytimePercent);
+	// Calculate shading information.
+	const Double3 horizonFogColor = this->getFogColor(daytimePercent);
+	const Double3 zenithFogColor = horizonFogColor * 0.85; // Temp.
+	const Double3 sunColor(1.0, 0.95, 0.90);
 	const Double3 sunDirection = this->getSunDirection(daytimePercent);
+
+	// Calculate ambient percent. This will eventually also take a type argument that 
+	// determines if the ambient should be different (for certain interiors).
+	const double ambient = [daytimePercent]()
+	{
+		const double minAmbient = 0.20;
+		const double maxAmbient = 1.0;
+		const double center = (maxAmbient - minAmbient) / 2.0;
+		return center + ((1.0 - center) * std::sin(daytimePercent * (2.0 * PI)));
+	}();
+
+	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
+		sunDirection, ambient, this->fogDistance);
 
 	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
 	// the cheaper form of ray casting (although still not very efficient), and results
 	// in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, &voxelGrid, daytimePercent, colorBuffer, 
-		&fogColor, &sunDirection, widthReal, &transform, yShear,
-		&forwardComp, &right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, &voxelGrid, colorBuffer, &shadingInfo, widthReal, 
+		&transform, yShear, &forwardComp, &right2D](int startX, int endX)
 	{
 		for (int x = startX; x < endX; ++x)
 		{
@@ -1635,13 +1926,13 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 			const Double2 direction = (forwardComp + rightComp).normalized();
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->castColumnRay(x, eye, direction, transform, yShear,
-				daytimePercent, fogColor, sunDirection, voxelGrid, colorBuffer);
+			this->rayCast2D(x, eye, direction, transform, yShear, shadingInfo, 
+				voxelGrid, colorBuffer);
 		}
 	};
 
 	// Lambda for clearing some rows on the frame buffer quickly.
-	auto clearRows = [this, colorBuffer, &fogColor](int startY, int endY)
+	auto clearRows = [this, colorBuffer, &horizonFogColor, &zenithFogColor](int startY, int endY)
 	{
 		const int startIndex = startY * this->width;
 		const int endIndex = endY * this->width;
@@ -1649,7 +1940,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 		// Clear some color rows.
 		uint32_t *colorBegin = colorBuffer + startIndex;
 		uint32_t *colorEnd = colorBuffer + endIndex;
-		std::fill(colorBegin, colorEnd, fogColor.toRGB());
+		std::fill(colorBegin, colorEnd, horizonFogColor.toRGB());
 
 		// Clear some depth rows.
 		const auto depthBegin = this->zBuffer.begin() + startIndex;

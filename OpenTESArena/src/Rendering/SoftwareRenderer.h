@@ -22,7 +22,10 @@ class VoxelGrid;
 class SoftwareRenderer
 {
 private:
-	enum class Axis { X, Y, Z };
+	// This determines which direction the normal of a wall face points towards on the outside. 
+	// Only necessary for the sides of walls because floor and ceiling normals can be inferred 
+	// trivially.
+	enum class WallNormal { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
 	struct TextureData
 	{
@@ -35,8 +38,8 @@ private:
 	// computed once per frame.
 	struct ShadingInfo
 	{
-		// Fog colors for the horizon and zenith to interpolate sky color between.
-		Double3 horizonFogColor, zenithFogColor;
+		// Sky colors for the horizon and zenith to interpolate between. Also used for fog.
+		Double3 horizonSkyColor, zenithSkyColor;
 
 		// Light and direction of the sun.
 		Double3 sunColor, sunDirection;
@@ -44,8 +47,12 @@ private:
 		// Global ambient light percent.
 		double ambient;
 
-		ShadingInfo(const Double3 &horizonFogColor, const Double3 &zenithFogColor,
-			const Double3 &sunColor, const Double3 &sunDirection, double ambient);
+		// Distance at which fog is maximum.
+		double fogDistance;
+
+		ShadingInfo(const Double3 &horizonSkyColor, const Double3 &zenithSkyColor,
+			const Double3 &sunColor, const Double3 &sunDirection, double ambient,
+			double fogDistance);
 	};
 
 	// A flat is a 2D surface always facing perpendicular to the Y axis (not necessarily
@@ -94,16 +101,45 @@ private:
 	// Gets the current sun direction based on the time of day.
 	Double3 getSunDirection(double daytimePercent) const;
 
+	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
+	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
+
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
+	// Draws a column of wall pixels.
+	static void drawWall(int x, int yStart, int yEnd, double projectedYStart, 
+		double projectedYEnd, double z, double u, double topV, double bottomV,
+		const TextureData &texture, const ShadingInfo &shadingInfo, int frameWidth, 
+		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+
+	// Draws a column of floor or ceiling pixels. The pixel drawing order is always
+	// top to bottom, so the start and end points should be passed with that in mind.
+	static void drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart, 
+		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, 
+		double startZ, double endZ, const TextureData &texture, const ShadingInfo &shadingInfo, 
+		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+	
+	// Manages drawing voxels in the column that the player is in.
+	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+		WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
+		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
+		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+
+	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
+	static void drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+		WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
+		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
+		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
-	void castColumnRay(int x, const Double3 &eye, const Double2 &direction,
-		const Matrix4d &transform, double yShear, double daytimePercent,
-		const Double3 &fogColor, const Double3 &sunDirection, const VoxelGrid &voxelGrid, 
-		uint32_t *colorBuffer);
+	void rayCast2D(int x, const Double3 &eye, const Double2 &direction,
+		const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
+		const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 
 	// Refreshes the list of flats that are within the viewing frustum. "yShear" is the 
 	// Y-shearing component of the projection plane, and "transform" is the projection * 
