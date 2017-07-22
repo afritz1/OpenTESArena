@@ -650,6 +650,29 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 }
 
+Double3 SoftwareRenderer::getWallNormal(WallFacing wallFacing)
+{
+	// Decide what the wall normal is, based on the wall facing. It can only be on the 
+	// X or Z axis because floors and ceilings are drawn separately from walls, and their 
+	// normals are trivial.
+	if (wallFacing == WallFacing::PositiveX)
+	{
+		return Double3::UnitX;
+	}
+	else if (wallFacing == WallFacing::NegativeX)
+	{
+		return -Double3::UnitX;
+	}
+	else if (wallFacing == WallFacing::PositiveZ)
+	{
+		return Double3::UnitZ;
+	}
+	else
+	{
+		return -Double3::UnitZ;
+	}
+}
+
 double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &transform, 
 	double yShear)
 {
@@ -666,8 +689,8 @@ double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &tra
 
 void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, double z, double u, double topV, double bottomV, 
-	const TextureData &texture, const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, 
-	double *depthBuffer, uint32_t *colorBuffer)
+	const Double3 &normal, const TextureData &texture, const ShadingInfo &shadingInfo, 
+	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Horizontal offset in texture.
 	const int textureX = static_cast<int>(u *
@@ -713,8 +736,9 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 
 void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
-	double startZ, double endZ, const TextureData &texture, const ShadingInfo &shadingInfo,
-	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+	double startZ, double endZ, const Double3 &normal, const TextureData &texture,
+	const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, double *depthBuffer,
+	uint32_t *colorBuffer)
 {
 	// Values for perspective-correct interpolation.
 	const double startZRecip = 1.0 / startZ;
@@ -774,7 +798,7 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 }
 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-	WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
 	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
 	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
@@ -797,17 +821,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 
 	// Horizontal texture coordinate for the inner wall. Shared between all voxels in this
 	// voxel column.
-	const double u = [&farPoint, wallNormal]()
+	const double u = [&farPoint, wallFacing]()
 	{
-		if (wallNormal == WallNormal::PositiveX)
+		if (wallFacing == WallFacing::PositiveX)
 		{
 			return 1.0 - (farPoint.y - std::floor(farPoint.y));
 		}
-		else if (wallNormal == WallNormal::NegativeX)
+		else if (wallFacing == WallFacing::NegativeX)
 		{
 			return farPoint.y - std::floor(farPoint.y);
 		}
-		else if (wallNormal == WallNormal::PositiveZ)
+		else if (wallFacing == WallFacing::PositiveZ)
 		{
 			return farPoint.x - std::floor(farPoint.x);
 		}
@@ -817,7 +841,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		}
 	}();
 
-	auto drawPlayersVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, wallNormal, &nearPoint, 
+	// Wall normals are always reversed for the initial voxel column.
+	const Double3 wallNormal = -SoftwareRenderer::getWallNormal(wallFacing);
+
+	auto drawPlayersVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint, 
 		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, 
 		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
 	{
@@ -877,8 +904,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 1) Ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -887,7 +915,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -895,8 +923,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 3) Inner floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -918,8 +947,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 1) Floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -928,7 +958,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -936,8 +966,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 3) Inner ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -959,8 +990,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 1) Inner ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -969,7 +1001,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -977,15 +1009,16 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 3) Inner floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
 		}
 	};
 
-	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
 		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
 		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
 	{
@@ -1038,8 +1071,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 1) Ceiling.
 		if (voxelData.ceilingID > 0)
 		{
+			const Double3 ceilingNormal = Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1048,7 +1082,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		if (voxelData.sideID > 0)
 		{
 			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1056,14 +1090,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 3) Inner floor.
 		if (voxelData.floorID > 0)
 		{
+			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
 	};
 
-	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, wallNormal, &nearPoint, &farPoint,
+	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint,
 		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
 		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
 	{
@@ -1116,8 +1151,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 1) Floor.
 		if (voxelData.floorID > 0)
 		{
+			const Double3 floorNormal = -Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1126,7 +1162,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		if (voxelData.sideID > 0)
 		{
 			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV,
+				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1134,8 +1170,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 3) Inner ceiling.
 		if (voxelData.ceilingID > 0)
 		{
+			const Double3 ceilingNormal = -Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1158,7 +1195,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 }
 
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-	WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
 	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
 	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
@@ -1186,17 +1223,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 	// Horizontal texture coordinate for the wall. Shared between all voxels in this
 	// voxel column.
-	const double u = [&nearPoint, wallNormal]()
+	const double u = [&nearPoint, wallFacing]()
 	{
-		if (wallNormal == WallNormal::PositiveX)
+		if (wallFacing == WallFacing::PositiveX)
 		{
 			return nearPoint.y - std::floor(nearPoint.y);
 		}
-		else if (wallNormal == WallNormal::NegativeX)
+		else if (wallFacing == WallFacing::NegativeX)
 		{
 			return 1.0 - (nearPoint.y - std::floor(nearPoint.y));
 		}
-		else if (wallNormal == WallNormal::PositiveZ)
+		else if (wallFacing == WallFacing::PositiveZ)
 		{
 			return 1.0 - (nearPoint.x - std::floor(nearPoint.x));
 		}
@@ -1206,7 +1243,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		}
 	}();
 
-	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, wallNormal, &nearPoint,
+	// Wall normals behave as they usually would when rendering after the initial voxel 
+	// column; no need to cover special cases like wall back faces.
+	const Double3 wallNormal = SoftwareRenderer::getWallNormal(wallFacing);
+
+	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures,
 		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
 	{
@@ -1266,8 +1307,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 1) Ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1276,7 +1318,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1284,8 +1326,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 3) Inner floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1308,7 +1351,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1316,8 +1359,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 2) Floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1325,8 +1369,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 3) Inner ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1349,7 +1394,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			if (voxelData.sideID > 0)
 			{
 				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1357,8 +1402,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 2) Inner ceiling.
 			if (voxelData.ceilingID > 0)
 			{
+				const Double3 ceilingNormal = -Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
-					farCeilingScreenY, nearPoint, farPoint, nearZ, farZ,
+					farCeilingScreenY, nearPoint, farPoint, nearZ, farZ, ceilingNormal,
 					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
@@ -1366,15 +1412,16 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 3) Inner floor.
 			if (voxelData.floorID > 0)
 			{
+				const Double3 floorNormal = Double3::UnitY;
 				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 					depthBuffer, colorBuffer);
 			}
 		}
 	};
 
-	auto drawVoxelBelow = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+	auto drawVoxelBelow = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
 		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
 		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
 	{
@@ -1427,8 +1474,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 1) Ceiling.
 		if (voxelData.ceilingID > 0)
 		{
+			const Double3 ceilingNormal = Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
 				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1437,7 +1485,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		if (voxelData.sideID > 0)
 		{
 			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1445,14 +1493,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 3) Inner floor.
 		if (voxelData.floorID > 0)
 		{
+			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ,
+				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
 				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
 	};
 
-	auto drawVoxelAbove = [x, voxelX, voxelZ, wallNormal, &nearPoint, &farPoint,
+	auto drawVoxelAbove = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
 		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
 		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
 	{
@@ -1505,8 +1554,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 1) Floor.
 		if (voxelData.floorID > 0)
 		{
+			const Double3 floorNormal = -Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, nearFloorScreenY,
-				farFloorScreenY, nearPoint, farPoint, nearZ, farZ,
+				farFloorScreenY, nearPoint, farPoint, nearZ, farZ, floorNormal,
 				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1515,7 +1565,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		if (voxelData.sideID > 0)
 		{
 			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV,
+				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
 				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1523,8 +1573,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 3) Inner ceiling.
 		if (voxelData.ceilingID > 0)
 		{
+			const Double3 ceilingNormal = -Double3::UnitY;
 			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
-				farCeilingScreenY, nearPoint, farPoint, nearZ, farZ,
+				farCeilingScreenY, nearPoint, farPoint, nearZ, farZ, ceilingNormal,
 				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
 				depthBuffer, colorBuffer);
 		}
@@ -1618,7 +1669,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
 	// DDA loop.
 	double zDistance;
-	WallNormal wallNormal;
+	WallFacing wallFacing;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
 	bool voxelIsValid = (startCell.x >= 0) && (startCell.y >= 0) && (startCell.z >= 0) &&
@@ -1635,12 +1686,12 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		if (sideDistX < sideDistZ)
 		{
 			zDistance = sideDistX;
-			wallNormal = nonNegativeDirX ? WallNormal::NegativeX : WallNormal::PositiveX;
+			wallFacing = nonNegativeDirX ? WallFacing::NegativeX : WallFacing::PositiveX;
 		}
 		else
 		{
 			zDistance = sideDistZ;
-			wallNormal = nonNegativeDirZ ? WallNormal::NegativeZ : WallNormal::PositiveZ;
+			wallFacing = nonNegativeDirZ ? WallFacing::NegativeZ : WallFacing::PositiveZ;
 		}
 
 		// The initial near point is directly in front of the player in the near Z 
@@ -1657,7 +1708,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, startCell.x, startCell.z, eye.y,
-			wallNormal, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			wallFacing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
 			zDistance, transform, yShear, shadingInfo, voxelGrid, this->textures, this->width, 
 			this->height, this->zBuffer.data(), colorBuffer);
 	}
@@ -1668,7 +1719,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
 	// distance for the current edge point.
-	auto doDDAStep = [&sideDistX, &sideDistZ, &cell, &wallNormal, &voxelIsValid, &zDistance,
+	auto doDDAStep = [&sideDistX, &sideDistZ, &cell, &wallFacing, &voxelIsValid, &zDistance,
 		deltaDistX, deltaDistZ, stepX, stepZ, dirX, dirZ, nonNegativeDirX, nonNegativeDirZ,
 		&eye, &voxelGrid]()
 	{
@@ -1676,18 +1727,18 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		{
 			sideDistX += deltaDistX;
 			cell.x += stepX;
-			wallNormal = nonNegativeDirX ? WallNormal::NegativeX : WallNormal::PositiveX;
+			wallFacing = nonNegativeDirX ? WallFacing::NegativeX : WallFacing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
 			cell.z += stepZ;
-			wallNormal = nonNegativeDirZ ? WallNormal::NegativeZ : WallNormal::PositiveZ;
+			wallFacing = nonNegativeDirZ ? WallFacing::NegativeZ : WallFacing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
 		}
 
-		zDistance = ((wallNormal == WallNormal::PositiveX) || (wallNormal == WallNormal::NegativeX)) ?
+		zDistance = ((wallFacing == WallFacing::PositiveX) || (wallFacing == WallFacing::NegativeX)) ?
 			(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
 			(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
 	};
@@ -1703,7 +1754,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		// loop needs to do another DDA step to calculate the far point.
 		const int savedCellX = cell.x;
 		const int savedCellZ = cell.z;
-		const WallNormal savedNormal = wallNormal;
+		const WallFacing savedNormal = wallFacing;
 		const double wallDistance = zDistance;
 
 		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
@@ -1818,7 +1869,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	}
 }
 
-void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double fovY,
+void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
@@ -1828,8 +1879,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 
 	// Camera values for rendering. We trick the 2.5D ray caster into thinking the player is 
 	// always looking straight forward, but we use the Y component of the player's direction 
-	// to offset projected coordinates via Y-shearing. Assume "forward" is normalized.
-	const Double3 forwardXZ = Double3(forward.x, 0.0, forward.z).normalized();
+	// to offset projected coordinates via Y-shearing. Assume "direction" is normalized.
+	const Double3 forwardXZ = Double3(direction.x, 0.0, direction.z).normalized();
 	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
 	const Double3 up = Double3::UnitY;
 
@@ -1849,21 +1900,21 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &forward, double
 	// must be clamped less than 1 because 1 would imply they are looking straight up or down, 
 	// which is impossible in 2.5D rendering (the vertical line segment of the view frustum 
 	// would be infinitely high or low). The camera code should take care of the clamping for us.
-	const double yShear = [&forward, zoom]()
+	const double yShear = [&direction, zoom]()
 	{
 		// Get the vertical angle of the player's direction.
-		const double angleRadians = [&forward]()
+		const double angleRadians = [&direction]()
 		{
-			// Get the length of the forward vector's projection onto the XZ plane.
+			// Get the length of the direction vector's projection onto the XZ plane.
 			const double xzProjection = std::sqrt(
-				(forward.x * forward.x) + (forward.z * forward.z));
+				(direction.x * direction.x) + (direction.z * direction.z));
 
-			if (forward.y > 0.0)
+			if (direction.y > 0.0)
 			{
 				// Above the horizon.
 				return std::acos(xzProjection);
 			}
-			else if (forward.y < 0.0)
+			else if (direction.y < 0.0)
 			{
 				// Below the horizon.
 				return -std::acos(xzProjection);

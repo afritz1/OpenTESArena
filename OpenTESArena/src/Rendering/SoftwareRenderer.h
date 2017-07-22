@@ -22,10 +22,9 @@ class VoxelGrid;
 class SoftwareRenderer
 {
 private:
-	// This determines which direction the normal of a wall face points towards on the outside. 
-	// Only necessary for the sides of walls because floor and ceiling normals can be inferred 
-	// trivially.
-	enum class WallNormal { PositiveX, NegativeX, PositiveZ, NegativeZ };
+	// This determines which axis a wall side is facing towards on the outside. Only necessary 
+	// for the sides of walls because floor and ceiling normals can be inferred trivially.
+	enum class WallFacing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
 	struct TextureData
 	{
@@ -101,6 +100,9 @@ private:
 	// Gets the current sun direction based on the time of day.
 	Double3 getSunDirection(double daytimePercent) const;
 
+	// Gets the wall normal associated with a wall facing.
+	static Double3 getWallNormal(WallFacing wallFacing);
+
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
@@ -111,26 +113,27 @@ private:
 	// Draws a column of wall pixels.
 	static void drawWall(int x, int yStart, int yEnd, double projectedYStart, 
 		double projectedYEnd, double z, double u, double topV, double bottomV,
-		const TextureData &texture, const ShadingInfo &shadingInfo, int frameWidth, 
-		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+		const Double3 &normal, const TextureData &texture, const ShadingInfo &shadingInfo, 
+		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Draws a column of floor or ceiling pixels. The pixel drawing order is always
 	// top to bottom, so the start and end points should be passed with that in mind.
 	static void drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart, 
 		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, 
-		double startZ, double endZ, const TextureData &texture, const ShadingInfo &shadingInfo, 
-		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+		double startZ, double endZ, const Double3 &normal, const TextureData &texture, 
+		const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, double *depthBuffer, 
+		uint32_t *colorBuffer);
 	
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-		WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+		WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
 		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-		WallNormal wallNormal, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+		WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
 		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
@@ -187,7 +190,7 @@ public:
 	void resize(int width, int height);
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
-	void render(const Double3 &eye, const Double3 &forward, double fovY, 
+	void render(const Double3 &eye, const Double3 &direction, double fovY, 
 		double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 };
 
