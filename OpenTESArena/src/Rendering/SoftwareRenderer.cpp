@@ -276,14 +276,13 @@ void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double yShear,
 		const Double3 topLeft = bottomLeft + flatUpScaled;
 		const Double3 topRight = bottomRight + flatUpScaled;
 
-		Double4 tlPoint = transform * Double4(topLeft.x, topLeft.y, topLeft.z, 1.0);
-		Double4 trPoint = transform * Double4(topRight.x, topRight.y, topRight.z, 1.0);
-
 		// Normalize coordinates.
 		blPoint = blPoint / blPoint.w;
 		brPoint = brPoint / brPoint.w;
-		tlPoint = tlPoint / tlPoint.w;
-		trPoint = trPoint / trPoint.w;
+
+		// Calculate top left and right projected Y (no need for X; it's equal to each bottom X).
+		const double topLeftProjY = SoftwareRenderer::getProjectedY(topLeft, transform, yShear);
+		const double topRightProjY = SoftwareRenderer::getProjectedY(topRight, transform, yShear);
 
 		// Create projection data for the flat.
 		Flat::Projection flatProjection;
@@ -292,13 +291,13 @@ void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double yShear,
 		// by 0.5 to apply the correct aspect ratio. Calculate true distances from the camera 
 		// to the left and right edges in the XZ plane.
 		flatProjection.left.x = 0.50 + (blPoint.x * 0.50);
-		flatProjection.left.topY = (0.50 + yShear) - (tlPoint.y * 0.50);
+		flatProjection.left.topY = topLeftProjY;
 		flatProjection.left.bottomY = (0.50 + yShear) - (blPoint.y * 0.50);
 		flatProjection.left.z = (Double2(bottomLeft.x, bottomLeft.z) - eye2D).length();
 		flatProjection.left.u = leftU;
 
 		flatProjection.right.x = 0.50 + (brPoint.x * 0.50);
-		flatProjection.right.topY = (0.50 + yShear) - (trPoint.y * 0.50);
+		flatProjection.right.topY = topRightProjY;
 		flatProjection.right.bottomY = (0.50 + yShear) - (brPoint.y * 0.50);
 		flatProjection.right.z = (Double2(bottomRight.x, bottomRight.z) - eye2D).length();
 		flatProjection.right.u = rightU;
