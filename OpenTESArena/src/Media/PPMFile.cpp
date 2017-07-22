@@ -14,8 +14,8 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 	const std::vector<std::string> lines = String::split(text, '\n');
 
 	// Make sure the PPM type is P3 (ASCII format).
-	std::string ppmType = String::trimLines(lines.at(0));
-	DebugAssert(ppmType.compare("P3") == 0, "Unrecognized PPM type \"" + ppmType + "\".");
+	const std::string ppmType = String::trimLines(lines.at(0));
+	DebugAssert(ppmType == "P3", "Unrecognized PPM type \"" + ppmType + "\".");
 
 	// Skip the comment at index 1.
 

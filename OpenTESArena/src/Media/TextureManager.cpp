@@ -71,9 +71,9 @@ void TextureManager::loadPalette(const std::string &paletteName)
 
 	// Get file extension of the palette name.
 	const std::string extension = String::getExtension(paletteName);
-	const bool isCOL = extension.compare(".COL") == 0;
-	const bool isIMG = extension.compare(".IMG") == 0;
-	const bool isMNU = extension.compare(".MNU") == 0;
+	const bool isCOL = extension == ".COL";
+	const bool isIMG = extension == ".IMG";
+	const bool isMNU = extension == ".MNU";
 
 	if (isCOL)
 	{
@@ -123,9 +123,9 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
-	const bool isCOL = extension.compare(".COL") == 0;
-	const bool isIMG = extension.compare(".IMG") == 0;
-	const bool isMNU = extension.compare(".MNU") == 0;
+	const bool isCOL = extension == ".COL";
+	const bool isIMG = extension == ".IMG";
+	const bool isMNU = extension == ".MNU";
 
 	SDL_Surface *surface = nullptr;
 
@@ -204,8 +204,8 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
-	const bool isIMG = extension.compare(".IMG") == 0;
-	const bool isMNU = extension.compare(".MNU") == 0;
+	const bool isIMG = extension == ".IMG";
+	const bool isMNU = extension == ".MNU";
 
 	SDL_Texture *texture = nullptr;
 
@@ -278,13 +278,13 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
-	const bool isCFA = extension.compare(".CFA") == 0;
-	const bool isCIF = extension.compare(".CIF") == 0;
-	const bool isCEL = extension.compare(".CEL") == 0;
-	const bool isDFA = extension.compare(".DFA") == 0;
-	const bool isFLC = extension.compare(".FLC") == 0;
-	const bool isRCI = extension.compare(".RCI") == 0;
-	const bool isSET = extension.compare(".SET") == 0;
+	const bool isCFA = extension == ".CFA";
+	const bool isCIF = extension == ".CIF";
+	const bool isCEL = extension == ".CEL";
+	const bool isDFA = extension == ".DFA";
+	const bool isFLC = extension == ".FLC";
+	const bool isRCI = extension == ".RCI";
+	const bool isSET = extension == ".SET";
 
 	if (isCFA)
 	{
@@ -442,13 +442,13 @@ const std::vector<Texture> &TextureManager::getTextures(
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
-	const bool isCFA = extension.compare(".CFA") == 0;
-	const bool isCIF = extension.compare(".CIF") == 0;
-	const bool isCEL = extension.compare(".CEL") == 0;
-	const bool isDFA = extension.compare(".DFA") == 0;
-	const bool isFLC = extension.compare(".FLC") == 0;
-	const bool isRCI = extension.compare(".RCI") == 0;
-	const bool isSET = extension.compare(".SET") == 0;
+	const bool isCFA = extension == ".CFA";
+	const bool isCIF = extension == ".CIF";
+	const bool isCEL = extension == ".CEL";
+	const bool isDFA = extension == ".DFA";
+	const bool isFLC = extension == ".FLC";
+	const bool isRCI = extension == ".RCI";
+	const bool isSET = extension == ".SET";
 
 	if (isCFA)
 	{
