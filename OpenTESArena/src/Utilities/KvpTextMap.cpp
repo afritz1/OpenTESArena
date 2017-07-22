@@ -23,7 +23,7 @@ const char KvpTextMap::COMMENT = '#';
 KvpTextMap::KvpTextMap(const std::string &filename)
 	: filename(filename)
 {
-	std::string text = File::toString(filename);
+	std::string text = File::readAllText(filename);
 	std::istringstream iss(text);
 
 	// Check each line in "text" for valid key/value pairs.

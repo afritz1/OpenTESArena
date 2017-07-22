@@ -10,7 +10,7 @@
 std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 	int &width, int &height)
 {
-	const std::string text = File::toString(filename);
+	const std::string text = File::readAllText(filename);
 	const std::vector<std::string> lines = String::split(text, '\n');
 
 	// Make sure the PPM type is P3 (ASCII format).

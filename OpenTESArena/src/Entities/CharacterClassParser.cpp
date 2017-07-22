@@ -72,10 +72,10 @@ std::vector<CharacterClass> CharacterClassParser::parse()
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
 
-	std::string fullPath(CharacterClassParser::PATH + CharacterClassParser::FILENAME);
+	const std::string fullPath(CharacterClassParser::PATH + CharacterClassParser::FILENAME);
 
 	// Read the locations file into a string.
-	std::string text = File::toString(fullPath);
+	const std::string text = File::readAllText(fullPath);
 
 	// Relevant parsing symbols.
 	const char comment = '#';

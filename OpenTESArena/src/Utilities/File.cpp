@@ -8,10 +8,9 @@
 
 #include "Debug.h"
 
-std::string File::toString(const std::string &filename)
+std::string File::readAllText(const std::string &filename)
 {
-	std::ifstream ifs(filename.c_str(), std::ios::in |
-		std::ios::binary | std::ios::ate);
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
 	DebugAssert(ifs.is_open(), "Could not open \"" + filename + "\".");
 
