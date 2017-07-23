@@ -14,6 +14,7 @@ private:
 	~Bytes() = delete;
 public:
 	static uint16_t getLE16(const uint8_t *buf);
+	static uint32_t getLE24(const uint8_t *buf);
 	static uint32_t getLE32(const uint8_t *buf);
 };
 
