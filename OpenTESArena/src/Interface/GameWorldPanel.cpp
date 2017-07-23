@@ -34,6 +34,7 @@
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
+#include "../Media/SoundFile.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
@@ -807,6 +808,10 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 			{
 				weaponAnimation.setState(WeaponAnimation::State::Left);
 			}
+
+			// Play the swing sound.
+			auto &audioManager = this->getGame()->getAudioManager();
+			audioManager.playSound(SoundFile::fromName(SoundName::Swish));
 		}
 	}	
 }
