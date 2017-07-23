@@ -3,9 +3,7 @@
 
 #include <memory>
 
-// This class manages what sounds and music are played.
-
-// OpenAL Soft is used with WildMIDI for music.
+// This class manages what sounds and music are played by OpenAL Soft.
 
 class AudioManagerImpl;
 class Options;
@@ -39,6 +37,10 @@ public:
 
 	// Sets the sound volume. Percent must be between 0.0 and 1.0.
 	void setSoundVolume(double percent);
+
+	// Updates any state not handled by a background thread, such as resetting 
+	// the sources of finished sounds.
+	void update();
 };
 
 #endif

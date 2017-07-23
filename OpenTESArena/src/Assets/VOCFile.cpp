@@ -1,3 +1,6 @@
+#include <cassert>
+#include <cstdint>
+
 #include "VOCFile.h"
 
 #include "../Utilities/Bytes.h"
@@ -43,6 +46,10 @@ VOCFile::VOCFile(const std::string &filename)
 	DebugAssert(checksum == (~versionNumber + 0x1234), 
 		"Invalid checksum \"" + std::to_string(checksum) + "\".");
 
+	// Set the default sample rate to 0. Assume that a .VOC file has the same sample rate
+	// for all of its sound data (error otherwise).
+	this->sampleRate = 0;
+
 	// Read data blocks.
 	int offset = headerSize;
 	while (offset < srcData.size())
@@ -75,15 +82,29 @@ VOCFile::VOCFile(const std::string &filename)
 			const uint8_t *audioEnd = blockData + blockSize;
 			const int sampleRate = 1000000 / (256 - frequencyDivisor);
 
-			// To do.
-			// - 8-bit unsigned PCM range is 0-255, with centerpoint of 128.
-			const int centerPoint = 128;
+			// The codec must be 0 (8-bit unsigned PCM).
+			assert(pcmCodec == 0);
+
+			// Assign the sample rate if it hasn't been assigned yet.
+			if (this->sampleRate == 0)
+			{
+				this->sampleRate = sampleRate;
+			}
+			else
+			{
+				// Any subsequent sample rates must match.
+				assert(this->sampleRate == sampleRate);
+			}
+			
+			// Append the PCM data to the audio vector.
+			this->audioData.insert(this->audioData.end(), audioBegin, audioEnd);
 		}
 		else if (blockType == BlockType::RepeatStart)
 		{
-			// Only used with DRUMS.VOC.
+			// Only used with DRUMS.VOC. Ignore this functionality for now, it's not necessary.
+
 			// The sound blocks following this block should be repeated some number of times.
-			const uint16_t repeatCount = Bytes::getLE16(blockData) - 1;
+			//const uint16_t repeatCount = Bytes::getLE16(blockData) - 1;
 
 			// To do. 
 			// - Maybe keep a "repeating" boolean outside the loop? Append data blocks to
@@ -109,4 +130,14 @@ VOCFile::VOCFile(const std::string &filename)
 VOCFile::~VOCFile()
 {
 
+}
+
+int VOCFile::getSampleRate() const
+{
+	return this->sampleRate;
+}
+
+const std::vector<uint8_t> &VOCFile::getAudioData() const
+{
+	return this->audioData;
 }

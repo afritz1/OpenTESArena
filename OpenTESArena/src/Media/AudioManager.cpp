@@ -7,6 +7,7 @@
 #include <functional>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "al.h"
@@ -15,6 +16,7 @@
 #include "AudioManager.h"
 
 #include "WildMidi.hpp"
+#include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
 #include "../Utilities/Debug.h"
 
@@ -22,17 +24,25 @@ std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
 class OpenALStream;
 
-class AudioManagerImpl {
+class AudioManagerImpl
+{
 public:
 	float mMusicVolume;
 	float mSfxVolume;
 
-	/* Currently active song and playback stream. */
+	// Currently active song and playback stream.
 	MidiSongPtr mCurrentSong;
 	std::unique_ptr<OpenALStream> mSongStream;
 
-	/* A deque of available sources to play sounds and streams with. */
+	// Loaded sound buffers from .VOC files.
+	std::unordered_map<std::string, ALuint> mSoundBuffers;
+
+	// A deque of available sources to play sounds and streams with.
 	std::deque<ALuint> mFreeSources;
+
+	// A deque of currently used sources for sounds (the music source is owned 
+	// by OpenALStream).
+	std::deque<ALuint> mUsedSources;
 
 	AudioManagerImpl();
 	~AudioManagerImpl();
@@ -47,8 +57,9 @@ public:
 
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
-};
 
+	void update();
+};
 
 class OpenALStream {
 	AudioManagerImpl *mManager;
@@ -305,17 +316,31 @@ AudioManagerImpl::AudioManagerImpl()
 
 AudioManagerImpl::~AudioManagerImpl()
 {
-	stopMusic();
+	this->stopMusic();
+	this->stopSound();
 
 	MidiDevice::shutdown();
 
 	ALCcontext *context = alcGetCurrentContext();
-	if (!context) return;
-
+	if (!context)
+	{
+		return;
+	}
 
 	for (ALuint source : mFreeSources)
+	{
 		alDeleteSources(1, &source);
+	}
+
 	mFreeSources.clear();
+
+	for (auto &pair : mSoundBuffers)
+	{
+		ALuint buffer = pair.second;
+		alDeleteBuffers(1, &buffer);
+	}
+
+	mSoundBuffers.clear();
 
 	ALCdevice *device = alcGetContextsDevice(context);
 	alcMakeContextCurrent(nullptr);
@@ -389,33 +414,109 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 
 void AudioManagerImpl::playSound(const std::string &filename)
 {
-	// To do: sound support.
-	static_cast<void>(filename);
+	if (!mFreeSources.empty())
+	{
+		auto vocIter = mSoundBuffers.find(filename);
+
+		if (vocIter == mSoundBuffers.end())
+		{
+			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
+			const VOCFile voc(filename);
+
+			ALuint bufferID;
+			alGenBuffers(1, &bufferID);
+			DebugAssert(alGetError() == AL_NO_ERROR, "alGenBuffers");
+
+			const std::vector<uint8_t> &audioData = voc.getAudioData();
+
+			alBufferData(bufferID, AL_FORMAT_MONO8,
+				static_cast<const ALvoid*>(audioData.data()),
+				static_cast<ALsizei>(audioData.size()),
+				static_cast<ALsizei>(voc.getSampleRate()));
+
+			vocIter = mSoundBuffers.insert(std::make_pair(filename, bufferID)).first;
+		}
+
+		// Play the sound.
+		const ALuint source = mFreeSources.front();
+		alSourcei(source, AL_BUFFER, vocIter->second);
+		alSourcePlay(source);
+
+		mUsedSources.push_front(source);
+		mFreeSources.pop_front();
+	}
 }
 
 void AudioManagerImpl::stopMusic()
 {
-	if (mSongStream)
+	if (mSongStream != nullptr)
+	{
 		mSongStream->stop();
+	}
+
 	mSongStream = nullptr;
 	mCurrentSong = nullptr;
 }
 
 void AudioManagerImpl::stopSound()
 {
-	// To do: stop all sounds.
+	// Reset all used sources and return them to the free sources.
+	for (ALuint source : mUsedSources)
+	{
+		alSourceStop(source);
+		alSourceRewind(source);
+		alSourcei(source, AL_BUFFER, 0);
+		mFreeSources.push_front(source);
+	}
+
+	mUsedSources.clear();
 }
 
 void AudioManagerImpl::setMusicVolume(double percent)
 {
-	if (mSongStream)
-		mSongStream->setVolume(static_cast<float>(percent));
 	mMusicVolume = static_cast<float>(percent);
+
+	if (mSongStream != nullptr)
+	{
+		mSongStream->setVolume(mMusicVolume);
+	}
 }
 
 void AudioManagerImpl::setSoundVolume(double percent)
 {
 	mSfxVolume = static_cast<float>(percent);
+
+	// Set volumes of free and used sound channels.
+	for (ALuint source : mFreeSources)
+	{
+		alSourcef(source, AL_GAIN, mSfxVolume);
+	}
+
+	for (ALuint source : mUsedSources)
+	{
+		alSourcef(source, AL_GAIN, mSfxVolume);
+	}
+}
+
+void AudioManagerImpl::update()
+{
+	// If a sound source is done, reset it and return the ID to the free sources.
+	for (size_t i = 0; i < mUsedSources.size(); i++)
+	{
+		const ALuint source = mUsedSources.at(i);
+
+		ALint state;
+		alGetSourcei(source, AL_SOURCE_STATE, &state);
+
+		if (state == AL_STOPPED)
+		{
+			alSourceRewind(source);
+			alSourcei(source, AL_BUFFER, 0);
+
+			mFreeSources.push_front(source);
+			mUsedSources.erase(mUsedSources.begin() + i);
+		}
+	}
 }
 
 // Audio Manager
@@ -467,4 +568,9 @@ void AudioManager::setMusicVolume(double percent)
 void AudioManager::setSoundVolume(double percent)
 {
 	pImpl->setSoundVolume(percent);
+}
+
+void AudioManager::update()
+{
+	pImpl->update();
 }

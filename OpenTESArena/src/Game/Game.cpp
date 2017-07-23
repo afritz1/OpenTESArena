@@ -345,6 +345,9 @@ void Game::loop()
 		// Update the input manager's state.
 		this->inputManager.update();
 
+		// Update the audio manager, checking for finished sounds.
+		this->audioManager.update();
+
 		// Listen for input events.
 		this->handleEvents(running);
 
