@@ -699,6 +699,11 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
+
 	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
@@ -724,7 +729,10 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 			// Draw only if the texel is not transparent.
 			if (texel.w > 0.0)
 			{
-				const Double3 color(texel.x, texel.y, texel.z);
+				const Double3 color(
+					texel.x * (shadingInfo.ambient + sunComponent.x),
+					texel.y * (shadingInfo.ambient + sunComponent.y),
+					texel.z * (shadingInfo.ambient + sunComponent.z));
 
 				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 				depthBuffer[index] = z;
@@ -747,6 +755,11 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 
 	// Fog color to interpolate with.
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
 
 	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
@@ -787,7 +800,10 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 			// Draw only if the texel is not transparent.
 			if (texel.w > 0.0)
 			{
-				const Double3 color(texel.x, texel.y, texel.z);
+				const Double3 color(
+					texel.x * (shadingInfo.ambient + sunComponent.x),
+					texel.y * (shadingInfo.ambient + sunComponent.y),
+					texel.z * (shadingInfo.ambient + sunComponent.z));
 
 				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 				depthBuffer[index] = z;
@@ -1787,6 +1803,17 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		const Flat &flat = *pair.first;
 		const Flat::Projection &flatProjection = pair.second;
 
+		// Normal of the flat (not all flats face the camera).
+		const Double3 flatNormal = Double3(
+			flat.direction.x,
+			0.0,
+			flat.direction.y).normalized();
+
+		// Contribution from the sun.
+		const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(flatNormal));
+		const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+			0.0, 1.0 - shadingInfo.ambient);
+
 		// X percent across the screen.
 		const double xPercent = static_cast<double>(x) /
 			static_cast<double>(this->width);
@@ -1858,7 +1885,10 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 				// Draw only if the texel is not transparent.
 				if (texel.w > 0.0)
 				{
-					const Double3 color(texel.x, texel.y, texel.z);
+					const Double3 color(
+						texel.x * (shadingInfo.ambient + sunComponent.x),
+						texel.y * (shadingInfo.ambient + sunComponent.y),
+						texel.z * (shadingInfo.ambient + sunComponent.z));
 
 					colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
 					depth[index] = zDistance;
@@ -1940,17 +1970,27 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Calculate shading information.
 	const Double3 horizonFogColor = this->getFogColor(daytimePercent);
 	const Double3 zenithFogColor = horizonFogColor * 0.85; // Temp.
-	const Double3 sunColor(1.0, 0.95, 0.90);
 	const Double3 sunDirection = this->getSunDirection(daytimePercent);
+	const Double3 sunColor = [&sunDirection]()
+	{
+		const Double3 baseColor(0.90, 0.875, 0.85);
+
+		// Darken the sun color if it's below the horizon so wall faces aren't lit 
+		// as much during the night. This is just an artistic value to compensate
+		// for the lack of shadows.
+		return (sunDirection.y >= 0.0) ? baseColor :
+			(baseColor * (1.0 - std::abs(sunDirection.y))).clamped();
+	}();
 
 	// Calculate ambient percent. This will eventually also take a type argument that 
 	// determines if the ambient should be different (for certain interiors).
 	const double ambient = [daytimePercent]()
 	{
 		const double minAmbient = 0.20;
-		const double maxAmbient = 1.0;
-		const double center = (maxAmbient - minAmbient) / 2.0;
-		return center + ((1.0 - center) * std::sin(daytimePercent * (2.0 * PI)));
+		const double maxAmbient = 0.90;
+		const double diff = maxAmbient - minAmbient;
+		const double center = minAmbient + (diff / 2.0);
+		return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * PI)));
 	}();
 
 	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
