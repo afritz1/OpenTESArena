@@ -49,7 +49,7 @@ public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
 		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-		double maxRunSpeed);
+		double maxRunSpeed, WeaponType weaponType);
 	~Player();
 
 	const Double3 &getPosition() const;

@@ -11,6 +11,7 @@
 #include "../Entities/EntityManager.h"
 #include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
+#include "../Items/WeaponType.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -49,9 +50,27 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const Double3 velocity = Double3(0.0, 0.0, 0.0);
 	const double maxWalkSpeed = 2.0;
 	const double maxRunSpeed = 8.0;
+	const WeaponType weaponType = []()
+	{
+		// Pick a random weapon type for testing.
+		const std::vector<WeaponType> types =
+		{
+			WeaponType::BattleAxe,
+			WeaponType::Broadsword,
+			WeaponType::Fists,
+			WeaponType::Flail,
+			WeaponType::Mace,
+			WeaponType::Staff,
+			WeaponType::Warhammer
+		};
+
+		Random random;
+		int index = random.next(static_cast<int>(types.size()));
+		return types.at(index);
+	}();
 
 	Player player(playerName, gender, raceID, charClass, portraitID,
-		position, direction, velocity, maxWalkSpeed, maxRunSpeed);
+		position, direction, velocity, maxWalkSpeed, maxRunSpeed, weaponType);
 
 	// Add some wall textures.
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

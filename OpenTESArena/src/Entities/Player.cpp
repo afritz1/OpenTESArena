@@ -23,11 +23,10 @@ const double Player::FRICTION = 4.0;
 Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-	double maxRunSpeed)
+	double maxRunSpeed, WeaponType weaponType)
 	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed),
-	weaponAnimation(WeaponType::Fists /* Placeholder for now. */)
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponType)
 {
 	assert(portraitID >= 0);
 }
