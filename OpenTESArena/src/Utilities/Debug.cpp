@@ -2,7 +2,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
-#include <SDL_messagebox.h>
+
+#include "SDL_messagebox.h"
 
 #include "Debug.h"
 
@@ -64,12 +65,19 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 {
 	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
 		lineNumber, message);
-    const std::string platformName(SDL_GetPlatform());
-    if (platformName == "Mac OS X") {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), nullptr);
-    } else {
-        std::getchar();
-    }
+
+	const std::string platformName(SDL_GetPlatform());
+
+	// macOS .apps close immediately even with getchar(), so a message box is needed.
+	if (platformName == "Mac OS X")
+	{
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), nullptr);
+	}
+	else
+	{
+		std::getchar();
+	}
+
 	exit(EXIT_FAILURE);
 }
 
