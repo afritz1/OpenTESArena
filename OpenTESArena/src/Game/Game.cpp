@@ -23,6 +23,7 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
+#include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
@@ -33,43 +34,12 @@ Game::Game()
 
 	// Get the current working directory. This is most relevant for platforms
 	// like macOS, where the base path might be in the app's own "Resources" folder.
-	this->basePath = []()
-	{
-		char *basePathPtr = SDL_GetBasePath();
+	this->basePath = Platform::getBasePath();
 
-		if (basePathPtr == nullptr)
-		{
-			DebugMention("SDL_GetBasePath() not available on this platform.");
-			basePathPtr = SDL_strdup("./");
-		}
-
-		const std::string basePathString(basePathPtr);
-		SDL_free(basePathPtr);
-
-		// Convert Windows backslashes to forward slashes.
-		return String::replace(basePathString, '\\', '/');
-	}();
-
-	// Get the path to the options folder. This is platform-dependent and points to the
-	// "preferences directory" so it's always writable. Append "options.txt" to access
+	// Get the path to the options folder. This is platform-dependent and points inside 
+	// the "preferences directory" so it's always writable. Append "options.txt" to access
 	// the file itself.
-	this->optionsPath = []()
-	{
-		// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
-		char *optionsPathPtr = SDL_GetPrefPath("OpenTESArena", "options");
-
-		if (optionsPathPtr == nullptr)
-		{
-			DebugMention("SDL_GetPrefPath() not available on this platform.");
-			optionsPathPtr = SDL_strdup("options/");
-		}
-
-		const std::string optionsPathString(optionsPathPtr);
-		SDL_free(optionsPathPtr);
-
-		// Convert Windows backslashes to forward slashes.
-		return String::replace(optionsPathString, '\\', '/');
-	}();
+	this->optionsPath = Platform::getOptionsPath();
 
 	// Parse the desired options.txt.
 	this->options = [this]()
@@ -95,7 +65,7 @@ Game::Game()
 				// Create "<PrefsOptionsPath>/options.txt" if it doesn't exist.
 				if (!File::exists(prefsOptionsPath))
 				{
-					// @todo: generate new options.txt via hardcoded text in executable.
+					// @todo: generate new options.txt via hardcoded text in executable? Maybe a bad idea.
 					/*DebugMention("Created " + OptionsParser::FILENAME + " in \"" +
 						prefsOptionsPath + "\".");*/
 					DebugNotImplemented();
