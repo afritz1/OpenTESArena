@@ -10,6 +10,7 @@
 #include "../Items/WeaponType.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
+#include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 
 const std::unordered_map<std::string, CharacterClassCategoryName> CharacterClassParserCategories =
@@ -72,7 +73,8 @@ std::vector<CharacterClass> CharacterClassParser::parse()
 	// of spacing and commas, and there must be a new line at the end of the file.
 	// Comment lines must have the comment symbol in the first column.
 
-	const std::string fullPath(CharacterClassParser::PATH + CharacterClassParser::FILENAME);
+	const std::string fullPath(Platform::getBasePath() + 
+		CharacterClassParser::PATH + CharacterClassParser::FILENAME);
 
 	// Read the locations file into a string.
 	const std::string text = File::readAllText(fullPath);
