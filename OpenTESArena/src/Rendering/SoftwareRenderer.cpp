@@ -774,7 +774,7 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 		const Double2 currentPoint =
 			(startPointDiv + ((endPointDiv - startPointDiv) * yPercent)) /
 			(startZRecip + ((endZRecip - startZRecip) * yPercent));
-		const double z = startZ + ((endZ - startZ) * yPercent);
+		const double z = 1.0 / (startZRecip + ((endZRecip - startZRecip) * yPercent));
 
 		// Linearly interpolated fog.
 		const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
