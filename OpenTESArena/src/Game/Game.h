@@ -5,6 +5,7 @@
 #include <string>
 
 #include "InputManager.h"
+#include "../Interface/FPSCounter.h"
 #include "../Media/AudioManager.h"
 
 // This class holds the current game data, manages the primary game loop, and 
@@ -41,6 +42,7 @@ private:
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 	std::unique_ptr<CityDataFile> cityDataFile;
+	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 
 	// Resizes the SDL renderer and any other renderer-associated components.
@@ -90,6 +92,9 @@ public:
 
 	// Gets the data object for world map locations.
 	CityDataFile &getCityDataFile() const;
+
+	// Gets the frames-per-second counter. This is updated in the game loop.
+	const FPSCounter &getFPSCounter() const;
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel).

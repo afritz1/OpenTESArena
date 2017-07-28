@@ -198,6 +198,11 @@ CityDataFile &Game::getCityDataFile() const
 	return *this->cityDataFile.get();
 }
 
+const FPSCounter &Game::getFPSCounter() const
+{
+	return this->fpsCounter;
+}
+
 void Game::setPanel(std::unique_ptr<Panel> nextPanel)
 {
 	this->nextPanel = std::move(nextPanel);
@@ -317,6 +322,9 @@ void Game::loop()
 
 		// Update the audio manager, checking for finished sounds.
 		this->audioManager.update();
+
+		// Update FPS counter.
+		this->fpsCounter.updateFrameTime(dt);
 
 		// Listen for input events.
 		this->handleEvents(running);

@@ -833,9 +833,11 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 void GameWorldPanel::drawDebugText(Renderer &renderer)
 {
 	const Int2 windowDims = renderer.getWindowDimensions();
-	const double resolutionScale = this->getGame()->getOptions().getResolutionScale();
 
-	auto &gameData = this->getGame()->getGameData();
+	const auto &game = *this->getGame();
+	const double resolutionScale = game.getOptions().getResolutionScale();
+
+	auto &gameData = game.getGameData();
 	const auto &player = gameData.getPlayer();
 	const Double3 &position = player.getPosition();
 	const Double3 &direction = player.getDirection();
@@ -843,13 +845,14 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	TextBox tempText(2, 2, Color::White,
 		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
+		"FPS: " + String::fixedPrecision(game.getFPSCounter().getFPS(), 1) + "\n" +
 		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
 		"Y: " + String::fixedPrecision(position.y, 5) + "\n" +
 		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
 		"DirX: " + String::fixedPrecision(direction.x, 5) + "\n" +
 		"DirY: " + String::fixedPrecision(direction.y, 5) + "\n" +
 		"DirZ: " + String::fixedPrecision(direction.z, 5),
-		this->getGame()->getFontManager().getFont(FontName::D),
+		game.getFontManager().getFont(FontName::D),
 		TextAlignment::Left, renderer);
 	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
 }
