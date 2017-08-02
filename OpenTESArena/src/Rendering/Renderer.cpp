@@ -8,6 +8,7 @@
 
 #include "SoftwareRenderer.h"
 #include "Surface.h"
+#include "../Interface/CursorAlignment.h"
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
@@ -583,6 +584,71 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const int screenWidth = this->getWindowDimensions().x;
 	const int viewHeight = this->getViewHeight();
 	this->drawToNative(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
+}
+
+void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
+	const Int2 &mousePosition, double scale)
+{
+	// The caller should check for any null textures.
+	assert(cursor != nullptr);
+
+	int cursorWidth, cursorHeight;
+	SDL_QueryTexture(cursor, nullptr, nullptr, &cursorWidth, &cursorHeight);
+
+	const int scaledWidth = static_cast<int>(std::round(cursorWidth * scale));
+	const int scaledHeight = static_cast<int>(std::round(cursorHeight * scale));
+
+	// Get the magnitude to offset the cursor's coordinates by.
+	const Int2 cursorOffset = [alignment, scaledWidth, scaledHeight]()
+	{
+		const int xOffset = [alignment, scaledWidth]()
+		{
+			if ((alignment == CursorAlignment::TopLeft) ||
+				(alignment == CursorAlignment::Left) ||
+				(alignment == CursorAlignment::BottomLeft))
+			{
+				return 0;
+			}
+			else if ((alignment == CursorAlignment::Top) ||
+				(alignment == CursorAlignment::Middle) ||
+				(alignment == CursorAlignment::Bottom))
+			{
+				return scaledWidth / 2;
+			}
+			else
+			{
+				return scaledWidth - 1;
+			}
+		}();
+
+		const int yOffset = [alignment, scaledHeight]()
+		{
+			if ((alignment == CursorAlignment::TopLeft) ||
+				(alignment == CursorAlignment::Top) ||
+				(alignment == CursorAlignment::TopRight))
+			{
+				return 0;
+			}
+			else if ((alignment == CursorAlignment::Left) ||
+				(alignment == CursorAlignment::Middle) ||
+				(alignment == CursorAlignment::Right))
+			{
+				return scaledHeight / 2;
+			}
+			else
+			{
+				return scaledHeight - 1;
+			}
+		}();
+
+		return Int2(xOffset, yOffset);
+	}();
+
+	this->drawToNative(cursor,
+		mousePosition.x - cursorOffset.x,
+		mousePosition.y - cursorOffset.y,
+		scaledWidth,
+		scaledHeight);
 }
 
 void Renderer::drawToNative(SDL_Texture *texture, int x, int y, int w, int h)

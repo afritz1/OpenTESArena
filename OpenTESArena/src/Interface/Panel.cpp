@@ -5,6 +5,7 @@
 #include "Panel.h"
 
 #include "CinematicPanel.h"
+#include "CursorAlignment.h"
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
@@ -180,6 +181,12 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 
 	// Once all texture sequences are available as FLCFile loads, uncomment this.
 	//return (stream != nullptr) ? makeIntroBookPanel() : makeIntroTitlePanel();
+}
+
+std::pair<SDL_Texture*, CursorAlignment> Panel::getCurrentCursor() const
+{
+	// Null by default.
+	return std::make_pair(nullptr, CursorAlignment::TopLeft);
 }
 
 Game *Panel::getGame() const

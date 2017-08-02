@@ -18,6 +18,8 @@ class Color;
 class SoftwareRenderer;
 class VoxelGrid;
 
+enum class CursorAlignment;
+
 struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;
@@ -159,6 +161,11 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
 		double daytimePercent, const VoxelGrid &voxelGrid);
+
+	// Draws the given cursor texture to the native frame buffer. The exact position 
+	// of the cursor is modified by the cursor alignment.
+	void drawCursor(SDL_Texture *texture, CursorAlignment alignment, 
+		const Int2 &mousePosition, double scale);
 
 	// Draw methods for the native and original frame buffers.
 	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);

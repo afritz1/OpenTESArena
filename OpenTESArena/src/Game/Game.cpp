@@ -284,7 +284,22 @@ void Game::tick(double dt)
 
 void Game::render()
 {
+	// Draw the panel's main content.
 	this->panel->render(*this->renderer.get());
+
+	// Get the active panel's cursor texture and alignment.
+	const std::pair<SDL_Texture*, CursorAlignment> cursor = this->panel->getCurrentCursor();
+
+	// Draw cursor if not null. Some panels do not define a cursor (like cinematics), 
+	// so their cursor is always null.
+	if (cursor.first != nullptr)
+	{
+		// The panel should not be drawing the cursor themselves. It's done here 
+		// just to make sure that the cursor is drawn only once and is always drawn last.
+		this->renderer->drawCursor(cursor.first, cursor.second,
+			this->inputManager.getMousePosition(), this->options->getCursorScale());
+	}
+
 	this->renderer->present();
 }
 

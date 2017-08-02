@@ -19,6 +19,8 @@ class Font;
 class Game;
 class Renderer;
 
+enum class CursorAlignment;
+
 struct SDL_Texture;
 
 union SDL_Event;
@@ -39,6 +41,11 @@ public:
 	virtual ~Panel();
 
 	static std::unique_ptr<Panel> defaultPanel(Game *game);
+
+	// Gets the panel's active mouse cursor and alignment. Override this method if
+	// the panel has at least one cursor defined. The texture must be supplied by 
+	// the texture manager.
+	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const;
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.
