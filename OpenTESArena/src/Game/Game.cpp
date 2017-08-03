@@ -138,6 +138,11 @@ Game::Game()
 	// to avoid corruption between panel events which change the panel.
 	this->gameData = nullptr;
 	this->nextPanel = nullptr;
+	this->nextSubPanel = nullptr;
+
+	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
+	// The pop is delayed until the beginning of the next frame.
+	this->requestedSubPanelPop = false;
 }
 
 Game::~Game()
@@ -208,6 +213,24 @@ void Game::setPanel(std::unique_ptr<Panel> nextPanel)
 	this->nextPanel = std::move(nextPanel);
 }
 
+void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
+{
+	this->nextSubPanel = std::move(nextSubPanel);
+}
+
+void Game::popSubPanel()
+{
+	// The active sub-panel must not pop more than one sub-panel, because it may 
+	// have unintended side effects for other panels below it.
+	DebugAssert(!this->requestedSubPanelPop, "Already scheduled to pop this sub-panel.");
+
+	// If there are no sub-panels, then there is only the main panel, and panels 
+	// should never have any sub-panels to pop.
+	DebugAssert(this->subPanels.size() > 0, "No sub-panels to pop.");
+
+	this->requestedSubPanelPop = true;
+}
+
 void Game::setMusic(MusicName name)
 {
 	const std::string &filename = MusicFile::fromName(name);
@@ -225,6 +248,29 @@ void Game::resizeWindow(int width, int height)
 	auto &options = this->getOptions();
 	const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
 	this->renderer->resize(width, height, options.getResolutionScale(), fullGameWindow);
+}
+
+void Game::handlePanelChanges()
+{
+	// If a sub-panel pop was requested, then pop the top of the sub-panel stack.
+	if (this->requestedSubPanelPop)
+	{
+		this->subPanels.pop_back();
+		this->requestedSubPanelPop = false;
+	}
+
+	// If a new sub-panel was requested, then add it to the stack.
+	if (this->nextSubPanel.get() != nullptr)
+	{
+		this->subPanels.push_back(std::move(this->nextSubPanel));
+	}
+
+	// If a new panel was requested, switch to it. If it will be the active panel 
+	// (i.e., there are no sub-panels), then subsequent events will be sent to it.
+	if (this->nextPanel.get() != nullptr)
+	{
+		this->panel = std::move(this->nextPanel);
+	}
 }
 
 void Game::handleEvents(bool &running)
@@ -258,28 +304,37 @@ void Game::handleEvents(bool &running)
 			SDL_SaveBMP(screenshot.get(), "out.bmp");
 		}
 
-		// Panel-specific events are handled by the panel.
-		this->panel->handleEvent(e);
-
-		// If the panel event requested a new panel, switch to it and send the
-		// remaining events for this frame to the new panel.
-		if (this->nextPanel.get() != nullptr)
+		// Panel-specific events are handled by the active panel or sub-panel. If any 
+		// sub-panels exist, choose the top one. Otherwise, choose the main panel.
+		if (this->subPanels.size() > 0)
 		{
-			this->panel = std::move(this->nextPanel);
+			this->subPanels.back()->handleEvent(e);
 		}
+		else
+		{
+			this->panel->handleEvent(e);
+		}
+
+		// See if the event requested any changes in active panels.
+		this->handlePanelChanges();
 	}
 }
 
 void Game::tick(double dt)
 {
-	// Tick the current panel by delta time.
-	this->panel->tick(dt);
-
-	// If the panel tick requested a new panel, switch to it.
-	if (this->nextPanel.get() != nullptr)
+	// If any sub-panels are active, tick the top one by delta time. Otherwise, 
+	// tick the main panel.
+	if (this->subPanels.size() > 0)
 	{
-		this->panel = std::move(this->nextPanel);
+		this->subPanels.back()->tick(dt);
 	}
+	else
+	{
+		this->panel->tick(dt);
+	}
+
+	// See if the panel tick requested any changes in active panels.
+	this->handlePanelChanges();
 }
 
 void Game::render()
@@ -287,8 +342,15 @@ void Game::render()
 	// Draw the panel's main content.
 	this->panel->render(*this->renderer.get());
 
+	// Draw any sub-panels back to front.
+	for (auto &subPanel : this->subPanels)
+	{
+		subPanel->render(*this->renderer.get());
+	}
+
 	// Get the active panel's cursor texture and alignment.
-	const std::pair<SDL_Texture*, CursorAlignment> cursor = this->panel->getCurrentCursor();
+	const std::pair<SDL_Texture*, CursorAlignment> cursor = (this->subPanels.size() > 0) ?
+		this->subPanels.back()->getCurrentCursor() : this->panel->getCurrentCursor();
 
 	// Draw cursor if not null. Some panels do not define a cursor (like cinematics), 
 	// so their cursor is always null.

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "InputManager.h"
 #include "../Interface/FPSCounter.h"
@@ -32,21 +33,29 @@ enum class MusicName;
 class Game
 {
 private:
+	// A vector of sub-panels treated like a stack. The top of the stack is the back.
+	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
+	std::vector<std::unique_ptr<Panel>> subPanels;
+
 	AudioManager audioManager;
 	InputManager inputManager;
 	std::unique_ptr<FontManager> fontManager;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<Options> options;
-	std::unique_ptr<Panel> panel, nextPanel;
+	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<TextAssets> textAssets;
 	std::unique_ptr<CityDataFile> cityDataFile;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
+	bool requestedSubPanelPop;
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
+
+	// Handles any changes in panels after an SDL event or game tick.
+	void handlePanelChanges();
 
 	// Handles SDL events for the current frame.
 	void handleEvents(bool &running);
@@ -99,6 +108,17 @@ public:
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel).
 	void setPanel(std::unique_ptr<Panel> nextPanel);
+
+	// Adds a new sub-panel after the current SDL event has been processed (to avoid
+	// adding multiple pop-ups from the same panel or sub-panel).
+	void pushSubPanel(std::unique_ptr<Panel> nextSubPanel);
+
+	// Pops the current sub-panel off the stack after the current SDL event has been
+	// processed (to avoid popping a sub-panel while in use). This will normally be called 
+	// by a sub-panel to destroy itself. If a new sub-panel is pushed during the same event,
+	// then the old sub-panel is popped and replaced by the new sub-panel. Panels should 
+	// never call this, because if they are active, then there are no sub-panels to pop.
+	void popSubPanel();
 
 	// Sets the music to the given music name.
 	void setMusic(MusicName name);
