@@ -25,6 +25,7 @@ public:
 	ProvinceMapPanel(Game *game, int provinceID);
 	virtual ~ProvinceMapPanel();
 
+	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

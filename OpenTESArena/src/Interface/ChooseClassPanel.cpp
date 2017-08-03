@@ -7,6 +7,7 @@
 
 #include "ChooseClassCreationPanel.h"
 #include "ChooseNamePanel.h"
+#include "CursorAlignment.h"
 #include "ListBox.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -159,6 +160,15 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 ChooseClassPanel::~ChooseClassPanel()
 {
 
+}
+
+std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
+{
+	auto &textureManager = this->getGame()->getTextureManager();
+	const auto &texture = textureManager.getTexture(
+		TextureFile::fromName(TextureName::SwordCursor),
+		PaletteFile::fromName(PaletteName::Default));
+	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
 void ChooseClassPanel::handleEvent(const SDL_Event &e)
@@ -445,13 +455,4 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
-
-	// Draw cursor.
-	const auto &cursor = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor));
-	const auto &options = this->getGame()->getOptions();
-	renderer.drawToNative(cursor.get(),
-		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
-		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

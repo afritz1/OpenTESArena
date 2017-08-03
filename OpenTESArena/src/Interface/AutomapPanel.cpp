@@ -7,6 +7,7 @@
 
 #include "AutomapPanel.h"
 
+#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "TextBox.h"
 #include "../Game/CardinalDirection.h"
@@ -219,6 +220,15 @@ AutomapPanel::~AutomapPanel()
 
 }
 
+std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
+{
+	auto &textureManager = this->getGame()->getTextureManager();
+	const auto &texture = textureManager.getTexture(
+		TextureFile::fromName(TextureName::QuillCursor),
+		TextureFile::fromName(TextureName::Automap));
+	return std::make_pair(texture.get(), CursorAlignment::BottomLeft);
+}
+
 void AutomapPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -366,18 +376,4 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
-
-	// Draw quill cursor. This one uses a different point for blitting because 
-	// the tip of the cursor is at the bottom left, not the top left.
-	const auto &cursor = textureManager.getTexture(
-		TextureFile::fromName(TextureName::QuillCursor),
-		TextureFile::fromName(TextureName::Automap));
-	const auto &options = this->getGame()->getOptions();
-	const int cursorYOffset = static_cast<int>(
-		static_cast<double>(cursor.getHeight()) * options.getCursorScale());
-	renderer.drawToNative(cursor.get(),
-		mousePosition.x,
-		mousePosition.y - cursorYOffset,
-		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
-		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

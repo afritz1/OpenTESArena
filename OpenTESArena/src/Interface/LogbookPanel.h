@@ -16,6 +16,7 @@ public:
 	LogbookPanel(Game *game);
 	virtual ~LogbookPanel();
 
+	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

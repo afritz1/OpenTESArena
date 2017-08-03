@@ -4,6 +4,7 @@
 
 #include "LoadGamePanel.h"
 
+#include "CursorAlignment.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
@@ -61,6 +62,15 @@ LoadGamePanel::~LoadGamePanel()
 
 }
 
+std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
+{
+	auto &textureManager = this->getGame()->getTextureManager();
+	const auto &texture = textureManager.getTexture(
+		TextureFile::fromName(TextureName::SwordCursor),
+		PaletteFile::fromName(PaletteName::Default));
+	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+}
+
 void LoadGamePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -105,15 +115,4 @@ void LoadGamePanel::render(Renderer &renderer)
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
-
-	// Draw cursor.
-	const auto &cursor = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor));
-	const auto &inputManager = this->getGame()->getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const auto &options = this->getGame()->getOptions();
-	renderer.drawToNative(cursor.get(),
-		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
-		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

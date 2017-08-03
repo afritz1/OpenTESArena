@@ -6,6 +6,7 @@
 
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
+#include "CursorAlignment.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -121,6 +122,15 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 ChooseRacePanel::~ChooseRacePanel()
 {
 	
+}
+
+std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
+{
+	auto &textureManager = this->getGame()->getTextureManager();
+	const auto &texture = textureManager.getTexture(
+		TextureFile::fromName(TextureName::SwordCursor),
+		PaletteFile::fromName(PaletteName::Default));
+	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
@@ -264,13 +274,4 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();
-
-	// Draw cursor.
-	const auto &cursor = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor));
-	const auto &options = this->getGame()->getOptions();
-	renderer.drawToNative(cursor.get(),
-		mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
-		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 }

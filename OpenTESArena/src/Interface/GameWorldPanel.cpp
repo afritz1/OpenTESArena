@@ -8,6 +8,7 @@
 
 #include "AutomapPanel.h"
 #include "CharacterPanel.h"
+#include "CursorAlignment.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"
@@ -60,6 +61,23 @@ namespace
 	const Rect BottomMiddleRegion(141, 119, 38, 28);
 	const Rect BottomRightRegion(179, 119, 141, 28);
 	const Rect UiBottomRegion(0, 147, 320, 53);
+
+	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse 
+	// position so the cursor's click area is closer to the tip of each arrow, as is 
+	// done in the original game (slightly differently, though. I think the middle 
+	// cursor was originally top-aligned, not middle-aligned, which is strange).
+	const std::array<CursorAlignment, 9> ArrowCursorAlignments =
+	{
+		CursorAlignment::TopLeft,
+		CursorAlignment::Top,
+		CursorAlignment::TopRight,
+		CursorAlignment::TopLeft,
+		CursorAlignment::Middle,
+		CursorAlignment::TopRight,
+		CursorAlignment::Left,
+		CursorAlignment::Bottom,
+		CursorAlignment::Right
+	};
 }
 
 GameWorldPanel::GameWorldPanel(Game *game)
@@ -260,6 +278,41 @@ GameWorldPanel::GameWorldPanel(Game *game)
 GameWorldPanel::~GameWorldPanel()
 {
 
+}
+
+std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
+{
+	// The cursor texture depends on the current mouse position.
+	const auto &game = *this->getGame();
+	auto &textureManager = game.getTextureManager();
+	const auto playerInterface = game.getOptions().getPlayerInterface();
+	const Int2 mousePosition = game.getInputManager().getMousePosition();
+
+	// If using the modern interface, just use the default arrow cursor.
+	if (playerInterface == PlayerInterface::Modern)
+	{
+		const auto &texture = textureManager.getTextures(
+			TextureFile::fromName(TextureName::ArrowCursors)).at(4);
+		return std::make_pair(texture.get(), CursorAlignment::Middle);
+	}
+	else
+	{
+		// See which arrow cursor region the native mouse is in.
+		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
+		{
+			if (this->nativeCursorRegions.at(i).contains(mousePosition))
+			{
+				const auto &texture = textureManager.getTextures(
+					TextureFile::fromName(TextureName::ArrowCursors)).at(i);
+				return std::make_pair(texture.get(), ArrowCursorAlignments.at(i));
+			}
+		}
+
+		// If not in any of the arrow regions, use the default sword cursor.
+		const auto &texture = textureManager.getTexture(
+			TextureFile::fromName(TextureName::SwordCursor));
+		return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	}
 }
 
 void GameWorldPanel::handleEvent(const SDL_Event &e)
@@ -1113,38 +1166,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	// - This shouldn't be done for the game world interface because it needs to clamp 
 	//   to the screen edges, not the letterbox edges. Fix this eventually... again.
 	renderer.drawOriginalToNative();
-
-	// Draw cursor, depending on its position on the screen.
-	const Texture &cursor = [this, &mousePosition, playerInterface, &textureManager]()
-		-> const Texture& // Interesting how this return type isn't deduced in MSVC.
-	{
-		// If using the modern interface, just use the default arrow cursor.
-		if (playerInterface == PlayerInterface::Modern)
-		{
-			return textureManager.getTextures(
-				TextureFile::fromName(TextureName::ArrowCursors)).at(4);
-		}
-		else
-		{
-			// See which arrow cursor region the native mouse is in.
-			for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
-			{
-				if (this->nativeCursorRegions.at(i).contains(mousePosition))
-				{
-					return textureManager.getTextures(
-						TextureFile::fromName(TextureName::ArrowCursors)).at(i);
-				}
-			}
-
-			// If not in any of the arrow regions, use the default sword cursor.
-			return textureManager.getTexture(
-				TextureFile::fromName(TextureName::SwordCursor));
-		}
-	}();
-
-	renderer.drawToNative(cursor.get(), mousePosition.x, mousePosition.y,
-		static_cast<int>(cursor.getWidth() * options.getCursorScale()),
-		static_cast<int>(cursor.getHeight() * options.getCursorScale()));
 
 	// Set the transparency blending back to normal (off).
 	renderer.useTransparencyBlending(false);
