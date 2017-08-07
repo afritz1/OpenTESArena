@@ -255,9 +255,10 @@ Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
 	const double letterboxWidthReal = static_cast<double>(letterbox.w);
 	const double letterboxHeightReal = static_cast<double>(letterbox.h);
 
+	// Convert to letterbox point. Round to avoid off-by-one errors.
 	const Int2 letterboxPoint(
-		static_cast<int>(letterboxWidthReal * originalXPercent),
-		static_cast<int>(letterboxHeightReal * originalYPercent));
+		static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
+		static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
 
 	// Then from letterbox point to native point.
 	const Int2 nativePoint(
@@ -265,6 +266,28 @@ Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
 		letterboxPoint.y + letterbox.y);
 
 	return nativePoint;
+}
+
+Rect Renderer::nativeRectToOriginal(const Rect &nativeRect) const
+{
+	const Int2 newTopLeft = this->nativePointToOriginal(nativeRect.getTopLeft());
+	const Int2 newBottomRight = this->nativePointToOriginal(nativeRect.getBottomRight());
+	return Rect(
+		newTopLeft.x,
+		newTopLeft.y,
+		newBottomRight.x - newTopLeft.x,
+		newBottomRight.y - newTopLeft.y);
+}
+
+Rect Renderer::originalRectToNative(const Rect &originalRect) const
+{
+	const Int2 newTopLeft = this->originalPointToNative(originalRect.getTopLeft());
+	const Int2 newBottomRight = this->originalPointToNative(originalRect.getBottomRight());
+	return Rect(
+		newTopLeft.x,
+		newTopLeft.y,
+		newBottomRight.x - newTopLeft.x,
+		newBottomRight.y - newTopLeft.y);
 }
 
 bool Renderer::letterboxContains(const Int2 &nativePoint) const

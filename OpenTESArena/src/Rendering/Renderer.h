@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "Rect3D.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
@@ -15,6 +14,7 @@
 // The format for all textures is ARGB8888.
 
 class Color;
+class Rect;
 class SoftwareRenderer;
 class VoxelGrid;
 
@@ -81,6 +81,12 @@ public:
 
 	// Does the opposite of nativePointToOriginal().
 	Int2 originalPointToNative(const Int2 &originalPoint) const;
+
+	// Same as nativePointToOriginal() but for rectangles.
+	Rect nativeRectToOriginal(const Rect &nativeRect) const;
+
+	// Same as originalPointToNative() but for rectangles.
+	Rect originalRectToNative(const Rect &originalRect) const;
 
 	// Returns true if the letterbox contains a native point.
 	bool letterboxContains(const Int2 &nativePoint) const;
