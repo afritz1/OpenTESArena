@@ -22,13 +22,11 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button<Game*>> characterSheetButton;
+	std::unique_ptr<Button<Game*>> characterSheetButton, statusButton,
+		logbookButton, pauseButton;
 	std::unique_ptr<Button<Player&>> drawWeaponButton;
-	std::unique_ptr<Button<>> stealButton, statusButton, magicButton, 
-		useItemButton, campButton;
-	std::unique_ptr<Button<Game*>> logbookButton;
+	std::unique_ptr<Button<>> stealButton, magicButton, useItemButton, campButton;
 	std::unique_ptr<Button<GameWorldPanel*>> scrollUpButton, scrollDownButton;
-	std::unique_ptr<Button<Game*>> pauseButton;
 	std::unique_ptr<Button<Game*, bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
@@ -39,7 +37,7 @@ private:
 
 	// Handles input for the player camera.
 	void handlePlayerTurning(double dt, const Int2 &mouseDelta);
-	
+
 	// Handles input for player movement in the game world.
 	void handlePlayerMovement(double dt);
 

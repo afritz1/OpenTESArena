@@ -11,8 +11,10 @@
 #include "CursorAlignment.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Entities/CharacterClass.h"
@@ -145,11 +147,48 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->statusButton = []()
 	{
-		auto function = []()
+		auto function = [](Game *game)
 		{
-			DebugMention("Status.");
+			auto &textureManager = game->getTextureManager();
+			const auto &gameWorldInterface = textureManager.getTexture(
+				TextureFile::fromName(TextureName::GameWorldInterface));
+
+			const Int2 center(
+				(Renderer::ORIGINAL_WIDTH / 2),
+				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
+
+			const std::string text = std::string("You are in Test City.") + "\n" +
+				"It is some time during the day." + "\n" +
+				"The date is some day during the week in some year." + "\n" +
+				"You are currently carrying 0 kg out of 0 kg." + "\n" +
+				"You are healthy.";
+
+			const Color color(251, 239, 77);
+
+			const RichTextString richText(
+				text,
+				FontName::Arena,
+				color,
+				TextAlignment::Center);
+
+			// To do: eventually the texture will need to auto-fit to the size of
+			// the text. Maybe RichTextString could have a method for determining that,
+			// and it would use a given Font reference? It could be reused by TextBox.
+			Texture texture(Texture::generate(
+				Texture::PatternType::Dark, 270, 61, game->getTextureManager(),
+				game->getRenderer()));
+
+			const Int2 textureCenter = center;
+
+			// The sub-panel does nothing after it's removed.
+			auto function = [](Game *game) {};
+
+			std::unique_ptr<Panel> textSubPanel(new TextSubPanel(
+				game, center, richText, function, std::move(texture), textureCenter));
+
+			game->pushSubPanel(std::move(textSubPanel));
 		};
-		return std::unique_ptr<Button<>>(new Button<>(177, 151, 29, 22, function));
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(177, 151, 29, 22, function));
 	}();
 
 	this->magicButton = []()
@@ -399,7 +438,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->statusButton->contains(originalPosition))
 			{
-				this->statusButton->click();
+				this->statusButton->click(this->getGame());
 			}
 			else if (this->magicButton->contains(originalPosition))
 			{
