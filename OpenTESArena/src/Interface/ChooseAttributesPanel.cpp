@@ -7,9 +7,11 @@
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
+#include "TextSubPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
@@ -206,6 +208,47 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 	this->raceID = raceID;
 	this->portraitID = 0;
+
+	// Push the initial text pop-up onto the sub-panel stack.
+	std::unique_ptr<Panel> textSubPanel = [game]()
+	{
+		const Int2 center(
+			(Renderer::ORIGINAL_WIDTH / 2) - 1,
+			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+		const Color color(199, 199, 199);
+
+		const std::string text = [game]()
+		{
+			std::string segment = game->getTextAssets().getAExeSegment(
+				ExeStrings::DistributeClassPoints);
+
+			segment = String::replace(segment, '\r', '\n');
+
+			return segment;
+		}();
+		
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			color,
+			TextAlignment::Center);
+
+		Texture texture(Texture::generate(
+			Texture::PatternType::Dark, 183, 42, game->getTextureManager(),
+			game->getRenderer()));
+
+		const Int2 textureCenter(
+			(Renderer::ORIGINAL_WIDTH / 2) - 1,
+			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+		// The sub-panel does nothing after it's removed.
+		auto function = [](Game *game) {};
+
+		return std::unique_ptr<Panel>(new TextSubPanel(
+			game, center, richText, function, std::move(texture), textureCenter));
+	}();
+
+	game->pushSubPanel(std::move(textSubPanel));
 }
 
 ChooseAttributesPanel::~ChooseAttributesPanel()

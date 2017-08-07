@@ -8,26 +8,19 @@
 #include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
 
-// Skip the nitty-gritty details like the confirmation box and province details
-// for now. Just click on a province and go.
-
 class Renderer;
-class TextBox;
 
 enum class GenderName;
 
 class ChooseRacePanel : public Panel
 {
 private:
-	Texture parchment;
-	std::unique_ptr<TextBox> initialTextBox;
 	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>> backToGenderButton;
 	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&, 
 		GenderName, int>> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
 	std::string name;
-	bool initialTextBoxVisible;
 
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);
 public:

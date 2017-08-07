@@ -7,8 +7,9 @@
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
 #include "CursorAlignment.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
-#include "TextBox.h"
+#include "TextSubPanel.h"
 #include "../Assets/ExeStrings.h"
 #include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
@@ -51,44 +52,6 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
 	: Panel(game), charClass(charClass), name(name), gender(gender)
 {
-	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),
-		game->getRenderer()));
-
-	this->initialTextBox = [game, charClass, name]()
-	{
-		Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 100);
-		Color color(48, 12, 12);
-
-		std::string text = [game, charClass, name]()
-		{
-			std::string segment = game->getTextAssets().getAExeSegment(
-				ExeStrings::ChooseRace);
-
-			segment = String::replace(segment, '\r', '\n');
-
-			// Replace first "%s" with player name.
-			size_t index = segment.find("%s");
-			segment.replace(index, 2, name);
-
-			// Replace second "%s" with character class.
-			index = segment.find("%s");
-			segment.replace(index, 2, charClass.getDisplayName());
-
-			return segment;
-		}();
-
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
-	}();
-
 	this->backToGenderButton = []()
 	{
 		auto function = [](Game *game, const CharacterClass &charClass, 
@@ -115,8 +78,56 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			GenderName, int>>(new Button<Game*, const CharacterClass&, const std::string&, 
 				GenderName, int>(function));
 	}();
+	
+	// @todo: maybe allocate std::unique_ptr<std::function> for unravelling the map?
+	// When done, set to null and push initial parchment sub-panel?
 
-	this->initialTextBoxVisible = true;
+	// Push the initial text sub-panel.
+	std::unique_ptr<Panel> textSubPanel = [game, &charClass, &name]()
+	{
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 100);
+		const Color color(48, 12, 12);
+
+		const std::string text = [game, &charClass, &name]()
+		{
+			std::string segment = game->getTextAssets().getAExeSegment(
+				ExeStrings::ChooseRace);
+
+			segment = String::replace(segment, '\r', '\n');
+
+			// Replace first "%s" with player name.
+			size_t index = segment.find("%s");
+			segment.replace(index, 2, name);
+
+			// Replace second "%s" with character class.
+			index = segment.find("%s");
+			segment.replace(index, 2, charClass.getDisplayName());
+
+			return segment;
+		}();
+
+		const RichTextString richText(
+			text,
+			FontName::A,
+			color,
+			TextAlignment::Center);
+
+		Texture texture(Texture::generate(
+			Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),
+			game->getRenderer()));
+
+		const Int2 textureCenter(
+			(Renderer::ORIGINAL_WIDTH / 2) - 1,
+			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+		// The sub-panel does nothing after it's removed.
+		auto function = [](Game *game) {};
+		
+		return std::unique_ptr<Panel>(new TextSubPanel(
+			game, center, richText, function, std::move(texture), textureCenter));
+	}();
+
+	game->pushSubPanel(std::move(textSubPanel));
 }
 
 ChooseRacePanel::~ChooseRacePanel()
@@ -140,27 +151,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
-	// Interact with the pop-up text box if visible.
-	// To do: find a better way to do this (via a stack of pop-ups?).
-	if (this->initialTextBoxVisible)
-	{
-		bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-			inputManager.keyPressed(e, SDLK_KP_ENTER);
-		bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-
-		bool hideInitialPopUp = leftClick || rightClick || enterPressed ||
-			spacePressed || escapePressed;
-
-		if (hideInitialPopUp)
-		{
-			// Hide the initial text box.
-			this->initialTextBoxVisible = false;
-		}
-
-		return;
-	}
-
-	// Interact with the map screen instead.
+	// Interact with the map screen.
 	if (escapePressed)
 	{
 		this->backToGenderButton->click(this->getGame(), this->charClass, this->name);
@@ -238,37 +229,24 @@ void ChooseRacePanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
 
-	// Draw visible parchments and text.
-	if (this->initialTextBoxVisible)
-	{
-		renderer.drawToOriginal(this->parchment.get(),
-			(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1,
-			(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) - 1);
-		renderer.drawToOriginal(this->initialTextBox->getTexture(),
-			this->initialTextBox->getX(), this->initialTextBox->getY());
-	}
-
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Draw hovered province tooltip.
-	if (!this->initialTextBoxVisible)
+	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		.nativePointToOriginal(mousePosition);
+
+	// Draw tooltip if the mouse is in a province.
+	const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
+	for (int provinceID = 0; provinceID < provinceCount; provinceID++)
 	{
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
-			.nativePointToOriginal(mousePosition);
+		const Rect &clickArea = ProvinceClickAreas.at(provinceID);
 
-		// Draw tooltip if the mouse is in a province.
-		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
-		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
+		// Ignore the Imperial province.
+		if (clickArea.contains(mouseOriginalPoint) &&
+			(provinceID != (ProvinceClickAreas.size() - 1)))
 		{
-			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
-
-			// Ignore the Imperial province.
-			if (clickArea.contains(mouseOriginalPoint) &&
-				(provinceID != (ProvinceClickAreas.size() - 1)))
-			{
-				this->drawProvinceTooltip(provinceID, renderer);
-			}
+			this->drawProvinceTooltip(provinceID, renderer);
 		}
 	}
 
