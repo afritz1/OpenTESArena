@@ -115,6 +115,18 @@ const std::vector<std::pair<int, int>> RaceNamesPlural =
 // Logbook.
 const std::pair<int, int> LogbookIsEmpty(0x00042f45, 22);
 
+// Time of day strings.
+const std::vector<std::pair<int, int>> TimeOfDayStrings =
+{
+	{ 0x00040529, 13 },
+	{ 0x00040537, 14 },
+	{ 0x00040546, 4 },
+	{ 0x0004054B, 16 },
+	{ 0x0004055C, 14 },
+	{ 0x0004056B, 8 },
+	{ 0x00040574, 8 }
+};
+
 // Creature names ("Rat", "Goblin", etc.). Each creature type could simply use its index 
 // in this array as its identifier, much like with provinces.
 const std::vector<std::pair<int, int>> CreatureNames =

@@ -17,6 +17,8 @@
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CIFFile.h"
+#include "../Assets/ExeStrings.h"
+#include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
 #include "../Entities/Player.h"
@@ -161,17 +163,33 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			{
 				const Location &location = game->getGameData().getLocation();
 
-				const std::string clockTimeString = [game]()
+				const std::string timeString = [game]()
 				{
 					const Clock &clock = game->getGameData().getClock();
 					const int hours = clock.getHours12();
 					const int minutes = clock.getMinutes();
-					return std::to_string(hours) + ":" +
+					const std::string clockTimeString = std::to_string(hours) + ":" +
 						((minutes < 10) ? "0" : "") + std::to_string(minutes);
+
+					const int timeOfDayIndex = [game]()
+					{
+						const double daytimePercent = game->getGameData().getDaytimePercent();
+						const int stringCount = static_cast<int>(ExeStrings::TimeOfDayStrings.size());
+						const int index = static_cast<int>(stringCount * daytimePercent);
+
+						// Shift the indices right by 1, because midnight is stored at the end, 
+						// but it should occur at the actual time of midnight (at zero).
+						return (index + (stringCount - 1)) % stringCount;
+					}();
+
+					const std::string timeOfDayString = game->getTextAssets().getAExeSegment(
+						ExeStrings::TimeOfDayStrings.at(timeOfDayIndex));
+
+					return clockTimeString + " " + timeOfDayString;
 				}();
 
 				return "You are in " + location.getName() + "." + "\n" +
-					"It is " + clockTimeString + "." + "\n" +
+					"It is " + timeString + "." + "\n" +
 					"The date is some day during the week in some year." + "\n" +
 					"You are currently carrying 0 kg out of 0 kg." + "\n" +
 					"You are healthy.";
