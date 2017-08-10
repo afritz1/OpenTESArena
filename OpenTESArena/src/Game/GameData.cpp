@@ -22,16 +22,16 @@
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
 
-const double GameData::SECONDS_PER_DAY = 120.0; // Arbitrary value for testing.
+// Arbitrary value for testing.
+const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 120.0;
 
 GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-	const Location &location, double gameTime, double fogDistance)
+	const Location &location, const Clock &clock, double fogDistance)
 	: player(std::move(player)), entityManager(std::move(entityManager)),
-	voxelGrid(std::move(voxelGrid)), location(location)
+	voxelGrid(std::move(voxelGrid)), location(location), clock(clock)
 {
 	DebugMention("Initializing.");
 
-	this->gameTime = gameTime;
 	this->fogDistance = fogDistance;
 }
 
@@ -546,11 +546,12 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	Location location("Test City", player.getRaceID(),
 		LocationType::CityState, ClimateName::Cold);
 
-	const double gameTime = 0.0; // In seconds. Affects time of day.
+	// Start the clock at midnight.
+	Clock clock;
 
 	return std::unique_ptr<GameData>(new GameData(
 		std::move(player), std::move(entityManager), std::move(voxelGrid),
-		location, gameTime, fogDistance));
+		location, clock, fogDistance));
 }
 
 Player &GameData::getPlayer()
@@ -573,15 +574,15 @@ Location &GameData::getLocation()
 	return this->location;
 }
 
-double GameData::getGameTime() const
+const Clock &GameData::getClock() const
 {
-	return this->gameTime;
+	return this->clock;
 }
 
 double GameData::getDaytimePercent() const
 {
-	return std::fmod(this->getGameTime(), GameData::SECONDS_PER_DAY) /
-		GameData::SECONDS_PER_DAY;
+	return this->clock.getPreciseTotalSeconds() /
+		static_cast<double>(Clock::SECONDS_IN_A_DAY);
 }
 
 double GameData::getFogDistance() const
@@ -589,9 +590,10 @@ double GameData::getFogDistance() const
 	return this->fogDistance;
 }
 
-void GameData::incrementGameTime(double dt)
+void GameData::tickTime(double dt)
 {
 	assert(dt >= 0.0);
 
-	this->gameTime += dt;
+	// Tick the game clock.
+	this->clock.tick(dt * GameData::TIME_SCALE);
 }

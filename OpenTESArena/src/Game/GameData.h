@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "Clock.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../World/Location.h"
@@ -27,19 +28,21 @@ enum class GenderName;
 class GameData
 {
 private:
-	// The number of real-time seconds that an in-game day lasts.
-	static const double SECONDS_PER_DAY;
+	// The time scale determines how long or short a real-time second is. If the time 
+	// scale is 5.0, then each real-time second is five game seconds, etc..
+	static const double TIME_SCALE;
 
 	Player player;
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
 	Location location;
-	double gameTime, fogDistance;
-	// province... location... weather...
+	Clock clock;
+	double fogDistance;
+	// weather...
 	// date...
 public:
 	GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-		const Location &location, double gameTime, double fogDistance);
+		const Location &location, const Clock &clock, double fogDistance);
 	~GameData();
 
 	// Creates a game data object used for the test world.
@@ -51,18 +54,16 @@ public:
 	EntityManager &getEntityManager();
 	VoxelGrid &getVoxelGrid();
 	Location &getLocation();
-	double getGameTime() const;
+	const Clock &getClock() const;
 
-	// Gets a 0->1 value representing how far along the current day is. 
-	// 0.0 is 12:00am and 0.50 is noon.
+	// Gets a percentage representing how far along the current day is. 0.0 is 
+	// 12:00am and 0.50 is noon.
 	double getDaytimePercent() const;
 
 	double getFogDistance() const;
 
-	void incrementGameTime(double dt);
-
-	// No tick method here.
-	// The current panel does what it wants using these methods.
+	// Ticks the game clock (for the current time of day and date).
+	void tickTime(double dt);
 };
 
 #endif

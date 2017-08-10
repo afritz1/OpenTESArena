@@ -157,13 +157,25 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				(Renderer::ORIGINAL_WIDTH / 2),
 				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
 
-			const Location &location = game->getGameData().getLocation();
+			const std::string text = [game]()
+			{
+				const Location &location = game->getGameData().getLocation();
 
-			const std::string text = "You are in " + location.getName() + "." + "\n" +
-				"It is some time during the day." + "\n" +
-				"The date is some day during the week in some year." + "\n" +
-				"You are currently carrying 0 kg out of 0 kg." + "\n" +
-				"You are healthy.";
+				const std::string clockTimeString = [game]()
+				{
+					const Clock &clock = game->getGameData().getClock();
+					const int hours = clock.getHours12();
+					const int minutes = clock.getMinutes();
+					return std::to_string(hours) + ":" +
+						((minutes < 10) ? "0" : "") + std::to_string(minutes);
+				}();
+
+				return "You are in " + location.getName() + "." + "\n" +
+					"It is " + clockTimeString + "." + "\n" +
+					"The date is some day during the week in some year." + "\n" +
+					"You are currently carrying 0 kg out of 0 kg." + "\n" +
+					"You are healthy.";
+			}();
 
 			const Color color(251, 239, 77);
 
@@ -1003,10 +1015,10 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerTurning(dt, mouseDelta);
 	this->handlePlayerMovement(dt);
 
-	// Tick the game world time.
+	// Tick the game world clock time.
 	auto &game = *this->getGame();
 	auto &gameData = game.getGameData();
-	gameData.incrementGameTime(dt);
+	gameData.tickTime(dt);
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
