@@ -20,7 +20,7 @@ const std::map<LocationType, std::string> LocationTypeDisplayNames =
 	{ LocationType::Unique, "Unique" }
 };
 
-Location::Location(const std::string &name, int provinceID, 
+Location::Location(const std::string &name, int provinceID,
 	LocationType locationType, ClimateName climateName)
 {
 	this->name = name;
@@ -40,7 +40,7 @@ int Location::getProvinceID() const
 }
 
 LocationType Location::getLocationType() const
-{	
+{
 	return this->locationType;
 }
 
@@ -49,7 +49,7 @@ ClimateName Location::getClimateName() const
 	return this->climateName;
 }
 
-const std::string &Location::getDisplayName() const
+const std::string &Location::getName() const
 {
 	return this->name;
 }

@@ -18,14 +18,16 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
+#include "../World/ClimateName.h"
+#include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
 
 const double GameData::SECONDS_PER_DAY = 120.0; // Arbitrary value for testing.
 
 GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-	double gameTime, double fogDistance)
+	const Location &location, double gameTime, double fogDistance)
 	: player(std::move(player)), entityManager(std::move(entityManager)),
-	voxelGrid(std::move(voxelGrid))
+	voxelGrid(std::move(voxelGrid)), location(location)
 {
 	DebugMention("Initializing.");
 
@@ -481,7 +483,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		std::unique_ptr<Doodad> doodad(new Doodad(animation, position, entityManager));
 
 		// Assign the entity ID with the first texture.
-		renderer.addFlat(doodad->getID(), position, Double2::UnitX, 
+		renderer.addFlat(doodad->getID(), position, Double2::UnitX,
 			width, height, textureIDs.at(0));
 
 		entityManager.add(std::move(doodad));
@@ -503,7 +505,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		Animation deathAnimation(deathIDs, timePerFrame, false);
 
 		std::unique_ptr<NonPlayer> nonPlayer(new NonPlayer(
-			position, direction, idleAnimations, moveAnimations, attackAnimation, 
+			position, direction, idleAnimations, moveAnimations, attackAnimation,
 			deathAnimation, entityManager));
 
 		// Assign the entity ID with the first texture.
@@ -541,11 +543,14 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	renderer.setSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels),
 		skyPalette->w * skyPalette->h);
 
+	Location location("Test City", player.getRaceID(),
+		LocationType::CityState, ClimateName::Cold);
+
 	const double gameTime = 0.0; // In seconds. Affects time of day.
 
 	return std::unique_ptr<GameData>(new GameData(
-		std::move(player), std::move(entityManager),
-		std::move(voxelGrid), gameTime, fogDistance));
+		std::move(player), std::move(entityManager), std::move(voxelGrid),
+		location, gameTime, fogDistance));
 }
 
 Player &GameData::getPlayer()
@@ -561,6 +566,11 @@ EntityManager &GameData::getEntityManager()
 VoxelGrid &GameData::getVoxelGrid()
 {
 	return this->voxelGrid;
+}
+
+Location &GameData::getLocation()
+{
+	return this->location;
 }
 
 double GameData::getGameTime() const

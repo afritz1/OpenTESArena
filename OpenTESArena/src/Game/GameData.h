@@ -7,6 +7,7 @@
 
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../World/Location.h"
 #include "../World/VoxelGrid.h"
 
 // Intended to be a container for the player and world data that is currently active 
@@ -32,12 +33,13 @@ private:
 	Player player;
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
+	Location location;
 	double gameTime, fogDistance;
 	// province... location... weather...
 	// date...
 public:
 	GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-		double gameTime, double fogDistance);
+		const Location &location, double gameTime, double fogDistance);
 	~GameData();
 
 	// Creates a game data object used for the test world.
@@ -48,6 +50,7 @@ public:
 	Player &getPlayer();
 	EntityManager &getEntityManager();
 	VoxelGrid &getVoxelGrid();
+	Location &getLocation();
 	double getGameTime() const;
 
 	// Gets a 0->1 value representing how far along the current day is. 

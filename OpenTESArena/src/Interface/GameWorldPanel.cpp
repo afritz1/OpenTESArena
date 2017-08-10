@@ -157,7 +157,9 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				(Renderer::ORIGINAL_WIDTH / 2),
 				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
 
-			const std::string text = std::string("You are in Test City.") + "\n" +
+			const Location &location = game->getGameData().getLocation();
+
+			const std::string text = "You are in " + location.getName() + "." + "\n" +
 				"It is some time during the day." + "\n" +
 				"The date is some day during the week in some year." + "\n" +
 				"You are currently carrying 0 kg out of 0 kg." + "\n" +
@@ -277,14 +279,15 @@ GameWorldPanel::GameWorldPanel(Game *game)
 		{
 			if (goToAutomap)
 			{
-				auto &player = game->getGameData().getPlayer();
-				auto &voxelGrid = game->getGameData().getVoxelGrid();
-				const std::string locationName("Test City"); // Keep location in game data?
-				const Double3 position = player.getPosition();
+				auto &gameData = game->getGameData();
+				const auto &player = gameData.getPlayer();
+				const auto &voxelGrid = gameData.getVoxelGrid();
+				const Location &location = gameData.getLocation();
+				const Double3 &position = player.getPosition();
 
 				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game,
-					Double2(position.x, position.z), player.getGroundDirection(),
-					voxelGrid, locationName));
+					Double2(position.x, position.z), player.getGroundDirection(), 
+					voxelGrid, location.getName()));
 				game->setPanel(std::move(automapPanel));
 			}
 			else

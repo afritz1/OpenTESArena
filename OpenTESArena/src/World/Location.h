@@ -29,7 +29,7 @@ public:
 	int getProvinceID() const;
 	LocationType getLocationType() const;
 	ClimateName getClimateName() const;
-	const std::string &getDisplayName() const;
+	const std::string &getName() const;
 	std::string typeToString() const;
 };
 
