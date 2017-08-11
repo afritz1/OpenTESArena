@@ -188,9 +188,19 @@ GameWorldPanel::GameWorldPanel(Game *game)
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
+				const auto &date = game->getGameData().getDate();
+				const std::string weekdayString = game->getTextAssets().getAExeSegment(
+					ExeStrings::WeekdayNames.at(date.getWeekday()));
+				const std::string dayString = date.getOrdinalDay();
+				const std::string monthString = game->getTextAssets().getAExeSegment(
+					ExeStrings::MonthNames.at(date.getMonth()));
+				const std::string yearString = std::to_string(date.getEra()) + "E " +
+					std::to_string(date.getYear());
+
 				return "You are in " + location.getName() + "." + "\n" +
 					"It is " + timeString + "." + "\n" +
-					"The date is some day during the week in some year." + "\n" +
+					"The date is " + weekdayString + ", " + dayString + " of " + monthString + 
+					" in the year " + yearString + "\n" +
 					"You are currently carrying 0 kg out of 0 kg." + "\n" +
 					"You are healthy.";
 			}();
