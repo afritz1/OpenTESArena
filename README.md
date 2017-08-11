@@ -12,6 +12,8 @@ This project is early in development.
 
 No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
+Press 'F' at the main menu to do a quickstart with a random character (for faster testing).
+
 Here are some keys in the game world:
 - WASD - move and turn. Hold LCtrl to strafe with A and D.
 - Esc - pause menu
