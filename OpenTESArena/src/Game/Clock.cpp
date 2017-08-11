@@ -4,6 +4,23 @@
 
 const int Clock::SECONDS_IN_A_DAY = 86400;
 
+const Clock Clock::Midnight(0, 0, 0);
+const Clock Clock::Night1(0, 1, 0);
+const Clock Clock::EarlyMorning(3, 0, 0);
+const Clock Clock::Morning(6, 0, 0);
+const Clock Clock::Noon(12, 0, 0);
+const Clock Clock::Afternoon(12, 1, 0);
+const Clock Clock::Evening(18, 0, 0);
+const Clock Clock::Night2(21, 0, 0);
+
+const Clock Clock::AmbientStartBrightening(6, 0, 0);
+const Clock Clock::AmbientEndBrightening(6, 15, 0);
+const Clock Clock::AmbientStartDimming(17, 45, 0);
+const Clock Clock::AmbientEndDimming(18, 0, 0);
+
+const Clock Clock::MusicSwitchToDay(6, 19, 0);
+const Clock Clock::MusicSwitchToNight(17, 45, 0);
+
 Clock::Clock(int hours, int minutes, int seconds, double currentSecond)
 {
 	// Make sure each value is in a valid range.

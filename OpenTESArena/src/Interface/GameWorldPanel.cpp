@@ -173,13 +173,35 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 					const int timeOfDayIndex = [game]()
 					{
-						const double daytimePercent = game->getGameData().getDaytimePercent();
-						const int stringCount = static_cast<int>(ExeStrings::TimeOfDayStrings.size());
-						const int index = static_cast<int>(stringCount * daytimePercent);
+						// Arena has eight time ranges for each time of day. They aren't 
+						// uniformly distributed -- midnight and noon are only one minute.
+						const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
+						{
+							std::make_pair(Clock::Midnight, 6),
+							std::make_pair(Clock::Night1, 5),
+							std::make_pair(Clock::EarlyMorning, 0),
+							std::make_pair(Clock::Morning, 1),
+							std::make_pair(Clock::Noon, 2),
+							std::make_pair(Clock::Afternoon, 3),
+							std::make_pair(Clock::Evening, 4),
+							std::make_pair(Clock::Night2, 5)
+						};
 
-						// Shift the indices right by 1, because midnight is stored at the end, 
-						// but it should occur at the actual time of midnight (at zero).
-						return (index + (stringCount - 1)) % stringCount;
+						const Clock &presentClock = game->getGameData().getClock();
+
+						// Reverse iterate, checking which range the active one is in.
+						for (auto it = clocksAndIndices.rbegin(); it != clocksAndIndices.rend(); ++it)
+						{
+							const Clock &clock = it->first;
+
+							if (presentClock.getTotalSeconds() >= clock.getTotalSeconds())
+							{
+								return it->second;
+							}
+						}
+
+						DebugCrash("No valid time of day.");
+						return 0;
 					}();
 
 					const std::string timeOfDayString = game->getTextAssets().getAExeSegment(
