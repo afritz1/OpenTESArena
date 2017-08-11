@@ -121,10 +121,39 @@ const std::vector<std::pair<int, int>> TimeOfDayStrings =
 	{ 0x00040529, 13 },
 	{ 0x00040537, 14 },
 	{ 0x00040546, 4 },
-	{ 0x0004054B, 16 },
-	{ 0x0004055C, 14 },
-	{ 0x0004056B, 8 },
+	{ 0x0004054b, 16 },
+	{ 0x0004055c, 14 },
+	{ 0x0004056b, 8 },
 	{ 0x00040574, 8 }
+};
+
+// Weekday names.
+const std::vector<std::pair<int, int>> WeekdayNames =
+{
+	{ 0x0003e92a, 7 },
+	{ 0x0003e932, 6 },
+	{ 0x0003e939, 6 },
+	{ 0x0003e940, 6 },
+	{ 0x0003e947, 6 },
+	{ 0x0003e94e, 7 },
+	{ 0x0003e956, 6 }
+};
+
+// Month names.
+const std::vector<std::pair<int, int>> MonthNames =
+{
+	{ 0x0003e894, 12 },
+	{ 0x0003e8a1, 10 },
+	{ 0x0003e8ac, 10 },
+	{ 0x0003e8b7, 11 },
+	{ 0x0003e8c3, 11 },
+	{ 0x0003e8cf, 8 },
+	{ 0x0003e8d8, 12 },
+	{ 0x0003e8e5, 9 },
+	{ 0x0003e8ef, 10 },
+	{ 0x0003e8fa, 9 },
+	{ 0x0003e904, 10 },
+	{ 0x0003e90f, 12 }
 };
 
 // Creature names ("Rat", "Goblin", etc.). Each creature type could simply use its index 
