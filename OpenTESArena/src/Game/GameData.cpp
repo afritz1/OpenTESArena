@@ -542,9 +542,28 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// The sky palette is used to color the sky and fog. The renderer chooses
 	// which color to use based on the time of day. Interiors should just have
 	// one pixel as the sky palette (usually black).
-	const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
-	renderer.setSkyPalette(static_cast<const uint32_t*>(skyPalette->pixels),
-		skyPalette->w * skyPalette->h);
+	const std::vector<uint32_t> fullSkyPalette = [&textureManager]()
+	{
+		// The palettes in the data files only cover half of the day, so some added
+		// darkness is needed for the other half.
+		const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
+		const uint32_t *skyPalettePixels = static_cast<const uint32_t*>(skyPalette->pixels);
+		const int skyPaletteSize = skyPalette->w * skyPalette->h;
+
+		std::vector<uint32_t> fullPalette(skyPaletteSize * 2);
+
+		// Fill with darkness.
+		const uint32_t darkness = skyPalettePixels[0];
+		std::fill(fullPalette.begin(), fullPalette.end(), darkness);
+
+		// Copy the sky palette over the center of the full palette.
+		std::copy(skyPalettePixels, skyPalettePixels + skyPaletteSize,
+			fullPalette.data() + (fullPalette.size() / 4));
+
+		return fullPalette;
+	}();
+
+	renderer.setSkyPalette(fullSkyPalette.data(), static_cast<int>(fullSkyPalette.size()));
 
 	Location location("Test City", player.getRaceID(),
 		LocationType::CityState, ClimateName::Cold);
