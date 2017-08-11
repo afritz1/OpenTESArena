@@ -6,9 +6,12 @@
 
 #include "GameData.h"
 
+#include "../Assets/ExeStrings.h"
 #include "../Entities/Animation.h"
+#include "../Entities/CharacterClassParser.h"
 #include "../Entities/Doodad.h"
 #include "../Entities/EntityManager.h"
+#include "../Entities/GenderName.h"
 #include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
 #include "../Items/WeaponType.h"
@@ -552,6 +555,25 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	return std::unique_ptr<GameData>(new GameData(
 		std::move(player), std::move(entityManager), std::move(voxelGrid),
 		location, clock, fogDistance));
+}
+
+std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureManager,
+	Renderer &renderer)
+{
+	Random random;
+	const std::string playerName = "Player";
+	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
+	const int raceID = random.next() % 
+		static_cast<int>(ExeStrings::RaceNamesSingular.size());
+
+	const auto charClasses = CharacterClassParser::parse();
+	const CharacterClass &charClass = charClasses.at(
+		random.next() % static_cast<int>(charClasses.size()));
+
+	const int portraitID = random.next() % 10;
+
+	return GameData::createDefault(playerName, gender, raceID, charClass,
+		portraitID, textureManager, renderer);
 }
 
 Player &GameData::getPlayer()

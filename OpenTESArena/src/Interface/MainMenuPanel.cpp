@@ -8,10 +8,13 @@
 #include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
 #include "CursorAlignment.h"
+#include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
 #include "../Game/Game.h"
+#include "../Game/GameData.h"
 #include "../Game/Options.h"
+#include "../Game/PlayerInterface.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
@@ -101,6 +104,31 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			new Button<Game*>(center, width, height, function));
 	}();
 
+	this->fastStartButton = [game]()
+	{
+		auto function = [](Game *game)
+		{
+			// Initialize 3D renderer.
+			auto &renderer = game->getRenderer();
+			const auto &options = game->getOptions();
+			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
+
+			// Generate a random player character for the game data.
+			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
+				game->getTextureManager(), renderer);
+
+			// Set the game data before constructing the game world panel.
+			game->setGameData(std::move(gameData));
+
+			// Initialize game world panel.
+			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
+			game->setPanel(std::move(gameWorldPanel));
+			game->setMusic(MusicName::SunnyDay);
+		};
+		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+	}();
+
 	this->exitButton = []()
 	{
 		Int2 center(168, 158);
@@ -140,6 +168,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	bool lPressed = inputManager.keyPressed(e, SDLK_l);
 	bool sPressed = inputManager.keyPressed(e, SDLK_s);
 	bool ePressed = inputManager.keyPressed(e, SDLK_e);
+	bool fPressed = inputManager.keyPressed(e, SDLK_f);
 
 	if (lPressed)
 	{
@@ -152,6 +181,11 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	else if (ePressed)
 	{
 		this->exitButton->click();
+	}
+	else if (fPressed)
+	{
+		// Enter the game world immediately, for testing purposes.
+		this->fastStartButton->click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);

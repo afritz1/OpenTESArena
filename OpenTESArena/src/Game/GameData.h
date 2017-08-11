@@ -50,6 +50,10 @@ public:
 		GenderName gender, int raceID, const CharacterClass &charClass,
 		int portraitID, TextureManager &textureManager, Renderer &renderer);
 
+	// Creates a game data object with random player data for testing.
+	static std::unique_ptr<GameData> createRandomPlayer(TextureManager &textureManager, 
+		Renderer &renderer);
+
 	Player &getPlayer();
 	EntityManager &getEntityManager();
 	VoxelGrid &getVoxelGrid();
