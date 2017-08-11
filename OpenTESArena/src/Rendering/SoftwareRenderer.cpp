@@ -722,7 +722,8 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 			const double v = topV + ((bottomV - topV) * yPercent);
 
 			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+			const int textureY = static_cast<int>(v * 
+				static_cast<double>(texture.height)) % texture.height;
 
 			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 
