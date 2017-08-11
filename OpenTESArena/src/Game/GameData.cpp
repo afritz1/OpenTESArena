@@ -29,9 +29,9 @@
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 120.0;
 
 GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-	const Location &location, const Clock &clock, double fogDistance)
+	const Location &location, const Date &date, const Clock &clock, double fogDistance)
 	: player(std::move(player)), entityManager(std::move(entityManager)),
-	voxelGrid(std::move(voxelGrid)), location(location), clock(clock)
+	voxelGrid(std::move(voxelGrid)), location(location), date(date), clock(clock)
 {
 	DebugMention("Initializing.");
 
@@ -549,12 +549,17 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	Location location("Test City", player.getRaceID(),
 		LocationType::CityState, ClimateName::Cold);
 
+	// Start the date on the first day of the first month.
+	const int month = 0;
+	const int day = 0;
+	Date date(month, day);
+
 	// Start the clock at midnight.
 	Clock clock;
 
 	return std::unique_ptr<GameData>(new GameData(
 		std::move(player), std::move(entityManager), std::move(voxelGrid),
-		location, clock, fogDistance));
+		location, date, clock, fogDistance));
 }
 
 std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureManager,
@@ -563,7 +568,7 @@ std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureMa
 	Random random;
 	const std::string playerName = "Player";
 	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
-	const int raceID = random.next() % 
+	const int raceID = random.next() %
 		static_cast<int>(ExeStrings::RaceNamesSingular.size());
 
 	const auto charClasses = CharacterClassParser::parse();
@@ -596,6 +601,11 @@ Location &GameData::getLocation()
 	return this->location;
 }
 
+const Date &GameData::getDate() const
+{
+	return this->date;
+}
+
 const Clock &GameData::getClock() const
 {
 	return this->clock;
@@ -617,5 +627,14 @@ void GameData::tickTime(double dt)
 	assert(dt >= 0.0);
 
 	// Tick the game clock.
+	const int oldHour = this->clock.getHours24();
 	this->clock.tick(dt * GameData::TIME_SCALE);
+	const int newHour = this->clock.getHours24();
+
+	// Check if the clock hour looped back around.
+	if (newHour < oldHour)
+	{
+		// Increment the day.
+		this->date.incrementDay();
+	}
 }

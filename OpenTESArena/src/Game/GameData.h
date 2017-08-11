@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Clock.h"
+#include "Date.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../World/Location.h"
@@ -36,13 +37,14 @@ private:
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
 	Location location;
+	Date date;
 	Clock clock;
 	double fogDistance;
 	// weather...
 	// date...
 public:
 	GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
-		const Location &location, const Clock &clock, double fogDistance);
+		const Location &location, const Date &date, const Clock &clock, double fogDistance);
 	~GameData();
 
 	// Creates a game data object used for the test world.
@@ -58,6 +60,7 @@ public:
 	EntityManager &getEntityManager();
 	VoxelGrid &getVoxelGrid();
 	Location &getLocation();
+	const Date &getDate() const;
 	const Clock &getClock() const;
 
 	// Gets a percentage representing how far along the current day is. 0.0 is 
