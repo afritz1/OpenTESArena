@@ -2,56 +2,73 @@
 
 #include "Date.h"
 
-#include "Month.h"
-#include "Weekday.h"
-#include "Year.h"
 #include "../Utilities/Debug.h"
 
-Date::Date(const Year &year, const Month &month, const Weekday &weekday, int day)
-	: year(year), month(month), weekday(weekday)
-{
-	// Programmer error if the day is ever out of range.
-	assert(day >= 1);
-	assert(day <= 30);
+const int Date::INITIAL_ERA = 3;
+const int Date::INITIAL_YEAR = 389;
+const int Date::YEARS_PER_ERA = 1000;
+const int Date::MONTHS_PER_YEAR = 12;
+const int Date::DAYS_PER_MONTH = 30;
+const int Date::DAYS_PER_WEEK = 7;
 
+Date::Date(int era, int year, int month, int day)
+{
+	// Make sure each value is in a valid range.
+	assert(era >= 0);
+	assert(year >= 1);
+	assert(year <= Date::YEARS_PER_ERA);
+	assert(month >= 0);
+	assert(month < Date::MONTHS_PER_YEAR);
+	assert(day >= 0);
+	assert(day < Date::DAYS_PER_MONTH);
+
+	this->era = era;
+	this->year = year;
+	this->month = month;
 	this->day = day;
 }
+
+Date::Date(int month, int day)
+	: Date(Date::INITIAL_ERA, Date::INITIAL_YEAR, month, day) { }
 
 Date::~Date()
 {
 
 }
 
-const Year &Date::getYear() const
+int Date::getEra() const
+{
+	return this->era;
+}
+
+int Date::getYear() const
 {
 	return this->year;
 }
 
-const Month &Date::getMonth() const
+int Date::getMonth() const
 {
 	return this->month;
 }
 
-const Weekday &Date::getWeekday() const
+int Date::getWeekday() const
 {
-	return this->weekday;
+	// For now, all months start on the same weekday (Monday).
+	return this->day % Date::DAYS_PER_WEEK;
 }
 
-int Date::getDayNumber() const
+int Date::getDay() const
 {
 	return this->day;
 }
 
 std::string Date::getOrdinalDay() const
 {
-	// Programmer error if the day is ever out of range.
-	assert(this->day >= 1);
-	assert(this->day <= 30);
+	// The current day is zero-based, so add one to get the "actual" day.
+	const int displayedDay = this->day + 1;
+	const int ordinalDay = displayedDay % 10;
 
-	int dayNumber = this->getDayNumber();
-	int ordinalDay = dayNumber % 10;
-
-	auto dayString = std::to_string(dayNumber);
+	auto dayString = std::to_string(displayedDay);
 	if (ordinalDay == 1)
 	{
 		dayString += "st";
@@ -72,43 +89,40 @@ std::string Date::getOrdinalDay() const
 	return dayString;
 }
 
-void Date::incrementDay()
+void Date::incrementEra()
 {
-	// Programmer error if the day is ever out of range.
-	assert(this->day >= 1);
-	assert(this->day <= 30);
-
-	this->day++;
-	this->incrementWeekday();
-
-	// No need to check for "> 31"; the assertions take care of that.
-	if (this->day == 31)
-	{
-		this->day = 1;
-		this->incrementMonth();
-	}
-}
-
-void Date::incrementWeekday()
-{
-	DebugNotImplemented();
-	//this->weekday->incrementWeekday();
-}
-
-void Date::incrementMonth()
-{
-	DebugNotImplemented();
-	/*bool isLastMonth = this->month->isLastMonthInYear();
-
-	this->month->incrementMonth();
-
-	if (isLastMonth)
-	{
-		this->incrementYear();
-	}*/
+	this->era++;
 }
 
 void Date::incrementYear()
 {
-	this->year.incrementYear();
+	this->year++;
+
+	if (this->year == (Date::YEARS_PER_ERA + 1))
+	{
+		this->incrementEra();
+		this->year = 1;
+	}
+}
+
+void Date::incrementMonth()
+{
+	this->month++;
+
+	if (this->month == Date::MONTHS_PER_YEAR)
+	{
+		this->incrementYear();
+		this->month = 0;
+	}
+}
+
+void Date::incrementDay()
+{
+	this->day++;
+
+	if (this->day == Date::DAYS_PER_MONTH)
+	{
+		this->incrementMonth();
+		this->day = 0;
+	}
 }
