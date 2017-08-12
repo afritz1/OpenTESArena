@@ -110,7 +110,8 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			text,
 			FontName::A,
 			color,
-			TextAlignment::Center);
+			TextAlignment::Center,
+			game->getFontManager());
 
 		Texture texture(Texture::generate(
 			Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),

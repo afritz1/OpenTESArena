@@ -231,7 +231,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			text,
 			FontName::Arena,
 			color,
-			TextAlignment::Center);
+			TextAlignment::Center,
+			game->getFontManager());
 
 		Texture texture(Texture::generate(
 			Texture::PatternType::Dark, 183, 42, game->getTextureManager(),

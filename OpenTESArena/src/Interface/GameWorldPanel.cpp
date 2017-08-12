@@ -233,7 +233,8 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				text,
 				FontName::Arena,
 				color,
-				TextAlignment::Center);
+				TextAlignment::Center,
+				game->getFontManager());
 
 			// To do: eventually the texture will need to auto-fit to the size of
 			// the text. Maybe RichTextString could have a method for determining that,
