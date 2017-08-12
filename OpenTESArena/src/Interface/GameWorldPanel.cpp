@@ -1112,8 +1112,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &player = gameData.getPlayer();
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getVerticalFOV(), gameData.getDaytimePercent(),
-		gameData.getVoxelGrid());
+		options.getVerticalFOV(), gameData.getAmbientPercent(),
+		gameData.getDaytimePercent(), gameData.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

@@ -1900,7 +1900,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
+	double ambient, double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -1981,17 +1981,6 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		// for the lack of shadows.
 		return (sunDirection.y >= 0.0) ? baseColor :
 			(baseColor * (1.0 - std::abs(sunDirection.y))).clamped();
-	}();
-
-	// Calculate ambient percent. This will eventually also take a type argument that 
-	// determines if the ambient should be different (for certain interiors).
-	const double ambient = [daytimePercent]()
-	{
-		const double minAmbient = 0.20;
-		const double maxAmbient = 0.90;
-		const double diff = maxAmbient - minAmbient;
-		const double center = minAmbient + (diff / 2.0);
-		return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * PI)));
 	}();
 
 	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 

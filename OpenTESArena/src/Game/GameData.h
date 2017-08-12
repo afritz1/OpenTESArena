@@ -70,8 +70,12 @@ public:
 	double getFogDistance() const;
 
 	// Gets the current ambient light percent, based on the current clock time and 
-	// the player's location (interior/exterior).
+	// the player's location (interior/exterior). This function is intended to match
+	// the actual calculation done in Arena.
 	double getAmbientPercent() const;
+
+	// A more gradual ambient percent function (maybe useful on the side sometime).
+	double getBetterAmbientPercent() const;
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickTime(double dt);

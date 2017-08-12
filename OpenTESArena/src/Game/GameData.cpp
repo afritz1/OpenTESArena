@@ -15,6 +15,7 @@
 #include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
 #include "../Items/WeaponType.h"
+#include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -665,32 +666,49 @@ double GameData::getAmbientPercent() const
 		const double endDimmingTime =
 			Clock::AmbientEndDimming.getPreciseTotalSeconds();
 
+		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
+		// some values here that make testing easier.
+		const double minAmbient = 0.20;
+		const double maxAmbient = 0.90;
+
 		if ((clockPreciseSeconds >= endBrighteningTime) &&
 			(clockPreciseSeconds < startDimmingTime))
 		{
 			// Daytime ambient.
-			return 1.0;
+			return maxAmbient;
 		}
 		else if ((clockPreciseSeconds >= startBrighteningTime) &&
 			(clockPreciseSeconds < endBrighteningTime))
 		{
 			// Interpolate brightening light (in the morning).
-			return (clockPreciseSeconds - startBrighteningTime) /
+			const double timePercent = (clockPreciseSeconds - startBrighteningTime) /
 				(endBrighteningTime - startBrighteningTime);
+			return minAmbient + ((maxAmbient - minAmbient) * timePercent);
 		}
 		else if ((clockPreciseSeconds >= startDimmingTime) &&
 			(clockPreciseSeconds < endDimmingTime))
 		{
 			// Interpolate dimming light (in the evening).
-			return 1.0 - ((clockPreciseSeconds - startDimmingTime) /
-				(endDimmingTime - startDimmingTime));
+			const double timePercent = (clockPreciseSeconds - startDimmingTime) /
+				(endDimmingTime - startDimmingTime);
+			return maxAmbient + ((minAmbient - maxAmbient) * timePercent);
 		}
 		else
 		{
 			// Night ambient.
-			return 0.0;
+			return minAmbient;
 		}
 	}
+}
+
+double GameData::getBetterAmbientPercent() const
+{
+	const double daytimePercent = this->getDaytimePercent();
+	const double minAmbient = 0.20;
+	const double maxAmbient = 0.90;
+	const double diff = maxAmbient - minAmbient;
+	const double center = minAmbient + (diff / 2.0);
+	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * PI)));
 }
 
 void GameData::tickTime(double dt)

@@ -581,7 +581,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
-	double daytimePercent, const VoxelGrid &voxelGrid)
+	double ambient, double daytimePercent, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
@@ -597,7 +597,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 		std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.
-	this->softwareRenderer->render(eye, forward, fovY, daytimePercent, 
+	this->softwareRenderer->render(eye, forward, fovY, ambient, daytimePercent, 
 		voxelGrid, gameWorldPixels);
 
 	// Update the game world texture with the new ARGB8888 pixels.

@@ -191,7 +191,8 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY, 
-		double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
+		double ambient, double daytimePercent, const VoxelGrid &voxelGrid, 
+		uint32_t *colorBuffer);
 };
 
 #endif
