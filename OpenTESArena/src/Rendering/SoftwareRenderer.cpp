@@ -1980,7 +1980,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		// as much during the night. This is just an artistic value to compensate
 		// for the lack of shadows.
 		return (sunDirection.y >= 0.0) ? baseColor :
-			(baseColor * (1.0 - std::abs(sunDirection.y))).clamped();
+			(baseColor * (1.0 - (5.0 * std::abs(sunDirection.y)))).clamped();
 	}();
 
 	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
