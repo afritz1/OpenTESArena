@@ -69,6 +69,10 @@ public:
 
 	double getFogDistance() const;
 
+	// Gets the current ambient light percent, based on the current clock time and 
+	// the player's location (interior/exterior).
+	double getAmbientPercent() const;
+
 	// Ticks the game clock (for the current time of day and date).
 	void tickTime(double dt);
 };

@@ -641,6 +641,58 @@ double GameData::getFogDistance() const
 	return this->fogDistance;
 }
 
+double GameData::getAmbientPercent() const
+{
+	if (this->location.getClimateName() == ClimateName::Interior)
+	{
+		// Completely dark indoors (some places might be an exception to this, and those
+		// would be handled eventually).
+		return 0.0;
+	}
+	else
+	{
+		// The ambient light outside depends on the clock time.
+		const double clockPreciseSeconds = this->clock.getPreciseTotalSeconds();
+
+		// Time ranges where the ambient light changes. The start times are inclusive,
+		// and the end times are exclusive.
+		const double startBrighteningTime =
+			Clock::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime =
+			Clock::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime =
+			Clock::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime =
+			Clock::AmbientEndDimming.getPreciseTotalSeconds();
+
+		if ((clockPreciseSeconds >= endBrighteningTime) &&
+			(clockPreciseSeconds < startDimmingTime))
+		{
+			// Daytime ambient.
+			return 1.0;
+		}
+		else if ((clockPreciseSeconds >= startBrighteningTime) &&
+			(clockPreciseSeconds < endBrighteningTime))
+		{
+			// Interpolate brightening light (in the morning).
+			return (clockPreciseSeconds - startBrighteningTime) /
+				(endBrighteningTime - startBrighteningTime);
+		}
+		else if ((clockPreciseSeconds >= startDimmingTime) &&
+			(clockPreciseSeconds < endDimmingTime))
+		{
+			// Interpolate dimming light (in the evening).
+			return 1.0 - ((clockPreciseSeconds - startDimmingTime) /
+				(endDimmingTime - startDimmingTime));
+		}
+		else
+		{
+			// Night ambient.
+			return 0.0;
+		}
+	}
+}
+
 void GameData::tickTime(double dt)
 {
 	assert(dt >= 0.0);
