@@ -1244,7 +1244,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		else if (this->magicButton->contains(originalPosition) &&
 			player.getCharacterClass().canCastMagic())
 		{
-			this->drawTooltip("Cast Magic", renderer);
+			this->drawTooltip("Spells", renderer);
 		}
 		else if (this->logbookButton->contains(originalPosition))
 		{
