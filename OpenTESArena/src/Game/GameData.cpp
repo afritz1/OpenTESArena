@@ -26,8 +26,9 @@
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
 
-// Arbitrary value for testing.
-const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 120.0;
+// Arbitrary value for testing. One real second = six game minutes.
+// The value used in Arena is one real second = twenty game seconds.
+const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;
 
 GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
 	const Location &location, const Date &date, const Clock &clock, double fogDistance)
@@ -574,8 +575,8 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int day = 0;
 	Date date(month, day);
 
-	// Start the clock at midnight.
-	Clock clock;
+	// Start the clock at 5:00am.
+	Clock clock(5, 0, 0);
 
 	return std::unique_ptr<GameData>(new GameData(
 		std::move(player), std::move(entityManager), std::move(voxelGrid),
