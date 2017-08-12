@@ -47,6 +47,10 @@ public:
 	static const Clock AmbientStartDimming;
 	static const Clock AmbientEndDimming;
 
+	// Clock times for lamppost activation.
+	static const Clock LamppostActivate;
+	static const Clock LamppostDeactivate;
+
 	// Clock times for changes in music.
 	static const Clock MusicSwitchToDay;
 	static const Clock MusicSwitchToNight;

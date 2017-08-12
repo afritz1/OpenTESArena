@@ -18,6 +18,9 @@ const Clock Clock::AmbientEndBrightening(6, 15, 0);
 const Clock Clock::AmbientStartDimming(17, 45, 0);
 const Clock Clock::AmbientEndDimming(18, 0, 0);
 
+const Clock Clock::LamppostActivate(17, 45, 0);
+const Clock Clock::LamppostDeactivate(6, 15, 0);
+
 const Clock Clock::MusicSwitchToDay(6, 19, 0);
 const Clock Clock::MusicSwitchToNight(17, 45, 0);
 
