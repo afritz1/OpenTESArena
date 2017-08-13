@@ -149,13 +149,28 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = [](Game *game)
 		{
-			auto &textureManager = game->getTextureManager();
-			const auto &gameWorldInterface = textureManager.getTexture(
-				TextureFile::fromName(TextureName::GameWorldInterface));
+			const auto playerInterface = game->getOptions().getPlayerInterface();
 
-			const Int2 center(
-				(Renderer::ORIGINAL_WIDTH / 2),
-				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
+			// The center of the pop-up depends on the interface mode.
+			const Int2 center = [game, playerInterface]()
+			{
+				auto &textureManager = game->getTextureManager();
+				const auto &gameWorldInterface = textureManager.getTexture(
+					TextureFile::fromName(TextureName::GameWorldInterface));
+
+				if (playerInterface == PlayerInterface::Classic)
+				{
+					return Int2(
+						Renderer::ORIGINAL_WIDTH / 2,
+						(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
+				}
+				else
+				{
+					return Int2(
+						Renderer::ORIGINAL_WIDTH / 2,
+						Renderer::ORIGINAL_HEIGHT / 2);
+				}
+			}();
 
 			const std::string text = [game]()
 			{
