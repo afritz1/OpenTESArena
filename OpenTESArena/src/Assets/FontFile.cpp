@@ -17,7 +17,7 @@ namespace
 	const std::unordered_map<std::string, int> FontSpaceWidths =
 	{
 		{ "FONT_A.DAT", 5 },
-		{ "ARENAFNT.DAT", 3 },
+		{ "ARENAFNT.DAT", 4 },
 		{ "FONT_B.DAT", 3 },
 		{ "FONT_C.DAT", 4 },
 		{ "CHARFNT.DAT", 3 },

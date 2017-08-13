@@ -155,7 +155,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 			const Int2 center(
 				(Renderer::ORIGINAL_WIDTH / 2),
-				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
+				((Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2) - 0);
 
 			const std::string text = [game]()
 			{
@@ -226,20 +226,21 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			}();
 
 			const Color color(251, 239, 77);
+			const int lineSpacing = 1;
 
 			const RichTextString richText(
 				text,
 				FontName::Arena,
 				color,
 				TextAlignment::Center,
+				lineSpacing,
 				game->getFontManager());
 
-			// To do: eventually the texture will need to auto-fit to the size of
-			// the text. Maybe RichTextString could have a method for determining that,
-			// and it would use a given Font reference? It could be reused by TextBox.
-			Texture texture(Texture::generate(
-				Texture::PatternType::Dark, 270, 61, game->getTextureManager(),
-				game->getRenderer()));
+			const Int2 &richTextDimensions = richText.getDimensions();
+
+			Texture texture(Texture::generate(Texture::PatternType::Dark, 
+				richTextDimensions.x + 12, richTextDimensions.y + 12, 
+				game->getTextureManager(), game->getRenderer()));
 
 			const Int2 textureCenter = center;
 

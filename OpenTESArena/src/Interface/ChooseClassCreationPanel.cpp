@@ -37,17 +37,20 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->titleTextBox = [game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 80);
 
 		std::string text = game->getTextAssets().getAExeSegment(
 			ExeStrings::ChooseClassCreation);
 		text = String::replace(text, '\r', '\n');
+
+		const int lineSpacing = 1;
 
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
+			lineSpacing,
 			game->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
@@ -56,7 +59,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->generateTextBox = [game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
 
 		const RichTextString richText(
 			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassCreationGenerate),
@@ -71,7 +74,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->selectTextBox = [game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 
 		const RichTextString richText(
 			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassCreationSelect),
@@ -97,7 +100,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->generateButton = []()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
 		auto function = [](Game *game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
@@ -110,7 +113,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->selectButton = []()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
@@ -200,9 +203,9 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	// Draw parchments: title, generate, select.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
-		(this->parchment.getWidth() / 2);
+		(this->parchment.getWidth() / 2) - 1;
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
-		(this->parchment.getHeight() / 2);
+		(this->parchment.getHeight() / 2) + 1;
 
 	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
 	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 20);

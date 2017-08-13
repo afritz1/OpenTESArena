@@ -32,13 +32,15 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 
 	this->textBoxes = [game, &text]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT - 12);
+		const Int2 center(
+			Renderer::ORIGINAL_WIDTH / 2, 
+			Renderer::ORIGINAL_HEIGHT - 11);
 
 		// Count new lines.
-		int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
+		const int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
 
 		// Split text into lines.
-		std::vector<std::string> textLines = String::split(text, '\n');
+		const std::vector<std::string> textLines = String::split(text, '\n');
 
 		// Group up to three text lines per text box.
 		std::vector<std::unique_ptr<TextBox>> textBoxes;
@@ -60,12 +62,15 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 				continue;
 			}
 
+			const int lineSpacing = 1;
+
 			// Eventually use a different color for other cinematics (Tharn, Emperor, etc.).
 			const RichTextString richText(
 				textBoxText,
 				FontName::Arena,
 				Color(105, 174, 207),
 				TextAlignment::Center,
+				lineSpacing,
 				game->getFontManager());
 
 			std::unique_ptr<TextBox> textBox(new TextBox(

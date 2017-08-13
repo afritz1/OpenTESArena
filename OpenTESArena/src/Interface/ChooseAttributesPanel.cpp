@@ -213,7 +213,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	{
 		const Int2 center(
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,
-			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+			(Renderer::ORIGINAL_HEIGHT / 2) - 2);
 		const Color color(199, 199, 199);
 
 		const std::string text = [game]()
@@ -225,12 +225,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 			return segment;
 		}();
+
+		const int lineSpacing = 1;
 		
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			color,
 			TextAlignment::Center,
+			lineSpacing,
 			game->getFontManager());
 
 		Texture texture(Texture::generate(

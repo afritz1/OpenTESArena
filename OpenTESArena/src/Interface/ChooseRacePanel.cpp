@@ -85,7 +85,7 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	// Push the initial text sub-panel.
 	std::unique_ptr<Panel> textSubPanel = [game, &charClass, &name]()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 100);
+		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 		const Color color(48, 12, 12);
 
 		const std::string text = [game, &charClass, &name]()
@@ -106,11 +106,14 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			return segment;
 		}();
 
+		const int lineSpacing = 1;
+
 		const RichTextString richText(
 			text,
 			FontName::A,
 			color,
 			TextAlignment::Center,
+			lineSpacing,
 			game->getFontManager());
 
 		Texture texture(Texture::generate(
