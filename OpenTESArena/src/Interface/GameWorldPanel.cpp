@@ -437,16 +437,6 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame()->getInputManager();
-	bool resized = inputManager.windowResized(e);
-
-	if (resized)
-	{
-		// Update the cursor's regions for camera motion.
-		int width = e.window.data1;
-		int height = e.window.data2;
-		this->updateCursorRegions(width, height);
-	}
-
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
 
@@ -552,6 +542,12 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 		}
 	}
+}
+
+void GameWorldPanel::resize(int windowWidth, int windowHeight)
+{
+	// Update the cursor's regions for camera motion.
+	this->updateCursorRegions(windowWidth, windowHeight);
 }
 
 void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)

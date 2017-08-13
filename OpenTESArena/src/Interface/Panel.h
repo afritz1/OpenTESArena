@@ -52,6 +52,11 @@ public:
 	// are handled by the game loop.
 	virtual void handleEvent(const SDL_Event &e) = 0;
 
+	// Called whenever the application window resizes. The panel should not handle
+	// the resize event itself, since it's more of an "application event" than a
+	// panel event, so it's handled in the game loop instead.
+	virtual void resize(int windowWidth, int windowHeight);
+
 	// Animates the panel by delta time. Override this method if a panel animates
 	// in some form each frame without user input, or depends on things like a key
 	// or a mouse button being held down.

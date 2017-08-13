@@ -202,6 +202,13 @@ std::pair<SDL_Texture*, CursorAlignment> Panel::getCurrentCursor() const
 	return std::make_pair(nullptr, CursorAlignment::TopLeft);
 }
 
+void Panel::resize(int windowWidth, int windowHeight)
+{
+	// Do nothing by default.
+	static_cast<void>(windowWidth);
+	static_cast<void>(windowHeight);
+}
+
 Game *Panel::getGame() const
 {
 	return this->game;

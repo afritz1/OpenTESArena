@@ -294,6 +294,16 @@ void Game::handleEvents(bool &running)
 			int width = e.window.data1;
 			int height = e.window.data2;
 			this->resizeWindow(width, height);
+
+			// Call each panel's resize method. The panels should not be listening for
+			// resize events themselves because it's more of an "application event" than
+			// a panel event.
+			this->panel->resize(width, height);
+
+			for (auto &subPanel : this->subPanels)
+			{
+				subPanel->resize(width, height);
+			}
 		}
 
 		if (takeScreenshot)
