@@ -9,6 +9,7 @@
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -16,6 +17,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/FontManager.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -38,13 +40,24 @@ Panel::~Panel()
 }
 
 SDL_Texture *Panel::createTooltip(const std::string &text,
-	const Font &font, Renderer &renderer)
+	FontName fontName, FontManager &fontManager, Renderer &renderer)
 {
 	const Color textColor(255, 255, 255, 255);
 	const Color backColor(32, 32, 32, 192);
 
+	const int x = 0;
+	const int y = 0;
+
+	const RichTextString richText(
+		text,
+		fontName,
+		textColor,
+		TextAlignment::Left,
+		fontManager);
+
 	// Create text.
-	const TextBox textBox(0, 0, textColor, text, font, TextAlignment::Left, renderer);
+	const TextBox textBox(x, y, richText, renderer);
+
 	SDL_Surface *textSurface = textBox.getSurface();
 
 	// Create background. Make it a little bigger than the text box.

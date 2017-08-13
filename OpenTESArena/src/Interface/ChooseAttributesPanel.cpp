@@ -39,61 +39,60 @@
 ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	const CharacterClass &charClass, const std::string &name, 
 	GenderName gender, int raceID)
-	: Panel(game), headOffsets(), charClass(charClass), gender(gender), name(name)
+	: Panel(game), charClass(charClass), gender(gender), name(name)
 {
-	this->nameTextBox = [game, name]()
+	this->nameTextBox = [game, &name]()
 	{
-		Int2 origin(10, 8);
-		Color color(199, 199, 199);
-		std::string text = name;
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
+		const int x = 10;
+		const int y = 8;
+
+		const RichTextString richText(
+			name,
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->raceTextBox = [game, raceID]()
 	{
-		Int2 origin(10, 17);
-		Color color(199, 199, 199);
-		std::string text = game->getTextAssets().getAExeSegment(
+		const int x = 10;
+		const int y = 17;
+
+		const std::string &text = game->getTextAssets().getAExeSegment(
 			ExeStrings::RaceNamesSingular.at(raceID));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
-	this->classTextBox = [game, charClass]()
+	this->classTextBox = [game, &charClass]()
 	{
-		Int2 origin(10, 26);
-		Color color(199, 199, 199);
-		std::string text = charClass.getDisplayName();
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
+		const int x = 10;
+		const int y = 26;
+
+		const RichTextString richText(
+			charClass.getDisplayName(),
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
-	this->backToRaceButton = [charClass, name, gender]()
+	this->backToRaceButton = [&charClass, &name, gender]()
 	{
 		auto function = [charClass, name, gender](Game *game)
 		{
@@ -104,11 +103,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();
 
-	this->doneButton = [this, charClass, name, gender, raceID]()
+	this->doneButton = [this, &charClass, &name, gender, raceID]()
 	{
-		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
-		int width = 21;
-		int height = 12;
+		const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
+		const int width = 21;
+		const int height = 12;
 
 		auto gameDataFunction = [this, charClass, name, gender, raceID](Game *game)
 		{
@@ -174,9 +173,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 	this->portraitButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
-		int width = 60;
-		int height = 42;
+		const Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
+		const int width = 60;
+		const int height = 42;
 		auto function = [](ChooseAttributesPanel *panel, bool increment)
 		{
 			const int minID = 0;

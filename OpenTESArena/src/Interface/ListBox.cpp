@@ -5,23 +5,30 @@
 
 #include "ListBox.h"
 
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/Font.h"
+#include "../Media/FontManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	const Font &font, int maxDisplayed, Renderer &renderer)
-	: textColor(textColor), point(x, y), font(font)
+	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
+	: textColor(textColor), point(x, y), fontName(fontName)
 {
 	assert(maxDisplayed > 0);
 
 	this->scrollIndex = 0;
+
+	// Get the font data associated with the font name.
+	const Font &font = fontManager.getFont(fontName);
+
+	this->characterHeight = font.getCharacterHeight();
 
 	// Make text boxes for getting list box dimensions now and drawing later.
 	// It's okay for there to be zero elements. Just be blank, then!
@@ -30,9 +37,20 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 		// Remove any new lines.
 		std::string trimmedElement = String::trimLines(element);
 
+		const int x = 0;
+		const int y = 0;
+
+		const RichTextString richText(
+			trimmedElement,
+			font.getFontName(),
+			textColor,
+			TextAlignment::Left,
+			fontManager);
+
 		// Store the text box for later.
-		std::unique_ptr<TextBox> textBox(new TextBox(0, 0, textColor, 
-			trimmedElement, font, TextAlignment::Left, renderer));
+		std::unique_ptr<TextBox> textBox(new TextBox(
+			x, y, richText, renderer));
+
 		this->textBoxes.push_back(std::move(textBox));
 	}
 
@@ -95,7 +113,7 @@ int ListBox::getMaxDisplayedCount() const
 	int height;
 	SDL_QueryTexture(this->getTexture(), nullptr, nullptr, nullptr, &height);
 
-	return height / this->font.getCharacterHeight();
+	return height / this->characterHeight;
 }
 
 const Int2 &ListBox::getPoint() const
@@ -121,7 +139,7 @@ int ListBox::getClickedIndex(const Int2 &point) const
 {
 	// Only the Y component of the point really matters here.
 	const int index = this->scrollIndex + 
-		((point.y - this->point.y) / this->font.getCharacterHeight());
+		((point.y - this->point.y) / this->characterHeight);
 	return index;
 }
 

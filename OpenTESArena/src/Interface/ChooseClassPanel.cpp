@@ -9,6 +9,7 @@
 #include "ChooseNamePanel.h"
 #include "CursorAlignment.h"
 #include "ListBox.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -52,45 +53,42 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	this->titleTextBox = [game]()
 	{
-		int x = 89;
-		int y = 32;
-		Color color(211, 211, 211);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::ChooseClassList);
-		auto &font = game->getFontManager().getFont(FontName::C);
-		auto alignment = TextAlignment::Left;
+		const int x = 89;
+		const int y = 32;
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassList),
+			FontName::C,
+			Color(211, 211, 211),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->classesListBox = [this, game]()
 	{
-		int x = 85;
-		int y = 46;
-		auto &font = game->getFontManager().getFont(FontName::A);
-		Color color(85, 44, 20);
-		int maxDisplayed = 6;
+		const int x = 85;
+		const int y = 46;
+		const int maxDisplayed = 6;
+
 		std::vector<std::string> elements;
 
 		// This depends on the character classes being already sorted.
-		for (const auto &item : this->charClasses)
+		for (const auto &charClass : this->charClasses)
 		{
-			elements.push_back(item.getDisplayName());
+			elements.push_back(charClass.getDisplayName());
 		}
 
 		return std::unique_ptr<ListBox>(new ListBox(
 			x,
 			y,
-			color,
+			Color(85, 44, 20),
 			elements,
-			font,
+			FontName::A,
 			maxDisplayed,
+			game->getFontManager(),
 			game->getRenderer()));
 	}();
 
@@ -106,9 +104,9 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	this->upButton = []
 	{
-		Int2 center(68, 22);
-		int w = 8;
-		int h = 8;
+		const Int2 center(68, 22);
+		const int w = 8;
+		const int h = 8;
 		auto function = [](ChooseClassPanel *panel)
 		{
 			// Scroll the list box up one if able.
@@ -123,9 +121,9 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	this->downButton = []
 	{
-		Int2 center(68, 117);
-		int w = 8;
-		int h = 8;
+		const Int2 center(68, 117);
+		const int w = 8;
+		const int h = 8;
 		auto function = [](ChooseClassPanel *panel)
 		{
 			// Scroll the list box down one if able.
@@ -388,10 +386,12 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 			"Armors: " + this->getClassArmors(characterClass) + "\n" +
 			"Shields: " + this->getClassShields(characterClass) + "\n" +
 			"Weapons: " + this->getClassWeapons(characterClass);
-		const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
+
+		Texture texture(Panel::createTooltip(
+			text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 		tooltipIter = this->tooltipTextures.emplace(std::make_pair(
-			tooltipIndex, Texture(Panel::createTooltip(text, font, renderer)))).first;
+			tooltipIndex, std::move(texture))).first;
 	}
 
 	const Texture &tooltip = tooltipIter->second;

@@ -11,6 +11,7 @@
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/CharacterClass.h"
@@ -38,78 +39,77 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 {
 	this->playerNameTextBox = [game]()
 	{
-		int x = 17;
-		int y = 154;
-		Color color(215, 121, 8);
-		std::string text = game->getGameData().getPlayer().getFirstName();
-		auto &font = game->getFontManager().getFont(FontName::Char);
-		auto alignment = TextAlignment::Left;
+		const int x = 17;
+		const int y = 154;
+
+		const RichTextString richText(
+			game->getGameData().getPlayer().getFirstName(),
+			FontName::Char,
+			Color(215, 121, 8),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->musicTextBox = [game]()
 	{
-		Int2 center(127, 96);
-		Color color(12, 73, 16);
-		std::string text = std::to_string(static_cast<int>(
+		const Int2 center(127, 96);
+
+		const std::string text = std::to_string(static_cast<int>(
 			std::round(game->getOptions().getMusicVolume() * 100.0)));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color(12, 73, 16),
+			TextAlignment::Center,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			center, richText, game->getRenderer()));
 	}();
 
 	this->soundTextBox = [game]()
 	{
-		Int2 center(54, 96);
-		Color color(12, 73, 16);
-		std::string text = std::to_string(static_cast<int>(
+		const Int2 center(54, 96);
+
+		const std::string text = std::to_string(static_cast<int>(
 			std::round(game->getOptions().getSoundVolume() * 100.0)));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color(12, 73, 16),
+			TextAlignment::Center,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			center, richText, game->getRenderer()));
 	}();
 
 	this->optionsTextBox = [game]()
 	{
-		Int2 center(234, 96);
-		Color color(215, 158, 4);
-		Color shadowColor(101, 77, 24);
-		std::string text("OPTIONS");
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(234, 96);
+
+		const RichTextString richText(
+			"OPTIONS",
+			FontName::Arena,
+			Color(215, 158, 4),
+			TextAlignment::Center,
+			game->getFontManager());
+
+		const Color shadowColor(101, 77, 24);
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			shadowColor,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, shadowColor, game->getRenderer()));
 	}();
 
 	this->loadButton = []()
 	{
-		int x = 65;
-		int y = 118;
+		const int x = 65;
+		const int y = 118;
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
@@ -121,8 +121,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->exitButton = []()
 	{
-		int x = 193;
-		int y = 118;
+		const int x = 193;
+		const int y = 118;
 		auto function = []()
 		{
 			SDL_Event evt;
@@ -135,8 +135,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->newButton = []()
 	{
-		int x = 0;
-		int y = 118;
+		const int x = 0;
+		const int y = 118;
 		auto function = [](Game *game)
 		{
 			game->setGameData(nullptr);
@@ -151,8 +151,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->saveButton = []()
 	{
-		int x = 129;
-		int y = 118;
+		const int x = 129;
+		const int y = 118;
 		auto function = [](Game *game)
 		{
 			// SaveGamePanel...
@@ -165,8 +165,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->resumeButton = []()
 	{
-		int x = 257;
-		int y = 118;
+		const int x = 257;
+		const int y = 118;
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
@@ -178,8 +178,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->optionsButton = []()
 	{
-		int x = 162;
-		int y = 89;
+		const int x = 162;
+		const int y = 89;
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
@@ -191,8 +191,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->musicUpButton = []()
 	{
-		int x = 119;
-		int y = 79;
+		const int x = 119;
+		const int y = 79;
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel *panel)
 		{
@@ -208,8 +208,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->musicDownButton = []()
 	{
-		int x = 119;
-		int y = 104;
+		const int x = 119;
+		const int y = 104;
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel *panel)
 		{
@@ -225,8 +225,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->soundUpButton = []()
 	{
-		int x = 46;
-		int y = 79;
+		const int x = 46;
+		const int y = 79;
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel *panel)
 		{
@@ -242,8 +242,8 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 
 	this->soundDownButton = []()
 	{
-		int x = 46;
-		int y = 104;
+		const int x = 46;
+		const int y = 104;
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel *panel)
 		{
@@ -268,20 +268,20 @@ void PauseMenuPanel::updateMusicText(double volume)
 	// Update the displayed music volume.
 	this->musicTextBox = [this, volume]()
 	{
-		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+		const Int2 center(127, 96);
+		const int displayedVolume = static_cast<int>(std::round(volume * 100.0));
 
-		Int2 center(127, 96);
-		Color color(12, 73, 16);
-		std::string text = std::to_string(displayedVolume);
-		auto &font = this->getGame()->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
+		const RichTextString &oldRichText = this->musicTextBox->getRichText();
+
+		const RichTextString richText(
+			std::to_string(displayedVolume),
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			this->getGame()->getRenderer()));
+			center, richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -290,20 +290,20 @@ void PauseMenuPanel::updateSoundText(double volume)
 	// Update the displayed sound volume.
 	this->soundTextBox = [this, volume]()
 	{
-		int displayedVolume = static_cast<int>(std::round(volume * 100.0));
+		const Int2 center(54, 96);
+		const int displayedVolume = static_cast<int>(std::round(volume * 100.0));
 
-		Int2 center(54, 96);
-		Color color(12, 73, 16);
-		std::string text = std::to_string(displayedVolume);
-		auto &font = this->getGame()->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
+		const RichTextString &oldRichText = this->soundTextBox->getRichText();
+		
+		const RichTextString richText(
+			std::to_string(displayedVolume),
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			this->getGame()->getRenderer()));
+			center, richText, this->getGame()->getRenderer()));
 	}();
 }
 

@@ -27,22 +27,6 @@
 LoadGamePanel::LoadGamePanel(Game *game)
 	: Panel(game)
 {
-	this->underConstructionTextBox = [game]()
-	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 170);
-		auto color = Color::White;
-		std::string text = "Under construction!";
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
-	}();
-
 	this->backButton = []()
 	{
 		auto function = [](Game *game)
@@ -107,11 +91,6 @@ void LoadGamePanel::render(Renderer &renderer)
 	const auto &slotsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::LoadSave));
 	renderer.drawToOriginal(slotsBackground.get());
-
-	// Draw temp text. The load game design is unclear at this point, but it should
-	// have up/down arrows and buttons.
-	renderer.drawToOriginal(this->underConstructionTextBox->getTexture(),
-		this->underConstructionTextBox->getX(), this->underConstructionTextBox->getY());
 
 	// Scale the original frame buffer onto the native one.
 	renderer.drawOriginalToNative();

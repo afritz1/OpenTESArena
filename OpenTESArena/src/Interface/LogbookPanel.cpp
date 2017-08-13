@@ -6,6 +6,7 @@
 
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -29,24 +30,27 @@ LogbookPanel::LogbookPanel(Game *game)
 {
 	this->titleTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
-		Color color(255, 207, 12);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::LogbookIsEmpty);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(
+			Renderer::ORIGINAL_WIDTH / 2, 
+			Renderer::ORIGINAL_HEIGHT / 2);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::LogbookIsEmpty),
+			FontName::A,
+			Color(255, 207, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->backButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 40, Renderer::ORIGINAL_HEIGHT - 13);
+		const Int2 center(
+			Renderer::ORIGINAL_WIDTH - 40, 
+			Renderer::ORIGINAL_HEIGHT - 13);
+
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(game));

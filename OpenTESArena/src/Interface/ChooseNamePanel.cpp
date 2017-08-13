@@ -8,6 +8,7 @@
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
 #include "CursorAlignment.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -36,43 +37,39 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 		Texture::PatternType::Parchment, 300, 60, game->getTextureManager(),
 		game->getRenderer()));
 
-	this->titleTextBox = [game, charClass]()
+	this->titleTextBox = [game, &charClass]()
 	{
-		int x = 26;
-		int y = 82;
-		Color color(48, 12, 12);
-		
+		const int x = 26;
+		const int y = 82;
+
 		std::string text = game->getTextAssets().getAExeSegment(ExeStrings::ChooseName);
 		text = String::replace(text, "%s", charClass.getDisplayName());
 
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->nameTextBox = [game]()
 	{
-		int x = 61;
-		int y = 101;
-		Color color(48, 12, 12);
-		std::string text = "";
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Left;
+		const int x = 61;
+		const int y = 101;
+
+		const RichTextString richText(
+			std::string(),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->backToClassButton = []()
@@ -101,7 +98,7 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 
 ChooseNamePanel::~ChooseNamePanel()
 {
-	
+
 }
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
@@ -220,14 +217,21 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 		// Update the displayed name.
 		this->nameTextBox = [this]
 		{
-			return std::unique_ptr<TextBox>(new TextBox(
-				61,
-				101,
-				Color(48, 12, 12),
+			const int x = 61;
+			const int y = 101;
+
+			auto &game = *this->getGame();
+			const RichTextString &oldRichText = this->nameTextBox->getRichText();
+
+			const RichTextString richText(
 				this->name,
-				this->getGame()->getFontManager().getFont(FontName::A),
-				TextAlignment::Left,
-				this->getGame()->getRenderer()));
+				oldRichText.getFontName(),
+				oldRichText.getColor(),
+				oldRichText.getAlignment(),
+				game.getFontManager());
+
+			return std::unique_ptr<TextBox>(new TextBox(
+				x, y, richText, game.getRenderer()));
 		}();
 	}
 }

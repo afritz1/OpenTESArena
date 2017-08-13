@@ -4,17 +4,14 @@
 #include <string>
 #include <vector>
 
+#include "RichTextString.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 
 // Redesigned for use with the font system using Arena assets.
 
-class Font;
 class Rect;
 class Renderer;
-
-enum class FontName;
-enum class TextAlignment;
 
 struct SDL_Surface;
 struct SDL_Texture;
@@ -22,28 +19,22 @@ struct SDL_Texture;
 class TextBox
 {
 private:
+	RichTextString richText;
 	SDL_Surface *surface; // For ListBox compatibility. Identical to "texture".
 	SDL_Texture *texture, *shadowTexture;
-	Color textColor;
-	FontName fontName;
-	TextAlignment alignment;
 	int x, y;
 public:
-	TextBox(int x, int y, const Color &textColor, const Color &shadowColor,
-		const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer);
-	TextBox(const Int2 &center, const Color &textColor, const Color &shadowColor, 
-		const std::string &text, const Font &font, TextAlignment alignment, Renderer &renderer);
-	TextBox(int x, int y, const Color &textColor, const std::string &text,
-		const Font &font, TextAlignment alignment, Renderer &renderer);
-	TextBox(const Int2 &center, const Color &textColor, const std::string &text,
-		const Font &font, TextAlignment alignment, Renderer &renderer);
+	TextBox(int x, int y, const RichTextString &richText, const Color &shadowColor,
+		Renderer &renderer);
+	TextBox(const Int2 &center, const RichTextString &richText, const Color &shadowColor,
+		Renderer &renderer);
+	TextBox(int x, int y, const RichTextString &richText, Renderer &renderer);
+	TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer);
 	virtual ~TextBox();
 
 	int getX() const;
 	int getY() const;
-	TextAlignment getAlignment() const;
-	FontName getFontName() const;
-	const Color &getTextColor() const;
+	const RichTextString &getRichText() const;
 
 	// Gets the bounding box around the text box's content. Useful for tooltips when hovering
 	// over it with the mouse.

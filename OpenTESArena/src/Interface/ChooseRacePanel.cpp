@@ -188,10 +188,9 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	assert(provinceID != (ProvinceClickAreas.size() - 1));
 	const std::string &raceName = this->getGame()->getTextAssets().getAExeSegment(
 		ExeStrings::RaceNamesPlural.at(provinceID));
-
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
-
-	Texture tooltip(Panel::createTooltip("Land of the " + raceName, font, renderer));
+	
+	const Texture tooltip(Panel::createTooltip(
+		"Land of the " + raceName, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

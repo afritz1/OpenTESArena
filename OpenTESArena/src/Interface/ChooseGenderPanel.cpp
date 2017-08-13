@@ -7,6 +7,7 @@
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -36,52 +37,47 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 
 	this->genderTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
-		Color color(48, 12, 12);
-		std::string text = game->getTextAssets().getAExeSegment(ExeStrings::ChooseGender);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGender),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->maleTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		Color color(48, 12, 12);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::ChooseGenderMale);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGenderMale),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->femaleTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		Color color(48, 12, 12);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::ChooseGenderFemale);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGenderFemale),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->backToNameButton = []()
@@ -97,7 +93,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 
 	this->maleButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		auto function = [](Game *game, const CharacterClass &charClass,
 			const std::string &name)
 		{
@@ -111,7 +107,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 
 	this->femaleButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		auto function = [](Game *game, const CharacterClass &charClass,
 			const std::string &name)
 		{

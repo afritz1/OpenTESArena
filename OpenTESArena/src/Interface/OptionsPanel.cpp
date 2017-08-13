@@ -7,6 +7,7 @@
 
 #include "CursorAlignment.h"
 #include "PauseMenuPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Entities/Player.h"
@@ -41,192 +42,191 @@ OptionsPanel::OptionsPanel(Game *game)
 {
 	this->titleTextBox = [game]()
 	{
-		Int2 center(160, 30);
-		auto color = Color::White;
-		std::string text("Options");
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(160, 30);
+
+		const RichTextString richText(
+			"Options",
+			FontName::A,
+			Color::White,
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->backToPauseTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 30, Renderer::ORIGINAL_HEIGHT - 15);
-		auto color = Color::White;
-		std::string text("Return");
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(
+			Renderer::ORIGINAL_WIDTH - 30,
+			Renderer::ORIGINAL_HEIGHT - 15);
+
+		const RichTextString richText(
+			"Return",
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->fpsTextBox = [game]()
 	{
-		int x = 20;
-		int y = 45;
-		auto color = Color::White;
-		std::string text(OptionsPanel::FPS_TEXT +
-			std::to_string(game->getOptions().getTargetFPS()));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
+		const int x = 20;
+		const int y = 45;
+
+		const RichTextString richText(
+			OptionsPanel::FPS_TEXT + std::to_string(game->getOptions().getTargetFPS()),
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->resolutionScaleTextBox = [game]()
 	{
-		int x = 20;
-		int y = 65;
-		auto color = Color::White;
+		const int x = 20;
+		const int y = 65;
+
 		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
 			String::fixedPrecision(game->getOptions().getResolutionScale(), 2);
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->playerInterfaceTextBox = [game]()
 	{
-		int x = 20;
-		int y = 85;
-		auto color = Color::White;
-		const auto &options = game->getOptions();
+		const int x = 20;
+		const int y = 85;
+
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			OptionsPanel::getPlayerInterfaceString(options.getPlayerInterface());
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+			OptionsPanel::getPlayerInterfaceString(game->getOptions().getPlayerInterface());
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->verticalFOVTextBox = [game]()
 	{
-		int x = 20;
-		int y = 105;
-		auto color = Color::White;
+		const int x = 20;
+		const int y = 105;
+
 		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
 			String::fixedPrecision(game->getOptions().getVerticalFOV(), 1);
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->cursorScaleTextBox = [game]()
 	{
-		int x = 20;
-		int y = 125;
-		auto color = Color::White;
+		const int x = 20;
+		const int y = 125;
+
 		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
 			String::fixedPrecision(game->getOptions().getCursorScale(), 1);
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->letterboxAspectTextBox = [game]()
 	{
-		int x = 20;
-		int y = 145;
-		auto color = Color::White;
+		const int x = 20;
+		const int y = 145;
+
 		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
 			String::fixedPrecision(game->getOptions().getLetterboxAspect(), 2);
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->hSensitivityTextBox = [game]()
 	{
-		int x = 175;
-		int y = 45;
-		auto color = Color::White;
-		std::string text(OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game->getOptions().getHorizontalSensitivity(), 1));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+		const int x = 175;
+		const int y = 45;
+
+		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(game->getOptions().getHorizontalSensitivity(), 1);
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->vSensitivityTextBox = [game]()
 	{
-		int x = 175;
-		int y = 65;
-		auto color = Color::White;
-		std::string text(OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game->getOptions().getVerticalSensitivity(), 1));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
+		const int x = 175;
+		const int y = 65;
+
+		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
+			String::fixedPrecision(game->getOptions().getVerticalSensitivity(), 1);
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->backToPauseButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 30, Renderer::ORIGINAL_HEIGHT - 15);
+		const Int2 center(
+			Renderer::ORIGINAL_WIDTH - 30,
+			Renderer::ORIGINAL_HEIGHT - 15);
+
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
@@ -238,10 +238,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->fpsUpButton = []()
 	{
-		int x = 85;
-		int y = 41;
-		int width = 8;
-		int height = 8;
+		const int x = 85;
+		const int y = 41;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const int newFPS = options.getTargetFPS() + 5;
@@ -254,10 +254,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->fpsDownButton = [this]()
 	{
-		int x = this->fpsUpButton->getX();
-		int y = this->fpsUpButton->getY() + this->fpsUpButton->getHeight();
-		int width = this->fpsUpButton->getWidth();
-		int height = this->fpsUpButton->getHeight();
+		const int x = this->fpsUpButton->getX();
+		const int y = this->fpsUpButton->getY() + this->fpsUpButton->getHeight();
+		const int width = this->fpsUpButton->getWidth();
+		const int height = this->fpsUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const int newFPS = std::max(options.getTargetFPS() - 5, options.MIN_FPS);
@@ -270,10 +270,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->resolutionScaleUpButton = []()
 	{
-		int x = 120;
-		int y = 61;
-		int width = 8;
-		int height = 8;
+		const int x = 120;
+		const int y = 61;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::min(
@@ -293,10 +293,11 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->resolutionScaleDownButton = [this]()
 	{
-		int x = this->resolutionScaleUpButton->getX();
-		int y = this->resolutionScaleUpButton->getY() + this->resolutionScaleUpButton->getHeight();
-		int width = this->resolutionScaleUpButton->getWidth();
-		int height = this->resolutionScaleUpButton->getHeight();
+		const int x = this->resolutionScaleUpButton->getX();
+		const int y = this->resolutionScaleUpButton->getY() +
+			this->resolutionScaleUpButton->getHeight();
+		const int width = this->resolutionScaleUpButton->getWidth();
+		const int height = this->resolutionScaleUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::max(
@@ -316,10 +317,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->playerInterfaceButton = []()
 	{
-		int x = 136;
-		int y = 86;
-		int width = 8;
-		int height = 8;
+		const int x = 136;
+		const int y = 86;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options,
 			Player &player, Renderer &renderer)
 		{
@@ -351,10 +352,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->verticalFOVUpButton = []()
 	{
-		int x = 105;
-		int y = 101;
-		int width = 8;
-		int height = 8;
+		const int x = 105;
+		const int y = 101;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0,
@@ -368,10 +369,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->verticalFOVDownButton = [this]()
 	{
-		int x = this->verticalFOVUpButton->getX();
-		int y = this->verticalFOVUpButton->getY() + this->verticalFOVUpButton->getHeight();
-		int width = this->verticalFOVUpButton->getWidth();
-		int height = this->verticalFOVUpButton->getHeight();
+		const int x = this->verticalFOVUpButton->getX();
+		const int y = this->verticalFOVUpButton->getY() + this->verticalFOVUpButton->getHeight();
+		const int width = this->verticalFOVUpButton->getWidth();
+		const int height = this->verticalFOVUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newVerticalFOV = std::max(options.getVerticalFOV() - 5.0,
@@ -385,10 +386,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->cursorScaleUpButton = []()
 	{
-		int x = 99;
-		int y = 121;
-		int width = 8;
-		int height = 8;
+		const int x = 99;
+		const int y = 121;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newCursorScale = std::min(options.getCursorScale() + 0.10,
@@ -402,10 +403,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->cursorScaleDownButton = [this]()
 	{
-		int x = this->cursorScaleUpButton->getX();
-		int y = this->cursorScaleUpButton->getY() + this->cursorScaleUpButton->getHeight();
-		int width = this->cursorScaleUpButton->getWidth();
-		int height = this->cursorScaleUpButton->getHeight();
+		const int x = this->cursorScaleUpButton->getX();
+		const int y = this->cursorScaleUpButton->getY() + this->cursorScaleUpButton->getHeight();
+		const int width = this->cursorScaleUpButton->getWidth();
+		const int height = this->cursorScaleUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newCursorScale = std::max(options.getCursorScale() - 0.10,
@@ -419,10 +420,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->letterboxAspectUpButton = []()
 	{
-		int x = 120;
-		int y = 141;
-		int width = 8;
-		int height = 8;
+		const int x = 120;
+		const int y = 141;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
 		{
 			const double newLetterboxAspect = std::min(options.getLetterboxAspect() + 0.010,
@@ -437,10 +438,11 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->letterboxAspectDownButton = [this]()
 	{
-		int x = this->letterboxAspectUpButton->getX();
-		int y = this->letterboxAspectUpButton->getY() + this->letterboxAspectUpButton->getHeight();
-		int width = this->letterboxAspectUpButton->getWidth();
-		int height = this->letterboxAspectUpButton->getHeight();
+		const int x = this->letterboxAspectUpButton->getX();
+		const int y = this->letterboxAspectUpButton->getY() +
+			this->letterboxAspectUpButton->getHeight();
+		const int width = this->letterboxAspectUpButton->getWidth();
+		const int height = this->letterboxAspectUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
 		{
 			const double newLetterboxAspect = std::max(options.getLetterboxAspect() - 0.010,
@@ -455,10 +457,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->hSensitivityUpButton = []()
 	{
-		int x = 255;
-		int y = 41;
-		int width = 8;
-		int height = 8;
+		const int x = 255;
+		const int y = 41;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::min(
@@ -472,10 +474,11 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->hSensitivityDownButton = [this]()
 	{
-		int x = this->hSensitivityUpButton->getX();
-		int y = this->hSensitivityUpButton->getY() + this->hSensitivityUpButton->getHeight();
-		int width = this->hSensitivityUpButton->getWidth();
-		int height = this->hSensitivityUpButton->getHeight();
+		const int x = this->hSensitivityUpButton->getX();
+		const int y = this->hSensitivityUpButton->getY() +
+			this->hSensitivityUpButton->getHeight();
+		const int width = this->hSensitivityUpButton->getWidth();
+		const int height = this->hSensitivityUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::max(
@@ -489,10 +492,10 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->vSensitivityUpButton = [this]()
 	{
-		int x = 256;
-		int y = 61;
-		int width = 8;
-		int height = 8;
+		const int x = 256;
+		const int y = 61;
+		const int width = 8;
+		const int height = 8;
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::min(
@@ -506,10 +509,11 @@ OptionsPanel::OptionsPanel(Game *game)
 
 	this->vSensitivityDownButton = [this]()
 	{
-		int x = this->vSensitivityUpButton->getX();
-		int y = this->vSensitivityUpButton->getY() + this->vSensitivityUpButton->getHeight();
-		int width = this->vSensitivityUpButton->getWidth();
-		int height = this->vSensitivityUpButton->getHeight();
+		const int x = this->vSensitivityUpButton->getX();
+		const int y = this->vSensitivityUpButton->getY() +
+			this->vSensitivityUpButton->getHeight();
+		const int width = this->vSensitivityUpButton->getWidth();
+		const int height = this->vSensitivityUpButton->getHeight();
 		auto function = [](OptionsPanel *panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::max(
@@ -538,16 +542,17 @@ void OptionsPanel::updateFPSText(int fps)
 
 	this->fpsTextBox = [this, fps]()
 	{
-		std::string text(OptionsPanel::FPS_TEXT + std::to_string(fps));
-		auto &fontManager = this->getGame()->getFontManager();
+		const RichTextString &oldRichText = this->fpsTextBox->getRichText();
+
+		const RichTextString richText(
+			OptionsPanel::FPS_TEXT + std::to_string(fps),
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->fpsTextBox->getX(),
-			this->fpsTextBox->getY(),
-			this->fpsTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->fpsTextBox->getFontName()),
-			this->fpsTextBox->getAlignment(),
+			this->fpsTextBox->getX(), this->fpsTextBox->getY(), richText,
 			this->getGame()->getRenderer()));
 	}();
 }
@@ -558,18 +563,18 @@ void OptionsPanel::updateResolutionScaleText(double resolutionScale)
 
 	this->resolutionScaleTextBox = [this, resolutionScale]()
 	{
-		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
-			String::fixedPrecision(resolutionScale, 2);
-		auto &fontManager = this->getGame()->getFontManager();
+		const RichTextString &oldRichText = this->resolutionScaleTextBox->getRichText();
+
+		const RichTextString richText(
+			OptionsPanel::RESOLUTION_SCALE_TEXT + String::fixedPrecision(resolutionScale, 2),
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->resolutionScaleTextBox->getX(),
-			this->resolutionScaleTextBox->getY(),
-			this->resolutionScaleTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->resolutionScaleTextBox->getFontName()),
-			this->resolutionScaleTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -579,18 +584,21 @@ void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
 
 	this->playerInterfaceTextBox = [this, playerInterface]()
 	{
+		const RichTextString &oldRichText = this->playerInterfaceTextBox->getRichText();
+
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
 			this->getPlayerInterfaceString(playerInterface);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->playerInterfaceTextBox->getX(),
-			this->playerInterfaceTextBox->getY(),
-			this->playerInterfaceTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->playerInterfaceTextBox->getFontName()),
-			this->playerInterfaceTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -600,18 +608,21 @@ void OptionsPanel::updateVerticalFOVText(double verticalFOV)
 
 	this->verticalFOVTextBox = [this, verticalFOV]()
 	{
+		const RichTextString &oldRichText = this->verticalFOVTextBox->getRichText();
+
 		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
 			String::fixedPrecision(verticalFOV, 1);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->verticalFOVTextBox->getX(),
-			this->verticalFOVTextBox->getY(),
-			this->verticalFOVTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->verticalFOVTextBox->getFontName()),
-			this->verticalFOVTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -621,18 +632,21 @@ void OptionsPanel::updateCursorScaleText(double cursorScale)
 
 	this->cursorScaleTextBox = [this, cursorScale]()
 	{
+		const RichTextString &oldRichText = this->cursorScaleTextBox->getRichText();
+
 		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
 			String::fixedPrecision(cursorScale, 1);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->cursorScaleTextBox->getX(),
-			this->cursorScaleTextBox->getY(),
-			this->cursorScaleTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->cursorScaleTextBox->getFontName()),
-			this->cursorScaleTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -642,18 +656,21 @@ void OptionsPanel::updateLetterboxAspectText(double letterboxAspect)
 
 	this->letterboxAspectTextBox = [this, letterboxAspect]()
 	{
+		const RichTextString &oldRichText = this->letterboxAspectTextBox->getRichText();
+
 		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
 			String::fixedPrecision(letterboxAspect, 2);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->letterboxAspectTextBox->getX(),
-			this->letterboxAspectTextBox->getY(),
-			this->letterboxAspectTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->letterboxAspectTextBox->getFontName()),
-			this->letterboxAspectTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -663,18 +680,21 @@ void OptionsPanel::updateHorizontalSensitivityText(double hSensitivity)
 
 	this->hSensitivityTextBox = [this, hSensitivity]()
 	{
+		const RichTextString &oldRichText = this->hSensitivityTextBox->getRichText();
+
 		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
 			String::fixedPrecision(hSensitivity, 1);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->hSensitivityTextBox->getX(),
-			this->hSensitivityTextBox->getY(),
-			this->hSensitivityTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->hSensitivityTextBox->getFontName()),
-			this->hSensitivityTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
@@ -684,26 +704,28 @@ void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
 
 	this->vSensitivityTextBox = [this, vSensitivity]()
 	{
+		const RichTextString &oldRichText = this->vSensitivityTextBox->getRichText();
+
 		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
 			String::fixedPrecision(vSensitivity, 1);
-		auto &fontManager = this->getGame()->getFontManager();
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame()->getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			this->vSensitivityTextBox->getX(),
-			this->vSensitivityTextBox->getY(),
-			this->vSensitivityTextBox->getTextColor(),
-			text,
-			fontManager.getFont(this->vSensitivityTextBox->getFontName()),
-			this->vSensitivityTextBox->getAlignment(),
-			this->getGame()->getRenderer()));
+			this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY(),
+			richText, this->getGame()->getRenderer()));
 	}();
 }
 
 void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
-
-	Texture tooltip(Panel::createTooltip(text, font, renderer));
+	const Texture tooltip(Panel::createTooltip(
+		text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 originalPosition = renderer.nativePointToOriginal(

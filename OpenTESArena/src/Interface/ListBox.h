@@ -15,9 +15,11 @@
 // Though the index of a selected item can be obtained, this class is not intended
 // for holding data about those selected items. It is simply a view for the text.
 
-class Font;
+class FontManager;
 class Renderer;
 class TextBox;
+
+enum class FontName;
 
 struct SDL_Surface;
 struct SDL_Texture;
@@ -28,16 +30,17 @@ private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes;
 	Color textColor;
 	Int2 point;
-	const Font &font;
+	FontName fontName;
 	SDL_Surface *clearSurface; // For clearing the texture upon updating.
 	SDL_Texture *texture;
 	int scrollIndex;
+	int characterHeight;
 
 	// Updates the texture to show the currently visible text boxes.
 	void updateDisplay();
 public:
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
-		const Font &font, int maxDisplayed, Renderer &renderer);
+		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 	~ListBox();
 
 	// Gets the index of the top-most displayed element.

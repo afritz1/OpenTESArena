@@ -9,6 +9,7 @@
 
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "RichTextString.h"
 #include "TextBox.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
@@ -71,19 +72,19 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 {
 	this->locationTextBox = [game, &locationName]()
 	{
-		Int2 center(120, 28);
-		Color color(56, 16, 12);
-		Color shadowColor(150, 101, 52);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			shadowColor,
+		const Int2 center(120, 28);
+
+		const RichTextString richText(
 			locationName,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::A,
+			Color(56, 16, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
+		const Color shadowColor(150, 101, 52);
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			center, richText, shadowColor, game->getRenderer()));
 	}();
 
 	this->backToGameButton = []()
@@ -293,9 +294,8 @@ void AutomapPanel::handleMouse(double dt)
 
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
-
-	Texture tooltip(Panel::createTooltip(text, font, renderer));
+	const Texture tooltip(Panel::createTooltip(
+		text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

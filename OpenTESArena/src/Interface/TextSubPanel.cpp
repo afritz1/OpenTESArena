@@ -22,12 +22,7 @@ TextSubPanel::TextSubPanel(Game *game, const Int2 &textCenter,
 	textureCenter(textureCenter)
 {
 	this->textBox = std::unique_ptr<TextBox>(new TextBox(
-		textCenter,
-		richText.getColor(),
-		richText.getText(),
-		game->getFontManager().getFont(richText.getFontName()),
-		richText.getAlignment(),
-		game->getRenderer()));
+		textCenter, richText, game->getRenderer()));
 }
 
 TextSubPanel::TextSubPanel(Game *game, const Int2 &textCenter,

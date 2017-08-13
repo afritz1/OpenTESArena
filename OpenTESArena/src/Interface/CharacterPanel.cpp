@@ -7,6 +7,7 @@
 #include "CharacterEquipmentPanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/CIFFile.h"
@@ -30,60 +31,58 @@
 #include "../Rendering/Texture.h"
 
 CharacterPanel::CharacterPanel(Game *game)
-	: Panel(game), headOffsets()
+	: Panel(game)
 {
 	this->playerNameTextBox = [game]()
 	{
-		Int2 origin(10, 8);
-		Color color(199, 199, 199);
-		std::string text = game->getGameData().getPlayer().getDisplayName();
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
+		const int x = 10;
+		const int y = 8;
+
+		const RichTextString richText(
+			game->getGameData().getPlayer().getDisplayName(),
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->playerRaceTextBox = [game]()
 	{
-		Int2 origin(10, 17);
-		Color color(199, 199, 199);
-		auto &player = game->getGameData().getPlayer();
-		std::string text = game->getTextAssets().getAExeSegment(
+		const int x = 10;
+		const int y = 17;
+
+		const auto &player = game->getGameData().getPlayer();
+		const std::string &text = game->getTextAssets().getAExeSegment(
 			ExeStrings::RaceNamesSingular.at(player.getRaceID()));
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
-		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
+
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->playerClassTextBox = [game]()
 	{
-		Int2 origin(10, 26);
-		Color color(199, 199, 199);
-		std::string text = game->getGameData().getPlayer().getCharacterClass()
-			.getDisplayName();
-		auto &font = game->getFontManager().getFont(FontName::Arena);
-		auto alignment = TextAlignment::Left;
+		const int x = 10;
+		const int y = 26;
+
+		const RichTextString richText(
+			game->getGameData().getPlayer().getCharacterClass().getDisplayName(),
+			FontName::Arena,
+			Color(199, 199, 199),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			origin.x,
-			origin.y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->doneButton = []()

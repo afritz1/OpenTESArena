@@ -91,20 +91,18 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->playerNameTextBox = [game]()
 	{
-		int x = 17;
-		int y = 154;
-		Color color(215, 121, 8);
-		std::string text = game->getGameData().getPlayer().getFirstName();
-		auto &font = game->getFontManager().getFont(FontName::Char);
-		auto alignment = TextAlignment::Left;
+		const int x = 17;
+		const int y = 154;
+
+		const RichTextString richText(
+			game->getGameData().getPlayer().getFirstName(),
+			FontName::Char,
+			Color(215, 121, 8),
+			TextAlignment::Left,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			x,
-			y,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			x, y, richText, game->getRenderer()));
 	}();
 
 	this->characterSheetButton = []()
@@ -976,9 +974,8 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
-
-	Texture tooltip(Panel::createTooltip(text, font, renderer));
+	const Texture tooltip(Panel::createTooltip(
+		text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	auto &textureManager = this->getGame()->getTextureManager();
 	const auto &gameInterface = textureManager.getTexture(
@@ -1000,7 +997,10 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Double3 &position = player.getPosition();
 	const Double3 &direction = player.getDirection();
 
-	TextBox tempText(2, 2, Color::White,
+	const int x = 2;
+	const int y = 2;
+
+	const std::string text =
 		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
 		"FPS: " + String::fixedPrecision(game.getFPSCounter().getFPS(), 1) + "\n" +
@@ -1009,9 +1009,17 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
 		"DirX: " + String::fixedPrecision(direction.x, 5) + "\n" +
 		"DirY: " + String::fixedPrecision(direction.y, 5) + "\n" +
-		"DirZ: " + String::fixedPrecision(direction.z, 5),
-		game.getFontManager().getFont(FontName::D),
-		TextAlignment::Left, renderer);
+		"DirZ: " + String::fixedPrecision(direction.z, 5);
+
+	const RichTextString richText(
+		text,
+		FontName::D,
+		Color::White,
+		TextAlignment::Left,
+		game.getFontManager());
+
+	TextBox tempText(x, y, richText, renderer);
+
 	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
 }
 

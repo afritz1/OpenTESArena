@@ -15,11 +15,12 @@
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
 class Color;
-class Font;
+class FontManager;
 class Game;
 class Renderer;
 
 enum class CursorAlignment;
+enum class FontName;
 
 struct SDL_Texture;
 
@@ -33,7 +34,7 @@ protected:
 	// Generates a tooltip texture with the default white foreground and gray
 	// background with alpha blending.
 	static SDL_Texture *createTooltip(const std::string &text,
-		const Font &font, Renderer &renderer);
+		FontName fontName, FontManager &fontManager, Renderer &renderer);
 
 	Game *getGame() const;
 public:

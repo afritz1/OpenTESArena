@@ -5,6 +5,7 @@
 
 #include "TextCinematicPanel.h"
 
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -60,14 +61,15 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 			}
 
 			// Eventually use a different color for other cinematics (Tharn, Emperor, etc.).
-			Color textColor(105, 174, 207);
-			std::unique_ptr<TextBox> textBox(new TextBox(
-				center,
-				textColor,
+			const RichTextString richText(
 				textBoxText,
-				game->getFontManager().getFont(FontName::Arena),
+				FontName::Arena,
+				Color(105, 174, 207),
 				TextAlignment::Center,
-				game->getRenderer()));
+				game->getFontManager());
+
+			std::unique_ptr<TextBox> textBox(new TextBox(
+				center, richText, game->getRenderer()));
 			textBoxes.push_back(std::move(textBox));
 		}
 

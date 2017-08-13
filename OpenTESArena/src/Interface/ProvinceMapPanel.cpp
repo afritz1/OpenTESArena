@@ -9,6 +9,7 @@
 
 #include "CursorAlignment.h"
 #include "ProvinceButtonName.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
@@ -173,9 +174,9 @@ void ProvinceMapPanel::tick(double dt)
 void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer)
 {
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
 
-	Texture tooltip(Panel::createTooltip(text, font, renderer));
+	Texture tooltip(Panel::createTooltip(
+		text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -193,14 +194,15 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &center,
 	Renderer &renderer)
 {
-	TextBox textBox(
-		center - Int2(0, 10),
-		Color(158, 0, 0),
-		Color(48, 48, 48),
+	const RichTextString richText(
 		name,
-		this->getGame()->getFontManager().getFont(FontName::Arena),
+		FontName::Arena,
+		Color(158, 0, 0),
 		TextAlignment::Center,
-		renderer);
+		this->getGame()->getFontManager());
+
+	const TextBox textBox(
+		center - Int2(0, 10), richText, Color(48, 48, 48), renderer);
 
 	// Clamp to screen edges, with some extra space on the left and right.
 	const int x = std::max(std::min(textBox.getX(),

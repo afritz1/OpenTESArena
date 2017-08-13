@@ -7,6 +7,7 @@
 #include "ChooseClassPanel.h"
 #include "CursorAlignment.h"
 #include "MainMenuPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
@@ -36,56 +37,51 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->titleTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
-		Color color(48, 12, 12);
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 
 		std::string text = game->getTextAssets().getAExeSegment(
 			ExeStrings::ChooseClassCreation);
 		text = String::replace(text, '\r', '\n');
 
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
-		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
+		const RichTextString richText(
 			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			center, richText, game->getRenderer()));
 	}();
 
 	this->generateTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		Color color(48, 12, 12);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::ChooseClassCreationGenerate);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassCreationGenerate),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->selectTextBox = [game]()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		Color color(48, 12, 12);
-		std::string text = game->getTextAssets().getAExeSegment(
-			ExeStrings::ChooseClassCreationSelect);
-		auto &font = game->getFontManager().getFont(FontName::A);
-		auto alignment = TextAlignment::Center;
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+
+		const RichTextString richText(
+			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassCreationSelect),
+			FontName::A,
+			Color(48, 12, 12),
+			TextAlignment::Center,
+			game->getFontManager());
+
 		return std::unique_ptr<TextBox>(new TextBox(
-			center,
-			color,
-			text,
-			font,
-			alignment,
-			game->getRenderer()));
+			center, richText, game->getRenderer()));
 	}();
 
 	this->backToMainMenuButton = []()
@@ -101,7 +97,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->generateButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 		auto function = [](Game *game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
@@ -114,7 +110,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 
 	this->selectButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 		auto function = [](Game *game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
@@ -170,9 +166,8 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Font &font = this->getGame()->getFontManager().getFont(FontName::D);
-
-	Texture tooltip(Panel::createTooltip(text, font, renderer));
+	const Texture tooltip(Panel::createTooltip(
+		text, FontName::D, this->getGame()->getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame()->getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
