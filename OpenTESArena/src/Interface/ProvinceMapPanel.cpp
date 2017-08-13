@@ -209,7 +209,7 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
 	const int y = std::max(std::min(textBox.getY(),
 		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h), 0);
-
+	
 	renderer.drawToOriginal(textBox.getShadowTexture(), x + 1, y);
 	renderer.drawToOriginal(textBox.getTexture(), x, y);
 }
@@ -250,8 +250,8 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		.nativePointToOriginal(mousePosition);
 
 	// Initialize the current closest position to something very far away (watch out for
-	// integer multiplication overflow; that's why it's using short max).
-	Int2 closestPosition(std::numeric_limits<short>::max(), std::numeric_limits<short>::max());
+	// integer multiplication overflow with closest distance).
+	Int2 closestPosition(-1000, -1000);
 
 	// Lambda for comparing distances of two location points to the mouse position.
 	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](const Int2 &point)
