@@ -155,7 +155,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 			const Int2 center(
 				(Renderer::ORIGINAL_WIDTH / 2),
-				((Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2) - 0);
+				(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
 
 			const std::string text = [game]()
 			{
