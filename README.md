@@ -21,6 +21,7 @@ Here are some keys in the game world:
 - L - logbook
 - M - world map (click on provinces for province maps)
 - N - automap
+- V - status
 - F4 - toggle debug text
 
 <br/>

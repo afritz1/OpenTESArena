@@ -450,6 +450,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
 	bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
 	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB);
+	bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
 	bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
 
 	if (automapHotkeyPressed)
@@ -463,6 +464,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (sheetHotkeyPressed)
 	{
 		this->characterSheetButton->click(this->getGame());
+	}
+	else if (statusHotkeyPressed)
+	{
+		this->statusButton->click(this->getGame());
 	}
 	else if (worldMapHotkeyPressed)
 	{
