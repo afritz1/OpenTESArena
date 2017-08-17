@@ -63,7 +63,7 @@ namespace
 	};
 }
 
-const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 18.0;
+const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
 
 WeaponAnimation::WeaponAnimation(WeaponType weaponType)
 {
