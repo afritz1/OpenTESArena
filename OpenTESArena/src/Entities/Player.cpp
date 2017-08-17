@@ -169,7 +169,7 @@ void Player::lookAt(const Double3 &point)
 
 void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 {
-	auto getVoxel = [&voxelGrid](int x, int y, int z)
+	auto getVoxel = [&voxelGrid](int x, int y, int z) -> VoxelData
 	{
 		// Voxels outside the world are air.
 		if ((x < 0) || (x >= voxelGrid.getWidth()) ||
