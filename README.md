@@ -2,7 +2,7 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++11 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows and Linux.
 
-- Version: 0.4.0
+- Version: 0.5.0
 - License: MIT
 - IRC: #opentesarena on [webchat.freenode.net](https://webchat.freenode.net/)
 
@@ -52,7 +52,7 @@ The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find whe
 - If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
 #### Linux (Ubuntu 16.04)
-Substitute `<version>` with the current version number (i.e., `0.4.0`), and `<arch>` with the desired architecture (`32` or `64`).
+Substitute `<version>` with the current version number (i.e., `0.5.0`), and `<arch>` with the desired architecture (`32` or `64`).
 ```bash
 sudo apt-get install wget unzip rar
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
