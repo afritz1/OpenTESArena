@@ -16,7 +16,7 @@ TargetFPS=60
 ResolutionScale=0.50
 VerticalFieldOfView=60.0
 LetterboxAspect=1.60
-CursorScale=3.6
+CursorScale=3.60
 ModernInterface=False
 
 # Input.
@@ -27,7 +27,7 @@ VerticalSensitivity=8.0
 # Sound.
 # - Change "Soundfont" to your desired config file.
 MusicVolume=0.30
-SoundVolume=0.35
+SoundVolume=0.30
 Soundfont=data/eawpats/timidity.cfg
 SoundChannels=32
 
