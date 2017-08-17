@@ -6,7 +6,6 @@
 #include "VoxelData.h"
 
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
-// It also has a "voxel height" value to accommodate some of Arena's "tall" voxels.
 
 class VoxelGrid
 {

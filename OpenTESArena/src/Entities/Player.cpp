@@ -207,7 +207,26 @@ void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
 
 	// Check horizontal collisions.
-	if (!xVoxel.isAir())
+
+	// -- Temp hack until Y collision detection is implemented --
+	auto isBridge = [](const VoxelData &voxel)
+	{
+		return (voxel.sideID == 42) && (voxel.floorID == 43) &&
+			(voxel.ceilingID == 43);
+	};
+
+	if (!xVoxel.isAir() && !isBridge(xVoxel))
+	{
+		this->velocity.x = 0.0;
+	}
+
+	if (!zVoxel.isAir() && !isBridge(zVoxel))
+	{
+		this->velocity.z = 0.0;
+	}
+	// -- end hack --
+
+	/*if (!xVoxel.isAir())
 	{
 		this->velocity.x = 0.0;
 	}
@@ -215,12 +234,12 @@ void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 	if (!zVoxel.isAir())
 	{
 		this->velocity.z = 0.0;
-	}
+	}*/
 
 	// To do: Y collision (snap Y position above ground if inside ground?).
 	this->velocity.y = 0.0;
 
-	// To do: use an axis-aligned bounding box or cylinder instead of a point.
+	// To do: use an axis-aligned bounding box or cylinder instead of a point?
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude,
