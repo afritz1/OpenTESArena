@@ -10,10 +10,14 @@
 // Perhaps much later, when voxel destruction spells like Passwall are added, 
 // more data could be added here that represents a percentage of "fade".
 
+// "Diagonal 1" starts at (nearX, nearZ) and ends at (farX, farZ). "Diagonal 2"
+// starts at (farX, nearZ) and ends at (nearX, farZ). The line equations for each
+// are z = x and z = -x + 1, respectively.
+
 class VoxelData
 {
 public:
-	int sideID, floorID, ceilingID;
+	int sideID, floorID, ceilingID, diag1ID, diag2ID;
 	double yOffset, ySize; // Offset from bottom of voxel, and "thickness" in Y.
 	double topV, bottomV; // V texture coordinates between 0.0 and 1.0.
 
@@ -23,6 +27,12 @@ public:
 	// Default constructor for most voxels; a Y offset of 0.0 and Y size of 1.0, 
 	// with the default texture coordinates.
 	VoxelData(int sideID, int floorID, int ceilingID);
+
+	VoxelData(int diag1ID, int diag2ID, double yOffset, double ySize,
+		double topV, double bottomV);
+
+	// Diagonal wall constructor. Only one of the IDs should be non-zero.
+	VoxelData(int diag1ID, int diag2ID);
 
 	// Default constructor for a 1x1x1 voxel with all sides using the same texture.
 	VoxelData(int id);
