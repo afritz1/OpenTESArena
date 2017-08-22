@@ -106,6 +106,20 @@ private:
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
+	// Use this to gather potential intersection data from a voxel containing a non-zero ID for
+	// "diagonal 1"; the diagonal starting at (nearX, nearZ) and ending at (farX, farZ). "Inner Z"
+	// is the Z distance from the near point to the intersection. Returns whether an intersection 
+	// occurred within the voxel.
+	static bool findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
+		const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal);
+
+	// Use this to gather potential intersection data from a voxel containing a non-zero ID for
+	// "diagonal 2"; the diagonal starting at (farX, nearZ) and ending at (nearX, farZ). "Inner Z"
+	// is the Z distance from the near point to the intersection. Returns whether an intersection 
+	// occurred within the voxel.
+	static bool findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
+		const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal);
+
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
