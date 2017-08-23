@@ -84,6 +84,9 @@ private:
 	static const double NEAR_PLANE;
 	static const double FAR_PLANE;
 
+	// A value just below one for keeping texture coordinates from overflowing.
+	static const double JUST_BELOW_ONE;
+
 	std::vector<double> zBuffer;
 	std::unordered_map<int, Flat> flats;
 	std::vector<std::pair<const Flat*, Flat::Projection>> visibleFlats;

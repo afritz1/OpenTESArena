@@ -23,6 +23,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor,
 
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
+const double SoftwareRenderer::JUST_BELOW_ONE = std::nextafter(1.0, 0.0);
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
@@ -689,33 +690,29 @@ double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &tra
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
 	const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal)
 {
-	// Start, middle, and end points of the diagonal line segment in the voxel.
-	const Double2 diagStart(0.0, 0.0);
-	const Double2 diagMiddle(0.50, 0.50);
-	const Double2 diagEnd(1.0, 1.0);
+	// Start, middle, and end points of the diagonal line segment relative to the grid.
+	const Double2 diagStart(
+		static_cast<double>(voxelX),
+		static_cast<double>(voxelZ));
+	const Double2 diagMiddle(
+		static_cast<double>(voxelX) + 0.50,
+		static_cast<double>(voxelZ) + 0.50);
+	const Double2 diagEnd(
+		static_cast<double>(voxelX) + SoftwareRenderer::JUST_BELOW_ONE,
+		static_cast<double>(voxelZ) + SoftwareRenderer::JUST_BELOW_ONE);
 
 	// Normals for the left and right faces of the wall, facing up-left and down-right
 	// respectively (magic number is sqrt(2) / 2).
 	const Double3 leftNormal(0.7071068, 0.0, -0.7071068);
 	const Double3 rightNormal(-0.7071068, 0.0, 0.7071068);
-
-	// Local points of the incoming ray (transformed to the range of 0->1).
-	// - If for some reason the floor() causes issues, then transform the diagonal points
-	//   from local space to grid space instead.
-	const Double2 localNearPoint(
-		nearPoint.x - std::floor(nearPoint.x),
-		nearPoint.y - std::floor(nearPoint.y));
-	const Double2 localFarPoint(
-		farPoint.x - std::floor(farPoint.x),
-		farPoint.y - std::floor(farPoint.y));
-
+	
 	// An intersection occurs if the near point and far point are on different sides 
 	// of the diagonal line, or if the near point lies on the diagonal line. No need
 	// to normalize the (localPoint - diagMiddle) vector because it's just checking
 	// if it's greater than zero.
 	const Double2 leftNormal2D(leftNormal.x, leftNormal.z);
-	const bool nearOnLeft = leftNormal2D.dot(localNearPoint - diagMiddle) >= 0.0;
-	const bool farOnLeft = leftNormal2D.dot(localFarPoint - diagMiddle) >= 0.0;
+	const bool nearOnLeft = leftNormal2D.dot(nearPoint - diagMiddle) >= 0.0;
+	const bool farOnLeft = leftNormal2D.dot(farPoint - diagMiddle) >= 0.0;
 	const bool intersectionOccurred = (nearOnLeft && !farOnLeft) || (!nearOnLeft && farOnLeft);
 
 	// Only set the output data if an intersection occurred.
@@ -725,49 +722,48 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 		const double dx = farPoint.x - nearPoint.x;
 		const double dz = farPoint.y - nearPoint.y;
 
-		// Special cases: when the slope is horizontal or vertical. This method treats
-		// the X axis as the vertical axis and the Z axis as the horizontal axis.
-		const double isHorizontal = std::abs(dx) < EPSILON;
-		const double isVertical = std::abs(dz) < EPSILON;
-
-		if (isHorizontal)
+		// The hit coordinate is a 0->1 value representing where the diagonal was hit.
+		const double hitCoordinate = [&nearPoint, &diagStart, dx, dz]()
 		{
-			// The X axis intercept is the intersection coordinate.
-			const double hitCoordinate = localNearPoint.x;
+			// Special cases: when the slope is horizontal or vertical. This method treats
+			// the X axis as the vertical axis and the Z axis as the horizontal axis.
+			const double isHorizontal = std::abs(dx) < EPSILON;
+			const double isVertical = std::abs(dz) < EPSILON;
 
-			point = Double2(
-				static_cast<double>(voxelX) + hitCoordinate,
-				static_cast<double>(voxelZ) + hitCoordinate);
-			u = hitCoordinate;
-		}
-		else if (isVertical)
-		{
-			// The Z axis intercept is the intersection coordinate.
-			const double hitCoordinate = localNearPoint.y;
+			if (isHorizontal)
+			{
+				// The X axis intercept is the intersection coordinate.
+				return nearPoint.x - diagStart.x;
+			}
+			else if (isVertical)
+			{
+				// The Z axis intercept is the intersection coordinate.
+				return nearPoint.y - diagStart.y;
+			}
+			else
+			{
+				// Slope of the diagonal line (trivial, x = z).
+				const double diagSlope = 1.0;
 
-			point = Double2(
-				static_cast<double>(voxelX) + hitCoordinate,
-				static_cast<double>(voxelZ) + hitCoordinate);
-			u = hitCoordinate;
-		}
-		else
-		{
-			// Get the slope of the incoming ray.
-			const double raySlope = dx / dz;
+				// Vertical axis intercept of the diagonal line.
+				const double diagXIntercept = diagStart.x - diagStart.y;
 
-			// Get the vertical axis intercept of the incoming ray.
-			const double rayXIntercept = localNearPoint.x - (raySlope * localNearPoint.y);
+				// Slope of the incoming ray.
+				const double raySlope = dx / dz;
 
-			// General line intersection calculation (diag1 is just x = z, so the hit
-			// coordinate can be simplified).
-			const double hitCoordinate = rayXIntercept / raySlope;
+				// Get the vertical axis intercept of the incoming ray.
+				const double rayXIntercept = nearPoint.x - (raySlope * nearPoint.y);
 
-			point = Double2(
-				static_cast<double>(voxelX) + hitCoordinate,
-				static_cast<double>(voxelZ) + hitCoordinate);
-			u = hitCoordinate;
-		}
+				// General line intersection calculation.
+				return ((rayXIntercept - diagXIntercept) / 
+					(diagSlope - raySlope)) - diagStart.y;
+			}
+		}();
 
+		u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		point = Double2(
+			static_cast<double>(voxelX) + u,
+			static_cast<double>(voxelZ) + u);
 		innerZ = (point - nearPoint).length();
 		normal = nearOnLeft ? leftNormal : rightNormal;
 
@@ -783,18 +779,93 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
 	const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal)
 {
-	// Start, middle, and end points for the diagonal line segment in the voxel.
-	const Double2 diagStart(1.0, 0.0);
-	const Double2 diagMiddle(0.50, 0.50);
-	const Double2 diagEnd(0.0, 1.0);
+	// Mostly a copy of findDiag1Intersection(), though with a couple different values
+	// for the diagonal (end points, slope, etc.).
+
+	// Start, middle, and end points of the diagonal line segment relative to the grid.
+	const Double2 diagStart(
+		static_cast<double>(voxelX) + SoftwareRenderer::JUST_BELOW_ONE,
+		static_cast<double>(voxelZ));
+	const Double2 diagMiddle(
+		static_cast<double>(voxelX) + 0.50,
+		static_cast<double>(voxelZ) + 0.50);
+	const Double2 diagEnd(
+		static_cast<double>(voxelX),
+		static_cast<double>(voxelZ) + SoftwareRenderer::JUST_BELOW_ONE);
 
 	// Normals for the left and right faces of the wall, facing up-right and down-left
 	// respectively (magic number is sqrt(2) / 2).
 	const Double3 leftNormal(0.7071068, 0.0, 0.7071068);
 	const Double3 rightNormal(-0.7071068, 0.0, -0.7071068);
 
-	// To do... (finish after testing diag1 intersection).
-	return false;
+	// An intersection occurs if the near point and far point are on different sides 
+	// of the diagonal line, or if the near point lies on the diagonal line. No need
+	// to normalize the (localPoint - diagMiddle) vector because it's just checking
+	// if it's greater than zero.
+	const Double2 leftNormal2D(leftNormal.x, leftNormal.z);
+	const bool nearOnLeft = leftNormal2D.dot(nearPoint - diagMiddle) >= 0.0;
+	const bool farOnLeft = leftNormal2D.dot(farPoint - diagMiddle) >= 0.0;
+	const bool intersectionOccurred = (nearOnLeft && !farOnLeft) || (!nearOnLeft && farOnLeft);
+
+	// Only set the output data if an intersection occurred.
+	if (intersectionOccurred)
+	{
+		// Change in X and change in Z of the incoming ray across the voxel.
+		const double dx = farPoint.x - nearPoint.x;
+		const double dz = farPoint.y - nearPoint.y;
+
+		// The hit coordinate is a 0->1 value representing where the diagonal was hit.
+		const double hitCoordinate = [&nearPoint, &diagStart, dx, dz]()
+		{
+			// Special cases: when the slope is horizontal or vertical. This method treats
+			// the X axis as the vertical axis and the Z axis as the horizontal axis.
+			const double isHorizontal = std::abs(dx) < EPSILON;
+			const double isVertical = std::abs(dz) < EPSILON;
+
+			if (isHorizontal)
+			{
+				// The X axis intercept is the compliment of the intersection coordinate.
+				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.x - diagStart.x);
+			}
+			else if (isVertical)
+			{
+				// The Z axis intercept is the compliment of the intersection coordinate.
+				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.y - diagStart.y);
+			}
+			else
+			{
+				// Slope of the diagonal line (trivial, x = -z).
+				const double diagSlope = -1.0;
+
+				// Vertical axis intercept of the diagonal line.
+				const double diagXIntercept = diagStart.x + diagStart.y;
+
+				// Slope of the incoming ray.
+				const double raySlope = dx / dz;
+
+				// Get the vertical axis intercept of the incoming ray.
+				const double rayXIntercept = nearPoint.x - (raySlope * nearPoint.y);
+
+				// General line intersection calculation.
+				return ((rayXIntercept - diagXIntercept) /
+					(diagSlope - raySlope)) - diagStart.y;
+			}
+		}();
+
+		u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		point = Double2(
+			static_cast<double>(voxelX) + (SoftwareRenderer::JUST_BELOW_ONE - u),
+			static_cast<double>(voxelZ) + u);
+		innerZ = (point - nearPoint).length();
+		normal = nearOnLeft ? leftNormal : rightNormal;
+
+		return true;
+	}
+	else
+	{
+		// No intersection.
+		return false;
+	}
 }
 
 void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
@@ -1526,7 +1597,45 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					depthBuffer, colorBuffer);
 			}
 
-			// 2) Inner ceiling.
+			// 2) Diagonal 1.
+			if (voxelData.diag1ID > 0)
+			{
+				double innerZ;
+				Double2 point;
+				double u;
+				Double3 normal;
+				const bool success = SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ,
+					nearPoint, farPoint, innerZ, point, u, normal);
+
+				if (success)
+				{
+					const Double3 diag1Top(
+						point.x,
+						playerYFloor + voxelData.yOffset + voxelData.ySize,
+						point.y);
+					const Double3 diag1Bottom(
+						point.x,
+						playerYFloor + voxelData.yOffset,
+						point.y);
+
+					const double diag1TopScreenY = SoftwareRenderer::getProjectedY(
+						diag1Top, transform, yShear) * heightReal;
+					const double diag1BottomScreenY = SoftwareRenderer::getProjectedY(
+						diag1Bottom, transform, yShear) * heightReal;
+
+					const int diag1Start = std::min(std::max(0,
+						static_cast<int>(std::ceil(diag1TopScreenY - 0.50))), frameHeight);
+					const int diag1End = std::min(std::max(0,
+						static_cast<int>(std::floor(diag1BottomScreenY + 0.50))), frameHeight);
+
+					SoftwareRenderer::drawWall(x, diag1Start, diag1End, diag1TopScreenY,
+						diag1BottomScreenY, nearZ + innerZ, u, voxelData.topV, voxelData.bottomV,
+						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
+						frameHeight, depthBuffer, colorBuffer);
+				}
+			}
+
+			// 3) Inner ceiling.
 			if (voxelData.ceilingID > 0)
 			{
 				const Double3 ceilingNormal = -Double3::UnitY;
@@ -1536,7 +1645,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					depthBuffer, colorBuffer);
 			}
 
-			// 3) Inner floor.
+			// 4) Inner floor.
 			if (voxelData.floorID > 0)
 			{
 				const Double3 floorNormal = Double3::UnitY;
