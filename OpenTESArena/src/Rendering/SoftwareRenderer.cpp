@@ -868,6 +868,34 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 	}
 }
 
+void SoftwareRenderer::diagonalProjection(double voxelYReal, const VoxelData &voxelData,
+	const Double2 &point, const Matrix4d &transform, double yShear, int frameHeight,
+	double heightReal, double &diagTopScreenY, double &diagBottomScreenY, int &diagStart, 
+	int &diagEnd)
+{
+	// Points in world space for the top and bottom of the diagonal wall slice.
+	const Double3 diagTop(
+		point.x,
+		voxelYReal + voxelData.yOffset + voxelData.ySize,
+		point.y);
+	const Double3 diagBottom(
+		point.x,
+		voxelYReal + voxelData.yOffset,
+		point.y);
+
+	// Projected Y coordinates on-screen.
+	diagTopScreenY = SoftwareRenderer::getProjectedY(
+		diagTop, transform, yShear) * heightReal;
+	diagBottomScreenY = SoftwareRenderer::getProjectedY(
+		diagBottom, transform, yShear) * heightReal;
+
+	// Y drawing range on-screen.
+	diagStart = std::min(std::max(0,
+		static_cast<int>(std::ceil(diagTopScreenY - 0.50))), frameHeight);
+	diagEnd = std::min(std::max(0,
+		static_cast<int>(std::floor(diagBottomScreenY + 0.50))), frameHeight);
+}
+
 void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, double z, double u, double topV, double bottomV, 
 	const Double3 &normal, const TextureData &texture, const ShadingInfo &shadingInfo, 
@@ -1604,32 +1632,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				Double2 point;
 				double u;
 				Double3 normal;
-				const bool success = SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ,
-					nearPoint, farPoint, innerZ, point, u, normal);
+				const bool success = SoftwareRenderer::findDiag1Intersection(
+					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, u, normal);
 
 				if (success)
 				{
-					const Double3 diag1Top(
-						point.x,
-						playerYFloor + voxelData.yOffset + voxelData.ySize,
-						point.y);
-					const Double3 diag1Bottom(
-						point.x,
-						playerYFloor + voxelData.yOffset,
-						point.y);
+					double diagTopScreenY, diagBottomScreenY;
+					int diagStart, diagEnd;
 
-					const double diag1TopScreenY = SoftwareRenderer::getProjectedY(
-						diag1Top, transform, yShear) * heightReal;
-					const double diag1BottomScreenY = SoftwareRenderer::getProjectedY(
-						diag1Bottom, transform, yShear) * heightReal;
+					// Assign the diagonal projection values to the declared variables.
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+						transform, yShear, frameHeight, heightReal, diagTopScreenY, 
+						diagBottomScreenY, diagStart, diagEnd);
 
-					const int diag1Start = std::min(std::max(0,
-						static_cast<int>(std::ceil(diag1TopScreenY - 0.50))), frameHeight);
-					const int diag1End = std::min(std::max(0,
-						static_cast<int>(std::floor(diag1BottomScreenY + 0.50))), frameHeight);
-
-					SoftwareRenderer::drawWall(x, diag1Start, diag1End, diag1TopScreenY,
-						diag1BottomScreenY, nearZ + innerZ, u, voxelData.topV, voxelData.bottomV,
+					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
+						diagBottomScreenY, nearZ + innerZ, u, voxelData.topV, voxelData.bottomV,
 						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
 						frameHeight, depthBuffer, colorBuffer);
 				}

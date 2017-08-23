@@ -17,6 +17,7 @@
 // it's not a graphics API, and the overhead of passing frame buffers back and
 // forth with the GPU was "hilarious" as one said. It was good practice, though!
 
+class VoxelData;
 class VoxelGrid;
 
 class SoftwareRenderer
@@ -122,6 +123,13 @@ private:
 	// occurred within the voxel.
 	static bool findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
 		const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal);
+
+	// Calculates all the projection data for a diagonal wall after successful intersection
+	// and assigns it to various reference variables.
+	static void diagonalProjection(double voxelYReal, const VoxelData &voxelData, 
+		const Double2 &point, const Matrix4d &transform, double yShear, int frameHeight, 
+		double heightReal, double &diagTopScreenY, double &diagBottomScreenY, int &diagStart, 
+		int &diagEnd);
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
