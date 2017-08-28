@@ -11,6 +11,7 @@
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
+#include "../Assets/MIFFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
@@ -118,13 +119,31 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
 				game->getTextureManager(), renderer);
 
+			// Overwrite game level with a .MIF file.
+			const MIFFile mif("START.MIF");
+
+			Double3 playerPosition = gameData->getPlayer().getPosition();
+			GameData::loadFromMIF(mif, playerPosition, gameData->getVoxelGrid(),
+				gameData->getEntityManager(), game->getTextureManager(), renderer);
+
+			// Hardcode the player's position and orientation in START.MIF for now.
+			auto &player = gameData->getPlayer();
+			player.teleport(Double3(
+				23.50,
+				playerPosition.y,
+				static_cast<double>(mif.getDepth()) - 1.50));
+			player.lookAt(Double3(
+				player.getPosition().x,
+				player.getPosition().y,
+				player.getPosition().z - 1.0));
+
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));
 
 			// Initialize game world panel.
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
 			game->setPanel(std::move(gameWorldPanel));
-			game->setMusic(MusicName::SunnyDay);
+			game->setMusic(MusicName::Dungeon1);
 		};
 		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
 	}();

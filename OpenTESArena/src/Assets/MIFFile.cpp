@@ -40,6 +40,10 @@ namespace
 	};
 }
 
+const uint16_t MIFFile::DRY_CHASM = 0x0C00;
+const uint16_t MIFFile::WET_CHASM = 0x0D00;
+const uint16_t MIFFile::LAVA_CHASM = 0x0E00;
+
 MIFFile::MIFFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
@@ -52,13 +56,26 @@ MIFFile::MIFFile(const std::string &filename)
 	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	// Start of the header data (at "MHDR"), and its size (should be 61).
+	// Get data from the header (after "MHDR"). Constant for all levels. The header 
+	// size should be 61.
 	const uint8_t *headerStart = srcData.data();
 	const uint8_t headerSize = *(headerStart + 4);
-
-	// Get the map dimensions from the header. Constant for all levels.
+	const uint8_t unknown1 = *(headerStart + 6);
+	const uint8_t entryCount = *(headerStart + 7);
 	const uint16_t mapWidth = Bytes::getLE16(headerStart + 27);
 	const uint16_t mapDepth = Bytes::getLE16(headerStart + 29);
+
+	// Load entries(?) from header.
+	for (size_t i = 0; i < entryCount; i++)
+	{
+		const uint16_t x = Bytes::getLE16(headerStart + 8 + (i * 2));
+		const uint16_t y = Bytes::getLE16(headerStart + 16 + (i * 2));
+		this->entries.push_back(Int2(x, y));
+	}
+
+	// Get starting level index. The level count (a single byte) comes right after this, 
+	// but it is unused in this reader (it's inferred by the level loading loop).
+	this->startingLevelIndex = *(headerStart + 24);
 
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,
 	// so this needs to be in a loop.
@@ -94,6 +111,16 @@ int MIFFile::getWidth() const
 int MIFFile::getDepth() const
 {
 	return this->depth;
+}
+
+int MIFFile::getStartingLevelIndex() const
+{
+	return this->startingLevelIndex;
+}
+
+const std::vector<Int2> &MIFFile::getEntries() const
+{
+	return this->entries;
 }
 
 const std::vector<MIFFile::Level> &MIFFile::getLevels() const

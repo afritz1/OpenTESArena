@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "../Math/Vector2.h"
+
 // A MIF file contains map information. It defines the dimensions of a particular area 
 // and which voxels have which IDs, as well as some other data. It is normally paired with 
 // an INF file that tells which textures to use, among other things.
@@ -54,6 +56,8 @@ public:
 	};
 private:
 	int width, depth;
+	int startingLevelIndex;
+	std::vector<Int2> entries; // Entrance locations for the level?
 	std::vector<MIFFile::Level> levels;
 	// Should a vector of levels be exposed, or does the caller want a nicer format?
 	// VoxelGrid? Array of VoxelData?
@@ -61,9 +65,20 @@ public:
 	MIFFile(const std::string &filename);
 	~MIFFile();
 
+	// Identifiers for various chasms in Arena's voxel data.
+	static const uint16_t DRY_CHASM;
+	static const uint16_t WET_CHASM;
+	static const uint16_t LAVA_CHASM;
+
 	// Gets the dimensions of the map. They are constant for all levels in a map.
 	int getWidth() const;
 	int getDepth() const;
+
+	// Gets the starting level when the player enters the area.
+	int getStartingLevelIndex() const;
+
+	// Still unknown, but each entry might determine where a transition voxel is.
+	const std::vector<Int2> &getEntries() const;
 
 	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
 	// to be in a nicer format before handing it over to the rest of the program).

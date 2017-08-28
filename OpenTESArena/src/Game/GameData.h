@@ -21,6 +21,7 @@
 // need to load data into the game data object.
 
 class CharacterClass;
+class MIFFile;
 class Renderer;
 class TextureManager;
 
@@ -46,6 +47,12 @@ public:
 	GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
 		const Location &location, const Date &date, const Clock &clock, double fogDistance);
 	~GameData();
+
+	// Takes a .MIF file and writes its data into the given reference parameters.
+	// This overwrites parts of the existing game session.
+	static void loadFromMIF(const MIFFile &mif, Double3 &playerPosition, 
+		VoxelGrid &voxelGrid, EntityManager &entityManager, 
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,

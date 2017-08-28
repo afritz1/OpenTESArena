@@ -7,9 +7,11 @@
 #include "GameData.h"
 
 #include "../Assets/ExeStrings.h"
+#include "../Assets/MIFFile.h"
 #include "../Entities/Animation.h"
 #include "../Entities/CharacterClassParser.h"
 #include "../Entities/Doodad.h"
+#include "../Entities/Entity.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/GenderName.h"
 #include "../Entities/NonPlayer.h"
@@ -21,6 +23,7 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../World/ClimateName.h"
 #include "../World/LocationType.h"
@@ -43,6 +46,101 @@ GameData::GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&v
 GameData::~GameData()
 {
 	DebugMention("Closing.");
+}
+
+void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition, 
+	VoxelGrid &voxelGrid, EntityManager &entityManager, TextureManager &textureManager,
+	Renderer &renderer)
+{
+	// Arena's level origins start at the top-right corner of the map, so X increases 
+	// going to the left, and Z increases going down. The wilderness uses this same 
+	// pattern. Each chunk looks like this:
+	// +++++++ <- Origin (0, 0)
+	// +++++++
+	// +++++++
+	// +++++++
+	// ^
+	// |
+	// Max (mapWidth - 1, mapDepth - 1)
+
+	// Set player's location (position data in .MIF is still unknown).
+	//playerPosition = Double3(...);
+
+	// Clear all entities.
+	for (const auto *entity : entityManager.getAllEntities())
+	{
+		renderer.removeFlat(entity->getID());
+		entityManager.remove(entity->getID());
+	}
+
+	// Reset voxel grid dimensions and data.
+	voxelGrid = VoxelGrid(
+		mif.getWidth(), 
+		5, // Eventually determine height by MAP2 expansion (if it exists).
+		mif.getDepth());
+
+	// Empty voxel data (for air).
+	const int emptyID = voxelGrid.addVoxelData(VoxelData(0));
+
+	// Wall (placeholder).
+	const int wallID = voxelGrid.addVoxelData(VoxelData(1));
+
+	// Lambda for setting a voxel at some coordinate to some ID.
+	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
+	{
+		char *voxels = voxelGrid.getVoxels();
+		voxels[x + (y * voxelGrid.getWidth()) +
+			(z * voxelGrid.getWidth() * voxelGrid.getHeight())] = id;
+	};
+
+	// Load first level in .MIF file.
+	const MIFFile::Level &level = mif.getLevels().front();
+	const uint8_t *florData = level.flor.data();
+	const uint8_t *map1Data = level.map1.data();
+
+	// Indices for voxel data, stepping two bytes at a time.
+	int floorIndex = 0;
+	int map1Index = 0;
+
+	auto getNextFloorVoxel = [florData, &floorIndex]()
+	{
+		const uint16_t voxel = Bytes::getLE16(florData + floorIndex);
+		floorIndex += 2;
+		return voxel;
+	};
+
+	auto getNextMap1Voxel = [map1Data, &map1Index]()
+	{
+		const uint16_t voxel = Bytes::getLE16(map1Data + map1Index);
+		map1Index += 2;
+		return voxel;
+	};
+
+	// Write the .MIF file's voxel IDs into the voxel grid.
+	for (int x = (mif.getWidth() - 1); x >= 0; x--)
+	{
+		for (int z = (mif.getDepth() - 1); z >= 0; z--)
+		{
+			const int index = x + (z * mif.getWidth());
+			const uint16_t florVoxel = getNextFloorVoxel();
+			const uint16_t map1Voxel = getNextMap1Voxel();
+
+			if ((florVoxel & 0xFF00) != MIFFile::WET_CHASM)
+			{
+				setVoxel(x, 0, z, wallID);
+			}
+
+			if ((map1Voxel & 0x8000) == 0)
+			{
+				// A voxel of some kind.
+				const bool voxelIsEmpty = map1Voxel == 0;
+				if (!voxelIsEmpty)
+				{
+					setVoxel(x, 1, z, wallID);
+				}
+			}
+		}
+	}
 }
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
