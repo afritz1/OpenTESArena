@@ -66,9 +66,9 @@ public:
 	~MIFFile();
 
 	// Identifiers for various chasms in Arena's voxel data.
-	static const uint16_t DRY_CHASM;
-	static const uint16_t WET_CHASM;
-	static const uint16_t LAVA_CHASM;
+	static const uint8_t DRY_CHASM;
+	static const uint8_t WET_CHASM;
+	static const uint8_t LAVA_CHASM;
 
 	// Gets the dimensions of the map. They are constant for all levels in a map.
 	int getWidth() const;

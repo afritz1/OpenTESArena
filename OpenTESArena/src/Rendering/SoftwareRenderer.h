@@ -211,6 +211,11 @@ public:
 	// Removes a light. Causes an error if no ID matches.
 	void removeLight(int id);
 
+	// Removes all textures from the renderer. Useful when changing to a new map.
+	// (Individual textures can't be removed due to the simple array implementation
+	// and small API).
+	void removeAllTextures();
+
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);
 

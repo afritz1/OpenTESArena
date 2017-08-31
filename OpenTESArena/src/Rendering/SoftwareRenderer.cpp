@@ -192,6 +192,11 @@ void SoftwareRenderer::removeLight(int id)
 	DebugNotImplemented();
 }
 
+void SoftwareRenderer::removeAllTextures()
+{
+	this->textures.clear();
+}
+
 void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;

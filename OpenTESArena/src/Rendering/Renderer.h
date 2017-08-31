@@ -144,6 +144,7 @@ public:
 	void setSkyPalette(const uint32_t *colors, int count);
 	void removeFlat(int id);
 	void removeLight(int id);
+	void removeAllWorldTextures();
 
 	// Fills the desired frame buffer with the draw color, or default black/transparent.
 	void clearNative(const Color &color);

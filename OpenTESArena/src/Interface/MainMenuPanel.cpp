@@ -121,6 +121,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif("START.MIF");
+			//const MIFFile mif("39699021.MIF");
 
 			Double3 playerPosition = gameData->getPlayer().getPosition();
 			GameData::loadFromMIF(mif, playerPosition, gameData->getVoxelGrid(),
@@ -136,6 +137,14 @@ MainMenuPanel::MainMenuPanel(Game *game)
 				player.getPosition().x,
 				player.getPosition().y,
 				player.getPosition().z - 1.0));
+			/*player.teleport(Double3(
+				87.50,
+				playerPosition.y,
+				50.50));
+			player.lookAt(Double3(
+				player.getPosition().x - 1.0,
+				player.getPosition().y,
+				player.getPosition().z));*/
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));

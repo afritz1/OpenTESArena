@@ -40,9 +40,9 @@ namespace
 	};
 }
 
-const uint16_t MIFFile::DRY_CHASM = 0x0C00;
-const uint16_t MIFFile::WET_CHASM = 0x0D00;
-const uint16_t MIFFile::LAVA_CHASM = 0x0E00;
+const uint8_t MIFFile::DRY_CHASM = 0xC;
+const uint8_t MIFFile::WET_CHASM = 0xD;
+const uint8_t MIFFile::LAVA_CHASM = 0xE;
 
 MIFFile::MIFFile(const std::string &filename)
 {

@@ -472,6 +472,12 @@ void Renderer::removeLight(int id)
 	this->softwareRenderer->removeLight(id);
 }
 
+void Renderer::removeAllWorldTextures()
+{
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->removeAllTextures();
+}
+
 void Renderer::clearNative(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);

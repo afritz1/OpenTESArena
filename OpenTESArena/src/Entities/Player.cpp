@@ -217,12 +217,12 @@ void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
 
 	if (!xVoxel.isAir() && !isBridge(xVoxel))
 	{
-		this->velocity.x = 0.0;
+		//this->velocity.x = 0.0;
 	}
 
 	if (!zVoxel.isAir() && !isBridge(zVoxel))
 	{
-		this->velocity.z = 0.0;
+		//this->velocity.z = 0.0;
 	}
 	// -- end hack --
 

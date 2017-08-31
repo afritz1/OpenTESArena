@@ -73,6 +73,9 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 		entityManager.remove(entity->getID());
 	}
 
+	// Clear software renderer textures (so the .INF file indices are correct).
+	//renderer.removeAllWorldTextures(); // Uncomment once .INF files are in use.
+
 	// Reset voxel grid dimensions and data.
 	voxelGrid = VoxelGrid(
 		mif.getWidth(), 
@@ -81,9 +84,6 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 
 	// Empty voxel data (for air).
 	const int emptyID = voxelGrid.addVoxelData(VoxelData(0));
-
-	// Wall (placeholder).
-	const int wallID = voxelGrid.addVoxelData(VoxelData(1));
 
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
@@ -115,6 +115,9 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 		map1Index += 2;
 		return voxel;
 	};
+	
+	// Mappings of floor and wall IDs to voxel data indices.
+	std::unordered_map<uint16_t, int> floorDataMappings, wallDataMappings;
 
 	// Write the .MIF file's voxel IDs into the voxel grid.
 	for (int x = (mif.getWidth() - 1); x >= 0; x--)
@@ -125,19 +128,107 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 			const uint16_t florVoxel = getNextFloorVoxel();
 			const uint16_t map1Voxel = getNextMap1Voxel();
 
-			if ((florVoxel & 0xFF00) != MIFFile::WET_CHASM)
+			// The floor voxel has a texture if it's not a chasm.
+			const int floorTextureID = (florVoxel & 0xFF00) >> 8;
+			if ((floorTextureID != MIFFile::DRY_CHASM) && 
+				(floorTextureID != MIFFile::WET_CHASM) &&
+				(floorTextureID != MIFFile::LAVA_CHASM))
 			{
-				setVoxel(x, 0, z, wallID);
+				// Get the voxel data index associated with the floor value, or add it
+				// if it doesn't exist yet.
+				const int dataIndex = [&voxelGrid, &floorDataMappings, florVoxel, floorTextureID]()
+				{
+					const auto floorIter = floorDataMappings.find(florVoxel);
+					if (floorIter != floorDataMappings.end())
+					{
+						return floorIter->second;
+					}
+					else
+					{
+						// To do: Also assign some "seawall" texture for interiors and exteriors.
+						// Retrieve it beforehand from the *...CHASM members and assign here?
+						// Not sure how that works.
+						const int index = voxelGrid.addVoxelData(VoxelData(floorTextureID));
+						return floorDataMappings.insert(
+							std::make_pair(florVoxel, index)).first->second;
+					}
+				}();
+
+				setVoxel(x, 0, z, dataIndex);
 			}
 
 			if ((map1Voxel & 0x8000) == 0)
 			{
 				// A voxel of some kind.
 				const bool voxelIsEmpty = map1Voxel == 0;
+
 				if (!voxelIsEmpty)
 				{
-					setVoxel(x, 1, z, wallID);
+					const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
+					const uint8_t leastSigByte = map1Voxel & 0x007F;
+					const bool voxelIsSolid = mostSigByte == leastSigByte;
+
+					if (voxelIsSolid)
+					{
+						// Regular 1x1x1 wall.
+						const int wallTextureID = mostSigByte;
+
+						// Get the voxel data index associated with the wall value, or add it
+						// if it doesn't exist yet.
+						const int dataIndex = [&voxelGrid, &wallDataMappings, map1Voxel, wallTextureID]()
+						{
+							const auto wallIter = wallDataMappings.find(map1Voxel);
+							if (wallIter != wallDataMappings.end())
+							{
+								return wallIter->second;
+							}
+							else
+							{
+								// To do: Also assign Y size from *CEILING in .INF if the main 
+								// floor's height is different.
+								const int index = voxelGrid.addVoxelData(VoxelData(wallTextureID));
+								return wallDataMappings.insert(
+									std::make_pair(map1Voxel, index)).first->second;
+							}
+						}();
+
+						setVoxel(x, 1, z, dataIndex);
+					}
+					else
+					{
+						// Raised platform. The height appears to be some fraction of 64,
+						// and when it's greater than 64, then that determines the offset?
+						const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4; // To do: get BOXCAP Y texture.
+						const uint8_t wallTextureID = map1Voxel & 0x000F; // To do: get BOXSIDE Z texture.
+						const double platformHeight = static_cast<double>(mostSigByte) / 64.0;
+
+						// Get the voxel data index associated with the wall value, or add it
+						// if it doesn't exist yet.
+						const int dataIndex = [&voxelGrid, &wallDataMappings, map1Voxel,
+							capTextureID, wallTextureID, platformHeight]()
+						{
+							const auto wallIter = wallDataMappings.find(map1Voxel);
+							if (wallIter != wallDataMappings.end())
+							{
+								return wallIter->second;
+							}
+							else
+							{
+								const int index = voxelGrid.addVoxelData(VoxelData(
+									wallTextureID, capTextureID, capTextureID, 
+									0.0, platformHeight, 1.0 - platformHeight, 1.0));
+								return wallDataMappings.insert(
+									std::make_pair(map1Voxel, index)).first->second;
+							}
+						}();
+
+						setVoxel(x, 1, z, dataIndex);
+					}
 				}
+			}
+			else
+			{
+				// An object of some kind.
 			}
 		}
 	}
