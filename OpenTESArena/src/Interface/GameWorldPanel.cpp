@@ -663,8 +663,14 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		if (turning)
 		{
 			const Int2 dimensions = this->getGame()->getRenderer().getWindowDimensions();
-			double dxx = static_cast<double>(dx) / static_cast<double>(dimensions.x);
-			double dyy = static_cast<double>(dy) / static_cast<double>(dimensions.y);
+
+			// Get the smaller of the two dimensions, so the look sensitivity is relative 
+			// to a square instead of a rectangle. This keeps the camera look independent 
+			// of the aspect ratio.
+			const int minDimension = std::min(dimensions.x, dimensions.y);
+
+			double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
+			double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
 
 			// Pitch and/or yaw the camera.
 			const auto &options = this->getGame()->getOptions();
@@ -918,29 +924,40 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 
 void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 {
+	// To do: run this method at fixed time-steps instead of every frame, because if, 
+	// for example, the game is running at 200 fps, then the player has to move their 
+	// cursor much faster for it to count as a swing. The GameWorldPanel would probably 
+	// need to save its own "swing" mouse delta independently of the input manager, or
+	// maybe the game loop could call a "Panel::fixedTick()" method.
+
 	// Only handle attacking if the player's weapon is currently idle.
 	auto &weaponAnimation = this->getGame()->getGameData().getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
-		// Relative mouse state isn't called because it only works once per frame, and it's
-		// used in multiple places.
-		const int dx = mouseDelta.x;
-		const int dy = mouseDelta.y;
+		const Int2 dimensions = this->getGame()->getRenderer().getWindowDimensions();
+
+		// Get the smaller of the two dimensions, so the percentage change in mouse position 
+		// is relative to a square instead of a rectangle.
+		const int minDimension = std::min(dimensions.x, dimensions.y);
+
+		// Percentages that the mouse moved across the screen.
+		const double dxx = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
+		const double dyy = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
+
 		const auto &inputManager = this->getGame()->getInputManager();
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		// If the mouse moves fast enough, it's considered an attack.
-		// - To do: normalize dx and dy so they're percentages. This way it works the same
-		//   for all resolutions.
-		const double mouseDistance = std::sqrt((dx * dx) + (dy * dy));
-		const bool isAttack = rightClick && (mouseDistance > 40.0);
+		// If the mouse moves fast enough, it's considered an attack. The distances
+		// are in percentages of screen dimensions.
+		const double requiredDistance = 0.080;
+		const double mouseDistance = std::sqrt((dxx * dxx) + (dyy * dyy));
+		const bool isAttack = rightClick && (mouseDistance >= requiredDistance);
 
 		if (isAttack)
 		{
 			// Convert the change in mouse coordinates to a vector. Reverse the change in
 			// y so that positive values are up.
-			const Double2 mouseDirection =
-				Double2(static_cast<double>(dx), static_cast<double>(-dy)).normalized();
+			const Double2 mouseDirection = Double2(dxx, -dyy).normalized();
 
 			// Calculate the direction the mouse moved in (let's use cardinal directions
 			// for convenience. Up means north (positive Y), right means east (positive X).
