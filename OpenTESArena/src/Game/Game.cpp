@@ -1,7 +1,9 @@
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <string>
+#include <thread>
 
 #include "SDL.h"
 
@@ -377,32 +379,34 @@ void Game::render()
 
 void Game::loop()
 {
-	// Longest allowed frame time.
-	const int maximumMS = 1000 / Options::MIN_FPS;
+	// Longest allowed frame time in microseconds.
+	const std::chrono::duration<int64_t, std::micro> maximumMS(1000000 / Options::MIN_FPS);
 
-	int thisTime = SDL_GetTicks();
+	auto thisTime = std::chrono::high_resolution_clock::now();
 
 	// Primary game loop.
 	bool running = true;
 	while (running)
 	{
-		const int lastTime = thisTime;
-		thisTime = SDL_GetTicks();
+		const auto lastTime = thisTime;
+		thisTime = std::chrono::high_resolution_clock::now();
 
-		// Fastest allowed frame time in milliseconds.
-		const int minimumMS = 1000 / this->options->getTargetFPS();
+		// Fastest allowed frame time in microseconds.
+		const std::chrono::duration<int64_t, std::micro> minimumMS(
+			1000000 / this->options->getTargetFPS());
 
 		// Delay the current frame if the previous one was too fast.
-		int frameTime = thisTime - lastTime;
+		auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);
 		if (frameTime < minimumMS)
 		{
-			SDL_Delay(static_cast<uint32_t>(minimumMS - frameTime));
-			thisTime = SDL_GetTicks();
-			frameTime = thisTime - lastTime;
+			const auto sleepTime = minimumMS - frameTime;
+			std::this_thread::sleep_for(sleepTime);
+			thisTime = std::chrono::high_resolution_clock::now();
+			frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);
 		}
 
 		// Clamp the delta time to at most the maximum frame time.
-		const double dt = std::fmin(frameTime, maximumMS) / 1000.0;
+		const double dt = std::fmin(frameTime.count(), maximumMS.count()) / 1000000.0;
 
 		// Update the input manager's state.
 		this->inputManager.update();
