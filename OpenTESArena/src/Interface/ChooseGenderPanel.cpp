@@ -40,7 +40,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGender),
+			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGender),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
@@ -55,7 +55,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGenderMale),
+			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderMale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
@@ -70,7 +70,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeSegment(ExeStrings::ChooseGenderFemale),
+			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderFemale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,

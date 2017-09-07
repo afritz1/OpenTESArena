@@ -90,9 +90,8 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 
 		const std::string text = [game, &charClass, &name]()
 		{
-			std::string segment = game->getTextAssets().getAExeSegment(
-				ExeStrings::ChooseRace);
-
+			std::string segment = game->getTextAssets().getAExeStrings().get(
+				ExeStringKey::ChooseRace);
 			segment = String::replace(segment, '\r', '\n');
 
 			// Replace first "%s" with player name.
@@ -189,8 +188,8 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
 	assert(provinceID != (ProvinceClickAreas.size() - 1));
-	const std::string &raceName = this->getGame()->getTextAssets().getAExeSegment(
-		ExeStrings::RaceNamesPlural.at(provinceID));
+	const std::string &raceName = this->getGame()->getTextAssets().getAExeStrings().getList(
+		ExeStringKey::RaceNamesPlural).at(provinceID);
 	
 	const Texture tooltip(Panel::createTooltip(
 		"Land of the " + raceName, FontName::D, this->getGame()->getFontManager(), renderer));

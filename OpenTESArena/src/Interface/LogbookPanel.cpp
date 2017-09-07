@@ -35,7 +35,7 @@ LogbookPanel::LogbookPanel(Game *game)
 			Renderer::ORIGINAL_HEIGHT / 2);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeSegment(ExeStrings::LogbookIsEmpty),
+			game->getTextAssets().getAExeStrings().get(ExeStringKey::LogbookIsEmpty),
 			FontName::A,
 			Color(255, 207, 12),
 			TextAlignment::Center,

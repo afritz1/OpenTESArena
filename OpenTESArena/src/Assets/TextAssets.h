@@ -1,6 +1,7 @@
 #ifndef TEXT_ASSETS_H
 #define TEXT_ASSETS_H
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,25 +13,15 @@
 // All relevant text files (TEMPLATE.DAT, QUESTION.TXT, etc.) should be read in 
 // when this object is created.
 
-namespace std
-{
-	// Hash function for std::pair<int, int>.
-	template <>
-	struct hash<std::pair<int, int>>
-	{
-		size_t operator()(const std::pair<int, int> &p) const
-		{
-			// Multiplied "second" by a prime number to make it a tiny bit stronger.
-			return static_cast<size_t>(p.first ^ (p.second * 149));
-		}
-	};
-}
+class ExeStrings;
 
 class TextAssets
 {
 private:
+	static const std::string AExeKeyValuesMapPath;
+
 	std::string aExe;
-	std::unordered_map<std::pair<int, int>, std::string> aExeSegments;
+	std::unique_ptr<ExeStrings> aExeStrings;
 	std::unordered_map<std::string, std::string> templateDat;
 	std::vector<CharacterQuestion> questionTxt;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
@@ -47,9 +38,8 @@ public:
 	TextAssets();
 	~TextAssets();
 
-	// Gets a chunk of A.EXE as a string. Offset and size should be obtained from
-	// the Exe strings header file.
-	const std::string &getAExeSegment(const std::pair<int, int> &offsetAndSize);
+	// Gets the ExeStrings object for obtaining floppy disk executable strings with.
+	const ExeStrings &getAExeStrings() const;
 
 	// Finds the text in TEMPLATE.DAT given a key (i.e., "#0000a").
 	const std::string &getTemplateDatText(const std::string &key);

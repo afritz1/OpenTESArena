@@ -5,7 +5,7 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Utilities/Debug.h"
-#include "../Utilities/KvpTextMap.h"
+#include "../Utilities/KeyValueMap.h"
 
 // The path to the options folder is platform-dependent (see SDL_GetPrefPath).
 const std::string OptionsParser::FILENAME = "options.txt";
@@ -34,7 +34,7 @@ std::unique_ptr<Options> OptionsParser::parse(const std::string &filename)
 	DebugMention("Reading \"" + filename + "\".");
 
 	// Read in all the key-value pairs from the options file.
-	KvpTextMap textMap(filename);
+	KeyValueMap textMap(filename);
 	
 	// Graphics.
 	int screenWidth = textMap.getInteger(OptionsParser::SCREEN_WIDTH_KEY);
@@ -74,9 +74,9 @@ void OptionsParser::save(const Options &options)
 {
 	// not done! 
 	
-	// Maybe make a "KvpTextMap::save(std::map, filename)" method?
+	// Maybe make a "KeyValueMap::save(std::map, filename)" method?
 	// What about custom comments per line? std::vector<std::string> would be better,
-	// but that doesn't require KvpTextMap functionality then. There could be default
+	// but that doesn't require KeyValueMap functionality then. There could be default
 	// comments, like "# Graphics", etc..
 
 	// Maybe it could just replace existing key values. No need for new comments.

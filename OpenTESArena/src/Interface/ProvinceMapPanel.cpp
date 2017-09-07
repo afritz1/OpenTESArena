@@ -229,8 +229,8 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Get the filename of the province map.
 	const std::string backgroundFilename = [this]()
 	{
-		const std::string &filename = this->getGame()->getTextAssets().getAExeSegment(
-			ExeStrings::ProvinceIMGFilenames.at(this->provinceID));
+		const std::string &filename = this->getGame()->getTextAssets().getAExeStrings().getList(
+			ExeStringKey::ProvinceIMGFilenames).at(this->provinceID);
 
 		// Set all characters to uppercase because the texture manager expects 
 		// extensions to be uppercase, and most filenames in A.EXE are lowercase.

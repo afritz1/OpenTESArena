@@ -778,14 +778,13 @@ std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureMa
 	Random random;
 	const std::string playerName = "Player";
 	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
-	const int raceID = random.next() %
-		static_cast<int>(ExeStrings::RaceNamesSingular.size());
+	const int raceID = random.next(8);
 
 	const auto charClasses = CharacterClassParser::parse();
 	const CharacterClass &charClass = charClasses.at(
 		random.next() % static_cast<int>(charClasses.size()));
 
-	const int portraitID = random.next() % 10;
+	const int portraitID = random.next(10);
 
 	return GameData::createDefault(playerName, gender, raceID, charClass,
 		portraitID, textureManager, renderer);

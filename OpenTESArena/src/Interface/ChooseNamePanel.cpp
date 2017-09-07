@@ -42,7 +42,7 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 		const int x = 26;
 		const int y = 82;
 
-		std::string text = game->getTextAssets().getAExeSegment(ExeStrings::ChooseName);
+		std::string text = game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseName);
 		text = String::replace(text, "%s", charClass.getDisplayName());
 
 		const RichTextString richText(

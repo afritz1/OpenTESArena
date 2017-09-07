@@ -57,7 +57,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 		const int y = 32;
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeSegment(ExeStrings::ChooseClassList),
+			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
 			FontName::C,
 			Color(211, 211, 211),
 			TextAlignment::Left,

@@ -217,18 +217,18 @@ GameWorldPanel::GameWorldPanel(Game *game)
 						return 0;
 					}();
 
-					const std::string timeOfDayString = game->getTextAssets().getAExeSegment(
-						ExeStrings::TimeOfDayStrings.at(timeOfDayIndex));
+					const std::string &timeOfDayString = game->getTextAssets().getAExeStrings()
+						.getList(ExeStringKey::TimesOfDay).at(timeOfDayIndex);
 
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
 				const auto &date = game->getGameData().getDate();
-				const std::string weekdayString = game->getTextAssets().getAExeSegment(
-					ExeStrings::WeekdayNames.at(date.getWeekday()));
+				const std::string &weekdayString = game->getTextAssets().getAExeStrings().getList(
+					ExeStringKey::WeekdayNames).at(date.getWeekday());
 				const std::string dayString = date.getOrdinalDay();
-				const std::string monthString = game->getTextAssets().getAExeSegment(
-					ExeStrings::MonthNames.at(date.getMonth()));
+				const std::string &monthString = game->getTextAssets().getAExeStrings().getList(
+					ExeStringKey::MonthNames).at(date.getMonth());
 				const std::string yearString = std::to_string(date.getEra()) + "E " +
 					std::to_string(date.getYear());
 

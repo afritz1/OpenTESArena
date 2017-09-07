@@ -62,8 +62,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		const int x = 10;
 		const int y = 17;
 
-		const std::string &text = game->getTextAssets().getAExeSegment(
-			ExeStrings::RaceNamesSingular.at(raceID));
+		const std::string &text = game->getTextAssets().getAExeStrings().getList(
+			ExeStringKey::RaceNamesSingular).at(raceID);
 
 		const RichTextString richText(
 			text,
@@ -218,9 +218,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 
 		const std::string text = [game]()
 		{
-			std::string segment = game->getTextAssets().getAExeSegment(
-				ExeStrings::DistributeClassPoints);
-
+			std::string segment = game->getTextAssets().getAExeStrings().get(
+				ExeStringKey::DistributeClassPoints);
 			segment = String::replace(segment, '\r', '\n');
 
 			return segment;

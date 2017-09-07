@@ -4,18 +4,26 @@
 
 #include "TextAssets.h"
 
+#include "ExeStrings.h"
 #include "ExeUnpacker.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
 
+const std::string TextAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
+
 TextAssets::TextAssets()
 {
 	// Decompress A.EXE and place it in a string for later use.
-	ExeUnpacker exe("A.EXE");
-	this->aExe = exe.getText();
+	const ExeUnpacker floppyExe("A.EXE");
+	this->aExe = floppyExe.getText();
+
+	// Generate a map of interesting strings from the text of A.EXE.
+	this->aExeStrings = std::unique_ptr<ExeStrings>(new ExeStrings(
+		this->aExe, Platform::getBasePath() + TextAssets::AExeKeyValuesMapPath));
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
 	this->parseTemplateDat();
@@ -282,23 +290,9 @@ void TextAssets::parseDungeonTxt()
 	}
 }
 
-const std::string &TextAssets::getAExeSegment(const std::pair<int, int> &offsetAndSize)
+const ExeStrings &TextAssets::getAExeStrings() const
 {
-	// Check if the segment has been loaded.
-	auto segmentIter = this->aExeSegments.find(offsetAndSize);
-
-	if (segmentIter != this->aExeSegments.end())
-	{
-		return segmentIter->second;
-	}
-	else
-	{
-		// Load the segment and return it.
-		std::string segment = this->aExe.substr(offsetAndSize.first, offsetAndSize.second);
-		segmentIter = this->aExeSegments.insert(std::make_pair(
-			offsetAndSize, std::move(segment))).first;
-		return segmentIter->second;
-	}
+	return *this->aExeStrings.get();
 }
 
 const std::string &TextAssets::getTemplateDatText(const std::string &key)

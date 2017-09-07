@@ -6,11 +6,11 @@ std::vector<std::string> String::split(const std::string &str, char separator)
 {
 	std::vector<std::string> strings;
 
-	// Add an empty string to start off. If the given line is empty, then a
+	// Add an empty string to start off. If the given string is empty, then a
 	// vector with one empty string is returned.
 	strings.push_back(std::string());
 
-	for (const auto c : str)
+	for (const char c : str)
 	{
 		if (c == separator)
 		{
@@ -19,7 +19,7 @@ std::vector<std::string> String::split(const std::string &str, char separator)
 		}
 		else
 		{
-			// Put the character on the current string.
+			// Put the character on the end of the current string.
 			strings.at(strings.size() - 1).push_back(c);
 		}
 	}

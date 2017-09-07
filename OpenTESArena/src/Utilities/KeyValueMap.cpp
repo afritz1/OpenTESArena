@@ -1,7 +1,7 @@
 #include <sstream>
 #include <vector>
 
-#include "KvpTextMap.h"
+#include "KeyValueMap.h"
 
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
@@ -9,7 +9,7 @@
 
 namespace
 {
-	const std::unordered_map<std::string, bool> KvpTextMapBooleans =
+	const std::unordered_map<std::string, bool> KeyValueMapBooleans =
 	{
 		{ "True", true },
 		{ "true", true },
@@ -18,9 +18,9 @@ namespace
 	};
 }
 
-const char KvpTextMap::COMMENT = '#';
+const char KeyValueMap::COMMENT = '#';
 
-KvpTextMap::KvpTextMap(const std::string &filename)
+KeyValueMap::KeyValueMap(const std::string &filename)
 	: filename(filename)
 {
 	std::string text = File::readAllText(filename);
@@ -35,7 +35,7 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 			continue;
 
 		const char firstChar = line.at(0);
-		if ((firstChar == KvpTextMap::COMMENT) ||
+		if ((firstChar == KeyValueMap::COMMENT) ||
 			(firstChar == '\r'))
 		{
 			continue;
@@ -55,12 +55,12 @@ KvpTextMap::KvpTextMap(const std::string &filename)
 	}
 }
 
-KvpTextMap::~KvpTextMap()
+KeyValueMap::~KeyValueMap()
 {
 
 }
 
-const std::string &KvpTextMap::getValue(const std::string &key) const
+const std::string &KeyValueMap::getValue(const std::string &key) const
 {
 	const auto pairIter = this->pairs.find(key);
 	DebugAssert(pairIter != this->pairs.end(), "Key \"" + key + 
@@ -69,29 +69,29 @@ const std::string &KvpTextMap::getValue(const std::string &key) const
 	return pairIter->second;
 }
 
-bool KvpTextMap::getBoolean(const std::string &key) const
+bool KeyValueMap::getBoolean(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
-	const auto boolIter = KvpTextMapBooleans.find(value);
-	DebugAssert(boolIter != KvpTextMapBooleans.end(), "\"" + value + "\" for \"" + 
+	const auto boolIter = KeyValueMapBooleans.find(value);
+	DebugAssert(boolIter != KeyValueMapBooleans.end(), "\"" + value + "\" for \"" + 
 		key + "\" in " + this->filename + " must be either true or false.");
 
 	return boolIter->second;
 }
 
-int KvpTextMap::getInteger(const std::string &key) const
+int KeyValueMap::getInteger(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	return std::stoi(value);
 }
 
-double KvpTextMap::getDouble(const std::string &key) const
+double KeyValueMap::getDouble(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	return std::stod(value);
 }
 
-const std::string &KvpTextMap::getString(const std::string &key) const
+const std::string &KeyValueMap::getString(const std::string &key) const
 {
 	const std::string &value = this->getValue(key);
 	return value;

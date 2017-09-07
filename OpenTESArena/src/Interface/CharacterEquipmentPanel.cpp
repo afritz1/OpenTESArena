@@ -53,8 +53,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		const int y = 17;
 
 		const auto &player = game->getGameData().getPlayer();
-		const std::string &text = game->getTextAssets().getAExeSegment(
-			ExeStrings::RaceNamesSingular.at(player.getRaceID()));
+		const std::string &text = game->getTextAssets().getAExeStrings().getList(
+			ExeStringKey::RaceNamesSingular).at(player.getRaceID());
 
 		const RichTextString richText(
 			text,
