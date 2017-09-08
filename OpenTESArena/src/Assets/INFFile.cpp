@@ -1,4 +1,6 @@
 #include <array>
+#include <sstream>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "INFFile.h"
@@ -59,18 +61,88 @@ INFFile::INFFile(const std::string &filename)
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
-	this->text = std::string(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	std::string text(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Remove carriage returns (newlines are nicer to work with).
-	this->text = String::replace(this->text, "\r", "");
+	text = String::replace(text, "\r", "");
+
+	// The parse mode indicates which '@' section is currently being parsed.
+	enum class ParseMode
+	{
+		Floors, Walls, Flats, Sound, Text
+	};
+
+	std::stringstream ss(text);
+	std::string line;
+	ParseMode mode = ParseMode::Floors;
+
+	while (std::getline(ss, line))
+	{
+		// Skip empty lines.
+		if (line.size() == 0)
+		{
+			continue;
+		}
+
+		const char SECTION_SEPARATOR = '@';
+
+		// Check for a change of mode.
+		if (line.front() == SECTION_SEPARATOR)
+		{
+			const std::unordered_map<std::string, ParseMode> Sections =
+			{
+				{ "@FLOORS", ParseMode::Floors },
+				{ "@WALLS", ParseMode::Walls },
+				{ "@FLATS", ParseMode::Flats },
+				{ "@SOUND", ParseMode::Sound },
+				{ "@TEXT", ParseMode::Text }
+			};
+
+			// Separate the '@' token from other things in the line (like @FLATS NOSHOW).
+			line = String::split(line).front();
+
+			// See which token the section is.
+			const auto sectionIter = Sections.find(line);
+			if (sectionIter != Sections.end())
+			{
+				mode = sectionIter->second;
+				DebugMention("Changed to " + line + " mode.");
+			}
+			else
+			{
+				DebugCrash("Unrecognized .INF section \"" + line + "\".");
+			}
+
+			continue;
+		}
+
+		DebugMention(line);
+
+		// Parse the line depending on the current mode.
+		/*if (mode == ParseMode::Floors)
+		{
+
+		}
+		else if (mode == ParseMode::Walls)
+		{
+
+		}
+		else if (mode == ParseMode::Flats)
+		{
+
+		}
+		else if (mode == ParseMode::Sound)
+		{
+
+		}
+		else if (mode == ParseMode::Text)
+		{
+
+		}*/
+	}
 }
 
 INFFile::~INFFile()
 {
 
-}
-
-const std::string &INFFile::getText() const
-{
-	return this->text;
 }

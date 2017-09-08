@@ -10,13 +10,12 @@
 class INFFile
 {
 private:
-	std::string text;
+	
 public:
 	INFFile(const std::string &filename);
 	~INFFile();
 
-	// Gets the .INF file text.
-	const std::string &getText() const;
+	
 };
 
 #endif
