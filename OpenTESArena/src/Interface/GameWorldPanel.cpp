@@ -1006,6 +1006,13 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	}	
 }
 
+void GameWorldPanel::handleTriggers(const Int2 &voxel)
+{
+	// To do: sound triggers and text triggers, stored in GameData.
+	DebugMention("Entered voxel [" + std::to_string(voxel.x) + ", " + 
+		std::to_string(voxel.y) + "].");
+}
+
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
@@ -1115,7 +1122,17 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
+	const Int3 oldPlayerVoxel = player.getVoxelPosition();
 	player.tick(game, dt);
+	const Int3 newPlayerVoxel = player.getVoxelPosition();
+
+	// See if the player changed voxels in the XZ plane, and trigger text and sound 
+	// events if so.
+	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
+		(newPlayerVoxel.z != oldPlayerVoxel.z))
+	{
+		this->handleTriggers(Int2(newPlayerVoxel.x, newPlayerVoxel.z));
+	}
 
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);

@@ -45,6 +45,10 @@ private:
 	// the previous frame.
 	void handlePlayerAttack(const Int2 &mouseDelta);
 
+	// Sends an "on voxel enter" message for the given voxel and triggers any text or
+	// sound events.
+	void handleTriggers(const Int2 &voxel);
+
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
 

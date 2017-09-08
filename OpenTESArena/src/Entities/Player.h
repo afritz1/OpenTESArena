@@ -34,9 +34,6 @@ private:
 	WeaponAnimation weaponAnimation;
 	// Other stats...
 
-	// Gets the voxel coordinates of the player.
-	Int3 getVoxelPosition() const;
-
 	// Gets the Y position of the player's feet.
 	double getFeetY() const;
 
@@ -71,6 +68,9 @@ public:
 
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
+
+	// Gets the voxel coordinates of the player.
+	Int3 getVoxelPosition() const;
 
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();

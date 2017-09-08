@@ -93,17 +93,17 @@ double Player::getJumpMagnitude() const
 	return Player::JUMP_VELOCITY;
 }
 
-WeaponAnimation &Player::getWeaponAnimation()
-{
-	return this->weaponAnimation;
-}
-
 Int3 Player::getVoxelPosition() const
 {
 	return Int3(
 		static_cast<int>(std::floor(this->camera.position.x)),
 		static_cast<int>(std::floor(this->camera.position.y)),
 		static_cast<int>(std::floor(this->camera.position.z)));
+}
+
+WeaponAnimation &Player::getWeaponAnimation()
+{
+	return this->weaponAnimation;
 }
 
 double Player::getFeetY() const
