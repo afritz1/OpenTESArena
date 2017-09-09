@@ -30,7 +30,7 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
 	this->zBuffer = std::vector<double>(pixelCount);
-	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
+	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
 
 	this->width = width;
 	this->height = height;
@@ -201,7 +201,7 @@ void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;
 	this->zBuffer.resize(pixelCount);
-	std::fill(this->zBuffer.begin(), this->zBuffer.end(), 0);
+	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
 
 	this->width = width;
 	this->height = height;
