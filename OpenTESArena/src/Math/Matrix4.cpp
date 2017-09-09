@@ -8,49 +8,49 @@ template <typename T>
 Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
 	const Vector4f<T> &w)
 {
-	this->x[0] = x.x;
-	this->x[1] = x.y;
-	this->x[2] = x.z;
-	this->x[3] = x.w;
+	this->x.x = x.x;
+	this->x.y = x.y;
+	this->x.z = x.z;
+	this->x.w = x.w;
 
-	this->y[0] = y.x;
-	this->y[1] = y.y;
-	this->y[2] = y.z;
-	this->y[3] = y.w;
+	this->y.x = y.x;
+	this->y.y = y.y;
+	this->y.z = y.z;
+	this->y.w = y.w;
 
-	this->z[0] = z.x;
-	this->z[1] = z.y;
-	this->z[2] = z.z;
-	this->z[3] = z.w;
+	this->z.x = z.x;
+	this->z.y = z.y;
+	this->z.z = z.z;
+	this->z.w = z.w;
 
-	this->w[0] = w.x;
-	this->w[1] = w.y;
-	this->w[2] = w.z;
-	this->w[3] = w.w;
+	this->w.x = w.x;
+	this->w.y = w.y;
+	this->w.z = w.z;
+	this->w.w = w.w;
 }
 
 template <typename T>
 Matrix4<T>::Matrix4()
 {
-	this->x[0] = static_cast<T>(0.0);
-	this->x[1] = static_cast<T>(0.0);
-	this->x[2] = static_cast<T>(0.0);
-	this->x[3] = static_cast<T>(0.0);
+	this->x.x = static_cast<T>(0.0);
+	this->x.y = static_cast<T>(0.0);
+	this->x.z = static_cast<T>(0.0);
+	this->x.w = static_cast<T>(0.0);
 
-	this->y[0] = static_cast<T>(0.0);
-	this->y[1] = static_cast<T>(0.0);
-	this->y[2] = static_cast<T>(0.0);
-	this->y[3] = static_cast<T>(0.0);
+	this->y.x = static_cast<T>(0.0);
+	this->y.y = static_cast<T>(0.0);
+	this->y.z = static_cast<T>(0.0);
+	this->y.w = static_cast<T>(0.0);
 
-	this->z[0] = static_cast<T>(0.0);
-	this->z[1] = static_cast<T>(0.0);
-	this->z[2] = static_cast<T>(0.0);
-	this->z[3] = static_cast<T>(0.0);
+	this->z.x = static_cast<T>(0.0);
+	this->z.y = static_cast<T>(0.0);
+	this->z.z = static_cast<T>(0.0);
+	this->z.w = static_cast<T>(0.0);
 
-	this->w[0] = static_cast<T>(0.0);
-	this->w[1] = static_cast<T>(0.0);
-	this->w[2] = static_cast<T>(0.0);
-	this->w[3] = static_cast<T>(0.0);
+	this->w.x = static_cast<T>(0.0);
+	this->w.y = static_cast<T>(0.0);
+	this->w.z = static_cast<T>(0.0);
+	this->w.w = static_cast<T>(0.0);
 }
 
 template <typename T>
@@ -63,10 +63,10 @@ template <typename T>
 Matrix4<T> Matrix4<T>::identity()
 {
 	Matrix4<T> m;
-	m.x[0] = static_cast<T>(1.0);
-	m.y[1] = static_cast<T>(1.0);
-	m.z[2] = static_cast<T>(1.0);
-	m.w[3] = static_cast<T>(1.0);
+	m.x.x = static_cast<T>(1.0);
+	m.y.y = static_cast<T>(1.0);
+	m.z.z = static_cast<T>(1.0);
+	m.w.w = static_cast<T>(1.0);
 	return m;
 }
 
@@ -74,9 +74,9 @@ template <typename T>
 Matrix4<T> Matrix4<T>::translation(T x, T y, T z)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
-	m.w[0] = x;
-	m.w[1] = y;
-	m.w[2] = z;
+	m.w.x = x;
+	m.w.y = y;
+	m.w.z = z;
 	return m;
 }
 
@@ -84,9 +84,9 @@ template <typename T>
 Matrix4<T> Matrix4<T>::scale(T x, T y, T z)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
-	m.x[0] = x;
-	m.y[1] = y;
-	m.z[2] = z;
+	m.x.x = x;
+	m.y.y = y;
+	m.z.z = z;
 	return m;
 }
 
@@ -96,10 +96,10 @@ Matrix4<T> Matrix4<T>::xRotation(T radians)
 	Matrix4<T> m = Matrix4<T>::identity();
 	T sAngle = static_cast<T>(std::sin(radians));
 	T cAngle = static_cast<T>(std::cos(radians));
-	m.y[1] = cAngle;
-	m.y[2] = sAngle;
-	m.z[1] = -sAngle;
-	m.z[2] = cAngle;
+	m.y.y = cAngle;
+	m.y.z = sAngle;
+	m.z.y = -sAngle;
+	m.z.z = cAngle;
 	return m;
 }
 
@@ -109,10 +109,10 @@ Matrix4<T> Matrix4<T>::yRotation(T radians)
 	Matrix4<T> m = Matrix4<T>::identity();
 	T sAngle = static_cast<T>(std::sin(radians));
 	T cAngle = static_cast<T>(std::cos(radians));
-	m.x[0] = cAngle;
-	m.x[2] = sAngle;
-	m.z[0] = -sAngle;
-	m.z[2] = cAngle;
+	m.x.x = cAngle;
+	m.x.z = sAngle;
+	m.z.x = -sAngle;
+	m.z.z = cAngle;
 	return m;
 }
 
@@ -122,10 +122,10 @@ Matrix4<T> Matrix4<T>::zRotation(T radians)
 	Matrix4<T> m = Matrix4<T>::identity();
 	T sAngle = static_cast<T>(std::sin(radians));
 	T cAngle = static_cast<T>(std::cos(radians));
-	m.x[0] = cAngle;
-	m.x[1] = sAngle;
-	m.y[0] = -sAngle;
-	m.y[1] = cAngle;
+	m.x.x = cAngle;
+	m.x.y = sAngle;
+	m.y.x = -sAngle;
+	m.y.y = cAngle;
 	return m;
 }
 
@@ -134,15 +134,15 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	const Vector3f<T> &right, const Vector3f<T> &up)
 {
 	Matrix4<T> rotation = Matrix4<T>::identity();
-	rotation.x[0] = right.x;
-	rotation.y[0] = right.y;
-	rotation.z[0] = right.z;
-	rotation.x[1] = up.x;
-	rotation.y[1] = up.y;
-	rotation.z[1] = up.z;
-	rotation.x[2] = -forward.x;
-	rotation.y[2] = -forward.y;
-	rotation.z[2] = -forward.z;
+	rotation.x.x = right.x;
+	rotation.y.x = right.y;
+	rotation.z.x = right.z;
+	rotation.x.y = up.x;
+	rotation.y.y = up.y;
+	rotation.z.y = up.z;
+	rotation.x.z = -forward.x;
+	rotation.y.z = -forward.y;
+	rotation.z.z = -forward.z;
 
 	Matrix4<T> transpose = Matrix4<T>::translation(-eye.x, -eye.y, -eye.z);
 
@@ -153,12 +153,12 @@ template <typename T>
 Matrix4<T> Matrix4<T>::projection(T near, T far, T width, T height)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
-	m.x[0] = (static_cast<T>(2.0) * near) / width;
-	m.y[1] = (static_cast<T>(2.0) * near) / height;
-	m.z[2] = -(far + near) / (far - near);
-	m.z[3] = static_cast<T>(-1.0);
-	m.w[2] = ((static_cast<T>(-2.0) * far) * near) / (far - near);
-	m.w[3] = static_cast<T>(0.0);
+	m.x.x = (static_cast<T>(2.0) * near) / width;
+	m.y.y = (static_cast<T>(2.0) * near) / height;
+	m.z.z = -(far + near) / (far - near);
+	m.z.w = static_cast<T>(-1.0);
+	m.w.z = ((static_cast<T>(-2.0) * far) * near) / (far - near);
+	m.w.w = static_cast<T>(0.0);
 	return m;
 }
 
@@ -177,92 +177,92 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 	Matrix4<T> p;
 
 	// Column X.
-	p.x[0] =
-		(this->x[0] * m.x[0]) +
-		(this->y[0] * m.x[1]) +
-		(this->z[0] * m.x[2]) +
-		(this->w[0] * m.x[3]);
-	p.x[1] =
-		(this->x[1] * m.x[0]) +
-		(this->y[1] * m.x[1]) +
-		(this->z[1] * m.x[2]) +
-		(this->w[1] * m.x[3]);
-	p.x[2] =
-		(this->x[2] * m.x[0]) +
-		(this->y[2] * m.x[1]) +
-		(this->z[2] * m.x[2]) +
-		(this->w[2] * m.x[3]);
-	p.x[3] =
-		(this->x[3] * m.x[0]) +
-		(this->y[3] * m.x[1]) +
-		(this->z[3] * m.x[2]) +
-		(this->w[3] * m.x[3]);
+	p.x.x =
+		(this->x.x * m.x.x) +
+		(this->y.x * m.x.y) +
+		(this->z.x * m.x.z) +
+		(this->w.x * m.x.w);
+	p.x.y =
+		(this->x.y * m.x.x) +
+		(this->y.y * m.x.y) +
+		(this->z.y * m.x.z) +
+		(this->w.y * m.x.w);
+	p.x.z =
+		(this->x.z * m.x.x) +
+		(this->y.z * m.x.y) +
+		(this->z.z * m.x.z) +
+		(this->w.z * m.x.w);
+	p.x.w =
+		(this->x.w * m.x.x) +
+		(this->y.w * m.x.y) +
+		(this->z.w * m.x.z) +
+		(this->w.w * m.x.w);
 
 	// Column Y.
-	p.y[0] =
-		(this->x[0] * m.y[0]) +
-		(this->y[0] * m.y[1]) +
-		(this->z[0] * m.y[2]) +
-		(this->w[0] * m.y[3]);
-	p.y[1] =
-		(this->x[1] * m.y[0]) +
-		(this->y[1] * m.y[1]) +
-		(this->z[1] * m.y[2]) +
-		(this->w[1] * m.y[3]);
-	p.y[2] =
-		(this->x[2] * m.y[0]) +
-		(this->y[2] * m.y[1]) +
-		(this->z[2] * m.y[2]) +
-		(this->w[2] * m.y[3]);
-	p.y[3] =
-		(this->x[3] * m.y[0]) +
-		(this->y[3] * m.y[1]) +
-		(this->z[3] * m.y[2]) +
-		(this->w[3] * m.y[3]);
+	p.y.x =
+		(this->x.x * m.y.x) +
+		(this->y.x * m.y.y) +
+		(this->z.x * m.y.z) +
+		(this->w.x * m.y.w);
+	p.y.y =
+		(this->x.y * m.y.x) +
+		(this->y.y * m.y.y) +
+		(this->z.y * m.y.z) +
+		(this->w.y * m.y.w);
+	p.y.z =
+		(this->x.z * m.y.x) +
+		(this->y.z * m.y.y) +
+		(this->z.z * m.y.z) +
+		(this->w.z * m.y.w);
+	p.y.w =
+		(this->x.w * m.y.x) +
+		(this->y.w * m.y.y) +
+		(this->z.w * m.y.z) +
+		(this->w.w * m.y.w);
 
 	// Column Z.
-	p.z[0] =
-		(this->x[0] * m.z[0]) +
-		(this->y[0] * m.z[1]) +
-		(this->z[0] * m.z[2]) +
-		(this->w[0] * m.z[3]);
-	p.z[1] =
-		(this->x[1] * m.z[0]) +
-		(this->y[1] * m.z[1]) +
-		(this->z[1] * m.z[2]) +
-		(this->w[1] * m.z[3]);
-	p.z[2] =
-		(this->x[2] * m.z[0]) +
-		(this->y[2] * m.z[1]) +
-		(this->z[2] * m.z[2]) +
-		(this->w[2] * m.z[3]);
-	p.z[3] =
-		(this->x[3] * m.z[0]) +
-		(this->y[3] * m.z[1]) +
-		(this->z[3] * m.z[2]) +
-		(this->w[3] * m.z[3]);
+	p.z.x =
+		(this->x.x * m.z.x) +
+		(this->y.x * m.z.y) +
+		(this->z.x * m.z.z) +
+		(this->w.x * m.z.w);
+	p.z.y =
+		(this->x.y * m.z.x) +
+		(this->y.y * m.z.y) +
+		(this->z.y * m.z.z) +
+		(this->w.y * m.z.w);
+	p.z.z =
+		(this->x.z * m.z.x) +
+		(this->y.z * m.z.y) +
+		(this->z.z * m.z.z) +
+		(this->w.z * m.z.w);
+	p.z.w =
+		(this->x.w * m.z.x) +
+		(this->y.w * m.z.y) +
+		(this->z.w * m.z.z) +
+		(this->w.w * m.z.w);
 
 	// Column W.
-	p.w[0] =
-		(this->x[0] * m.w[0]) +
-		(this->y[0] * m.w[1]) +
-		(this->z[0] * m.w[2]) +
-		(this->w[0] * m.w[3]);
-	p.w[1] =
-		(this->x[1] * m.w[0]) +
-		(this->y[1] * m.w[1]) +
-		(this->z[1] * m.w[2]) +
-		(this->w[1] * m.w[3]);
-	p.w[2] =
-		(this->x[2] * m.w[0]) +
-		(this->y[2] * m.w[1]) +
-		(this->z[2] * m.w[2]) +
-		(this->w[2] * m.w[3]);
-	p.w[3] =
-		(this->x[3] * m.w[0]) +
-		(this->y[3] * m.w[1]) +
-		(this->z[3] * m.w[2]) +
-		(this->w[3] * m.w[3]);
+	p.w.x =
+		(this->x.x * m.w.x) +
+		(this->y.x * m.w.y) +
+		(this->z.x * m.w.z) +
+		(this->w.x * m.w.w);
+	p.w.y =
+		(this->x.y * m.w.x) +
+		(this->y.y * m.w.y) +
+		(this->z.y * m.w.z) +
+		(this->w.y * m.w.w);
+	p.w.z =
+		(this->x.z * m.w.x) +
+		(this->y.z * m.w.y) +
+		(this->z.z * m.w.z) +
+		(this->w.z * m.w.w);
+	p.w.w =
+		(this->x.w * m.w.x) +
+		(this->y.w * m.w.y) +
+		(this->z.w * m.w.z) +
+		(this->w.w * m.w.w);
 
 	return p;
 }
@@ -270,14 +270,14 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 template <typename T>
 Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &f) const
 {
-	T newX = (this->x[0] * f.x) + (this->y[0] * f.y) +
-		(this->z[0] * f.z) + (this->w[0] * f.w);
-	T newY = (this->x[1] * f.x) + (this->y[1] * f.y) +
-		(this->z[1] * f.z) + (this->w[1] * f.w);
-	T newZ = (this->x[2] * f.x) + (this->y[2] * f.y) +
-		(this->z[2] * f.z) + (this->w[2] * f.w);
-	T newW = (this->x[3] * f.x) + (this->y[3] * f.y) +
-		(this->z[3] * f.z) + (this->w[3] * f.w);
+	T newX = (this->x.x * f.x) + (this->y.x * f.y) +
+		(this->z.x * f.z) + (this->w.x * f.w);
+	T newY = (this->x.y * f.x) + (this->y.y * f.y) +
+		(this->z.y * f.z) + (this->w.y * f.w);
+	T newZ = (this->x.z * f.x) + (this->y.z * f.y) +
+		(this->z.z * f.z) + (this->w.z * f.w);
+	T newW = (this->x.w * f.x) + (this->y.w * f.y) +
+		(this->z.w * f.z) + (this->w.w * f.w);
 	return Vector4f<T>(newX, newY, newZ, newW);
 }
 
@@ -285,25 +285,25 @@ template <typename T>
 std::string Matrix4<T>::toString() const
 {
 	return std::string("[") +
-		std::to_string(this->x[0]) + std::string(", ") +
-		std::to_string(this->y[0]) + std::string(", ") +
-		std::to_string(this->z[0]) + std::string(", ") +
-		std::to_string(this->w[0]) + std::string(",\n ") +
+		std::to_string(this->x.x) + std::string(", ") +
+		std::to_string(this->y.x) + std::string(", ") +
+		std::to_string(this->z.x) + std::string(", ") +
+		std::to_string(this->w.x) + std::string(",\n ") +
 
-		std::to_string(this->x[1]) + std::string(", ") +
-		std::to_string(this->y[1]) + std::string(", ") +
-		std::to_string(this->z[1]) + std::string(", ") +
-		std::to_string(this->w[1]) + std::string(",\n ") +
+		std::to_string(this->x.y) + std::string(", ") +
+		std::to_string(this->y.y) + std::string(", ") +
+		std::to_string(this->z.y) + std::string(", ") +
+		std::to_string(this->w.y) + std::string(",\n ") +
 
-		std::to_string(this->x[2]) + std::string(", ") +
-		std::to_string(this->y[2]) + std::string(", ") +
-		std::to_string(this->z[2]) + std::string(", ") +
-		std::to_string(this->w[2]) + std::string(",\n ") +
+		std::to_string(this->x.z) + std::string(", ") +
+		std::to_string(this->y.z) + std::string(", ") +
+		std::to_string(this->z.z) + std::string(", ") +
+		std::to_string(this->w.z) + std::string(",\n ") +
 
-		std::to_string(this->x[3]) + std::string(", ") +
-		std::to_string(this->y[3]) + std::string(", ") +
-		std::to_string(this->z[3]) + std::string(", ") +
-		std::to_string(this->w[3]) + std::string("]");
+		std::to_string(this->x.w) + std::string(", ") +
+		std::to_string(this->y.w) + std::string(", ") +
+		std::to_string(this->z.w) + std::string(", ") +
+		std::to_string(this->w.w) + std::string("]");
 }
 
 // Template instantiations.

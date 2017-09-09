@@ -2772,15 +2772,18 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		const int startIndex = startY * this->width;
 		const int endIndex = endY * this->width;
 
-		// Clear some color rows.
-		uint32_t *colorBegin = colorBuffer + startIndex;
-		uint32_t *colorEnd = colorBuffer + endIndex;
-		std::fill(colorBegin, colorEnd, horizonFogColor.toRGB());
+		uint32_t *colorPtr = colorBuffer;
+		double *depthPtr = this->zBuffer.data();
 
-		// Clear some depth rows.
-		const auto depthBegin = this->zBuffer.begin() + startIndex;
-		const auto depthEnd = this->zBuffer.begin() + endIndex;
-		std::fill(depthBegin, depthEnd, std::numeric_limits<double>::infinity());
+		const uint32_t colorValue = horizonFogColor.toRGB();
+		const double depthValue = std::numeric_limits<double>::infinity();
+
+		// Clear the color and depth of some rows.
+		for (int i = startIndex; i < endIndex; i++)
+		{
+			colorPtr[i] = colorValue;
+			depthPtr[i] = depthValue;
+		}
 	};
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
