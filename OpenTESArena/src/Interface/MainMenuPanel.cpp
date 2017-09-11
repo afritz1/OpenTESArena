@@ -11,6 +11,7 @@
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
+#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -28,6 +29,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/String.h"
 
 MainMenuPanel::MainMenuPanel(Game *game)
 	: Panel(game)
@@ -122,9 +124,10 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif("START.MIF");
 			//const MIFFile mif("39699021.MIF");
+			const INFFile inf(String::toUppercase(mif.getLevels().front().info));
 
 			Double3 playerPosition = gameData->getPlayer().getPosition();
-			GameData::loadFromMIF(mif, playerPosition, gameData->getVoxelGrid(),
+			GameData::loadFromMIF(mif, inf, playerPosition, gameData->getVoxelGrid(),
 				gameData->getEntityManager(), game->getTextureManager(), renderer);
 
 			// Hardcode the player's position and orientation in START.MIF for now.

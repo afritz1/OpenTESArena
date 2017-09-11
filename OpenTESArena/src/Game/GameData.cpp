@@ -7,6 +7,7 @@
 #include "GameData.h"
 
 #include "../Assets/ExeStrings.h"
+#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Entities/Animation.h"
 #include "../Entities/CharacterClassParser.h"
@@ -48,7 +49,7 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
-void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition, 
+void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
 	VoxelGrid &voxelGrid, EntityManager &entityManager, TextureManager &textureManager,
 	Renderer &renderer)
 {
@@ -175,7 +176,8 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 
 						// Get the voxel data index associated with the wall value, or add it
 						// if it doesn't exist yet.
-						const int dataIndex = [&voxelGrid, &wallDataMappings, map1Voxel, wallTextureID]()
+						const int dataIndex = [&inf, &voxelGrid, &wallDataMappings, 
+							map1Voxel, wallTextureID]()
 						{
 							const auto wallIter = wallDataMappings.find(map1Voxel);
 							if (wallIter != wallDataMappings.end())
@@ -184,9 +186,12 @@ void GameData::loadFromMIF(const MIFFile &mif, Double3 &playerPosition,
 							}
 							else
 							{
-								// To do: Also assign Y size from *CEILING in .INF if the main 
-								// floor's height is different.
-								const int index = voxelGrid.addVoxelData(VoxelData(wallTextureID));
+								const double ceilingHeight = 
+									static_cast<double>(inf.getCeiling().height) / 100.0;
+
+								const int index = voxelGrid.addVoxelData(VoxelData(
+									wallTextureID, wallTextureID, wallTextureID, 0.0,
+									ceilingHeight, 0.0, 1.0));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
 							}

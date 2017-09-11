@@ -1,6 +1,4 @@
-#include <array>
 #include <sstream>
-#include <unordered_map>
 #include <unordered_set>
 
 #include "INFFile.h"
@@ -16,12 +14,28 @@ namespace
 	// unlike the .INF files inside GLOBAL.BSA.
 	const std::unordered_set<std::string> UnencryptedINFs =
 	{
-		"Crystal3.inf",
+		"CRYSTAL3.INF",
 		"IMPPAL1.INF",
 		"IMPPAL2.INF",
 		"IMPPAL3.INF",
 		"IMPPAL4.INF"
 	};
+}
+
+INFFile::CeilingData::CeilingData()
+{
+	const int defaultHeight = 100;
+
+	this->height = defaultHeight;
+	this->unknown = 0;
+	this->outdoorDungeon = false;
+}
+
+INFFile::FlatData::FlatData()
+{
+	this->yOffset = 0;
+	this->health = 0;
+	this->type = 0;
 }
 
 INFFile::INFFile(const std::string &filename)
@@ -72,6 +86,30 @@ INFFile::INFFile(const std::string &filename)
 		Floors, Walls, Flats, Sound, Text
 	};
 
+	// Store memory for each encountered type (i.e., *BOXCAP, *DOOR, etc.) in each section.
+	// I think it goes like this: for each set of consecutive types, assign them to each
+	// consecutive element until the next set of types.
+	struct ReferencedFloorTypes
+	{
+		std::vector<int> boxcap;
+		bool ceiling;
+	};
+
+	struct ReferencedWallTypes
+	{
+		std::vector<int> boxcap, boxside, door;
+	};
+
+	struct ReferencedFlatTypes
+	{
+		std::vector<int> item;
+	};
+
+	struct ReferencedTextTypes
+	{
+		std::vector<int> text;
+	};
+
 	std::stringstream ss(text);
 	std::string line;
 	ParseMode mode = ParseMode::Floors;
@@ -116,10 +154,9 @@ INFFile::INFFile(const std::string &filename)
 			continue;
 		}
 
-		DebugMention(line);
-
-		// Parse the line depending on the current mode.
-		/*if (mode == ParseMode::Floors)
+		// Parse the line depending on the current mode (each line of text is guaranteed 
+		// to not be empty at this point).
+		if (mode == ParseMode::Floors)
 		{
 
 		}
@@ -133,16 +170,91 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else if (mode == ParseMode::Sound)
 		{
+			// Split into the filename and ID.
+			std::vector<std::string> tokens = String::split(line);
+			const std::string &vocFilename = tokens.front();
+			const int vocID = std::stoi(tokens.at(1));
 
+			this->sounds.insert(std::make_pair(vocID, vocFilename));
 		}
 		else if (mode == ParseMode::Text)
 		{
 
-		}*/
+		}
 	}
 }
 
 INFFile::~INFFile()
 {
 
+}
+
+const INFFile::TextureData &INFFile::getTexture(int index) const
+{
+	return this->textures.at(index);
+}
+
+const std::vector<INFFile::FlatData> &INFFile::getItemList(int index) const
+{
+	return this->itemLists.at(index);
+}
+
+const std::string &INFFile::getBoxcap(int index) const
+{
+	return this->boxcaps.at(index);
+}
+
+const std::string &INFFile::getBoxside(int index) const
+{
+	return this->boxsides.at(index);
+}
+
+const std::string &INFFile::getSound(int index) const
+{
+	return this->sounds.at(index);
+}
+
+const INFFile::TextData &INFFile::getText(int index) const
+{
+	return this->texts.at(index);
+}
+
+const std::string &INFFile::getLavaChasmTexture() const
+{
+	return this->lavaChasmTexture;
+}
+
+const std::string &INFFile::getWetChasmTexture() const
+{
+	return this->wetChasmTexture;
+}
+
+const std::string &INFFile::getDryChasmTexture() const
+{
+	return this->dryChasmTexture;
+}
+
+const std::string &INFFile::getLevelDownTexture() const
+{
+	return this->levelDownTexture;
+}
+
+const std::string &INFFile::getLevelUpTexture() const
+{
+	return this->levelUpTexture;
+}
+
+const std::string &INFFile::getTransitionTexture() const
+{
+	return this->transitionTexture;
+}
+
+const std::string &INFFile::getTransWalkThruTexture() const
+{
+	return this->transWalkThruTexture;
+}
+
+const INFFile::CeilingData &INFFile::getCeiling() const
+{
+	return this->ceiling;
 }
