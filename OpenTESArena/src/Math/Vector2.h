@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 
 class Random;
 
@@ -95,5 +96,19 @@ typedef Vector2i<unsigned int> Uint2;
 
 typedef Vector2f<float> Float2;
 typedef Vector2f<double> Double2;
+
+// Hash definition for unordered_map<Int2, ...>.
+namespace std
+{
+	template <>
+	struct hash<Int2>
+	{
+		size_t operator()(const Int2 &v) const
+		{
+			// Multiply with a prime number before xor'ing.
+			return static_cast<size_t>(v.x ^ (v.y * 41));
+		}
+	};
+}
 
 #endif

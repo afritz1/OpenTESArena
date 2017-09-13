@@ -170,9 +170,9 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else if (mode == ParseMode::Sound)
 		{
-			// Split into the filename and ID.
+			// Split into the filename and ID. Make sure the filename is all caps.
 			std::vector<std::string> tokens = String::split(line);
-			const std::string &vocFilename = tokens.front();
+			const std::string vocFilename = String::toUppercase(tokens.front());
 			const int vocID = std::stoi(tokens.at(1));
 
 			this->sounds.insert(std::make_pair(vocID, vocFilename));

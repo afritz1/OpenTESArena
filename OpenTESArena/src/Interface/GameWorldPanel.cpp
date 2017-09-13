@@ -1008,9 +1008,25 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 
 void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
-	// To do: sound triggers and text triggers, stored in GameData.
-	DebugMention("Entered voxel [" + std::to_string(voxel.x) + ", " + 
-		std::to_string(voxel.y) + "].");
+	auto &game = *this->getGame();
+	const auto &gameData = game.getGameData();
+
+	// See if there's a text trigger.
+	const std::string *textTrigger = gameData.getTextTrigger(voxel);
+	if (textTrigger != nullptr)
+	{
+		// Display the text.
+		// To do: text box creation and timing. std::unique_ptr<std::pair<TextBox, double>>?
+	}
+
+	// See if there's a sound trigger.
+	const std::string *soundTrigger = gameData.getSoundTrigger(voxel);
+	if (soundTrigger != nullptr)
+	{
+		// Play the sound.
+		auto &audioManager = game.getAudioManager();
+		audioManager.playSound(*soundTrigger);
+	}
 }
 
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)

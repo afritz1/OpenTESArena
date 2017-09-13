@@ -50,8 +50,9 @@ GameData::~GameData()
 }
 
 void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
-	VoxelGrid &voxelGrid, EntityManager &entityManager, TextureManager &textureManager,
-	Renderer &renderer)
+	VoxelGrid &voxelGrid, std::unordered_map<Int2, std::string> &textTriggers, 
+	std::unordered_map<Int2, std::string> &soundTriggers, EntityManager &entityManager,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Arena's level origins start at the top-right corner of the map, so X increases 
 	// going to the left, and Z increases going down. The wilderness uses this same 
@@ -235,6 +236,30 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 			{
 				// An object of some kind.
 			}
+		}
+	}
+
+	// Assign text and sound triggers.
+	for (const auto &trigger : level.trig)
+	{
+		// Transform the voxel coordinates from the Arena layout to the new layout.
+		const Int2 voxel(
+			(mif.getDepth() - 1) - trigger.y,
+			(mif.getWidth() - 1) - trigger.x);
+
+		// There can be a text trigger and sound trigger in the same voxel.
+		const bool isTextTrigger = trigger.textIndex != -1;
+		const bool isSoundTrigger = trigger.soundIndex != -1;
+
+		if (isTextTrigger)
+		{
+			// To do: INF text parsing.
+			//textTriggers.insert(std::make_pair(voxel, inf.getText(trigger.textIndex).text));
+		}
+		
+		if (isSoundTrigger)
+		{
+			soundTriggers.insert(std::make_pair(voxel, inf.getSound(trigger.soundIndex)));
 		}
 	}
 }
@@ -795,6 +820,16 @@ std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureMa
 		portraitID, textureManager, renderer);
 }
 
+std::unordered_map<Int2, std::string> &GameData::temp_getTextTriggers()
+{
+	return this->textTriggers;
+}
+
+std::unordered_map<Int2, std::string> &GameData::temp_getSoundTriggers()
+{
+	return this->soundTriggers;
+}
+
 Player &GameData::getPlayer()
 {
 	return this->player;
@@ -903,6 +938,18 @@ double GameData::getBetterAmbientPercent() const
 	const double diff = maxAmbient - minAmbient;
 	const double center = minAmbient + (diff / 2.0);
 	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * PI)));
+}
+
+const std::string *GameData::getTextTrigger(const Int2 &voxel) const
+{
+	const auto textIter = this->textTriggers.find(voxel);
+	return (textIter != this->textTriggers.end()) ? (&textIter->second) : nullptr;
+}
+
+const std::string *GameData::getSoundTrigger(const Int2 &voxel) const
+{
+	const auto soundIter = this->soundTriggers.find(voxel);
+	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
 }
 
 void GameData::tickTime(double dt)

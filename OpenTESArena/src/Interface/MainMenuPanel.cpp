@@ -128,6 +128,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 
 			Double3 playerPosition = gameData->getPlayer().getPosition();
 			GameData::loadFromMIF(mif, inf, playerPosition, gameData->getVoxelGrid(),
+				gameData->temp_getTextTriggers(), gameData->temp_getSoundTriggers(),
 				gameData->getEntityManager(), game->getTextureManager(), renderer);
 
 			// Hardcode the player's position and orientation in START.MIF for now.

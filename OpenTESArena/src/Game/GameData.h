@@ -3,12 +3,14 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "Clock.h"
 #include "Date.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../Math/Vector2.h"
 #include "../World/Location.h"
 #include "../World/VoxelGrid.h"
 
@@ -35,6 +37,7 @@ private:
 	// scale is 5.0, then each real-time second is five game seconds, etc..
 	static const double TIME_SCALE;
 
+	std::unordered_map<Int2, std::string> textTriggers, soundTriggers;
 	Player player;
 	EntityManager entityManager;
 	VoxelGrid voxelGrid;
@@ -43,7 +46,6 @@ private:
 	Clock clock;
 	double fogDistance;
 	// weather...
-	// date...
 public:
 	GameData(Player &&player, EntityManager &&entityManager, VoxelGrid &&voxelGrid,
 		const Location &location, const Date &date, const Clock &clock, double fogDistance);
@@ -52,8 +54,9 @@ public:
 	// Takes a .MIF file with its associated .INF file and writes data into the given 
 	// reference parameters. This overwrites parts of the existing game session.
 	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition,
-		VoxelGrid &voxelGrid, EntityManager &entityManager, TextureManager &textureManager, 
-		Renderer &renderer);
+		VoxelGrid &voxelGrid, std::unordered_map<Int2, std::string> &textTriggers, 
+		std::unordered_map<Int2, std::string> &soundTriggers, EntityManager &entityManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
@@ -63,6 +66,10 @@ public:
 	// Creates a game data object with random player data for testing.
 	static std::unique_ptr<GameData> createRandomPlayer(TextureManager &textureManager, 
 		Renderer &renderer);
+
+	// -- temp -- (remove once some kind of "WorldData" class is made).
+	std::unordered_map<Int2, std::string> &temp_getTextTriggers();
+	std::unordered_map<Int2, std::string> &temp_getSoundTriggers();
 
 	Player &getPlayer();
 	EntityManager &getEntityManager();
@@ -84,6 +91,14 @@ public:
 
 	// A more gradual ambient percent function (maybe useful on the side sometime).
 	double getBetterAmbientPercent() const;
+
+	// Returns a pointer to some trigger text if the given voxel has a text trigger, or
+	// null if it doesn't.
+	const std::string *getTextTrigger(const Int2 &voxel) const;
+
+	// Returns a pointer to a sound filename if the given voxel has a sound trigger, or
+	// null if it doesn't.
+	const std::string *getSoundTrigger(const Int2 &voxel) const;
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickTime(double dt);
