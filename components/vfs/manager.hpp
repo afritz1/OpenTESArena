@@ -44,7 +44,8 @@ public:
     void addDataPath(std::string&& path);
 
     IStreamPtr open(const char *name);
-    IStreamPtr open(std::string&& name) { return open(name.c_str()); }
+    IStreamPtr open(const std::string &name) { return open(name.c_str()); }
+    IStreamPtr open(std::string &&name) { return open(name.c_str()); }
 
     bool exists(const char *name);
     std::vector<std::string> list(const char *pattern=nullptr) const;
