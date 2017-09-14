@@ -44,7 +44,7 @@ void TextAssets::parseTemplateDat()
 {
 	const std::string filename = "TEMPLATE.DAT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read TEMPLATE.DAT into a string.
@@ -106,7 +106,7 @@ void TextAssets::parseQuestionTxt()
 {
 	const std::string filename = "QUESTION.TXT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read QUESTION.TXT into a string.
@@ -230,7 +230,7 @@ void TextAssets::parseDungeonTxt()
 {
 	const std::string filename = "DUNGEON.TXT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);

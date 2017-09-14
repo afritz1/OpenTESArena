@@ -13,7 +13,7 @@ void COLFile::toPalette(const std::string &filename, Palette &dstPalette)
 {
 	bool failed = false;
 	std::array<uint8_t, 776> rawpal;
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 
 	if (!stream)
 	{

@@ -46,7 +46,7 @@ const uint8_t MIFFile::LAVA_CHASM = 0xE;
 
 MIFFile::MIFFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);

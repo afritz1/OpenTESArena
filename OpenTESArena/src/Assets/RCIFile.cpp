@@ -12,7 +12,7 @@ const int RCIFile::FRAME_SIZE = RCIFile::FRAME_WIDTH * RCIFile::FRAME_HEIGHT;
 
 RCIFile::RCIFile(const std::string &filename, const Palette &palette)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
