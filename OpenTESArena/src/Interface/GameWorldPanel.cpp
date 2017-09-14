@@ -949,7 +949,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 
 		// If the mouse moves fast enough, it's considered an attack. The distances
 		// are in percentages of screen dimensions.
-		const double requiredDistance = 0.080;
+		const double requiredDistance = 0.060;
 		const double mouseDistance = std::sqrt((dxx * dxx) + (dyy * dyy));
 		const bool isAttack = rightClick && (mouseDistance >= requiredDistance);
 
