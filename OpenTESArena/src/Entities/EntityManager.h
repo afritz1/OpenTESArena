@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-class Entity;
+#include "../Entities/Entity.h"
 
 enum class EntityType;
 
@@ -15,8 +15,10 @@ private:
 	std::unordered_map<int, std::unique_ptr<Entity>> entities;
 public:
 	EntityManager();
-	EntityManager(EntityManager &&entityManager);
+	EntityManager(EntityManager &&entityManager) = default;
 	~EntityManager();
+
+	EntityManager &operator=(EntityManager &&entityManager) = default;
 
 	// Gets an entity pointer, given their ID. Returns null if no ID matches.
 	Entity *at(int id) const;

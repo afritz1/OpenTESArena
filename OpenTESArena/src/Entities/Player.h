@@ -6,7 +6,7 @@
 #include "WeaponAnimation.h"
 
 class Game;
-class VoxelGrid;
+class WorldData;
 
 enum class GenderName;
 
@@ -38,10 +38,10 @@ private:
 	double getFeetY() const;
 
 	// Changes the player's velocity based on collision with objects in the world.
-	void handleCollision(const VoxelGrid &voxelGrid, double dt);
+	void handleCollision(const WorldData &worldData, double dt);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const VoxelGrid &voxelGrid, double dt);
+	void updatePhysics(const WorldData &worldData, double dt);
 public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
@@ -76,7 +76,7 @@ public:
 	WeaponAnimation &getWeaponAnimation();
 
 	// Returns whether the player is standing on ground and with no Y velocity.
-	bool onGround(const VoxelGrid &voxelGrid) const;
+	bool onGround(const WorldData &worldData) const;
 
 	// Teleports the player to a point.
 	void teleport(const Double3 &position);

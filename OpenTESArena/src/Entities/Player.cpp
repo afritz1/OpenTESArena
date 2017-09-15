@@ -13,6 +13,7 @@
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
+#include "../World/WorldData.h"
 
 const double Player::HEIGHT = 0.70;
 const double Player::STEPPING_HEIGHT = 0.25;
@@ -111,7 +112,7 @@ double Player::getFeetY() const
 	return this->camera.position.y - Player::HEIGHT;
 }
 
-bool Player::onGround(const VoxelGrid &voxelGrid) const
+bool Player::onGround(const WorldData &worldData) const
 {
 	// To do: find a non-hack way to do this.
 
@@ -167,10 +168,12 @@ void Player::lookAt(const Double3 &point)
 	this->camera.lookAt(point);
 }
 
-void Player::handleCollision(const VoxelGrid &voxelGrid, double dt)
+void Player::handleCollision(const WorldData &worldData, double dt)
 {
-	auto getVoxel = [&voxelGrid](int x, int y, int z) -> VoxelData
+	auto getVoxel = [&worldData](int x, int y, int z) -> VoxelData
 	{
+		const VoxelGrid &voxelGrid = worldData.getVoxelGrid();
+
 		// Voxels outside the world are air.
 		if ((x < 0) || (x >= voxelGrid.getWidth()) ||
 			(y < 0) || (y >= voxelGrid.getHeight()) ||
@@ -287,13 +290,13 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const VoxelGrid &voxelGrid, double dt)
+void Player::updatePhysics(const WorldData &worldData, double dt)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
 
 	// Change the player's velocity based on collision.
-	this->handleCollision(voxelGrid, dt);
+	this->handleCollision(worldData, dt);
 
 	// Simple Euler integration for updating the player's position.
 	Double3 newPosition = this->camera.position + (this->velocity * dt);
@@ -304,7 +307,7 @@ void Player::updatePhysics(const VoxelGrid &voxelGrid, double dt)
 		this->camera.position = newPosition;
 	}
 
-	if (this->onGround(voxelGrid))
+	if (this->onGround(worldData))
 	{
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
@@ -322,7 +325,7 @@ void Player::updatePhysics(const VoxelGrid &voxelGrid, double dt)
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	this->updatePhysics(game.getGameData().getVoxelGrid(), dt);
+	this->updatePhysics(game.getGameData().getWorldData(), dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

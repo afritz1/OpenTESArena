@@ -358,7 +358,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			{
 				auto &gameData = game->getGameData();
 				const auto &player = gameData.getPlayer();
-				const auto &voxelGrid = gameData.getVoxelGrid();
+				const auto &voxelGrid = gameData.getWorldData().getVoxelGrid();
 				const Location &location = gameData.getLocation();
 				const Double3 &position = player.getPosition();
 
@@ -693,6 +693,8 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
 
+	const auto &worldData = this->getGame()->getGameData().getWorldData();
+
 	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
 	if (playerInterface == PlayerInterface::Classic)
 	{
@@ -728,7 +730,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		const Double3 &rightDirection = player.getRight();
 
 		// Mouse movement takes priority over key movement.
-		if (leftClick && player.onGround(this->getGame()->getGameData().getVoxelGrid()))
+		if (leftClick && player.onGround(worldData))
 		{
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const int mouseX = mousePosition.x;
@@ -807,7 +809,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			}
 		}
 		else if ((forward || backward || ((left || right) && lCtrl) || space) &&
-			player.onGround(this->getGame()->getGameData().getVoxelGrid()))
+			player.onGround(worldData))
 		{
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
@@ -874,8 +876,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			groundDirection.y).normalized();
 		const Double3 &rightDirection = player.getRight();
 
-		if ((forward || backward || left || right || space) &&
-			player.onGround(this->getGame()->getGameData().getVoxelGrid()))
+		if ((forward || backward || left || right || space) && player.onGround(worldData))
 		{
 			// Calculate the acceleration direction based on input.
 			Double3 accelDirection(0.0, 0.0, 0.0);
@@ -1009,10 +1010,10 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
 	auto &game = *this->getGame();
-	const auto &gameData = game.getGameData();
+	const auto &worldData = game.getGameData().getWorldData();
 
 	// See if there's a text trigger.
-	const std::string *textTrigger = gameData.getTextTrigger(voxel);
+	const std::string *textTrigger = worldData.getTextTrigger(voxel);
 	if (textTrigger != nullptr)
 	{
 		// Display the text.
@@ -1020,7 +1021,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 
 	// See if there's a sound trigger.
-	const std::string *soundTrigger = gameData.getSoundTrigger(voxel);
+	const std::string *soundTrigger = worldData.getSoundTrigger(voxel);
 	if (soundTrigger != nullptr)
 	{
 		// Play the sound.
@@ -1153,8 +1154,10 @@ void GameWorldPanel::tick(double dt)
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);
 
+	auto &worldData = gameData.getWorldData();
+
 	// Update entities and their state in the renderer.
-	auto &entityManager = gameData.getEntityManager();
+	auto &entityManager = worldData.getEntityManager();
 	for (auto *entity : entityManager.getAllEntities())
 	{
 		// Tick entity state.
@@ -1186,10 +1189,11 @@ void GameWorldPanel::render(Renderer &renderer)
 	// clearing the native buffer beforehand is still necessary.
 	auto &gameData = this->getGame()->getGameData();
 	auto &player = gameData.getPlayer();
+	const auto &worldData = gameData.getWorldData();
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getVerticalFOV(), gameData.getAmbientPercent(),
-		gameData.getDaytimePercent(), gameData.getVoxelGrid());
+		gameData.getDaytimePercent(), worldData.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

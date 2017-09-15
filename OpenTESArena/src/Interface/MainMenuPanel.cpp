@@ -127,9 +127,8 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			const INFFile inf(String::toUppercase(mif.getLevels().front().info));
 
 			Double3 playerPosition = gameData->getPlayer().getPosition();
-			GameData::loadFromMIF(mif, inf, playerPosition, gameData->getVoxelGrid(),
-				gameData->temp_getTextTriggers(), gameData->temp_getSoundTriggers(),
-				gameData->getEntityManager(), game->getTextureManager(), renderer);
+			GameData::loadFromMIF(mif, inf, playerPosition, gameData->getWorldData(),
+				game->getTextureManager(), renderer);
 
 			// Hardcode the player's position and orientation in START.MIF for now.
 			auto &player = gameData->getPlayer();
