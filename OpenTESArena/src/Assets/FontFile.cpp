@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <unordered_map>
 
 #include "FontFile.h"
 
@@ -13,20 +12,6 @@
 
 namespace
 {
-	// Number of columns of whitespace a space is.
-	const std::unordered_map<std::string, int> FontSpaceWidths =
-	{
-		{ "FONT_A.DAT", 5 },
-		{ "ARENAFNT.DAT", 4 },
-		{ "FONT_B.DAT", 3 },
-		{ "FONT_C.DAT", 4 },
-		{ "CHARFNT.DAT", 3 },
-		{ "FONT_D.DAT", 3 },
-		{ "FONT4.DAT", 3 },
-		{ "FONT_S.DAT", 3 },
-		{ "TEENYFNT.DAT", 2 }
-	};
-
 	struct FontElement
 	{
 		uint32_t width, height;
@@ -54,18 +39,14 @@ FontFile::FontFile(const std::string &filename)
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// The character height is in the first byte.
-	const uint8_t charHeight = srcData.at(0);
+	const uint8_t charHeight = srcData.front();
 	const uint8_t *counts = srcData.data();
 	const uint16_t *lines = reinterpret_cast<const uint16_t*>(counts + 95);
 
 	std::array<FontElement, 96> symbols;
 	std::fill(symbols.begin(), symbols.end(), FontElement());
 
-	// Set the space character as some arbitrary size.
-	FontElement &space = symbols.at(0);
-	space.width = FontSpaceWidths.at(filename);
-	space.height = charHeight;
-
+	// Start at index 1 since the width of a space (index 0) depends on the exclamation mark.
 	// Adapted from WinArena "ParseBSA.cpp".
 	for (size_t i = 1; i < symbols.size(); ++i)
 	{
@@ -98,6 +79,11 @@ FontFile::FontFile(const std::string &filename)
 		maxWidth += 1;
 		element.width = maxWidth;
 	}
+
+	// Assign the exclamation mark's dimensions to space (' ').
+	FontElement &space = symbols.front();
+	space.width = symbols.at(1).width;
+	space.height = charHeight;
 	
 	// Now that the symbols table is filled with character bits, turn it into a list
 	// of characters paired with a width and pixel data.
@@ -105,13 +91,13 @@ FontFile::FontFile(const std::string &filename)
 	this->characters.resize(symbols.size());
 
 	// Colors for setting pixels.
-	const uint32_t black = Color(0, 0, 0, 0).toARGB();
+	const uint32_t transparent = Color(0, 0, 0, 0).toARGB();
 	const uint32_t white = Color(255, 255, 255, 255).toARGB();
 
 	// Adapted from WinArena "Raster.cpp".
 	for (size_t i = 0; i < symbols.size(); ++i)
 	{
-		// Use white for pixels and black for background.
+		// Use white for pixels and transparent for background.
 		FontElement &element = symbols.at(i);
 
 		auto &pair = this->characters.at(i);
@@ -129,7 +115,7 @@ FontFile::FontFile(const std::string &filename)
 				const int index = cx + (cy * element.width);
 
 				// Color the pixel white if the character's bit is set there.
-				pixels[index] = ((bits & mask) != 0) ? white : black;
+				pixels[index] = ((bits & mask) != 0) ? white : transparent;
 
 				mask >>= 1;
 			}
