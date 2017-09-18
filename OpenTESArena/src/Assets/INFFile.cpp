@@ -25,9 +25,10 @@ namespace
 INFFile::CeilingData::CeilingData()
 {
 	const int defaultHeight = 100;
+	const double defaultScale = 1.0;
 
 	this->height = defaultHeight;
-	this->unknown = 0;
+	this->boxScale = defaultScale;
 	this->outdoorDungeon = false;
 }
 
@@ -86,6 +87,19 @@ INFFile::INFFile(const std::string &filename)
 		Floors, Walls, Flats, Sound, Text
 	};
 
+	// Some sections have a mode they can be in, via a tag like *BOXCAP or *TEXT.
+	enum class FloorMode { BoxCap, Ceiling };
+
+	enum class WallMode
+	{
+		BoxCap, BoxSide, Door, DryChasm, LavaChasm, LevelDown,
+		LevelUp, Menu, Transition, TransWalkThru, WalkThru, WetChasm,
+	};
+
+	enum class FlatMode { Item };
+
+	enum class TextMode { Key, Riddle, Text };
+
 	// Store memory for each encountered type (i.e., *BOXCAP, *DOOR, etc.) in each section.
 	// I think it goes like this: for each set of consecutive types, assign them to each
 	// consecutive element until the next set of types.
@@ -97,7 +111,7 @@ INFFile::INFFile(const std::string &filename)
 
 	struct ReferencedWallTypes
 	{
-		std::vector<int> boxcap, boxside, door;
+		std::vector<int> boxcap, boxside;
 	};
 
 	struct ReferencedFlatTypes
@@ -156,17 +170,40 @@ INFFile::INFFile(const std::string &filename)
 
 		// Parse the line depending on the current mode (each line of text is guaranteed 
 		// to not be empty at this point).
+		// - For .SET filenames, the number (#...) is preceded by a tab (for tokenization).
 		if (mode == ParseMode::Floors)
 		{
-
+			const std::unordered_map<std::string, FloorMode> FloorSections =
+			{
+				{ "*BOXCAP", FloorMode::BoxCap },
+				{ "*CEILING", FloorMode::Ceiling }
+			};
 		}
 		else if (mode == ParseMode::Walls)
 		{
-
+			const std::unordered_map<std::string, WallMode> WallSections =
+			{
+				{ "*BOXCAP", WallMode::BoxCap },
+				{ "*BOXSIDE", WallMode::BoxSide },
+				{ "*DOOR", WallMode::Door }, // *DOOR is ignored.
+				{ "*DRYCHASM", WallMode::DryChasm },
+				{ "*LAVACHASM", WallMode::LavaChasm },
+				{ "*LEVELDOWN", WallMode::LevelDown },
+				{ "*LEVELUP", WallMode::LevelUp },
+				{ "*MENU", WallMode::Menu }, // A clickable wall? Store entrances? Secret walls?
+				{ "*TRANS", WallMode::Transition },
+				{ "*TRANSWALKTHRU", WallMode::TransWalkThru },
+				{ "*WALKTHRU", WallMode::WalkThru }, // Probably for hedge archways.
+				{ "*WETCHASM", WallMode::WetChasm },
+			};
 		}
 		else if (mode == ParseMode::Flats)
 		{
+			// Check if line says *TEXT, and if so, get the number. Otherwise, get the
+			// filename and any associated modifiers ("F:", "Y:", etc.).
 
+			// I think each *ITEM tag only points to the filename right below it. It
+			// doesn't stack up any other filenames.
 		}
 		else if (mode == ParseMode::Sound)
 		{
@@ -179,7 +216,18 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else if (mode == ParseMode::Text)
 		{
+			// Reset current text group after each *TEXT tag. Don't worry about empty lines.
+			const char TEXT_CHAR = '*';
 
+			// Decide what mode it is if the mode hasn't been decided.
+			// if (textMode is null) then check first char on the first line
+			// - if (char == '+') then key index
+			// - else if (char == '~') then one-shot text
+			// - else if (char == '^') then riddle
+			// - else regular text
+			const char KEY_INDEX_CHAR = '+';
+			const char ONE_SHOT_CHAR = '~';
+			const char RIDDLE_CHAR = '^';
 		}
 	}
 }

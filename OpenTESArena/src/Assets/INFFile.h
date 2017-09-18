@@ -27,7 +27,7 @@ public:
 	{
 		TextureData texture;
 		int height; // Size of walls on main floor. Default is 100.
-		int unknown; // Second *CEILING number. It's usually in the 300's.
+		double boxScale; // Main floor box scale. Formula: (Y * boxScale) / 256.
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
 
 		CeilingData();
@@ -43,15 +43,15 @@ public:
 		// Bit array of flat modifiers?
 		// 0x1: Collider. 0x2: Reflect (puddle). 0x4: Double (scale?). 0x8: Dark.
 		// 0x10: Transparent (ghosts). 0x20: Ceiling (attached to ceiling?).
-		int type;
+		uint16_t type;
 
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
 		std::string nextFlat;
 		std::unique_ptr<int> deathEffect;
 
-		// Used with S:#, where '#' is the death sound.
-		std::unique_ptr<int> deathSound;
+		// Used with S:#, where '#' is light intensity (for candles, etc.).
+		std::unique_ptr<int> lightIntensity;
 
 		FlatData();
 	};
@@ -64,8 +64,8 @@ public:
 
 	struct TextData
 	{
-		std::string text; // Stores display text unless it is a riddle.
-		std::unique_ptr<RiddleData> riddleData; // Non-null when the *TEXT is a riddle.
+		std::string text; // Stores display text for a text trigger.
+		bool oneShot; // Whether the text is only displayed once (starts with '~').
 	};
 private:
 	// Texture filenames in the order they are discovered. .SET files are expanded;
