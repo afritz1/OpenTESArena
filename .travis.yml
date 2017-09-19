@@ -6,8 +6,7 @@ compiler: gcc
 group: stable
 
 before_install:
-  - sudo apt-get install libsdl2-dev libopenal-dev
-  - sudo apt-get install wildmidi
+  - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev libsdl2-dev libopenal-dev wildmidi
 
 install:
   - wget https://github.com/Mindwerks/wildmidi/archive/wildmidi-0.4.0.tar.gz
