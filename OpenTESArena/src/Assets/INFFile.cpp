@@ -81,6 +81,9 @@ INFFile::INFFile(const std::string &filename)
 	// Remove carriage returns (newlines are nicer to work with).
 	text = String::replace(text, "\r", "");
 
+	// To do: maybe make a virtual method for each section, so parsing is nicer?
+	// - Most sections have to store some state, so having a class would make sense.
+
 	// The parse mode indicates which '@' section is currently being parsed.
 	enum class ParseMode
 	{
@@ -190,7 +193,7 @@ INFFile::INFFile(const std::string &filename)
 				{ "*LAVACHASM", WallMode::LavaChasm },
 				{ "*LEVELDOWN", WallMode::LevelDown },
 				{ "*LEVELUP", WallMode::LevelUp },
-				{ "*MENU", WallMode::Menu }, // A clickable wall? Store entrances? Secret walls?
+				{ "*MENU", WallMode::Menu }, // Doors leading to interiors.
 				{ "*TRANS", WallMode::Transition },
 				{ "*TRANSWALKTHRU", WallMode::TransWalkThru },
 				{ "*WALKTHRU", WallMode::WalkThru }, // Probably for hedge archways.
