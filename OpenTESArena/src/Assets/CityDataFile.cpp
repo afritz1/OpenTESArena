@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstring>
 
 #include "CityDataFile.h"
@@ -25,7 +26,7 @@ CityDataFile::CityDataFile(const std::string &filename)
 	const size_t provinceDataSize = 1228;
 
 	// Size of each location definition in bytes.
-	const size_t locationDataSize = 24;
+	const size_t locationDataSize = 25;
 
 	// Iterate over each province and initialize the location data.
 	for (size_t i = 0; i < this->provinces.size(); i++)
@@ -36,56 +37,77 @@ CityDataFile::CityDataFile(const std::string &filename)
 		// Read the province header.
 		const uint8_t *provinceNamePtr = srcData.data() + startOffset;
 		std::memcpy(province.name.data(), provinceNamePtr, province.name.size());
-		std::memcpy(province.unknown.data(), 
-			provinceNamePtr + province.name.size(), province.unknown.size());
 
-		const uint8_t *locationPtr = provinceNamePtr + province.name.size() + 
-			province.unknown.size();
+		const uint8_t *provinceGlobalDimsPtr = provinceNamePtr + province.name.size();
+		province.globalX = Bytes::getLE16(provinceGlobalDimsPtr);
+		province.globalY = Bytes::getLE16(provinceGlobalDimsPtr + sizeof(province.globalX));
+		province.globalW = Bytes::getLE16(provinceGlobalDimsPtr + (sizeof(province.globalX) * 2));
+		province.globalH = Bytes::getLE16(provinceGlobalDimsPtr + (sizeof(province.globalX) * 3));
+
+		const uint8_t *locationPtr = provinceGlobalDimsPtr + (sizeof(province.globalX) * 4);
 
 		for (auto &cityState : province.cityStates)
 		{
-			// Read the city-state data (name, x, y).
+			// Read the city-state data.
 			std::memcpy(cityState.name.data(), locationPtr, cityState.name.size());
 			cityState.x = Bytes::getLE16(locationPtr + cityState.name.size());
 			cityState.y = Bytes::getLE16(locationPtr + cityState.name.size() + sizeof(cityState.x));
-			locationPtr += locationDataSize + 1; // Add 1 for null-terminator.
+			cityState.visibility = *(locationPtr + cityState.name.size() +
+				sizeof(cityState.x) + sizeof(cityState.y));
+			locationPtr += locationDataSize;
 		}
 
 		for (auto &town : province.towns)
 		{
-			// Read the town data (name, x, y).
+			// Read the town data.
 			std::memcpy(town.name.data(), locationPtr, town.name.size());
 			town.x = Bytes::getLE16(locationPtr + town.name.size());
 			town.y = Bytes::getLE16(locationPtr + town.name.size() + sizeof(town.x));
-			locationPtr += locationDataSize + 1;
+			town.visibility = *(locationPtr + town.name.size() + sizeof(town.x) + sizeof(town.y));
+			locationPtr += locationDataSize;
 		}
 
 		for (auto &village : province.villages)
 		{
-			// Read the village data (name, x, y).
+			// Read the village data.
 			std::memcpy(village.name.data(), locationPtr, village.name.size());
 			village.x = Bytes::getLE16(locationPtr + village.name.size());
 			village.y = Bytes::getLE16(locationPtr + village.name.size() + sizeof(village.x));
-			locationPtr += locationDataSize + 1;
+			village.visibility = *(locationPtr + village.name.size() +
+				sizeof(village.x) + sizeof(village.y));
+			locationPtr += locationDataSize;
 		}
 
-		// Read the dungeon data (name, x, y). The second dungeon is listed first.
-		std::memcpy(province.secondDungeon.name.data(), locationPtr, 
+		// Read the dungeon data. The second dungeon is listed first.
+		std::memcpy(province.secondDungeon.name.data(), locationPtr,
 			province.secondDungeon.name.size());
 		province.secondDungeon.x = Bytes::getLE16(locationPtr + province.secondDungeon.name.size());
-		province.secondDungeon.y = Bytes::getLE16(locationPtr + 
+		province.secondDungeon.y = Bytes::getLE16(locationPtr +
 			province.secondDungeon.name.size() + sizeof(province.secondDungeon.x));
-		locationPtr += locationDataSize + 1;
+		province.secondDungeon.visibility = *(locationPtr + province.secondDungeon.name.size() +
+			sizeof(province.secondDungeon.x) + sizeof(province.secondDungeon.y));
+		locationPtr += locationDataSize;
 
-		std::memcpy(province.firstDungeon.name.data(), locationPtr, 
+		std::memcpy(province.firstDungeon.name.data(), locationPtr,
 			province.firstDungeon.name.size());
 		province.firstDungeon.x = Bytes::getLE16(locationPtr + province.firstDungeon.name.size());
 		province.firstDungeon.y = Bytes::getLE16(locationPtr +
 			province.firstDungeon.name.size() + sizeof(province.firstDungeon.x));
-		locationPtr += locationDataSize + 1;
+		province.firstDungeon.visibility = *(locationPtr + province.firstDungeon.name.size() +
+			sizeof(province.firstDungeon.x) + sizeof(province.firstDungeon.y));
+		locationPtr += locationDataSize;
 
-		// Read unknown data.
-		std::memcpy(province.unknownData.data.data(), locationPtr, province.unknownData.data.size());
+		// Read random dungeon data.
+		for (auto &dungeon : province.randomDungeons)
+		{
+			// Read the random dungeon data.
+			std::memcpy(dungeon.name.data(), locationPtr, dungeon.name.size());
+			dungeon.x = Bytes::getLE16(locationPtr + dungeon.name.size());
+			dungeon.y = Bytes::getLE16(locationPtr + dungeon.name.size() + sizeof(dungeon.x));
+			dungeon.visibility = *(locationPtr + dungeon.name.size() +
+				sizeof(dungeon.x) + sizeof(dungeon.y));
+			locationPtr += locationDataSize;
+		}
 	}
 }
 
@@ -96,7 +118,6 @@ CityDataFile::~CityDataFile()
 
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
-	DebugAssert(index < CityDataFile::PROVINCE_COUNT, "Province index out of range.");
-
+	assert(index < CityDataFile::PROVINCE_COUNT);
 	return this->provinces.at(index);
 }
