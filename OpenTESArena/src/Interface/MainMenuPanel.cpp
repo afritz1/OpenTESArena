@@ -126,28 +126,12 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			//const MIFFile mif("39699021.MIF");
 			const INFFile inf(String::toUppercase(mif.getLevels().front().info));
 
-			Double3 playerPosition = gameData->getPlayer().getPosition();
+			auto &player = gameData->getPlayer();
+			Double3 playerPosition = player.getPosition();
 			GameData::loadFromMIF(mif, inf, playerPosition, gameData->getWorldData(),
 				game->getTextureManager(), renderer);
 
-			// Hardcode the player's position and orientation in START.MIF for now.
-			auto &player = gameData->getPlayer();
-			player.teleport(Double3(
-				23.50,
-				playerPosition.y,
-				static_cast<double>(mif.getDepth()) - 1.50));
-			player.lookAt(Double3(
-				player.getPosition().x,
-				player.getPosition().y,
-				player.getPosition().z - 1.0));
-			/*player.teleport(Double3(
-				87.50,
-				playerPosition.y,
-				50.50));
-			player.lookAt(Double3(
-				player.getPosition().x - 1.0,
-				player.getPosition().y,
-				player.getPosition().z));*/
+			player.teleport(playerPosition);
 
 			// Set the game data before constructing the game world panel.
 			game->setGameData(std::move(gameData));

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "VoxelData.h"
+#include "../Math/Vector2.h"
 
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
 
@@ -16,6 +17,11 @@ private:
 public:
 	VoxelGrid(int width, int height, int depth);
 	~VoxelGrid();
+
+	// Transformation methods for converting voxel coordinates from Arena's format
+	// (+X west, +Z south) to the new format (+X north, +Z east).
+	static Int2 arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridDepth);
+	static Double2 arenaVoxelToNewVoxel(const Double2 &voxel, int gridWidth, int gridDepth);
 
 	// Methods for obtaining the dimensions of the voxel grid.
 	int getWidth() const;

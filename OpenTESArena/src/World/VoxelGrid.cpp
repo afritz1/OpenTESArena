@@ -18,6 +18,18 @@ VoxelGrid::~VoxelGrid()
 
 }
 
+Int2 VoxelGrid::arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridDepth)
+{
+	return Int2(gridDepth - voxel.y, gridWidth - voxel.x);
+}
+
+Double2 VoxelGrid::arenaVoxelToNewVoxel(const Double2 &voxel, int gridWidth, int gridDepth)
+{
+	return Double2(
+		static_cast<double>(gridDepth) - voxel.y,
+		static_cast<double>(gridWidth) - voxel.x);
+}
+
 int VoxelGrid::getWidth() const
 {
 	return this->width;

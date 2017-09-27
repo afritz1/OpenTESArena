@@ -57,7 +57,7 @@ public:
 private:
 	int width, depth;
 	int startingLevelIndex;
-	std::vector<Int2> entries; // Entrance locations for the level?
+	std::vector<Double2> startPoints; // Entrance locations for the level.
 	std::vector<MIFFile::Level> levels;
 	// Should a vector of levels be exposed, or does the caller want a nicer format?
 	// VoxelGrid? Array of VoxelData?
@@ -70,6 +70,12 @@ public:
 	static const uint8_t WET_CHASM;
 	static const uint8_t LAVA_CHASM;
 
+	// This value is used for transforming .MIF coordinates to voxel coordinates. For example, 
+	// if the values in the .MIF files are "centimeters", then dividing by this value converts 
+	// them to voxel coordinates (including decimal values; i.e., X=1.5 means the middle of the 
+	// voxel at X coordinate 1).
+	static const double ARENA_UNITS;
+
 	// Gets the dimensions of the map. They are constant for all levels in a map.
 	int getWidth() const;
 	int getDepth() const;
@@ -77,8 +83,9 @@ public:
 	// Gets the starting level when the player enters the area.
 	int getStartingLevelIndex() const;
 
-	// Still unknown, but each entry might determine where a transition voxel is.
-	const std::vector<Int2> &getEntries() const;
+	// Starting points for the player. The .MIF values require a division by 128 in order
+	// to become "voxel units" (including the decimal value).
+	const std::vector<Double2> &getStartPoints() const;
 
 	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
 	// to be in a nicer format before handing it over to the rest of the program).

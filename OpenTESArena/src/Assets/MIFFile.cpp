@@ -43,6 +43,7 @@ namespace
 const uint8_t MIFFile::DRY_CHASM = 0xC;
 const uint8_t MIFFile::WET_CHASM = 0xD;
 const uint8_t MIFFile::LAVA_CHASM = 0xE;
+const double MIFFile::ARENA_UNITS = 128.0;
 
 MIFFile::MIFFile(const std::string &filename)
 {
@@ -65,12 +66,17 @@ MIFFile::MIFFile(const std::string &filename)
 	const uint16_t mapWidth = Bytes::getLE16(headerStart + 27);
 	const uint16_t mapDepth = Bytes::getLE16(headerStart + 29);
 
-	// Load entries(?) from header.
+	// Load start locations from the header.
 	for (size_t i = 0; i < entryCount; i++)
 	{
-		const uint16_t x = Bytes::getLE16(headerStart + 8 + (i * 2));
-		const uint16_t y = Bytes::getLE16(headerStart + 16 + (i * 2));
-		this->entries.push_back(Int2(x, y));
+		// Convert the coordinates from .MIF format to voxel format. The remainder
+		// of the division is used for positioning within the voxel.
+		const double x = static_cast<double>(
+			Bytes::getLE16(headerStart + 8 + (i * 2))) / MIFFile::ARENA_UNITS;
+		const double y = static_cast<double>(
+			Bytes::getLE16(headerStart + 16 + (i * 2))) / MIFFile::ARENA_UNITS;
+
+		this->startPoints.push_back(Double2(x, y));
 	}
 
 	// Get starting level index. The level count (a single byte) comes right after this, 
@@ -118,9 +124,9 @@ int MIFFile::getStartingLevelIndex() const
 	return this->startingLevelIndex;
 }
 
-const std::vector<Int2> &MIFFile::getEntries() const
+const std::vector<Double2> &MIFFile::getStartPoints() const
 {
-	return this->entries;
+	return this->startPoints;
 }
 
 const std::vector<MIFFile::Level> &MIFFile::getLevels() const

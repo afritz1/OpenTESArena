@@ -179,9 +179,10 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 	for (const auto &trigger : level.trig)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const Int2 voxel(
-			(mif.getDepth() - 1) - trigger.y,
-			(mif.getWidth() - 1) - trigger.x);
+		// - For some reason, the grid dimensions have a minus one here, whereas
+		//   the dimensions for player starting points do not.
+		const Int2 voxel = VoxelGrid::arenaVoxelToNewVoxel(
+			Int2(trigger.x, trigger.y), mif.getWidth() - 1, mif.getDepth() - 1);
 
 		// There can be a text trigger and sound trigger in the same voxel.
 		const bool isTextTrigger = trigger.textIndex != -1;

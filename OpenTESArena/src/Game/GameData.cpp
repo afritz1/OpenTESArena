@@ -33,9 +33,9 @@
 // The value used in Arena is one real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;
 
-GameData::GameData(Player &&player, WorldData &&worldData, const Location &location, 
+GameData::GameData(Player &&player, WorldData &&worldData, const Location &location,
 	const Date &date, const Clock &clock, double fogDistance)
-	: player(std::move(player)), worldData(std::move(worldData)), location(location), 
+	: player(std::move(player)), worldData(std::move(worldData)), location(location),
 	date(date), clock(clock)
 {
 	DebugMention("Initializing.");
@@ -48,11 +48,15 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
-void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
+void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition,
 	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
 {
-	// Set player's location (position data in .MIF is still unknown).
-	//playerPosition = Double3(...);
+	// Convert start point to new coordinate system and set player's location 
+	// (player Y value is arbitrary for now).
+	const auto &startPoints = mif.getStartPoints();
+	const Double2 startPoint = VoxelGrid::arenaVoxelToNewVoxel(
+		startPoints.front(), mif.getWidth(), mif.getDepth());
+	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
 	// Clear all entities.
 	auto &entityManager = worldData.getEntityManager();
