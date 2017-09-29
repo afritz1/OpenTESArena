@@ -56,16 +56,28 @@ public:
 		FlatData();
 	};
 
+	struct KeyData
+	{
+		int id; // Key ID (starts with '+').
+
+		KeyData(int id);
+	};
+
 	struct RiddleData
 	{
-		std::string riddle, correct, wrong;
 		std::vector<std::string> answers; // Accepted answers from the player.
+		std::string riddle, correct, wrong;
+		int firstNumber, secondNumber; // Not sure what these are.
+
+		RiddleData(int firstNumber, int secondNumber);
 	};
 
 	struct TextData
 	{
 		std::string text; // Stores display text for a text trigger.
 		bool oneShot; // Whether the text is only displayed once (starts with '~').
+
+		TextData(bool oneShot);
 	};
 private:
 	// Texture filenames in the order they are discovered. .SET files are expanded;
@@ -85,7 +97,13 @@ private:
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
 
-	// Text and riddles. Some places have several dozen *TEXT definitions.
+	// Key info for *TEXT IDs.
+	std::unordered_map<int, KeyData> keys;
+
+	// Riddle info for *TEXT IDs.
+	std::unordered_map<int, RiddleData> riddles;
+
+	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, TextData> texts;
 
 	// Specific wall textures.
@@ -104,6 +122,8 @@ public:
 	const std::string &getBoxcap(int index) const;
 	const std::string &getBoxside(int index) const;
 	const std::string &getSound(int index) const;
+	const KeyData &getKey(int index) const;
+	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
 	const std::string &getLavaChasmTexture() const;
 	const std::string &getWetChasmTexture() const;
