@@ -1010,14 +1010,30 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
 	auto &game = *this->getGame();
-	const auto &worldData = game.getGameData().getWorldData();
+	auto &worldData = game.getGameData().getWorldData();
 
 	// See if there's a text trigger.
 	const std::string *textTrigger = worldData.getTextTrigger(voxel);
 	if (textTrigger != nullptr)
 	{
-		// Display the text.
-		// To do: text box creation and timing. std::unique_ptr<std::pair<TextBox, double>>?
+		// Only display it if it should be displayed (i.e., not already displayed 
+		// if it's a single-display text).
+		const bool isSingleDisplay = worldData.textTriggerIsSingleDisplay(voxel);
+		const bool canDisplay = !isSingleDisplay ||
+			(isSingleDisplay && !worldData.singleDisplayTextTriggerActivated(voxel));
+
+		if (canDisplay)
+		{
+			// Display the text.
+			// To do: text box creation and timing. std::unique_ptr<std::pair<TextBox, double>>?
+			printf("%s\n", textTrigger->c_str());
+
+			// Set the text trigger as activated if it's a single-display trigger.
+			if (isSingleDisplay)
+			{
+				worldData.activateSingleDisplayTextTrigger(voxel);
+			}
+		}
 	}
 
 	// See if there's a sound trigger.

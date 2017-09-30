@@ -50,9 +50,9 @@ INFFile::RiddleData::RiddleData(int firstNumber, int secondNumber)
 	this->secondNumber = secondNumber;
 }
 
-INFFile::TextData::TextData(bool oneShot)
+INFFile::TextData::TextData(bool displayedOnce)
 {
-	this->oneShot = oneShot;
+	this->displayedOnce = displayedOnce;
 }
 
 INFFile::INFFile(const std::string &filename)
@@ -266,7 +266,7 @@ INFFile::INFFile(const std::string &filename)
 			const char TEXT_CHAR = '*';
 			const char KEY_INDEX_CHAR = '+';
 			const char RIDDLE_CHAR = '^';
-			const char ONE_SHOT_CHAR = '~';
+			const char DISPLAYED_ONCE_CHAR = '~';
 
 			// Check the first character in the line to determine any changes in text mode.
 			// Otherwise, parse the line based on the current mode.
@@ -324,12 +324,12 @@ INFFile::INFFile(const std::string &filename)
 				textState->riddleState = std::unique_ptr<TextState::RiddleState>(
 					new TextState::RiddleState(firstNumber, secondNumber));
 			}
-			else if (line.front() == ONE_SHOT_CHAR)
+			else if (line.front() == DISPLAYED_ONCE_CHAR)
 			{
 				textState->mode = TextMode::Text;
 
-				const bool oneShot = true;
-				textState->textData = std::unique_ptr<TextData>(new TextData(oneShot));
+				const bool displayedOnce = true;
+				textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
 
 				// Append the rest of the line to the text data.
 				textState->textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -389,8 +389,8 @@ INFFile::INFFile(const std::string &filename)
 				{
 					textState->mode = TextMode::Text;
 
-					const bool oneShot = false;
-					textState->textData = std::unique_ptr<TextData>(new TextData(oneShot));
+					const bool displayedOnce = false;
+					textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
 				}
 
 				// Read the line into the text data.
@@ -428,6 +428,21 @@ const std::string &INFFile::getBoxside(int index) const
 const std::string &INFFile::getSound(int index) const
 {
 	return this->sounds.at(index);
+}
+
+bool INFFile::hasKeyIndex(int index) const
+{
+	return this->keys.find(index) != this->keys.end();
+}
+
+bool INFFile::hasRiddleIndex(int index) const
+{
+	return this->riddles.find(index) != this->riddles.end();
+}
+
+bool INFFile::hasTextIndex(int index) const
+{
+	return this->texts.find(index) != this->texts.end();
 }
 
 const INFFile::KeyData &INFFile::getKey(int index) const

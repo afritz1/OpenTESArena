@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "WorldData.h"
 
 #include "../Assets/INFFile.h"
@@ -188,10 +190,12 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 		const bool isTextTrigger = trigger.textIndex != -1;
 		const bool isSoundTrigger = trigger.soundIndex != -1;
 
-		if (isTextTrigger)
+		// Make sure the text index points to a text value (i.e., not a key or riddle).
+		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
 		{
-			// To do: INF text parsing.
-			//textTriggers.insert(std::make_pair(voxel, inf.getText(trigger.textIndex).text));
+			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
+			this->textTriggers.insert(std::make_pair(
+				voxel, std::make_pair(textData.displayedOnce, textData.text)));
 		}
 
 		if (isSoundTrigger)
@@ -207,18 +211,6 @@ WorldData::WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager)
 WorldData::~WorldData()
 {
 
-}
-
-const std::string *WorldData::getTextTrigger(const Int2 &voxel) const
-{
-	const auto textIter = this->textTriggers.find(voxel);
-	return (textIter != this->textTriggers.end()) ? (&textIter->second) : nullptr;
-}
-
-const std::string *WorldData::getSoundTrigger(const Int2 &voxel) const
-{
-	const auto soundIter = this->soundTriggers.find(voxel);
-	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
 }
 
 VoxelGrid &WorldData::getVoxelGrid()
@@ -239,4 +231,67 @@ EntityManager &WorldData::getEntityManager()
 const EntityManager &WorldData::getEntityManager() const
 {
 	return this->entityManager;
+}
+
+const std::string *WorldData::getTextTrigger(const Int2 &voxel) const
+{
+	const auto textIter = this->textTriggers.find(voxel);
+
+	if (textIter != this->textTriggers.end())
+	{
+		const auto &pair = textIter->second;
+		const bool displayedOnce = pair.first;
+
+		// If the text trigger should only be activated once, then only return
+		// a valid pointer if it hasn't been activated yet.
+		if (displayedOnce)
+		{
+			const auto activatedIter = this->activatedOneShotTextTriggers.find(voxel);
+			return (activatedIter == this->activatedOneShotTextTriggers.end()) ?
+				(&pair.second) : nullptr;
+		}
+		else
+		{
+			return &pair.second;
+		}
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+bool WorldData::textTriggerIsSingleDisplay(const Int2 &voxel) const
+{
+	const auto textIter = this->textTriggers.find(voxel);
+
+	assert(textIter != this->textTriggers.end());
+
+	const bool displayedOnce = textIter->second.first;
+	return displayedOnce;
+}
+
+bool WorldData::singleDisplayTextTriggerActivated(const Int2 &voxel) const
+{
+	assert(this->textTriggers.find(voxel) != this->textTriggers.end());
+
+	return this->activatedOneShotTextTriggers.find(voxel) != 
+		this->activatedOneShotTextTriggers.end();
+}
+
+void WorldData::activateSingleDisplayTextTrigger(const Int2 &voxel)
+{
+	assert(this->textTriggers.find(voxel) != this->textTriggers.end());
+
+	if (this->activatedOneShotTextTriggers.find(voxel) == 
+		this->activatedOneShotTextTriggers.end())
+	{
+		this->activatedOneShotTextTriggers.insert(voxel);
+	}
+}
+
+const std::string *WorldData::getSoundTrigger(const Int2 &voxel) const
+{
+	const auto soundIter = this->soundTriggers.find(voxel);
+	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
 }

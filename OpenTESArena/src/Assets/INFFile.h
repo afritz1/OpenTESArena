@@ -75,9 +75,9 @@ public:
 	struct TextData
 	{
 		std::string text; // Stores display text for a text trigger.
-		bool oneShot; // Whether the text is only displayed once (starts with '~').
+		bool displayedOnce; // Whether the text is only displayed once (starts with '~').
 
-		TextData(bool oneShot);
+		TextData(bool displayedOnce);
 	};
 private:
 	// Texture filenames in the order they are discovered. .SET files are expanded;
@@ -122,6 +122,9 @@ public:
 	const std::string &getBoxcap(int index) const;
 	const std::string &getBoxside(int index) const;
 	const std::string &getSound(int index) const;
+	bool hasKeyIndex(int index) const;
+	bool hasRiddleIndex(int index) const;
+	bool hasTextIndex(int index) const;
 	const KeyData &getKey(int index) const;
 	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
