@@ -85,7 +85,7 @@ namespace
 }
 
 GameWorldPanel::GameWorldPanel(Game *game)
-	: Panel(game)
+	: Panel(game), triggeredText(0.0, nullptr)
 {
 	assert(game->gameDataIsActive());
 
@@ -1023,9 +1023,32 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 
 		if (canDisplay)
 		{
-			// Display the text.
-			// To do: text box creation and timing. std::unique_ptr<std::pair<TextBox, double>>?
-			printf("%s\n", textTrigger->getText().c_str());
+			// Ignore the newline at the end.
+			const std::string text = textTrigger->getText().substr(
+				0, textTrigger->getText().size() - 1);
+			const int lineSpacing = 1;
+
+			const RichTextString richText(
+				text,
+				FontName::Arena,
+				Color(215, 121, 8),
+				TextAlignment::Center,
+				lineSpacing,
+				game.getFontManager());
+
+			// Create the text box for display (set position to zero; the renderer will decide
+			// where to draw it).
+			const Color shadowColor(12, 12, 24);
+			std::unique_ptr<TextBox> textBox(new TextBox(
+				Int2(0, 0), 
+				richText, 
+				shadowColor,
+				game.getRenderer()));
+
+			// Assign the text box and its duration to the triggered text member. It will 
+			// be displayed in the render method until the duration is no longer positive.
+			const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+			this->triggeredText = std::make_pair(duration, std::move(textBox));
 
 			// Set the text trigger as activated (regardless of whether or not it's single-shot,
 			// just for consistency).
@@ -1149,6 +1172,12 @@ void GameWorldPanel::tick(double dt)
 	auto &game = *this->getGame();
 	auto &gameData = game.getGameData();
 	gameData.tickTime(dt);
+
+	// Tick the triggered text timer if the remaining duration is positive.
+	if (this->triggeredText.first > 0.0)
+	{
+		this->triggeredText.first -= dt;
+	}
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
@@ -1351,6 +1380,23 @@ void GameWorldPanel::render(Renderer &renderer)
 		{
 			this->drawTooltip("Camp", renderer);
 		}
+	}
+
+	// Draw pop-up text if its duration is positive.
+	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
+	//   subtracting the time in tick() because it would always be one frame shorter then.
+	if (this->triggeredText.first > 0.0)
+	{
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface));
+
+		const auto &triggeredTextBox = *this->triggeredText.second.get();
+		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggeredTextBox.getSurface()->w / 2);
+		const int centerY = Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight() - 
+			triggeredTextBox.getSurface()->h - 2;
+
+		renderer.drawToOriginal(triggeredTextBox.getShadowTexture(), centerX - 1, centerY);
+		renderer.drawToOriginal(triggeredTextBox.getTexture(), centerX, centerY);
 	}
 
 	// Draw some optional debug text.
