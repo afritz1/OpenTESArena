@@ -1013,26 +1013,23 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	auto &worldData = game.getGameData().getWorldData();
 
 	// See if there's a text trigger.
-	const std::string *textTrigger = worldData.getTextTrigger(voxel);
+	WorldData::TextTrigger *textTrigger = worldData.getTextTrigger(voxel);
 	if (textTrigger != nullptr)
 	{
 		// Only display it if it should be displayed (i.e., not already displayed 
 		// if it's a single-display text).
-		const bool isSingleDisplay = worldData.textTriggerIsSingleDisplay(voxel);
-		const bool canDisplay = !isSingleDisplay ||
-			(isSingleDisplay && !worldData.singleDisplayTextTriggerActivated(voxel));
+		const bool canDisplay = !textTrigger->isSingleDisplay() ||
+			(textTrigger->isSingleDisplay() && !textTrigger->hasBeenDisplayed());
 
 		if (canDisplay)
 		{
 			// Display the text.
 			// To do: text box creation and timing. std::unique_ptr<std::pair<TextBox, double>>?
-			printf("%s\n", textTrigger->c_str());
+			printf("%s\n", textTrigger->getText().c_str());
 
-			// Set the text trigger as activated if it's a single-display trigger.
-			if (isSingleDisplay)
-			{
-				worldData.activateSingleDisplayTextTrigger(voxel);
-			}
+			// Set the text trigger as activated (regardless of whether or not it's single-shot,
+			// just for consistency).
+			textTrigger->setPreviouslyDisplayed(true);
 		}
 	}
 
