@@ -24,7 +24,7 @@ namespace
 
 INFFile::CeilingData::CeilingData()
 {
-	const int defaultHeight = 100;
+	const int defaultHeight = 128;
 	const double defaultScale = 1.0;
 
 	this->height = defaultHeight;

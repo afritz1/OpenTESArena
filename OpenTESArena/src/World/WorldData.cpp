@@ -157,8 +157,9 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 							}
 							else
 							{
-								const double ceilingHeight =
-									static_cast<double>(inf.getCeiling().height) / 100.0;
+								const double ceilingHeight = 
+									static_cast<double>(inf.getCeiling().height) / 
+									static_cast<double>(MIFFile::ARENA_UNITS);
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
 									wallTextureID, wallTextureID, wallTextureID, 0.0,
@@ -176,7 +177,8 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 						// and when it's greater than 64, then that determines the offset?
 						const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4; // To do: get BOXCAP Y texture.
 						const uint8_t wallTextureID = map1Voxel & 0x000F; // To do: get BOXSIDE Z texture.
-						const double platformHeight = static_cast<double>(mostSigByte) / 64.0;
+						const double platformHeight = static_cast<double>(mostSigByte) / 
+							static_cast<double>(MIFFile::ARENA_UNITS);
 
 						// Get the voxel data index associated with the wall value, or add it
 						// if it doesn't exist yet.
@@ -190,9 +192,17 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 							}
 							else
 							{
+								// To do: Clamp top V coordinate positive until the correct platform 
+								// height calculation is figured out. Maybe the platform height
+								// needs to be multiplied by the ratio between the current ceiling
+								// height and the default ceiling height (128)? I.e., multiply by
+								// the "ceilingHeight" local variable used a couple dozen lines up?
+								const double topV = std::max(0.0, 1.0 - platformHeight);
+								const double bottomV = 1.0; // To do: should also be a function.
+
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
 									wallTextureID, capTextureID, capTextureID,
-									0.0, platformHeight, 1.0 - platformHeight, 1.0));
+									0.0, platformHeight, topV, bottomV));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
 							}
