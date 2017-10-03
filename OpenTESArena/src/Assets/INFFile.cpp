@@ -22,6 +22,19 @@ namespace
 	};
 }
 
+INFFile::TextureData::TextureData(const std::string &filename, int setIndex)
+	: filename(filename), setIndex(new int(setIndex)) { }
+
+INFFile::TextureData::TextureData(const std::string &filename)
+	: filename(filename) { }
+
+INFFile::TextureData::TextureData() { }
+
+INFFile::TextureData::~TextureData()
+{
+
+}
+
 INFFile::CeilingData::CeilingData()
 {
 	const int defaultHeight = 128;
@@ -138,6 +151,21 @@ INFFile::INFFile(const std::string &filename)
 		std::vector<int> item;
 	};*/
 
+	struct FloorState
+	{
+		std::unique_ptr<CeilingData> ceilingData; // Non-null when present.
+		std::unique_ptr<int> setSize; // Non-null when a .SET size exists.
+		std::string textureName;
+		FloorMode mode;
+		int id; // *BOXCAP ID.
+
+		FloorState()
+		{
+			this->mode = FloorMode::None;
+			this->id = -1;
+		}
+	};
+
 	struct TextState
 	{
 		enum RiddleMode { Riddle, Correct, Wrong };
@@ -171,6 +199,7 @@ INFFile::INFFile(const std::string &filename)
 	// - To do: Maybe this could be a virtual class that's instantiated as needed for
 	//   each category encountered in the .INF file. It would move much of the parsing
 	//   code into loosely coupled components (via virtual methods that take INFFile&).
+	std::unique_ptr<FloorState> floorState;
 	std::unique_ptr<TextState> textState;
 
 	std::stringstream ss(text);
@@ -219,11 +248,136 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else if (parseMode == ParseMode::Floors)
 		{
-			const std::unordered_map<std::string, FloorMode> FloorSections =
+			const char TYPE_CHAR = '*';
+
+			// Lambda for converting a character to an integer (i.e., for .SET sizes).
+			auto charToInt = [](char c) { return c - '0'; };
+
+			// Decide what to do based on the first character. Otherwise, read the line
+			// as a texture filename.
+			if (line.front() == TYPE_CHAR)
 			{
-				{ "*BOXCAP", FloorMode::BoxCap },
-				{ "*CEILING", FloorMode::Ceiling }
-			};
+				// Initialize floor state if it is null.
+				if (floorState.get() == nullptr)
+				{
+					floorState = std::unique_ptr<FloorState>(new FloorState());
+				}
+
+				const std::string BOXCAP_STR = "BOXCAP";
+				const std::string CEILING_STR = "CEILING";
+
+				// See what the type in the line is.
+				const std::vector<std::string> tokens = String::split(line);
+				const std::string firstToken = tokens.at(0);
+				const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+
+				if (firstTokenType == BOXCAP_STR)
+				{
+					// Write the *BOXCAP's ID to the floor state.
+					floorState->id = std::stoi(tokens.at(1));
+					floorState->mode = FloorMode::BoxCap;
+				}
+				else if (firstTokenType == CEILING_STR)
+				{
+					// Initialize ceiling data.
+					floorState->ceilingData = std::unique_ptr<CeilingData>(new CeilingData());
+					floorState->mode = FloorMode::Ceiling;
+
+					// Check up to three numbers on the right: ceiling height, box scale,
+					// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
+					if (tokens.size() >= 2)
+					{
+						floorState->ceilingData->height = std::stoi(tokens.at(1));
+					}
+
+					if (tokens.size() >= 3)
+					{
+						// To do: This might need some more math. (Y * boxScale) / 256?
+						floorState->ceilingData->boxScale = std::stoi(tokens.at(2));
+					}
+
+					if (tokens.size() == 4)
+					{
+						floorState->ceilingData->outdoorDungeon = tokens.at(3) == "1";
+					}
+				}
+				else
+				{
+					DebugCrash("Unrecognized @FLOOR section \"" + tokens.at(0) + "\".");
+				}
+			}
+			else if (floorState.get() == nullptr)
+			{
+				// No current floor state, so the current line is a loose texture filename
+				// (found in some city .INFs).
+				const std::vector<std::string> tokens = String::split(line, '\t');
+
+				if (tokens.size() == 1)
+				{
+					// A regular filename (like an .IMG).
+					this->textures.push_back(TextureData(line));
+				}
+				else
+				{
+					// A .SET filename. Expand it for each of the .SET indices.
+					const std::string &textureName = tokens.at(0);
+					const int setSize = charToInt(tokens.at(1).at(1));
+
+					for (int i = 0; i < setSize; i++)
+					{
+						this->textures.push_back(TextureData(textureName, i));
+					}
+				}
+			}
+			else
+			{
+				// There is existing floor state, so this line is expected to be a filename.
+				// If the line contains a tab, it's a .SET file.
+				const std::vector<std::string> tokens = String::split(line, '\t');
+
+				// Assign texture data depending on whether the line is for a .SET file.
+				if (tokens.size() == 1)
+				{
+					// Just a regular texture (like an .IMG).
+					floorState->textureName = line;
+
+					this->textures.push_back(TextureData(floorState->textureName));
+				}
+				else
+				{
+					const int setSize = charToInt(tokens.at(1).at(1));
+
+					// Left side is the filename, right side is the .SET size.
+					floorState->textureName = tokens.at(0);
+					floorState->setSize = std::unique_ptr<int>(new int(setSize));
+
+					for (int i = 0; i < setSize; i++)
+					{
+						this->textures.push_back(TextureData(floorState->textureName, i));
+					}
+				}
+
+				// Write the box cap data and reset the floor state. Also write to the ceiling
+				// data if it is being defined for the current group.
+				this->boxcaps.at(floorState->id) = floorState->textureName;
+
+				if (floorState->ceilingData.get() != nullptr)
+				{
+					this->ceiling.texture.filename = floorState->ceilingData->texture.filename;
+
+					if (floorState->ceilingData->texture.setIndex.get() != nullptr)
+					{
+						this->ceiling.texture.setIndex = 
+							std::move(floorState->ceilingData->texture.setIndex);
+					}
+
+					this->ceiling.height = floorState->ceilingData->height;
+					this->ceiling.boxScale = floorState->ceilingData->boxScale;
+					this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
+				}
+
+				floorState = std::unique_ptr<FloorState>(new FloorState());
+			}
 		}
 		else if (parseMode == ParseMode::Walls)
 		{

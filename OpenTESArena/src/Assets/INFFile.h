@@ -21,6 +21,12 @@ public:
 	{
 		std::string filename;
 		std::unique_ptr<int> setIndex; // Non-null when texture is a .SET file.
+
+		TextureData(const std::string &filename, int setIndex);
+		TextureData(const std::string &filename);
+		TextureData(TextureData&&) = default;
+		TextureData();
+		~TextureData();
 	};
 
 	struct CeilingData
