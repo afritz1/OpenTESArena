@@ -66,6 +66,14 @@ namespace
 	const Rect BottomRightRegion(179, 119, 141, 28);
 	const Rect UiBottomRegion(0, 147, 320, 53);
 
+	// Colors for UI text.
+	const Color TriggerTextColor(215, 121, 8);
+	const Color TriggerTextShadowColor(12, 12, 24);
+	const Color DisplayTextColor(195, 0, 0);
+	const Color DisplayTextShadow(12, 12, 24);
+	const Color EffectTextForeground(251, 239, 77);
+	const Color EffectTextShadow(190, 113, 0);
+
 	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse 
 	// position so the cursor's click area is closer to the tip of each arrow, as is 
 	// done in the original game (slightly differently, though. I think the middle 
@@ -85,7 +93,8 @@ namespace
 }
 
 GameWorldPanel::GameWorldPanel(Game *game)
-	: Panel(game), triggeredText(0.0, nullptr)
+	: Panel(game), triggerText(0.0, nullptr), actionText(0.0, nullptr), 
+	effectText(0.0, nullptr)
 {
 	assert(game->gameDataIsActive());
 
@@ -1031,24 +1040,23 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 			const RichTextString richText(
 				text,
 				FontName::Arena,
-				Color(215, 121, 8),
+				TriggerTextColor,
 				TextAlignment::Center,
 				lineSpacing,
 				game.getFontManager());
 
 			// Create the text box for display (set position to zero; the renderer will decide
 			// where to draw it).
-			const Color shadowColor(12, 12, 24);
 			std::unique_ptr<TextBox> textBox(new TextBox(
 				Int2(0, 0), 
 				richText, 
-				shadowColor,
+				TriggerTextShadowColor,
 				game.getRenderer()));
 
 			// Assign the text box and its duration to the triggered text member. It will 
 			// be displayed in the render method until the duration is no longer positive.
 			const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-			this->triggeredText = std::make_pair(duration, std::move(textBox));
+			this->triggerText = std::make_pair(duration, std::move(textBox));
 
 			// Set the text trigger as activated (regardless of whether or not it's single-shot,
 			// just for consistency).
@@ -1174,9 +1182,9 @@ void GameWorldPanel::tick(double dt)
 	gameData.tickTime(dt);
 
 	// Tick the triggered text timer if the remaining duration is positive.
-	if (this->triggeredText.first > 0.0)
+	if (this->triggerText.first > 0.0)
 	{
-		this->triggeredText.first -= dt;
+		this->triggerText.first -= dt;
 	}
 
 	// Tick the player.
@@ -1385,19 +1393,21 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw pop-up text if its duration is positive.
 	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
 	//   subtracting the time in tick() because it would always be one frame shorter then.
-	if (this->triggeredText.first > 0.0)
+	if (this->triggerText.first > 0.0)
 	{
 		const auto &gameInterface = textureManager.getTexture(
 			TextureFile::fromName(TextureName::GameWorldInterface));
 
-		const auto &triggeredTextBox = *this->triggeredText.second.get();
-		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggeredTextBox.getSurface()->w / 2);
+		const auto &triggerTextBox = *this->triggerText.second.get();
+		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextBox.getSurface()->w / 2);
 		const int centerY = Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight() - 
-			triggeredTextBox.getSurface()->h - 2;
+			triggerTextBox.getSurface()->h - 2;
 
-		renderer.drawToOriginal(triggeredTextBox.getShadowTexture(), centerX - 1, centerY);
-		renderer.drawToOriginal(triggeredTextBox.getTexture(), centerX, centerY);
+		renderer.drawToOriginal(triggerTextBox.getShadowTexture(), centerX - 1, centerY);
+		renderer.drawToOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
+
+	// To do: draw "action text" and "effect text" (similar to trigger text).
 
 	// Draw some optional debug text.
 	if (options.debugIsShown())
