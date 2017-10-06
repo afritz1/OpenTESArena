@@ -70,9 +70,9 @@ namespace
 	const Color TriggerTextColor(215, 121, 8);
 	const Color TriggerTextShadowColor(12, 12, 24);
 	const Color ActionTextColor(195, 0, 0);
-	const Color ActionTextShadow(12, 12, 24);
-	const Color EffectTextForeground(251, 239, 77);
-	const Color EffectTextShadow(190, 113, 0);
+	const Color ActionTextShadowColor(12, 12, 24);
+	const Color EffectTextColor(251, 239, 77);
+	const Color EffectTextShadowColor(190, 113, 0);
 
 	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse 
 	// position so the cursor's click area is closer to the tip of each arrow, as is 
