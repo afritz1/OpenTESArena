@@ -69,8 +69,8 @@ namespace
 	// Colors for UI text.
 	const Color TriggerTextColor(215, 121, 8);
 	const Color TriggerTextShadowColor(12, 12, 24);
-	const Color DisplayTextColor(195, 0, 0);
-	const Color DisplayTextShadow(12, 12, 24);
+	const Color ActionTextColor(195, 0, 0);
+	const Color ActionTextShadow(12, 12, 24);
 	const Color EffectTextForeground(251, 239, 77);
 	const Color EffectTextShadow(190, 113, 0);
 
