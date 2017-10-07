@@ -35,12 +35,13 @@ std::vector<std::string> String::split(const std::string &str)
 std::string String::trim(const std::string &str)
 {
 	const char space = ' ';
+	const char tab = '\t';
 
 	std::string trimmed;
 
 	for (const char c : str)
 	{
-		if (c != space)
+		if ((c != space) && (c != tab))
 		{
 			trimmed.push_back(c);
 		}
@@ -52,10 +53,11 @@ std::string String::trim(const std::string &str)
 std::string String::trimFront(const std::string &str)
 {
 	const char space = ' ';
+	const char tab = '\t';
 
 	std::string trimmed(str);
 	
-	while (trimmed.front() == space)
+	while ((trimmed.front() == space) || (trimmed.front() == tab))
 	{
 		trimmed.erase(trimmed.begin());
 	}
@@ -66,10 +68,11 @@ std::string String::trimFront(const std::string &str)
 std::string String::trimBack(const std::string &str)
 {
 	const char space = ' ';
+	const char tab = '\t';
 
 	std::string trimmed(str);
 
-	while (trimmed.back() == space)
+	while ((trimmed.back() == space) || (trimmed.back() == tab))
 	{
 		trimmed.pop_back();
 	}

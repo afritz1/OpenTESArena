@@ -249,10 +249,7 @@ INFFile::INFFile(const std::string &filename)
 		else if (parseMode == ParseMode::Floors)
 		{
 			const char TYPE_CHAR = '*';
-
-			// Lambda for converting a character to an integer (i.e., for .SET sizes).
-			auto charToInt = [](char c) { return c - '0'; };
-
+			
 			// Decide what to do based on the first character. Otherwise, read the line
 			// as a texture filename.
 			if (line.front() == TYPE_CHAR)
@@ -310,7 +307,7 @@ INFFile::INFFile(const std::string &filename)
 			{
 				// No current floor state, so the current line is a loose texture filename
 				// (found in some city .INFs).
-				const std::vector<std::string> tokens = String::split(line, '\t');
+				const std::vector<std::string> tokens = String::split(line, '#');
 
 				if (tokens.size() == 1)
 				{
@@ -320,8 +317,8 @@ INFFile::INFFile(const std::string &filename)
 				else
 				{
 					// A .SET filename. Expand it for each of the .SET indices.
-					const std::string &textureName = tokens.at(0);
-					const int setSize = charToInt(tokens.at(1).at(1));
+					const std::string textureName = String::trimBack(tokens.at(0));
+					const int setSize = std::stoi(tokens.at(1));
 
 					for (int i = 0; i < setSize; i++)
 					{
@@ -332,8 +329,8 @@ INFFile::INFFile(const std::string &filename)
 			else
 			{
 				// There is existing floor state, so this line is expected to be a filename.
-				// If the line contains a tab, it's a .SET file.
-				const std::vector<std::string> tokens = String::split(line, '\t');
+				// If the line contains a '#', it's a .SET file.
+				const std::vector<std::string> tokens = String::split(line, '#');
 
 				// Assign texture data depending on whether the line is for a .SET file.
 				if (tokens.size() == 1)
@@ -345,10 +342,11 @@ INFFile::INFFile(const std::string &filename)
 				}
 				else
 				{
-					const int setSize = charToInt(tokens.at(1).at(1));
+					// Get the .SET size found after the '#'. It is one digit.
+					const int setSize = std::stoi(tokens.at(1));
 
 					// Left side is the filename, right side is the .SET size.
-					floorState->textureName = tokens.at(0);
+					floorState->textureName = String::trimBack(tokens.at(0));
 					floorState->setSize = std::unique_ptr<int>(new int(setSize));
 
 					for (int i = 0; i < setSize; i++)
