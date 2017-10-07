@@ -25,8 +25,7 @@ public:
 		TextureData(const std::string &filename, int setIndex);
 		TextureData(const std::string &filename);
 		TextureData(TextureData&&) = default;
-		TextureData();
-		~TextureData();
+		TextureData() = default;
 	};
 
 	struct CeilingData

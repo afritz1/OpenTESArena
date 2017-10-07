@@ -20,6 +20,84 @@ namespace
 		"IMPPAL3.INF",
 		"IMPPAL4.INF"
 	};
+
+	// Each '@' section may or may not have some state it currently possesses. They 
+	// also have a mode they can be in, via a tag like *BOXCAP or *TEXT.
+	struct FloorState
+	{
+		enum class Mode { None, BoxCap, Ceiling };
+
+		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
+		std::unique_ptr<int> setSize; // Non-null when a .SET size exists.
+		std::string textureName;
+		FloorState::Mode mode;
+		int id; // *BOXCAP ID.
+
+		FloorState()
+		{
+			this->mode = FloorState::Mode::None;
+			this->id = -1;
+		}
+	};
+
+	struct WallState
+	{
+		enum class Mode
+		{
+			None, BoxCap, BoxSide, Door, DryChasm, LavaChasm, LevelDown,
+			LevelUp, Menu, Transition, TransWalkThru, WalkThru, WetChasm
+		};
+
+		// To do.
+
+		WallState()
+		{
+
+		}
+	};
+
+	struct FlatState
+	{
+		enum class Mode { None, Item };
+
+		// To do.
+
+		FlatState()
+		{
+
+		}
+	};
+
+	struct TextState
+	{
+		enum class Mode { None, Key, Riddle, Text };
+
+		struct RiddleState
+		{
+			enum class Mode { Riddle, Correct, Wrong };
+
+			INFFile::RiddleData data;
+			RiddleState::Mode mode;
+
+			RiddleState(int firstNumber, int secondNumber)
+				: data(firstNumber, secondNumber)
+			{
+				this->mode = RiddleState::Mode::Riddle;
+			}
+		};
+
+		std::unique_ptr<INFFile::KeyData> keyData;
+		std::unique_ptr<RiddleState> riddleState;
+		std::unique_ptr<INFFile::TextData> textData;
+		TextState::Mode mode; // Determines which data is in use.
+		int id; // *TEXT ID.
+
+		TextState(int id)
+		{
+			this->mode = TextState::Mode::None;
+			this->id = id;
+		}
+	};
 }
 
 INFFile::TextureData::TextureData(const std::string &filename, int setIndex)
@@ -27,13 +105,6 @@ INFFile::TextureData::TextureData(const std::string &filename, int setIndex)
 
 INFFile::TextureData::TextureData(const std::string &filename)
 	: filename(filename) { }
-
-INFFile::TextureData::TextureData() { }
-
-INFFile::TextureData::~TextureData()
-{
-
-}
 
 INFFile::CeilingData::CeilingData()
 {
@@ -110,97 +181,374 @@ INFFile::INFFile(const std::string &filename)
 	// Remove carriage returns (newlines are nicer to work with).
 	text = String::replace(text, "\r", "");
 
-	// To do: maybe make a virtual method for each section, so parsing is nicer?
-	// - Most sections have to store some state, so having a class would make sense.
-
 	// The parse mode indicates which '@' section is currently being parsed.
 	enum class ParseMode
 	{
 		None, Floors, Walls, Flats, Sound, Text
 	};
 
-	// Some sections have a mode they can be in, via a tag like *BOXCAP or *TEXT.
-	enum class FloorMode { None, BoxCap, Ceiling };
-
-	enum class WallMode
-	{
-		None, BoxCap, BoxSide, Door, DryChasm, LavaChasm, LevelDown,
-		LevelUp, Menu, Transition, TransWalkThru, WalkThru, WetChasm,
-	};
-
-	enum class FlatMode { None, Item };
-
-	enum class TextMode { None, Key, Riddle, Text };
-
-	// Store memory for each encountered type (i.e., *BOXCAP, *DOOR, etc.) in each section.
-	// I think it goes like this: for each set of consecutive types, assign them to each
-	// consecutive element until the next set of types.
-	/*struct ReferencedFloorTypes
-	{
-		std::vector<int> boxcap;
-		bool ceiling;
-	};
-
-	struct ReferencedWallTypes
-	{
-		std::vector<int> boxcap, boxside;
-	};
-
-	struct ReferencedFlatTypes
-	{
-		std::vector<int> item;
-	};*/
-
-	struct FloorState
-	{
-		std::unique_ptr<CeilingData> ceilingData; // Non-null when present.
-		std::unique_ptr<int> setSize; // Non-null when a .SET size exists.
-		std::string textureName;
-		FloorMode mode;
-		int id; // *BOXCAP ID.
-
-		FloorState()
-		{
-			this->mode = FloorMode::None;
-			this->id = -1;
-		}
-	};
-
-	struct TextState
-	{
-		enum RiddleMode { Riddle, Correct, Wrong };
-
-		struct RiddleState
-		{
-			RiddleData data;
-			RiddleMode mode;
-
-			RiddleState(int firstNumber, int secondNumber)
-				: data(firstNumber, secondNumber)
-			{
-				this->mode = RiddleMode::Riddle;
-			}
-		};
-
-		std::unique_ptr<KeyData> keyData;
-		std::unique_ptr<RiddleState> riddleState;
-		std::unique_ptr<TextData> textData;
-		TextMode mode; // Determines which data is in use.
-		int id; // *TEXT ID.
-
-		TextState(int id)
-		{
-			this->mode = TextMode::None;
-			this->id = id;
-		}
-	};
-
 	// Initialize loop states to null (they are non-null when in use by the loop).
-	// - To do: Maybe this could be a virtual class that's instantiated as needed for
-	//   each category encountered in the .INF file. It would move much of the parsing
-	//   code into loosely coupled components (via virtual methods that take INFFile&).
+	// I tried re-organizing them into virtual classes, but this way seems to be the
+	// most practical for now.
 	std::unique_ptr<FloorState> floorState;
+	std::unique_ptr<WallState> wallState;
+	std::unique_ptr<FlatState> flatState;
 	std::unique_ptr<TextState> textState;
+
+	// Lambdas for flushing state to the INFFile. This is useful during the parse loop,
+	// but it's also sometimes necessary at the end of the file because the last element 
+	// of certain sections (i.e., @TEXT) might get missed if there is no data after them.
+	auto flushWallState = [this, &wallState]()
+	{
+		// To do.
+		// Call whenever it hits an empty line or a '*' line after a non-'*' line.
+	};
+
+	auto flushFlatState = [this, &flatState]()
+	{
+		// To do.
+		// Call whenever it hits an empty line or an *ITEM section.
+	};
+
+	auto flushTextState = [this, &textState]()
+	{
+		if (textState->mode == TextState::Mode::Key)
+		{
+			// Save key data.
+			this->keys.insert(std::make_pair(textState->id, *textState->keyData.get()));
+		}
+		else if (textState->mode == TextState::Mode::Riddle)
+		{
+			// Save riddle data.
+			this->riddles.insert(std::make_pair(textState->id, textState->riddleState->data));
+		}
+		else if (textState->mode == TextState::Mode::Text)
+		{
+			// Save text data.
+			this->texts.insert(std::make_pair(textState->id, *textState->textData.get()));
+		}
+	};
+
+	// Lambda for flushing all states. Some states don't need an explicit flush because 
+	// they have no risk of leaving data behind.
+	auto flushAllStates = [&floorState, &wallState, &flatState, &textState,
+		&flushWallState, &flushFlatState, &flushTextState]()
+	{
+		if (floorState.get() != nullptr)
+		{
+			floorState = nullptr;
+		}
+
+		if (wallState.get() != nullptr)
+		{
+			flushWallState();
+			wallState = nullptr;
+		}
+
+		if (flatState.get() != nullptr)
+		{
+			flushFlatState();
+			flatState = nullptr;
+		}
+
+		if (textState.get() != nullptr)
+		{
+			flushTextState();
+			textState = nullptr;
+		}
+	};
+
+	// Lambdas for parsing a line of text.
+	auto parseFloorLine = [this, &floorState](const std::string &line)
+	{
+		const char TYPE_CHAR = '*';
+
+		// Decide what to do based on the first character. Otherwise, read the line
+		// as a texture filename.
+		if (line.front() == TYPE_CHAR)
+		{
+			// Initialize floor state if it is null.
+			if (floorState.get() == nullptr)
+			{
+				floorState = std::unique_ptr<FloorState>(new FloorState());
+			}
+
+			const std::string BOXCAP_STR = "BOXCAP";
+			const std::string CEILING_STR = "CEILING";
+
+			// See what the type in the line is.
+			const std::vector<std::string> tokens = String::split(line);
+			const std::string firstToken = tokens.at(0);
+			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+
+			if (firstTokenType == BOXCAP_STR)
+			{
+				// Write the *BOXCAP's ID to the floor state.
+				floorState->id = std::stoi(tokens.at(1));
+				floorState->mode = FloorState::Mode::BoxCap;
+			}
+			else if (firstTokenType == CEILING_STR)
+			{
+				// Initialize ceiling data.
+				floorState->ceilingData = std::unique_ptr<CeilingData>(new CeilingData());
+				floorState->mode = FloorState::Mode::Ceiling;
+
+				// Check up to three numbers on the right: ceiling height, box scale,
+				// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
+				if (tokens.size() >= 2)
+				{
+					floorState->ceilingData->height = std::stoi(tokens.at(1));
+				}
+
+				if (tokens.size() >= 3)
+				{
+					// To do: This might need some more math. (Y * boxScale) / 256?
+					floorState->ceilingData->boxScale = std::stoi(tokens.at(2));
+				}
+
+				if (tokens.size() == 4)
+				{
+					floorState->ceilingData->outdoorDungeon = tokens.at(3) == "1";
+				}
+			}
+			else
+			{
+				DebugCrash("Unrecognized @FLOOR section \"" + tokens.at(0) + "\".");
+			}
+		}
+		else if (floorState.get() == nullptr)
+		{
+			// No current floor state, so the current line is a loose texture filename
+			// (found in some city .INFs).
+			const std::vector<std::string> tokens = String::split(line, '#');
+
+			if (tokens.size() == 1)
+			{
+				// A regular filename (like an .IMG).
+				this->textures.push_back(TextureData(line));
+			}
+			else
+			{
+				// A .SET filename. Expand it for each of the .SET indices.
+				const std::string textureName = String::trimBack(tokens.at(0));
+				const int setSize = std::stoi(tokens.at(1));
+
+				for (int i = 0; i < setSize; i++)
+				{
+					this->textures.push_back(TextureData(textureName, i));
+				}
+			}
+		}
+		else
+		{
+			// There is existing floor state, so this line is expected to be a filename.
+			// If the line contains a '#', it's a .SET file.
+			const std::vector<std::string> tokens = String::split(line, '#');
+
+			// Assign texture data depending on whether the line is for a .SET file.
+			if (tokens.size() == 1)
+			{
+				// Just a regular texture (like an .IMG).
+				floorState->textureName = line;
+
+				this->textures.push_back(TextureData(floorState->textureName));
+			}
+			else
+			{
+				// Get the .SET size found after the '#'. It is one digit.
+				const int setSize = std::stoi(tokens.at(1));
+
+				// Left side is the filename, right side is the .SET size.
+				floorState->textureName = String::trimBack(tokens.at(0));
+				floorState->setSize = std::unique_ptr<int>(new int(setSize));
+
+				for (int i = 0; i < setSize; i++)
+				{
+					this->textures.push_back(TextureData(floorState->textureName, i));
+				}
+			}
+
+			// Write the box cap data and reset the floor state. Also write to the ceiling
+			// data if it is being defined for the current group.
+			this->boxcaps.at(floorState->id) = floorState->textureName;
+
+			if (floorState->ceilingData.get() != nullptr)
+			{
+				this->ceiling.texture.filename = floorState->ceilingData->texture.filename;
+
+				if (floorState->ceilingData->texture.setIndex.get() != nullptr)
+				{
+					this->ceiling.texture.setIndex =
+						std::move(floorState->ceilingData->texture.setIndex);
+				}
+
+				this->ceiling.height = floorState->ceilingData->height;
+				this->ceiling.boxScale = floorState->ceilingData->boxScale;
+				this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
+			}
+
+			floorState = std::unique_ptr<FloorState>(new FloorState());
+		}
+	};
+
+	auto parseWallLine = [this, &wallState, &flushWallState](const std::string &line)
+	{
+		const std::unordered_map<std::string, WallState::Mode> WallSections =
+		{
+			{ "*BOXCAP", WallState::Mode::BoxCap },
+			{ "*BOXSIDE", WallState::Mode::BoxSide },
+			{ "*DOOR", WallState::Mode::Door }, // *DOOR is ignored.
+			{ "*DRYCHASM", WallState::Mode::DryChasm },
+			{ "*LAVACHASM", WallState::Mode::LavaChasm },
+			{ "*LEVELDOWN", WallState::Mode::LevelDown },
+			{ "*LEVELUP", WallState::Mode::LevelUp },
+			{ "*MENU", WallState::Mode::Menu }, // Doors leading to interiors.
+			{ "*TRANS", WallState::Mode::Transition },
+			{ "*TRANSWALKTHRU", WallState::Mode::TransWalkThru },
+			{ "*WALKTHRU", WallState::Mode::WalkThru }, // Probably for hedge archways.
+			{ "*WETCHASM", WallState::Mode::WetChasm }
+		};
+	};
+
+	auto parseFlatLine = [this, &flatState, &flushFlatState](const std::string &line)
+	{
+		// Check if line says *TEXT, and if so, get the number. Otherwise, get the
+		// filename and any associated modifiers ("F:", "Y:", etc.).
+
+		// I think each *ITEM tag only points to the filename right below it. It
+		// doesn't stack up any other filenames.
+	};
+
+	auto parseSoundLine = [this](const std::string &line)
+	{
+		// Split into the filename and ID. Make sure the filename is all caps.
+		const std::vector<std::string> tokens = String::split(line);
+		const std::string vocFilename = String::toUppercase(tokens.front());
+		const int vocID = std::stoi(tokens.at(1));
+
+		this->sounds.insert(std::make_pair(vocID, vocFilename));
+	};
+
+	auto parseTextLine = [this, &textState, &flushTextState](const std::string &line)
+	{
+		// Start a new text state after each *TEXT tag.
+		const char TEXT_CHAR = '*';
+		const char KEY_INDEX_CHAR = '+';
+		const char RIDDLE_CHAR = '^';
+		const char DISPLAYED_ONCE_CHAR = '~';
+
+		// Check the first character in the line to determine any changes in text mode.
+		// Otherwise, parse the line based on the current mode.
+		if (line.front() == TEXT_CHAR)
+		{
+			const std::vector<std::string> tokens = String::split(line);
+
+			// Get the ID after *TEXT.
+			const int textID = std::stoi(tokens.at(1));
+
+			// If there is existing text state present, save it.
+			if (textState.get() != nullptr)
+			{
+				flushTextState();
+			}
+
+			// Reset the text state to default with the new *TEXT ID.
+			textState = std::unique_ptr<TextState>(new TextState(textID));
+		}
+		else if (line.front() == KEY_INDEX_CHAR)
+		{
+			// Get key number. No need for a key section here since it's only one line.
+			const std::string keyStr = line.substr(1, line.size() - 1);
+			const int keyNumber = std::stoi(keyStr);
+
+			textState->mode = TextState::Mode::Key;
+			textState->keyData = std::unique_ptr<KeyData>(new KeyData(keyNumber));
+		}
+		else if (line.front() == RIDDLE_CHAR)
+		{
+			// Get riddle numbers.
+			const std::string numbers = line.substr(1, line.size() - 1);
+			const std::vector<std::string> tokens = String::split(numbers);
+			const int firstNumber = std::stoi(tokens.at(0));
+			const int secondNumber = std::stoi(tokens.at(1));
+
+			textState->mode = TextState::Mode::Riddle;
+			textState->riddleState = std::unique_ptr<TextState::RiddleState>(
+				new TextState::RiddleState(firstNumber, secondNumber));
+		}
+		else if (line.front() == DISPLAYED_ONCE_CHAR)
+		{
+			textState->mode = TextState::Mode::Text;
+
+			const bool displayedOnce = true;
+			textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
+
+			// Append the rest of the line to the text data.
+			textState->textData->text += line.substr(1, line.size() - 1) + '\n';
+		}
+		else if (textState->mode == TextState::Mode::Riddle)
+		{
+			const char ANSWER_CHAR = ':'; // An accepted answer.
+			const char RESPONSE_SECTION_CHAR = '`'; // CORRECT/WRONG.
+
+			if (line.front() == ANSWER_CHAR)
+			{
+				// Add the answer to the answers data.
+				const std::string answer = line.substr(1, line.size() - 1);
+				textState->riddleState->data.answers.push_back(answer);
+			}
+			else if (line.front() == RESPONSE_SECTION_CHAR)
+			{
+				// Change riddle mode based on the response section.
+				const std::string CORRECT_STR = "CORRECT";
+				const std::string WRONG_STR = "WRONG";
+				const std::string responseSection = line.substr(1, line.size() - 1);
+
+				if (responseSection == CORRECT_STR)
+				{
+					textState->riddleState->mode = TextState::RiddleState::Mode::Correct;
+				}
+				else if (responseSection == WRONG_STR)
+				{
+					textState->riddleState->mode = TextState::RiddleState::Mode::Wrong;
+				}
+			}
+			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Riddle)
+			{
+				// Read the line into the riddle text.
+				textState->riddleState->data.riddle += line + '\n';
+			}
+			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Correct)
+			{
+				// Read the line into the correct text.
+				textState->riddleState->data.correct += line + '\n';
+			}
+			else if (textState->riddleState->mode == TextState::RiddleState::Mode::Wrong)
+			{
+				// Read the line into the wrong text.
+				textState->riddleState->data.wrong += line + '\n';
+			}
+		}
+		else if (textState->mode == TextState::Mode::Text)
+		{
+			// Read the line into the text data.
+			textState->textData->text += line + '\n';
+		}
+		else
+		{
+			// Plain old text after a *TEXT line.
+			if (textState->mode == TextState::Mode::None)
+			{
+				textState->mode = TextState::Mode::Text;
+
+				const bool displayedOnce = false;
+				textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
+			}
+
+			// Read the line into the text data.
+			textState->textData->text += line + '\n';
+		}
+	};
 
 	std::stringstream ss(text);
 	std::string line;
@@ -208,14 +556,15 @@ INFFile::INFFile(const std::string &filename)
 
 	while (std::getline(ss, line))
 	{
-		// Skip empty lines.
+		// Skip empty lines and flush all states.
 		if (line.size() == 0)
 		{
+			flushAllStates();
 			continue;
 		}
 
 		const char SECTION_SEPARATOR = '@';
-		
+
 		// Check the first character for any changes in section. Otherwise, parse the line 
 		// depending on the current mode (each line of text is guaranteed to not be empty 
 		// at this point).
@@ -236,320 +585,41 @@ INFFile::INFFile(const std::string &filename)
 
 			// See which token the section is.
 			const auto sectionIter = Sections.find(line);
-			if (sectionIter != Sections.end())
-			{
-				// To do: change this to a std::unique_ptr assignment from a factory parser class.
-				parseMode = sectionIter->second;
-			}
-			else
-			{
-				DebugCrash("Unrecognized .INF section \"" + line + "\".");
-			}
+			DebugAssert(sectionIter != Sections.end(),
+				"Unrecognized .INF section \"" + line + "\".");
+
+			// Flush any existing state.
+			flushAllStates();
+
+			// Assign the new parse mode.
+			parseMode = sectionIter->second;
 		}
 		else if (parseMode == ParseMode::Floors)
 		{
-			const char TYPE_CHAR = '*';
-			
-			// Decide what to do based on the first character. Otherwise, read the line
-			// as a texture filename.
-			if (line.front() == TYPE_CHAR)
-			{
-				// Initialize floor state if it is null.
-				if (floorState.get() == nullptr)
-				{
-					floorState = std::unique_ptr<FloorState>(new FloorState());
-				}
-
-				const std::string BOXCAP_STR = "BOXCAP";
-				const std::string CEILING_STR = "CEILING";
-
-				// See what the type in the line is.
-				const std::vector<std::string> tokens = String::split(line);
-				const std::string firstToken = tokens.at(0);
-				const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
-
-				if (firstTokenType == BOXCAP_STR)
-				{
-					// Write the *BOXCAP's ID to the floor state.
-					floorState->id = std::stoi(tokens.at(1));
-					floorState->mode = FloorMode::BoxCap;
-				}
-				else if (firstTokenType == CEILING_STR)
-				{
-					// Initialize ceiling data.
-					floorState->ceilingData = std::unique_ptr<CeilingData>(new CeilingData());
-					floorState->mode = FloorMode::Ceiling;
-
-					// Check up to three numbers on the right: ceiling height, box scale,
-					// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
-					if (tokens.size() >= 2)
-					{
-						floorState->ceilingData->height = std::stoi(tokens.at(1));
-					}
-
-					if (tokens.size() >= 3)
-					{
-						// To do: This might need some more math. (Y * boxScale) / 256?
-						floorState->ceilingData->boxScale = std::stoi(tokens.at(2));
-					}
-
-					if (tokens.size() == 4)
-					{
-						floorState->ceilingData->outdoorDungeon = tokens.at(3) == "1";
-					}
-				}
-				else
-				{
-					DebugCrash("Unrecognized @FLOOR section \"" + tokens.at(0) + "\".");
-				}
-			}
-			else if (floorState.get() == nullptr)
-			{
-				// No current floor state, so the current line is a loose texture filename
-				// (found in some city .INFs).
-				const std::vector<std::string> tokens = String::split(line, '#');
-
-				if (tokens.size() == 1)
-				{
-					// A regular filename (like an .IMG).
-					this->textures.push_back(TextureData(line));
-				}
-				else
-				{
-					// A .SET filename. Expand it for each of the .SET indices.
-					const std::string textureName = String::trimBack(tokens.at(0));
-					const int setSize = std::stoi(tokens.at(1));
-
-					for (int i = 0; i < setSize; i++)
-					{
-						this->textures.push_back(TextureData(textureName, i));
-					}
-				}
-			}
-			else
-			{
-				// There is existing floor state, so this line is expected to be a filename.
-				// If the line contains a '#', it's a .SET file.
-				const std::vector<std::string> tokens = String::split(line, '#');
-
-				// Assign texture data depending on whether the line is for a .SET file.
-				if (tokens.size() == 1)
-				{
-					// Just a regular texture (like an .IMG).
-					floorState->textureName = line;
-
-					this->textures.push_back(TextureData(floorState->textureName));
-				}
-				else
-				{
-					// Get the .SET size found after the '#'. It is one digit.
-					const int setSize = std::stoi(tokens.at(1));
-
-					// Left side is the filename, right side is the .SET size.
-					floorState->textureName = String::trimBack(tokens.at(0));
-					floorState->setSize = std::unique_ptr<int>(new int(setSize));
-
-					for (int i = 0; i < setSize; i++)
-					{
-						this->textures.push_back(TextureData(floorState->textureName, i));
-					}
-				}
-
-				// Write the box cap data and reset the floor state. Also write to the ceiling
-				// data if it is being defined for the current group.
-				this->boxcaps.at(floorState->id) = floorState->textureName;
-
-				if (floorState->ceilingData.get() != nullptr)
-				{
-					this->ceiling.texture.filename = floorState->ceilingData->texture.filename;
-
-					if (floorState->ceilingData->texture.setIndex.get() != nullptr)
-					{
-						this->ceiling.texture.setIndex = 
-							std::move(floorState->ceilingData->texture.setIndex);
-					}
-
-					this->ceiling.height = floorState->ceilingData->height;
-					this->ceiling.boxScale = floorState->ceilingData->boxScale;
-					this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
-				}
-
-				floorState = std::unique_ptr<FloorState>(new FloorState());
-			}
+			parseFloorLine(line);
 		}
 		else if (parseMode == ParseMode::Walls)
 		{
-			const std::unordered_map<std::string, WallMode> WallSections =
-			{
-				{ "*BOXCAP", WallMode::BoxCap },
-				{ "*BOXSIDE", WallMode::BoxSide },
-				{ "*DOOR", WallMode::Door }, // *DOOR is ignored.
-				{ "*DRYCHASM", WallMode::DryChasm },
-				{ "*LAVACHASM", WallMode::LavaChasm },
-				{ "*LEVELDOWN", WallMode::LevelDown },
-				{ "*LEVELUP", WallMode::LevelUp },
-				{ "*MENU", WallMode::Menu }, // Doors leading to interiors.
-				{ "*TRANS", WallMode::Transition },
-				{ "*TRANSWALKTHRU", WallMode::TransWalkThru },
-				{ "*WALKTHRU", WallMode::WalkThru }, // Probably for hedge archways.
-				{ "*WETCHASM", WallMode::WetChasm },
-			};
+			parseWallLine(line);
 		}
 		else if (parseMode == ParseMode::Flats)
 		{
-			// Check if line says *TEXT, and if so, get the number. Otherwise, get the
-			// filename and any associated modifiers ("F:", "Y:", etc.).
-
-			// I think each *ITEM tag only points to the filename right below it. It
-			// doesn't stack up any other filenames.
+			parseFlatLine(line);
 		}
 		else if (parseMode == ParseMode::Sound)
 		{
-			// Split into the filename and ID. Make sure the filename is all caps.
-			const std::vector<std::string> tokens = String::split(line);
-			const std::string vocFilename = String::toUppercase(tokens.front());
-			const int vocID = std::stoi(tokens.at(1));
-
-			this->sounds.insert(std::make_pair(vocID, vocFilename));
+			parseSoundLine(line);
 		}
 		else if (parseMode == ParseMode::Text)
 		{
-			// Start a new text state after each *TEXT tag.
-			const char TEXT_CHAR = '*';
-			const char KEY_INDEX_CHAR = '+';
-			const char RIDDLE_CHAR = '^';
-			const char DISPLAYED_ONCE_CHAR = '~';
-
-			// Check the first character in the line to determine any changes in text mode.
-			// Otherwise, parse the line based on the current mode.
-			if (line.front() == TEXT_CHAR)
-			{
-				const std::vector<std::string> tokens = String::split(line);
-
-				// Get the ID after *TEXT.
-				const int textID = std::stoi(tokens.at(1));
-
-				// If there is existing text state present, save it.
-				if (textState.get() != nullptr)
-				{
-					if (textState->mode == TextMode::Key)
-					{
-						// Save key data.
-						this->keys.insert(std::make_pair(
-							textState->id, *textState->keyData.get()));
-					}
-					else if (textState->mode == TextMode::Riddle)
-					{
-						// Save riddle data.
-						this->riddles.insert(std::make_pair(
-							textState->id, textState->riddleState->data));
-					}
-					else if (textState->mode == TextMode::Text)
-					{
-						// Save text data.
-						this->texts.insert(std::make_pair(
-							textState->id, *textState->textData.get()));
-					}
-				}
-
-				// Reset the text state to default with the new *TEXT ID.
-				textState = std::unique_ptr<TextState>(new TextState(textID));
-			}
-			else if (line.front() == KEY_INDEX_CHAR)
-			{
-				// Get key number. No need for a key section here since it's only one line.
-				const std::string keyStr = line.substr(1, line.size() - 1);
-				const int keyNumber = std::stoi(keyStr);
-
-				textState->mode = TextMode::Key;
-				textState->keyData = std::unique_ptr<KeyData>(new KeyData(keyNumber));
-			}
-			else if (line.front() == RIDDLE_CHAR)
-			{
-				// Get riddle numbers.
-				const std::string numbers = line.substr(1, line.size() - 1);
-				const std::vector<std::string> tokens = String::split(numbers);
-				const int firstNumber = std::stoi(tokens.at(0));
-				const int secondNumber = std::stoi(tokens.at(1));
-
-				textState->mode = TextMode::Riddle;
-				textState->riddleState = std::unique_ptr<TextState::RiddleState>(
-					new TextState::RiddleState(firstNumber, secondNumber));
-			}
-			else if (line.front() == DISPLAYED_ONCE_CHAR)
-			{
-				textState->mode = TextMode::Text;
-
-				const bool displayedOnce = true;
-				textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
-
-				// Append the rest of the line to the text data.
-				textState->textData->text += line.substr(1, line.size() - 1) + '\n';
-			}
-			else if (textState->mode == TextMode::Riddle)
-			{
-				const char ANSWER_CHAR = ':'; // An accepted answer.
-				const char RESPONSE_SECTION_CHAR = '`'; // CORRECT/WRONG.
-
-				if (line.front() == ANSWER_CHAR)
-				{
-					// Add the answer to the answers data.
-					const std::string answer = line.substr(1, line.size() - 1);
-					textState->riddleState->data.answers.push_back(answer);
-				}
-				else if (line.front() == RESPONSE_SECTION_CHAR)
-				{
-					// Change riddle mode based on the response section.
-					const std::string CORRECT_STR = "CORRECT";
-					const std::string WRONG_STR = "WRONG";
-					const std::string responseSection = line.substr(1, line.size() - 1);
-
-					if (responseSection == CORRECT_STR)
-					{
-						textState->riddleState->mode = TextState::RiddleMode::Correct;
-					}
-					else if (responseSection == WRONG_STR)
-					{
-						textState->riddleState->mode = TextState::RiddleMode::Wrong;
-					}
-				}
-				else if (textState->riddleState->mode == TextState::RiddleMode::Riddle)
-				{
-					// Read the line into the riddle text.
-					textState->riddleState->data.riddle += line + '\n';
-				}
-				else if (textState->riddleState->mode == TextState::RiddleMode::Correct)
-				{
-					// Read the line into the correct text.
-					textState->riddleState->data.correct += line + '\n';
-				}
-				else if (textState->riddleState->mode == TextState::RiddleMode::Wrong)
-				{
-					// Read the line into the wrong text.
-					textState->riddleState->data.wrong += line + '\n';
-				}
-			}
-			else if (textState->mode == TextMode::Text)
-			{
-				// Read the line into the text data.
-				textState->textData->text += line + '\n';
-			}
-			else
-			{
-				// Plain old text after a *TEXT line.
-				if (textState->mode == TextMode::None)
-				{
-					textState->mode = TextMode::Text;
-
-					const bool displayedOnce = false;
-					textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
-				}
-
-				// Read the line into the text data.
-				textState->textData->text += line + '\n';
-			}
+			parseTextLine(line);
 		}
 	}
+
+	// Flush any remaining data. Most of these won't ever need flushing -- it's 
+	// primarily for @TEXT since it's frequently the last section in the file
+	// and has the possibility of an off-by-one error with its *TEXT saving.
+	flushAllStates();
 }
 
 INFFile::~INFFile()
