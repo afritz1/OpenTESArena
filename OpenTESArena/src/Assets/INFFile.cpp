@@ -627,9 +627,9 @@ INFFile::~INFFile()
 
 }
 
-const INFFile::TextureData &INFFile::getTexture(int index) const
+const std::vector<INFFile::TextureData> &INFFile::getTextures() const
 {
-	return this->textures.at(index);
+	return this->textures;
 }
 
 const std::vector<INFFile::FlatData> &INFFile::getItemList(int index) const

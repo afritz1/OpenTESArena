@@ -122,7 +122,7 @@ public:
 	INFFile(const std::string &filename);
 	~INFFile();
 
-	const TextureData &getTexture(int index) const;
+	const std::vector<TextureData> &getTextures() const;
 	const std::vector<FlatData> &getItemList(int index) const;
 	const std::string &getBoxcap(int index) const;
 	const std::string &getBoxside(int index) const;

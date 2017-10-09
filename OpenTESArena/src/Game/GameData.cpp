@@ -25,6 +25,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 #include "../World/ClimateName.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
@@ -67,9 +68,41 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	}
 
 	// Clear software renderer textures (so the .INF file indices are correct).
-	//renderer.removeAllWorldTextures(); // To do: Uncomment once .INF files are in use.
+	renderer.removeAllWorldTextures();
+
+	// Set sky to black (assuming all .MIFs are indoors for now).
+	const uint32_t black = 0x0;
+	renderer.setSkyPalette(&black, 1);
 
 	worldData = std::move(WorldData(mif, inf));
+	
+	// Load .INF textures into the renderer.
+	for (const auto &textureData : inf.getTextures())
+	{
+		const std::string textureName = String::toUppercase(textureData.filename);
+
+		if (textureData.setIndex.get() != nullptr)
+		{
+			const auto &surfaces = textureManager.getSurfaces(textureName);
+			const SDL_Surface *surface = surfaces.at(*textureData.setIndex.get());
+			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels), 
+				surface->w, surface->h);
+		}
+		else
+		{
+			const SDL_Surface *surface = textureManager.getSurface(textureName);
+			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+				surface->w, surface->h);
+		}
+	}
+
+	// -- temp -- Add some debug textures for good measure (to avoid out-of-range accesses).
+	for (int i = 0; i < 64; i++)
+	{
+		std::vector<uint32_t> colors(64 * 64);
+		std::fill(colors.begin(), colors.end(), 0xFF0000FF);
+		renderer.addTexture(colors.data(), 64, 64);
+	}
 }
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
