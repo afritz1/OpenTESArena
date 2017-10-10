@@ -1,22 +1,22 @@
 #include <limits>
 
-#include "BufferView.h"
+#include "HeapView.h"
 
 #include "Debug.h"
 
-BufferView::BufferView()
+HeapView::HeapView()
 {
 	// Allocate one "infinite" free block.
 	Block block(0, std::numeric_limits<size_t>::max());
 	this->blocks.push_back(block);
 }
 
-BufferView::~BufferView()
+HeapView::~HeapView()
 {
 
 }
 
-size_t BufferView::allocate(size_t size)
+size_t HeapView::allocate(size_t size)
 {
 	// Allocation request must be at least 1 byte.
 	DebugAssert(size > 0, "Allocation size must be positive.");
@@ -58,7 +58,7 @@ size_t BufferView::allocate(size_t size)
 	return offset;
 }
 
-void BufferView::deallocate(size_t offset)
+void HeapView::deallocate(size_t offset)
 {
 	// See if an allocation exists at the given offset.
 	const auto sizeIter = this->sizes.find(offset);

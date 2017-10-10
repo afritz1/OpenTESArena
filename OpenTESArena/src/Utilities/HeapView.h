@@ -1,20 +1,20 @@
-#ifndef BUFFER_VIEW_H
-#define BUFFER_VIEW_H
+#ifndef HEAP_VIEW_H
+#define HEAP_VIEW_H
 
 #include <list>
 #include <unordered_map>
 
-// A buffer view is an imaginary overlay for a memory buffer so it can be treated like
+// A heap view is an imaginary overlay for a memory buffer so it can be treated like
 // a stand-alone heap.
 
 // In other words, it is a guide telling the caller where to allocate a request in an
-// actual buffer. The buffer view itself assumes infinite capacity, so it is the caller's
+// actual buffer. The heap view itself assumes infinite capacity, so it is the caller's
 // job to make sure their buffer can fit an allocation at the suggested byte offset.
 
-// The buffer view doesn't do any allocations itself. It simply maintains the positions 
+// The heap view doesn't do any allocations itself. It simply maintains the positions 
 // and sizes of imaginary ones.
 
-class BufferView
+class HeapView
 {
 private:
 	struct Block
@@ -34,8 +34,8 @@ private:
 	// Mapping of allocated block offsets to their sizes (block headers, basically).
 	std::unordered_map<size_t, size_t> sizes;
 public:
-	BufferView();
-	~BufferView();
+	HeapView();
+	~HeapView();
 
 	// Returns the byte offset for where an allocation of the requested size should 
 	// occur. If the returned value points to an offset that would overflow the
