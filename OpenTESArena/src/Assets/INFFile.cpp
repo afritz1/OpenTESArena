@@ -27,6 +27,10 @@ namespace
 	{
 		enum class Mode { None, BoxCap, Ceiling };
 
+		// Arbitrary ID indicating no *BOXCAP found yet for the current floor state. 
+		// The "id" member could be nullable, but this saves an unnecessary allocation.
+		static const int NO_BOXCAP = -1;
+
 		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
 		std::unique_ptr<int> setSize; // Non-null when a .SET size exists.
 		std::string textureName;
@@ -36,7 +40,7 @@ namespace
 		FloorState()
 		{
 			this->mode = FloorState::Mode::None;
-			this->id = -1;
+			this->id = FloorState::NO_BOXCAP;
 		}
 	};
 
@@ -341,8 +345,9 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else
 		{
-			// There is existing floor state, so this line is expected to be a filename.
-			// If the line contains a '#', it's a .SET file.
+			// There is existing floor state (or it is in the default state with id == -1), 
+			// so this line is expected to be a filename. If the line contains a '#', it's 
+			// a .SET file.
 			const std::vector<std::string> tokens = String::split(line, '#');
 
 			// Assign texture data depending on whether the line is for a .SET file.
@@ -368,10 +373,16 @@ INFFile::INFFile(const std::string &filename)
 				}
 			}
 
-			// Write the box cap data and reset the floor state. Also write to the ceiling
-			// data if it is being defined for the current group.
-			this->boxcaps.at(floorState->id) = floorState->textureName;
+			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
+			// The floor state ID will be unset ("NO_BOXCAP") for loose filenames that don't 
+			// have an associated *BOXCAP line, but might have an associated *CEILING line.
+			if (floorState->id != FloorState::NO_BOXCAP)
+			{
+				this->boxcaps.at(floorState->id) = floorState->textureName;
+			}
 
+			// Write to the ceiling data if it is being defined for the current group, and
+			// reset the floor state.
 			if (floorState->ceilingData.get() != nullptr)
 			{
 				this->ceiling.texture.filename = floorState->ceilingData->texture.filename;

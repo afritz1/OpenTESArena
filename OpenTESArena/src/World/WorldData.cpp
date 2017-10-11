@@ -120,7 +120,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 						// To do: Also assign some "seawall" texture for interiors and exteriors.
 						// Retrieve it beforehand from the *...CHASM members and assign here?
 						// Not sure how that works.
-						const int index = this->voxelGrid.addVoxelData(VoxelData(floorTextureID));
+						const int index = this->voxelGrid.addVoxelData(VoxelData(floorTextureID + 1));
 						return floorDataMappings.insert(
 							std::make_pair(florVoxel, index)).first->second;
 					}
