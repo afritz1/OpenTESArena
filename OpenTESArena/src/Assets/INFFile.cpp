@@ -416,9 +416,10 @@ INFFile::INFFile(const std::string &filename)
 				wallState = std::unique_ptr<WallState>(new WallState());
 			}
 
-			// All the different possible '*' sections for walls. *DOOR is ignored.
+			// All the different possible '*' sections for walls.
 			const std::string BOXCAP_STR = "BOXCAP";
 			const std::string BOXSIDE_STR = "BOXSIDE";
+			const std::string DOOR_STR = "DOOR"; // *DOOR is ignored.
 			const std::string DRYCHASM_STR = "DRYCHASM";
 			const std::string LAVACHASM_STR = "LAVACHASM";
 			const std::string LEVELDOWN_STR = "LEVELDOWN";
@@ -442,6 +443,10 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
+			}
+			else if (firstTokenType == DOOR_STR)
+			{
+				// Ignore *DOOR lines explicitly so they aren't "unrecognized".
 			}
 			else if (firstTokenType == DRYCHASM_STR)
 			{
