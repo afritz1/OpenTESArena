@@ -48,15 +48,15 @@ namespace
 	{
 		enum class Mode
 		{
-			None, BoxCap, BoxSide, Door, DryChasm, LavaChasm, LevelDown,
-			LevelUp, Menu, Transition, TransWalkThru, WalkThru, WetChasm
+			None, BoxCap, BoxSide, DryChasm, LavaChasm, LevelDown, LevelUp,
+			Menu, Transition, TransWalkThru, WalkThru, WetChasm
 		};
 
-		// To do.
+		WallState::Mode mode;
 
 		WallState()
 		{
-
+			this->mode = WallState::Mode::None;
 		}
 	};
 
@@ -404,21 +404,86 @@ INFFile::INFFile(const std::string &filename)
 
 	auto parseWallLine = [this, &wallState, &flushWallState](const std::string &line)
 	{
-		const std::unordered_map<std::string, WallState::Mode> WallSections =
+		const char TYPE_CHAR = '*';
+
+		// Decide what to do based on the first character. Otherwise, read the line
+		// as a texture filename.
+		if (line.front() == TYPE_CHAR)
 		{
-			{ "*BOXCAP", WallState::Mode::BoxCap },
-			{ "*BOXSIDE", WallState::Mode::BoxSide },
-			{ "*DOOR", WallState::Mode::Door }, // *DOOR is ignored.
-			{ "*DRYCHASM", WallState::Mode::DryChasm },
-			{ "*LAVACHASM", WallState::Mode::LavaChasm },
-			{ "*LEVELDOWN", WallState::Mode::LevelDown },
-			{ "*LEVELUP", WallState::Mode::LevelUp },
-			{ "*MENU", WallState::Mode::Menu }, // Doors leading to interiors.
-			{ "*TRANS", WallState::Mode::Transition },
-			{ "*TRANSWALKTHRU", WallState::Mode::TransWalkThru },
-			{ "*WALKTHRU", WallState::Mode::WalkThru }, // Probably for hedge archways.
-			{ "*WETCHASM", WallState::Mode::WetChasm }
-		};
+			// Initialize wall state if it is null.
+			if (wallState.get() == nullptr)
+			{
+				wallState = std::unique_ptr<WallState>(new WallState());
+			}
+
+			// All the different possible '*' sections for walls. *DOOR is ignored.
+			const std::string BOXCAP_STR = "BOXCAP";
+			const std::string BOXSIDE_STR = "BOXSIDE";
+			const std::string DRYCHASM_STR = "DRYCHASM";
+			const std::string LAVACHASM_STR = "LAVACHASM";
+			const std::string LEVELDOWN_STR = "LEVELDOWN";
+			const std::string LEVELUP_STR = "LEVELUP";
+			const std::string MENU_STR = "MENU"; // Doors leading to interiors.
+			const std::string TRANS_STR = "TRANS";
+			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU";
+			const std::string WALKTHRU_STR = "WALKTHRU"; // Probably for hedge archways.
+			const std::string WETCHASM_STR = "WETCHASM";
+
+			// See what the type in the line is.
+			const std::vector<std::string> tokens = String::split(line);
+			const std::string firstToken = tokens.at(0);
+			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+
+			// To do: get relevant data from each section.
+			if (firstTokenType == BOXCAP_STR)
+			{
+				wallState->mode = WallState::Mode::BoxCap;
+			}
+			else if (firstTokenType == BOXSIDE_STR)
+			{
+				wallState->mode = WallState::Mode::BoxSide;
+			}
+			else if (firstTokenType == DRYCHASM_STR)
+			{
+				wallState->mode = WallState::Mode::DryChasm;
+			}
+			else if (firstTokenType == LAVACHASM_STR)
+			{
+				wallState->mode = WallState::Mode::LavaChasm;
+			}
+			else if (firstTokenType == LEVELDOWN_STR)
+			{
+				wallState->mode = WallState::Mode::LevelDown;
+			}
+			else if (firstTokenType == LEVELUP_STR)
+			{
+				wallState->mode = WallState::Mode::LevelUp;
+			}
+			else if (firstTokenType == MENU_STR)
+			{
+				wallState->mode = WallState::Mode::Menu;
+			}
+			else if (firstTokenType == TRANS_STR)
+			{
+				wallState->mode = WallState::Mode::Transition;
+			}
+			else if (firstTokenType == TRANSWALKTHRU_STR)
+			{
+				wallState->mode = WallState::Mode::TransWalkThru;
+			}
+			else if (firstTokenType == WALKTHRU_STR)
+			{
+				wallState->mode = WallState::Mode::WalkThru;
+			}
+			else if (firstTokenType == WETCHASM_STR)
+			{
+				wallState->mode = WallState::Mode::WetChasm;
+			}
+			else
+			{
+				DebugCrash("Unrecognized @WALLS section \"" + firstTokenType + "\".");
+			}
+		}
 	};
 
 	auto parseFlatLine = [this, &flatState, &flushFlatState](const std::string &line)
