@@ -32,7 +32,7 @@ public:
 		int numf; // Number of floor (and wall?) textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
-		std::vector<uint8_t> flor, loot, map1, map2, targ;
+		std::vector<uint8_t> flat, flor, inns, loot, map1, map2, targ;
 		std::vector<MIFFile::Level::Lock> lock;
 		std::vector<MIFFile::Level::Trigger> trig;
 
@@ -43,8 +43,10 @@ public:
 
 		// Loading methods for each .MIF level tag (FLOR, MAP1, etc.), called by Level::load(). 
 		// The return value is the offset from the current tag to where the next tag would be.
+		static int loadFLAT(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadFLOR(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadINFO(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadINNS(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadLOCK(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadLOOT(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadMAP1(MIFFile::Level &level, const uint8_t *tagStart);

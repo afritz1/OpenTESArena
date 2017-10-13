@@ -12,8 +12,10 @@
 
 namespace
 {
+	const std::string Tag_FLAT = "FLAT";
 	const std::string Tag_FLOR = "FLOR";
 	const std::string Tag_INFO = "INFO";
+	const std::string Tag_INNS = "INNS";
 	const std::string Tag_LEVL = "LEVL";
 	const std::string Tag_LOCK = "LOCK";
 	const std::string Tag_LOOT = "LOOT";
@@ -27,8 +29,10 @@ namespace
 	// Mappings of .MIF level tags to functions for decoding data, excluding "LEVL".
 	const std::unordered_map<std::string, int(*)(MIFFile::Level&, const uint8_t*)> MIFLevelTags =
 	{
+		{ Tag_FLAT, MIFFile::Level::loadFLAT },
 		{ Tag_FLOR, MIFFile::Level::loadFLOR },
 		{ Tag_INFO, MIFFile::Level::loadINFO },
+		{ Tag_INNS, MIFFile::Level::loadINNS },
 		{ Tag_LOCK, MIFFile::Level::loadLOCK },
 		{ Tag_LOOT, MIFFile::Level::loadLOOT },
 		{ Tag_MAP1, MIFFile::Level::loadMAP1 },
@@ -165,6 +169,18 @@ int MIFFile::Level::load(const uint8_t *levelStart)
 	return static_cast<int>(levelEnd - levelStart);
 }
 
+int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
+{
+	const uint16_t size = Bytes::getLE16(tagStart + 4);
+	const uint8_t *tagDataStart = tagStart + 6;
+
+	// Currently unknown.
+	level.flat = std::vector<uint8_t>(size);
+	std::memcpy(level.flat.data(), tagDataStart, level.flat.size());
+
+	return size + 6;
+}
+
 int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 {
 	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
@@ -189,6 +205,18 @@ int MIFFile::Level::loadINFO(MIFFile::Level &level, const uint8_t *tagStart)
 	// Using the size might include some unnecessary empty space, so assume it's 
 	// null-terminated instead.
 	level.info = std::string(reinterpret_cast<const char*>(tagDataStart));
+
+	return size + 6;
+}
+
+int MIFFile::Level::loadINNS(MIFFile::Level &level, const uint8_t *tagStart)
+{
+	const uint16_t size = Bytes::getLE16(tagStart + 4);
+	const uint8_t *tagDataStart = tagStart + 6;
+
+	// Currently unknown.
+	level.inns = std::vector<uint8_t>(size);
+	std::memcpy(level.inns.data(), tagDataStart, level.inns.size());
 
 	return size + 6;
 }
