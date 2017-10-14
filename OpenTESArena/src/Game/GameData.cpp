@@ -56,7 +56,9 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	// (player Y value is arbitrary for now).
 	const auto &startPoints = mif.getStartPoints();
 	const Double2 startPoint = VoxelGrid::arenaVoxelToNewVoxel(
-		startPoints.front(), mif.getWidth(), mif.getDepth());
+		(startPoints.size() > 0) ? startPoints.front() : Double2(), 
+		mif.getWidth(),
+		mif.getDepth());
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
 	// Clear all entities.

@@ -28,19 +28,18 @@ namespace
 		enum class Mode { None, BoxCap, Ceiling };
 
 		// Arbitrary ID indicating no *BOXCAP found yet for the current floor state. 
-		// The "id" member could be nullable, but this saves an unnecessary allocation.
-		static const int NO_BOXCAP = -1;
+		// The ID member could be nullable, but this saves an unnecessary allocation.
+		static const int NO_ID = -1;
 
 		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
-		std::unique_ptr<int> setSize; // Non-null when a .SET size exists.
 		std::string textureName;
 		FloorState::Mode mode;
-		int id; // *BOXCAP ID.
+		int boxCapID;
 
 		FloorState()
 		{
 			this->mode = FloorState::Mode::None;
-			this->id = FloorState::NO_BOXCAP;
+			this->boxCapID = FloorState::NO_ID;
 		}
 	};
 
@@ -52,11 +51,19 @@ namespace
 			Menu, Transition, TransWalkThru, WalkThru, WetChasm
 		};
 
+		// Arbitrary ID for uninitialized "*..." members.
+		static const int NO_ID = -1;
+
+		std::string textureName;
 		WallState::Mode mode;
+		int boxCapID, boxSideID, menuID;
 
 		WallState()
 		{
 			this->mode = WallState::Mode::None;
+			this->boxCapID = WallState::NO_ID;
+			this->boxSideID = WallState::NO_ID;
+			this->menuID = WallState::NO_ID;
 		}
 	};
 
@@ -202,12 +209,6 @@ INFFile::INFFile(const std::string &filename)
 	// Lambdas for flushing state to the INFFile. This is useful during the parse loop,
 	// but it's also sometimes necessary at the end of the file because the last element 
 	// of certain sections (i.e., @TEXT) might get missed if there is no data after them.
-	auto flushWallState = [this, &wallState]()
-	{
-		// To do.
-		// Call whenever it hits an empty line or a '*' line after a non-'*' line.
-	};
-
 	auto flushFlatState = [this, &flatState]()
 	{
 		// To do.
@@ -236,7 +237,7 @@ INFFile::INFFile(const std::string &filename)
 	// Lambda for flushing all states. Some states don't need an explicit flush because 
 	// they have no risk of leaving data behind.
 	auto flushAllStates = [&floorState, &wallState, &flatState, &textState,
-		&flushWallState, &flushFlatState, &flushTextState]()
+		&flushFlatState, &flushTextState]()
 	{
 		if (floorState.get() != nullptr)
 		{
@@ -245,7 +246,6 @@ INFFile::INFFile(const std::string &filename)
 
 		if (wallState.get() != nullptr)
 		{
-			flushWallState();
 			wallState = nullptr;
 		}
 
@@ -288,7 +288,7 @@ INFFile::INFFile(const std::string &filename)
 			if (firstTokenType == BOXCAP_STR)
 			{
 				// Write the *BOXCAP's ID to the floor state.
-				floorState->id = std::stoi(tokens.at(1));
+				floorState->boxCapID = std::stoi(tokens.at(1));
 				floorState->mode = FloorState::Mode::BoxCap;
 			}
 			else if (firstTokenType == CEILING_STR)
@@ -345,9 +345,9 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else
 		{
-			// There is existing floor state (or it is in the default state with id == -1), 
-			// so this line is expected to be a filename. If the line contains a '#', it's 
-			// a .SET file.
+			// There is existing floor state (or it is in the default state with box cap 
+			// ID unset), so this line is expected to be a filename. If the line contains 
+			// a '#', it's a .SET file.
 			const std::vector<std::string> tokens = String::split(line, '#');
 
 			// Assign texture data depending on whether the line is for a .SET file.
@@ -360,12 +360,9 @@ INFFile::INFFile(const std::string &filename)
 			}
 			else
 			{
-				// Get the .SET size found after the '#'. It is one digit.
-				const int setSize = std::stoi(tokens.at(1));
-
 				// Left side is the filename, right side is the .SET size.
 				floorState->textureName = String::trimBack(tokens.at(0));
-				floorState->setSize = std::unique_ptr<int>(new int(setSize));
+				const int setSize = std::stoi(tokens.at(1));
 
 				for (int i = 0; i < setSize; i++)
 				{
@@ -374,11 +371,11 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
-			// The floor state ID will be unset ("NO_BOXCAP") for loose filenames that don't 
-			// have an associated *BOXCAP line, but might have an associated *CEILING line.
-			if (floorState->id != FloorState::NO_BOXCAP)
+			// The floor state ID will be unset for loose filenames that don't have an 
+			// associated *BOXCAP line, but might have an associated *CEILING line.
+			if (floorState->boxCapID != FloorState::NO_ID)
 			{
-				this->boxcaps.at(floorState->id) = floorState->textureName;
+				this->boxCaps.at(floorState->boxCapID) = floorState->textureName;
 			}
 
 			// Write to the ceiling data if it is being defined for the current group, and
@@ -402,7 +399,7 @@ INFFile::INFFile(const std::string &filename)
 		}
 	};
 
-	auto parseWallLine = [this, &wallState, &flushWallState](const std::string &line)
+	auto parseWallLine = [this, &wallState](const std::string &line)
 	{
 		const char TYPE_CHAR = '*';
 
@@ -426,7 +423,7 @@ INFFile::INFFile(const std::string &filename)
 			const std::string LEVELUP_STR = "LEVELUP";
 			const std::string MENU_STR = "MENU"; // Doors leading to interiors.
 			const std::string TRANS_STR = "TRANS";
-			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU";
+			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU"; // Store signs, hedge archways. Ignored?
 			const std::string WALKTHRU_STR = "WALKTHRU"; // Probably for hedge archways.
 			const std::string WETCHASM_STR = "WETCHASM";
 
@@ -435,18 +432,20 @@ INFFile::INFFile(const std::string &filename)
 			const std::string firstToken = tokens.at(0);
 			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
-			// To do: get relevant data from each section.
 			if (firstTokenType == BOXCAP_STR)
 			{
 				wallState->mode = WallState::Mode::BoxCap;
+				wallState->boxCapID = std::stoi(tokens.at(1));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
+				wallState->boxSideID = std::stoi(tokens.at(1));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
 				// Ignore *DOOR lines explicitly so they aren't "unrecognized".
+				static_cast<void>(firstTokenType);
 			}
 			else if (firstTokenType == DRYCHASM_STR)
 			{
@@ -467,6 +466,7 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == MENU_STR)
 			{
 				wallState->mode = WallState::Mode::Menu;
+				wallState->menuID = std::stoi(tokens.at(1));
 			}
 			else if (firstTokenType == TRANS_STR)
 			{
@@ -488,6 +488,108 @@ INFFile::INFFile(const std::string &filename)
 			{
 				DebugCrash("Unrecognized @WALLS section \"" + firstTokenType + "\".");
 			}
+		}
+		else if (wallState.get() == nullptr)
+		{
+			// No existing wall state, so this line contains a "loose" texture name.
+			const std::vector<std::string> tokens = String::split(line, '#');
+
+			if (tokens.size() == 1)
+			{
+				// A regular filename (like an .IMG).
+				this->textures.push_back(TextureData(line));
+			}
+			else
+			{
+				// A .SET filename. Expand it for each of the .SET indices.
+				const std::string textureName = String::trimBack(tokens.at(0));
+				const int setSize = std::stoi(tokens.at(1));
+
+				for (int i = 0; i < setSize; i++)
+				{
+					this->textures.push_back(TextureData(textureName, i));
+				}
+			}
+		}
+		else
+		{
+			// There is existing wall state, so this line contains a texture name associated 
+			// with some '*' section(s).
+			const std::vector<std::string> tokens = String::split(line, '#');
+
+			// Assign texture data depending on whether the line is for a .SET file.
+			if (tokens.size() == 1)
+			{
+				// Just a regular texture (like an .IMG).
+				wallState->textureName = line;
+
+				this->textures.push_back(TextureData(wallState->textureName));
+			}
+			else
+			{
+				// Left side is the filename, right side is the .SET size.
+				wallState->textureName = String::trimBack(tokens.at(0));
+				const int setSize = std::stoi(tokens.at(1));
+
+				for (int i = 0; i < setSize; i++)
+				{
+					this->textures.push_back(TextureData(wallState->textureName, i));
+				}
+			}
+
+			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the 
+			// current wall state.
+			if (wallState->boxCapID != WallState::NO_ID)
+			{
+				this->boxCaps.at(wallState->boxCapID) = wallState->textureName;
+			}
+
+			if (wallState->boxSideID != WallState::NO_ID)
+			{
+				this->boxSides.at(wallState->boxSideID) = wallState->textureName;
+			}
+
+			if (wallState->menuID != WallState::NO_ID)
+			{
+				this->menus.at(wallState->menuID) = wallState->textureName;
+			}
+
+			// Write the texture name based on the wall mode (excluding some since they're
+			// handled differently -- i.e., with more than one line of state, or with an ID).
+			if (wallState->mode == WallState::Mode::DryChasm)
+			{
+				this->dryChasmTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::LavaChasm)
+			{
+				this->lavaChasmTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::LevelDown)
+			{
+				this->levelDownTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::LevelUp)
+			{
+				this->levelUpTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::Transition)
+			{
+				this->transitionTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::TransWalkThru)
+			{
+				this->transWalkThruTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::WalkThru)
+			{
+				this->walkThruTexture = wallState->textureName;
+			}
+			else if (wallState->mode == WallState::Mode::WetChasm)
+			{
+				this->wetChasmTexture = wallState->textureName;
+			}
+
+			wallState = std::unique_ptr<WallState>(new WallState());
 		}
 	};
 
@@ -718,14 +820,19 @@ const std::vector<INFFile::FlatData> &INFFile::getItemList(int index) const
 	return this->itemLists.at(index);
 }
 
-const std::string &INFFile::getBoxcap(int index) const
+const std::string &INFFile::getBoxCap(int index) const
 {
-	return this->boxcaps.at(index);
+	return this->boxCaps.at(index);
 }
 
-const std::string &INFFile::getBoxside(int index) const
+const std::string &INFFile::getBoxSide(int index) const
 {
-	return this->boxsides.at(index);
+	return this->boxSides.at(index);
+}
+
+const std::string &INFFile::getMenu(int index) const
+{
+	return this->menus.at(index);
 }
 
 const std::string &INFFile::getSound(int index) const
@@ -796,6 +903,11 @@ const std::string &INFFile::getTransitionTexture() const
 const std::string &INFFile::getTransWalkThruTexture() const
 {
 	return this->transWalkThruTexture;
+}
+
+const std::string &INFFile::getWalkThruTexture() const
+{
+	return this->walkThruTexture;
 }
 
 const INFFile::CeilingData &INFFile::getCeiling() const

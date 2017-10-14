@@ -94,10 +94,10 @@ private:
 	// although those past 63 might not be used (character class names, lore names, etc.).
 	std::array<std::vector<FlatData>, 96> itemLists;
 
-	std::array<std::string, 16> boxcaps, boxsides;
+	std::array<std::string, 16> boxCaps, boxSides, menus;
 
 	// Some .INFs have an outlier (*DOOR 90), so this shouldn't be a sequential data structure.
-	std::unordered_map<int, std::string> doorTextures;
+	//std::unordered_map<int, std::string> doorTextures; // Unused?
 
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
@@ -113,7 +113,7 @@ private:
 
 	// Specific wall textures.
 	std::string lavaChasmTexture, wetChasmTexture, dryChasmTexture, levelDownTexture,
-		levelUpTexture, transitionTexture, transWalkThruTexture;
+		levelUpTexture, transitionTexture, transWalkThruTexture, walkThruTexture;
 
 	// Height of voxels on the main floor. Default is 100. Not sure what the second number 
 	// of *CEILING is.
@@ -124,8 +124,9 @@ public:
 
 	const std::vector<TextureData> &getTextures() const;
 	const std::vector<FlatData> &getItemList(int index) const;
-	const std::string &getBoxcap(int index) const;
-	const std::string &getBoxside(int index) const;
+	const std::string &getBoxCap(int index) const;
+	const std::string &getBoxSide(int index) const;
+	const std::string &getMenu(int index) const;
 	const std::string &getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;
@@ -140,6 +141,7 @@ public:
 	const std::string &getLevelUpTexture() const;
 	const std::string &getTransitionTexture() const;
 	const std::string &getTransWalkThruTexture() const;
+	const std::string &getWalkThruTexture() const;
 	const CeilingData &getCeiling() const;
 };
 
