@@ -719,9 +719,18 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else
 		{
-			// Plain old text after a *TEXT line.
-			if (textState->mode == TextState::Mode::None)
+			// Plain old text after a *TEXT line, and on rare occasions it's after a key 
+			// line (+123, like in AGTEMPL.INF).
+			if ((textState->mode == TextState::Mode::None) ||
+				(textState->mode == TextState::Mode::Key))
 			{
+				if (textState->mode == TextState::Mode::Key)
+				{
+					// Save key data and empty the key data state.
+					this->keys.insert(std::make_pair(textState->id, *textState->keyData.get()));
+					textState->keyData = nullptr;
+				}
+
 				textState->mode = TextState::Mode::Text;
 
 				const bool displayedOnce = false;
