@@ -31,7 +31,7 @@ public:
 	struct CeilingData
 	{
 		TextureData texture;
-		int height; // Size of walls on main floor. Default is 100.
+		int height; // Size of walls on main floor. Default is 128.
 		double boxScale; // Main floor box scale. Formula: (Y * boxScale) / 256.
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
 

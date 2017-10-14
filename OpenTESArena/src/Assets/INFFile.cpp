@@ -388,6 +388,10 @@ INFFile::INFFile(const std::string &filename)
 			// reset the floor state.
 			if (floorState->ceilingData.get() != nullptr)
 			{
+				// Set the ceiling texture to the current texture (otherwise the ceiling
+				// texture is empty).
+				floorState->ceilingData->texture.filename = floorState->textureName;
+
 				this->ceiling.texture.filename = floorState->ceilingData->texture.filename;
 
 				if (floorState->ceilingData->texture.setIndex.get() != nullptr)

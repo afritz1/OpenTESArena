@@ -219,6 +219,61 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 		}
 	}
 
+	// Fill the second floor with the ceiling tiles if it's an interior, or MAP2 if it exists.
+	const INFFile::CeilingData &ceiling = inf.getCeiling();
+
+	// To do: Replace this. Figure out how to determine if some place is an interior.
+	const bool isInterior = !ceiling.outdoorDungeon;
+
+	if (isInterior)
+	{
+		// Get the index of the ceiling texture name in the textures array.
+		// - To do: make this easier to get (i.e., just store the ceiling index in the
+		//   INFFile class itself instead of its filename).
+		const int ceilingIndex = [&inf, &ceiling]()
+		{
+			if (ceiling.texture.filename.size() > 0)
+			{
+				const auto texIter = std::find_if(inf.getTextures().begin(), 
+					inf.getTextures().end(), [&ceiling](const INFFile::TextureData &data)
+				{
+					return data.filename == ceiling.texture.filename;
+				});
+
+				return static_cast<int>(std::distance(inf.getTextures().begin(), texIter));
+			}
+			else
+			{
+				// To do: get ceiling from .INFs without *CEILING (like START.INF). Maybe
+				// hardcoding index 1 is enough?
+				return 1;
+			}
+		}();
+
+		// Define the ceiling voxel data as being right above the top of the main floor.
+		const int index = this->voxelGrid.addVoxelData(VoxelData(
+			0,
+			ceilingIndex + 1,
+			0,
+			(static_cast<double>(ceiling.height) / MIFFile::ARENA_UNITS) - 1.0,
+			1.0,
+			0.0,
+			1.0));
+
+		// Set all the ceiling voxels.
+		for (int x = 0; x < mif.getWidth(); x++)
+		{
+			for (int z = 0; z < mif.getDepth(); z++)
+			{
+				setVoxel(x, 2, z, index);
+			}
+		}
+	}
+	else if (level.map2.size() > 0)
+	{
+		// To do: Write second story voxels, and extend them higher if necessary.
+	}
+
 	// Assign text and sound triggers.
 	for (const auto &trigger : level.trig)
 	{
