@@ -279,6 +279,7 @@ INFFile::INFFile(const std::string &filename)
 
 			const std::string BOXCAP_STR = "BOXCAP";
 			const std::string CEILING_STR = "CEILING";
+			const std::string TOP_STR = "TOP"; // Only occurs in LABRNTH{1,2}.INF.
 
 			// See what the type in the line is.
 			const std::vector<std::string> tokens = String::split(line);
@@ -314,6 +315,11 @@ INFFile::INFFile(const std::string &filename)
 				{
 					floorState->ceilingData->outdoorDungeon = tokens.at(3) == "1";
 				}
+			}
+			else if (firstTokenType == TOP_STR)
+			{
+				// Not sure what *TOP is.
+				static_cast<void>(firstTokenType);
 			}
 			else
 			{
@@ -748,20 +754,27 @@ INFFile::INFFile(const std::string &filename)
 
 	while (std::getline(ss, line))
 	{
-		// Skip empty lines and flush all states.
-		if (line.size() == 0)
-		{
-			flushAllStates();
-			continue;
-		}
-
 		const char SECTION_SEPARATOR = '@';
 
-		// Check the first character for any changes in section. Otherwise, parse the line 
-		// depending on the current mode (each line of text is guaranteed to not be empty 
-		// at this point).
-		// - For .SET filenames, the number (#...) is preceded by a tab (for tokenization).
-		if (line.front() == SECTION_SEPARATOR)
+		// First check if the line is empty. Then check the first character for any changes 
+		// in the current section. Otherwise, parse the line depending on the current mode.
+		if (line.size() == 0)
+		{
+			// Usually, empty lines indicate a separation from two sections, but there are 
+			// some riddles with newlines (like *TEXT 0 in LABRNTH2.INF), so don't skip those.
+			if ((textState.get() != nullptr) &&
+				(textState->riddleState.get() != nullptr) &&
+				(textState->riddleState->mode == TextState::RiddleState::Mode::Riddle))
+			{
+				textState->riddleState->data.riddle += '\n';
+			}
+			else
+			{
+				// Save any current state into INFFile members.
+				flushAllStates();
+			}
+		}
+		else if (line.front() == SECTION_SEPARATOR)
 		{
 			const std::unordered_map<std::string, ParseMode> Sections =
 			{
