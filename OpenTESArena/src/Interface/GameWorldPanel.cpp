@@ -1400,8 +1400,13 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		const auto &triggerTextBox = *this->triggerText.second.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextBox.getSurface()->w / 2);
-		const int centerY = Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight() - 
-			triggerTextBox.getSurface()->h - 2;
+		const int centerY = [playerInterface, &gameInterface, &triggerTextBox]()
+		{
+			const int interfaceOffset = (playerInterface == PlayerInterface::Classic) ? 
+				gameInterface.getHeight() : (gameInterface.getHeight() / 2);
+			return Renderer::ORIGINAL_HEIGHT - interfaceOffset - 
+				triggerTextBox.getSurface()->h - 2;
+		}();
 
 		renderer.drawToOriginal(triggerTextBox.getShadowTexture(), centerX - 1, centerY);
 		renderer.drawToOriginal(triggerTextBox.getTexture(), centerX, centerY);
