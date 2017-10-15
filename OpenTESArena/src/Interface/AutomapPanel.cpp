@@ -118,7 +118,9 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 		auto getYHitFloor = [&voxelGrid](int x, int z)
 		{
 			const char *voxels = voxelGrid.getVoxels();
-			for (int y = (voxelGrid.getHeight() - 1); y >= 0; --y)
+
+			// To do: see if the map is actually drawn from low to high instead of high to low.
+			for (int y = 1; y >= 0; --y)
 			{
 				const int index = x + (y * voxelGrid.getWidth()) +
 					(z * voxelGrid.getWidth() * voxelGrid.getHeight());
