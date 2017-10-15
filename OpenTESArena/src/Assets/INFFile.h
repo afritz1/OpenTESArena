@@ -30,7 +30,7 @@ public:
 
 	struct CeilingData
 	{
-		TextureData texture;
+		int textureIndex; // Index into textures vector.
 		int height; // Size of walls on main floor. Default is 128.
 		double boxScale; // Main floor box scale. Formula: (Y * boxScale) / 256.
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
@@ -40,7 +40,7 @@ public:
 
 	struct FlatData
 	{
-		std::string filename;
+		int textureIndex; // Index into textures vector.
 
 		int yOffset; // Offsets the flat some number of pixels. Negative goes up.
 		int health; // Number of hit points.
@@ -94,7 +94,8 @@ private:
 	// although those past 63 might not be used (character class names, lore names, etc.).
 	std::array<std::vector<FlatData>, 96> itemLists;
 
-	std::array<std::string, 16> boxCaps, boxSides, menus;
+	// References to texture names in the textures vector. -1 if unset.
+	std::array<int, 16> boxCaps, boxSides, menus;
 
 	// Some .INFs have an outlier (*DOOR 90), so this shouldn't be a sequential data structure.
 	//std::unordered_map<int, std::string> doorTextures; // Unused?
@@ -111,22 +112,24 @@ private:
 	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, TextData> texts;
 
-	// Specific wall textures.
-	std::string lavaChasmTexture, wetChasmTexture, dryChasmTexture, levelDownTexture,
-		levelUpTexture, transitionTexture, transWalkThruTexture, walkThruTexture;
+	// References into the textures vector. -1 if unset.
+	int dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex,
+		transitionIndex, transWalkThruIndex, walkThruIndex, wetChasmIndex;
 
-	// Height of voxels on the main floor. Default is 100. Not sure what the second number 
-	// of *CEILING is.
+	// Ceiling data (height, box scale(?), etc.).
 	CeilingData ceiling;
 public:
 	INFFile(const std::string &filename);
 	~INFFile();
 
+	// Arbitrary index used for unset texture indices.
+	static const int NO_INDEX;
+
 	const std::vector<TextureData> &getTextures() const;
 	const std::vector<FlatData> &getItemList(int index) const;
-	const std::string &getBoxCap(int index) const;
-	const std::string &getBoxSide(int index) const;
-	const std::string &getMenu(int index) const;
+	const int *getBoxCap(int index) const;
+	const int *getBoxSide(int index) const;
+	const int *getMenu(int index) const;
 	const std::string &getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;
@@ -134,14 +137,14 @@ public:
 	const KeyData &getKey(int index) const;
 	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
-	const std::string &getLavaChasmTexture() const;
-	const std::string &getWetChasmTexture() const;
-	const std::string &getDryChasmTexture() const;
-	const std::string &getLevelDownTexture() const;
-	const std::string &getLevelUpTexture() const;
-	const std::string &getTransitionTexture() const;
-	const std::string &getTransWalkThruTexture() const;
-	const std::string &getWalkThruTexture() const;
+	const int *getDryChasmIndex() const;
+	const int *getLavaChasmIndex() const;
+	const int *getLevelDownIndex() const;
+	const int *getLevelUpIndex() const;
+	const int *getTransitionIndex() const;
+	const int *getTransWalkThruIndex() const;
+	const int *getWalkThruIndex() const;
+	const int *getWetChasmIndex() const;
 	const CeilingData &getCeiling() const;
 };
 

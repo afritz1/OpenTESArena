@@ -122,6 +122,7 @@ INFFile::CeilingData::CeilingData()
 	const int defaultHeight = 128;
 	const double defaultScale = 1.0;
 
+	this->textureIndex = INFFile::NO_INDEX;
 	this->height = defaultHeight;
 	this->boxScale = defaultScale;
 	this->outdoorDungeon = false;
@@ -149,6 +150,8 @@ INFFile::TextData::TextData(bool displayedOnce)
 {
 	this->displayedOnce = displayedOnce;
 }
+
+const int INFFile::NO_INDEX = -1;
 
 INFFile::INFFile(const std::string &filename)
 {
@@ -184,6 +187,19 @@ INFFile::INFFile(const std::string &filename)
 			count++;
 		}
 	}
+
+	// Initialize texture indices to "unset".
+	this->boxCaps.fill(INFFile::NO_INDEX);
+	this->boxSides.fill(INFFile::NO_INDEX);
+	this->menus.fill(INFFile::NO_INDEX);
+	this->dryChasmIndex = INFFile::NO_INDEX;
+	this->lavaChasmIndex = INFFile::NO_INDEX;
+	this->levelDownIndex = INFFile::NO_INDEX;
+	this->levelUpIndex = INFFile::NO_INDEX;
+	this->transitionIndex = INFFile::NO_INDEX;
+	this->transWalkThruIndex = INFFile::NO_INDEX;
+	this->walkThruIndex = INFFile::NO_INDEX;
+	this->wetChasmIndex = INFFile::NO_INDEX;
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
@@ -352,59 +368,54 @@ INFFile::INFFile(const std::string &filename)
 		else
 		{
 			// There is existing floor state (or it is in the default state with box cap 
-			// ID unset), so this line is expected to be a filename. If the line contains 
-			// a '#', it's a .SET file.
-			const std::vector<std::string> tokens = String::split(line, '#');
-
-			// Assign texture data depending on whether the line is for a .SET file.
-			if (tokens.size() == 1)
+			// ID unset), so this line is expected to be a filename.
+			const int currentIndex = [this, &floorState, &line]()
 			{
-				// Just a regular texture (like an .IMG).
-				floorState->textureName = line;
+				// If the line contains a '#', it's a .SET file.
+				const std::vector<std::string> tokens = String::split(line, '#');
 
-				this->textures.push_back(TextureData(floorState->textureName));
-			}
-			else
-			{
-				// Left side is the filename, right side is the .SET size.
-				floorState->textureName = String::trimBack(tokens.at(0));
-				const int setSize = std::stoi(tokens.at(1));
-
-				for (int i = 0; i < setSize; i++)
+				// Assign texture data depending on whether the line is for a .SET file.
+				if (tokens.size() == 1)
 				{
-					this->textures.push_back(TextureData(floorState->textureName, i));
+					// Just a regular texture (like an .IMG).
+					floorState->textureName = line;
+
+					this->textures.push_back(TextureData(floorState->textureName));
+					return static_cast<int>(this->textures.size()) - 1;
 				}
-			}
+				else
+				{
+					// Left side is the filename, right side is the .SET size.
+					floorState->textureName = String::trimBack(tokens.at(0));
+					const int setSize = std::stoi(tokens.at(1));
+
+					for (int i = 0; i < setSize; i++)
+					{
+						this->textures.push_back(TextureData(floorState->textureName, i));
+					}
+
+					return static_cast<int>(this->textures.size()) - setSize;
+				}
+			}();
 
 			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
 			// The floor state ID will be unset for loose filenames that don't have an 
 			// associated *BOXCAP line, but might have an associated *CEILING line.
 			if (floorState->boxCapID != FloorState::NO_ID)
 			{
-				this->boxCaps.at(floorState->boxCapID) = floorState->textureName;
+				this->boxCaps.at(floorState->boxCapID) = currentIndex;
 			}
 
-			// Write to the ceiling data if it is being defined for the current group, and
-			// reset the floor state.
+			// Write to the ceiling data if it is being defined for the current group.
 			if (floorState->ceilingData.get() != nullptr)
 			{
-				// Set the ceiling texture to the current texture (otherwise the ceiling
-				// texture is empty).
-				floorState->ceilingData->texture.filename = floorState->textureName;
-
-				this->ceiling.texture.filename = floorState->ceilingData->texture.filename;
-
-				if (floorState->ceilingData->texture.setIndex.get() != nullptr)
-				{
-					this->ceiling.texture.setIndex =
-						std::move(floorState->ceilingData->texture.setIndex);
-				}
-
+				this->ceiling.textureIndex = currentIndex;
 				this->ceiling.height = floorState->ceilingData->height;
 				this->ceiling.boxScale = floorState->ceilingData->boxScale;
 				this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
 			}
 
+			// Reset the floor state for any future floor data.
 			floorState = std::unique_ptr<FloorState>(new FloorState());
 		}
 	};
@@ -525,78 +536,85 @@ INFFile::INFFile(const std::string &filename)
 		{
 			// There is existing wall state, so this line contains a texture name associated 
 			// with some '*' section(s).
-			const std::vector<std::string> tokens = String::split(line, '#');
-
-			// Assign texture data depending on whether the line is for a .SET file.
-			if (tokens.size() == 1)
+			const int currentIndex = [this, &wallState, &line]()
 			{
-				// Just a regular texture (like an .IMG).
-				wallState->textureName = line;
+				// If the line contains a '#', it's a .SET file.
+				const std::vector<std::string> tokens = String::split(line, '#');
 
-				this->textures.push_back(TextureData(wallState->textureName));
-			}
-			else
-			{
-				// Left side is the filename, right side is the .SET size.
-				wallState->textureName = String::trimBack(tokens.at(0));
-				const int setSize = std::stoi(tokens.at(1));
-
-				for (int i = 0; i < setSize; i++)
+				// Assign texture data depending on whether the line is for a .SET file.
+				if (tokens.size() == 1)
 				{
-					this->textures.push_back(TextureData(wallState->textureName, i));
+					// Just a regular texture (like an .IMG).
+					wallState->textureName = line;
+
+					this->textures.push_back(TextureData(wallState->textureName));
+					return static_cast<int>(this->textures.size()) - 1;
 				}
-			}
+				else
+				{
+					// Left side is the filename, right side is the .SET size.
+					wallState->textureName = String::trimBack(tokens.at(0));
+					const int setSize = std::stoi(tokens.at(1));
+
+					for (int i = 0; i < setSize; i++)
+					{
+						this->textures.push_back(TextureData(wallState->textureName, i));
+					}
+
+					return static_cast<int>(this->textures.size()) - setSize;
+				}
+			}();
 
 			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the 
 			// current wall state.
 			if (wallState->boxCapID != WallState::NO_ID)
 			{
-				this->boxCaps.at(wallState->boxCapID) = wallState->textureName;
+				this->boxCaps.at(wallState->boxCapID) = currentIndex;
 			}
 
 			if (wallState->boxSideID != WallState::NO_ID)
 			{
-				this->boxSides.at(wallState->boxSideID) = wallState->textureName;
+				this->boxSides.at(wallState->boxSideID) = currentIndex;
 			}
 
 			if (wallState->menuID != WallState::NO_ID)
 			{
-				this->menus.at(wallState->menuID) = wallState->textureName;
+				this->menus.at(wallState->menuID) = currentIndex;
 			}
 
-			// Write the texture name based on the wall mode (excluding some since they're
+			// Write the texture index based on the wall mode (excluding some since they're
 			// handled differently -- i.e., with more than one line of state, or with an ID).
 			if (wallState->mode == WallState::Mode::DryChasm)
 			{
-				this->dryChasmTexture = wallState->textureName;
+				this->dryChasmIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::LavaChasm)
 			{
-				this->lavaChasmTexture = wallState->textureName;
+				this->lavaChasmIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::LevelDown)
 			{
-				this->levelDownTexture = wallState->textureName;
+				this->levelDownIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::LevelUp)
 			{
-				this->levelUpTexture = wallState->textureName;
+				this->levelUpIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::Transition)
 			{
-				this->transitionTexture = wallState->textureName;
+				this->transitionIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::TransWalkThru)
 			{
-				this->transWalkThruTexture = wallState->textureName;
+				this->transWalkThruIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::WalkThru)
 			{
-				this->walkThruTexture = wallState->textureName;
+				this->walkThruIndex = currentIndex;
 			}
 			else if (wallState->mode == WallState::Mode::WetChasm)
 			{
-				this->wetChasmTexture = wallState->textureName;
+				this->wetChasmIndex = currentIndex;
 			}
 
 			wallState = std::unique_ptr<WallState>(new WallState());
@@ -846,19 +864,22 @@ const std::vector<INFFile::FlatData> &INFFile::getItemList(int index) const
 	return this->itemLists.at(index);
 }
 
-const std::string &INFFile::getBoxCap(int index) const
+const int *INFFile::getBoxCap(int index) const
 {
-	return this->boxCaps.at(index);
+	const int *ptr = &this->boxCaps.at(index);
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getBoxSide(int index) const
+const int *INFFile::getBoxSide(int index) const
 {
-	return this->boxSides.at(index);
+	const int *ptr = &this->boxSides.at(index);
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getMenu(int index) const
+const int *INFFile::getMenu(int index) const
 {
-	return this->menus.at(index);
+	const int *ptr = &this->menus.at(index);
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
 const std::string &INFFile::getSound(int index) const
@@ -896,44 +917,52 @@ const INFFile::TextData &INFFile::getText(int index) const
 	return this->texts.at(index);
 }
 
-const std::string &INFFile::getLavaChasmTexture() const
+const int *INFFile::getDryChasmIndex() const
 {
-	return this->lavaChasmTexture;
+	const int *ptr = &this->dryChasmIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getWetChasmTexture() const
+const int *INFFile::getLavaChasmIndex() const
 {
-	return this->wetChasmTexture;
+	const int *ptr = &this->lavaChasmIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getDryChasmTexture() const
+const int *INFFile::getLevelDownIndex() const
 {
-	return this->dryChasmTexture;
+	const int *ptr = &this->levelDownIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getLevelDownTexture() const
+const int *INFFile::getLevelUpIndex() const
 {
-	return this->levelDownTexture;
+	const int *ptr = &this->levelUpIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getLevelUpTexture() const
+const int *INFFile::getTransitionIndex() const
 {
-	return this->levelUpTexture;
+	const int *ptr = &this->transitionIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getTransitionTexture() const
+const int *INFFile::getTransWalkThruIndex() const
 {
-	return this->transitionTexture;
+	const int *ptr = &this->transWalkThruIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getTransWalkThruTexture() const
+const int *INFFile::getWalkThruIndex() const
 {
-	return this->transWalkThruTexture;
+	const int *ptr = &this->walkThruIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const std::string &INFFile::getWalkThruTexture() const
+const int *INFFile::getWetChasmIndex() const
 {
-	return this->walkThruTexture;
+	const int *ptr = &this->wetChasmIndex;
+	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
 const INFFile::CeilingData &INFFile::getCeiling() const

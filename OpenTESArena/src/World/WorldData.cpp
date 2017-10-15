@@ -228,19 +228,11 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 	if (isInterior)
 	{
 		// Get the index of the ceiling texture name in the textures array.
-		// - To do: make this easier to get (i.e., just store the ceiling index in the
-		//   INFFile class itself instead of its filename).
 		const int ceilingIndex = [&inf, &ceiling]()
 		{
-			if (ceiling.texture.filename.size() > 0)
+			if (ceiling.textureIndex != INFFile::NO_INDEX)
 			{
-				const auto texIter = std::find_if(inf.getTextures().begin(), 
-					inf.getTextures().end(), [&ceiling](const INFFile::TextureData &data)
-				{
-					return data.filename == ceiling.texture.filename;
-				});
-
-				return static_cast<int>(std::distance(inf.getTextures().begin(), texIter));
+				return ceiling.textureIndex;
 			}
 			else
 			{
