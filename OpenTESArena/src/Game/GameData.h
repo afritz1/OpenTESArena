@@ -52,8 +52,9 @@ public:
 
 	// Takes a .MIF file with its associated .INF file and writes data into the given 
 	// reference parameters. This overwrites parts of the existing game session.
-	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition,
-		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
+	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, int levelIndex, 
+		Double3 &playerPosition, WorldData &worldData, TextureManager &textureManager, 
+		Renderer &renderer);
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,

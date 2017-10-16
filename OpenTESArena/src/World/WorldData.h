@@ -38,7 +38,7 @@ private:
 	VoxelGrid voxelGrid;
 	EntityManager entityManager;
 public:
-	WorldData(const MIFFile &mif, const INFFile &inf);
+	WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex);
 	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager);
 	WorldData(WorldData &&worldData) = default;
 	~WorldData();

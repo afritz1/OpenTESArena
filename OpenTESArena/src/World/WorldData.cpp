@@ -40,8 +40,8 @@ void WorldData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 	this->previouslyDisplayed = previouslyDisplayed;
 }
 
-WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
-	: voxelGrid(mif.getWidth(), 5, mif.getDepth()) // To do: eventually get height from .MIF file.
+WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
+	: voxelGrid(mif.getWidth(), mif.getHeight(levelIndex), mif.getDepth())
 {
 	// Arena's level origins start at the top-right corner of the map, so X increases 
 	// going to the left, and Z increases going down. The wilderness uses this same 
@@ -65,8 +65,8 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 			(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight())] = id;
 	};
 
-	// Load first level in .MIF file.
-	const MIFFile::Level &level = mif.getLevels().front();
+	// Load requested level from .MIF file.
+	const MIFFile::Level &level = mif.getLevels().at(levelIndex);
 	const uint8_t *florData = level.flor.data();
 	const uint8_t *map1Data = level.map1.data();
 
@@ -159,7 +159,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf)
 							{
 								const double ceilingHeight = 
 									static_cast<double>(inf.getCeiling().height) / 
-									static_cast<double>(MIFFile::ARENA_UNITS);
+									MIFFile::ARENA_UNITS;
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
 									wallTextureID, wallTextureID, wallTextureID, 0.0,

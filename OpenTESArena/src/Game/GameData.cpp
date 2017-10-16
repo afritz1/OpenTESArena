@@ -49,14 +49,17 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
-void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition,
-	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
+void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, int levelIndex, 
+	Double3 &playerPosition, WorldData &worldData, TextureManager &textureManager, 
+	Renderer &renderer)
 {
 	// Convert start point to new coordinate system and set player's location 
 	// (player Y value is arbitrary for now).
+	// - To do: figure out how to select start points (some places don't have
+	//   start points for each level).
 	const auto &startPoints = mif.getStartPoints();
 	const Double2 startPoint = VoxelGrid::arenaVoxelToNewVoxel(
-		(startPoints.size() > 0) ? startPoints.front() : Double2(), 
+		(levelIndex < startPoints.size()) ? startPoints.at(levelIndex) : startPoints.at(0),
 		mif.getWidth(),
 		mif.getDepth());
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
@@ -76,7 +79,8 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	const uint32_t black = 0x0;
 	renderer.setSkyPalette(&black, 1);
 
-	worldData = std::move(WorldData(mif, inf));
+	// Load the world data from the .MIF and .INF files.
+	worldData = std::move(WorldData(mif, inf, levelIndex));
 	
 	// Load .INF textures into the renderer.
 	for (const auto &textureData : inf.getTextures())

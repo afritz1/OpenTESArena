@@ -28,10 +28,11 @@ public:
 			int x, y, textIndex, soundIndex;
 		};
 
-		std::string name, info; // Name of level, and associated INF filename.
-		int numf; // Number of floor (and wall?) textures.
+		std::string name, info; // Name of level and associated INF filename.
+		int numf; // Number of floor textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
+		// - To do: maybe store MAP2 data with each voxel's extended height?
 		std::vector<uint8_t> flat, flor, inns, loot, map1, map2, targ;
 		std::vector<MIFFile::Level::Lock> lock;
 		std::vector<MIFFile::Level::Trigger> trig;
@@ -40,6 +41,10 @@ public:
 		// level loading methods for each tag as needed. The return value is the offset from 
 		// the current LEVL tag to where the next LEVL tag would be.
 		int load(const uint8_t *levelStart);
+
+		// Gets the height of the level in voxels. This value depends on extended blocks
+		// in the MAP2 data, otherwise it drops back to a default value.
+		int getHeight() const;
 
 		// Loading methods for each .MIF level tag (FLOR, MAP1, etc.), called by Level::load(). 
 		// The return value is the offset from the current tag to where the next tag would be.
@@ -78,8 +83,10 @@ public:
 	// voxel at X coordinate 1).
 	static const double ARENA_UNITS;
 
-	// Gets the dimensions of the map. They are constant for all levels in a map.
+	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
+	// and the height depends on MAP2 data in each level (if any -- default otherwise).
 	int getWidth() const;
+	int getHeight(int levelIndex) const;
 	int getDepth() const;
 
 	// Gets the starting level when the player enters the area.
@@ -92,14 +99,6 @@ public:
 	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
 	// to be in a nicer format before handing it over to the rest of the program).
 	const std::vector<MIFFile::Level> &getLevels() const;
-
-	// To do:
-	// - Voxel data per floor (flor, map1, map2), per level.
-	// - Name and .INF of a level.
-	// - Texture count per level (numf)
-	// - Lock locations and lock levels per level.
-	// - Trigger locations per level.
-	// - Target(?), Loot(loot piles? Quest items?).
 };
 
 #endif

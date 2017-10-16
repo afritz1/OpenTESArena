@@ -118,6 +118,11 @@ int MIFFile::getWidth() const
 	return this->width;
 }
 
+int MIFFile::getHeight(int levelIndex) const
+{
+	return this->levels.at(levelIndex).getHeight();
+}
+
 int MIFFile::getDepth() const
 {
 	return this->depth;
@@ -167,6 +172,21 @@ int MIFFile::Level::load(const uint8_t *levelStart)
 	}
 
 	return static_cast<int>(levelEnd - levelStart);
+}
+
+int MIFFile::Level::getHeight() const
+{
+	// If there is MAP2 data, then check through each voxel to find the highest point.
+	if (this->map2.size() > 0)
+	{
+		// To do: look at MAP2 voxels and determine highest column.
+		return 6;
+	}
+	else
+	{
+		// Use the default height -- ground, main floor, and ceiling.
+		return 3;
+	}
 }
 
 int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
