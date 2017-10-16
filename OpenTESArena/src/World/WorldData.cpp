@@ -162,8 +162,10 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 									MIFFile::ARENA_UNITS;
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									wallTextureID, wallTextureID, wallTextureID, 0.0,
-									ceilingHeight, 0.0, 1.0));
+									wallTextureID, 
+									wallTextureID,
+									wallTextureID,
+									0.0, ceilingHeight, 0.0, 1.0));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
 							}
@@ -182,7 +184,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 
 						// Get the voxel data index associated with the wall value, or add it
 						// if it doesn't exist yet.
-						const int dataIndex = [this, &wallDataMappings, map1Voxel,
+						const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel,
 							capTextureID, wallTextureID, platformHeight]()
 						{
 							const auto wallIter = wallDataMappings.find(map1Voxel);
@@ -201,7 +203,9 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 								const double bottomV = 1.0; // To do: should also be a function.
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									wallTextureID, capTextureID, capTextureID,
+									(*inf.getBoxSide(wallTextureID)) + 1, 
+									inf.getCeiling().textureIndex + 1,
+									(*inf.getBoxCap(capTextureID)) + 1,
 									0.0, platformHeight, topV, bottomV));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
