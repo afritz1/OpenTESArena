@@ -19,6 +19,9 @@ public:
 
 	// Circular rotation of a 16-bit integer to the right.
 	static uint16_t ror16(uint16_t value, unsigned int count);
+
+	// Circular rotation of a 32-bit integer to the left.
+	static uint32_t rol32(uint32_t value, unsigned int count);
 };
 
 #endif
