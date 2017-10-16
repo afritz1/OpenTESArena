@@ -122,14 +122,14 @@ MainMenuPanel::MainMenuPanel(Game *game)
 				game->getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
-			const int levelIndex = 0;
 			const MIFFile mif("START.MIF");
 			//const MIFFile mif("39699021.MIF");
-			const INFFile inf(String::toUppercase(mif.getLevels().at(levelIndex).info));
+			const INFFile inf(String::toUppercase(
+				mif.getLevels().at(mif.getStartingLevelIndex()).info));
 
 			auto &player = gameData->getPlayer();
 			Double3 playerPosition = player.getPosition();
-			GameData::loadFromMIF(mif, inf, levelIndex, playerPosition, 
+			GameData::loadFromMIF(mif, inf, playerPosition, 
 				gameData->getWorldData(), game->getTextureManager(), renderer);
 
 			player.teleport(playerPosition);
