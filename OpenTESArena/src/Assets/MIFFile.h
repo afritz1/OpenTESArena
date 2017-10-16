@@ -83,6 +83,10 @@ public:
 	// voxel at X coordinate 1).
 	static const double ARENA_UNITS;
 
+	// Generates the filename for a main quest .MIF file given the XY province coordinates 
+	// and the province ID.
+	static std::string mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID);
+
 	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
 	// and the height depends on MAP2 data in each level (if any -- default otherwise).
 	int getWidth() const;
