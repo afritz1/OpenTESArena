@@ -157,12 +157,12 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 							}
 							else
 							{
-								const double ceilingHeight = 
-									static_cast<double>(inf.getCeiling().height) / 
+								const double ceilingHeight =
+									static_cast<double>(inf.getCeiling().height) /
 									MIFFile::ARENA_UNITS;
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									wallTextureID, 
+									wallTextureID,
 									wallTextureID,
 									wallTextureID,
 									0.0, ceilingHeight, 0.0, 1.0));
@@ -179,7 +179,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 						// and when it's greater than 64, then that determines the offset?
 						const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4; // To do: get BOXCAP Y texture.
 						const uint8_t wallTextureID = map1Voxel & 0x000F; // To do: get BOXSIDE Z texture.
-						const double platformHeight = static_cast<double>(mostSigByte) / 
+						const double platformHeight = static_cast<double>(mostSigByte) /
 							static_cast<double>(MIFFile::ARENA_UNITS);
 
 						// Get the voxel data index associated with the wall value, or add it
@@ -203,7 +203,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 								const double bottomV = 1.0; // To do: should also be a function.
 
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									(*inf.getBoxSide(wallTextureID)) + 1, 
+									(*inf.getBoxSide(wallTextureID)) + 1,
 									inf.getCeiling().textureIndex + 1,
 									(*inf.getBoxCap(capTextureID)) + 1,
 									0.0, platformHeight, topV, bottomV));
@@ -218,7 +218,65 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 			}
 			else
 			{
-				// An object of some kind.
+				// A special voxel, or an object of some kind.
+				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
+
+				if (mostSigNibble == 0x8)
+				{
+					// The lower byte determines the index of a FLAT for an object.
+					const uint8_t flatIndex = map1Voxel & 0x00FF;
+					// To do.
+				}
+				else if (mostSigNibble == 0x9)
+				{
+					// Transparent block with 1-sided texture on all sides.
+					// To do.
+				}
+				else if (mostSigNibble == 0xA)
+				{
+					// Transparent block with 2-sided texture on one side.
+					// To do.
+				}
+				else if (mostSigNibble == 0xB)
+				{
+					// Door with texture == (6 lowest bits) - 1.
+					const int doorTextureIndex = (map1Voxel & 0x003F) - 1;
+					// To do.
+				}
+				else if (mostSigNibble == 0xC)
+				{
+					// Unknown (perhaps "curtains" for beds?).
+					// To do.
+				}
+				else if (mostSigNibble == 0xD)
+				{
+					// Diagonal wall -- direction depends on the nineth bit.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const bool isRightDiag = (map1Voxel & 0x0100) == 0;
+							const int diagTextureIndex = map1Voxel & 0x00FF;
+							const double ceilingHeight =
+								static_cast<double>(inf.getCeiling().height) / 
+								MIFFile::ARENA_UNITS;
+
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								isRightDiag ? diagTextureIndex : 0,
+								!isRightDiag ? diagTextureIndex : 0,
+								0.0, ceilingHeight, 0.0, 1.0));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 1, z, dataIndex);
+				}
 			}
 		}
 	}
