@@ -249,7 +249,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 						}
 						else
 						{
-							const int doorTextureIndex = (map1Voxel & 0x003F) - 1;
+							const int doorTextureIndex = map1Voxel & 0x003F;
 							const double ceilingHeight =
 								static_cast<double>(inf.getCeiling().height) /
 								MIFFile::ARENA_UNITS;
