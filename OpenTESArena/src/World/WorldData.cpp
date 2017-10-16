@@ -239,9 +239,29 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, int levelIndex)
 				}
 				else if (mostSigNibble == 0xB)
 				{
-					// Door with texture == (6 lowest bits) - 1.
-					const int doorTextureIndex = (map1Voxel & 0x003F) - 1;
-					// To do.
+					// Door with texture.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const int doorTextureIndex = (map1Voxel & 0x003F) - 1;
+							const double ceilingHeight =
+								static_cast<double>(inf.getCeiling().height) /
+								MIFFile::ARENA_UNITS;
+
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								doorTextureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xC)
 				{
