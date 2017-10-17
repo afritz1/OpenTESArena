@@ -998,14 +998,14 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 		if (z <= depthBuffer[index])
 		{
 			// Horizontal texture coordinate.
-			const double u = currentPoint.y - std::floor(currentPoint.y);
+			const double u = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
 
 			// Horizontal offset in texture.
 			const int textureX = static_cast<int>(u *
 				static_cast<double>(texture.width)) % texture.width;
 
 			// Vertical texture coordinate.
-			const double v = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
+			const double v = 1.0 - (currentPoint.y - std::floor(currentPoint.y));
 
 			// Y position in texture.
 			const int textureY = static_cast<int>(v *
@@ -1056,19 +1056,19 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	{
 		if (wallFacing == WallFacing::PositiveX)
 		{
-			return 1.0 - (farPoint.y - std::floor(farPoint.y));
+			return farPoint.y - std::floor(farPoint.y);
 		}
 		else if (wallFacing == WallFacing::NegativeX)
 		{
-			return farPoint.y - std::floor(farPoint.y);
+			return 1.0 - (farPoint.y - std::floor(farPoint.y));
 		}
 		else if (wallFacing == WallFacing::PositiveZ)
 		{
-			return farPoint.x - std::floor(farPoint.x);
+			return 1.0 - (farPoint.x - std::floor(farPoint.x));
 		}
 		else
 		{
-			return 1.0 - (farPoint.x - std::floor(farPoint.x));
+			return farPoint.x - std::floor(farPoint.x);
 		}
 	}();
 
@@ -1728,19 +1728,19 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	{
 		if (wallFacing == WallFacing::PositiveX)
 		{
-			return nearPoint.y - std::floor(nearPoint.y);
+			return 1.0 - (nearPoint.y - std::floor(nearPoint.y));
 		}
 		else if (wallFacing == WallFacing::NegativeX)
 		{
-			return 1.0 - (nearPoint.y - std::floor(nearPoint.y));
+			return nearPoint.y - std::floor(nearPoint.y);
 		}
 		else if (wallFacing == WallFacing::PositiveZ)
 		{
-			return 1.0 - (nearPoint.x - std::floor(nearPoint.x));
+			return nearPoint.x - std::floor(nearPoint.x);
 		}
 		else
 		{
-			return nearPoint.x - std::floor(nearPoint.x);
+			return 1.0 - (nearPoint.x - std::floor(nearPoint.x));
 		}
 	}();
 
