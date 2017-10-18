@@ -172,7 +172,8 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 {
 	auto getVoxel = [&worldData](int x, int y, int z) -> VoxelData
 	{
-		const VoxelGrid &voxelGrid = worldData.getVoxelGrid();
+		const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+		const VoxelGrid &voxelGrid = level.getVoxelGrid();
 
 		// Voxels outside the world are air.
 		if ((x < 0) || (x >= voxelGrid.getWidth()) ||

@@ -366,14 +366,15 @@ GameWorldPanel::GameWorldPanel(Game *game)
 			if (goToAutomap)
 			{
 				auto &gameData = game->getGameData();
+				const auto &worldData = gameData.getWorldData();
+				const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 				const auto &player = gameData.getPlayer();
-				const auto &voxelGrid = gameData.getWorldData().getVoxelGrid();
 				const Location &location = gameData.getLocation();
 				const Double3 &position = player.getPosition();
 
 				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game,
 					Double2(position.x, position.z), player.getGroundDirection(), 
-					voxelGrid, location.getName()));
+					level.getVoxelGrid(), location.getName()));
 				game->setPanel(std::move(automapPanel));
 			}
 			else
@@ -1020,9 +1021,10 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
 	auto &game = *this->getGame();
 	auto &worldData = game.getGameData().getWorldData();
+	auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 
 	// See if there's a text trigger.
-	WorldData::TextTrigger *textTrigger = worldData.getTextTrigger(voxel);
+	LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
 	if (textTrigger != nullptr)
 	{
 		// Only display it if it should be displayed (i.e., not already displayed 
@@ -1065,7 +1067,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 
 	// See if there's a sound trigger.
-	const std::string *soundTrigger = worldData.getSoundTrigger(voxel);
+	const std::string *soundTrigger = level.getSoundTrigger(voxel);
 	if (soundTrigger != nullptr)
 	{
 		// Play the sound.
@@ -1240,10 +1242,11 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &gameData = this->getGame()->getGameData();
 	auto &player = gameData.getPlayer();
 	const auto &worldData = gameData.getWorldData();
+	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 	const auto &options = this->getGame()->getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getVerticalFOV(), gameData.getAmbientPercent(),
-		gameData.getDaytimePercent(), worldData.getVoxelGrid());
+		gameData.getDaytimePercent(), level.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame()->getTextureManager();

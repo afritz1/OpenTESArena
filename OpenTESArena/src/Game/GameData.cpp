@@ -52,15 +52,6 @@ GameData::~GameData()
 void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
 	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
 {
-	// Convert start point to new coordinate system and set player's location 
-	// (player Y value is arbitrary for now).
-	const auto &startPoints = mif.getStartPoints();
-	const Double2 startPoint = VoxelGrid::arenaVoxelToNewVoxel(
-		startPoints.at(mif.getStartingLevelIndex()),
-		mif.getWidth(),
-		mif.getDepth());
-	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
-
 	// Clear all entities.
 	auto &entityManager = worldData.getEntityManager();
 	for (const auto *entity : entityManager.getAllEntities())
@@ -78,6 +69,12 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 
 	// Load the world data from the .MIF and .INF files.
 	worldData = std::move(WorldData(mif, inf));
+
+	// Convert start point to new coordinate system and set player's location 
+	// (player Y value is arbitrary for now).
+	const auto &startPoints = worldData.getStartPoints();
+	const Double2 &startPoint = startPoints.at(worldData.getCurrentLevel());
+	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 	
 	// Load .INF textures into the renderer.
 	for (const auto &textureData : inf.getTextures())
