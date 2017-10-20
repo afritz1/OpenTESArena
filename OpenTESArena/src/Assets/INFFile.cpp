@@ -71,11 +71,16 @@ namespace
 	{
 		enum class Mode { None, Item };
 
-		// To do.
+		// Arbitrary ID for uninitialized "*..." members.
+		static const int NO_ID = -1;
+
+		FlatState::Mode mode;
+		int itemID;
 
 		FlatState()
 		{
-
+			this->mode = FlatState::Mode::None;
+			this->itemID = FlatState::NO_ID;
 		}
 	};
 
@@ -130,6 +135,7 @@ INFFile::CeilingData::CeilingData()
 
 INFFile::FlatData::FlatData()
 {
+	this->textureIndex = INFFile::NO_INDEX;
 	this->yOffset = 0;
 	this->health = 0;
 	this->type = 0;
@@ -222,15 +228,9 @@ INFFile::INFFile(const std::string &filename)
 	std::unique_ptr<FlatState> flatState;
 	std::unique_ptr<TextState> textState;
 
-	// Lambdas for flushing state to the INFFile. This is useful during the parse loop,
+	// Lambda for flushing state to the INFFile. This is useful during the parse loop,
 	// but it's also sometimes necessary at the end of the file because the last element 
 	// of certain sections (i.e., @TEXT) might get missed if there is no data after them.
-	auto flushFlatState = [this, &flatState]()
-	{
-		// To do.
-		// Call whenever it hits an empty line or an *ITEM section.
-	};
-
 	auto flushTextState = [this, &textState]()
 	{
 		if (textState->mode == TextState::Mode::Key)
@@ -250,10 +250,10 @@ INFFile::INFFile(const std::string &filename)
 		}
 	};
 
-	// Lambda for flushing all states. Some states don't need an explicit flush because 
+	// Lambda for flushing all states. Most states don't need an explicit flush because 
 	// they have no risk of leaving data behind.
-	auto flushAllStates = [&floorState, &wallState, &flatState, &textState,
-		&flushFlatState, &flushTextState]()
+	auto flushAllStates = [&floorState, &wallState, &flatState, 
+		&textState, &flushTextState]()
 	{
 		if (floorState.get() != nullptr)
 		{
@@ -267,7 +267,6 @@ INFFile::INFFile(const std::string &filename)
 
 		if (flatState.get() != nullptr)
 		{
-			flushFlatState();
 			flatState = nullptr;
 		}
 
@@ -621,13 +620,80 @@ INFFile::INFFile(const std::string &filename)
 		}
 	};
 
-	auto parseFlatLine = [this, &flatState, &flushFlatState](const std::string &line)
+	auto parseFlatLine = [this, &flatState](const std::string &line)
 	{
-		// Check if line says *TEXT, and if so, get the number. Otherwise, get the
-		// filename and any associated modifiers ("F:", "Y:", etc.).
+		const char TYPE_CHAR = '*';
 
-		// I think each *ITEM tag only points to the filename right below it. It
-		// doesn't stack up any other filenames.
+		// Check if the first character is a '*' for an *ITEM line. Otherwise, read the line 
+		// as a texture filename, and check for extra tokens on the right (F:, Y:, etc.).
+		if (line.front() == TYPE_CHAR)
+		{
+			// Initialize flat state if it is null.
+			if (flatState.get() == nullptr)
+			{
+				flatState = std::unique_ptr<FlatState>(new FlatState());
+			}
+
+			const std::string ITEM_STR = "ITEM";
+
+			// See what the type in the line is.
+			const std::vector<std::string> tokens = String::split(line);
+			const std::string firstToken = tokens.at(0);
+			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+
+			if (firstTokenType == ITEM_STR)
+			{
+				flatState->mode = FlatState::Mode::Item;
+				flatState->itemID = std::stoi(tokens.at(1));
+			}
+			else
+			{
+				DebugCrash("Unrecognized @FLATS section \"" + firstTokenType + "\".");
+			}
+		}
+		else if ((flatState.get() == nullptr) || (flatState->itemID == FlatState::NO_ID))
+		{
+			// A "loose" texture name. Check for tokens on the right side as well.
+			// To do: reuse most of the flat parsing from the else branch.
+		}
+		else
+		{
+			// A texture name after an *ITEM line, potentially with some modifiers on the right.
+			// The modifiers might be split by tabs or spaces, so check for both cases. The 
+			// texture name always has a tab on the right though (if there's any whitespace).
+			const std::vector<std::string> tokens = String::split(line, '\t');
+
+			if (tokens.size() == 1)
+			{
+				// Just a texture name with no modifiers.
+				this->textures.push_back(TextureData(tokens.at(0)));
+				this->items.at(flatState->itemID).textureIndex = 
+					static_cast<int>(this->textures.size() - 1);
+			}
+			else
+			{
+				// There exist some modifiers on the right side, so check if it needs 
+				// splitting on space.
+				// To do...
+				/*auto modifiers = [&tokens]()
+				{
+					const std::string &rightTokens = tokens.at(1);
+					const bool hasSpace = rightTokens.find(' ') != std::string::npos;
+
+					if (hasSpace)
+					{
+						// Split it on space.
+						// To do: return std::vector<std::pair<char, int>>.
+					}
+					else
+					{
+						// Already split on tab.
+					}
+				}();*/
+			}
+
+			flatState = std::unique_ptr<FlatState>(new FlatState());
+		}
 	};
 
 	auto parseSoundLine = [this](const std::string &line)
@@ -859,9 +925,9 @@ const std::vector<INFFile::TextureData> &INFFile::getTextures() const
 	return this->textures;
 }
 
-const std::vector<INFFile::FlatData> &INFFile::getItemList(int index) const
+const INFFile::FlatData &INFFile::getItem(int index) const
 {
-	return this->itemLists.at(index);
+	return this->items.at(index);
 }
 
 const int *INFFile::getBoxCap(int index) const

@@ -90,9 +90,10 @@ private:
 	// pointer will contain the index (otherwise it is null).
 	std::vector<TextureData> textures;
 
-	// Each item list is a set of texture filenames. The highest *ITEM number is 95,
-	// although those past 63 might not be used (character class names, lore names, etc.).
-	std::array<std::vector<FlatData>, 96> itemLists;
+	// Each item is a record holding various data for a flat (i.e., texture index, etc.). 
+	// The highest *ITEM number is 95, although those past 63 might not be used (character 
+	// class names, lore names, etc.).
+	std::array<FlatData, 96> items;
 
 	// References to texture names in the textures vector. -1 if unset.
 	std::array<int, 16> boxCaps, boxSides, menus;
@@ -126,7 +127,7 @@ public:
 	static const int NO_INDEX;
 
 	const std::vector<TextureData> &getTextures() const;
-	const std::vector<FlatData> &getItemList(int index) const;
+	const FlatData &getItem(int index) const;
 	const int *getBoxCap(int index) const;
 	const int *getBoxSide(int index) const;
 	const int *getMenu(int index) const;
