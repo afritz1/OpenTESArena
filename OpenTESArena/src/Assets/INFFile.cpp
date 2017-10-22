@@ -659,9 +659,20 @@ INFFile::INFFile(const std::string &filename)
 		else
 		{
 			// A texture name after an *ITEM line, potentially with some modifiers on the right.
-			// The modifiers might be split by tabs or spaces, so check for both cases. The 
+			// Each token might be split by tabs or spaces, so always check for both cases. The 
 			// texture name always has a tab on the right though (if there's any whitespace).
-			const std::vector<std::string> tokens = String::split(line, '\t');
+			const std::vector<std::string> tokens = [&line]()
+			{
+				// Trim any extra whitespace (so there are no adjacent duplicates).
+				const std::string trimmedStr = String::trimExtra(line);
+
+				// Replace tabs with spaces.
+				const std::string replacedStr = String::replace(trimmedStr, '\t', ' ');
+
+				// To do: refine String::split() to account for whitespace in general so
+				// we can avoid doing the extra steps above.
+				return String::split(replacedStr);
+			}();
 
 			if (tokens.size() == 1)
 			{

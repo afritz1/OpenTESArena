@@ -98,6 +98,30 @@ std::string String::trimLines(const std::string &str)
 	return trimmed;
 }
 
+std::string String::trimExtra(const std::string &str)
+{
+	std::string trimmed;
+	char prev = -1;
+
+	auto isWhitespace = [](char c)
+	{
+		const char space = ' ';
+		const char tab = '\t';
+		return (c == space) || (c == tab);
+	};
+
+	for (const char c : str)
+	{
+		if (!isWhitespace(c) || !isWhitespace(prev))
+		{
+			trimmed += c;
+			prev = c;
+		}
+	}
+
+	return trimmed;
+}
+
 std::string String::getExtension(const std::string &str)
 {
 	const size_t dotPos = str.rfind('.');
@@ -139,7 +163,7 @@ std::string String::toUppercase(const std::string &str)
 {
 	std::string newStr(str);
 
-	for (auto &c : newStr)
+	for (char &c : newStr)
 	{
 		c = std::toupper(c);
 	}
@@ -151,7 +175,7 @@ std::string String::toLowercase(const std::string &str)
 {
 	std::string newStr(str);
 
-	for (auto &c : newStr)
+	for (char &c : newStr)
 	{
 		c = std::tolower(c);
 	}

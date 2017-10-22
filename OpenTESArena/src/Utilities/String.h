@@ -33,6 +33,9 @@ public:
 	// Removes new line characters from a string.
 	static std::string trimLines(const std::string &str);
 
+	// Removes extra whitespace from a string.
+	static std::string trimExtra(const std::string &str);
+
 	// Gets the right-most extension from a string, i.e., ".txt".
 	static std::string getExtension(const std::string &str);
 
