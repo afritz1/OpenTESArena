@@ -45,10 +45,15 @@ public:
 		int yOffset; // Offsets the flat some number of pixels. Negative goes up.
 		int health; // Number of hit points.
 
-		// Bit array of flat modifiers?
+		// Flat modifiers.
 		// 0x1: Collider. 0x2: Reflect (puddle). 0x4: Double (scale?). 0x8: Dark.
 		// 0x10: Transparent (ghosts). 0x20: Ceiling (attached to ceiling?).
-		uint16_t type;
+		bool collider;
+		bool puddle;
+		bool doubleScale;
+		bool dark;
+		bool transparent;
+		bool ceiling;
 
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
@@ -90,13 +95,17 @@ private:
 	// pointer will contain the index (otherwise it is null).
 	std::vector<TextureData> textures;
 
-	// Each item is a record holding various data for a flat (i.e., texture index, etc.). 
-	// The highest *ITEM number is 95, although those past 63 might not be used (character 
-	// class names, lore names, etc.).
-	std::array<FlatData, 96> items;
-
 	// References to texture names in the textures vector. -1 if unset.
 	std::array<int, 16> boxCaps, boxSides, menus;
+
+	// Flat data in the order they are discovered. Each record holds various data for a flat 
+	// (i.e., texture index, etc.).
+	std::vector<FlatData> flats;
+
+	// Indices into the flats vector for flats paired with an *ITEM index. The highest *ITEM 
+	// number is 95, although those past 63 might not be used (character class names, lore 
+	// names, etc.).
+	std::array<int, 96> items;
 
 	// Some .INFs have an outlier (*DOOR 90), so this shouldn't be a sequential data structure.
 	//std::unordered_map<int, std::string> doorTextures; // Unused?
@@ -127,10 +136,11 @@ public:
 	static const int NO_INDEX;
 
 	const std::vector<TextureData> &getTextures() const;
-	const FlatData &getItem(int index) const;
 	const int *getBoxCap(int index) const;
 	const int *getBoxSide(int index) const;
 	const int *getMenu(int index) const;
+	const FlatData &getFlat(int index) const;
+	const FlatData &getItem(int index) const;
 	const std::string &getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

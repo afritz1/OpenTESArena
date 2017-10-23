@@ -1,3 +1,4 @@
+#include <cctype>
 #include <sstream>
 #include <unordered_set>
 
@@ -138,7 +139,12 @@ INFFile::FlatData::FlatData()
 	this->textureIndex = INFFile::NO_INDEX;
 	this->yOffset = 0;
 	this->health = 0;
-	this->type = 0;
+	this->collider = false;
+	this->puddle = false;
+	this->doubleScale = false;
+	this->dark = false;
+	this->transparent = false;
+	this->ceiling = false;
 }
 
 INFFile::KeyData::KeyData(int id)
@@ -198,6 +204,7 @@ INFFile::INFFile(const std::string &filename)
 	this->boxCaps.fill(INFFile::NO_INDEX);
 	this->boxSides.fill(INFFile::NO_INDEX);
 	this->menus.fill(INFFile::NO_INDEX);
+	this->items.fill(INFFile::NO_INDEX);
 	this->dryChasmIndex = INFFile::NO_INDEX;
 	this->lavaChasmIndex = INFFile::NO_INDEX;
 	this->levelDownIndex = INFFile::NO_INDEX;
@@ -651,16 +658,12 @@ INFFile::INFFile(const std::string &filename)
 				DebugCrash("Unrecognized @FLATS section \"" + firstTokenType + "\".");
 			}
 		}
-		else if ((flatState.get() == nullptr) || (flatState->itemID == FlatState::NO_ID))
-		{
-			// A "loose" texture name. Check for tokens on the right side as well.
-			// To do: reuse most of the flat parsing from the else branch.
-		}
 		else
 		{
-			// A texture name after an *ITEM line, potentially with some modifiers on the right.
-			// Each token might be split by tabs or spaces, so always check for both cases. The 
-			// texture name always has a tab on the right though (if there's any whitespace).
+			// A texture name potentially after an *ITEM line, and potentially with some 
+			// modifiers on the right. Each token might be split by tabs or spaces, so always 
+			// check for both cases. The texture name always has a tab on the right though 
+			// (if there's any whitespace).
 			const std::vector<std::string> tokens = [&line]()
 			{
 				// Trim any extra whitespace (so there are no adjacent duplicates).
@@ -674,35 +677,80 @@ INFFile::INFFile(const std::string &filename)
 				return String::split(replacedStr);
 			}();
 
-			if (tokens.size() == 1)
-			{
-				// Just a texture name with no modifiers.
-				this->textures.push_back(TextureData(tokens.at(0)));
-				this->items.at(flatState->itemID).textureIndex = 
-					static_cast<int>(this->textures.size() - 1);
-			}
-			else
-			{
-				// There exist some modifiers on the right side, so check if it needs 
-				// splitting on space.
-				// To do...
-				/*auto modifiers = [&tokens]()
-				{
-					const std::string &rightTokens = tokens.at(1);
-					const bool hasSpace = rightTokens.find(' ') != std::string::npos;
+			// Get the texture name and check if it starts with a dash.
+			const std::string &firstToken = tokens.at(0);
+			const bool hasDash = firstToken.at(0) == '-'; // To do: not sure what this does.
+			const std::string textureName = String::toUppercase(
+				hasDash ? firstToken.substr(1, firstToken.size() - 1) : firstToken);
 
-					if (hasSpace)
+			// Add the flat's texture name to the textures vector.
+			this->textures.push_back(TextureData(textureName));
+
+			// Add a new flat data record and keep its index.
+			this->flats.push_back(INFFile::FlatData());
+			const int flatIndex = static_cast<int>(this->flats.size() - 1);
+
+			// The current line is "loose" if the previous line was not an *ITEM line.
+			const bool looseTextureName = (flatState.get() == nullptr) || 
+				(flatState->itemID == FlatState::NO_ID);
+
+			// If an *ITEM index is currently stored, then pair it with the new flat's index.
+			if (!looseTextureName)
+			{
+				this->items.at(flatState->itemID) = flatIndex;
+			}
+
+			// Assign the current line's values and modifiers to the new flat.
+			INFFile::FlatData &flat = this->flats.back();
+			flat.textureIndex = static_cast<int>(this->textures.size() - 1);
+
+			// If the flat also has modifiers, then check each modifier and mutate the 
+			// flat accordingly.
+			if (tokens.size() >= 2)
+			{
+				for (size_t i = 1; i < tokens.size(); i++)
+				{
+					const char MODIFIER_SEPARATOR = ':';
+					const char FLAT_PROPERTIES_MODIFIER = 'F';
+					const char LIGHT_MODIFIER = 'S';
+					const char Y_OFFSET_MODIFIER = 'Y';
+
+					const std::string &modifierStr = tokens.at(i);
+					const char modifierType = std::toupper(modifierStr.at(0));
+
+					// The modifier value comes after the modifier separator.
+					const std::vector<std::string> modifierTokens =
+						String::split(modifierStr, MODIFIER_SEPARATOR);
+					const int modifierValue = std::stoi(modifierTokens.at(1));
+
+					if (modifierType == FLAT_PROPERTIES_MODIFIER)
 					{
-						// Split it on space.
-						// To do: return std::vector<std::pair<char, int>>.
+						// Flat properties (collider, puddle, double scale, transparent, etc.).
+						flat.collider = (modifierValue & (1 << 0)) != 0;
+						flat.puddle = (modifierValue & (1 << 1)) != 0;
+						flat.doubleScale = (modifierValue & (1 << 2)) != 0;
+						flat.dark = (modifierValue & (1 << 3)) != 0;
+						flat.transparent = (modifierValue & (1 << 4)) != 0;
+						flat.ceiling = (modifierValue & (1 << 5)) != 0;
+					}
+					else if (modifierType == LIGHT_MODIFIER)
+					{
+						// Light range (in units of voxels).
+						flat.lightIntensity = std::unique_ptr<int>(new int(modifierValue));
+					}
+					else if (modifierType == Y_OFFSET_MODIFIER)
+					{
+						// Y offset in world (for flying entities, hanging chains, etc.).
+						flat.yOffset = modifierValue;
 					}
 					else
 					{
-						// Already split on tab.
+						DebugCrash("Unrecognized modifier '" + std::to_string(modifierType) + "'.");
 					}
-				}();*/
+				}
 			}
 
+			// Reset flat state for the next loop.
 			flatState = std::unique_ptr<FlatState>(new FlatState());
 		}
 	};
@@ -936,11 +984,6 @@ const std::vector<INFFile::TextureData> &INFFile::getTextures() const
 	return this->textures;
 }
 
-const INFFile::FlatData &INFFile::getItem(int index) const
-{
-	return this->items.at(index);
-}
-
 const int *INFFile::getBoxCap(int index) const
 {
 	const int *ptr = &this->boxCaps.at(index);
@@ -957,6 +1000,17 @@ const int *INFFile::getMenu(int index) const
 {
 	const int *ptr = &this->menus.at(index);
 	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+}
+
+const INFFile::FlatData &INFFile::getFlat(int index) const
+{
+	return this->flats.at(index);
+}
+
+const INFFile::FlatData &INFFile::getItem(int index) const
+{
+	const int flatIndex = this->items.at(index);
+	return this->flats.at(flatIndex);
 }
 
 const std::string &INFFile::getSound(int index) const

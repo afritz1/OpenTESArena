@@ -68,7 +68,7 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	renderer.setSkyPalette(&black, 1);
 
 	// Load the world data from the .MIF and .INF files.
-	worldData = std::move(WorldData(mif, inf));
+	worldData = WorldData(mif, inf);
 
 	// Convert start point to new coordinate system and set player's location 
 	// (player Y value is arbitrary for now).
@@ -80,19 +80,47 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	for (const auto &textureData : inf.getTextures())
 	{
 		const std::string textureName = String::toUppercase(textureData.filename);
+		const std::string extension = String::getExtension(textureName);
 
-		if (textureData.setIndex.get() != nullptr)
+		const bool isDFA = extension == ".DFA";
+		const bool isIMG = extension == ".IMG";
+		const bool isSET = extension == ".SET";
+		const bool noExtension = extension.size() == 0;
+
+		if (isSET)
 		{
+			// Use the texture data's .SET index to obtain the correct surface.
 			const auto &surfaces = textureManager.getSurfaces(textureName);
 			const SDL_Surface *surface = surfaces.at(*textureData.setIndex.get());
 			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels), 
 				surface->w, surface->h);
 		}
-		else
+		else if (isDFA)
+		{
+			// To do: creatures don't have .DFA files (although they're referenced in the .INF
+			// files), so I think the extension needs to be .CFA instead for them.
+			/*const auto &surfaces = textureManager.getSurfaces(textureName);
+			for (const auto *surface : surfaces)
+			{
+				renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+					surface->w, surface->h);
+			}*/
+		}
+		else if (isIMG)
 		{
 			const SDL_Surface *surface = textureManager.getSurface(textureName);
 			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
 				surface->w, surface->h);
+		}
+		else if (noExtension)
+		{
+			// Ignore texture names with no extension. They appear to be lore-related names
+			// that were used at one point in Arena's development.
+			static_cast<void>(textureData);
+		}
+		else
+		{
+			DebugCrash("Unrecognized texture extension \"" + extension + "\".");
 		}
 	}
 
