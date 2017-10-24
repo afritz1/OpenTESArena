@@ -1,14 +1,16 @@
 #ifndef TEXT_ASSETS_H
 #define TEXT_ASSETS_H
 
+#include <array>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "../Game/CharacterClassGeneration.h"
 #include "../Game/CharacterQuestion.h"
 
-// This class stores various plain text (human readable) data from Arena assets.
+// This class stores various miscellaneous data from Arena assets.
 
 // All relevant text files (TEMPLATE.DAT, QUESTION.TXT, etc.) should be read in 
 // when this object is created.
@@ -16,7 +18,7 @@
 class ExeStrings;
 
 class TextAssets
-{
+{	
 private:
 	static const std::string AExeKeyValuesMapPath;
 
@@ -24,6 +26,7 @@ private:
 	std::unique_ptr<ExeStrings> aExeStrings;
 	std::unordered_map<std::string, std::string> templateDat;
 	std::vector<CharacterQuestion> questionTxt;
+	CharacterClassGeneration classesDat;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
@@ -31,6 +34,9 @@ private:
 
 	// Load QUESTION.TXT and separate each question by its number.
 	void parseQuestionTxt();
+
+	// Load CLASSES.DAT.
+	void parseClassesDat();
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
@@ -46,6 +52,8 @@ public:
 
 	// Returns all of the questions in QUESTION.TXT.
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
+
+	const CharacterClassGeneration &getClassGenData() const;
 
 	// Returns all of the main quest dungeon names paired with their description. 
 	// These are just the dungeons with a unique icon on the world map, not the 

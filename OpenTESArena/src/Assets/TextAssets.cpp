@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <cassert>
 #include <cctype>
+#include <cstring>
 #include <sstream>
 
 #include "TextAssets.h"
@@ -30,6 +32,9 @@ TextAssets::TextAssets()
 
 	// Read in QUESTION.TXT and create character question objects.
 	this->parseQuestionTxt();
+
+	// Read in CLASSES.DAT.
+	this->parseClassesDat();
 
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
@@ -226,6 +231,54 @@ void TextAssets::parseQuestionTxt()
 	addQuestion(description, a, b, c);
 }
 
+void TextAssets::parseClassesDat()
+{
+	const std::string filename = "CLASSES.DAT";
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	const auto fileSize = stream->tellg();
+	stream->seekg(0, std::ios::beg);
+
+	std::vector<uint8_t> srcData(fileSize);
+	stream->read(reinterpret_cast<char*>(srcData.data()), fileSize);
+
+	// Initialize the class generation data with zeroes.
+	auto &classes = this->classesDat.classes;
+	auto &choices = this->classesDat.choices;
+	std::memset(classes.data(), 0, classes.size() * sizeof(classes.front()));
+	std::memset(choices.data(), 0, choices.size() * sizeof(choices.front()));
+
+	// The class IDs take up the first 18 bytes.
+	for (size_t i = 0; i < classes.size(); i++)
+	{
+		const uint8_t *srcPtr = srcData.data() + i;
+		const uint8_t value = *srcPtr;
+
+		CharacterClassGeneration::ClassData &classData = classes.at(i);
+		classData.id = value & CharacterClassGeneration::ID_MASK;
+		classData.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
+		classData.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
+		classData.isThief = (value & CharacterClassGeneration::THIEF_MASK) != 0;
+	}
+
+	// After the class IDs are 66 groups of "A, B, C" choices. They account for all 
+	// the combinations of answers to character questions. When the user is done
+	// answering questions, their A/B/C counts map to some index in the Choices array.
+	for (size_t i = 0; i < choices.size(); i++)
+	{
+		const int choiceSize = 3;
+		const uint8_t *srcPtr = srcData.data() + classes.size() + (choiceSize * i);
+
+		CharacterClassGeneration::ChoiceData &choice = choices.at(i);
+		choice.a = *srcPtr;
+		choice.b = *(srcPtr + 1);
+		choice.c = *(srcPtr + 2);
+	}
+}
+
 void TextAssets::parseDungeonTxt()
 {
 	const std::string filename = "DUNGEON.TXT";
@@ -308,6 +361,11 @@ const std::string &TextAssets::getTemplateDatText(const std::string &key)
 const std::vector<CharacterQuestion> &TextAssets::getQuestionTxtQuestions() const
 {
 	return this->questionTxt;
+}
+
+const CharacterClassGeneration &TextAssets::getClassGenData() const
+{
+	return this->classesDat;
 }
 
 const std::vector<std::pair<std::string, std::string>> &TextAssets::getDungeonTxtDungeons() const
