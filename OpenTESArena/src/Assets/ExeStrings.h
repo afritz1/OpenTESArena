@@ -29,10 +29,18 @@ enum class ExeStringKey
 	DistributeClassPoints,
 	ChooseAppearance,
 
-	// Character class names.
-	MageClassNames,
-	ThiefClassNames,
-	WarriorClassNames,
+	// Character class names (ordered by: mages, thieves, warriors).
+	CharacterClassNames,
+
+	// Character class data.
+	AllowedWeapons,
+	AllowedShields,
+	AllowedArmor,
+	ClassAttributes,
+	ClassExperiencePerLevel,
+	ClassNumberToClassID,
+	HealthDice,
+	LockpickingDivisors,
 
 	// Province names and backgrounds.
 	ProvinceNames,

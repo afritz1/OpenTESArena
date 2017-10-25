@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstring>
 #include <sstream>
 
 #include "ExeStrings.h"
@@ -26,9 +27,8 @@ namespace
 		{ ExeStringKey::ConfirmRace, "ConfirmRace" },
 		{ ExeStringKey::FinalRaceMessage, "FinalRaceMessage" },
 		{ ExeStringKey::DistributeClassPoints, "DistributeClassPoints" },
-		{ ExeStringKey::MageClassNames, "MageClassNames" },
-		{ ExeStringKey::ThiefClassNames, "ThiefClassNames" },
-		{ ExeStringKey::WarriorClassNames, "WarriorClassNames" },
+		{ ExeStringKey::CharacterClassNames, "CharacterClassNames" },
+		{ ExeStringKey::ClassAttributes, "ClassAttributes" },
 		{ ExeStringKey::ProvinceNames, "ProvinceNames" },
 		{ ExeStringKey::ProvinceIMGFilenames, "ProvinceIMGFilenames" },
 		{ ExeStringKey::RaceNamesSingular, "RaceNamesSingular" },
@@ -57,16 +57,6 @@ ExeStrings::ExeStrings(const std::string &exeText, const std::string &keyValueMa
 	// of pairs, and insert the corresponding executable string(s) into the proper map.
 	for (const auto &pair : ExeKeyValueMapKeys)
 	{
-		// Lambda for converting a hex string to an integer.
-		auto hexStringToInt = [](const std::string &str)
-		{
-			int value;
-			std::stringstream ss;
-			ss << std::hex << str;
-			ss >> value;
-			return value;
-		};
-
 		// Separator characters for lists and pairs.
 		const char LIST_SEPARATOR = ';';
 		const char PAIR_SEPARATOR = ',';
@@ -83,6 +73,38 @@ ExeStrings::ExeStrings(const std::string &exeText, const std::string &keyValueMa
 		// Split the value string on semicolons.
 		const std::vector<std::string> valuesList = String::split(value, LIST_SEPARATOR);
 
+		// Lambda for constructing a string from some offset + size pair.
+		auto makeExeString = [&exeText](const std::vector<std::string> &pairElements)
+		{
+			// Lambda for converting a hex string to an integer.
+			auto hexStringToInt = [](const std::string &str)
+			{
+				int value;
+				std::stringstream ss;
+				ss << std::hex << str;
+				ss >> value;
+				return value;
+			};
+
+			// Offset in the executable.
+			const int offset = hexStringToInt(pairElements.at(0));
+
+			// Number of bytes to read from the offset.
+			const int size = [&exeText, &pairElements, offset]()
+			{
+				const std::string &element = pairElements.at(1);
+
+				// If the element is a dash, it's a null-terminated string.
+				// Otherwise, it's a number.
+				return (element == "-") ? 
+					static_cast<int>(std::strlen(exeText.data() + offset)) :
+					std::stoi(element);
+			}();
+
+			// Get the substring from the executable text.
+			return exeText.substr(offset, size);
+		};
+
 		// If there's only one element, then it's a single pair. Otherwise, it's a list
 		// of pairs.
 		if (valuesList.size() == 1)
@@ -94,12 +116,8 @@ ExeStrings::ExeStrings(const std::string &exeText, const std::string &keyValueMa
 			DebugAssert(pairElements.size() == 2, "Invalid element count for \"" + 
 				pair.second + "\" in " + keyValueMapFilename + ".");
 
-			// Convert the two strings to integers.
-			const int offset = hexStringToInt(pairElements.front());
-			const int size = std::stoi(pairElements.at(1));
-
 			// Get the substring from the executable text.
-			const std::string exeString = exeText.substr(offset, size);
+			const std::string exeString = makeExeString(pairElements);
 
 			// Insert the pair into the single element strings map.
 			this->strings.insert(std::make_pair(pair.first, exeString));
@@ -122,13 +140,9 @@ ExeStrings::ExeStrings(const std::string &exeText, const std::string &keyValueMa
 				DebugAssert(pairElements.size() == 2, "Invalid element count for \"" +
 					pair.second + "\" (index " + std::to_string(i) + ") in " + 
 					keyValueMapFilename + ".");
-
-				// Convert the two strings to integers.
-				const int offset = hexStringToInt(pairElements.front());
-				const int size = std::stoi(pairElements.at(1));
-
+				
 				// Get the substring from the executable text.
-				const std::string exeString = exeText.substr(offset, size);
+				const std::string exeString = makeExeString(pairElements);
 
 				// Insert the string into the string list.
 				listIter->second.push_back(exeString);
