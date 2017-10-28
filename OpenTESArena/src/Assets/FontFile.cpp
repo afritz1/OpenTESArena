@@ -13,14 +13,14 @@ namespace
 {
 	struct FontElement
 	{
-		uint32_t width, height;
 		std::array<uint16_t, 16> lines;
+		uint32_t width, height;
 
 		FontElement()
 		{
+			this->lines.fill(0);
 			this->width = 0;
 			this->height = 0;
-			std::fill(this->lines.begin(), this->lines.end(), 0);
 		}
 	};
 }
@@ -43,7 +43,7 @@ FontFile::FontFile(const std::string &filename)
 	const uint16_t *lines = reinterpret_cast<const uint16_t*>(counts + 95);
 
 	std::array<FontElement, 96> symbols;
-	std::fill(symbols.begin(), symbols.end(), FontElement());
+	symbols.fill(FontElement());
 
 	// Start at index 1 since the width of a space (index 0) depends on the exclamation mark.
 	// Adapted from WinArena "ParseBSA.cpp".

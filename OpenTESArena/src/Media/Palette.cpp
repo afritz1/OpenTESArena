@@ -7,7 +7,7 @@
 Palette::Palette()
 {
 	// Set all colors to black by default.
-	std::fill(this->colors.begin(), this->colors.end(), Color::Black);
+	this->colors.fill(Color::Black);
 }
 
 Palette::~Palette()

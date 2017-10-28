@@ -24,7 +24,7 @@ namespace
 
 		BitVector()
 		{
-			std::fill(this->bits.begin(), this->bits.end(), false);
+			this->bits.fill(false);
 			this->bitsUsed = 0;
 		}
 	};

@@ -29,7 +29,7 @@ public:
 		auto dst = out.begin();
 
 		std::array<uint8_t, 4096> history;
-		std::fill(history.begin(), history.end(), 0x20);
+		history.fill(0x20);
 		int historypos = 0;
 
 		// This appears to be some form of LZ compression. It starts with a 1-byte-
@@ -137,7 +137,7 @@ public:
 		};
 
 		std::array<uint8_t, 4096> history;
-		std::fill(history.begin(), history.end(), 0x20);
+		history.fill(0x20);
 		int historypos = 0;
 
 		std::array<uint16_t, 941> NodeIdxMap;

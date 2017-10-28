@@ -6,7 +6,7 @@
 
 FPSCounter::FPSCounter()
 {
-	std::fill(this->frameTimes.begin(), this->frameTimes.end(), 0.0);
+	this->frameTimes.fill(0.0);
 }
 
 FPSCounter::~FPSCounter()

@@ -199,8 +199,8 @@ public:
 		: mManager(manager), mSong(song), mQuit(false), mSource(0)
 		, mBufferIdx(0), mSampleRate(0)
 	{
-		// Using std::fill for mBuffers since VS2013 doesn't support mBuffers{0}.
-		std::fill(mBuffers.begin(), mBuffers.end(), 0);
+		// Using std::array::fill() for mBuffers since VS2013 doesn't support mBuffers{0}.
+		mBuffers.fill(0);
 	}
 
 	~OpenALStream()
@@ -275,7 +275,7 @@ public:
 		alGenBuffers(static_cast<ALsizei>(mBuffers.size()), mBuffers.data());
 		if (alGetError() != AL_NO_ERROR)
 		{
-			std::fill(mBuffers.begin(), mBuffers.end(), 0);
+			mBuffers.fill(0);
 			return false;
 		}
 
