@@ -165,7 +165,7 @@ template <typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
 	const T height = (static_cast<T>(2.0) * near) * static_cast<T>(
-		std::tan((fovY * 0.50) * DEG_TO_RAD));
+		std::tan((fovY * 0.50) * Constants::DegToRad));
 	const T width = height * aspect;
 	return Matrix4<T>::projection(near, far, width, height);
 }

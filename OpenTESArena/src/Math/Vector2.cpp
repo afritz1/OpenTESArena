@@ -245,7 +245,7 @@ template <class T>
 bool Vector2f<T>::isNormalized() const
 {
 	return std::fabs(static_cast<T>(1.0) - this->length()) <
-		static_cast<T>(EPSILON);
+		static_cast<T>(Constants::Epsilon);
 }
 
 template <class T>

@@ -9,7 +9,7 @@
 // projected Y coordinates by +/- one screen height at a vertical field of view of 90.0. 
 // That's an arbitrary value I'm basing the Y-shearing on, just to have some kind of 
 // "identity" for everything else to be relative to.
-const double Camera3D::MIN_Y_LIMIT = (PI / 4.0) * RAD_TO_DEG;
+const double Camera3D::MIN_Y_LIMIT = (Constants::Pi / 4.0) * Constants::RadToDeg;
 
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
@@ -69,8 +69,8 @@ void Camera3D::rotate(double dx, double dy, double yLimit)
 	assert(std::isfinite(this->forward.length()));
 	assert(yLimit >= Camera3D::MIN_Y_LIMIT);
 
-	double lookRightRads = dx * DEG_TO_RAD;
-	double lookUpRads = dy * DEG_TO_RAD;
+	double lookRightRads = dx * Constants::DegToRad;
+	double lookUpRads = dy * Constants::DegToRad;
 
 	if (!std::isfinite(lookRightRads))
 	{
@@ -87,8 +87,8 @@ void Camera3D::rotate(double dx, double dy, double yLimit)
 
 	// Clamp the range that the camera can tilt up or down to avoid breaking
 	// the vector cross product at extreme angles.
-	const double zenithMaxDec = yLimit * DEG_TO_RAD;
-	const double zenithMinDec = (180.0 - yLimit) * DEG_TO_RAD;
+	const double zenithMaxDec = yLimit * Constants::DegToRad;
+	const double zenithMinDec = (180.0 - yLimit) * Constants::DegToRad;
 
 	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
 		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);

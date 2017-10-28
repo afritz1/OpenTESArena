@@ -1290,7 +1290,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// small "pop-in" when turning from N to NE, because N is drawn in two places, 
 		// but the second place (offset == 256) has tick marks where "NE" should be.
 		const int xOffset = static_cast<int>(240.0 +
-			std::round(256.0 * (angle / (2.0 * PI)))) % 256;
+			std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
 
 		SDL_Rect clipRect;
 		clipRect.x = xOffset;

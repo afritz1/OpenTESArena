@@ -157,7 +157,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 		static_cast<double>(nativeSurface->h);
 
 	// Compare the two aspects to decide what the letterbox dimensions are.
-	if (std::abs(nativeAspect - this->letterboxAspect) < EPSILON)
+	if (std::abs(nativeAspect - this->letterboxAspect) < Constants::Epsilon)
 	{
 		// Equal aspects. The letterbox is equal to the screen size.
 		SDL_Rect rect;

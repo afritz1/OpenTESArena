@@ -23,7 +23,7 @@ void Camera2D::yaw(double radians)
 
 void Camera2D::rotate(double degrees)
 {
-	double lookRightRads = degrees * DEG_TO_RAD;
+	double lookRightRads = degrees * Constants::DegToRad;
 
 	if (!std::isfinite(lookRightRads))
 	{

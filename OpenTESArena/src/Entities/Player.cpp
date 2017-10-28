@@ -314,7 +314,7 @@ void Player::updatePhysics(const WorldData &worldData, double dt)
 		Double2 frictionDirection = Double2(-velocityXZ.x, -velocityXZ.y).normalized();
 		double frictionMagnitude = velocityXZ.length() * Player::FRICTION;
 
-		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > EPSILON))
+		if (std::isfinite(frictionDirection.length()) && (frictionMagnitude > Constants::Epsilon))
 		{
 			this->accelerate(Double3(frictionDirection.x, 0.0, frictionDirection.y),
 				frictionMagnitude, true, dt);

@@ -650,7 +650,7 @@ Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
 Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 {
 	// The sun rises in the east (+Z) and sets in the west (-Z).
-	const double radians = daytimePercent * (2.0 * PI);
+	const double radians = daytimePercent * (2.0 * Constants::Pi);
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 }
 
@@ -731,8 +731,8 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 		{
 			// Special cases: when the slope is horizontal or vertical. This method treats
 			// the X axis as the vertical axis and the Z axis as the horizontal axis.
-			const double isHorizontal = std::abs(dx) < EPSILON;
-			const double isVertical = std::abs(dz) < EPSILON;
+			const double isHorizontal = std::abs(dx) < Constants::Epsilon;
+			const double isVertical = std::abs(dz) < Constants::Epsilon;
 
 			if (isHorizontal)
 			{
@@ -823,8 +823,8 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 		{
 			// Special cases: when the slope is horizontal or vertical. This method treats
 			// the X axis as the vertical axis and the Z axis as the horizontal axis.
-			const double isHorizontal = std::abs(dx) < EPSILON;
-			const double isVertical = std::abs(dz) < EPSILON;
+			const double isHorizontal = std::abs(dx) < Constants::Epsilon;
+			const double isVertical = std::abs(dz) < Constants::Epsilon;
 
 			if (isHorizontal)
 			{
@@ -926,7 +926,7 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 		// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
 		// adjacent walls sharing the same Z value. More strict drawing rules (voxel
 		// stepping order? Occlusion culling?) might be a better fix for this.
-		if (z <= (depthBuffer[index] - EPSILON))
+		if (z <= (depthBuffer[index] - Constants::Epsilon))
 		{
 			// Percent stepped from beginning to end on the column.
 			const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
@@ -2669,7 +2669,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const Double3 up = Double3::UnitY;
 
 	// Zoom of the camera, based on vertical field of view.
-	const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
+	const double zoom = 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
 
 	// Refresh transformation matrix (model matrix isn't required because it's just 
 	// the identity matrix).

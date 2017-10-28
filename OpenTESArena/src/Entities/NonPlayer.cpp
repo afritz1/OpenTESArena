@@ -28,7 +28,7 @@ NonPlayer::AnimationType NonPlayer::getAnimationType() const
 	// Death animation should override moving animation.
 
 	// If moving, return Move.
-	if (this->velocity.length() > EPSILON)
+	if (this->velocity.length() > Constants::Epsilon)
 	{
 		return NonPlayer::AnimationType::Move;
 	}

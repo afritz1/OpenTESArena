@@ -32,7 +32,7 @@ Quaternion Quaternion::identity()
 
 Quaternion Quaternion::fromAxisAngle(const Double3 &v, double w)
 {
-	if (v.lengthSquared() < EPSILON)
+	if (v.lengthSquared() < Constants::Epsilon)
 	{
 		return Quaternion::identity();
 	}

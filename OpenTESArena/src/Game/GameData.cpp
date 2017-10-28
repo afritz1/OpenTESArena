@@ -790,7 +790,7 @@ double GameData::getBetterAmbientPercent() const
 	const double maxAmbient = 0.90;
 	const double diff = maxAmbient - minAmbient;
 	const double center = minAmbient + (diff / 2.0);
-	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * PI)));
+	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * Constants::Pi)));
 }
 
 void GameData::tickTime(double dt)
