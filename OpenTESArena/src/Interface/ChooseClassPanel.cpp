@@ -3,9 +3,8 @@
 
 #include "SDL.h"
 
-#include "ChooseClassPanel.h"
-
 #include "ChooseClassCreationPanel.h"
+#include "ChooseClassPanel.h"
 #include "ChooseNamePanel.h"
 #include "CursorAlignment.h"
 #include "ListBox.h"

@@ -2,10 +2,9 @@
 #include <cmath>
 #include <vector>
 
-#include "Player.h"
-
 #include "EntityType.h"
 #include "GenderName.h"
+#include "Player.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Items/WeaponType.h"

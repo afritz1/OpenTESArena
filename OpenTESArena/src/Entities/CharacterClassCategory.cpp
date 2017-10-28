@@ -1,7 +1,6 @@
 #include <map>
 
 #include "CharacterClassCategory.h"
-
 #include "CharacterClassCategoryName.h"
 
 const std::map<CharacterClassCategoryName, std::string> CharacterClassCategoryDisplayNames =

@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "OptionsParser.h"
-
 #include "Options.h"
+#include "OptionsParser.h"
 #include "PlayerInterface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/KeyValueMap.h"

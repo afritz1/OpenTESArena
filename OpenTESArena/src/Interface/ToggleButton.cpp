@@ -1,5 +1,4 @@
 #include "ToggleButton.h"
-
 #include "../Math/Rect.h"
 
 ToggleButton::ToggleButton(int x, int y, int width, int height, bool on, 

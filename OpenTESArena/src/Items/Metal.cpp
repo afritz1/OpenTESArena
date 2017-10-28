@@ -2,7 +2,6 @@
 #include <map>
 
 #include "Metal.h"
-
 #include "MetalType.h"
 
 const std::map<MetalType, std::string> MetalTypeDisplayNames =

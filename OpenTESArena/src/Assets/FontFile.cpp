@@ -2,7 +2,6 @@
 #include <array>
 
 #include "FontFile.h"
-
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Media/FontName.h"

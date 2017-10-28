@@ -2,10 +2,9 @@
 
 #include "SDL.h"
 
-#include "ChooseRacePanel.h"
-
 #include "ChooseAttributesPanel.h"
 #include "ChooseGenderPanel.h"
+#include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"

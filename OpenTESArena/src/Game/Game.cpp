@@ -8,7 +8,6 @@
 #include "SDL.h"
 
 #include "Game.h"
-
 #include "GameData.h"
 #include "Options.h"
 #include "OptionsParser.h"

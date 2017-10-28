@@ -2,7 +2,6 @@
 #include <vector>
 
 #include "KeyValueMap.h"
-
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"

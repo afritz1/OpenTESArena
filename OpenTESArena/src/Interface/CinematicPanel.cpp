@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "CinematicPanel.h"
-
 #include "../Game/Game.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"

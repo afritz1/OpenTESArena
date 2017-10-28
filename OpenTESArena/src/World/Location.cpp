@@ -1,9 +1,8 @@
 #include <cassert>
 #include <map>
 
-#include "Location.h"
-
 #include "ClimateName.h"
+#include "Location.h"
 #include "LocationType.h"
 
 // Display names for each type of location. It's for things like the greeting 

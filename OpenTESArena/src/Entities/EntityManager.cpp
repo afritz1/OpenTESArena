@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "EntityManager.h"
-
 #include "Entity.h"
+#include "EntityManager.h"
 #include "EntityType.h"
 
 EntityManager::EntityManager()

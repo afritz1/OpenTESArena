@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "Item.h"
-
 #include "ArtifactData.h"
+#include "Item.h"
 
 Item::Item(const ArtifactData *artifactData)
 {

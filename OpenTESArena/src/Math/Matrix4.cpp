@@ -1,8 +1,7 @@
 #include <cmath>
 
-#include "Matrix4.h"
-
 #include "Constants.h"
+#include "Matrix4.h"
 
 template <typename T>
 Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,

@@ -3,9 +3,8 @@
 
 #include "SDL.h"
 
-#include "OptionsPanel.h"
-
 #include "CursorAlignment.h"
+#include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"

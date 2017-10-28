@@ -3,7 +3,6 @@
 #include <sstream>
 
 #include "ExeStrings.h"
-
 #include "../Utilities/Debug.h"
 #include "../Utilities/KeyValueMap.h"
 #include "../Utilities/String.h"

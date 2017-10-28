@@ -14,7 +14,6 @@
 #include "alc.h"
 
 #include "AudioManager.h"
-
 #include "WildMidi.hpp"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"

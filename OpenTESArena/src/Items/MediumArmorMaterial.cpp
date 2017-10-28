@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "MediumArmorMaterial.h"
-
 #include "ArmorMaterialType.h"
+#include "MediumArmorMaterial.h"
 
 MediumArmorMaterial::MediumArmorMaterial()
 {

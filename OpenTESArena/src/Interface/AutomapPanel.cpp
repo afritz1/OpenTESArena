@@ -6,7 +6,6 @@
 #include "SDL.h"
 
 #include "AutomapPanel.h"
-
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "RichTextString.h"

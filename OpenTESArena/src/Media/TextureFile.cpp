@@ -3,7 +3,6 @@
 #include <unordered_map>
 
 #include "TextureFile.h"
-
 #include "TextureName.h"
 #include "TextureSequenceName.h"
 

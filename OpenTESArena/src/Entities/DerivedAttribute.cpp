@@ -3,7 +3,6 @@
 #include <map>
 
 #include "DerivedAttribute.h"
-
 #include "DerivedAttributeName.h"
 
 const std::map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =

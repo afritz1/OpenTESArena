@@ -1,7 +1,6 @@
 #include <map>
 
 #include "BodyPart.h"
-
 #include "BodyPartName.h"
 #include "../Items/ArmorType.h"
 

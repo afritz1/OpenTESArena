@@ -1,9 +1,8 @@
 #include <cassert>
 #include <map>
 
-#include "MiscellaneousItem.h"
-
 #include "ItemType.h"
+#include "MiscellaneousItem.h"
 #include "MiscellaneousItemType.h"
 #include "MiscellaneousArtifactData.h"
 

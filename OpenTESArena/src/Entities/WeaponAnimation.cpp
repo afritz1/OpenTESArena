@@ -2,7 +2,6 @@
 #include <map>
 
 #include "WeaponAnimation.h"
-
 #include "../Items/WeaponType.h"
 #include "../Utilities/Debug.h"
 

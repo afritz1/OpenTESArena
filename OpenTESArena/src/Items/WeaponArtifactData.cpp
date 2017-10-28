@@ -1,9 +1,8 @@
 #include <cassert>
 
-#include "WeaponArtifactData.h"
-
 #include "ItemType.h"
 #include "MetalType.h"
+#include "WeaponArtifactData.h"
 #include "WeaponType.h"
 
 WeaponArtifactData::WeaponArtifactData(const std::string &displayName, 

@@ -1,9 +1,8 @@
 #include <cmath>
 
-#include "Vector3.h"
-
 #include "Constants.h"
 #include "Random.h"
+#include "Vector3.h"
 
 // -- Vector3i --
 

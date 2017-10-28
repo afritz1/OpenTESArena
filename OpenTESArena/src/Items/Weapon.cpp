@@ -1,10 +1,9 @@
 #include <cassert>
 #include <map>
 
-#include "Weapon.h"
-
 #include "ItemType.h"
 #include "Metal.h"
+#include "Weapon.h"
 #include "WeaponArtifactData.h"
 #include "WeaponHandCount.h"
 #include "WeaponRangeName.h"

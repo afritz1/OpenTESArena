@@ -1,8 +1,7 @@
 #include <cmath>
 
-#include "Quaternion.h"
-
 #include "Constants.h"
+#include "Quaternion.h"
 
 Quaternion::Quaternion(double x, double y, double z, double w)
 {

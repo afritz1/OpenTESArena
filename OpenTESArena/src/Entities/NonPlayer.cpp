@@ -1,6 +1,5 @@
-#include "NonPlayer.h"
-
 #include "EntityType.h"
+#include "NonPlayer.h"
 #include "../Math/Constants.h"
 
 NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,

@@ -43,7 +43,6 @@ And my .cpp files:
 #include <standard lib 4.h>
 
 #include "ExampleClass.h"
-
 #include "LocalSourceFile4.h"
 #include "../SomeFolder/LocalSourceFile5.h"
 #include "../SomeFolder/LocalSourceFile6.h"

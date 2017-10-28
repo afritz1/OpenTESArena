@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "Palette.h"
-
 #include "PaletteFile.h"
 #include "PaletteName.h"
 

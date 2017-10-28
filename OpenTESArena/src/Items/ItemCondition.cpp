@@ -2,9 +2,8 @@
 #include <cassert>
 #include <map>
 
-#include "ItemCondition.h"
-
 #include "ArmorMaterial.h"
+#include "ItemCondition.h"
 #include "ItemConditionName.h"
 #include "Metal.h"
 #include "ShieldType.h"

@@ -2,10 +2,9 @@
 
 #include "SDL.h"
 
-#include "TextureManager.h"
-
 #include "PaletteFile.h"
 #include "PaletteName.h"
+#include "TextureManager.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/COLFile.h"

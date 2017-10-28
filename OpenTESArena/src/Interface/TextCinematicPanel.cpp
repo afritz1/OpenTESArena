@@ -3,11 +3,10 @@
 
 #include "SDL.h"
 
-#include "TextCinematicPanel.h"
-
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "TextCinematicPanel.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/FontManager.h"

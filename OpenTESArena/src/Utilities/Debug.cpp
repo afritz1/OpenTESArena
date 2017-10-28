@@ -6,7 +6,6 @@
 #include "SDL_messagebox.h"
 
 #include "Debug.h"
-
 #include "String.h"
 
 namespace

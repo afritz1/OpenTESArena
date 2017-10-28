@@ -4,7 +4,6 @@
 #include "SDL.h"
 
 #include "Font.h"
-
 #include "FontName.h"
 #include "../Assets/FontFile.h"
 #include "../Rendering/Renderer.h"

@@ -2,13 +2,12 @@
 
 #include "SDL.h"
 
-#include "Panel.h"
-
 #include "CinematicPanel.h"
 #include "CursorAlignment.h"
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
+#include "Panel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"

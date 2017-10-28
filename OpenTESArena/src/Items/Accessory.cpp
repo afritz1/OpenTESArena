@@ -2,7 +2,6 @@
 #include <map>
 
 #include "Accessory.h"
-
 #include "AccessoryArtifactData.h"
 #include "AccessoryType.h"
 #include "ItemType.h"

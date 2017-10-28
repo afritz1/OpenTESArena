@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "Options.h"
-
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 

@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "ImagePanel.h"
-
 #include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"

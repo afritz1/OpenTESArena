@@ -4,10 +4,9 @@
 #include <cstring>
 #include <sstream>
 
-#include "TextAssets.h"
-
 #include "ExeStrings.h"
 #include "ExeUnpacker.h"
+#include "TextAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"

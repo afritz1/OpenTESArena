@@ -2,7 +2,6 @@
 #include <map>
 
 #include "ArmorMaterial.h"
-
 #include "ArmorMaterialType.h"
 
 const std::map<ArmorMaterialType, std::string> ArmorMaterialDisplayNames =

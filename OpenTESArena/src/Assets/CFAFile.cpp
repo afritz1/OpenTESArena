@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "CFAFile.h"
-
 #include "Compression.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"

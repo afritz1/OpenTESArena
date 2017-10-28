@@ -2,7 +2,6 @@
 #include <cstdint>
 
 #include "VOCFile.h"
-
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 

@@ -1,10 +1,9 @@
 #include <cassert>
 #include <map>
 
-#include "BodyArmor.h"
-
 #include "ArmorType.h"
 #include "ArmorMaterial.h"
+#include "BodyArmor.h"
 #include "BodyArmorArtifactData.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"

@@ -1,6 +1,5 @@
-#include "FontManager.h"
-
 #include "Font.h"
+#include "FontManager.h"
 #include "FontName.h"
 
 FontManager::FontManager()

@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "ChooseClassCreationPanel.h"
-
 #include "ChooseClassPanel.h"
 #include "CursorAlignment.h"
 #include "MainMenuPanel.h"

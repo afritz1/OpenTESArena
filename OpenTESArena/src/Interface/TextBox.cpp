@@ -1,8 +1,7 @@
 #include "SDL.h"
 
-#include "TextBox.h"
-
 #include "TextAlignment.h"
+#include "TextBox.h"
 #include "../Math/Rect.h"
 #include "../Media/Font.h"
 #include "../Rendering/Renderer.h"

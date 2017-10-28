@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "MiscellaneousArtifactData.h"
-
 #include "ItemType.h"
+#include "MiscellaneousArtifactData.h"
 #include "MiscellaneousItemType.h"
 
 MiscellaneousArtifactData::MiscellaneousArtifactData(const std::string &displayName, 

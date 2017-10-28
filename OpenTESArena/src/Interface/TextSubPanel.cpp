@@ -1,10 +1,9 @@
 #include "SDL.h"
 
-#include "TextSubPanel.h"
-
 #include "CursorAlignment.h"
 #include "RichTextString.h"
 #include "TextBox.h"
+#include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Media/FontManager.h"

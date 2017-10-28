@@ -1,9 +1,8 @@
 #include <cassert>
 
-#include "ShieldArtifactData.h"
-
 #include "ArmorType.h"
 #include "MetalType.h"
+#include "ShieldArtifactData.h"
 #include "ShieldType.h"
 
 ShieldArtifactData::ShieldArtifactData(const std::string &displayName, 

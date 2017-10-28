@@ -2,7 +2,6 @@
 #include <unordered_map>
 
 #include "PortraitFile.h"
-
 #include "TextureFile.h"
 #include "TextureName.h"
 #include "../Entities/GenderName.h"

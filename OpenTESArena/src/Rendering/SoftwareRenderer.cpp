@@ -5,7 +5,6 @@
 #include <thread>
 
 #include "SoftwareRenderer.h"
-
 #include "../Math/Constants.h"
 #include "../Utilities/Debug.h"
 #include "../World/VoxelData.h"

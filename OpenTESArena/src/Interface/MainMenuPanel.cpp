@@ -3,14 +3,13 @@
 
 #include "SDL.h"
 
-#include "MainMenuPanel.h"
-
 #include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
+#include "MainMenuPanel.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Game/Game.h"

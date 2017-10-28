@@ -4,11 +4,10 @@
 
 #include "SDL.h"
 
-#include "GameWorldPanel.h"
-
 #include "AutomapPanel.h"
 #include "CharacterPanel.h"
 #include "CursorAlignment.h"
+#include "GameWorldPanel.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
 #include "RichTextString.h"

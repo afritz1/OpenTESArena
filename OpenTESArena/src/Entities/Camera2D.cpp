@@ -1,7 +1,6 @@
 #include <cmath>
 
 #include "Camera2D.h"
-
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 

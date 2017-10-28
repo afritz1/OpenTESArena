@@ -1,7 +1,6 @@
 #include <map>
 
 #include "Gender.h"
-
 #include "GenderName.h"
 
 const std::map<GenderName, std::string> GenderDisplayNames =

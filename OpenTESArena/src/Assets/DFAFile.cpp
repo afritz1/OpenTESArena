@@ -1,8 +1,7 @@
 #include <algorithm>
 
-#include "DFAFile.h"
-
 #include "Compression.h"
+#include "DFAFile.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 

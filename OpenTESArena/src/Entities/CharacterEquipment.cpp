@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "CharacterEquipment.h"
-
 #include "../Items/Accessory.h"
 #include "../Items/BodyArmor.h"
 #include "../Items/Shield.h"

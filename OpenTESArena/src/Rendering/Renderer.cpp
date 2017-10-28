@@ -5,7 +5,6 @@
 #include "SDL.h"
 
 #include "Renderer.h"
-
 #include "SoftwareRenderer.h"
 #include "Surface.h"
 #include "../Interface/CursorAlignment.h"

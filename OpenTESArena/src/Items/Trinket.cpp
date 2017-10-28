@@ -1,9 +1,8 @@
 #include <cassert>
 #include <map>
 
-#include "Trinket.h"
-
 #include "ItemType.h"
+#include "Trinket.h"
 #include "TrinketType.h"
 
 const std::map<TrinketType, std::string> TrinketDisplayNames =

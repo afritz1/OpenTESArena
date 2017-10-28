@@ -1,8 +1,7 @@
 #include <limits>
 
-#include "HeapView.h"
-
 #include "Debug.h"
+#include "HeapView.h"
 
 HeapView::HeapView()
 {

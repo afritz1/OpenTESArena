@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "ArmorArtifactData.h"
-
 #include "ItemType.h"
 
 ArmorArtifactData::ArmorArtifactData(const std::string &displayName,

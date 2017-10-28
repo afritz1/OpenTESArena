@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "SETFile.h"
-
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"

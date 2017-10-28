@@ -1,4 +1,3 @@
-
 #include "WildMidi.hpp"
 
 #ifdef HAVE_WILDMIDI
@@ -8,15 +7,11 @@
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"
-
 #include "wildmidi_lib.h"
-
 
 namespace
 {
-
 	int sInitState = -1;
-
 
 	class WildMidiSong : public MidiSong {
 		midi *mSong;

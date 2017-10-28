@@ -4,7 +4,6 @@
 #include "SDL.h"
 
 #include "ImageSequencePanel.h"
-
 #include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"

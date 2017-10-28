@@ -2,9 +2,8 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "CharacterClassParser.h"
-
 #include "CharacterClassCategoryName.h"
+#include "CharacterClassParser.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
 #include "../Items/WeaponType.h"

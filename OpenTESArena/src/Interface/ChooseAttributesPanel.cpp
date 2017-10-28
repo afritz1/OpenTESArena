@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "ChooseAttributesPanel.h"
-
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"

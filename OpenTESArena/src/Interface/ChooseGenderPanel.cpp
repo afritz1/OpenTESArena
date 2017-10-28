@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "ChooseGenderPanel.h"
-
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"

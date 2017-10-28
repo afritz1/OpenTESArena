@@ -2,9 +2,8 @@
 #include <cstring>
 #include <unordered_map>
 
-#include "MIFFile.h"
-
 #include "Compression.h"
+#include "MIFFile.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 

@@ -1,5 +1,4 @@
 #include "Doodad.h"
-
 #include "EntityType.h"
 
 Doodad::Doodad(const Animation &animation, const Double3 &position,

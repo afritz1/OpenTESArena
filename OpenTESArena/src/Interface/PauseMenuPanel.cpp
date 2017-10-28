@@ -4,13 +4,12 @@
 
 #include "SDL.h"
 
-#include "PauseMenuPanel.h"
-
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
+#include "PauseMenuPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"

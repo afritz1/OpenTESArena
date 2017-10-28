@@ -2,7 +2,6 @@
 #include <map>
 
 #include "CharacterClass.h"
-
 #include "CharacterClassCategory.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"

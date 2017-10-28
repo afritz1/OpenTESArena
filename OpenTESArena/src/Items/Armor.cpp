@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "Armor.h"
-
 #include "ArmorMaterial.h"
 #include "ItemType.h"
 

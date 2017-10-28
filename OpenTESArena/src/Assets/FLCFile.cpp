@@ -1,9 +1,8 @@
 #include <algorithm>
 #include <array>
 
-#include "FLCFile.h"
-
 #include "Compression.h"
+#include "FLCFile.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"

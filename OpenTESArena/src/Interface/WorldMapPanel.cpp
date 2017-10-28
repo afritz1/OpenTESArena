@@ -2,12 +2,11 @@
 
 #include "SDL.h"
 
-#include "WorldMapPanel.h"
-
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
+#include "WorldMapPanel.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"

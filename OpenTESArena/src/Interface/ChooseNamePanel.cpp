@@ -3,10 +3,9 @@
 
 #include "SDL.h"
 
-#include "ChooseNamePanel.h"
-
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
+#include "ChooseNamePanel.h"
 #include "CursorAlignment.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"

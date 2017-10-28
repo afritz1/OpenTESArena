@@ -4,9 +4,8 @@
 
 #include "SDL_platform.h"
 
-#include "File.h"
-
 #include "Debug.h"
+#include "File.h"
 
 std::string File::readAllText(const std::string &filename)
 {

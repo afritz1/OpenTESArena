@@ -1,9 +1,8 @@
 #include <unordered_map>
 
-#include "WeaponFile.h"
-
 #include "TextureFile.h"
 #include "TextureName.h"
+#include "WeaponFile.h"
 #include "../Items/WeaponType.h"
 
 namespace std

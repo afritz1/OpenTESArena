@@ -2,7 +2,6 @@
 #include <map>
 
 #include "Climate.h"
-
 #include "ClimateName.h"
 
 const std::map<ClimateName, std::string> ClimateDisplayNames =

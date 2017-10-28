@@ -2,7 +2,6 @@
 #include <fstream>
 
 #include "PPMFile.h"
-
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"

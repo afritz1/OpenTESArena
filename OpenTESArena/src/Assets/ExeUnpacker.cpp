@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "ExeUnpacker.h"
-
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"

@@ -5,10 +5,9 @@
 
 #include "SDL.h"
 
-#include "ProvinceMapPanel.h"
-
 #include "CursorAlignment.h"
 #include "ProvinceButtonName.h"
+#include "ProvinceMapPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"

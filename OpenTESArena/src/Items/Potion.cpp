@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "Potion.h"
-
 #include "ConsumableType.h"
+#include "Potion.h"
 
 Potion::Potion()
 	: Consumable()

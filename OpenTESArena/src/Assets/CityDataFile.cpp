@@ -2,7 +2,6 @@
 #include <cstring>
 
 #include "CityDataFile.h"
-
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 

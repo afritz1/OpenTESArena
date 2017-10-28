@@ -2,9 +2,8 @@
 
 #include "SDL.h"
 
-#include "LoadGamePanel.h"
-
 #include "CursorAlignment.h"
+#include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextAlignment.h"

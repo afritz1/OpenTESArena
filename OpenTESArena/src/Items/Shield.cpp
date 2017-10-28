@@ -1,12 +1,11 @@
 #include <cassert>
 #include <map>
 
-#include "Shield.h"
-
 #include "ArmorMaterial.h"
 #include "ArmorType.h"
 #include "HeavyArmorMaterial.h"
 #include "Metal.h"
+#include "Shield.h"
 #include "ShieldArtifactData.h"
 #include "ShieldType.h"
 #include "../Entities/BodyPart.h"

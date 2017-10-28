@@ -1,8 +1,7 @@
 #include <unordered_map>
 
-#include "IMGFile.h"
-
 #include "Compression.h"
+#include "IMGFile.h"
 #include "../Math/Vector2.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"

@@ -1,7 +1,6 @@
 #include <unordered_map>
 
 #include "SoundFile.h"
-
 #include "SoundName.h"
 
 namespace std

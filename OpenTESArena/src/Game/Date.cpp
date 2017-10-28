@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "Date.h"
-
 #include "../Utilities/Debug.h"
 
 const int Date::INITIAL_ERA = 3;

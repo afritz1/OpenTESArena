@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "VoxelBuilder.h"
-
 #include "../Math/Vector3.h"
 #include "../Rendering/Rect3D.h"
 

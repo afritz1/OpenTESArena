@@ -2,7 +2,6 @@
 #include <cstdint>
 
 #include "COLFile.h"
-
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"

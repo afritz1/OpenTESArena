@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "CharacterQuestion.h"
-
 #include "../Entities/CharacterClassCategoryName.h"
 
 CharacterQuestion::CharacterQuestion(const std::string &description,

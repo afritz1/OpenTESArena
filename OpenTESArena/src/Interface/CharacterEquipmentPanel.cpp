@@ -3,7 +3,6 @@
 #include "SDL.h"
 
 #include "CharacterEquipmentPanel.h"
-
 #include "CharacterPanel.h"
 #include "CursorAlignment.h"
 #include "RichTextString.h"

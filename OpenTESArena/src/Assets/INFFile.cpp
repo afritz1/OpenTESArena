@@ -3,7 +3,6 @@
 #include <unordered_set>
 
 #include "INFFile.h"
-
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 

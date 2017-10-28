@@ -2,9 +2,8 @@
 
 #include "SDL.h"
 
-#include "CharacterPanel.h"
-
 #include "CharacterEquipmentPanel.h"
+#include "CharacterPanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "RichTextString.h"

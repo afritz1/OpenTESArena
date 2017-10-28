@@ -2,7 +2,6 @@
 #include <unordered_map>
 
 #include "CIFFile.h"
-
 #include "Compression.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"

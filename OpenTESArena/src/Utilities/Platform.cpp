@@ -1,8 +1,7 @@
 #include "SDL.h"
 
-#include "Platform.h"
-
 #include "Debug.h"
+#include "Platform.h"
 #include "String.h"
 
 std::string Platform::getPlatform()

@@ -1,7 +1,6 @@
 #include "SDL.h"
 
 #include "RichTextString.h"
-
 #include "../Media/Font.h"
 #include "../Media/FontManager.h"
 #include "../Utilities/String.h"

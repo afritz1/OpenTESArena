@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "WorldData.h"
-
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Media/TextureManager.h"

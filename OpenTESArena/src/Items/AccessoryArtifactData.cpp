@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "AccessoryArtifactData.h"
-
 #include "AccessoryType.h"
 #include "ItemType.h"
 #include "MetalType.h"

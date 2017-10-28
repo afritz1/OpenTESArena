@@ -1,5 +1,4 @@
 #include "Color.h"
-
 #include "../Math/Random.h"
 
 const Color Color::Red(255, 0, 0, 255);

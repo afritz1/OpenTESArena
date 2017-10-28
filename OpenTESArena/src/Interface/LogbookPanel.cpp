@@ -2,10 +2,9 @@
 
 #include "SDL.h"
 
-#include "LogbookPanel.h"
-
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "LogbookPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"

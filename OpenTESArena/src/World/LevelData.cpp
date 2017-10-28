@@ -1,5 +1,4 @@
 #include "LevelData.h"
-
 #include "../Assets/INFFile.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"

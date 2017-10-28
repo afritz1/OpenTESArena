@@ -2,13 +2,12 @@
 #include <map>
 #include <sstream>
 
-#include "ArtifactParser.h"
-
 #include "AccessoryArtifactData.h"
 #include "AccessoryType.h"
 #include "ArmorMaterialType.h"
 #include "ArmorType.h"
 #include "ArtifactData.h"
+#include "ArtifactParser.h"
 #include "BodyArmorArtifactData.h"
 #include "ConsumableType.h"
 #include "HeavyArmorMaterial.h"

@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "Entity.h"
-
 #include "EntityManager.h"
 #include "EntityType.h"
 

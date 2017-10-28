@@ -1,7 +1,6 @@
 #include <map>
 
 #include "PaletteFile.h"
-
 #include "PaletteName.h"
 
 namespace

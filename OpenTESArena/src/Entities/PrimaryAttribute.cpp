@@ -1,9 +1,8 @@
 #include <cassert>
 #include <map>
 
-#include "PrimaryAttribute.h"
-
 #include "AttributeModifierName.h"
+#include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
 
 const std::map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =

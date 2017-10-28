@@ -3,7 +3,6 @@
 #include <map>
 
 #include "CardinalDirection.h"
-
 #include "CardinalDirectionName.h"
 
 // Wikipedia says the intermediate directions don't have a space, so that's the

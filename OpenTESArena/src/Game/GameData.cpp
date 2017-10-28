@@ -5,7 +5,6 @@
 #include "SDL.h"
 
 #include "GameData.h"
-
 #include "../Assets/ExeStrings.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"

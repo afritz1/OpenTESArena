@@ -1,7 +1,6 @@
 #include <map>
 
 #include "AttributeModifier.h"
-
 #include "AttributeModifierName.h"
 
 const std::map<AttributeModifierName, std::string> AttributeModifierDisplayNames =

@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "RCIFile.h"
-
 #include "../Utilities/Debug.h"
 
 #include "components/vfs/manager.hpp"

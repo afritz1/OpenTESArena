@@ -1,8 +1,7 @@
 #include <cassert>
 
-#include "LightArmorMaterial.h"
-
 #include "ArmorMaterialType.h"
+#include "LightArmorMaterial.h"
 
 LightArmorMaterial::LightArmorMaterial()
 {

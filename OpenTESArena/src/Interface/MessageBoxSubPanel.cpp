@@ -1,6 +1,5 @@
-#include "MessageBoxSubPanel.h"
-
 #include "CursorAlignment.h"
+#include "MessageBoxSubPanel.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
