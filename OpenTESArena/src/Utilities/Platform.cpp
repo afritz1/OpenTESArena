@@ -1,3 +1,5 @@
+#include <thread>
+
 #include "SDL.h"
 
 #include "Debug.h"
@@ -78,5 +80,21 @@ std::string Platform::getLogPath()
 	{
 		DebugMention("No default log path on this platform.");
 		return "log/";
+	}
+}
+
+int Platform::getThreadCount()
+{
+	const int threadCount = static_cast<int>(std::thread::hardware_concurrency());
+	
+	// hardware_concurrency() might return 0, so it needs to be clamped positive.
+	if (threadCount == 0)
+	{
+		DebugWarning("hardware_concurrency() returned 0.");
+		return 1;
+	}
+	else
+	{
+		return threadCount;
 	}
 }

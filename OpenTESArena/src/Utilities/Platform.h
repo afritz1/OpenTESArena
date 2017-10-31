@@ -22,6 +22,9 @@ public:
 
 	// Gets the log folder path for logging program messages.
 	static std::string getLogPath();
+
+	// Gets the max number of threads available on the CPU.
+	static int getThreadCount();
 };
 
 #endif

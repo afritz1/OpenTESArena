@@ -7,6 +7,7 @@
 #include "SoftwareRenderer.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/Platform.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
 
@@ -34,14 +35,8 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->width = width;
 	this->height = height;
 
-	// Obtain the number of threads to use. "hardware_concurrency()" might return 0,
-	// so it needs to be clamped positive.
-	this->renderThreadCount = static_cast<int>(std::thread::hardware_concurrency());
-	if (this->renderThreadCount == 0)
-	{
-		DebugMention("hardware_concurrency() returned 0.");
-		this->renderThreadCount = 1;
-	}
+	// Obtain the number of threads to use.
+	this->renderThreadCount = Platform::getThreadCount();
 
 	// Fog distance is zero by default.
 	this->fogDistance = 0.0;
