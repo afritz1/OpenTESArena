@@ -4,6 +4,11 @@
 
 #include "Surface.h"
 
+Surface::Surface()
+{
+	this->surface = nullptr;
+}
+
 Surface::Surface(SDL_Surface *surface)
 {
 	assert(surface != nullptr);
@@ -18,7 +23,17 @@ Surface::Surface(Surface &&surface)
 
 Surface::~Surface()
 {
-	SDL_FreeSurface(this->surface);
+	if (this->surface != nullptr)
+	{
+		SDL_FreeSurface(this->surface);
+	}
+}
+
+Surface &Surface::operator=(Surface &&surface)
+{
+	this->surface = surface.surface;
+	surface.surface = nullptr;
+	return *this;
 }
 
 SDL_Surface *Surface::createSurfaceWithFormat(int width, int height,
@@ -53,6 +68,16 @@ SDL_Surface *Surface::createSurfaceWithFormatFrom(void *pixels,
 	SDL_memcpy(surface->pixels, pixels, height * pitch);
 	return surface;
 #endif
+}
+
+int Surface::getWidth() const
+{
+	return this->surface->w;
+}
+
+int Surface::getHeight() const
+{
+	return this->surface->h;
 }
 
 SDL_Surface *Surface::get() const

@@ -16,24 +16,25 @@ class Surface
 private:
 	SDL_Surface *surface;
 public:
+	Surface();
 	Surface(SDL_Surface *surface);
 	Surface(const Surface&) = delete;
 	Surface(Surface &&surface);
 	~Surface();
 
 	Surface &operator=(const Surface&) = delete;
-	Surface &operator=(Surface&&) = delete;
+	Surface &operator=(Surface &&surface);
 
-	// Wrapper function for SDL 2.0.5 "SDL_CreateRGBSurfaceWithFormat()".
-	// Remove this function once the project is using 2.0.5 again.
+	// Wrapper function for SDL_CreateRGBSurfaceWithFormat() in SDL 2.0.5.
 	static SDL_Surface *createSurfaceWithFormat(int width, int height,
 		int depth, uint32_t format);
 
-	// Wrapper function for SDL 2.0.5 "SDL_CreateRGBSurfaceWithFormatFrom()".
-	// Remove this function once the project is using 2.0.5 again.
+	// Wrapper function for SDL_CreateRGBSurfaceWithFormatFrom() in SDL 2.0.5.
 	static SDL_Surface *createSurfaceWithFormatFrom(void *pixels,
 		int width, int height, int depth, int pitch, uint32_t format);
 
+	int getWidth() const;
+	int getHeight() const;
 	SDL_Surface *get() const;
 };
 
