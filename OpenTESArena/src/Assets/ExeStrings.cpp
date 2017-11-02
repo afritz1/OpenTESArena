@@ -26,17 +26,33 @@ namespace
 		{ ExeStringKey::ConfirmRace, "ConfirmRace" },
 		{ ExeStringKey::FinalRaceMessage, "FinalRaceMessage" },
 		{ ExeStringKey::DistributeClassPoints, "DistributeClassPoints" },
+
 		{ ExeStringKey::CharacterClassNames, "CharacterClassNames" },
+
+		{ ExeStringKey::AllowedArmors, "AllowedArmors" },
+		//{ ExeStringKey::AllowedShields, "AllowedShields" },
+		//{ ExeStringKey::AllowedWeapons, "AllowedWeapons" },
 		{ ExeStringKey::ClassAttributes, "ClassAttributes" },
+		{ ExeStringKey::ClassNumberToClassID, "ClassNumberToClassID" },
+		{ ExeStringKey::ClassStartingExperience, "ClassStartingExperience" },
+		{ ExeStringKey::HealthDice, "HealthDice" },
+		{ ExeStringKey::LockpickingDivisors, "LockpickingDivisors" },
+
 		{ ExeStringKey::ProvinceNames, "ProvinceNames" },
 		{ ExeStringKey::ProvinceIMGFilenames, "ProvinceIMGFilenames" },
+
 		{ ExeStringKey::RaceNamesSingular, "RaceNamesSingular" },
 		{ ExeStringKey::RaceNamesPlural, "RaceNamesPlural" },
+
 		{ ExeStringKey::LogbookIsEmpty, "LogbookIsEmpty" },
+
 		{ ExeStringKey::TimesOfDay, "TimesOfDay" },
+
 		{ ExeStringKey::WeekdayNames, "WeekdayNames" },
 		{ ExeStringKey::MonthNames, "MonthNames" },
+
 		{ ExeStringKey::CreatureNames, "CreatureNames" },
+
 		{ ExeStringKey::CreatureAnimations, "CreatureAnimations" },
 		{ ExeStringKey::MaleCitizenAnimations, "MaleCitizenAnimations" },
 		{ ExeStringKey::FemaleCitizenAnimations, "FemaleCitizenAnimations" },

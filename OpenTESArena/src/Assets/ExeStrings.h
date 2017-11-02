@@ -33,12 +33,12 @@ enum class ExeStringKey
 	CharacterClassNames,
 
 	// Character class data.
-	AllowedWeapons,
+	AllowedArmors,
 	AllowedShields,
-	AllowedArmor,
+	AllowedWeapons,
 	ClassAttributes,
-	ClassExperiencePerLevel,
 	ClassNumberToClassID,
+	ClassStartingExperience,
 	HealthDice,
 	LockpickingDivisors,
 
