@@ -13,7 +13,7 @@ CharacterClass::CharacterClass(const std::string &name,
 	const std::vector<ShieldType> &allowedShields,
 	const std::vector<WeaponType> &allowedWeapons,
 	CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
-	int initialExperienceCap, int classNumberToID, bool mage, bool thief, bool criticalHit)
+	int initialExperienceCap, int classIndex, bool mage, bool thief, bool criticalHit)
 	: name(name), preferredAttributes(preferredAttributes), allowedArmors(allowedArmors),
 	allowedShields(allowedShields), allowedWeapons(allowedWeapons)
 {
@@ -21,7 +21,7 @@ CharacterClass::CharacterClass(const std::string &name,
 	this->lockpicking = lockpicking;
 	this->healthDie = healthDie;
 	this->initialExperienceCap = initialExperienceCap;
-	this->classNumberToID = classNumberToID;
+	this->classIndex = classIndex;
 	this->mage = mage;
 	this->thief = thief;
 	this->criticalHit = criticalHit;
@@ -77,9 +77,9 @@ int CharacterClass::getInitialExperienceCap() const
 	return this->initialExperienceCap;
 }
 
-int CharacterClass::getClassNumberToID() const
+int CharacterClass::getClassIndex() const
 {
-	return this->classNumberToID;
+	return this->classIndex;
 }
 
 bool CharacterClass::canCastMagic() const

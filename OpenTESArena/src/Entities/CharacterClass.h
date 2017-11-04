@@ -20,7 +20,7 @@ private:
 	double lockpicking; // Lockpick effectiveness percent.
 	int healthDie; // Die used in character generation (d8, d20, ...).
 	int initialExperienceCap; // Experience to get from level 1 to 2.
-	int classNumberToID; // Unknown.
+	int classIndex; // Index in the classes array.
 	bool mage, thief, criticalHit;
 public:
 	CharacterClass(const std::string &name, const std::string &preferredAttributes,
@@ -28,7 +28,7 @@ public:
 		const std::vector<ShieldType> &allowedShields,
 		const std::vector<WeaponType> &allowedWeapons,
 		CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
-		int initialExperienceCap, int classNumberToID, bool mage, bool thief, bool criticalHit);
+		int initialExperienceCap, int classIndex, bool mage, bool thief, bool criticalHit);
 	~CharacterClass();
 
 	const std::string &getName() const;
@@ -40,7 +40,7 @@ public:
 	double getLockpicking() const;
 	int getHealthDie() const;
 	int getInitialExperienceCap() const;
-	int getClassNumberToID() const;
+	int getClassIndex() const;
 	bool canCastMagic() const;
 	bool isThief() const;
 	bool hasCriticalHit() const;

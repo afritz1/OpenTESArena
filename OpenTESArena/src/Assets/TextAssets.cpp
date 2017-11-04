@@ -509,16 +509,14 @@ void TextAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			return static_cast<uint8_t>(numberStr.at(0));
 		}();
 
-		// To do: fix this (i.e., warriors are being shown as spellcasters). I think the
-		// "classNumberToID" value or the "classData.id" value might have some importance.
-		const CharacterClassGeneration::ClassData &classData = this->classesDat.classes.at(i);
-		const bool mage = classData.isSpellcaster;
-		const bool thief = classData.isThief;
-		const bool criticalHit = classData.hasCriticalHit;
+		const int classIndex = classNumberToID & CharacterClassGeneration::ID_MASK;
+		const bool mage = (classNumberToID & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
+		const bool thief = (classNumberToID & CharacterClassGeneration::THIEF_MASK) != 0;
+		const bool criticalHit = (classNumberToID & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
 
 		this->classDefinitions.push_back(CharacterClass(name, preferredAttributes,
 			allowedArmors, allowedShields, allowedWeapons, categoryName, lockpicking,
-			healthDie, initialExperienceCap, classNumberToID, mage, thief, criticalHit));
+			healthDie, initialExperienceCap, classIndex, mage, thief, criticalHit));
 	}
 }
 
