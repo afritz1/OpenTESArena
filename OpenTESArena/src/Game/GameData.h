@@ -61,8 +61,8 @@ public:
 		int portraitID, TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object with random player data for testing.
-	static std::unique_ptr<GameData> createRandomPlayer(TextureManager &textureManager, 
-		Renderer &renderer);
+	static std::unique_ptr<GameData> createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
+		TextureManager &textureManager, Renderer &renderer);
 
 	Player &getPlayer();
 	WorldData &getWorldData();

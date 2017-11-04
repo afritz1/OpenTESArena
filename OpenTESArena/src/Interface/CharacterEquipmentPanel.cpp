@@ -72,7 +72,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game *game)
 		const int y = 26;
 
 		const RichTextString richText(
-			game->getGameData().getPlayer().getCharacterClass().getDisplayName(),
+			game->getGameData().getPlayer().getCharacterClass().getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,

@@ -81,7 +81,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		const int y = 26;
 
 		const RichTextString richText(
-			charClass.getDisplayName(),
+			charClass.getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,

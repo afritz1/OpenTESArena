@@ -99,7 +99,7 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 
 			// Replace second "%s" with character class.
 			index = segment.find("%s");
-			segment.replace(index, 2, charClass.getDisplayName());
+			segment.replace(index, 2, charClass.getName());
 
 			return segment;
 		}();

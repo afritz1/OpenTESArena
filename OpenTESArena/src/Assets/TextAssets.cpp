@@ -8,6 +8,10 @@
 #include "ExeUnpacker.h"
 #include "TextAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
+#include "../Items/ArmorMaterialType.h"
+#include "../Items/ShieldType.h"
+#include "../Items/WeaponType.h"
+#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
@@ -32,8 +36,13 @@ TextAssets::TextAssets()
 	// Read in QUESTION.TXT and create character question objects.
 	this->parseQuestionTxt();
 
+	// The start of the .data segment (in A.EXE). Used in determining the positions of
+	// allowed shields and weapons arrays.
+	const int dataSegmentOffset = 0x32560;
+
 	// Read in CLASSES.DAT.
-	this->parseClassesDat();
+	assert(this->aExeStrings.get() != nullptr);
+	this->parseClasses(this->aExe, *this->aExeStrings.get(), dataSegmentOffset);
 
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
@@ -230,7 +239,8 @@ void TextAssets::parseQuestionTxt()
 	addQuestion(description, a, b, c);
 }
 
-void TextAssets::parseClassesDat()
+void TextAssets::parseClasses(const std::string &exeText, const ExeStrings &exeStrings,
+	int dataSegmentOffset)
 {
 	const std::string filename = "CLASSES.DAT";
 
@@ -275,6 +285,240 @@ void TextAssets::parseClassesDat()
 		choice.a = *srcPtr;
 		choice.b = *(srcPtr + 1);
 		choice.c = *(srcPtr + 2);
+	}
+
+	// Now read in the character class data from A.EXE. Some of it also depends on
+	// data from CLASSES.DAT.
+	const auto &classNameStrs = exeStrings.getList(ExeStringKey::CharacterClassNames);
+	const auto &allowedArmorsStrs = exeStrings.getList(ExeStringKey::AllowedArmors);
+	const auto &allowedShieldsStrs = exeStrings.getList(ExeStringKey::AllowedShields);
+	const auto &allowedWeaponsStrs = exeStrings.getList(ExeStringKey::AllowedWeapons);
+	const auto &preferredAttributesStrs = exeStrings.getList(ExeStringKey::ClassAttributes);
+	const auto &classNumbersToIDsStrs = exeStrings.getList(ExeStringKey::ClassNumberToClassID);
+	const auto &classInitialExpCapStrs = exeStrings.getList(ExeStringKey::ClassInitialExperienceCap);
+	const auto &healthDieStrs = exeStrings.getList(ExeStringKey::HealthDice);
+	const auto &lockpickingDivisorStrs = exeStrings.getList(ExeStringKey::LockpickingDivisors);
+
+	const int classCount = 18;
+	for (int i = 0; i < classCount; i++)
+	{
+		const std::string &name = classNameStrs.at(i);
+		const std::string &preferredAttributes = preferredAttributesStrs.at(i);
+
+		const std::vector<ArmorMaterialType> allowedArmors = [&allowedArmorsStrs, i]()
+		{
+			// Determine which armors are allowed based on a one-digit value.
+			const std::string &valueStr = allowedArmorsStrs.at(i);
+			const uint8_t value = static_cast<uint8_t>(valueStr.at(0));
+
+			if (value == 0)
+			{
+				return std::vector<ArmorMaterialType>
+				{
+					ArmorMaterialType::Leather, ArmorMaterialType::Chain, ArmorMaterialType::Plate
+				};
+			}
+			else if (value == 1)
+			{
+				return std::vector<ArmorMaterialType>
+				{
+					ArmorMaterialType::Leather, ArmorMaterialType::Chain
+				};
+			}
+			else if (value == 2)
+			{
+				return std::vector<ArmorMaterialType>
+				{
+					ArmorMaterialType::Leather
+				};
+			}
+			else if (value == 3)
+			{
+				return std::vector<ArmorMaterialType>();
+			}
+			else
+			{
+				throw std::runtime_error("Bad allowed armors value \"" +
+					std::to_string(value) + "\".");
+			}
+		}();
+
+		const std::vector<ShieldType> allowedShields = [&exeText,
+			dataSegmentOffset, &allowedShieldsStrs, i]()
+		{
+			// Use the pointer offset at the 'i' index of the shield pointers to find which
+			// ID array to use.
+			const std::string &offsetStr = allowedShieldsStrs.at(i);
+			const uint16_t offset = Bytes::getLE16(
+				reinterpret_cast<const uint8_t*>(offsetStr.data()));
+
+			// If the pointer offset is "null", that means all shields are allowed for this class.
+			// Otherwise, read each byte in the array until a 0xFF byte.
+			if (offset == 0)
+			{
+				return std::vector<ShieldType>
+				{
+					ShieldType::Buckler, ShieldType::Round, ShieldType::Kite, ShieldType::Tower
+				};
+			}
+			else
+			{
+				// Start and end of the 0xFF-terminated array in the executable.
+				const int arrayStart = dataSegmentOffset + offset;
+				const uint8_t endByte = 0xFF;
+
+				int index = 0;
+				std::vector<ShieldType> shields;
+
+				// Read shield IDs until the end byte.
+				while (true)
+				{
+					// Mappings of shield IDs to shield types. The index in the array is the ID 
+					// minus 7 because shields and armors are treated as the same type in Arena,
+					// so they're in the same array, but we separate them here because that seems 
+					// more object-oriented.
+					const std::array<ShieldType, 4> ShieldIDMappings =
+					{
+						ShieldType::Buckler,
+						ShieldType::Round,
+						ShieldType::Kite,
+						ShieldType::Tower
+					};
+
+					const uint8_t shieldID = static_cast<uint8_t>(exeText.at(arrayStart + index));
+
+					if (shieldID == endByte)
+					{
+						break;
+					}
+					else
+					{
+						shields.push_back(ShieldIDMappings.at(shieldID - 7));
+					}
+
+					index++;
+				}
+
+				return shields;
+			}
+		}();
+
+		const std::vector<WeaponType> allowedWeapons = [&exeText,
+			dataSegmentOffset, &allowedWeaponsStrs, i]()
+		{
+			// Use the pointer offset at the 'i' index of the weapon pointers to find which
+			// ID array to use.
+			const std::string &offsetStr = allowedWeaponsStrs.at(i);
+			const uint16_t offset = Bytes::getLE16(
+				reinterpret_cast<const uint8_t*>(offsetStr.data()));
+
+			// If the pointer offset is "null", that means all weapons are allowed for this class.
+			// Otherwise, read each byte in the array until a 0xFF byte.
+			if (offset == 0)
+			{
+				return std::vector<WeaponType>
+				{
+					WeaponType::BattleAxe, WeaponType::Broadsword, WeaponType::Claymore,
+					WeaponType::Dagger, WeaponType::DaiKatana, WeaponType::Flail,
+					WeaponType::Katana, WeaponType::LongBow, WeaponType::Longsword,
+					WeaponType::Mace, WeaponType::Saber, WeaponType::ShortBow,
+					WeaponType::Shortsword, WeaponType::Staff, WeaponType::Tanto,
+					WeaponType::Wakizashi, WeaponType::WarAxe, WeaponType::Warhammer
+				};
+			}
+			else
+			{
+				// Start and end of the 0xFF-terminated array in the executable.
+				const int arrayStart = dataSegmentOffset + offset;
+				const uint8_t endByte = 0xFF;
+
+				int index = 0;
+				std::vector<WeaponType> weapons;
+
+				// Read weapon IDs until the end byte.
+				while (true)
+				{
+					// Mappings of weapon IDs to weapon types, ordered as they are shown in 
+					// the executable.
+					const std::array<WeaponType, 18> WeaponIDMappings =
+					{
+						WeaponType::Staff, WeaponType::Dagger, WeaponType::Shortsword,
+						WeaponType::Broadsword, WeaponType::Saber, WeaponType::Longsword,
+						WeaponType::Claymore, WeaponType::Tanto, WeaponType::Wakizashi,
+						WeaponType::Katana, WeaponType::DaiKatana, WeaponType::Mace,
+						WeaponType::Flail, WeaponType::Warhammer, WeaponType::WarAxe,
+						WeaponType::BattleAxe, WeaponType::ShortBow, WeaponType::LongBow
+					};
+
+					const uint8_t weaponID = static_cast<uint8_t>(exeText.at(arrayStart + index));
+
+					if (weaponID == endByte)
+					{
+						break;
+					}
+					else
+					{
+						weapons.push_back(WeaponIDMappings.at(weaponID));
+					}
+
+					index++;
+				}
+
+				return weapons;
+			}
+		}();
+
+		const CharacterClassCategoryName categoryName = [i]()
+		{
+			if (i < 6)
+			{
+				return CharacterClassCategoryName::Mage;
+			}
+			else if (i < 12)
+			{
+				return CharacterClassCategoryName::Thief;
+			}
+			else
+			{
+				return CharacterClassCategoryName::Warrior;
+			}
+		}();
+
+		const double lockpicking = [&lockpickingDivisorStrs, i]()
+		{
+			const std::string &divisorStr = lockpickingDivisorStrs.at(i);
+			const uint8_t divisor = divisorStr.at(0);
+			return static_cast<double>(200 / divisor) / 100.0;
+		}();
+
+		const int healthDie = [&healthDieStrs, i]()
+		{
+			const std::string &dieStr = healthDieStrs.at(i);
+			return static_cast<uint8_t>(dieStr.at(0));
+		}();
+
+		const int initialExperienceCap = [&classInitialExpCapStrs, i]()
+		{
+			const std::string &capStr = classInitialExpCapStrs.at(i);
+			return Bytes::getLE16(reinterpret_cast<const uint8_t*>(capStr.data()));
+		}();
+
+		const int classNumberToID = [&classNumbersToIDsStrs, i]()
+		{
+			const std::string &numberStr = classNumbersToIDsStrs.at(i);
+			return static_cast<uint8_t>(numberStr.at(0));
+		}();
+
+		// To do: fix this (i.e., warriors are being shown as spellcasters). I think the
+		// "classNumberToID" value or the "classData.id" value might have some importance.
+		const CharacterClassGeneration::ClassData &classData = this->classesDat.classes.at(i);
+		const bool mage = classData.isSpellcaster;
+		const bool thief = classData.isThief;
+		const bool criticalHit = classData.hasCriticalHit;
+
+		this->classDefinitions.push_back(CharacterClass(name, preferredAttributes,
+			allowedArmors, allowedShields, allowedWeapons, categoryName, lockpicking,
+			healthDie, initialExperienceCap, classNumberToID, mage, thief, criticalHit));
 	}
 }
 
@@ -350,7 +594,7 @@ const ExeStrings &TextAssets::getAExeStrings() const
 const std::string &TextAssets::getTemplateDatText(const std::string &key)
 {
 	const auto iter = this->templateDat.find(key);
-	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" + 
+	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" +
 		key + "\" not found.");
 
 	const std::string &value = iter->second;
@@ -365,6 +609,11 @@ const std::vector<CharacterQuestion> &TextAssets::getQuestionTxtQuestions() cons
 const CharacterClassGeneration &TextAssets::getClassGenData() const
 {
 	return this->classesDat;
+}
+
+const std::vector<CharacterClass> &TextAssets::getClassDefinitions() const
+{
+	return this->classDefinitions;
 }
 
 const std::vector<std::pair<std::string, std::string>> &TextAssets::getDungeonTxtDungeons() const

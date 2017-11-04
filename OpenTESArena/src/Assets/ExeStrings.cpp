@@ -30,11 +30,11 @@ namespace
 		{ ExeStringKey::CharacterClassNames, "CharacterClassNames" },
 
 		{ ExeStringKey::AllowedArmors, "AllowedArmors" },
-		//{ ExeStringKey::AllowedShields, "AllowedShields" },
-		//{ ExeStringKey::AllowedWeapons, "AllowedWeapons" },
+		{ ExeStringKey::AllowedShields, "AllowedShields" },
+		{ ExeStringKey::AllowedWeapons, "AllowedWeapons" },
 		{ ExeStringKey::ClassAttributes, "ClassAttributes" },
 		{ ExeStringKey::ClassNumberToClassID, "ClassNumberToClassID" },
-		{ ExeStringKey::ClassStartingExperience, "ClassStartingExperience" },
+		{ ExeStringKey::ClassInitialExperienceCap, "ClassInitialExperienceCap" },
 		{ ExeStringKey::HealthDice, "HealthDice" },
 		{ ExeStringKey::LockpickingDivisors, "LockpickingDivisors" },
 
@@ -59,7 +59,13 @@ namespace
 		{ ExeStringKey::CFAFilenameChunks, "CFAFilenameChunks" },
 		{ ExeStringKey::CFAFilenameTemplates, "CFAFilenameTemplates" },
 		{ ExeStringKey::CFAHumansWithWeaponAnimations, "CFAHumansWithWeaponAnimations" },
-		{ ExeStringKey::CFAWeaponAnimations, "CFAWeaponAnimations" }
+		{ ExeStringKey::CFAWeaponAnimations, "CFAWeaponAnimations" },
+
+		{ ExeStringKey::BodyPartNames, "BodyPartNames" },
+
+		{ ExeStringKey::ArmorNames, "ArmorNames", },
+		{ ExeStringKey::ShieldNames, "ShieldNames", },
+		{ ExeStringKey::WeaponNames, "WeaponNames", }
 	};
 }
 

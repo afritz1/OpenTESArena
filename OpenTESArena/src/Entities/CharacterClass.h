@@ -12,30 +12,41 @@ enum class WeaponType;
 class CharacterClass
 {
 private:
-	std::string displayName;
-	CharacterClassCategoryName categoryName;
-	bool castsMagic;
-	int startingHealth, healthDice;
+	std::string name, preferredAttributes;
 	std::vector<ArmorMaterialType> allowedArmors;
 	std::vector<ShieldType> allowedShields;
 	std::vector<WeaponType> allowedWeapons;
+	CharacterClassCategoryName categoryName;
+	double lockpicking; // Lockpick effectiveness percent.
+	int healthDie; // Die used in character generation (d8, d20, ...).
+	int initialExperienceCap; // Experience to get from level 1 to 2.
+	int classNumberToID; // Unknown.
+	bool mage, thief, criticalHit;
 public:
-	CharacterClass(const std::string &displayName, 
-		CharacterClassCategoryName categoryName, bool castsMagic, 
-		int startingHealth, int healthDice, 
+	CharacterClass(const std::string &name, const std::string &preferredAttributes,
 		const std::vector<ArmorMaterialType> &allowedArmors,
 		const std::vector<ShieldType> &allowedShields,
-		const std::vector<WeaponType> &allowedWeapons);
+		const std::vector<WeaponType> &allowedWeapons,
+		CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
+		int initialExperienceCap, int classNumberToID, bool mage, bool thief, bool criticalHit);
 	~CharacterClass();
 
-	const std::string &getDisplayName() const;
-	CharacterClassCategoryName getClassCategoryName() const;
-	bool canCastMagic() const;
-	int getStartingHealth() const;
-	int getHealthDice() const;
+	const std::string &getName() const;
+	const std::string &getPreferredAttributes() const;
 	const std::vector<ArmorMaterialType> &getAllowedArmors() const;
 	const std::vector<ShieldType> &getAllowedShields() const;
 	const std::vector<WeaponType> &getAllowedWeapons() const;
+	CharacterClassCategoryName getCategoryName() const;
+	double getLockpicking() const;
+	int getHealthDie() const;
+	int getInitialExperienceCap() const;
+	int getClassNumberToID() const;
+	bool canCastMagic() const;
+	bool isThief() const;
+	bool hasCriticalHit() const;
+
+	// Gets the experience required for some given level.
+	int getExperienceCap(int level) const;
 };
 
 #endif

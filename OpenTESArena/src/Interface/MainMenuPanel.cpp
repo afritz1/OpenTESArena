@@ -12,6 +12,7 @@
 #include "MainMenuPanel.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Assets/TextAssets.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
@@ -118,7 +119,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 
 			// Generate a random player character for the game data.
 			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
-				game->getTextureManager(), renderer);
+				game->getTextAssets().getClassDefinitions(), game->getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif("START.MIF");

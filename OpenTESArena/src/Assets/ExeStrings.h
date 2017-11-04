@@ -38,7 +38,7 @@ enum class ExeStringKey
 	AllowedWeapons,
 	ClassAttributes,
 	ClassNumberToClassID,
-	ClassStartingExperience,
+	ClassInitialExperienceCap,
 	HealthDice,
 	LockpickingDivisors,
 
@@ -78,7 +78,15 @@ enum class ExeStringKey
 	CFAHumansWithWeaponAnimations,
 
 	// Human .CFA weapons by themselves (for combining with empty-handed animations).
-	CFAWeaponAnimations
+	CFAWeaponAnimations,
+
+	// Body part names.
+	BodyPartNames,
+
+	// Equipment-related names.
+	ArmorNames,
+	ShieldNames,
+	WeaponNames
 };
 
 namespace std

@@ -15,7 +15,6 @@
 #include "../Assets/TextAssets.h"
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
-#include "../Entities/CharacterClassParser.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Items/ArmorMaterial.h"
@@ -39,15 +38,16 @@ const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 ChooseClassPanel::ChooseClassPanel(Game *game)
 	: Panel(game)
 {
-	// Read in character classes.
-	this->charClasses = CharacterClassParser::parse();
+	// Read in character classes (just copy from misc. assets for now).
+	const auto &classDefs = game->getTextAssets().getClassDefinitions();
+	this->charClasses = std::vector<CharacterClass>(classDefs.begin(), classDefs.end());
 	assert(this->charClasses.size() > 0);
 
 	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
 		[](const CharacterClass &a, const CharacterClass &b)
 	{
-		return a.getDisplayName().compare(b.getDisplayName()) < 0;
+		return a.getName().compare(b.getName()) < 0;
 	});
 
 	this->titleTextBox = [game]()
@@ -77,7 +77,7 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 		// This depends on the character classes being already sorted.
 		for (const auto &charClass : this->charClasses)
 		{
-			elements.push_back(charClass.getDisplayName());
+			elements.push_back(charClass.getName());
 		}
 
 		return std::unique_ptr<ListBox>(new ListBox(
@@ -377,11 +377,10 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	{
 		const auto &characterClass = this->charClasses.at(tooltipIndex);
 
-		const std::string text = characterClass.getDisplayName() + " (" +
-			CharacterClassCategory::toString(characterClass.getClassCategoryName()) + " class)\n" +
+		const std::string text = characterClass.getName() + " (" +
+			CharacterClassCategory::toString(characterClass.getCategoryName()) + " class)\n" +
 			"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
-			"Health: " + std::to_string(characterClass.getStartingHealth()) +
-			" + d" + std::to_string(characterClass.getHealthDice()) + "\n" +
+			"Health die: " + "d" + std::to_string(characterClass.getHealthDie()) + "\n" +
 			"Armors: " + this->getClassArmors(characterClass) + "\n" +
 			"Shields: " + this->getClassShields(characterClass) + "\n" +
 			"Weapons: " + this->getClassWeapons(characterClass);

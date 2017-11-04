@@ -9,7 +9,7 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Entities/Animation.h"
-#include "../Entities/CharacterClassParser.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/Doodad.h"
 #include "../Entities/Entity.h"
 #include "../Entities/EntityManager.h"
@@ -670,18 +670,15 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		location, date, clock, fogDistance));
 }
 
-std::unique_ptr<GameData> GameData::createRandomPlayer(TextureManager &textureManager,
-	Renderer &renderer)
+std::unique_ptr<GameData> GameData::createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
+	TextureManager &textureManager, Renderer &renderer)
 {
 	Random random;
 	const std::string playerName = "Player";
 	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
 	const int raceID = random.next(8);
-
-	const auto charClasses = CharacterClassParser::parse();
 	const CharacterClass &charClass = charClasses.at(
 		random.next() % static_cast<int>(charClasses.size()));
-
 	const int portraitID = random.next(10);
 
 	return GameData::createDefault(playerName, gender, raceID, charClass,

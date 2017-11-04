@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
 #include "../Game/CharacterQuestion.h"
 
@@ -27,6 +28,7 @@ private:
 	std::unordered_map<std::string, std::string> templateDat;
 	std::vector<CharacterQuestion> questionTxt;
 	CharacterClassGeneration classesDat;
+	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
@@ -35,8 +37,11 @@ private:
 	// Load QUESTION.TXT and separate each question by its number.
 	void parseQuestionTxt();
 
-	// Load CLASSES.DAT.
-	void parseClassesDat();
+	// Load CLASSES.DAT and also read class data from A.EXE. The dataSegmentOffset is
+	// the start position of the .data segment in the executable (used with allowed
+	// shields and weapons).
+	void parseClasses(const std::string &exeText, const ExeStrings &exeStrings, 
+		int dataSegmentOffset);
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
@@ -54,6 +59,7 @@ public:
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
 
 	const CharacterClassGeneration &getClassGenData() const;
+	const std::vector<CharacterClass> &getClassDefinitions() const;
 
 	// Returns all of the main quest dungeon names paired with their description. 
 	// These are just the dungeons with a unique icon on the world map, not the 
