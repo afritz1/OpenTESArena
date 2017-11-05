@@ -246,12 +246,35 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 				}
 				else if (mostSigNibble == 0x9)
 				{
-					// Transparent block with 1-sided texture on all sides.
-					// To do.
+					// Transparent block with 1-sided texture on all sides, such as wooden 
+					// arches in dungeons. These do not have backfaces (especially when 
+					// standing in the voxel itself), so the renderer needs to handle that.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const int textureIndex = map1Voxel & 0x00FF;
+							const double ceilingHeight =
+								static_cast<double>(inf.getCeiling().height) /
+								MIFFile::ARENA_UNITS;
+
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								textureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xA)
 				{
-					// Transparent block with 2-sided texture on one side.
+					// Transparent block with 2-sided texture on one side (i.e., fence).
 					// To do.
 				}
 				else if (mostSigNibble == 0xB)
