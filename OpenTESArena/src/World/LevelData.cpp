@@ -108,6 +108,11 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	// Mappings of floor and wall IDs to voxel data indices.
 	std::unordered_map<uint16_t, int> floorDataMappings, wallDataMappings;
 
+	// Ceiling height of the .INF file.
+	const double ceilingHeight =
+		static_cast<double>(inf.getCeiling().height) /
+		MIFFile::ARENA_UNITS;
+
 	// Write the .MIF file's voxel IDs into the voxel grid.
 	for (int x = (gridWidth - 1); x >= 0; x--)
 	{
@@ -165,7 +170,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						// Get the voxel data index associated with the wall value, or add it
 						// if it doesn't exist yet.
 						const int dataIndex = [this, &inf, &wallDataMappings,
-							map1Voxel, wallTextureID]()
+							map1Voxel, ceilingHeight, wallTextureID]()
 						{
 							const auto wallIter = wallDataMappings.find(map1Voxel);
 							if (wallIter != wallDataMappings.end())
@@ -174,10 +179,6 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 							}
 							else
 							{
-								const double ceilingHeight =
-									static_cast<double>(inf.getCeiling().height) /
-									MIFFile::ARENA_UNITS;
-
 								const int index = this->voxelGrid.addVoxelData(VoxelData(
 									wallTextureID,
 									wallTextureID,
@@ -249,7 +250,8 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 					// Transparent block with 1-sided texture on all sides, such as wooden 
 					// arches in dungeons. These do not have backfaces (especially when 
 					// standing in the voxel itself), so the renderer needs to handle that.
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = [this, &inf, &wallDataMappings, 
+						map1Voxel, ceilingHeight]()
 					{
 						const auto wallIter = wallDataMappings.find(map1Voxel);
 						if (wallIter != wallDataMappings.end())
@@ -259,9 +261,6 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						else
 						{
 							const int textureIndex = map1Voxel & 0x00FF;
-							const double ceilingHeight =
-								static_cast<double>(inf.getCeiling().height) /
-								MIFFile::ARENA_UNITS;
 
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
 								textureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
@@ -280,7 +279,8 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 				else if (mostSigNibble == 0xB)
 				{
 					// Door with texture.
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = [this, &inf, &wallDataMappings, 
+						map1Voxel, ceilingHeight]()
 					{
 						const auto wallIter = wallDataMappings.find(map1Voxel);
 						if (wallIter != wallDataMappings.end())
@@ -290,10 +290,6 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						else
 						{
 							const int doorTextureIndex = map1Voxel & 0x003F;
-							const double ceilingHeight =
-								static_cast<double>(inf.getCeiling().height) /
-								MIFFile::ARENA_UNITS;
-
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
 								doorTextureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
 							return wallDataMappings.insert(
@@ -311,7 +307,8 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 				else if (mostSigNibble == 0xD)
 				{
 					// Diagonal wall -- direction depends on the nineth bit.
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = [this, &inf, &wallDataMappings, 
+						map1Voxel, ceilingHeight]()
 					{
 						const auto wallIter = wallDataMappings.find(map1Voxel);
 						if (wallIter != wallDataMappings.end())
@@ -322,10 +319,6 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						{
 							const bool isRightDiag = (map1Voxel & 0x0100) == 0;
 							const int diagTextureIndex = map1Voxel & 0x00FF;
-							const double ceilingHeight =
-								static_cast<double>(inf.getCeiling().height) /
-								MIFFile::ARENA_UNITS;
-
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
 								isRightDiag ? diagTextureIndex : 0,
 								!isRightDiag ? diagTextureIndex : 0,
