@@ -324,6 +324,9 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int bridge2ID = voxelGrid.addVoxelData(VoxelData(
 		42, 43, 43, 0.10, 0.125, 0.775, 0.90, VoxelType::Raised));
 
+	// Water.
+	const int waterID = voxelGrid.addVoxelData(VoxelData(0, VoxelType::WetChasm));
+
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
 	{
@@ -369,11 +372,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		setVoxel(i, 0, 13, roadID);
 	}
 
-	// Trench (with water eventually).
+	// Trench.
 	for (int k = 1; k < (gridDepth - 1); ++k)
 	{
-		setVoxel(11, 0, k, emptyID);
-		setVoxel(12, 0, k, emptyID);
+		setVoxel(11, 0, k, waterID);
+		setVoxel(12, 0, k, waterID);
 	}
 
 	// Random number generator with an arbitrary seed.
