@@ -226,8 +226,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -257,24 +256,21 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto &body = textureManager.getTexture(bodyFilename);
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);
-	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawToOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
-	renderer.drawToOriginal(head.get(), headOffset.x, headOffset.y);
-	renderer.drawToOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
+	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw character equipment background.
 	const auto &equipmentBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterEquipment));
-	renderer.drawToOriginal(equipmentBackground.get());
+	renderer.drawOriginal(equipmentBackground.get());
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
+	renderer.drawOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawToOriginal(this->playerRaceTextBox->getTexture(),
+	renderer.drawOriginal(this->playerRaceTextBox->getTexture(),
 		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
-	renderer.drawToOriginal(this->playerClassTextBox->getTexture(),
+	renderer.drawOriginal(this->playerClassTextBox->getTexture(),
 		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

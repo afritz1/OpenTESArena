@@ -1084,7 +1084,7 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
 
-	renderer.drawToOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT -
+	renderer.drawOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT -
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
@@ -1123,7 +1123,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 
 	TextBox tempText(x, y, richText, renderer);
 
-	renderer.drawToOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
+	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
 }
 
 void GameWorldPanel::updateCursorRegions(int width, int height)
@@ -1232,8 +1232,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Draw game world onto the native frame buffer. The game world buffer
 	// might not completely fill up the native buffer (bottom corners), so 
@@ -1251,9 +1250,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame()->getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
-	// Set original frame buffer blending to true.
-	renderer.useTransparencyBlending(true);
-
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
 	const auto playerInterface = options.getPlayerInterface();
@@ -1268,7 +1264,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Draw the current weapon image. Add 1 to the classic Y offset because Arena's
 		// renderer has an off-by-one bug, and a 1 pixel gap appears in my renderer unless 
 		// a small offset is added.
-		renderer.drawToOriginal(weaponTexture.get(), weaponOffset.x, 
+		renderer.drawOriginal(weaponTexture.get(), weaponOffset.x, 
 			(playerInterface == PlayerInterface::Classic) ? (weaponOffset.y + 1) : 
 			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
 	}
@@ -1306,14 +1302,14 @@ void GameWorldPanel::render(Renderer &renderer)
 		return Texture(segment);
 	}();
 
-	renderer.drawToOriginal(compassSliderSegment.get(),
+	renderer.drawOriginal(compassSliderSegment.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
 		compassSliderSegment.getHeight());
 
 	// Draw compass frame over the headings.
 	const auto &compassFrame = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CompassFrame));
-	renderer.drawToOriginal(compassFrame.get(),
+	renderer.drawOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -1325,7 +1321,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Draw game world interface.
 		const auto &gameInterface = textureManager.getTexture(
 			TextureFile::fromName(TextureName::GameWorldInterface));
-		renderer.drawToOriginal(gameInterface.get(), 0,
+		renderer.drawOriginal(gameInterface.get(), 0,
 			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 		// Draw player portrait.
@@ -1335,19 +1331,19 @@ void GameWorldPanel::render(Renderer &renderer)
 			.at(player.getPortraitID());
 		const auto &status = textureManager.getTextures(
 			TextureFile::fromName(TextureName::StatusGradients)).at(0);
-		renderer.drawToOriginal(status.get(), 14, 166);
-		renderer.drawToOriginal(portrait.get(), 14, 166);
+		renderer.drawOriginal(status.get(), 14, 166);
+		renderer.drawOriginal(portrait.get(), 14, 166);
 
 		// If the player's class can't use magic, show the darkened spell icon.
 		if (!player.getCharacterClass().canCastMagic())
 		{
 			const auto &nonMagicIcon = textureManager.getTexture(
 				TextureFile::fromName(TextureName::NoSpell));
-			renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
+			renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
 		}
 
 		// Draw text: player name.
-		renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
+		renderer.drawOriginal(this->playerNameTextBox->getTexture(),
 			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
 		// Check if the mouse is over one of the buttons for tooltips.
@@ -1410,8 +1406,8 @@ void GameWorldPanel::render(Renderer &renderer)
 				triggerTextBox.getSurface()->h - 2;
 		}();
 
-		renderer.drawToOriginal(triggerTextBox.getShadowTexture(), centerX - 1, centerY);
-		renderer.drawToOriginal(triggerTextBox.getTexture(), centerX, centerY);
+		renderer.drawOriginal(triggerTextBox.getShadowTexture(), centerX - 1, centerY);
+		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 
 	// To do: draw "action text" and "effect text" (similar to trigger text).
@@ -1422,11 +1418,5 @@ void GameWorldPanel::render(Renderer &renderer)
 		this->drawDebugText(renderer);
 	}
 
-	// Scale the original frame buffer onto the native one.
-	// - This shouldn't be done for the game world interface because it needs to clamp 
-	//   to the screen edges, not the letterbox edges. Fix this eventually... again.
-	renderer.drawOriginalToNative();
-
-	// Set the transparency blending back to normal (off).
-	renderer.useTransparencyBlending(false);
+	// To do: clamp game world interface to screen edges, not letterbox edges.
 }

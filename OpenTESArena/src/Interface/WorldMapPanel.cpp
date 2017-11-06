@@ -126,8 +126,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -137,8 +136,5 @@ void WorldMapPanel::render(Renderer &renderer)
 	const auto &mapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::WorldMap), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mapBackground.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(mapBackground.get());
 }

@@ -384,8 +384,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 void PauseMenuPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -394,12 +393,12 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw pause background.
 	const auto &pauseBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PauseBackground));
-	renderer.drawToOriginal(pauseBackground.get());
+	renderer.drawOriginal(pauseBackground.get());
 
 	// Draw game world interface below the pause menu.
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
-	renderer.drawToOriginal(gameInterface.get(), 0,
+	renderer.drawOriginal(gameInterface.get(), 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
@@ -410,36 +409,33 @@ void PauseMenuPanel::render(Renderer &renderer)
 		.at(player.getPortraitID());
 	const auto &status = textureManager.getTextures(
 		TextureFile::fromName(TextureName::StatusGradients)).at(0);
-	renderer.drawToOriginal(status.get(), 14, 166);
-	renderer.drawToOriginal(portrait.get(), 14, 166);
+	renderer.drawOriginal(status.get(), 14, 166);
+	renderer.drawOriginal(portrait.get(), 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
 	if (!player.getCharacterClass().canCastMagic())
 	{
 		const auto &nonMagicIcon = textureManager.getTexture(
 			TextureFile::fromName(TextureName::NoSpell));
-		renderer.drawToOriginal(nonMagicIcon.get(), 91, 177);
+		renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
 	}
 
 	// Cover up the detail slider with a new options background.
 	Texture optionsBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->optionsButton->getWidth(), this->optionsButton->getHeight(),
 		textureManager, renderer));
-	renderer.drawToOriginal(optionsBackground.get(), this->optionsButton->getX(),
+	renderer.drawOriginal(optionsBackground.get(), this->optionsButton->getX(),
 		this->optionsButton->getY());
 
 	// Draw text: player's name, music volume, sound volume, options.
-	renderer.drawToOriginal(this->playerNameTextBox->getTexture(),
+	renderer.drawOriginal(this->playerNameTextBox->getTexture(),
 		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawToOriginal(this->musicTextBox->getTexture(),
+	renderer.drawOriginal(this->musicTextBox->getTexture(),
 		this->musicTextBox->getX(), this->musicTextBox->getY());
-	renderer.drawToOriginal(this->soundTextBox->getTexture(),
+	renderer.drawOriginal(this->soundTextBox->getTexture(),
 		this->soundTextBox->getX(), this->soundTextBox->getY());
-	renderer.drawToOriginal(this->optionsTextBox->getShadowTexture(),
+	renderer.drawOriginal(this->optionsTextBox->getShadowTexture(),
 		this->optionsTextBox->getX() - 1, this->optionsTextBox->getY() + 1);
-	renderer.drawToOriginal(this->optionsTextBox->getTexture(),
+	renderer.drawOriginal(this->optionsTextBox->getTexture(),
 		this->optionsTextBox->getX(), this->optionsTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

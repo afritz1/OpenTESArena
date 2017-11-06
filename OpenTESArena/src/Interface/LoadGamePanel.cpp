@@ -79,8 +79,7 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 void LoadGamePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -89,8 +88,5 @@ void LoadGamePanel::render(Renderer &renderer)
 	// Draw slots background.
 	const auto &slotsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::LoadSave));
-	renderer.drawToOriginal(slotsBackground.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(slotsBackground.get());
 }

@@ -71,8 +71,7 @@ void CinematicPanel::tick(double dt)
 void CinematicPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Get a reference to all images in the sequence.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -81,8 +80,5 @@ void CinematicPanel::render(Renderer &renderer)
 
 	// Draw image.
 	const auto &texture = textures.at(this->imageIndex);
-	renderer.drawToOriginal(texture.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(texture.get());
 }

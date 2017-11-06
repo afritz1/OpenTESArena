@@ -203,14 +203,13 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 void ChooseRacePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -220,13 +219,13 @@ void ChooseRacePanel::render(Renderer &renderer)
 	const auto &raceSelectMap = textureManager.getTexture(
 		TextureFile::fromName(TextureName::RaceSelect), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(raceSelectMap.get());
+	renderer.drawOriginal(raceSelectMap.get());
 
 	// Arena just covers up the "exit" text at the bottom right.
 	const auto &exitCover = textureManager.getTexture(
 		TextureFile::fromName(TextureName::NoExit),
 		TextureFile::fromName(TextureName::RaceSelect));
-	renderer.drawToOriginal(exitCover.get(),
+	renderer.drawOriginal(exitCover.get(),
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
 
@@ -250,7 +249,4 @@ void ChooseRacePanel::render(Renderer &renderer)
 			this->drawProvinceTooltip(provinceID, renderer);
 		}
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

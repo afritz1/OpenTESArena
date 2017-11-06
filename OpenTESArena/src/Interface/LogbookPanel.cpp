@@ -103,8 +103,7 @@ void LogbookPanel::handleEvent(const SDL_Event &e)
 void LogbookPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -114,12 +113,9 @@ void LogbookPanel::render(Renderer &renderer)
 	const auto &logbookBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Logbook),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(logbookBackground.get());
+	renderer.drawOriginal(logbookBackground.get());
 
 	// Draw text: title.
-	renderer.drawToOriginal(this->titleTextBox->getTexture(),
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

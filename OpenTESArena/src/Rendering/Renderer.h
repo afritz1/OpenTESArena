@@ -34,7 +34,7 @@ private:
 
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	SDL_Texture *nativeTexture, *originalTexture, *gameWorldTexture; // Frame buffers.
+	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	std::unique_ptr<SoftwareRenderer> softwareRenderer; // 3D renderer.
 	double letterboxAspect;
 	bool fullGameWindow; // Determines height of 3D frame buffer.
@@ -111,11 +111,6 @@ public:
 	// Teleports the mouse to a location in the window.
 	void warpMouse(int x, int y);
 
-	// Tells the original frame buffer whether to blend with transparency when 
-	// copying to the native frame buffer. This might be an expensive operation,
-	// so only set it to true when the original frame buffer needs transparency.
-	void useTransparencyBlending(bool blend);
-
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
@@ -146,22 +141,19 @@ public:
 	void removeLight(int id);
 	void removeAllWorldTextures();
 
-	// Fills the desired frame buffer with the draw color, or default black/transparent.
-	void clearNative(const Color &color);
-	void clearNative();
+	// Fills the native frame buffer with the draw color, or default black/transparent.
+	void clear(const Color &color);
+	void clear();
 	void clearOriginal(const Color &color);
 	void clearOriginal();
 
 	// Wrapper methods for some SDL draw functions.
-	void drawNativePixel(const Color &color, int x, int y);
-	void drawNativeLine(const Color &color, int x1, int y1, int x2, int y2);
-	void drawNativeRect(const Color &color, int x, int y, int w, int h);
-	void drawOriginalPixel(const Color &color, int x, int y);
-	void drawOriginalLine(const Color &color, int x1, int y1, int x2, int y2);
-	void drawOriginalRect(const Color &color, int x, int y, int w, int h);
+	void drawPixel(const Color &color, int x, int y);
+	void drawLine(const Color &color, int x1, int y1, int x2, int y2);
+	void drawRect(const Color &color, int x, int y, int w, int h);
 
 	// Wrapper methods for some SDL fill functions.
-	void fillNativeRect(const Color &color, int x, int y, int w, int h);
+	void fillRect(const Color &color, int x, int y, int w, int h);
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
@@ -175,19 +167,15 @@ public:
 		const Int2 &mousePosition, double scale);
 
 	// Draw methods for the native and original frame buffers.
-	void drawToNative(SDL_Texture *texture, int x, int y, int w, int h);
-	void drawToNative(SDL_Texture *texture, int x, int y);
-	void drawToNative(SDL_Texture *texture);
-	void drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h);
-	void drawToOriginal(SDL_Texture *texture, int x, int y);
-	void drawToOriginal(SDL_Texture *texture);
+	void draw(SDL_Texture *texture, int x, int y, int w, int h);
+	void draw(SDL_Texture *texture, int x, int y);
+	void draw(SDL_Texture *texture);
+	void drawOriginal(SDL_Texture *texture, int x, int y, int w, int h);
+	void drawOriginal(SDL_Texture *texture, int x, int y);
+	void drawOriginal(SDL_Texture *texture);
 
 	// Stretches a texture over the entire native frame buffer.
-	void fillNative(SDL_Texture *texture);
-
-	// Scales and copies the original frame buffer onto the native frame buffer.
-	// If Renderer::useTransparencyBlending() is set to true, it also uses blending.
-	void drawOriginalToNative();
+	void fill(SDL_Texture *texture);
 
 	// Refreshes the displayed frame buffer.
 	void present();

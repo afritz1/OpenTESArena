@@ -181,14 +181,13 @@ void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &re
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 void ChooseClassCreationPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -198,7 +197,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background.get());
+	renderer.drawOriginal(background.get());
 
 	// Draw parchments: title, generate, select.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
@@ -206,16 +205,16 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
 		(this->parchment.getHeight() / 2) + 1;
 
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, generate, select.
-	renderer.drawToOriginal(this->titleTextBox->getTexture(),
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->generateTextBox->getTexture(),
+	renderer.drawOriginal(this->generateTextBox->getTexture(),
 		this->generateTextBox->getX(), this->generateTextBox->getY());
-	renderer.drawToOriginal(this->selectTextBox->getTexture(),
+	renderer.drawOriginal(this->selectTextBox->getTexture(),
 		this->selectTextBox->getX(), this->selectTextBox->getY());
 
 	// Check if the mouse is hovered over one of the boxes for tooltips.
@@ -231,7 +230,4 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	{
 		this->drawTooltip("Choose from a list", renderer);
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

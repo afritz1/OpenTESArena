@@ -96,8 +96,7 @@ void ImageSequencePanel::tick(double dt)
 void ImageSequencePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	auto &textureManager = this->getGame()->getTextureManager();
 
@@ -105,8 +104,5 @@ void ImageSequencePanel::render(Renderer &renderer)
 	const auto &image = textureManager.getTexture(
 		this->textureNames.at(this->imageIndex),
 		this->paletteNames.at(this->imageIndex));
-	renderer.drawToOriginal(image.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(image.get());
 }

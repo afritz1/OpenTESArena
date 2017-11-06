@@ -736,7 +736,7 @@ void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
@@ -842,8 +842,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 void OptionsPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -856,53 +855,53 @@ void OptionsPanel::render(Renderer &renderer)
 	const auto &arrows = textureManager.getTexture(
 		TextureFile::fromName(TextureName::UpDown),
 		PaletteFile::fromName(PaletteName::CharSheet));
-	renderer.drawToOriginal(arrows.get(), this->fpsUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->fpsUpButton->getX(),
 		this->fpsUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->resolutionScaleUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->resolutionScaleUpButton->getX(),
 		this->resolutionScaleUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->verticalFOVUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->verticalFOVUpButton->getX(),
 		this->verticalFOVUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->cursorScaleUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->cursorScaleUpButton->getX(),
 		this->cursorScaleUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->letterboxAspectUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->letterboxAspectUpButton->getX(),
 		this->letterboxAspectUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->hSensitivityUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->hSensitivityUpButton->getX(),
 		this->hSensitivityUpButton->getY());
-	renderer.drawToOriginal(arrows.get(), this->vSensitivityUpButton->getX(),
+	renderer.drawOriginal(arrows.get(), this->vSensitivityUpButton->getX(),
 		this->vSensitivityUpButton->getY());
 
 	Texture playerInterfaceBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->playerInterfaceButton->getWidth(), this->playerInterfaceButton->getHeight(),
 		textureManager, renderer));
-	renderer.drawToOriginal(playerInterfaceBackground.get(), this->playerInterfaceButton->getX(),
+	renderer.drawOriginal(playerInterfaceBackground.get(), this->playerInterfaceButton->getX(),
 		this->playerInterfaceButton->getY());
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
 		textureManager, renderer));
-	renderer.drawToOriginal(returnBackground.get(), this->backToPauseButton->getX(),
+	renderer.drawOriginal(returnBackground.get(), this->backToPauseButton->getX(),
 		this->backToPauseButton->getY());
 
 	// Draw text.
-	renderer.drawToOriginal(this->titleTextBox->getTexture(),
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->backToPauseTextBox->getTexture(),
+	renderer.drawOriginal(this->backToPauseTextBox->getTexture(),
 		this->backToPauseTextBox->getX(), this->backToPauseTextBox->getY());
-	renderer.drawToOriginal(this->fpsTextBox->getTexture(),
+	renderer.drawOriginal(this->fpsTextBox->getTexture(),
 		this->fpsTextBox->getX(), this->fpsTextBox->getY());
-	renderer.drawToOriginal(this->resolutionScaleTextBox->getTexture(),
+	renderer.drawOriginal(this->resolutionScaleTextBox->getTexture(),
 		this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY());
-	renderer.drawToOriginal(this->playerInterfaceTextBox->getTexture(),
+	renderer.drawOriginal(this->playerInterfaceTextBox->getTexture(),
 		this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY());
-	renderer.drawToOriginal(this->verticalFOVTextBox->getTexture(),
+	renderer.drawOriginal(this->verticalFOVTextBox->getTexture(),
 		this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY());
-	renderer.drawToOriginal(this->cursorScaleTextBox->getTexture(),
+	renderer.drawOriginal(this->cursorScaleTextBox->getTexture(),
 		this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY());
-	renderer.drawToOriginal(this->letterboxAspectTextBox->getTexture(),
+	renderer.drawOriginal(this->letterboxAspectTextBox->getTexture(),
 		this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY());
-	renderer.drawToOriginal(this->hSensitivityTextBox->getTexture(),
+	renderer.drawOriginal(this->hSensitivityTextBox->getTexture(),
 		this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY());
-	renderer.drawToOriginal(this->vSensitivityTextBox->getTexture(),
+	renderer.drawOriginal(this->vSensitivityTextBox->getTexture(),
 		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
 
 	const auto &inputManager = this->getGame()->getInputManager();
@@ -928,7 +927,4 @@ void OptionsPanel::render(Renderer &renderer)
 	{
 		this->drawTooltip("Only affects vertical camera look\nin modern interface mode.", renderer);
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

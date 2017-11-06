@@ -153,8 +153,7 @@ void TextCinematicPanel::tick(double dt)
 void TextCinematicPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -165,14 +164,11 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Draw animation.
 	const auto &texture = textures.at(this->imageIndex);
-	renderer.drawToOriginal(texture.get());
+	renderer.drawOriginal(texture.get());
 
 	// Get the relevant text box.
 	const auto &textBox = this->textBoxes.at(this->textIndex);
 
 	// Draw text.
-	renderer.drawToOriginal(textBox->getTexture(), textBox->getX(), textBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(textBox->getTexture(), textBox->getX(), textBox->getY());
 }

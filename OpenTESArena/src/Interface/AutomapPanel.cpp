@@ -358,7 +358,7 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 void AutomapPanel::tick(double dt)
@@ -369,8 +369,7 @@ void AutomapPanel::tick(double dt)
 void AutomapPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -380,10 +379,11 @@ void AutomapPanel::render(Renderer &renderer)
 	const auto &automapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Automap),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(automapBackground.get());
+	renderer.drawOriginal(automapBackground.get());
 
 	// Only draw the part of the automap within the drawing area.
-	renderer.setClipRect(DrawingArea.getRect());
+	const Rect nativeDrawingArea = renderer.originalRectToNative(DrawingArea);
+	renderer.setClipRect(nativeDrawingArea.getRect());
 
 	// Draw automap. Remember that +X is north and +Z is east (aliased as Y), and that
 	// the map texture is scaled by 3 (for the 3x3 player pixel).
@@ -392,15 +392,15 @@ void AutomapPanel::render(Renderer &renderer)
 	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
 	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY - 
 		this->mapTexture.getHeight();
-	renderer.drawToOriginal(this->mapTexture.get(), mapX, mapY);
+	renderer.drawOriginal(this->mapTexture.get(), mapX, mapY);
 
 	// Reset renderer clipping to normal.
 	renderer.setClipRect(nullptr);
 
 	// Draw text: title.
-	renderer.drawToOriginal(this->locationTextBox->getShadowTexture(),
+	renderer.drawOriginal(this->locationTextBox->getShadowTexture(),
 		this->locationTextBox->getX() + 2, this->locationTextBox->getY() + 2);
-	renderer.drawToOriginal(this->locationTextBox->getTexture(),
+	renderer.drawOriginal(this->locationTextBox->getTexture(),
 		this->locationTextBox->getX(), this->locationTextBox->getY());
 
 	// Check if the mouse is over the compass directions for tooltips.
@@ -424,7 +424,4 @@ void AutomapPanel::render(Renderer &renderer)
 	{
 		this->drawTooltip("Right", renderer);
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

@@ -56,17 +56,10 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	DebugAssert(this->nativeTexture != nullptr, 
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
-	// Initialize 320x200 frame buffer.
-	this->originalTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_TARGET, Renderer::ORIGINAL_WIDTH, Renderer::ORIGINAL_HEIGHT);
-
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	this->gameWorldTexture = nullptr;
 	this->softwareRenderer = nullptr;
 	this->fullGameWindow = false;
-
-	// Set the original frame buffer to not use transparency by default.
-	this->useTransparencyBlending(false);
 }
 
 Renderer::~Renderer()
@@ -368,13 +361,6 @@ void Renderer::warpMouse(int x, int y)
 	SDL_WarpMouseInWindow(this->window, x, y);
 }
 
-void Renderer::useTransparencyBlending(bool blend)
-{
-	int status = SDL_SetTextureBlendMode(this->originalTexture,
-		blend ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE);
-	DebugAssert(status == 0, "Couldn't set blending mode, " + std::string(SDL_GetError()));
-}
-
 void Renderer::setClipRect(const SDL_Rect *rect)
 {
 	SDL_RenderSetClipRect(this->renderer, rect);
@@ -477,45 +463,47 @@ void Renderer::removeAllWorldTextures()
 	this->softwareRenderer->removeAllTextures();
 }
 
-void Renderer::clearNative(const Color &color)
+void Renderer::clear(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderClear(this->renderer);
 }
 
-void Renderer::clearNative()
+void Renderer::clear()
 {
-	this->clearNative(Color::Black);
+	this->clear(Color::Black);
 }
 
 void Renderer::clearOriginal(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderClear(this->renderer);
+
+	const SDL_Rect rect = this->getLetterboxDimensions();
+	SDL_RenderFillRect(this->renderer, &rect);
 }
 
 void Renderer::clearOriginal()
 {
-	this->clearOriginal(Color::Transparent);
+	this->clearOriginal(Color::Black);
 }
 
-void Renderer::drawNativePixel(const Color &color, int x, int y)
+void Renderer::drawPixel(const Color &color, int x, int y)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawPoint(this->renderer, x, y);
 }
 
-void Renderer::drawNativeLine(const Color &color, int x1, int y1, int x2, int y2)
+void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
 }
 
-void Renderer::drawNativeRect(const Color &color, int x, int y, int w, int h)
+void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
@@ -529,35 +517,7 @@ void Renderer::drawNativeRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderDrawRect(this->renderer, &rect);
 }
 
-void Renderer::drawOriginalPixel(const Color &color, int x, int y)
-{
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderDrawPoint(this->renderer, x, y);
-}
-
-void Renderer::drawOriginalLine(const Color &color, int x1, int y1, int x2, int y2)
-{
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
-}
-
-void Renderer::drawOriginalRect(const Color &color, int x, int y, int w, int h)
-{
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-
-	SDL_Rect rect;
-	rect.x = x;
-	rect.y = y;
-	rect.w = w;
-	rect.h = h;
-
-	SDL_RenderDrawRect(this->renderer, &rect);
-}
-
-void Renderer::fillNativeRect(const Color &color, int x, int y, int w, int h)
+void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
@@ -573,16 +533,11 @@ void Renderer::fillNativeRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
-	SDL_Rect rect;
-	rect.x = x;
-	rect.y = y;
-	rect.w = w;
-	rect.h = h;
-
-	SDL_RenderFillRect(this->renderer, &rect);
+	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
+	SDL_RenderFillRect(this->renderer, rect.getRect());
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
@@ -611,7 +566,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	// Now copy to the native frame buffer (stretching if needed).
 	const int screenWidth = this->getWindowDimensions().x;
 	const int viewHeight = this->getViewHeight();
-	this->drawToNative(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
+	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
 }
 
 void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
@@ -672,14 +627,14 @@ void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
 		return Int2(xOffset, yOffset);
 	}();
 
-	this->drawToNative(cursor,
+	this->draw(cursor,
 		mousePosition.x - cursorOffset.x,
 		mousePosition.y - cursorOffset.y,
 		scaledWidth,
 		scaledHeight);
 }
 
-void Renderer::drawToNative(SDL_Texture *texture, int x, int y, int w, int h)
+void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 
@@ -692,60 +647,47 @@ void Renderer::drawToNative(SDL_Texture *texture, int x, int y, int w, int h)
 	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 }
 
-void Renderer::drawToNative(SDL_Texture *texture, int x, int y)
+void Renderer::draw(SDL_Texture *texture, int x, int y)
 {
 	int width, height;
 	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
 
-	this->drawToNative(texture, x, y, width, height);
+	this->draw(texture, x, y, width, height);
 }
 
-void Renderer::drawToNative(SDL_Texture *texture)
+void Renderer::draw(SDL_Texture *texture)
 {
-	this->drawToNative(texture, 0, 0);
+	this->draw(texture, 0, 0);
 }
 
-void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y, int w, int h)
+void Renderer::drawOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->originalTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	
+	// The given coordinates and dimensions are in 320x200 space, so transform them
+	// to native space.
+	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
 
-	SDL_Rect rect;
-	rect.x = x;
-	rect.y = y;
-	rect.w = w;
-	rect.h = h;
-
-	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
+	SDL_RenderCopy(this->renderer, texture, nullptr, rect.getRect());
 }
 
-void Renderer::drawToOriginal(SDL_Texture *texture, int x, int y)
+void Renderer::drawOriginal(SDL_Texture *texture, int x, int y)
 {
 	int width, height;
 	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
 
-	this->drawToOriginal(texture, x, y, width, height);
+	this->drawOriginal(texture, x, y, width, height);
 }
 
-void Renderer::drawToOriginal(SDL_Texture *texture)
+void Renderer::drawOriginal(SDL_Texture *texture)
 {
-	this->drawToOriginal(texture, 0, 0);
+	this->drawOriginal(texture, 0, 0);
 }
 
-void Renderer::fillNative(SDL_Texture *texture)
+void Renderer::fill(SDL_Texture *texture)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_RenderCopy(this->renderer, texture, nullptr, nullptr);
-}
-
-void Renderer::drawOriginalToNative()
-{
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-
-	// The original frame buffer should always be cleared with a fully transparent 
-	// color, not just black.
-
-	SDL_Rect rect = this->getLetterboxDimensions();
-	SDL_RenderCopy(this->renderer, this->originalTexture, nullptr, &rect);
 }
 
 void Renderer::present()

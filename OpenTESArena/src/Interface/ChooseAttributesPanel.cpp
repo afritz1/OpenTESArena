@@ -309,8 +309,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 void ChooseAttributesPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -337,24 +336,21 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const auto &body = textureManager.getTexture(bodyFilename);
 	const auto &shirt = textureManager.getTexture(shirtFilename);
 	const auto &pants = textureManager.getTexture(pantsFilename);
-	renderer.drawToOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawToOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
-	renderer.drawToOriginal(head.get(), headOffset.x, headOffset.y);
-	renderer.drawToOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
+	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw attributes texture.
 	const auto &attributesBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterStats));
-	renderer.drawToOriginal(attributesBackground.get());
+	renderer.drawOriginal(attributesBackground.get());
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawToOriginal(this->nameTextBox->getTexture(),
+	renderer.drawOriginal(this->nameTextBox->getTexture(),
 		this->nameTextBox->getX(), this->nameTextBox->getY());
-	renderer.drawToOriginal(this->raceTextBox->getTexture(),
+	renderer.drawOriginal(this->raceTextBox->getTexture(),
 		this->raceTextBox->getX(), this->raceTextBox->getY());
-	renderer.drawToOriginal(this->classTextBox->getTexture(),
+	renderer.drawOriginal(this->classTextBox->getTexture(),
 		this->classTextBox->getX(), this->classTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

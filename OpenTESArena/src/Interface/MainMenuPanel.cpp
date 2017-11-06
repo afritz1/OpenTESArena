@@ -230,8 +230,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 void MainMenuPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -241,8 +240,5 @@ void MainMenuPanel::render(Renderer &renderer)
 	const auto &mainMenu = textureManager.getTexture(
 		TextureFile::fromName(TextureName::MainMenu), 
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mainMenu.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(mainMenu.get());
 }

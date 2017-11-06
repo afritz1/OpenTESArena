@@ -238,8 +238,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 void ChooseNamePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -249,19 +248,16 @@ void ChooseNamePanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background.get());
+	renderer.drawOriginal(background.get());
 
 	// Draw parchment: title.
-	renderer.drawToOriginal(this->parchment.get(),
+	renderer.drawOriginal(this->parchment.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2),
 		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2));
 
 	// Draw text: title, name.
-	renderer.drawToOriginal(this->titleTextBox->getTexture(),
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->nameTextBox->getTexture(),
+	renderer.drawOriginal(this->nameTextBox->getTexture(),
 		this->nameTextBox->getX(), this->nameTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

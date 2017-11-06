@@ -60,16 +60,12 @@ void ImagePanel::tick(double dt)
 void ImagePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	auto &textureManager = this->getGame()->getTextureManager();
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(
 		this->textureName, this->paletteName);
-	renderer.drawToOriginal(image.get());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
+	renderer.drawOriginal(image.get());
 }

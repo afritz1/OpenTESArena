@@ -165,8 +165,7 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 void ChooseGenderPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -176,25 +175,22 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background.get());
+	renderer.drawOriginal(background.get());
 
 	// Draw parchments: title, male, and female.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -
 		(this->parchment.getWidth() / 2);
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) -
 		(this->parchment.getHeight() / 2);
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
-	renderer.drawToOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
+	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
 
 	// Draw text: title, male, and female.
-	renderer.drawToOriginal(this->genderTextBox->getTexture(),
+	renderer.drawOriginal(this->genderTextBox->getTexture(),
 		this->genderTextBox->getX(), this->genderTextBox->getY());
-	renderer.drawToOriginal(this->maleTextBox->getTexture(),
+	renderer.drawOriginal(this->maleTextBox->getTexture(),
 		this->maleTextBox->getX(), this->maleTextBox->getY());
-	renderer.drawToOriginal(this->femaleTextBox->getTexture(),
+	renderer.drawOriginal(this->femaleTextBox->getTexture(),
 		this->femaleTextBox->getX(), this->femaleTextBox->getY());
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

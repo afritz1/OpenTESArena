@@ -404,14 +404,13 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 void ChooseClassPanel::render(Renderer &renderer)
 {
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -421,19 +420,19 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(background.get());
+	renderer.drawOriginal(background.get());
 
 	// Draw list pop-up.
 	const auto &listPopUp = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PopUp2),
 		TextureFile::fromName(TextureName::CharacterCreation));
-	renderer.drawToOriginal(listPopUp.get(), 55, 9,
+	renderer.drawOriginal(listPopUp.get(), 55, 9,
 		listPopUp.getWidth(), listPopUp.getHeight());
 
 	// Draw text: title, list.
-	renderer.drawToOriginal(this->titleTextBox->getTexture(),
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawToOriginal(this->classesListBox->getTexture(),
+	renderer.drawOriginal(this->classesListBox->getTexture(),
 		this->classesListBox->getPoint().x,
 		this->classesListBox->getPoint().y);
 
@@ -450,7 +449,4 @@ void ChooseClassPanel::render(Renderer &renderer)
 			this->drawClassTooltip(index, renderer);
 		}
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }

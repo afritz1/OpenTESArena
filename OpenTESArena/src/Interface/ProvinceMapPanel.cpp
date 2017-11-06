@@ -187,7 +187,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
-	renderer.drawToOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip.get(), x, y);
 }
 
 void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &center,
@@ -209,8 +209,8 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 	const int y = std::max(std::min(textBox.getY(),
 		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h), 0);
 	
-	renderer.drawToOriginal(textBox.getShadowTexture(), x + 1, y);
-	renderer.drawToOriginal(textBox.getTexture(), x, y);
+	renderer.drawOriginal(textBox.getShadowTexture(), x + 1, y);
+	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
 
 void ProvinceMapPanel::render(Renderer &renderer)
@@ -218,8 +218,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	assert(this->getGame()->gameDataIsActive());
 
 	// Clear full screen.
-	renderer.clearNative();
-	renderer.clearOriginal();
+	renderer.clear();
 
 	// Set palette.
 	auto &textureManager = this->getGame()->getTextureManager();
@@ -239,7 +238,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
 		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
-	renderer.drawToOriginal(mapBackground.get());
+	renderer.drawOriginal(mapBackground.get());
 
 	// Draw location icons, and find which place is closest to the mouse cursor.
 	// Ignore locations with no name (ones that are zeroed out in the center province).
@@ -278,7 +277,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		{
 			const Int2 point(location.x, location.y);
 
-			renderer.drawToOriginal(icon.get(),
+			renderer.drawOriginal(icon.get(),
 				point.x - (icon.getWidth() / 2),
 				point.y - (icon.getHeight() / 2));
 
@@ -331,7 +330,4 @@ void ProvinceMapPanel::render(Renderer &renderer)
 			this->drawButtonTooltip(pair.first, renderer);
 		}
 	}
-
-	// Scale the original frame buffer onto the native one.
-	renderer.drawOriginalToNative();
 }
