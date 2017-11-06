@@ -333,7 +333,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 								textureIndex, 
 								0, 
 								0, 
-								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
+								0.0, ceilingHeight, 0.0, 1.0, VoxelType::TransparentWall));
 							return wallDataMappings.insert(
 								std::make_pair(map1Voxel, index)).first->second;
 						}
@@ -344,6 +344,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 				else if (mostSigNibble == 0xA)
 				{
 					// Transparent block with 2-sided texture on one side (i.e., fence).
+					// - This will use "VoxelType::TransparentEdge".
 					// To do.
 				}
 				else if (mostSigNibble == 0xB)

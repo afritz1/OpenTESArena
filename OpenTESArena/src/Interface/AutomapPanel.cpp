@@ -26,8 +26,10 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
+#include "../Utilities/Debug.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 
 namespace
 {
@@ -42,12 +44,16 @@ namespace
 
 	// Colors for automap pixels. Ground pixels (y == 0) are transparent.
 	const Color AutomapPlayer(247, 255, 0);
+	const Color AutomapFloor(0, 0, 0, 0);
 	const Color AutomapWall(130, 89, 48);
+	const Color AutomapRaised(97, 85, 60);
 	const Color AutomapDoor(146, 0, 0);
-	const Color AutomapFloorUp(0, 105, 0);
-	const Color AutomapFloorDown(0, 0, 255);
-	const Color AutomapWater(109, 138, 174);
-	const Color AutomapLava(255, 0, 0);
+	const Color AutomapLevelUp(0, 105, 0);
+	const Color AutomapLevelDown(0, 0, 255);
+	const Color AutomapDryChasm(20, 40, 40);
+	const Color AutomapWetChasm(109, 138, 174);
+	const Color AutomapLavaChasm(255, 0, 0);
+	const Color AutomapNotImplemented(255, 0, 255);
 
 	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
 	// These are offsets from the top-left corner of the 3x3 map pixel that the player 
@@ -110,34 +116,11 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 			voxelGrid.getDepth() * 3, voxelGrid.getWidth() * 3, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 
-		// Fill with transparent color first.
-		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
-
-		// Lambda for returning the Y coordinate of the highest non-air voxel in a column.
-		auto getYHitFloor = [&voxelGrid](int x, int z)
-		{
-			const char *voxels = voxelGrid.getVoxels();
-
-			// To do: see if the map is actually drawn from low to high instead of high to low.
-			for (int y = 1; y >= 0; --y)
-			{
-				const int index = x + (y * voxelGrid.getWidth()) +
-					(z * voxelGrid.getWidth() * voxelGrid.getHeight());
-
-				// If not air, then get the Y coordinate.
-				if (voxels[index] != 0)
-				{
-					return y;
-				}
-			}
-
-			// No solid voxel was hit, so return below the ground floor.
-			// - Perhaps the voxel grid should store the "kind" of water (i.e., lava)?
-			return -1;
-		};
-
-		// Lambda for filling a square in the map surface.
-		auto drawSquare = [surface](int x, int z, uint32_t color)
+		// Fill with transparent color first (used by floor voxels).
+		SDL_FillRect(surface, nullptr, AutomapFloor.toARGB());
+		
+		// Lambda for filling in a square in the map surface.
+		auto drawSquare = [surface](int x, int z, const Color &color)
 		{
 			SDL_Rect rect;
 			rect.x = z * 3;
@@ -145,34 +128,97 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 			rect.w = 3;
 			rect.h = 3;
 
-			SDL_FillRect(surface, &rect, color);
+			SDL_FillRect(surface, &rect, color.toARGB());
 		};
 
-		// For each voxel, walk from the highest Y to the lowest. The color depends 
-		// on the final height that was reached (y == -1 is water/lava, 0 is ground, etc.).
-		for (int x = 0; x < voxelGrid.getWidth(); ++x)
+		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
 		{
-			for (int z = 0; z < voxelGrid.getDepth(); ++z)
+			const char *voxels = voxelGrid.getVoxels();
+			const char id = voxels[x + (y * voxelGrid.getWidth()) +
+				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
+			return voxelGrid.getVoxelData(id);
+		};
+
+		// For each voxel, start at the lowest Y and walk upwards. The color depends 
+		// on a couple factors, like whether the voxel is a wall, a door, water, etc.,
+		// and some context-sensitive cases like whether a dry chasm has a wall
+		// over it.
+		for (int x = 0; x < voxelGrid.getWidth(); x++)
+		{
+			for (int z = 0; z < voxelGrid.getDepth(); z++)
 			{
-				const int yFloor = getYHitFloor(x, z);
+				const VoxelData &floorData = getVoxelData(x, 0, z);
+				const VoxelData &wallData = getVoxelData(x, 1, z);
+				const VoxelType floorType = floorData.type;
+				const VoxelType wallType = wallData.type;
 
-				// Decide which color the pixel will be. Do nothing if ground (y == 0), because
-				// the ground color is transparent.
-				if (yFloor == -1)
+				// Decide which color to use for the automap pixel.
+				const Color &color = [floorType, wallType]() -> const Color&
 				{
-					// Water/lava.
-					drawSquare(x, z, AutomapWater.toARGB());
-				}
-				else if (yFloor > 0)
-				{
-					// Wall.
-					drawSquare(x, z, AutomapWall.toARGB());
-				}
+					if (floorType == VoxelType::WetChasm)
+					{
+						// Water chasms ignore all but raised platforms.
+						return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
+					}
+					else if (floorType == VoxelType::LavaChasm)
+					{
+						// Lava chasms ignore all but raised platforms.
+						return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
+					}
+					else if (floorType == VoxelType::DryChasm)
+					{
+						// Dry chasms are a different color if a wall is over them.
+						return (wallType == VoxelType::Solid) ? AutomapRaised : AutomapDryChasm;
+					}
+					else if (floorType == VoxelType::Solid)
+					{
+						// If nothing is over the floor, return transparent. Otherwise, choose
+						// from a number of cases.
+						if (wallType == VoxelType::Empty)
+						{
+							return AutomapFloor;
+						}
+						else if (wallType == VoxelType::Solid)
+						{
+							return AutomapWall;
+						}
+						else if (wallType == VoxelType::Raised)
+						{
+							return AutomapRaised;
+						}
+						else if (wallType == VoxelType::Door)
+						{
+							return AutomapDoor;
+						}
+						else if (wallType == VoxelType::TransparentWall)
+						{
+							return AutomapFloor;
+						}
+						else if (wallType == VoxelType::LevelUp)
+						{
+							return AutomapLevelUp;
+						}
+						else if (wallType == VoxelType::LevelDown)
+						{
+							return AutomapLevelDown;
+						}
+						else
+						{
+							DebugMention("Unrecognized wall type \"" +
+								std::to_string(static_cast<int>(wallType)) + "\".");
+							return AutomapNotImplemented;
+						}
+					}
+					else
+					{
+						DebugMention("Unrecognized floor type \"" +
+							std::to_string(static_cast<int>(floorType)) + "\".");
+						return AutomapNotImplemented;
+					}
+				}();
 
-				// To do: Other types eventually (red doors, blue/green stairs, ...). Some
-				// voxels have priority even if they are between voxels in a column, so this
-				// drawing loop will eventually need to find the highest priority color instead 
-				// of the first hit.
+				// Draw the automap pixel.
+				drawSquare(x, z, color);
 			}
 		}
 
