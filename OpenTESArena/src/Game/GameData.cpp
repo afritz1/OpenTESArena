@@ -28,6 +28,7 @@
 #include "../World/ClimateName.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 
 // Arbitrary value for testing. One real second = six game minutes.
 // The value used in Arena is one real second = twenty game seconds.
@@ -257,69 +258,71 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// texture index.
 	// - A wall/floor/ceiling ID of 0 indicates air. The "empty voxel" is defined
 	//   as having air for each voxel face, and is ignored during rendering.
-	const int emptyID = voxelGrid.addVoxelData(VoxelData(0));
+	const int emptyID = voxelGrid.addVoxelData(VoxelData(0, VoxelType::Empty));
 
 	// City wall.
-	const int cityWallID = voxelGrid.addVoxelData(VoxelData(1));
+	const int cityWallID = voxelGrid.addVoxelData(VoxelData(1, VoxelType::Solid));
 
 	// Ground (with sea wall).
-	const int gravelID = voxelGrid.addVoxelData(VoxelData(2, 0, 3));
-	const int roadID = voxelGrid.addVoxelData(VoxelData(2, 0, 4));
-	const int grassID = voxelGrid.addVoxelData(VoxelData(2, 0, 5));
+	const int gravelID = voxelGrid.addVoxelData(VoxelData(2, 0, 3, VoxelType::Solid));
+	const int roadID = voxelGrid.addVoxelData(VoxelData(2, 0, 4, VoxelType::Solid));
+	const int grassID = voxelGrid.addVoxelData(VoxelData(2, 0, 5, VoxelType::Solid));
 
 	// Tavern.
-	const int tavern1ID = voxelGrid.addVoxelData(VoxelData(8));
-	const int tavern2ID = voxelGrid.addVoxelData(VoxelData(9));
-	const int tavern3ID = voxelGrid.addVoxelData(VoxelData(10));
-	const int tavernDoorID = voxelGrid.addVoxelData(VoxelData(11));
+	const int tavern1ID = voxelGrid.addVoxelData(VoxelData(8, VoxelType::Solid));
+	const int tavern2ID = voxelGrid.addVoxelData(VoxelData(9, VoxelType::Solid));
+	const int tavern3ID = voxelGrid.addVoxelData(VoxelData(10, VoxelType::Solid));
+	const int tavernDoorID = voxelGrid.addVoxelData(VoxelData(11, VoxelType::Solid));
 
 	// Temple.
-	const int temple1ID = voxelGrid.addVoxelData(VoxelData(12));
-	const int temple2ID = voxelGrid.addVoxelData(VoxelData(13));
-	const int temple3ID = voxelGrid.addVoxelData(VoxelData(14));
-	const int temple4ID = voxelGrid.addVoxelData(VoxelData(15));
-	const int temple5ID = voxelGrid.addVoxelData(VoxelData(16));
-	const int templeDoorID = voxelGrid.addVoxelData(VoxelData(17));
+	const int temple1ID = voxelGrid.addVoxelData(VoxelData(12, VoxelType::Solid));
+	const int temple2ID = voxelGrid.addVoxelData(VoxelData(13, VoxelType::Solid));
+	const int temple3ID = voxelGrid.addVoxelData(VoxelData(14, VoxelType::Solid));
+	const int temple4ID = voxelGrid.addVoxelData(VoxelData(15, VoxelType::Solid));
+	const int temple5ID = voxelGrid.addVoxelData(VoxelData(16, VoxelType::Solid));
+	const int templeDoorID = voxelGrid.addVoxelData(VoxelData(17, VoxelType::Solid));
 
 	// Mage's guild.
-	const int mages1ID = voxelGrid.addVoxelData(VoxelData(18));
-	const int mages2ID = voxelGrid.addVoxelData(VoxelData(19));
-	const int mages3ID = voxelGrid.addVoxelData(VoxelData(20));
-	const int mages4ID = voxelGrid.addVoxelData(VoxelData(21));
-	const int mages5ID = voxelGrid.addVoxelData(VoxelData(22));
-	const int magesDoorID = voxelGrid.addVoxelData(VoxelData(23));
+	const int mages1ID = voxelGrid.addVoxelData(VoxelData(18, VoxelType::Solid));
+	const int mages2ID = voxelGrid.addVoxelData(VoxelData(19, VoxelType::Solid));
+	const int mages3ID = voxelGrid.addVoxelData(VoxelData(20, VoxelType::Solid));
+	const int mages4ID = voxelGrid.addVoxelData(VoxelData(21, VoxelType::Solid));
+	const int mages5ID = voxelGrid.addVoxelData(VoxelData(22, VoxelType::Solid));
+	const int magesDoorID = voxelGrid.addVoxelData(VoxelData(23, VoxelType::Solid));
 
 	// Equipment store.
-	const int equip1ID = voxelGrid.addVoxelData(VoxelData(24));
-	const int equip2ID = voxelGrid.addVoxelData(VoxelData(25));
-	const int equip3ID = voxelGrid.addVoxelData(VoxelData(26));
-	const int equipDoorID = voxelGrid.addVoxelData(VoxelData(27));
+	const int equip1ID = voxelGrid.addVoxelData(VoxelData(24, VoxelType::Solid));
+	const int equip2ID = voxelGrid.addVoxelData(VoxelData(25, VoxelType::Solid));
+	const int equip3ID = voxelGrid.addVoxelData(VoxelData(26, VoxelType::Solid));
+	const int equipDoorID = voxelGrid.addVoxelData(VoxelData(27, VoxelType::Solid));
 
 	// Low house.
-	const int lowHouse1ID = voxelGrid.addVoxelData(VoxelData(28));
-	const int lowHouse2ID = voxelGrid.addVoxelData(VoxelData(29));
-	const int lowHouse3ID = voxelGrid.addVoxelData(VoxelData(30));
-	const int lowHouse4ID = voxelGrid.addVoxelData(VoxelData(31));
-	const int lowHouseDoorID = voxelGrid.addVoxelData(VoxelData(32));
+	const int lowHouse1ID = voxelGrid.addVoxelData(VoxelData(28, VoxelType::Solid));
+	const int lowHouse2ID = voxelGrid.addVoxelData(VoxelData(29, VoxelType::Solid));
+	const int lowHouse3ID = voxelGrid.addVoxelData(VoxelData(30, VoxelType::Solid));
+	const int lowHouse4ID = voxelGrid.addVoxelData(VoxelData(31, VoxelType::Solid));
+	const int lowHouseDoorID = voxelGrid.addVoxelData(VoxelData(32, VoxelType::Solid));
 
 	// Medium house.
-	const int medHouse1ID = voxelGrid.addVoxelData(VoxelData(33));
-	const int medHouse2ID = voxelGrid.addVoxelData(VoxelData(34));
-	const int medHouse3ID = voxelGrid.addVoxelData(VoxelData(35));
-	const int medHouseDoorID = voxelGrid.addVoxelData(VoxelData(36));
+	const int medHouse1ID = voxelGrid.addVoxelData(VoxelData(33, VoxelType::Solid));
+	const int medHouse2ID = voxelGrid.addVoxelData(VoxelData(34, VoxelType::Solid));
+	const int medHouse3ID = voxelGrid.addVoxelData(VoxelData(35, VoxelType::Solid));
+	const int medHouseDoorID = voxelGrid.addVoxelData(VoxelData(36, VoxelType::Solid));
 
 	// Noble house.
-	const int noble1ID = voxelGrid.addVoxelData(VoxelData(37));
-	const int noble2ID = voxelGrid.addVoxelData(VoxelData(38));
-	const int noble3ID = voxelGrid.addVoxelData(VoxelData(39));
-	const int nobleDoorID = voxelGrid.addVoxelData(VoxelData(40));
+	const int noble1ID = voxelGrid.addVoxelData(VoxelData(37, VoxelType::Solid));
+	const int noble2ID = voxelGrid.addVoxelData(VoxelData(38, VoxelType::Solid));
+	const int noble3ID = voxelGrid.addVoxelData(VoxelData(39, VoxelType::Solid));
+	const int nobleDoorID = voxelGrid.addVoxelData(VoxelData(40, VoxelType::Solid));
 
 	// Hedge.
-	const int hedgeID = voxelGrid.addVoxelData(VoxelData(41, 0, 0));
+	const int hedgeID = voxelGrid.addVoxelData(VoxelData(41, 0, 0, VoxelType::Solid));
 
 	// Bridge.
-	const int bridge1ID = voxelGrid.addVoxelData(VoxelData(42, 43, 43, 0.0, 0.125, 0.875, 1.0));
-	const int bridge2ID = voxelGrid.addVoxelData(VoxelData(42, 43, 43, 0.10, 0.125, 0.775, 0.90));
+	const int bridge1ID = voxelGrid.addVoxelData(VoxelData(
+		42, 43, 43, 0.0, 0.125, 0.875, 1.0, VoxelType::Raised));
+	const int bridge2ID = voxelGrid.addVoxelData(VoxelData(
+		42, 43, 43, 0.10, 0.125, 0.775, 0.90, VoxelType::Raised));
 
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)

@@ -12,6 +12,7 @@
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 #include "../World/WorldData.h"
 
 const double Player::HEIGHT = 0.70;
@@ -179,7 +180,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			(y < 0) || (y >= voxelGrid.getHeight()) ||
 			(z < 0) || (z >= voxelGrid.getDepth()))
 		{
-			return VoxelData(0);
+			return VoxelData(0, VoxelType::Empty);
 		}
 		else
 		{

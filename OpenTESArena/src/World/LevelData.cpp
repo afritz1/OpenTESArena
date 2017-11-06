@@ -3,6 +3,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Bytes.h"
+#include "../World/VoxelType.h"
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	: position(position)
@@ -73,7 +74,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	// Max (mapWidth - 1, mapDepth - 1)
 
 	// Empty voxel data (for air).
-	const int emptyID = voxelGrid.addVoxelData(VoxelData(0));
+	const int emptyID = voxelGrid.addVoxelData(VoxelData(0, VoxelType::Empty));
 
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [this](int x, int y, int z, int id)
@@ -142,13 +143,79 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						// To do: Also assign some "seawall" texture for interiors and exteriors.
 						// Retrieve it beforehand from the *...CHASM members and assign here?
 						// Not sure how that works.
-						const int index = this->voxelGrid.addVoxelData(VoxelData(floorTextureID + 1));
+						const int index = this->voxelGrid.addVoxelData(VoxelData(
+							floorTextureID + 1, VoxelType::Solid));
 						return floorDataMappings.insert(
 							std::make_pair(florVoxel, index)).first->second;
 					}
 				}();
 
 				setVoxel(x, 0, z, dataIndex);
+			}
+			else
+			{
+				// Assign voxel types to the empty voxels (i.e., a water voxel is a different
+				// type than a lava voxel).
+				if (floorTextureID == MIFFile::DRY_CHASM)
+				{
+					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
+					{
+						const auto floorIter = floorDataMappings.find(florVoxel);
+						if (floorIter != floorDataMappings.end())
+						{
+							return floorIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::DryChasm));
+							return floorDataMappings.insert(
+								std::make_pair(florVoxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 0, z, dataIndex);
+				}
+				else if (floorTextureID == MIFFile::WET_CHASM)
+				{
+					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
+					{
+						const auto floorIter = floorDataMappings.find(florVoxel);
+						if (floorIter != floorDataMappings.end())
+						{
+							return floorIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::WetChasm));
+							return floorDataMappings.insert(
+								std::make_pair(florVoxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 0, z, dataIndex);
+				}
+				else if (floorTextureID == MIFFile::LAVA_CHASM)
+				{
+					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
+					{
+						const auto floorIter = floorDataMappings.find(florVoxel);
+						if (floorIter != floorDataMappings.end())
+						{
+							return floorIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::LavaChasm));
+							return floorDataMappings.insert(
+								std::make_pair(florVoxel, index)).first->second;
+						}
+					}();
+
+					setVoxel(x, 0, z, dataIndex);
+				}
 			}
 
 			if ((map1Voxel & 0x8000) == 0)
@@ -183,7 +250,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 									wallTextureID,
 									wallTextureID,
 									wallTextureID,
-									0.0, ceilingHeight, 0.0, 1.0));
+									0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
 							}
@@ -224,7 +291,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 									(*inf.getBoxSide(wallTextureID)) + 1,
 									inf.getCeiling().textureIndex + 1,
 									(*inf.getBoxCap(capTextureID)) + 1,
-									0.0, platformHeight, topV, bottomV));
+									0.0, platformHeight, topV, bottomV, VoxelType::Raised));
 								return wallDataMappings.insert(
 									std::make_pair(map1Voxel, index)).first->second;
 							}
@@ -263,7 +330,10 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 							const int textureIndex = map1Voxel & 0x00FF;
 
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								textureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
+								textureIndex, 
+								0, 
+								0, 
+								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
 							return wallDataMappings.insert(
 								std::make_pair(map1Voxel, index)).first->second;
 						}
@@ -291,7 +361,10 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 						{
 							const int doorTextureIndex = map1Voxel & 0x003F;
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								doorTextureIndex, 0, 0, 0.0, ceilingHeight, 0.0, 1.0));
+								doorTextureIndex,
+								0,
+								0,
+								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Door));
 							return wallDataMappings.insert(
 								std::make_pair(map1Voxel, index)).first->second;
 						}
@@ -322,7 +395,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 							const int index = this->voxelGrid.addVoxelData(VoxelData(
 								isRightDiag ? diagTextureIndex : 0,
 								!isRightDiag ? diagTextureIndex : 0,
-								0.0, ceilingHeight, 0.0, 1.0));
+								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Diagonal));
 							return wallDataMappings.insert(
 								std::make_pair(map1Voxel, index)).first->second;
 						}
@@ -365,7 +438,8 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 			(static_cast<double>(ceiling.height) / MIFFile::ARENA_UNITS) - 1.0,
 			1.0,
 			0.0,
-			1.0));
+			1.0,
+			VoxelType::Solid));
 
 		// Set all the ceiling voxels.
 		for (int x = 0; x < gridWidth; x++)

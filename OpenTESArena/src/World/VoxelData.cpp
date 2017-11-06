@@ -1,7 +1,8 @@
 #include "VoxelData.h"
+#include "VoxelType.h"
 
 VoxelData::VoxelData(int sideID, int floorID, int ceilingID, double yOffset, 
-	double ySize, double topV, double bottomV)
+	double ySize, double topV, double bottomV, VoxelType type)
 {
 	this->sideID = sideID;
 	this->floorID = floorID;
@@ -12,13 +13,14 @@ VoxelData::VoxelData(int sideID, int floorID, int ceilingID, double yOffset,
 	this->ySize = ySize;
 	this->topV = topV;
 	this->bottomV = bottomV;
+	this->type = type;
 }
 
-VoxelData::VoxelData(int sideID, int floorID, int ceilingID)
-	: VoxelData(sideID, floorID, ceilingID, 0.0, 1.0, 0.0, 1.0) { }
+VoxelData::VoxelData(int sideID, int floorID, int ceilingID, VoxelType type)
+	: VoxelData(sideID, floorID, ceilingID, 0.0, 1.0, 0.0, 1.0, type) { }
 
 VoxelData::VoxelData(int diag1ID, int diag2ID, double yOffset, double ySize,
-	double topV, double bottomV)
+	double topV, double bottomV, VoxelType type)
 {
 	this->sideID = 0;
 	this->floorID = 0;
@@ -29,13 +31,14 @@ VoxelData::VoxelData(int diag1ID, int diag2ID, double yOffset, double ySize,
 	this->ySize = ySize;
 	this->topV = topV;
 	this->bottomV = bottomV;
+	this->type = type;
 }
 
-VoxelData::VoxelData(int diag1ID, int diag2ID)
-	: VoxelData(diag1ID, diag2ID, 0.0, 1.0, 0.0, 1.0) { }
+VoxelData::VoxelData(int diag1ID, int diag2ID, VoxelType type)
+	: VoxelData(diag1ID, diag2ID, 0.0, 1.0, 0.0, 1.0, type) { }
 
-VoxelData::VoxelData(int id)
-	: VoxelData(id, id, id, 0.0, 1.0, 0.0, 1.0) { }
+VoxelData::VoxelData(int id, VoxelType type)
+	: VoxelData(id, id, id, 0.0, 1.0, 0.0, 1.0, type) { }
 
 VoxelData::~VoxelData()
 {
