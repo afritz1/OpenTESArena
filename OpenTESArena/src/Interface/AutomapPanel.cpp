@@ -186,6 +186,10 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 						{
 							return AutomapRaised;
 						}
+						else if (wallType == VoxelType::Diagonal)
+						{
+							return AutomapFloor;
+						}
 						else if (wallType == VoxelType::Door)
 						{
 							return AutomapDoor;
