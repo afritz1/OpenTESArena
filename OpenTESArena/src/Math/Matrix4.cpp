@@ -6,51 +6,10 @@
 template <typename T>
 Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
 	const Vector4f<T> &w)
-{
-	this->x.x = x.x;
-	this->x.y = x.y;
-	this->x.z = x.z;
-	this->x.w = x.w;
-
-	this->y.x = y.x;
-	this->y.y = y.y;
-	this->y.z = y.z;
-	this->y.w = y.w;
-
-	this->z.x = z.x;
-	this->z.y = z.y;
-	this->z.z = z.z;
-	this->z.w = z.w;
-
-	this->w.x = w.x;
-	this->w.y = w.y;
-	this->w.z = w.z;
-	this->w.w = w.w;
-}
+	: x(x), y(y), z(z), w(w) { }
 
 template <typename T>
-Matrix4<T>::Matrix4()
-{
-	this->x.x = static_cast<T>(0.0);
-	this->x.y = static_cast<T>(0.0);
-	this->x.z = static_cast<T>(0.0);
-	this->x.w = static_cast<T>(0.0);
-
-	this->y.x = static_cast<T>(0.0);
-	this->y.y = static_cast<T>(0.0);
-	this->y.z = static_cast<T>(0.0);
-	this->y.w = static_cast<T>(0.0);
-
-	this->z.x = static_cast<T>(0.0);
-	this->z.y = static_cast<T>(0.0);
-	this->z.z = static_cast<T>(0.0);
-	this->z.w = static_cast<T>(0.0);
-
-	this->w.x = static_cast<T>(0.0);
-	this->w.y = static_cast<T>(0.0);
-	this->w.z = static_cast<T>(0.0);
-	this->w.w = static_cast<T>(0.0);
-}
+Matrix4<T>::Matrix4() { }
 
 template <typename T>
 Matrix4<T>::~Matrix4()

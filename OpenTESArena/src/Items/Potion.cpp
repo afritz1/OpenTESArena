@@ -4,7 +4,6 @@
 #include "Potion.h"
 
 Potion::Potion()
-	: Consumable()
 {
 
 }

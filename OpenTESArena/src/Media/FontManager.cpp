@@ -3,7 +3,6 @@
 #include "FontName.h"
 
 FontManager::FontManager()
-	: fonts()
 {
 	
 }

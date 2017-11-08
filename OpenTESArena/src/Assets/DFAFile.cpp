@@ -8,7 +8,6 @@
 #include "components/vfs/manager.hpp"
 
 DFAFile::DFAFile(const std::string &filename, const Palette &palette)
-	: pixels()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");

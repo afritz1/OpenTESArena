@@ -4,9 +4,8 @@
 ToggleButton::ToggleButton(int x, int y, int width, int height, bool on, 
 	const std::function<void(Game*)> &onFunction, 
 	const std::function<void(Game*)> &offFunction)
+	: onFunction(onFunction), offFunction(offFunction)
 {
-	this->onFunction = onFunction;
-	this->offFunction = offFunction;
 	this->x = x;
 	this->y = y;
 	this->width = width;

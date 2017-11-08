@@ -24,7 +24,6 @@ namespace
 }
 
 CIFFile::CIFFile(const std::string &filename, const Palette &palette)
-	: pixels(), offsets(), dimensions()
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");

@@ -21,8 +21,8 @@ const std::map<LocationType, std::string> LocationTypeDisplayNames =
 
 Location::Location(const std::string &name, int provinceID,
 	LocationType locationType, ClimateName climateName)
+	: name(name)
 {
-	this->name = name;
 	this->provinceID = provinceID;
 	this->locationType = locationType;
 	this->climateName = climateName;

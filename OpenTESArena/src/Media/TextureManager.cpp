@@ -23,8 +23,7 @@
 #include "components/vfs/manager.hpp"
 
 TextureManager::TextureManager(Renderer &renderer)
-	: renderer(renderer), palettes(), surfaces(), textures(),
-	surfaceSets(), textureSets()
+	: renderer(renderer)
 {
 	DebugMention("Initializing.");
 
