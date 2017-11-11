@@ -10,7 +10,7 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 This project is early in development.
 
-No jumping or collision yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+There is partial collision detection, but no jumping yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Press 'F' at the main menu to do a quickstart with a random character (for faster testing).
 
@@ -41,14 +41,19 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 
 ## Installation
 
-The engine uses `Soundfont` and `ArenaPath` in `options/options.txt` to find where the MIDI config and game files are.
+There are two options files, `options-default.txt` and `options-changes.txt`. The first one stores default settings and the second one stores user-specific settings. The "changes" file is stored in your prefs folder, and you can either create it yourself or let the program create it. In the future, a wizard will take care of this instead.
+- Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
+- Linux: `~/.local/share/OpenTESArena/options/`
+- macOS: `~/Library/Application Support/OpenTESArena/options/`
+
+The engine uses `MidiConfig` and `ArenaPath` in the options file to find where the MIDI config and game files are.
 
 #### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
 - Extract Arena106Setup.zip and run Arena106.exe.
 - Pick a destination folder anywhere and install.
-- Point `ArenaPath` in `options/options.txt` to the `ARENA` folder.
+- Point `ArenaPath` in the options file to the `ARENA` folder.
 - If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
 #### Linux (Ubuntu 16.04)
@@ -67,7 +72,7 @@ cd ..
 
 #### Obtaining a MIDI sound patches library (for music):
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
-- If you would like to use a different sound patches library, simply edit `Soundfont` in `options/options.txt` to point to another existing MIDI `.cfg` file.
+- If you would like to use a different sound patches library, simply edit `MidiConfig` in the options file to point to another existing MIDI `.cfg` file.
 
 ## Building from source
 
@@ -82,7 +87,7 @@ cd ..
 - Use CMake to generate your project files in `build`, then compile the executable.
 
 #### Running the executable:
-- Verify that the `data` and `options` folders are in the same folder as the executable, and that `Soundfont` and `ArenaPath` in `options/options.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
+- Verify that the `data` and `options` folders are in the same folder as the executable, and that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 [MSYS2 guide for Windows](docs/setup_windows_msys2.md)
 
