@@ -1,0 +1,58 @@
+# Default options for OpenTESArena. This file should not be changed.
+# Any changes to these options should go in an "options-changes.txt"
+# file in your prefs folder. For now, this is created on the program's
+# first run, but in the future, a wizard should be used instead.
+# - Windows: <username>/AppData/Roaming/OpenTESArena/options/
+# - Linux: ~/.local/share/OpenTESArena/options/
+# - macOS: ~/Library/Application Support/OpenTESArena/options/
+
+# [Graphics]
+# Width and height of the window in windowed mode.
+ScreenWidth=1280
+ScreenHeight=720
+
+# If Fullscreen is true, then screen width and height are ignored.
+Fullscreen=false
+
+TargetFPS=60
+
+# Resolution scale is the percent of the screen resolution used to
+# render the game world. Accepted values are between 0.10 and 1.0.
+ResolutionScale=0.50
+VerticalFieldOfView=60.0
+
+# Default letterbox aspect is 1.60. "Stretched" aspect for simulating 
+# the look on 640x480 monitors is 1.33.
+LetterboxAspect=1.60
+
+CursorScale=3.60
+
+# If ModernInterface is false, the in-game interface uses Arena's classic 
+# layout. If true, it uses a minimalistic interface with free-look 
+# similar to Daggerfall's.
+ModernInterface=false
+
+# [Input]
+# - Look sensitivity is normally between 5.0 and 15.0.
+HorizontalSensitivity=8.0
+VerticalSensitivity=8.0
+
+# [Sound]
+MusicVolume=0.30
+SoundVolume=0.25
+
+# Change "MidiConfig" to your desired .cfg file.
+MidiConfig=data/eawpats/timidity.cfg
+
+SoundChannels=32
+
+# [Misc]
+# Change "ArenaPath" to your desired path. In the future, this should be
+# set by a wizard instead.
+ArenaPath=data/ARENA
+
+# Skips the opening cinematic on program start.
+SkipIntro=false
+
+# Draws various debug info to the screen.
+ShowDebug=false

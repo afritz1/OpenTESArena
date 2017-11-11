@@ -352,7 +352,7 @@ void AudioManagerImpl::init(const Options &options)
 	DebugMention("Initializing.");
 
 #ifdef HAVE_WILDMIDI
-	WildMidiDevice::init(options.getSoundfont());
+	WildMidiDevice::init(options.getMidiConfig());
 #endif
 
 	// Start initializing the OpenAL device.
@@ -368,7 +368,7 @@ void AudioManagerImpl::init(const Options &options)
 
 	double musicVolume = options.getMusicVolume();
 	double soundVolume = options.getSoundVolume();
-	int maxChannels = options.getSoundChannelCount();
+	int maxChannels = options.getSoundChannels();
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);

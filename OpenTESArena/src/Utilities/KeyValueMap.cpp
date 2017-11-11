@@ -95,3 +95,8 @@ const std::string &KeyValueMap::getString(const std::string &key) const
 	const std::string &value = this->getValue(key);
 	return value;
 }
+
+const std::unordered_map<std::string, std::string> &KeyValueMap::getAll() const
+{
+	return this->pairs;
+}

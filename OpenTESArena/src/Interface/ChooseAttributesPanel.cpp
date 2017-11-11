@@ -112,8 +112,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
-			const bool fullGameWindow =
-				game->getOptions().getPlayerInterface() == PlayerInterface::Modern;
+			const bool fullGameWindow = game->getOptions().getModernInterface();
 			renderer.initializeWorldRendering(
 				game->getOptions().getResolutionScale(), fullGameWindow);
 

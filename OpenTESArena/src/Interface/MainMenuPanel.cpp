@@ -114,7 +114,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			// Initialize 3D renderer.
 			auto &renderer = game->getRenderer();
 			const auto &options = game->getOptions();
-			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			const bool fullGameWindow = options.getModernInterface();
 			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
 
 			// Generate a random player character for the game data.

@@ -36,7 +36,7 @@ private:
 		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Player&, Renderer&>> playerInterfaceButton;
 
-	static std::string getPlayerInterfaceString(PlayerInterface playerInterface);
+	static std::string getPlayerInterfaceString(bool modernInterface);
 
 	void updateFPSText(int fps);
 	void updateResolutionScaleText(double resolutionScale);

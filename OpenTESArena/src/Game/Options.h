@@ -2,45 +2,84 @@
 #define OPTIONS_H
 
 #include <string>
+#include <unordered_map>
 
 // Settings found in the options menu are saved in this object, which should live in
 // the game state object since it persists for the lifetime of the program.
 
 enum class PlayerInterface;
 
+// Maps to each option in the options file. Intended to be used behind the scenes
+// in the options code.
+enum class OptionName
+{
+	ScreenWidth,
+	ScreenHeight,
+	Fullscreen,
+	TargetFPS,
+	ResolutionScale,
+	VerticalFOV,
+	LetterboxAspect,
+	CursorScale,
+	ModernInterface,
+
+	HorizontalSensitivity,
+	VerticalSensitivity,
+
+	MusicVolume,
+	SoundVolume,
+	MidiConfig,
+	SoundChannels,
+
+	ArenaPath,
+	SkipIntro,
+	ShowDebug
+};
+
+namespace std
+{
+	// Hash specialization, since GCC doesn't support enum classes used as keys
+	// in unordered_maps.
+	template <>
+	struct hash<OptionName>
+	{
+		size_t operator()(const OptionName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 class Options
 {
 private:
-	// Graphics.
-	int screenWidth, screenHeight;
-	bool fullscreen;
-	int targetFPS;
-	double resolutionScale; // Percent.
-	double verticalFOV; // In degrees.
-	double letterboxAspect;
-	double cursorScale;
-	PlayerInterface playerInterface;
+	static const std::string DEFAULT_FILENAME;
 
-	// Input.
-	double hSensitivity, vSensitivity;
+	// "Default" values come from the default options file. "Changed" values come from
+	// changes at runtime, and those are written to the changed options file.
+	std::unordered_map<OptionName, bool> defaultBools, changedBools;
+	std::unordered_map<OptionName, int> defaultInts, changedInts;
+	std::unordered_map<OptionName, double> defaultDoubles, changedDoubles;
+	std::unordered_map<OptionName, std::string> defaultStrings, changedStrings;
 
-    // Sound.
-    std::string soundfont; // .cfg file.
-    double musicVolume, soundVolume;
-    int soundChannels;
+	bool Options::getBool(OptionName key) const;
+	int Options::getInt(OptionName key) const;
+	double Options::getDouble(OptionName key) const;
+	const std::string &Options::getString(OptionName key) const;
 
-	// Miscellaneous.
-	std::string arenaPath; // "ARENA" data path.
-	bool skipIntro;
-	bool showDebug;
+	void Options::setBool(OptionName key, bool value);
+	void Options::setInt(OptionName key, int value);
+	void Options::setDouble(OptionName key, double value);
+	void Options::setString(OptionName key, const std::string &value);
 public:
-	Options(std::string &&arenaPath, int screenWidth, int screenHeight, bool fullscreen,
-		int targetFPS, double resolutionScale, double verticalFOV, double letterboxAspect,
-		double cursorScale, double hSensitivity, double vSensitivity, std::string &&soundfont,
-		double musicVolume, double soundVolume, int soundChannels, bool skipIntro,
-		PlayerInterface playerInterface, bool showDebug);
+	// Constructs with values from the default options file.
+	Options();
 	~Options();
 
+	// Filename of the "changes" options file, the one that tracks runtime changes.
+	static const std::string CHANGES_FILENAME;
+
+	// Min and max values for the application.
 	static const int MIN_FPS;
 	static const double MIN_RESOLUTION_SCALE;
 	static const double MAX_RESOLUTION_SCALE;
@@ -54,44 +93,86 @@ public:
 	static const double MAX_HORIZONTAL_SENSITIVITY;
 	static const double MIN_VERTICAL_SENSITIVITY;
 	static const double MAX_VERTICAL_SENSITIVITY;
+	static const double MIN_VOLUME;
+	static const double MAX_VOLUME;
 
-	int getScreenWidth() const;
-	int getScreenHeight() const;
-	bool isFullscreen() const;
-	int getTargetFPS() const;
-	double getResolutionScale() const;
-	double getVerticalFOV() const;
-	double getLetterboxAspect() const;
-	double getCursorScale() const;
-	double getHorizontalSensitivity() const;
-	double getVerticalSensitivity() const;
-	const std::string &getSoundfont() const;
-	double getMusicVolume() const;
-	double getSoundVolume() const;
-	int getSoundChannelCount() const;
-	const std::string &getArenaPath() const;
-	bool introIsSkipped() const;
-	PlayerInterface getPlayerInterface() const;
-	bool debugIsShown() const;
+#define OPTION_BOOL(name) \
+bool get##name() const \
+{ \
+	return this->getBool(OptionName::name); \
+} \
+void set##name(bool value) \
+{ \
+	this->setBool(OptionName::name, value); \
+}
 
-	void setScreenWidth(int width);
-	void setScreenHeight(int height);
-	void setFullscreen(bool fullscreen);
-	void setTargetFPS(int targetFPS);
-	void setResolutionScale(double percent);
-	void setVerticalFOV(double fov);
-	void setLetterboxAspect(double aspect);
-	void setCursorScale(double cursorScale);
-	void setHorizontalSensitivity(double hSensitivity);
-	void setVerticalSensitivity(double vSensitivity);
-    void setSoundfont(std::string sfont);
-	void setMusicVolume(double percent);
-	void setSoundVolume(double percent);
-	void setSoundChannelCount(int count);
-	void setArenaPath(std::string path);
-	void setSkipIntro(bool skip);
-	void setPlayerInterface(PlayerInterface playerInterface);
-	void setShowDebug(bool debug);
+#define OPTION_INT(name) \
+void check##name(int value) const; \
+int get##name() const \
+{ \
+	const int value = this->getInt(OptionName::name); \
+	this->check##name(value); \
+	return value; \
+} \
+void set##name(int value) \
+{ \
+	this->check##name(value); \
+	this->setInt(OptionName::name, value); \
+}
+
+#define OPTION_DOUBLE(name) \
+void check##name(double value) const; \
+double get##name() const \
+{ \
+	const double value = this->getDouble(OptionName::name); \
+	this->check##name(value); \
+	return value; \
+} \
+void set##name(double value) \
+{ \
+	this->check##name(value); \
+	this->setDouble(OptionName::name, value); \
+}
+
+#define OPTION_STRING(name) \
+const std::string &get##name() const \
+{ \
+	return this->getString(OptionName::name); \
+} \
+void set##name(const std::string &value) \
+{ \
+	this->setString(OptionName::name, value); \
+}
+
+	// Getter, setter, and optional checker methods.
+	OPTION_INT(ScreenWidth)
+	OPTION_INT(ScreenHeight)
+	OPTION_BOOL(Fullscreen)
+	OPTION_INT(TargetFPS)
+	OPTION_DOUBLE(ResolutionScale)
+	OPTION_DOUBLE(VerticalFOV)
+	OPTION_DOUBLE(LetterboxAspect)
+	OPTION_DOUBLE(CursorScale)
+	OPTION_BOOL(ModernInterface)
+
+	OPTION_DOUBLE(HorizontalSensitivity)
+	OPTION_DOUBLE(VerticalSensitivity)
+
+	OPTION_DOUBLE(MusicVolume)
+	OPTION_DOUBLE(SoundVolume)
+	OPTION_STRING(MidiConfig)
+	OPTION_INT(SoundChannels)
+
+	OPTION_STRING(ArenaPath)
+	OPTION_BOOL(SkipIntro)
+	OPTION_BOOL(ShowDebug)
+
+	// Reads all the key-value pairs from the given absolute path, overwriting any
+	// existing values.
+	void load(const std::string &filename);
+
+	// Saves all key-value pairs that differ from the defaults to the changed options file.
+	void saveChanges();
 };
 
 #endif

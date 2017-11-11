@@ -157,16 +157,16 @@ GameWorldPanel::GameWorldPanel(Game *game)
 	{
 		auto function = [](Game *game)
 		{
-			const auto playerInterface = game->getOptions().getPlayerInterface();
+			const bool modernInterface = game->getOptions().getModernInterface();
 
 			// The center of the pop-up depends on the interface mode.
-			const Int2 center = [game, playerInterface]()
+			const Int2 center = [game, modernInterface]()
 			{
 				auto &textureManager = game->getTextureManager();
 				const auto &gameWorldInterface = textureManager.getTexture(
 					TextureFile::fromName(TextureName::GameWorldInterface));
 
-				if (playerInterface == PlayerInterface::Classic)
+				if (!modernInterface)
 				{
 					return Int2(
 						Renderer::ORIGINAL_WIDTH / 2,
@@ -413,11 +413,11 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	// The cursor texture depends on the current mouse position.
 	const auto &game = *this->getGame();
 	auto &textureManager = game.getTextureManager();
-	const auto playerInterface = game.getOptions().getPlayerInterface();
+	const bool modernInterface = game.getOptions().getModernInterface();
 	const Int2 mousePosition = game.getInputManager().getMousePosition();
 
 	// If using the modern interface, just use the default arrow cursor.
-	if (playerInterface == PlayerInterface::Modern)
+	if (modernInterface)
 	{
 		const auto &texture = textureManager.getTextures(
 			TextureFile::fromName(TextureName::ArrowCursors)).at(4);
@@ -457,7 +457,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Toggle debug display.
 		auto &options = this->getGame()->getOptions();
-		options.setShowDebug(!options.debugIsShown());
+		options.setShowDebug(!options.getShowDebug());
 	}
 
 	// Listen for hotkeys.
@@ -494,8 +494,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	const auto &renderer = this->getGame()->getRenderer();
 
 	// Handle input events based on which player interface mode is active.
-	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
-	if (playerInterface == PlayerInterface::Classic)
+	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	if (!modernInterface)
 	{
 		// Get mouse position relative to letterbox coordinates.
 		const Int2 mousePosition = inputManager.getMousePosition();
@@ -570,8 +570,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	// get the swing direction and swing.
 	const auto &inputManager = this->getGame()->getInputManager();
 
-	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
-	if (playerInterface == PlayerInterface::Classic)
+	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	if (!modernInterface)
 	{
 		// Classic interface mode.
 		// Arena's mouse look is pretty clunky, and I much prefer the free-look model,
@@ -704,8 +704,8 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 
 	const auto &worldData = this->getGame()->getGameData().getWorldData();
 
-	const auto playerInterface = this->getGame()->getOptions().getPlayerInterface();
-	if (playerInterface == PlayerInterface::Classic)
+	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	if (!modernInterface)
 	{
 		// Classic interface mode.
 		// Arena uses arrow keys, but let's use the left hand side of the keyboard 
@@ -1252,7 +1252,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
-	const auto playerInterface = options.getPlayerInterface();
+	const bool modernInterface = options.getModernInterface();
 	const auto &weaponAnimation = player.getWeaponAnimation();
 	if (!weaponAnimation.isSheathed())
 	{
@@ -1265,7 +1265,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// renderer has an off-by-one bug, and a 1 pixel gap appears in my renderer unless 
 		// a small offset is added.
 		renderer.drawOriginal(weaponTexture.get(), weaponOffset.x, 
-			(playerInterface == PlayerInterface::Classic) ? (weaponOffset.y + 1) : 
+			!modernInterface ? (weaponOffset.y + 1) : 
 			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
 	}
 
@@ -1316,7 +1316,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Continue drawing more interface objects if in classic mode.
-	if (playerInterface == PlayerInterface::Classic)
+	if (!modernInterface)
 	{
 		// Draw game world interface.
 		const auto &gameInterface = textureManager.getTexture(
@@ -1398,10 +1398,10 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		const auto &triggerTextBox = *this->triggerText.second.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextBox.getSurface()->w / 2);
-		const int centerY = [playerInterface, &gameInterface, &triggerTextBox]()
+		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
 		{
-			const int interfaceOffset = (playerInterface == PlayerInterface::Classic) ? 
-				gameInterface.getHeight() : (gameInterface.getHeight() / 2);
+			const int interfaceOffset = modernInterface ?
+				(gameInterface.getHeight() / 2) : gameInterface.getHeight();
 			return Renderer::ORIGINAL_HEIGHT - interfaceOffset - 
 				triggerTextBox.getSurface()->h - 2;
 		}();
@@ -1413,7 +1413,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	// To do: draw "action text" and "effect text" (similar to trigger text).
 
 	// Draw some optional debug text.
-	if (options.debugIsShown())
+	if (options.getShowDebug())
 	{
 		this->drawDebugText(renderer);
 	}

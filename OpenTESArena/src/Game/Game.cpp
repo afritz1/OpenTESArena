@@ -10,7 +10,6 @@
 #include "Game.h"
 #include "GameData.h"
 #include "Options.h"
-#include "OptionsParser.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssets.h"
@@ -42,41 +41,29 @@ Game::Game()
 	// the file itself.
 	this->optionsPath = Platform::getOptionsPath();
 
-	// Parse the desired options.txt.
+	// Parse options-default.txt. Always prefer the "default" file before the "changes" file. 
+	// The changes file is stored in the user's prefs folder.
 	this->options = [this]()
 	{
-		// We want any local copy of "options/options.txt" to override the one
-		// in the preferences directory for development purposes. At some point,
-		// options.txt should be hardcoded in the executable and generated in the
-		// preferences directory if it doesn't exist either there or locally.
-		const std::string desiredOptionsPath = [this]()
+		std::unique_ptr<Options> newOptions(new Options());
+
+		const std::string changesOptionsPath(this->optionsPath + Options::CHANGES_FILENAME);
+		const bool changesOptionsExists = File::exists(changesOptionsPath);
+
+		if (!changesOptionsExists)
 		{
-			const std::string localOptionsPath(this->basePath + "options/" + OptionsParser::FILENAME);
-			const std::string prefsOptionsPath(this->optionsPath + OptionsParser::FILENAME);
+			// If the "changes" options file doesn't exist, make one. Since the new options 
+			// object has no changes, the new file will have no key-value pairs.
+			DebugMention("Creating options file at \"" + changesOptionsPath + "\".");
+			newOptions->saveChanges();
+		}
+		else
+		{
+			// Read in any key-value pairs in the "changes" options file.
+			newOptions->load(changesOptionsPath);
+		}
 
-			// Look for the local "options/options.txt" first.
-			if (File::exists(localOptionsPath))
-			{
-				DebugMention("Using local \"options/" + OptionsParser::FILENAME +
-					"\" (intended for development purposes).");
-				return localOptionsPath;
-			}
-			else
-			{
-				// Create "<PrefsOptionsPath>/options.txt" if it doesn't exist.
-				if (!File::exists(prefsOptionsPath))
-				{
-					// @todo: generate new options.txt via hardcoded text in executable? Maybe a bad idea.
-					/*DebugMention("Created " + OptionsParser::FILENAME + " in \"" +
-						prefsOptionsPath + "\".");*/
-					DebugNotImplemented();
-				}
-
-				return prefsOptionsPath;
-			}
-		}();
-
-		return OptionsParser::parse(desiredOptionsPath);
+		return newOptions;
 	}();
 
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
@@ -102,7 +89,7 @@ Game::Game()
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(
 		this->options->getScreenWidth(), this->options->getScreenHeight(),
-		this->options->isFullscreen(), this->options->getLetterboxAspect()));
+		this->options->getFullscreen(), this->options->getLetterboxAspect()));
 
 	// Initialize the texture manager with the SDL window's pixel format.
 	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
@@ -247,7 +234,7 @@ void Game::resizeWindow(int width, int height)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	auto &options = this->getOptions();
-	const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+	const bool fullGameWindow = options.getModernInterface();
 	this->renderer->resize(width, height, options.getResolutionScale(), fullGameWindow);
 }
 
@@ -425,4 +412,8 @@ void Game::loop()
 		// Draw to the screen.
 		this->render();
 	}
+
+	// At this point, the program has received an exit signal, and is now 
+	// quitting peacefully.
+	this->options->saveChanges();
 }

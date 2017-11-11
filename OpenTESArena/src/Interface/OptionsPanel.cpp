@@ -112,7 +112,7 @@ OptionsPanel::OptionsPanel(Game *game)
 		const int y = 85;
 
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			OptionsPanel::getPlayerInterfaceString(game->getOptions().getPlayerInterface());
+			OptionsPanel::getPlayerInterfaceString(game->getOptions().getModernInterface());
 
 		const RichTextString richText(
 			text,
@@ -282,7 +282,7 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			const bool fullGameWindow = options.getModernInterface();
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
@@ -306,7 +306,7 @@ OptionsPanel::OptionsPanel(Game *game)
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getPlayerInterface() == PlayerInterface::Modern;
+			const bool fullGameWindow = options.getModernInterface();
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
@@ -324,9 +324,9 @@ OptionsPanel::OptionsPanel(Game *game)
 			Player &player, Renderer &renderer)
 		{
 			// Toggle the player interface option.
-			auto newPlayerInterface = (options.getPlayerInterface() == PlayerInterface::Classic) ?
-				PlayerInterface::Modern : PlayerInterface::Classic;
-			options.setPlayerInterface(newPlayerInterface);
+			const auto newPlayerInterface = options.getModernInterface() ?
+				PlayerInterface::Classic : PlayerInterface::Modern;
+			options.setModernInterface(newPlayerInterface == PlayerInterface::Modern);
 			panel->updatePlayerInterfaceText(newPlayerInterface);
 
 			// If classic mode, make sure the player is looking straight forward.
@@ -530,9 +530,9 @@ OptionsPanel::~OptionsPanel()
 
 }
 
-std::string OptionsPanel::getPlayerInterfaceString(PlayerInterface playerInterface)
+std::string OptionsPanel::getPlayerInterfaceString(bool modernInterface)
 {
-	return (playerInterface == PlayerInterface::Classic) ? "Classic" : "Modern";
+	return modernInterface ? "Modern" : "Classic";
 }
 
 void OptionsPanel::updateFPSText(int fps)
@@ -586,7 +586,7 @@ void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
 		const RichTextString &oldRichText = this->playerInterfaceTextBox->getRichText();
 
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			this->getPlayerInterfaceString(playerInterface);
+			this->getPlayerInterfaceString(playerInterface == PlayerInterface::Modern);
 
 		const RichTextString richText(
 			text,

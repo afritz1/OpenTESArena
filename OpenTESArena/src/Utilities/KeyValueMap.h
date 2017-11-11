@@ -24,10 +24,14 @@ public:
 	KeyValueMap(const std::string &filename);
 	~KeyValueMap();
 
+	// Typed getter methods for convenience.
 	bool getBoolean(const std::string &key) const;
 	int getInteger(const std::string &key) const;
 	double getDouble(const std::string &key) const;
 	const std::string &getString(const std::string &key) const;
+
+	// Gets a reference to all key-value pairs. Intended for iteration.
+	const std::unordered_map<std::string, std::string> &getAll() const;
 };
 
 #endif
