@@ -62,15 +62,15 @@ private:
 	std::unordered_map<OptionName, double> defaultDoubles, changedDoubles;
 	std::unordered_map<OptionName, std::string> defaultStrings, changedStrings;
 
-	bool Options::getBool(OptionName key) const;
-	int Options::getInt(OptionName key) const;
-	double Options::getDouble(OptionName key) const;
-	const std::string &Options::getString(OptionName key) const;
+	bool getBool(OptionName key) const;
+	int getInt(OptionName key) const;
+	double getDouble(OptionName key) const;
+	const std::string &getString(OptionName key) const;
 
-	void Options::setBool(OptionName key, bool value);
-	void Options::setInt(OptionName key, int value);
-	void Options::setDouble(OptionName key, double value);
-	void Options::setString(OptionName key, const std::string &value);
+	void setBool(OptionName key, bool value);
+	void setInt(OptionName key, int value);
+	void setDouble(OptionName key, double value);
+	void setString(OptionName key, const std::string &value);
 public:
 	// Constructs with values from the default options file.
 	Options();
