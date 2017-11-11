@@ -33,7 +33,7 @@ CursorScale=3.60
 ModernInterface=false
 
 # [Input]
-# - Look sensitivity is normally between 5.0 and 15.0.
+# Look sensitivity is normally between 5.0 and 15.0.
 HorizontalSensitivity=8.0
 VerticalSensitivity=8.0
 
