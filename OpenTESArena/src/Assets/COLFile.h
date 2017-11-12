@@ -14,7 +14,6 @@ class COLFile
 {
 private:
 	COLFile() = delete;
-	COLFile(const COLFile&) = delete;
 	~COLFile() = delete;
 public:
 	// Writes the data of a COL file into the given palette reference.

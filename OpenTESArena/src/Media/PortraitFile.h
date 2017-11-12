@@ -13,7 +13,6 @@ class PortraitFile
 {
 private:
 	PortraitFile() = delete;
-	PortraitFile(const PortraitFile&) = delete;
 	~PortraitFile() = delete;
 public:
 	// Gets the heads filename for a given gender, race, and whether the heads

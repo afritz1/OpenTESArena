@@ -14,8 +14,8 @@
 
 class Compression
 {
+private:
 	Compression() = delete;
-	Compression(const Compression&) = delete;
 	~Compression() = delete;
 public:
 	// Uncompresses an RLE run of bytes.

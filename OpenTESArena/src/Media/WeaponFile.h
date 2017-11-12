@@ -9,8 +9,8 @@ enum class WeaponType;
 
 class WeaponFile
 {
+private:
 	WeaponFile() = delete;
-	WeaponFile(const WeaponFile&) = delete;
 	~WeaponFile() = delete;
 public:
 	static const std::string &fromName(WeaponType weaponType);

@@ -9,8 +9,8 @@ enum class SoundName;
 
 class SoundFile
 {
+private:
 	SoundFile() = delete;
-	SoundFile(const SoundFile&) = delete;
 	~SoundFile() = delete;
 public:
 	static const std::string &fromName(SoundName soundName);

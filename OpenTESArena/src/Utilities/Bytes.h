@@ -10,7 +10,6 @@ class Bytes
 {
 private:
 	Bytes() = delete;
-	Bytes(const Bytes&) = delete;
 	~Bytes() = delete;
 public:
 	static uint16_t getLE16(const uint8_t *buf);

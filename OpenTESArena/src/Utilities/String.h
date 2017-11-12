@@ -12,7 +12,6 @@ class String
 {
 private:
 	String() = delete;
-	String(const String&) = delete;
 	~String() = delete;
 public:
 	// Splits a string on the given character.

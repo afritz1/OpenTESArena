@@ -16,7 +16,6 @@ class TextureFile
 {
 private:
 	TextureFile() = delete;
-	TextureFile(const TextureFile&) = delete;
 	~TextureFile() = delete;
 public:
 	static const std::string &fromName(TextureName textureName);

@@ -13,7 +13,6 @@ class PPMFile
 {
 private:
 	PPMFile() = delete;
-	PPMFile(const PPMFile&) = delete;
 	~PPMFile() = delete;
 public:
 	// Reads a .ppm file.

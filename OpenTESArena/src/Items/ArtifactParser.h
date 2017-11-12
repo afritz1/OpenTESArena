@@ -13,7 +13,6 @@ private:
 	static const std::string FILENAME;
 	
 	ArtifactParser() = delete;
-	ArtifactParser(const ArtifactParser&) = delete;
 	~ArtifactParser() = delete;
 	
 	// 3/9/2017

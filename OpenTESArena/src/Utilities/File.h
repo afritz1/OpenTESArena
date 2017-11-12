@@ -7,7 +7,6 @@ class File
 {
 private:
 	File() = delete;
-	File(const File&) = delete;
 	~File() = delete;
 public:
 	// Reads all of a file's text into a string.

@@ -12,7 +12,6 @@ class PaletteFile
 {
 private:
 	PaletteFile() = delete;
-	PaletteFile(const PaletteFile&) = delete;
 	~PaletteFile() = delete;
 public:
 	static const std::string &fromName(PaletteName paletteName);
