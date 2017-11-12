@@ -31,7 +31,7 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
-MainMenuPanel::MainMenuPanel(Game *game)
+MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game)
 {
 	this->loadButton = []()
@@ -39,13 +39,13 @@ MainMenuPanel::MainMenuPanel(Game *game)
 		Int2 center(168, 58);
 		int width = 150;
 		int height = 20;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
-			game->setPanel(std::move(loadPanel));
+			game.setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, function));
 	}();
 
 	this->newButton = []()
@@ -53,17 +53,17 @@ MainMenuPanel::MainMenuPanel(Game *game)
 		Int2 center(168, 112);
 		int width = 150;
 		int height = 20;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			// Link together the opening scroll, intro cinematic, and character creation.
-			auto changeToCharCreation = [](Game *game)
+			auto changeToCharCreation = [](Game &game)
 			{
 				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
-				game->setPanel(std::move(creationPanel));
-				game->setMusic(MusicName::Sheet);
+				game.setPanel(std::move(creationPanel));
+				game.setMusic(MusicName::Sheet);
 			};
 
-			auto changeToNewGameStory = [changeToCharCreation](Game *game)
+			auto changeToNewGameStory = [changeToCharCreation](Game &game)
 			{
 				std::vector<std::string> paletteNames
 				{
@@ -91,7 +91,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 					imageDurations,
 					changeToCharCreation));
 
-				game->setPanel(std::move(newGameStoryPanel));
+				game.setPanel(std::move(newGameStoryPanel));
 			};
 
 			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
@@ -100,26 +100,26 @@ MainMenuPanel::MainMenuPanel(Game *game)
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				0.042,
 				changeToNewGameStory));
-			game->setPanel(std::move(cinematicPanel));
-			game->setMusic(MusicName::EvilIntro);
+			game.setPanel(std::move(cinematicPanel));
+			game.setMusic(MusicName::EvilIntro);
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, function));
 	}();
 
-	this->fastStartButton = [game]()
+	this->fastStartButton = [&game]()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			// Initialize 3D renderer.
-			auto &renderer = game->getRenderer();
-			const auto &options = game->getOptions();
+			auto &renderer = game.getRenderer();
+			const auto &options = game.getOptions();
 			const bool fullGameWindow = options.getModernInterface();
 			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
 
 			// Generate a random player character for the game data.
 			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
-				game->getTextAssets().getClassDefinitions(), game->getTextureManager(), renderer);
+				game.getTextAssets().getClassDefinitions(), game.getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif("START.MIF");
@@ -130,19 +130,19 @@ MainMenuPanel::MainMenuPanel(Game *game)
 			auto &player = gameData->getPlayer();
 			Double3 playerPosition = player.getPosition();
 			GameData::loadFromMIF(mif, inf, playerPosition, 
-				gameData->getWorldData(), game->getTextureManager(), renderer);
+				gameData->getWorldData(), game.getTextureManager(), renderer);
 
 			player.teleport(playerPosition);
 
 			// Set the game data before constructing the game world panel.
-			game->setGameData(std::move(gameData));
+			game.setGameData(std::move(gameData));
 
 			// Initialize game world panel.
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gameWorldPanel));
-			game->setMusic(MusicName::Dungeon1);
+			game.setPanel(std::move(gameWorldPanel));
+			game.setMusic(MusicName::Dungeon1);
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->exitButton = []()
@@ -161,7 +161,7 @@ MainMenuPanel::MainMenuPanel(Game *game)
 	}();
 
 	// The game data should not be active on the main menu.
-	assert(!game->gameDataIsActive());
+	assert(!game.gameDataIsActive());
 }
 
 MainMenuPanel::~MainMenuPanel()
@@ -171,7 +171,7 @@ MainMenuPanel::~MainMenuPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -180,7 +180,7 @@ std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
 
 void MainMenuPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool lPressed = inputManager.keyPressed(e, SDLK_l);
 	bool sPressed = inputManager.keyPressed(e, SDLK_s);
 	bool ePressed = inputManager.keyPressed(e, SDLK_e);
@@ -209,7 +209,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->loadButton->contains(mouseOriginalPoint))
@@ -233,7 +233,7 @@ void MainMenuPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw main menu.

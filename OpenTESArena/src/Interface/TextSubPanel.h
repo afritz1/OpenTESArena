@@ -17,15 +17,15 @@ class TextSubPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> textBox;
-	std::function<void(Game*)> endingAction;
+	std::function<void(Game&)> endingAction;
 	Texture texture;
 	Int2 textureCenter;
 public:
-	TextSubPanel(Game *game, const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game*)> &endingAction, Texture &&texture,
+	TextSubPanel(Game &game, const Int2 &textCenter, const RichTextString &richText,
+		const std::function<void(Game&)> &endingAction, Texture &&texture,
 		const Int2 &textureCenter);
-	TextSubPanel(Game *game, const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game*)> &endingAction);
+	TextSubPanel(Game &game, const Int2 &textCenter, const RichTextString &richText,
+		const std::function<void(Game&)> &endingAction);
 	virtual ~TextSubPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

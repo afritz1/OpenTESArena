@@ -16,14 +16,14 @@ class Renderer;
 class ImagePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> skipButton;
+	std::unique_ptr<Button<Game&>> skipButton;
 	std::string paletteName;
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;
 public:
-	ImagePanel(Game *game, const std::string &paletteName, 
+	ImagePanel(Game &game, const std::string &paletteName, 
 		const std::string &textureName, double secondsToDisplay, 
-		const std::function<void(Game*)> &endingAction);
+		const std::function<void(Game&)> &endingAction);
 	virtual ~ImagePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

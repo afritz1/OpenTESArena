@@ -20,10 +20,10 @@ class CharacterPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
-	std::unique_ptr<Button<Game*>> doneButton, nextPageButton;
+	std::unique_ptr<Button<Game&>> doneButton, nextPageButton;
 	std::vector<Int2> headOffsets;
 public:
-	CharacterPanel(Game *game);
+	CharacterPanel(Game &game);
 	virtual ~CharacterPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

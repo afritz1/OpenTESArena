@@ -25,7 +25,7 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
-	std::unique_ptr<Button<Game*>> backToRaceButton, doneButton;
+	std::unique_ptr<Button<Game&>> backToRaceButton, doneButton;
 	std::unique_ptr<Button<ChooseAttributesPanel*, bool>> portraitButton;
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;
@@ -34,7 +34,7 @@ private:
 	std::string name;
 	int portraitID;
 public:
-	ChooseAttributesPanel(Game *game, const CharacterClass &charClass, 
+	ChooseAttributesPanel(Game &game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender, int raceID);
 	virtual ~ChooseAttributesPanel();
 

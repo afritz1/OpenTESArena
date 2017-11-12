@@ -16,18 +16,18 @@
 class ImageSequencePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> skipButton;
+	std::unique_ptr<Button<Game&>> skipButton;
 	std::vector<std::string> paletteNames;
 	std::vector<std::string> textureNames;
 	std::vector<double> imageDurations;
 	double currentSeconds;
 	int imageIndex;
 public:
-	ImageSequencePanel(Game *game,
+	ImageSequencePanel(Game &game,
 		const std::vector<std::string> &paletteNames,
 		const std::vector<std::string> &textureNames,
 		const std::vector<double> &imageDurations,
-		const std::function<void(Game*)> &endingAction);
+		const std::function<void(Game&)> &endingAction);
 	virtual ~ImageSequencePanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

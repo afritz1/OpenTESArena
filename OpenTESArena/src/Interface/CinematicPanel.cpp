@@ -8,14 +8,14 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-CinematicPanel::CinematicPanel(Game *game,
+CinematicPanel::CinematicPanel(Game &game,
 	const std::string &paletteName, const std::string &sequenceName,
-	double secondsPerImage, const std::function<void(Game*)> &endingAction)
+	double secondsPerImage, const std::function<void(Game&)> &endingAction)
 	: Panel(game), paletteName(paletteName), sequenceName(sequenceName)
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
 	}();
 
 	this->secondsPerImage = secondsPerImage;
@@ -30,7 +30,7 @@ CinematicPanel::~CinematicPanel()
 
 void CinematicPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
 	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
@@ -56,7 +56,7 @@ void CinematicPanel::tick(double dt)
 	}
 
 	// Get a reference to all images in the sequence.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 
@@ -74,7 +74,7 @@ void CinematicPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Get a reference to all images in the sequence.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &textures = textureManager.getTextures(
 		this->sequenceName, this->paletteName);
 

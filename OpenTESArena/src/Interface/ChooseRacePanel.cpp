@@ -47,34 +47,34 @@ namespace
 	};
 }
 
-ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
+ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
 	: Panel(game), charClass(charClass), name(name), gender(gender)
 {
 	this->backToGenderButton = []()
 	{
-		auto function = [](Game *game, const CharacterClass &charClass, 
+		auto function = [](Game &game, const CharacterClass &charClass, 
 			const std::string &name)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
 				game, charClass, name));
-			game->setPanel(std::move(namePanel));
+			game.setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>>(
-			new Button<Game*, const CharacterClass&, const std::string&>(function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
+			new Button<Game&, const CharacterClass&, const std::string&>(function));
 	}();
 
 	this->acceptButton = []()
 	{
-		auto function = [](Game *game, const CharacterClass &charClass,
+		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name, GenderName gender, int raceID)
 		{
 			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
 				game, charClass, name, gender, raceID));
-			game->setPanel(std::move(attributesPanel));
+			game.setPanel(std::move(attributesPanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&, 
-			GenderName, int>>(new Button<Game*, const CharacterClass&, const std::string&, 
+		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&, 
+			GenderName, int>>(new Button<Game&, const CharacterClass&, const std::string&, 
 				GenderName, int>(function));
 	}();
 	
@@ -82,14 +82,14 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 	// When done, set to null and push initial parchment sub-panel?
 
 	// Push the initial text sub-panel.
-	std::unique_ptr<Panel> textSubPanel = [game, &charClass, &name]()
+	std::unique_ptr<Panel> textSubPanel = [&game, &charClass, &name]()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 		const Color color(48, 12, 12);
 
-		const std::string text = [game, &charClass, &name]()
+		const std::string text = [&game, &charClass, &name]()
 		{
-			std::string segment = game->getTextAssets().getAExeStrings().get(
+			std::string segment = game.getTextAssets().getAExeStrings().get(
 				ExeStringKey::ChooseRace);
 			segment = String::replace(segment, '\r', '\n');
 
@@ -112,24 +112,24 @@ ChooseRacePanel::ChooseRacePanel(Game *game, const CharacterClass &charClass,
 			color,
 			TextAlignment::Center,
 			lineSpacing,
-			game->getFontManager());
+			game.getFontManager());
 
 		Texture texture(Texture::generate(
-			Texture::PatternType::Parchment, 240, 60, game->getTextureManager(),
-			game->getRenderer()));
+			Texture::PatternType::Parchment, 240, 60, game.getTextureManager(),
+			game.getRenderer()));
 
 		const Int2 textureCenter(
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,
 			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
 		// The sub-panel does nothing after it's removed.
-		auto function = [](Game *game) {};
+		auto function = [](Game &game) {};
 		
 		return std::unique_ptr<Panel>(new TextSubPanel(
 			game, center, richText, function, std::move(texture), textureCenter));
 	}();
 
-	game->pushSubPanel(std::move(textSubPanel));
+	game.pushSubPanel(std::move(textSubPanel));
 }
 
 ChooseRacePanel::~ChooseRacePanel()
@@ -139,7 +139,7 @@ ChooseRacePanel::~ChooseRacePanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -148,7 +148,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() con
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
@@ -161,7 +161,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Listen for map clicks.
@@ -187,13 +187,13 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
 	assert(provinceID != (ProvinceClickAreas.size() - 1));
-	const std::string &raceName = this->getGame()->getTextAssets().getAExeStrings().getList(
+	const std::string &raceName = this->getGame().getTextAssets().getAExeStrings().getList(
 		ExeStringKey::RaceNamesPlural).at(provinceID);
 	
 	const Texture tooltip(Panel::createTooltip(
-		"Land of the " + raceName, FontName::D, this->getGame()->getFontManager(), renderer));
+		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer));
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
@@ -212,7 +212,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background map.
@@ -229,11 +229,11 @@ void ChooseRacePanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Draw hovered province tooltip.
-	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.

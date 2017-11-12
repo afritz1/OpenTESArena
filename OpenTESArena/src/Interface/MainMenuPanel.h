@@ -9,10 +9,10 @@ class Renderer;
 class MainMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> loadButton, newButton, fastStartButton;
+	std::unique_ptr<Button<Game&>> loadButton, newButton, fastStartButton;
 	std::unique_ptr<Button<>> exitButton;
 public:
-	MainMenuPanel(Game *game);
+	MainMenuPanel(Game &game);
 	virtual ~MainMenuPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

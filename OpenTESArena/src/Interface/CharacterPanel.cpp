@@ -29,32 +29,32 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-CharacterPanel::CharacterPanel(Game *game)
+CharacterPanel::CharacterPanel(Game &game)
 	: Panel(game)
 {
-	this->playerNameTextBox = [game]()
+	this->playerNameTextBox = [&game]()
 	{
 		const int x = 10;
 		const int y = 8;
 
 		const RichTextString richText(
-			game->getGameData().getPlayer().getDisplayName(),
+			game.getGameData().getPlayer().getDisplayName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->playerRaceTextBox = [game]()
+	this->playerRaceTextBox = [&game]()
 	{
 		const int x = 10;
 		const int y = 17;
 
-		const auto &player = game->getGameData().getPlayer();
-		const std::string &text = game->getTextAssets().getAExeStrings().getList(
+		const auto &player = game.getGameData().getPlayer();
+		const std::string &text = game.getTextAssets().getAExeStrings().getList(
 			ExeStringKey::RaceNamesSingular).at(player.getRaceID());
 
 		const RichTextString richText(
@@ -62,26 +62,26 @@ CharacterPanel::CharacterPanel(Game *game)
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->playerClassTextBox = [game]()
+	this->playerClassTextBox = [&game]()
 	{
 		const int x = 10;
 		const int y = 26;
 
 		const RichTextString richText(
-			game->getGameData().getPlayer().getCharacterClass().getName(),
+			game.getGameData().getPlayer().getCharacterClass().getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
 	this->doneButton = []()
@@ -89,13 +89,13 @@ CharacterPanel::CharacterPanel(Game *game)
 		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		int width = 21;
 		int height = 13;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gamePanel));
+			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, function));
 	}();
 
 	this->nextPageButton = []()
@@ -104,17 +104,17 @@ CharacterPanel::CharacterPanel(Game *game)
 		int y = 179;
 		int width = 49;
 		int height = 13;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(game));
-			game->setPanel(std::move(equipmentPanel));
+			game.setPanel(std::move(equipmentPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, width, height, function));
 	}();
 
 	// Get pixel offsets for each head.
-	const auto &player = this->getGame()->getGameData().getPlayer();
+	const auto &player = this->getGame().getGameData().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceID(), false);
 	CIFFile cifFile(headsFilename, Palette());
@@ -132,7 +132,7 @@ CharacterPanel::~CharacterPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> CharacterPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -141,7 +141,7 @@ std::pair<SDL_Texture*, CursorAlignment> CharacterPanel::getCurrentCursor() cons
 
 void CharacterPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
 
@@ -155,7 +155,7 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->doneButton->contains(mouseOriginalPoint))
@@ -171,17 +171,17 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 
 void CharacterPanel::render(Renderer &renderer)
 {
-	assert(this->getGame()->gameDataIsActive());
+	assert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Get a reference to the active player data.
-	const auto &player = this->getGame()->getGameData().getPlayer();
+	const auto &player = this->getGame().getGameData().getPlayer();
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(

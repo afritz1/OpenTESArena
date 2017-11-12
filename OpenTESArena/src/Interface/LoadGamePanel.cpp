@@ -23,20 +23,20 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-LoadGamePanel::LoadGamePanel(Game *game)
+LoadGamePanel::LoadGamePanel(Game &game)
 	: Panel(game)
 {
 	this->backButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			// Back button behavior depends on if game data is active.
-			auto backPanel = game->gameDataIsActive() ?
+			auto backPanel = game.gameDataIsActive() ?
 				std::unique_ptr<Panel>(new PauseMenuPanel(game)) :
 				std::unique_ptr<Panel>(new MainMenuPanel(game));
-			game->setPanel(std::move(backPanel));
+			game.setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 }
 
@@ -47,7 +47,7 @@ LoadGamePanel::~LoadGamePanel()
 
 std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -56,7 +56,7 @@ std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 
 void LoadGamePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -69,7 +69,7 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Listen for up/down arrow click, saved game click...
@@ -82,7 +82,7 @@ void LoadGamePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw slots background.

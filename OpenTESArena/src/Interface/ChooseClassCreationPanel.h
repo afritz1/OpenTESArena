@@ -20,11 +20,11 @@ class ChooseClassCreationPanel : public Panel
 private:
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
-	std::unique_ptr<Button<Game*>> backToMainMenuButton, generateButton, selectButton;
+	std::unique_ptr<Button<Game&>> backToMainMenuButton, generateButton, selectButton;
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	ChooseClassCreationPanel(Game *game);
+	ChooseClassCreationPanel(Game &game);
 	virtual ~ChooseClassCreationPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

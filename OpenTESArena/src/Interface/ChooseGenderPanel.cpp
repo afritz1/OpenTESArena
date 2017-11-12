@@ -26,96 +26,96 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 
-ChooseGenderPanel::ChooseGenderPanel(Game *game, const CharacterClass &charClass,
+ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass,
 	const std::string &name)
 	: Panel(game), charClass(charClass), name(name)
 {
 	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 180, 40, game->getTextureManager(),
-		game->getRenderer()));
+		Texture::PatternType::Parchment, 180, 40, game.getTextureManager(),
+		game.getRenderer()));
 
-	this->genderTextBox = [game]()
+	this->genderTextBox = [&game]()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGender),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGender),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->maleTextBox = [game]()
+	this->maleTextBox = [&game]()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderMale),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderMale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->femaleTextBox = [game]()
+	this->femaleTextBox = [&game]()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderFemale),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderFemale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
 	this->backToNameButton = []()
 	{
-		auto function = [](Game *game, const CharacterClass &charClass)
+		auto function = [](Game &game, const CharacterClass &charClass)
 		{
-			game->setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
+			game.setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
 				game, charClass)));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&>>(
-			new Button<Game*, const CharacterClass&>(function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&>>(
+			new Button<Game&, const CharacterClass&>(function));
 	}();
 
 	this->maleButton = []()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		auto function = [](Game *game, const CharacterClass &charClass,
+		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				game, charClass, name, GenderName::Male));
-			game->setPanel(std::move(classPanel));
+			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>>(
-			new Button<Game*, const CharacterClass&, const std::string&>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
+			new Button<Game&, const CharacterClass&, const std::string&>(center, 175, 35, function));
 	}();
 
 	this->femaleButton = []()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		auto function = [](Game *game, const CharacterClass &charClass,
+		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseRacePanel(
 				game, charClass, name, GenderName::Female));
-			game->setPanel(std::move(classPanel));
+			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>>(
-			new Button<Game*, const CharacterClass&, const std::string&>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
+			new Button<Game&, const CharacterClass&, const std::string&>(center, 175, 35, function));
 	}();
 }
 
@@ -126,7 +126,7 @@ ChooseGenderPanel::~ChooseGenderPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -135,7 +135,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() c
 
 void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -148,7 +148,7 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->maleButton->contains(mouseOriginalPoint))
@@ -168,7 +168,7 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.

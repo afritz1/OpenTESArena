@@ -28,10 +28,8 @@
 
 #include "components/vfs/manager.hpp"
 
-Panel::Panel(Game *game)
-{
-	this->game = game;
-}
+Panel::Panel(Game &game)
+	: game(game) { }
 
 Panel::~Panel()
 {
@@ -85,23 +83,23 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 	return tooltip;
 }
 
-std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
+std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 {
 	// If the intro skip option is set, then jump to the main menu.
-	if (game->getOptions().getSkipIntro())
+	if (game.getOptions().getSkipIntro())
 	{
 		return std::unique_ptr<Panel>(new MainMenuPanel(game));
 	}
 
 	// All of these lambdas are linked together like a stack by each panel's last
 	// argument.
-	auto changeToMainMenu = [](Game *game)
+	auto changeToMainMenu = [](Game &game)
 	{
 		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-		game->setPanel(std::move(mainMenuPanel));
+		game.setPanel(std::move(mainMenuPanel));
 	};
 
-	auto changeToIntroStory = [changeToMainMenu](Game *game)
+	auto changeToIntroStory = [changeToMainMenu](Game &game)
 	{
 		std::vector<std::string> paletteNames
 		{
@@ -127,10 +125,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 			imageDurations,
 			changeToMainMenu));
 
-		game->setPanel(std::move(introStoryPanel));
+		game.setPanel(std::move(introStoryPanel));
 	};
 
-	auto changeToScrolling = [changeToIntroStory](Game *game)
+	auto changeToScrolling = [changeToIntroStory](Game &game)
 	{
 		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
 			game,
@@ -138,10 +136,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			0.042,
 			changeToIntroStory));
-		game->setPanel(std::move(scrollingPanel));
+		game.setPanel(std::move(scrollingPanel));
 	};
 
-	auto changeToQuote = [changeToScrolling](Game *game)
+	auto changeToQuote = [changeToScrolling](Game &game)
 	{
 		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> quotePanel(new ImagePanel(
@@ -150,10 +148,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 			TextureFile::fromName(TextureName::IntroQuote),
 			secondsToDisplay,
 			changeToScrolling));
-		game->setPanel(std::move(quotePanel));
+		game.setPanel(std::move(quotePanel));
 	};
 
-	auto makeIntroTitlePanel = [changeToQuote, game]()
+	auto makeIntroTitlePanel = [changeToQuote, &game]()
 	{
 		const double secondsToDisplay = 5.0;
 		std::unique_ptr<Panel> titlePanel(new ImagePanel(
@@ -165,10 +163,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game *game)
 		return std::move(titlePanel);
 	};
 
-	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game *game)
+	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game &game)
 	{
 		std::unique_ptr<Panel> titlePanel = makeIntroTitlePanel();
-		game->setPanel(std::move(titlePanel));
+		game.setPanel(std::move(titlePanel));
 	};
 
 	/*auto makeIntroBookPanel = [changeToTitle, game]()
@@ -208,7 +206,7 @@ void Panel::resize(int windowWidth, int windowHeight)
 	static_cast<void>(windowHeight);
 }
 
-Game *Panel::getGame() const
+Game &Panel::getGame() const
 {
 	return this->game;
 }

@@ -29,19 +29,19 @@
 
 const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
-ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
+ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	: Panel(game), charClass(charClass)
 {
 	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 300, 60, game->getTextureManager(),
-		game->getRenderer()));
+		Texture::PatternType::Parchment, 300, 60, game.getTextureManager(),
+		game.getRenderer()));
 
-	this->titleTextBox = [game, &charClass]()
+	this->titleTextBox = [&game, &charClass]()
 	{
 		const int x = 26;
 		const int y = 82;
 
-		std::string text = game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseName);
+		std::string text = game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseName);
 		text = String::replace(text, "%s", charClass.getName());
 
 		const RichTextString richText(
@@ -49,13 +49,13 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->nameTextBox = [game]()
+	this->nameTextBox = [&game]()
 	{
 		const int x = 61;
 		const int y = 101;
@@ -65,33 +65,33 @@ ChooseNamePanel::ChooseNamePanel(Game *game, const CharacterClass &charClass)
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
 	this->backToClassButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game->setPanel(std::move(classPanel));
+			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->acceptButton = []()
 	{
-		auto function = [](Game *game, const CharacterClass &charClass,
+		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
 			std::unique_ptr<Panel> genderPanel(new ChooseGenderPanel(
 				game, charClass, name));
-			game->setPanel(std::move(genderPanel));
+			game.setPanel(std::move(genderPanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>>(
-			new Button<Game*, const CharacterClass&, const std::string&>(function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
+			new Button<Game&, const CharacterClass&, const std::string&>(function));
 	}();
 }
 
@@ -102,7 +102,7 @@ ChooseNamePanel::~ChooseNamePanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -111,7 +111,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() con
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
 		inputManager.keyPressed(e, SDLK_KP_ENTER);
@@ -219,7 +219,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 			const int x = 61;
 			const int y = 101;
 
-			auto &game = *this->getGame();
+			auto &game = this->getGame();
 			const RichTextString &oldRichText = this->nameTextBox->getRichText();
 
 			const RichTextString richText(
@@ -241,7 +241,7 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.

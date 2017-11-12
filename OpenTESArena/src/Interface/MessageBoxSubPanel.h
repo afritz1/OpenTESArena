@@ -16,11 +16,11 @@ class MessageBoxSubPanel : public Panel
 private:
 	std::unique_ptr<TextBox> textBox;
 	Texture textBoxTexture, buttonTexture;
-	std::vector<std::function<void(Game*)>> functions;
+	std::vector<std::function<void(Game&)>> functions;
 public:
-	MessageBoxSubPanel(Game *game, std::unique_ptr<TextBox> textBox,
+	MessageBoxSubPanel(Game &game, std::unique_ptr<TextBox> textBox,
 		Texture &&textBoxTexture, Texture &&buttonTexture,
-		const std::vector<std::function<void(Game*)>> &functions);
+		const std::vector<std::function<void(Game&)>> &functions);
 	virtual ~MessageBoxSubPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

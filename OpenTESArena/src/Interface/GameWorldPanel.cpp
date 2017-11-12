@@ -91,37 +91,37 @@ namespace
 	};
 }
 
-GameWorldPanel::GameWorldPanel(Game *game)
+GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game), triggerText(0.0, nullptr), actionText(0.0, nullptr), 
 	effectText(0.0, nullptr)
 {
-	assert(game->gameDataIsActive());
+	assert(game.gameDataIsActive());
 
-	this->playerNameTextBox = [game]()
+	this->playerNameTextBox = [&game]()
 	{
 		const int x = 17;
 		const int y = 154;
 
 		const RichTextString richText(
-			game->getGameData().getPlayer().getFirstName(),
+			game.getGameData().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
 	this->characterSheetButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
-			game->setPanel(std::move(sheetPanel));
+			game.setPanel(std::move(sheetPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(14, 166, 40, 29, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(14, 166, 40, 29, function));
 	}();
 
 	this->drawWeaponButton = []()
@@ -155,14 +155,14 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->statusButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
-			const bool modernInterface = game->getOptions().getModernInterface();
+			const bool modernInterface = game.getOptions().getModernInterface();
 
 			// The center of the pop-up depends on the interface mode.
-			const Int2 center = [game, modernInterface]()
+			const Int2 center = [&game, modernInterface]()
 			{
-				auto &textureManager = game->getTextureManager();
+				auto &textureManager = game.getTextureManager();
 				const auto &gameWorldInterface = textureManager.getTexture(
 					TextureFile::fromName(TextureName::GameWorldInterface));
 
@@ -180,19 +180,19 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				}
 			}();
 
-			const std::string text = [game]()
+			const std::string text = [&game]()
 			{
-				const Location &location = game->getGameData().getLocation();
+				const Location &location = game.getGameData().getLocation();
 
-				const std::string timeString = [game]()
+				const std::string timeString = [&game]()
 				{
-					const Clock &clock = game->getGameData().getClock();
+					const Clock &clock = game.getGameData().getClock();
 					const int hours = clock.getHours12();
 					const int minutes = clock.getMinutes();
 					const std::string clockTimeString = std::to_string(hours) + ":" +
 						((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
-					const int timeOfDayIndex = [game]()
+					const int timeOfDayIndex = [&game]()
 					{
 						// Arena has eight time ranges for each time of day. They aren't 
 						// uniformly distributed -- midnight and noon are only one minute.
@@ -208,7 +208,7 @@ GameWorldPanel::GameWorldPanel(Game *game)
 							std::make_pair(Clock::Night2, 5)
 						};
 
-						const Clock &presentClock = game->getGameData().getClock();
+						const Clock &presentClock = game.getGameData().getClock();
 
 						// Reverse iterate, checking which range the active one is in.
 						for (auto it = clocksAndIndices.rbegin(); it != clocksAndIndices.rend(); ++it)
@@ -225,17 +225,17 @@ GameWorldPanel::GameWorldPanel(Game *game)
 						return 0;
 					}();
 
-					const std::string &timeOfDayString = game->getTextAssets().getAExeStrings()
+					const std::string &timeOfDayString = game.getTextAssets().getAExeStrings()
 						.getList(ExeStringKey::TimesOfDay).at(timeOfDayIndex);
 
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
-				const auto &date = game->getGameData().getDate();
-				const std::string &weekdayString = game->getTextAssets().getAExeStrings().getList(
+				const auto &date = game.getGameData().getDate();
+				const std::string &weekdayString = game.getTextAssets().getAExeStrings().getList(
 					ExeStringKey::WeekdayNames).at(date.getWeekday());
 				const std::string dayString = date.getOrdinalDay();
-				const std::string &monthString = game->getTextAssets().getAExeStrings().getList(
+				const std::string &monthString = game.getTextAssets().getAExeStrings().getList(
 					ExeStringKey::MonthNames).at(date.getMonth());
 				const std::string yearString = std::to_string(date.getEra()) + "E " +
 					std::to_string(date.getYear());
@@ -257,25 +257,25 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				color,
 				TextAlignment::Center,
 				lineSpacing,
-				game->getFontManager());
+				game.getFontManager());
 
 			const Int2 &richTextDimensions = richText.getDimensions();
 
 			Texture texture(Texture::generate(Texture::PatternType::Dark, 
 				richTextDimensions.x + 12, richTextDimensions.y + 12, 
-				game->getTextureManager(), game->getRenderer()));
+				game.getTextureManager(), game.getRenderer()));
 
 			const Int2 textureCenter = center;
 
 			// The sub-panel does nothing after it's removed.
-			auto function = [](Game *game) {};
+			auto function = [](Game &game) {};
 
 			std::unique_ptr<Panel> textSubPanel(new TextSubPanel(
 				game, center, richText, function, std::move(texture), textureCenter));
 
-			game->pushSubPanel(std::move(textSubPanel));
+			game.pushSubPanel(std::move(textSubPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(177, 151, 29, 22, function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(177, 151, 29, 22, function));
 	}();
 
 	this->magicButton = []()
@@ -289,13 +289,13 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->logbookButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
-			game->setPanel(std::move(logbookPanel));
+			game.setPanel(std::move(logbookPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(118, 175, 29, 22, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(118, 175, 29, 22, function));
 	}();
 
 	this->useItemButton = []()
@@ -350,21 +350,21 @@ GameWorldPanel::GameWorldPanel(Game *game)
 
 	this->pauseButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
-			game->setPanel(std::move(pausePanel));
+			game.setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->mapButton = []()
 	{
-		auto function = [](Game *game, bool goToAutomap)
+		auto function = [](Game &game, bool goToAutomap)
 		{
 			if (goToAutomap)
 			{
-				auto &gameData = game->getGameData();
+				auto &gameData = game.getGameData();
 				const auto &worldData = gameData.getWorldData();
 				const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 				const auto &player = gameData.getPlayer();
@@ -374,26 +374,26 @@ GameWorldPanel::GameWorldPanel(Game *game)
 				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game,
 					Double2(position.x, position.z), player.getGroundDirection(), 
 					level.getVoxelGrid(), location.getName()));
-				game->setPanel(std::move(automapPanel));
+				game.setPanel(std::move(automapPanel));
 			}
 			else
 			{
 				std::unique_ptr<Panel> worldMapPanel(new WorldMapPanel(game));
-				game->setPanel(std::move(worldMapPanel));
+				game.setPanel(std::move(worldMapPanel));
 			}
 		};
-		return std::unique_ptr<Button<Game*, bool>>(
-			new Button<Game*, bool>(118, 151, 29, 22, function));
+		return std::unique_ptr<Button<Game&, bool>>(
+			new Button<Game&, bool>(118, 151, 29, 22, function));
 	}();
 
 	// Set all of the cursor regions relative to the current window.
-	const Int2 screenDims = game->getRenderer().getWindowDimensions();
+	const Int2 screenDims = game.getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.x, screenDims.y);
 
 	// Load all the weapon offsets for the player's currently equipped weapon. If the
 	// player can ever change weapons in-game (i.e., with a hotkey), then this will
 	// need to be moved into update() instead.
-	const auto &weaponAnimation = game->getGameData().getPlayer().getWeaponAnimation();
+	const auto &weaponAnimation = game.getGameData().getPlayer().getWeaponAnimation();
 	const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
 	const CIFFile cifFile(weaponFilename, Palette());
 	
@@ -411,7 +411,7 @@ GameWorldPanel::~GameWorldPanel()
 std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
-	const auto &game = *this->getGame();
+	const auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const bool modernInterface = game.getOptions().getModernInterface();
 	const Int2 mousePosition = game.getInputManager().getMousePosition();
@@ -445,7 +445,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 
 void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
 
@@ -456,7 +456,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (f4Pressed)
 	{
 		// Toggle debug display.
-		auto &options = this->getGame()->getOptions();
+		auto &options = this->getGame().getOptions();
 		options.setShowDebug(!options.getShowDebug());
 	}
 
@@ -491,10 +491,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
-	const auto &renderer = this->getGame()->getRenderer();
+	const auto &renderer = this->getGame().getRenderer();
 
 	// Handle input events based on which player interface mode is active.
-	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	const bool modernInterface = this->getGame().getOptions().getModernInterface();
 	if (!modernInterface)
 	{
 		// Get mouse position relative to letterbox coordinates.
@@ -510,7 +510,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->drawWeaponButton->contains(originalPosition))
 			{
-				this->drawWeaponButton->click(this->getGame()->getGameData().getPlayer());
+				this->drawWeaponButton->click(this->getGame().getGameData().getPlayer());
 			}
 			else if (this->mapButton->contains(originalPosition))
 			{
@@ -568,9 +568,9 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	// Don't handle weapon swinging here. That can go in another method.
 	// If right click is held, weapon is out, and mouse motion is significant, then
 	// get the swing direction and swing.
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 
-	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	const bool modernInterface = this->getGame().getOptions().getModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
@@ -580,8 +580,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		// Holding the LMB in the left, right, upper left, or upper right parts of the
 		// screen turns the player. A and D turn the player as well.
 
-		const auto &options = this->getGame()->getOptions();
-		auto &player = this->getGame()->getGameData().getPlayer();
+		const auto &options = this->getGame().getOptions();
+		auto &player = this->getGame().getGameData().getPlayer();
 
 		// Listen for LMB, A, or D. Don't turn if Ctrl is held.
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
@@ -671,7 +671,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 
 		if (turning)
 		{
-			const Int2 dimensions = this->getGame()->getRenderer().getWindowDimensions();
+			const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative 
 			// to a square instead of a rectangle. This keeps the camera look independent 
@@ -682,8 +682,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
 
 			// Pitch and/or yaw the camera.
-			const auto &options = this->getGame()->getOptions();
-			auto &player = this->getGame()->getGameData().getPlayer();
+			const auto &options = this->getGame().getOptions();
+			auto &player = this->getGame().getGameData().getPlayer();
 			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(),
 				options.getVerticalSensitivity());
 		}
@@ -696,15 +696,15 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	// 1) handleClassicMovement()
 	// 2) handleModernMovement()
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 
 	// Arbitrary movement speeds.
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
 
-	const auto &worldData = this->getGame()->getGameData().getWorldData();
+	const auto &worldData = this->getGame().getGameData().getWorldData();
 
-	const bool modernInterface = this->getGame()->getOptions().getModernInterface();
+	const bool modernInterface = this->getGame().getOptions().getModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
@@ -729,7 +729,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = this->getGame()->getGameData().getPlayer();
+		auto &player = this->getGame().getGameData().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -876,7 +876,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = this->getGame()->getGameData().getPlayer();
+		auto &player = this->getGame().getGameData().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -941,10 +941,10 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = this->getGame()->getGameData().getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = this->getGame().getGameData().getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
-		const Int2 dimensions = this->getGame()->getRenderer().getWindowDimensions();
+		const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
 
 		// Get the smaller of the two dimensions, so the percentage change in mouse position 
 		// is relative to a square instead of a rectangle.
@@ -954,7 +954,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 		const double dxx = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
 		const double dyy = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
 
-		const auto &inputManager = this->getGame()->getInputManager();
+		const auto &inputManager = this->getGame().getInputManager();
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
 		// If the mouse moves fast enough, it's considered an attack. The distances
@@ -1010,7 +1010,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 			}
 
 			// Play the swing sound.
-			auto &audioManager = this->getGame()->getAudioManager();
+			auto &audioManager = this->getGame().getAudioManager();
 			audioManager.playSound(SoundFile::fromName(SoundName::Swish));
 		}
 	}	
@@ -1018,7 +1018,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 
 void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
-	auto &game = *this->getGame();
+	auto &game = this->getGame();
 	auto &worldData = game.getGameData().getWorldData();
 	auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 
@@ -1078,9 +1078,9 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame()->getFontManager(), renderer));
+		text, FontName::D, this->getGame().getFontManager(), renderer));
 
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
 
@@ -1092,7 +1092,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 {
 	const Int2 windowDims = renderer.getWindowDimensions();
 
-	const auto &game = *this->getGame();
+	const auto &game = this->getGame();
 	const double resolutionScale = game.getOptions().getResolutionScale();
 
 	auto &gameData = game.getGameData();
@@ -1167,10 +1167,10 @@ void GameWorldPanel::updateCursorRegions(int width, int height)
 
 void GameWorldPanel::tick(double dt)
 {
-	assert(this->getGame()->gameDataIsActive());
+	assert(this->getGame().gameDataIsActive());
 
 	// Get the relative mouse state (can only be called once per frame).	
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 
 	// Handle input for player motion.
@@ -1178,7 +1178,7 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerMovement(dt);
 
 	// Tick the game world clock time.
-	auto &game = *this->getGame();
+	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 	gameData.tickTime(dt);
 
@@ -1229,7 +1229,7 @@ void GameWorldPanel::tick(double dt)
 
 void GameWorldPanel::render(Renderer &renderer)
 {
-	assert(this->getGame()->gameDataIsActive());
+	assert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -1237,17 +1237,17 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw game world onto the native frame buffer. The game world buffer
 	// might not completely fill up the native buffer (bottom corners), so 
 	// clearing the native buffer beforehand is still necessary.
-	auto &gameData = this->getGame()->getGameData();
+	auto &gameData = this->getGame().getGameData();
 	auto &player = gameData.getPlayer();
 	const auto &worldData = gameData.getWorldData();
 	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
-	const auto &options = this->getGame()->getOptions();
+	const auto &options = this->getGame().getOptions();
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getVerticalFOV(), gameData.getAmbientPercent(),
 		gameData.getDaytimePercent(), level.getVoxelGrid());
 
 	// Set screen palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Display player's weapon if unsheathed. The position also depends on whether
@@ -1312,7 +1312,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.drawOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Continue drawing more interface objects if in classic mode.

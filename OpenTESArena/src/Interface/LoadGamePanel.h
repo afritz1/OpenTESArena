@@ -11,10 +11,10 @@ class TextBox;
 class LoadGamePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> backButton;
+	std::unique_ptr<Button<Game&>> backButton;
 	// up/down arrow buttons, saved game buttons...
 public:
-	LoadGamePanel(Game *game);
+	LoadGamePanel(Game &game);
 	virtual ~LoadGamePanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

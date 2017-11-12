@@ -115,7 +115,7 @@ Game::Game()
 	this->renderer->setWindowIcon(icon.get());
 
 	// Initialize panel and music to default.
-	this->panel = Panel::defaultPanel(this);
+	this->panel = Panel::defaultPanel(*this);
 	this->setMusic(MusicName::PercIntro);
 
 	// Use a texture as the cursor instead.

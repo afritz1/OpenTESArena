@@ -27,12 +27,12 @@ private:
 
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
-	std::unique_ptr<Button<Game*>> backToClassButton;
-	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>> acceptButton;
+	std::unique_ptr<Button<Game&>> backToClassButton;
+	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>> acceptButton;
 	CharacterClass charClass;
 	std::string name;
 public:
-	ChooseNamePanel(Game *game, const CharacterClass &charClass);
+	ChooseNamePanel(Game &game, const CharacterClass &charClass);
 	virtual ~ChooseNamePanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

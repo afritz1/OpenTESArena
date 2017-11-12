@@ -67,7 +67,12 @@ private:
 	void render();
 public:
 	Game();
+	Game(const Game&) = delete;
+	Game(Game&&) = delete;
 	~Game();
+
+	Game &operator=(const Game&) = delete;
+	Game &operator=(Game&&) = delete;
 
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();

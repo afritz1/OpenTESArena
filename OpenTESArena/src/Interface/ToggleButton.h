@@ -16,17 +16,17 @@ class Game;
 class ToggleButton
 {
 private:
-	std::function<void(Game*)> onFunction;
-	std::function<void(Game*)> offFunction;
+	std::function<void(Game&)> onFunction;
+	std::function<void(Game&)> offFunction;
 	int x, y, width, height;
 	bool on;
 public:
 	ToggleButton(int x, int y, int width, int height, bool on,
-		const std::function<void(Game*)> &onFunction,
-		const std::function<void(Game*)> &offFunction);
+		const std::function<void(Game&)> &onFunction,
+		const std::function<void(Game&)> &offFunction);
 	ToggleButton(const Int2 &center, int width, int height, bool on,
-		const std::function<void(Game*)> &onFunction,
-		const std::function<void(Game*)> &offFunction);
+		const std::function<void(Game&)> &onFunction,
+		const std::function<void(Game&)> &offFunction);
 	virtual ~ToggleButton();
 
 	// Returns whether the button is toggled on.
@@ -36,7 +36,7 @@ public:
 	bool contains(const Int2 &point);
 
 	// Switches the toggle state of the button.
-	void toggle(Game *game);
+	void toggle(Game &game);
 };
 
 #endif

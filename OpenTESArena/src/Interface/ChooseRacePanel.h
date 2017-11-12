@@ -15,8 +15,8 @@ enum class GenderName;
 class ChooseRacePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&>> backToGenderButton;
-	std::unique_ptr<Button<Game*, const CharacterClass&, const std::string&, 
+	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>> backToGenderButton;
+	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&, 
 		GenderName, int>> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
@@ -24,7 +24,7 @@ private:
 
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);
 public:
-	ChooseRacePanel(Game *game, const CharacterClass &charClass, 
+	ChooseRacePanel(Game &game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender);
 	virtual ~ChooseRacePanel();
 

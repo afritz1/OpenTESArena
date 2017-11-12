@@ -22,12 +22,12 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button<Game*>> characterSheetButton, statusButton,
+	std::unique_ptr<Button<Game&>> characterSheetButton, statusButton,
 		logbookButton, pauseButton;
 	std::unique_ptr<Button<Player&>> drawWeaponButton;
 	std::unique_ptr<Button<>> stealButton, magicButton, useItemButton, campButton;
 	std::unique_ptr<Button<GameWorldPanel*>> scrollUpButton, scrollDownButton;
-	std::unique_ptr<Button<Game*, bool>> mapButton;
+	std::unique_ptr<Button<Game&, bool>> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
 
@@ -63,7 +63,7 @@ private:
 public:
 	// Constructs the game world panel. The GameData object in Game must be
 	// initialized.
-	GameWorldPanel(Game *game);
+	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

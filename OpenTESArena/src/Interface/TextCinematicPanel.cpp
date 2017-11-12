@@ -21,15 +21,15 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-TextCinematicPanel::TextCinematicPanel(Game *game, 
+TextCinematicPanel::TextCinematicPanel(Game &game, 
 	const std::string &sequenceName, const std::string &text, 
-	double secondsPerImage, const std::function<void(Game*)> &endingAction)
+	double secondsPerImage, const std::function<void(Game&)> &endingAction)
 	: Panel(game), sequenceName(sequenceName)
 {
 	// Text cannot be empty.
 	assert(text.size() > 0);
 
-	this->textBoxes = [game, &text]()
+	this->textBoxes = [&game, &text]()
 	{
 		const Int2 center(
 			Renderer::ORIGINAL_WIDTH / 2, 
@@ -70,10 +70,10 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 				Color(105, 174, 207),
 				TextAlignment::Center,
 				lineSpacing,
-				game->getFontManager());
+				game.getFontManager());
 
 			std::unique_ptr<TextBox> textBox(new TextBox(
-				center, richText, game->getRenderer()));
+				center, richText, game.getRenderer()));
 			textBoxes.push_back(std::move(textBox));
 		}
 
@@ -82,7 +82,7 @@ TextCinematicPanel::TextCinematicPanel(Game *game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
 	}();
 
 	this->secondsPerImage = secondsPerImage;
@@ -98,7 +98,7 @@ TextCinematicPanel::~TextCinematicPanel()
 
 void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -137,7 +137,7 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->imageIndex++;
 
-		auto &textureManager = this->getGame()->getTextureManager();
+		auto &textureManager = this->getGame().getTextureManager();
 
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
@@ -156,7 +156,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get a reference to all relevant textures.

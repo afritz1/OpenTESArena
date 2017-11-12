@@ -29,19 +29,19 @@ union SDL_Event;
 class Panel
 {
 private:
-	Game *game;
+	Game &game;
 protected:
 	// Generates a tooltip texture with the default white foreground and gray
 	// background with alpha blending.
 	static SDL_Texture *createTooltip(const std::string &text,
 		FontName fontName, FontManager &fontManager, Renderer &renderer);
 
-	Game *getGame() const;
+	Game &getGame() const;
 public:
-	Panel(Game *game);
+	Panel(Game &game);
 	virtual ~Panel();
 
-	static std::unique_ptr<Panel> defaultPanel(Game *game);
+	static std::unique_ptr<Panel> defaultPanel(Game &game);
 
 	// Gets the panel's active mouse cursor and alignment. Override this method if
 	// the panel has at least one cursor defined. The texture must be supplied by 

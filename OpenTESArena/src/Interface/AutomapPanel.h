@@ -16,7 +16,7 @@ class AutomapPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> locationTextBox;
-	std::unique_ptr<Button<Game*>> backToGameButton;
+	std::unique_ptr<Button<Game&>> backToGameButton;
 	Texture mapTexture;
 	Double2 automapOffset; // Displayed XZ coordinate offset from (0, 0).
 
@@ -25,7 +25,7 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game *game, const Double2 &playerPosition, const Double2 &playerDirection,
+	AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
 		const VoxelGrid &voxelGrid, const std::string &locationName);
 	virtual ~AutomapPanel();
 

@@ -16,13 +16,13 @@ class ChooseGenderPanel : public Panel
 private:
 	Texture parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
-	std::unique_ptr<Button<Game*, const CharacterClass&>> backToNameButton;
-	std::unique_ptr<Button<Game*, const CharacterClass&, 
+	std::unique_ptr<Button<Game&, const CharacterClass&>> backToNameButton;
+	std::unique_ptr<Button<Game&, const CharacterClass&, 
 		const std::string&>> maleButton, femaleButton;
 	CharacterClass charClass;
 	std::string name;
 public:
-	ChooseGenderPanel(Game *game, const CharacterClass &charClass,
+	ChooseGenderPanel(Game &game, const CharacterClass &charClass,
 		const std::string &name);
 	virtual ~ChooseGenderPanel();
 

@@ -14,18 +14,18 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
-TextSubPanel::TextSubPanel(Game *game, const Int2 &textCenter,
-	const RichTextString &richText, const std::function<void(Game*)> &endingAction,
+TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
+	const RichTextString &richText, const std::function<void(Game&)> &endingAction,
 	Texture &&texture, const Int2 &textureCenter)
 	: Panel(game), endingAction(endingAction), texture(std::move(texture)),
 	textureCenter(textureCenter)
 {
 	this->textBox = std::unique_ptr<TextBox>(new TextBox(
-		textCenter, richText, game->getRenderer()));
+		textCenter, richText, game.getRenderer()));
 }
 
-TextSubPanel::TextSubPanel(Game *game, const Int2 &textCenter,
-	const RichTextString &richText, const std::function<void(Game*)> &endingAction)
+TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
+	const RichTextString &richText, const std::function<void(Game&)> &endingAction)
 	: TextSubPanel(game, textCenter, richText, endingAction, std::move(Texture()), Int2()) { }
 
 TextSubPanel::~TextSubPanel()
@@ -35,7 +35,7 @@ TextSubPanel::~TextSubPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> TextSubPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -44,7 +44,7 @@ std::pair<SDL_Texture*, CursorAlignment> TextSubPanel::getCurrentCursor() const
 
 void TextSubPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
 	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
@@ -54,7 +54,7 @@ void TextSubPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || spacePressed || enterPressed || leftClick || rightClick)
 	{
-		this->getGame()->popSubPanel();
+		this->getGame().popSubPanel();
 	}
 }
 

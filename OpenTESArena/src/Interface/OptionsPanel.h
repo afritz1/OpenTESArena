@@ -28,7 +28,7 @@ private:
 	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox,
 		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox,
 		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox;
-	std::unique_ptr<Button<Game*>> backToPauseButton;
+	std::unique_ptr<Button<Game&>> backToPauseButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
 		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton;
@@ -49,7 +49,7 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	OptionsPanel(Game *game);
+	OptionsPanel(Game &game);
 	virtual ~OptionsPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

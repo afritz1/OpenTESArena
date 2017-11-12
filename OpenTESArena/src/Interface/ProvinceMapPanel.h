@@ -12,7 +12,7 @@ class ProvinceMapPanel : public Panel
 {
 private:
 	std::unique_ptr<Button<>> searchButton, travelButton;
-	std::unique_ptr<Button<Game*>> backToWorldMapButton;
+	std::unique_ptr<Button<Game&>> backToWorldMapButton;
 	int provinceID;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
@@ -22,7 +22,7 @@ private:
 	void drawLocationName(const std::string &name, const Int2 &center,
 		Renderer &renderer);
 public:
-	ProvinceMapPanel(Game *game, int provinceID);
+	ProvinceMapPanel(Game &game, int provinceID);
 	virtual ~ProvinceMapPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

@@ -39,7 +39,7 @@ namespace
 	};
 }
 
-WorldMapPanel::WorldMapPanel(Game *game)
+WorldMapPanel::WorldMapPanel(Game &game)
 	: Panel(game)
 {
 	this->backToGameButton = []()
@@ -47,23 +47,23 @@ WorldMapPanel::WorldMapPanel(Game *game)
 		Int2 center(Renderer::ORIGINAL_WIDTH - 22, Renderer::ORIGINAL_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gamePanel));
+			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, function));
 	}();
 
 	this->provinceButton = []()
 	{
-		auto function = [](Game *game, int provinceID)
+		auto function = [](Game &game, int provinceID)
 		{
 			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(game, provinceID));
-			game->setPanel(std::move(provincePanel));
+			game.setPanel(std::move(provincePanel));
 		};
-		return std::unique_ptr<Button<Game*, int>>(new Button<Game*, int>(function));
+		return std::unique_ptr<Button<Game&, int>>(new Button<Game&, int>(function));
 	}();
 }
 
@@ -74,7 +74,7 @@ WorldMapPanel::~WorldMapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -83,7 +83,7 @@ std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 
 void WorldMapPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool mPressed = inputManager.keyPressed(e, SDLK_m);
 
@@ -97,7 +97,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->backToGameButton->contains(mouseOriginalPoint))
@@ -123,13 +123,13 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 void WorldMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGame()->gameDataIsActive());
+	assert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw world map background. This one has "Exit" at the bottom right.

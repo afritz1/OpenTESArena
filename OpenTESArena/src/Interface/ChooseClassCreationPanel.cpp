@@ -27,18 +27,18 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/String.h"
 
-ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
+ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	: Panel(game)
 {
 	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 180, 40, game->getTextureManager(), 
-		game->getRenderer()));
+		Texture::PatternType::Parchment, 180, 40, game.getTextureManager(), 
+		game.getRenderer()));
 
-	this->titleTextBox = [game]()
+	this->titleTextBox = [&game]()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 80);
 
-		std::string text = game->getTextAssets().getAExeStrings().get(
+		std::string text = game.getTextAssets().getAExeStrings().get(
 			ExeStringKey::ChooseClassCreation);
 		text = String::replace(text, '\r', '\n');
 
@@ -50,76 +50,76 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game *game)
 			Color(48, 12, 12),
 			TextAlignment::Center,
 			lineSpacing,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->generateTextBox = [game]()
+	this->generateTextBox = [&game]()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationGenerate),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationGenerate),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->selectTextBox = [game]()
+	this->selectTextBox = [&game]()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationSelect),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationSelect),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
 	this->backToMainMenuButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-			game->setPanel(std::move(mainMenuPanel));
-			game->setMusic(MusicName::PercIntro);
+			game.setPanel(std::move(mainMenuPanel));
+			game.setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->generateButton = []()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
 			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game->setPanel(std::move(classPanel));*/
+			game.setPanel(std::move(classPanel));*/
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, 175, 35, function));
 	}();
 
 	this->selectButton = []()
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game->setPanel(std::move(classPanel));
+			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, 175, 35, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, 175, 35, function));
 	}();
 }
 
@@ -130,7 +130,7 @@ ChooseClassCreationPanel::~ChooseClassCreationPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -139,7 +139,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCur
 
 void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -152,7 +152,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->generateButton->contains(mouseOriginalPoint))
@@ -169,9 +169,9 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame()->getFontManager(), renderer));
+		text, FontName::D, this->getGame().getFontManager(), renderer));
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
@@ -190,7 +190,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
@@ -218,7 +218,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 		this->selectTextBox->getX(), this->selectTextBox->getY());
 
 	// Check if the mouse is hovered over one of the boxes for tooltips.
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativePointToOriginal(mousePosition);
 

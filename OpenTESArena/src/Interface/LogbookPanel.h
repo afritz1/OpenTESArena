@@ -11,9 +11,9 @@ class LogbookPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> titleTextBox;
-	std::unique_ptr<Button<Game*>> backButton;
+	std::unique_ptr<Button<Game&>> backButton;
 public:
-	LogbookPanel(Game *game);
+	LogbookPanel(Game &game);
 	virtual ~LogbookPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

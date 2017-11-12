@@ -16,15 +16,15 @@ class Renderer;
 class CinematicPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> skipButton;
+	std::unique_ptr<Button<Game&>> skipButton;
 	std::string paletteName;
 	std::string sequenceName;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
 public:
-	CinematicPanel(Game *game, const std::string &paletteName,
+	CinematicPanel(Game &game, const std::string &paletteName,
 		const std::string &sequenceName, double secondsPerImage,
-		const std::function<void(Game*)> &endingAction);
+		const std::function<void(Game&)> &endingAction);
 	virtual ~CinematicPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -71,11 +71,11 @@ namespace
 	};
 }
 
-AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
+AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 	const Double2 &playerDirection, const VoxelGrid &voxelGrid, const std::string &locationName)
 	: Panel(game), automapOffset(playerPosition)
 {
-	this->locationTextBox = [game, &locationName]()
+	this->locationTextBox = [&game, &locationName]()
 	{
 		const Int2 center(120, 28);
 
@@ -84,12 +84,12 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 			FontName::A,
 			Color(56, 16, 12),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		const Color shadowColor(150, 101, 52);
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, shadowColor, game->getRenderer()));
+			center, richText, shadowColor, game.getRenderer()));
 	}();
 
 	this->backToGameButton = []()
@@ -97,13 +97,13 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 		Int2 center(Renderer::ORIGINAL_WIDTH - 57, Renderer::ORIGINAL_HEIGHT - 29);
 		int width = 38;
 		int height = 13;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gamePanel));
+			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, function));
 	}();
 
 	this->mapTexture = [this, &playerPosition, &playerDirection, &voxelGrid]()
@@ -259,7 +259,7 @@ AutomapPanel::AutomapPanel(Game *game, const Double2 &playerPosition,
 			drawPlayer(playerVoxelX, playerVoxelZ, playerDirection);
 		}
 
-		auto &renderer = this->getGame()->getRenderer();
+		auto &renderer = this->getGame().getRenderer();
 		Texture texture(renderer.createTextureFromSurface(surface));
 		SDL_FreeSurface(surface);
 
@@ -274,7 +274,7 @@ AutomapPanel::~AutomapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap));
@@ -283,7 +283,7 @@ std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
 
 void AutomapPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool nPressed = inputManager.keyPressed(e, SDLK_n);
 
@@ -297,7 +297,7 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Check if "Exit" was clicked.
@@ -310,11 +310,11 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 
 void AutomapPanel::handleMouse(double dt)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// Check if the LMB is held on one of the compass directions.
@@ -346,9 +346,9 @@ void AutomapPanel::handleMouse(double dt)
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame()->getFontManager(), renderer));
+		text, FontName::D, this->getGame().getFontManager(), renderer));
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
@@ -372,7 +372,7 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw automap background.
@@ -404,7 +404,7 @@ void AutomapPanel::render(Renderer &renderer)
 		this->locationTextBox->getX(), this->locationTextBox->getY());
 
 	// Check if the mouse is over the compass directions for tooltips.
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 

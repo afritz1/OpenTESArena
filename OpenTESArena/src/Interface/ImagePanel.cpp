@@ -12,14 +12,14 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-ImagePanel::ImagePanel(Game *game, const std::string &paletteName, 
+ImagePanel::ImagePanel(Game &game, const std::string &paletteName, 
 	const std::string &textureName, double secondsToDisplay,
-	const std::function<void(Game*)> &endingAction)
+	const std::function<void(Game&)> &endingAction)
 	: Panel(game), paletteName(paletteName), textureName(textureName)
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
 	}();
 
 	this->secondsToDisplay = secondsToDisplay;
@@ -33,7 +33,7 @@ ImagePanel::~ImagePanel()
 
 void ImagePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
 	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
@@ -62,7 +62,7 @@ void ImagePanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(

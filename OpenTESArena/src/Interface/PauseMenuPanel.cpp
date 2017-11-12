@@ -33,62 +33,62 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-PauseMenuPanel::PauseMenuPanel(Game *game)
+PauseMenuPanel::PauseMenuPanel(Game &game)
 	: Panel(game)
 {
-	this->playerNameTextBox = [game]()
+	this->playerNameTextBox = [&game]()
 	{
 		const int x = 17;
 		const int y = 154;
 
 		const RichTextString richText(
-			game->getGameData().getPlayer().getFirstName(),
+			game.getGameData().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->musicTextBox = [game]()
+	this->musicTextBox = [&game]()
 	{
 		const Int2 center(127, 96);
 
 		const std::string text = std::to_string(static_cast<int>(
-			std::round(game->getOptions().getMusicVolume() * 100.0)));
+			std::round(game.getOptions().getMusicVolume() * 100.0)));
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(12, 73, 16),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->soundTextBox = [game]()
+	this->soundTextBox = [&game]()
 	{
 		const Int2 center(54, 96);
 
 		const std::string text = std::to_string(static_cast<int>(
-			std::round(game->getOptions().getSoundVolume() * 100.0)));
+			std::round(game.getOptions().getSoundVolume() * 100.0)));
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(12, 73, 16),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->optionsTextBox = [game]()
+	this->optionsTextBox = [&game]()
 	{
 		const Int2 center(234, 96);
 
@@ -97,25 +97,25 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 			FontName::Arena,
 			Color(215, 158, 4),
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		const Color shadowColor(101, 77, 24);
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, shadowColor, game->getRenderer()));
+			center, richText, shadowColor, game.getRenderer()));
 	}();
 
 	this->loadButton = []()
 	{
 		const int x = 65;
 		const int y = 118;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
-			game->setPanel(std::move(loadPanel));
+			game.setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, 64, 29, function));
 	}();
 
 	this->exitButton = []()
@@ -136,56 +136,56 @@ PauseMenuPanel::PauseMenuPanel(Game *game)
 	{
 		const int x = 0;
 		const int y = 118;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
-			game->setGameData(nullptr);
+			game.setGameData(nullptr);
 
 			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-			game->setPanel(std::move(mainMenuPanel));
-			game->setMusic(MusicName::PercIntro);
+			game.setPanel(std::move(mainMenuPanel));
+			game.setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, 65, 29, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, 65, 29, function));
 	}();
 
 	this->saveButton = []()
 	{
 		const int x = 129;
 		const int y = 118;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			// SaveGamePanel...
 			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
-			//game->setPanel(std::move(optionsPanel));
+			//game.setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, 64, 29, function));
 	}();
 
 	this->resumeButton = []()
 	{
 		const int x = 257;
 		const int y = 118;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gamePanel));
+			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, 64, 29, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, 64, 29, function));
 	}();
 
 	this->optionsButton = []()
 	{
 		const int x = 162;
 		const int y = 89;
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
-			game->setPanel(std::move(optionsPanel));
+			game.setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, 145, 14, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, 145, 14, function));
 	}();
 
 	this->musicUpButton = []()
@@ -277,10 +277,10 @@ void PauseMenuPanel::updateMusicText(double volume)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, this->getGame()->getRenderer()));
+			center, richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -299,16 +299,16 @@ void PauseMenuPanel::updateSoundText(double volume)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, this->getGame()->getRenderer()));
+			center, richText, this->getGame().getRenderer()));
 	}();
 }
 
 std::pair<SDL_Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -317,7 +317,7 @@ std::pair<SDL_Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() cons
 
 void PauseMenuPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -330,11 +330,11 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		auto &options = this->getGame()->getOptions();
-		auto &audioManager = this->getGame()->getAudioManager();
+		auto &options = this->getGame().getOptions();
+		auto &audioManager = this->getGame().getAudioManager();
 
 		// See if any of the buttons are clicked.
 		// (This code is getting kind of bad now. Maybe use a vector?)
@@ -387,7 +387,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw pause background.
@@ -402,7 +402,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
-	const auto &player = this->getGame()->getGameData().getPlayer();
+	const auto &player = this->getGame().getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceID(), true);
 	const auto &portrait = textureManager.getTextures(headsFilename)

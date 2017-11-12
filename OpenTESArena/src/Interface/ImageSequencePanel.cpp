@@ -13,11 +13,11 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
-ImageSequencePanel::ImageSequencePanel(Game *game,
+ImageSequencePanel::ImageSequencePanel(Game &game,
 	const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames,
 	const std::vector<double> &imageDurations,
-	const std::function<void(Game*)> &endingAction)
+	const std::function<void(Game&)> &endingAction)
 	: Panel(game), paletteNames(paletteNames), textureNames(textureNames),
 	imageDurations(imageDurations)
 {
@@ -26,7 +26,7 @@ ImageSequencePanel::ImageSequencePanel(Game *game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(endingAction));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
 	}();
 
 	this->currentSeconds = 0.0;
@@ -40,7 +40,7 @@ ImageSequencePanel::~ImageSequencePanel()
 
 void ImageSequencePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool skipAllHotkeyPressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool skipOneHotkeyPressed = inputManager.keyPressed(e, SDLK_SPACE) ||
@@ -98,7 +98,7 @@ void ImageSequencePanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(

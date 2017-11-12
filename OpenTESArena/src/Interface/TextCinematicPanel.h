@@ -28,14 +28,14 @@ class TextCinematicPanel : public Panel
 {
 private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
-	std::unique_ptr<Button<Game*>> skipButton;
+	std::unique_ptr<Button<Game&>> skipButton;
 	std::string sequenceName;
 	double secondsPerImage, currentImageSeconds;
 	int imageIndex, textIndex;
 public:
-	TextCinematicPanel(Game *game, const std::string &sequenceName,
+	TextCinematicPanel(Game &game, const std::string &sequenceName,
 		const std::string &text, double secondsPerImage,
-		const std::function<void(Game*)> &endingAction);
+		const std::function<void(Game&)> &endingAction);
 	virtual ~TextCinematicPanel();
 
 	virtual void handleEvent(const SDL_Event &e) override;

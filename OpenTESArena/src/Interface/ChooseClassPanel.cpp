@@ -35,11 +35,11 @@
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
-ChooseClassPanel::ChooseClassPanel(Game *game)
+ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game)
 {
 	// Read in character classes (just copy from misc. assets for now).
-	const auto &classDefs = game->getTextAssets().getClassDefinitions();
+	const auto &classDefs = game.getTextAssets().getClassDefinitions();
 	this->charClasses = std::vector<CharacterClass>(classDefs.begin(), classDefs.end());
 	assert(this->charClasses.size() > 0);
 
@@ -50,23 +50,23 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 		return a.getName().compare(b.getName()) < 0;
 	});
 
-	this->titleTextBox = [game]()
+	this->titleTextBox = [&game]()
 	{
 		const int x = 89;
 		const int y = 32;
 
 		const RichTextString richText(
-			game->getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
+			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
 			FontName::C,
 			Color(211, 211, 211),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->classesListBox = [this, game]()
+	this->classesListBox = [this, &game]()
 	{
 		const int x = 85;
 		const int y = 46;
@@ -87,18 +87,18 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 			elements,
 			FontName::A,
 			maxDisplayed,
-			game->getFontManager(),
-			game->getRenderer()));
+			game.getFontManager(),
+			game.getRenderer()));
 	}();
 
 	this->backToClassCreationButton = []()
 	{
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
-			game->setPanel(std::move(creationPanel));
+			game.setPanel(std::move(creationPanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->upButton = []
@@ -140,13 +140,13 @@ ChooseClassPanel::ChooseClassPanel(Game *game)
 
 	this->acceptButton = []
 	{
-		auto function = [](Game *game, const CharacterClass &charClass)
+		auto function = [](Game &game, const CharacterClass &charClass)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(game, charClass));
-			game->setPanel(std::move(namePanel));
+			game.setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<Game*, const CharacterClass&>>(
-			new Button<Game*, const CharacterClass&>(function));
+		return std::unique_ptr<Button<Game&, const CharacterClass&>>(
+			new Button<Game&, const CharacterClass&>(function));
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
@@ -161,7 +161,7 @@ ChooseClassPanel::~ChooseClassPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -173,7 +173,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	// Eventually handle mouse motion: if mouse is over scroll bar and
 	// LMB state is down, move scroll bar to that Y position.
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -186,7 +186,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	bool mouseWheelDown = inputManager.mouseWheeledDown(e);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// See if a class in the list was clicked, or if it is being scrolled.
@@ -386,7 +386,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 			"Weapons: " + this->getClassWeapons(characterClass);
 
 		Texture texture(Panel::createTooltip(
-			text, FontName::D, this->getGame()->getFontManager(), renderer));
+			text, FontName::D, this->getGame().getFontManager(), renderer));
 
 		tooltipIter = this->tooltipTextures.emplace(std::make_pair(
 			tooltipIndex, std::move(texture))).first;
@@ -394,7 +394,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 
 	const Texture &tooltip = tooltipIter->second;
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
@@ -413,7 +413,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
@@ -437,7 +437,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 		this->classesListBox->getPoint().y);
 
 	// Draw tooltip if over a valid element in the list box.
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	Int2 mouseOriginalPoint = renderer.nativePointToOriginal(mousePosition);
 

@@ -35,12 +35,12 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
-ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
+ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	const CharacterClass &charClass, const std::string &name, 
 	GenderName gender, int raceID)
 	: Panel(game), charClass(charClass), gender(gender), name(name)
 {
-	this->nameTextBox = [game, &name]()
+	this->nameTextBox = [&game, &name]()
 	{
 		const int x = 10;
 		const int y = 8;
@@ -50,18 +50,18 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->raceTextBox = [game, raceID]()
+	this->raceTextBox = [&game, raceID]()
 	{
 		const int x = 10;
 		const int y = 17;
 
-		const std::string &text = game->getTextAssets().getAExeStrings().getList(
+		const std::string &text = game.getTextAssets().getAExeStrings().getList(
 			ExeStringKey::RaceNamesSingular).at(raceID);
 
 		const RichTextString richText(
@@ -69,13 +69,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->classTextBox = [game, &charClass]()
+	this->classTextBox = [&game, &charClass]()
 	{
 		const int x = 10;
 		const int y = 26;
@@ -85,21 +85,21 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
 	this->backToRaceButton = [&charClass, &name, gender]()
 	{
-		auto function = [charClass, name, gender](Game *game)
+		auto function = [charClass, name, gender](Game &game)
 		{
 			std::unique_ptr<Panel> racePanel(new ChooseRacePanel(
 				game, charClass, name, gender));
-			game->setPanel(std::move(racePanel));
+			game.setPanel(std::move(racePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(function));
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
 	}();
 
 	this->doneButton = [this, &charClass, &name, gender, raceID]()
@@ -108,31 +108,31 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 		const int width = 21;
 		const int height = 12;
 
-		auto gameDataFunction = [this, charClass, name, gender, raceID](Game *game)
+		auto gameDataFunction = [this, charClass, name, gender, raceID](Game &game)
 		{
 			// Initialize 3D renderer.
-			auto &renderer = game->getRenderer();
-			const bool fullGameWindow = game->getOptions().getModernInterface();
+			auto &renderer = game.getRenderer();
+			const bool fullGameWindow = game.getOptions().getModernInterface();
 			renderer.initializeWorldRendering(
-				game->getOptions().getResolutionScale(), fullGameWindow);
+				game.getOptions().getResolutionScale(), fullGameWindow);
 
 			// Generate the test world data.
 			std::unique_ptr<GameData> gameData = GameData::createDefault(
 				name, gender, raceID, charClass, this->portraitID,
-				game->getTextureManager(), renderer);
+				game.getTextureManager(), renderer);
 
 			// Set the game data before constructing the game world panel.
-			game->setGameData(std::move(gameData));
+			game.setGameData(std::move(gameData));
 		};
 
-		auto gameFunction = [](Game *game)
+		auto gameFunction = [](Game &game)
 		{
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
-			game->setPanel(std::move(gameWorldPanel));
-			game->setMusic(MusicName::SunnyDay);
+			game.setPanel(std::move(gameWorldPanel));
+			game.setMusic(MusicName::SunnyDay);
 		};
 
-		auto cinematicFunction = [gameDataFunction, gameFunction](Game *game)
+		auto cinematicFunction = [gameDataFunction, gameFunction](Game &game)
 		{
 			gameDataFunction(game);
 
@@ -142,12 +142,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			// for every subsequent screen forward by a little bit.
 
 			// Read Ria Silmane's text from TEMPLATE.DAT.
-			std::string silmaneText = game->getTextAssets().getTemplateDatText("#1400");
+			std::string silmaneText = game.getTextAssets().getTemplateDatText("#1400");
 			silmaneText.append("\n");
 
 			// Replace all instances of %pcf with the player's first name.
 			const std::string playerName =
-				game->getGameData().getPlayer().getFirstName();
+				game.getGameData().getPlayer().getFirstName();
 			silmaneText = String::replace(silmaneText, "%pcf", playerName);
 
 			// Some more formatting should be done in the future so the text wraps nicer.
@@ -161,12 +161,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 				0.171,
 				gameFunction));
 
-			game->setPanel(std::move(cinematicPanel));
-			game->setMusic(MusicName::Vision);
+			game.setPanel(std::move(cinematicPanel));
+			game.setMusic(MusicName::Vision);
 		};
 
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(center, width, height, cinematicFunction));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(center, width, height, cinematicFunction));
 	}();
 
 	this->portraitButton = []()
@@ -207,16 +207,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 	this->portraitID = 0;
 
 	// Push the initial text pop-up onto the sub-panel stack.
-	std::unique_ptr<Panel> textSubPanel = [game]()
+	std::unique_ptr<Panel> textSubPanel = [&game]()
 	{
 		const Int2 center(
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,
 			(Renderer::ORIGINAL_HEIGHT / 2) - 2);
 		const Color color(199, 199, 199);
 
-		const std::string text = [game]()
+		const std::string text = [&game]()
 		{
-			std::string segment = game->getTextAssets().getAExeStrings().get(
+			std::string segment = game.getTextAssets().getAExeStrings().get(
 				ExeStringKey::DistributeClassPoints);
 			segment = String::replace(segment, '\r', '\n');
 
@@ -231,24 +231,24 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game *game,
 			color,
 			TextAlignment::Center,
 			lineSpacing,
-			game->getFontManager());
+			game.getFontManager());
 
 		Texture texture(Texture::generate(
-			Texture::PatternType::Dark, 183, 42, game->getTextureManager(),
-			game->getRenderer()));
+			Texture::PatternType::Dark, 183, 42, game.getTextureManager(),
+			game.getRenderer()));
 
 		const Int2 textureCenter(
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,
 			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
 		// The sub-panel does nothing after it's removed.
-		auto function = [](Game *game) {};
+		auto function = [](Game &game) {};
 
 		return std::unique_ptr<Panel>(new TextSubPanel(
 			game, center, richText, function, std::move(texture), textureCenter));
 	}();
 
-	game->pushSubPanel(std::move(textSubPanel));
+	game.pushSubPanel(std::move(textSubPanel));
 }
 
 ChooseAttributesPanel::~ChooseAttributesPanel()
@@ -258,7 +258,7 @@ ChooseAttributesPanel::~ChooseAttributesPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -267,7 +267,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor
 
 void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -279,7 +279,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 		
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	if (leftClick)
@@ -311,7 +311,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
 	// Get the filenames for the portrait and clothes.

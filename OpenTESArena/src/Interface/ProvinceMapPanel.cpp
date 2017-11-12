@@ -62,7 +62,7 @@ namespace
 	};
 }
 
-ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
+ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	: Panel(game)
 {
 	this->searchButton = []()
@@ -100,13 +100,13 @@ ProvinceMapPanel::ProvinceMapPanel(Game *game, int provinceID)
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
-			game->setPanel(std::move(gamePanel));
+			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(
-			new Button<Game*>(x, y, width, height, function));
+		return std::unique_ptr<Button<Game&>>(
+			new Button<Game&>(x, y, width, height, function));
 	}();
 
 	this->provinceID = provinceID;
@@ -119,7 +119,7 @@ ProvinceMapPanel::~ProvinceMapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -130,7 +130,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 {
 	// Input will eventually depend on if the location pop-up is displayed, or
 	// if a location is selected.
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
@@ -144,7 +144,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		if (this->searchButton->contains(mouseOriginalPoint))
@@ -175,9 +175,9 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
 
 	Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame()->getFontManager(), renderer));
+		text, FontName::D, this->getGame().getFontManager(), renderer));
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
@@ -198,7 +198,7 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 		FontName::Arena,
 		Color(158, 0, 0),
 		TextAlignment::Center,
-		this->getGame()->getFontManager());
+		this->getGame().getFontManager());
 
 	const TextBox textBox(
 		center - Int2(0, 10), richText, Color(48, 48, 48), renderer);
@@ -215,19 +215,19 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 
 void ProvinceMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGame()->gameDataIsActive());
+	assert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get the filename of the province map.
 	const std::string backgroundFilename = [this]()
 	{
-		const std::string &filename = this->getGame()->getTextAssets().getAExeStrings().getList(
+		const std::string &filename = this->getGame().getTextAssets().getAExeStrings().getList(
 			ExeStringKey::ProvinceIMGFilenames).at(this->provinceID);
 
 		// Set all characters to uppercase because the texture manager expects 
@@ -242,9 +242,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Draw location icons, and find which place is closest to the mouse cursor.
 	// Ignore locations with no name (ones that are zeroed out in the center province).
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = this->getGame()->getRenderer()
+	const Int2 originalPosition = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// Initialize the current closest position to something very far away (watch out for
@@ -296,7 +296,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const auto &villageIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
 
-	const auto &province = this->getGame()->getCityDataFile()
+	const auto &province = this->getGame().getCityDataFile()
 		.getProvinceData(this->provinceID);
 
 	// Draw city-state icons.

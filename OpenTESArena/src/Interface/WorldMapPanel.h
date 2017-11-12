@@ -9,10 +9,10 @@ class Renderer;
 class WorldMapPanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game*>> backToGameButton;
-	std::unique_ptr<Button<Game*, int>> provinceButton;
+	std::unique_ptr<Button<Game&>> backToGameButton;
+	std::unique_ptr<Button<Game&, int>> provinceButton;
 public:
-	WorldMapPanel(Game *game);
+	WorldMapPanel(Game &game);
 	virtual ~WorldMapPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

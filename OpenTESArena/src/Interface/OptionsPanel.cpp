@@ -36,10 +36,10 @@ const std::string OptionsPanel::LETTERBOX_ASPECT_TEXT = "Letterbox Aspect: ";
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT = "H. Sensitivity: ";
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
 
-OptionsPanel::OptionsPanel(Game *game)
+OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
 {
-	this->titleTextBox = [game]()
+	this->titleTextBox = [&game]()
 	{
 		const Int2 center(160, 30);
 
@@ -48,13 +48,13 @@ OptionsPanel::OptionsPanel(Game *game)
 			FontName::A,
 			Color::White,
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->backToPauseTextBox = [game]()
+	this->backToPauseTextBox = [&game]()
 	{
 		const Int2 center(
 			Renderer::ORIGINAL_WIDTH - 30,
@@ -65,159 +65,159 @@ OptionsPanel::OptionsPanel(Game *game)
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Center,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game->getRenderer()));
+			center, richText, game.getRenderer()));
 	}();
 
-	this->fpsTextBox = [game]()
+	this->fpsTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 45;
 
 		const RichTextString richText(
-			OptionsPanel::FPS_TEXT + std::to_string(game->getOptions().getTargetFPS()),
+			OptionsPanel::FPS_TEXT + std::to_string(game.getOptions().getTargetFPS()),
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->resolutionScaleTextBox = [game]()
+	this->resolutionScaleTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 65;
 
 		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
-			String::fixedPrecision(game->getOptions().getResolutionScale(), 2);
+			String::fixedPrecision(game.getOptions().getResolutionScale(), 2);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->playerInterfaceTextBox = [game]()
+	this->playerInterfaceTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 85;
 
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			OptionsPanel::getPlayerInterfaceString(game->getOptions().getModernInterface());
+			OptionsPanel::getPlayerInterfaceString(game.getOptions().getModernInterface());
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->verticalFOVTextBox = [game]()
+	this->verticalFOVTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 105;
 
 		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
-			String::fixedPrecision(game->getOptions().getVerticalFOV(), 1);
+			String::fixedPrecision(game.getOptions().getVerticalFOV(), 1);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->cursorScaleTextBox = [game]()
+	this->cursorScaleTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 125;
 
 		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
-			String::fixedPrecision(game->getOptions().getCursorScale(), 1);
+			String::fixedPrecision(game.getOptions().getCursorScale(), 1);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->letterboxAspectTextBox = [game]()
+	this->letterboxAspectTextBox = [&game]()
 	{
 		const int x = 20;
 		const int y = 145;
 
 		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
-			String::fixedPrecision(game->getOptions().getLetterboxAspect(), 2);
+			String::fixedPrecision(game.getOptions().getLetterboxAspect(), 2);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->hSensitivityTextBox = [game]()
+	this->hSensitivityTextBox = [&game]()
 	{
 		const int x = 175;
 		const int y = 45;
 
 		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game->getOptions().getHorizontalSensitivity(), 1);
+			String::fixedPrecision(game.getOptions().getHorizontalSensitivity(), 1);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
-	this->vSensitivityTextBox = [game]()
+	this->vSensitivityTextBox = [&game]()
 	{
 		const int x = 175;
 		const int y = 65;
 
 		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game->getOptions().getVerticalSensitivity(), 1);
+			String::fixedPrecision(game.getOptions().getVerticalSensitivity(), 1);
 
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game->getFontManager());
+			game.getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game->getRenderer()));
+			x, y, richText, game.getRenderer()));
 	}();
 
 	this->backToPauseButton = []()
@@ -226,12 +226,12 @@ OptionsPanel::OptionsPanel(Game *game)
 			Renderer::ORIGINAL_WIDTH - 30,
 			Renderer::ORIGINAL_HEIGHT - 15);
 
-		auto function = [](Game *game)
+		auto function = [](Game &game)
 		{
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
-			game->setPanel(std::move(pausePanel));
+			game.setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<Game*>>(new Button<Game*>(
+		return std::unique_ptr<Button<Game&>>(new Button<Game&>(
 			center, 40, 16, function));
 	}();
 
@@ -548,11 +548,11 @@ void OptionsPanel::updateFPSText(int fps)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->fpsTextBox->getX(), this->fpsTextBox->getY(), richText,
-			this->getGame()->getRenderer()));
+			this->getGame().getRenderer()));
 	}();
 }
 
@@ -569,11 +569,11 @@ void OptionsPanel::updateResolutionScaleText(double resolutionScale)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -593,11 +593,11 @@ void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -617,11 +617,11 @@ void OptionsPanel::updateVerticalFOVText(double verticalFOV)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -641,11 +641,11 @@ void OptionsPanel::updateCursorScaleText(double cursorScale)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -665,11 +665,11 @@ void OptionsPanel::updateLetterboxAspectText(double letterboxAspect)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -689,11 +689,11 @@ void OptionsPanel::updateHorizontalSensitivityText(double hSensitivity)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
@@ -713,20 +713,20 @@ void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame()->getFontManager());
+			this->getGame().getFontManager());
 
 		return std::unique_ptr<TextBox>(new TextBox(
 			this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY(),
-			richText, this->getGame()->getRenderer()));
+			richText, this->getGame().getRenderer()));
 	}();
 }
 
 void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame()->getFontManager(), renderer));
+		text, FontName::D, this->getGame().getFontManager(), renderer));
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 originalPosition = renderer.nativePointToOriginal(
 		inputManager.getMousePosition());
 	const int mouseX = originalPosition.x;
@@ -741,7 +741,7 @@ void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default));
@@ -750,7 +750,7 @@ std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
@@ -763,74 +763,74 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame()->getRenderer()
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
 		// Check for various button clicks.
 		if (this->fpsUpButton->contains(mouseOriginalPoint))
 		{
-			this->fpsUpButton->click(this, this->getGame()->getOptions());
+			this->fpsUpButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->fpsDownButton->contains(mouseOriginalPoint))
 		{
-			this->fpsDownButton->click(this, this->getGame()->getOptions());
+			this->fpsDownButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->resolutionScaleUpButton->contains(mouseOriginalPoint))
 		{
-			this->resolutionScaleUpButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getRenderer());
+			this->resolutionScaleUpButton->click(this, this->getGame().getOptions(),
+				this->getGame().getRenderer());
 		}
 		else if (this->resolutionScaleDownButton->contains(mouseOriginalPoint))
 		{
-			this->resolutionScaleDownButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getRenderer());
+			this->resolutionScaleDownButton->click(this, this->getGame().getOptions(),
+				this->getGame().getRenderer());
 		}
 		else if (this->playerInterfaceButton->contains(mouseOriginalPoint))
 		{
-			this->playerInterfaceButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getGameData().getPlayer(), this->getGame()->getRenderer());
+			this->playerInterfaceButton->click(this, this->getGame().getOptions(),
+				this->getGame().getGameData().getPlayer(), this->getGame().getRenderer());
 		}
 		else if (this->verticalFOVUpButton->contains(mouseOriginalPoint))
 		{
-			this->verticalFOVUpButton->click(this, this->getGame()->getOptions());
+			this->verticalFOVUpButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->verticalFOVDownButton->contains(mouseOriginalPoint))
 		{
-			this->verticalFOVDownButton->click(this, this->getGame()->getOptions());
+			this->verticalFOVDownButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->cursorScaleUpButton->contains(mouseOriginalPoint))
 		{
-			this->cursorScaleUpButton->click(this, this->getGame()->getOptions());
+			this->cursorScaleUpButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->cursorScaleDownButton->contains(mouseOriginalPoint))
 		{
-			this->cursorScaleDownButton->click(this, this->getGame()->getOptions());
+			this->cursorScaleDownButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->letterboxAspectUpButton->contains(mouseOriginalPoint))
 		{
-			this->letterboxAspectUpButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getRenderer());
+			this->letterboxAspectUpButton->click(this, this->getGame().getOptions(),
+				this->getGame().getRenderer());
 		}
 		else if (this->letterboxAspectDownButton->contains(mouseOriginalPoint))
 		{
-			this->letterboxAspectDownButton->click(this, this->getGame()->getOptions(),
-				this->getGame()->getRenderer());
+			this->letterboxAspectDownButton->click(this, this->getGame().getOptions(),
+				this->getGame().getRenderer());
 		}
 		else if (this->hSensitivityUpButton->contains(mouseOriginalPoint))
 		{
-			this->hSensitivityUpButton->click(this, this->getGame()->getOptions());
+			this->hSensitivityUpButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->hSensitivityDownButton->contains(mouseOriginalPoint))
 		{
-			this->hSensitivityDownButton->click(this, this->getGame()->getOptions());
+			this->hSensitivityDownButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->vSensitivityUpButton->contains(mouseOriginalPoint))
 		{
-			this->vSensitivityUpButton->click(this, this->getGame()->getOptions());
+			this->vSensitivityUpButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->vSensitivityDownButton->contains(mouseOriginalPoint))
 		{
-			this->vSensitivityDownButton->click(this, this->getGame()->getOptions());
+			this->vSensitivityDownButton->click(this, this->getGame().getOptions());
 		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
@@ -845,7 +845,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame()->getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw solid background.
@@ -904,7 +904,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->vSensitivityTextBox->getTexture(),
 		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
 
-	const auto &inputManager = this->getGame()->getInputManager();
+	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
