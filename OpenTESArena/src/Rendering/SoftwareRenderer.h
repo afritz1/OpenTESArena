@@ -163,6 +163,12 @@ private:
 		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
+	// Draws a slice of a flat in the given X column of the screen.
+	static void drawFlat(int x, const Flat::Projection &flatProjection, const Double3 &normal, 
+		bool flipped, double fogDistance, const ShadingInfo &shadingInfo, 
+		const TextureData &texture, int frameWidth, int frameHeight, double *depthBuffer, 
+		uint32_t *colorBuffer);
+
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	void rayCast2D(int x, const Double3 &eye, const Double2 &direction,

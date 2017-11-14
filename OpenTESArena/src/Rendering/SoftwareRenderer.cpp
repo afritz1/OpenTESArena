@@ -2362,6 +2362,101 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	}
 }
 
+void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection, 
+	const Double3 &normal, bool flipped, double fogDistance, const ShadingInfo &shadingInfo,
+	const TextureData &texture, int frameWidth, int frameHeight, double *depthBuffer,
+	uint32_t *colorBuffer)
+{
+	// Values for the flat are interpolated from the right edge to the left edge
+	// (not necessarily right to left on-screen).
+	const Flat::Projection::Edge &startEdge = flatProjection.right;
+	const Flat::Projection::Edge &endEdge = flatProjection.left;
+
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
+
+	// X percent across the screen.
+	const double xPercent = (static_cast<double>(x) + 0.50) /
+		static_cast<double>(frameWidth);
+
+	// Find where the column is within the X range of the flat. This is the percent
+	// showing how far the column is from the start edge to the end edge in X.
+	const double flatPercent = (xPercent - startEdge.x) / (endEdge.x - startEdge.x);
+
+	// Don't render the flat if the column percent is invalid.
+	if ((flatPercent < 0.0) || (flatPercent > 1.0))
+	{
+		return;
+	}
+
+	// Horizontal texture coordinate in the flat.
+	const double u = std::max(std::min(
+		startEdge.u + ((endEdge.u - startEdge.u) * flatPercent),
+		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+
+	// Interpolate the projected Y coordinates based on the X range.
+	const double projectedY1 = startEdge.topY +
+		((endEdge.topY - startEdge.topY) * flatPercent);
+	const double projectedY2 = startEdge.bottomY +
+		((endEdge.bottomY - startEdge.bottomY) * flatPercent);
+
+	// Get the start and end Y coordinates of the projected points (potentially
+	// outside the top or bottom of the screen).
+	const double heightReal = static_cast<double>(frameHeight);
+	const double projectedStart = projectedY1 * heightReal;
+	const double projectedEnd = projectedY2 * heightReal;
+
+	// Clamp the Y coordinates for where the flat starts and stops on the screen.
+	const int drawStart = std::min(std::max(0,
+		static_cast<int>(std::ceil(projectedStart - 0.50))), frameHeight);
+	const int drawEnd = std::min(std::max(0,
+		static_cast<int>(std::floor(projectedEnd + 0.50))), frameHeight);
+
+	// Horizontal texel position.
+	const int textureX = static_cast<int>(
+		(flipped ? (SoftwareRenderer::JUST_BELOW_ONE - u) : u) *
+		static_cast<double>(texture.width));
+
+	// I think this needs to be perspective correct. Currently, it's like affine
+	// texture mapping, but for depth.
+	const double zDistance = startEdge.z + ((endEdge.z - startEdge.z) * flatPercent);
+
+	// Linearly interpolated fog.
+	const double fogPercent = std::min(zDistance / fogDistance, 1.0);
+	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+
+	for (int y = drawStart; y < drawEnd; y++)
+	{
+		const int index = x + (y * frameWidth);
+
+		if (zDistance <= depthBuffer[index])
+		{
+			// Vertical texture coordinate.
+			const double v = static_cast<double>(y - projectedStart) /
+				static_cast<double>(projectedEnd - projectedStart);
+
+			// Vertical texel position.
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+
+			// Draw only if the texel is not transparent.
+			if (texel.w > 0.0)
+			{
+				const Double3 color(
+					texel.x * (shadingInfo.ambient + sunComponent.x),
+					texel.y * (shadingInfo.ambient + sunComponent.y),
+					texel.z * (shadingInfo.ambient + sunComponent.z));
+
+				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+				depthBuffer[index] = zDistance;
+			}
+		}
+	}
+}
+
 void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direction,
 	const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
 	const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
@@ -2541,110 +2636,28 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 			colorBuffer);
 	}
 
-	// Flats (sprites, doors, diagonal walls, fences, etc.).
-	// - Maybe put the drawing into a lambda, so the required parameters are easier 
-	//   to understand?
-	// - Sprites *could* be done outside the ray casting loop, though they would need to be
-	//   parallelized a bit differently then. Here, it is easy to parallelize by column,
-	//   so it might be faster in practice, even if a little redundant work is done.
-
+	// Draw flats (sprites, fences, signs, etc.).
+	// - Flats could be done outside the ray casting loop, but they would then need to be
+	//   parallelized a bit differently (instead of by-column like this method).
 	for (const auto &pair : this->visibleFlats)
 	{
 		const Flat &flat = *pair.first;
 		const Flat::Projection &flatProjection = pair.second;
 
-		// Normal of the flat (not all flats face the camera).
+		// Normal of the flat (not all flats face the camera, but every flat's normal
+		// is perpendicular to the Y axis).
 		const Double3 flatNormal = Double3(
 			flat.direction.x,
 			0.0,
 			flat.direction.y).normalized();
 
-		// Contribution from the sun.
-		const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(flatNormal));
-		const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-			0.0, 1.0 - shadingInfo.ambient);
+		// Texture of the flat and whether it's flipped horizontally.
+		const TextureData &texture = textures[flat.textureID];
+		const bool flipped = flat.flipped;
 
-		// X percent across the screen.
-		const double xPercent = static_cast<double>(x) /
-			static_cast<double>(this->width);
-
-		// Find where the column is within the X range of the flat.
-		const double xRangePercent = (xPercent - flatProjection.right.x) /
-			(flatProjection.left.x - flatProjection.right.x);
-
-		// Don't render the flat if the X range percent is invalid.
-		if ((xRangePercent < 0.0) || (xRangePercent >= 1.0))
-		{
-			continue;
-		}
-
-		// Horizontal texture coordinate in the flat. This actually doesn't need
-		// perspective-correctness after all.
-		const double u = flatProjection.right.u + 
-			((flatProjection.left.u - flatProjection.right.u) * xRangePercent);
-
-		// Interpolate the projected Y coordinates based on the X range.
-		const double projectedY1 = flatProjection.right.topY +
-			((flatProjection.left.topY - flatProjection.right.topY) * xRangePercent);
-		const double projectedY2 = flatProjection.right.bottomY +
-			((flatProjection.left.bottomY - flatProjection.right.bottomY) * xRangePercent);
-
-		// Get the start and end Y pixel coordinates of the projected points (potentially
-		// outside the top or bottom of the screen).
-		const double heightReal = static_cast<double>(this->height);
-		const int projectedStart = static_cast<int>(std::round(projectedY1 * heightReal));
-		const int projectedEnd = static_cast<int>(std::round(projectedY2 * heightReal));
-
-		// Clamp the Y coordinates for where the wall starts and stops on the screen.
-		const int drawStart = std::max(0, projectedStart);
-		const int drawEnd = std::min(this->height, projectedEnd);
-
-		// The texture associated with the voxel ID.
-		const TextureData &texture = this->textures[flat.textureID];
-
-		// X position in texture (temporarily using modulo to protect against edge cases 
-		// where u == 1.0; it should be fixed in the u calculation instead).
-		const int textureX = static_cast<int>((flat.flipped ? (1.0 - u) : u) *
-			static_cast<double>(texture.width)) % texture.width;
-
-		// I think this needs to be perspective correct. Currently, it's like affine
-		// texture mapping, but for depth.
-		const double zDistance = flatProjection.right.z +
-			((flatProjection.left.z - flatProjection.right.z) * xRangePercent);
-
-		// Linearly interpolated fog.
-		const double fogPercent = std::min(zDistance / this->fogDistance, 1.0);
-		const Double3 &fogColor = shadingInfo.horizonSkyColor;
-
-		double *depth = this->zBuffer.data();
-		for (int y = drawStart; y < drawEnd; ++y)
-		{
-			const int index = x + (y * this->width);
-
-			if (zDistance <= depth[index])
-			{
-				// Vertical texture coordinate.
-				const double v = static_cast<double>(y - projectedStart) /
-					static_cast<double>(projectedEnd - projectedStart);
-
-				// Y position in texture.
-				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
-
-				// Draw only if the texel is not transparent.
-				if (texel.w > 0.0)
-				{
-					const Double3 color(
-						texel.x * (shadingInfo.ambient + sunComponent.x),
-						texel.y * (shadingInfo.ambient + sunComponent.y),
-						texel.z * (shadingInfo.ambient + sunComponent.z));
-
-					colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-					depth[index] = zDistance;
-				}
-			}
-		}
+		SoftwareRenderer::drawFlat(x, flatProjection, flatNormal, flipped, 
+			this->fogDistance, shadingInfo, texture, this->width, this->height, 
+			this->zBuffer.data(), colorBuffer);
 	}
 }
 
@@ -2741,7 +2754,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	auto renderColumns = [this, &eye, &voxelGrid, colorBuffer, &shadingInfo, widthReal, 
 		&transform, yShear, &forwardComp, &right2D](int startX, int endX)
 	{
-		for (int x = startX; x < endX; ++x)
+		for (int x = startX; x < endX; x++)
 		{
 			// X percent across the screen.
 			const double xPercent = (static_cast<double>(x) + 0.50) / widthReal;
