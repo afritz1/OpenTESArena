@@ -687,7 +687,7 @@ double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &tra
 }
 
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal)
+	const Double2 &farPoint, DiagonalHit &hit)
 {
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
 	const Double2 diagStart(
@@ -759,12 +759,13 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 			}
 		}();
 
-		u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
-		point = Double2(
-			static_cast<double>(voxelX) + u,
-			static_cast<double>(voxelZ) + u);
-		innerZ = (point - nearPoint).length();
-		normal = nearOnLeft ? leftNormal : rightNormal;
+		// Set the hit data.
+		hit.u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		hit.point = Double2(
+			static_cast<double>(voxelX) + hit.u,
+			static_cast<double>(voxelZ) + hit.u);
+		hit.innerZ = (hit.point - nearPoint).length();
+		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
 		return true;
 	}
@@ -776,7 +777,7 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 }
 
 bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal)
+	const Double2 &farPoint, DiagonalHit &hit)
 {
 	// Mostly a copy of findDiag1Intersection(), though with a couple different values
 	// for the diagonal (end points, slope, etc.).
@@ -851,12 +852,13 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 			}
 		}();
 
-		u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
-		point = Double2(
-			static_cast<double>(voxelX) + (SoftwareRenderer::JUST_BELOW_ONE - u),
-			static_cast<double>(voxelZ) + u);
-		innerZ = (point - nearPoint).length();
-		normal = nearOnLeft ? leftNormal : rightNormal;
+		// Set the hit data.
+		hit.u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		hit.point = Double2(
+			static_cast<double>(voxelX) + (SoftwareRenderer::JUST_BELOW_ONE - hit.u),
+			static_cast<double>(voxelZ) + hit.u);
+		hit.innerZ = (hit.point - nearPoint).length();
+		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
 		return true;
 	}
@@ -1139,12 +1141,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 2) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1152,26 +1151,23 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 3) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1179,14 +1175,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -1236,12 +1232,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 2) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1249,26 +1242,23 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 3) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1276,14 +1266,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -1323,12 +1313,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			// 1) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1336,26 +1323,23 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 2) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1363,14 +1347,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -1468,12 +1452,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 2) Diagonal 1.
 		if (voxelData.diag1ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -1481,26 +1462,23 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
 		// 3) Diagonal 2.
 		if (voxelData.diag2ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -1508,14 +1486,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
@@ -1602,12 +1580,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		// 2) Diagonal 1.
 		if (voxelData.diag1ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -1615,26 +1590,23 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
 		// 3) Diagonal 2.
 		if (voxelData.diag2ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -1642,14 +1614,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
@@ -1821,12 +1793,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 3) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1834,26 +1803,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 4) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1861,14 +1827,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -1918,12 +1884,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 3) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1931,26 +1894,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 4) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -1958,14 +1918,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -2005,12 +1965,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			// 2) Diagonal 1.
 			if (voxelData.diag1ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -2018,26 +1975,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY, 
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
 			// 3) Diagonal 2.
 			if (voxelData.diag2ID > 0)
 			{
-				double innerZ;
-				Double2 point;
-				double diagU;
-				Double3 normal;
+				DiagonalHit hit;
 				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+					voxelX, voxelZ, nearPoint, farPoint, hit);
 
 				if (success)
 				{
@@ -2045,14 +1999,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					int diagStart, diagEnd;
 
 					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, point,
+					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
 						transform, yShear, frameHeight, heightReal, diagTopScreenY,
 						diagBottomScreenY, diagStart, diagEnd);
 
 					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-						normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-						frameHeight, depthBuffer, colorBuffer);
+						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 				}
 			}
 
@@ -2150,12 +2104,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 3) Diagonal 1.
 		if (voxelData.diag1ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -2163,26 +2114,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
 		// 4) Diagonal 2.
 		if (voxelData.diag2ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -2190,14 +2138,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
@@ -2284,12 +2232,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		// 3) Diagonal 1.
 		if (voxelData.diag1ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -2297,26 +2242,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag1ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 
 		// 4) Diagonal 2.
 		if (voxelData.diag2ID > 0)
 		{
-			double innerZ;
-			Double2 point;
-			double diagU;
-			Double3 normal;
+			DiagonalHit hit;
 			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, innerZ, point, diagU, normal);
+				voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
@@ -2324,14 +2266,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, point,
+				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
 					transform, yShear, frameHeight, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + innerZ, diagU, voxelData.topV, voxelData.bottomV,
-					normal, textures.at(voxelData.diag2ID - 1), shadingInfo, frameWidth,
-					frameHeight, depthBuffer, colorBuffer);
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
+					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
+					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
 			}
 		}
 		

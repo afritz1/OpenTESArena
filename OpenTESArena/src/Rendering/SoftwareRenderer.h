@@ -12,11 +12,6 @@
 
 // This class runs the CPU-based 3D rendering for the application.
 
-// I originally used OpenCL with the graphics card for rendering, but this way 
-// is much easier to prototype with. OpenCL was an Achilles' Heel anyway, since
-// it's not a graphics API, and the overhead of passing frame buffers back and
-// forth with the GPU was "hilarious" as one said. It was good practice, though!
-
 class VoxelData;
 class VoxelGrid;
 
@@ -32,6 +27,14 @@ private:
 		std::vector<Double4> pixels;
 		int width, height;
 		bool containsTransparency; // For occlusion culling.
+	};
+
+	struct DiagonalHit
+	{
+		// Inner Z is the distance from the near point to the intersection point.
+		double innerZ, u;
+		Double2 point;
+		Double3 normal;
 	};
 
 	// Helper struct for keeping shading data organized in the renderer. These values are
@@ -111,18 +114,16 @@ private:
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
 	// Use this to gather potential intersection data from a voxel containing a non-zero ID for
-	// "diagonal 1"; the diagonal starting at (nearX, nearZ) and ending at (farX, farZ). "Inner Z"
-	// is the Z distance from the near point to the intersection. Returns whether an intersection 
-	// occurred within the voxel.
+	// "diagonal 1"; the diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns 
+	// whether an intersection occurred within the voxel.
 	static bool findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-		const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal);
+		const Double2 &farPoint, DiagonalHit &hit);
 
 	// Use this to gather potential intersection data from a voxel containing a non-zero ID for
-	// "diagonal 2"; the diagonal starting at (farX, nearZ) and ending at (nearX, farZ). "Inner Z"
-	// is the Z distance from the near point to the intersection. Returns whether an intersection 
-	// occurred within the voxel.
+	// "diagonal 2"; the diagonal starting at (farX, nearZ) and ending at (nearX, farZ). Returns 
+	// whether an intersection occurred within the voxel.
 	static bool findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-		const Double2 &farPoint, double &innerZ, Double2 &point, double &u, Double3 &normal);
+		const Double2 &farPoint, DiagonalHit &hit);
 
 	// Calculates all the projection data for a diagonal wall after successful intersection
 	// and assigns it to various reference variables.
