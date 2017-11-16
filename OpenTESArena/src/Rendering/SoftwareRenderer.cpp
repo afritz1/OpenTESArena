@@ -2376,7 +2376,7 @@ void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection,
 		if (zDistance <= depthBuffer[index])
 		{
 			// Vertical texture coordinate.
-			const double v = static_cast<double>(y - projectedStart) /
+			const double v = ((static_cast<double>(y) + 0.50) - projectedStart) /
 				static_cast<double>(projectedEnd - projectedStart);
 
 			// Vertical texel position.
