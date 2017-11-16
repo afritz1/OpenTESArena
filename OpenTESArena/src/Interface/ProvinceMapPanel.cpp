@@ -200,16 +200,15 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 		TextAlignment::Center,
 		this->getGame().getFontManager());
 
-	const TextBox textBox(
-		center - Int2(0, 10), richText, Color(48, 48, 48), renderer);
+	const TextBox::ShadowData shadowData(Color(48, 48, 48), Int2(1, 0));
+	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, renderer);
 
 	// Clamp to screen edges, with some extra space on the left and right.
 	const int x = std::max(std::min(textBox.getX(),
 		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
 	const int y = std::max(std::min(textBox.getY(),
-		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h), 0);
+		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2), 2);
 	
-	renderer.drawOriginal(textBox.getShadowTexture(), x + 1, y);
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
 

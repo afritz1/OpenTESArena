@@ -86,10 +86,10 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 			TextAlignment::Center,
 			game.getFontManager());
 
-		const Color shadowColor(150, 101, 52);
+		const TextBox::ShadowData shadowData(Color(150, 101, 52), Int2(2, 2));
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, shadowColor, game.getRenderer()));
+			center, richText, &shadowData, game.getRenderer()));
 	}();
 
 	this->backToGameButton = []()
@@ -398,8 +398,6 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.setClipRect(nullptr);
 
 	// Draw text: title.
-	renderer.drawOriginal(this->locationTextBox->getShadowTexture(),
-		this->locationTextBox->getX() + 2, this->locationTextBox->getY() + 2);
 	renderer.drawOriginal(this->locationTextBox->getTexture(),
 		this->locationTextBox->getX(), this->locationTextBox->getY());
 

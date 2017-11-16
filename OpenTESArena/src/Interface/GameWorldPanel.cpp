@@ -1046,12 +1046,14 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 				lineSpacing,
 				game.getFontManager());
 
+			const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+
 			// Create the text box for display (set position to zero; the renderer will decide
 			// where to draw it).
 			std::unique_ptr<TextBox> textBox(new TextBox(
 				Int2(0, 0), 
 				richText, 
-				TriggerTextShadowColor,
+				&shadowData,
 				game.getRenderer()));
 
 			// Assign the text box and its duration to the triggered text member. It will 
@@ -1397,7 +1399,8 @@ void GameWorldPanel::render(Renderer &renderer)
 			TextureFile::fromName(TextureName::GameWorldInterface));
 
 		const auto &triggerTextBox = *this->triggerText.second.get();
-		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextBox.getSurface()->w / 2);
+		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - 
+			(triggerTextBox.getSurface()->w / 2) - 1;
 		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
 		{
 			const int interfaceOffset = modernInterface ?
@@ -1406,7 +1409,6 @@ void GameWorldPanel::render(Renderer &renderer)
 				triggerTextBox.getSurface()->h - 2;
 		}();
 
-		renderer.drawOriginal(triggerTextBox.getShadowTexture(), centerX - 1, centerY);
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 

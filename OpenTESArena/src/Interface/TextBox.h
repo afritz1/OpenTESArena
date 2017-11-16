@@ -7,6 +7,8 @@
 #include "RichTextString.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Rendering/Surface.h"
+#include "../Rendering/Texture.h"
 
 // Redesigned for use with the font system using Arena assets.
 
@@ -18,15 +20,25 @@ struct SDL_Texture;
 
 class TextBox
 {
+public:
+	// Data for the text box's shadow (if any).
+	struct ShadowData
+	{
+		Color color;
+		Int2 offset;
+
+		ShadowData(const Color &color, const Int2 &offset)
+			: color(color), offset(offset) { }
+	};
 private:
 	RichTextString richText;
-	SDL_Surface *surface; // For ListBox compatibility. Identical to "texture".
-	SDL_Texture *texture, *shadowTexture;
+	Surface surface; // For ListBox compatibility. Identical to "texture".
+	Texture texture;
 	int x, y;
 public:
-	TextBox(int x, int y, const RichTextString &richText, const Color &shadowColor,
+	TextBox(int x, int y, const RichTextString &richText, const ShadowData *shadow,
 		Renderer &renderer);
-	TextBox(const Int2 &center, const RichTextString &richText, const Color &shadowColor,
+	TextBox(const Int2 &center, const RichTextString &richText, const ShadowData *shadow,
 		Renderer &renderer);
 	TextBox(int x, int y, const RichTextString &richText, Renderer &renderer);
 	TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer);
@@ -42,9 +54,6 @@ public:
 
 	SDL_Surface *getSurface() const;
 	SDL_Texture *getTexture() const;
-
-	// Gets the copy of the text box texture that uses the shadow color for text.
-	SDL_Texture *getShadowTexture() const;
 };
 
 #endif

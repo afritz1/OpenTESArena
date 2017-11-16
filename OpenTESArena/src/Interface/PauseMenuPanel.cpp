@@ -99,10 +99,10 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		const Color shadowColor(101, 77, 24);
+		const TextBox::ShadowData shadowData(Color(101, 77, 24), Int2(-1, 1));
 
 		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, shadowColor, game.getRenderer()));
+			center, richText, &shadowData, game.getRenderer()));
 	}();
 
 	this->loadButton = []()
@@ -434,8 +434,6 @@ void PauseMenuPanel::render(Renderer &renderer)
 		this->musicTextBox->getX(), this->musicTextBox->getY());
 	renderer.drawOriginal(this->soundTextBox->getTexture(),
 		this->soundTextBox->getX(), this->soundTextBox->getY());
-	renderer.drawOriginal(this->optionsTextBox->getShadowTexture(),
-		this->optionsTextBox->getX() - 1, this->optionsTextBox->getY() + 1);
 	renderer.drawOriginal(this->optionsTextBox->getTexture(),
-		this->optionsTextBox->getX(), this->optionsTextBox->getY());
+		this->optionsTextBox->getX() - 1, this->optionsTextBox->getY());
 }
