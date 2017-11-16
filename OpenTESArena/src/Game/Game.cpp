@@ -84,7 +84,8 @@ Game::Game()
 		(arenaPathIsRelative ? this->basePath : "") + this->options->getArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.
-	this->audioManager.init(*this->options.get());
+	this->audioManager.init(this->options->getMusicVolume(), this->options->getSoundVolume(),
+		this->options->getSoundChannels(), this->options->getMidiConfig());
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer = std::unique_ptr<Renderer>(new Renderer(

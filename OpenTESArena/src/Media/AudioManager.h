@@ -2,6 +2,7 @@
 #define AUDIO_MANAGER_H
 
 #include <memory>
+#include <string>
 
 // This class manages what sounds and music are played by OpenAL Soft.
 
@@ -10,15 +11,20 @@ class Options;
 
 class AudioManager
 {
+private:
 	std::unique_ptr<AudioManagerImpl> pImpl;
 public:
 	AudioManager();
 	~AudioManager();
 
-    void init(const Options &options);
+    void init(double musicVolume, double soundVolume, int maxChannels, 
+		const std::string &midiConfig);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
+
+	double getMusicVolume() const;
+	double getSoundVolume() const;
 
 	// Plays a music file. All music should loop until changed.
 	void playMusic(const std::string &filename);

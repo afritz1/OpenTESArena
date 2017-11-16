@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
-#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -46,7 +45,8 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(const Options &options);
+	void init(double musicVolume, double soundVolume, int maxChannels,
+		const std::string &midiConfig);
 
 	void playMusic(const std::string &filename);
 	void playSound(const std::string &filename);
@@ -321,7 +321,7 @@ AudioManagerImpl::~AudioManagerImpl()
 	MidiDevice::shutdown();
 
 	ALCcontext *context = alcGetCurrentContext();
-	if (!context)
+	if (context == nullptr)
 	{
 		return;
 	}
@@ -347,40 +347,37 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-void AudioManagerImpl::init(const Options &options)
+void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
+	const std::string &midiConfig)
 {
 	DebugMention("Initializing.");
 
 #ifdef HAVE_WILDMIDI
-	WildMidiDevice::init(options.getMidiConfig());
+	WildMidiDevice::init(midiConfig);
 #endif
 
-	// Start initializing the OpenAL device.
+	// Initialize the OpenAL device and context.
 	ALCdevice *device = alcOpenDevice(nullptr);
 	DebugAssert(device != nullptr, "alcOpenDevice");
 
-	// Create an OpenAL context.
 	ALCcontext *context = alcCreateContext(device, nullptr);
 	DebugAssert(context != nullptr, "alcCreateContext");
 
 	ALCboolean success = alcMakeContextCurrent(context);
 	DebugAssert(success == AL_TRUE, "alcMakeContextCurrent");
 
-	double musicVolume = options.getMusicVolume();
-	double soundVolume = options.getSoundVolume();
-	int maxChannels = options.getSoundChannels();
-
-	this->setMusicVolume(musicVolume);
-	this->setSoundVolume(soundVolume);
-
-	for (size_t i = 0; i < maxChannels; ++i)
+	// Generate the sound sources.
+	for (int i = 0; i < maxChannels; i++)
 	{
 		ALuint source;
 		alGenSources(1, &source);
-		if (alGetError() != AL_NO_ERROR)
-			break;
+		DebugAssert(alGetError() == AL_NO_ERROR, "alGenSources");
+
 		mFreeSources.push_back(source);
 	}
+
+	this->setMusicVolume(musicVolume);
+	this->setSoundVolume(soundVolume);
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename)
@@ -534,9 +531,20 @@ AudioManager::~AudioManager()
 
 }
 
-void AudioManager::init(const Options &options)
+void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
+	const std::string &midiConfig)
 {
-	pImpl->init(options);
+	pImpl->init(musicVolume, soundVolume, maxChannels, midiConfig);
+}
+
+double AudioManager::getMusicVolume() const
+{
+	return static_cast<double>(pImpl->mMusicVolume);
+}
+
+double AudioManager::getSoundVolume() const
+{
+	return static_cast<double>(pImpl->mSfxVolume);
 }
 
 void AudioManager::playMusic(const std::string &filename)
