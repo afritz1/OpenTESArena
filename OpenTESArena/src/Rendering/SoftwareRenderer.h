@@ -22,7 +22,7 @@ private:
 	// for the sides of walls because floor and ceiling normals can be inferred trivially.
 	enum class WallFacing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
-	struct TextureData
+	struct SoftwareTexture
 	{
 		std::vector<Double4> pixels;
 		int width, height;
@@ -94,7 +94,7 @@ private:
 	std::vector<double> zBuffer;
 	std::unordered_map<int, Flat> flats;
 	std::vector<std::pair<const Flat*, Flat::Projection>> visibleFlats;
-	std::vector<TextureData> textures;
+	std::vector<SoftwareTexture> textures;
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
@@ -139,14 +139,14 @@ private:
 	// Draws a column of wall pixels.
 	static void drawWall(int x, int yStart, int yEnd, double projectedYStart, 
 		double projectedYEnd, double z, double u, double topV, double bottomV,
-		const Double3 &normal, const TextureData &texture, const ShadingInfo &shadingInfo, 
+		const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
 		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Draws a column of floor or ceiling pixels. The pixel drawing order is always
 	// top to bottom, so the start and end points should be passed with that in mind.
 	static void drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart, 
 		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, 
-		double startZ, double endZ, const Double3 &normal, const TextureData &texture, 
+		double startZ, double endZ, const Double3 &normal, const SoftwareTexture &texture,
 		const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, double *depthBuffer, 
 		uint32_t *colorBuffer);
 	
@@ -154,20 +154,20 @@ private:
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 		WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
-		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
+		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 		WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
-		const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth, 
+		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Draws a slice of a flat in the given X column of the screen.
 	static void drawFlat(int x, const Flat::Projection &flatProjection, const Double3 &normal, 
 		bool flipped, double fogDistance, const ShadingInfo &shadingInfo, 
-		const TextureData &texture, int frameWidth, int frameHeight, double *depthBuffer, 
+		const SoftwareTexture &texture, int frameWidth, int frameHeight, double *depthBuffer,
 		uint32_t *colorBuffer);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels

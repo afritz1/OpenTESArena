@@ -76,7 +76,7 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 {
 	const int pixelCount = width * height;
 
-	TextureData texture;
+	SoftwareTexture texture;
 	texture.pixels = std::vector<Double4>(pixelCount);
 	texture.width = width;
 	texture.height = height;
@@ -899,7 +899,7 @@ void SoftwareRenderer::diagonalProjection(double voxelYReal, const VoxelData &vo
 
 void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, double z, double u, double topV, double bottomV, 
-	const Double3 &normal, const TextureData &texture, const ShadingInfo &shadingInfo, 
+	const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
 	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Horizontal offset in texture.
@@ -955,7 +955,7 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 
 void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
-	double startZ, double endZ, const Double3 &normal, const TextureData &texture,
+	double startZ, double endZ, const Double3 &normal, const SoftwareTexture &texture,
 	const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, double *depthBuffer,
 	uint32_t *colorBuffer)
 {
@@ -1027,7 +1027,7 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
+	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
 	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
@@ -1664,7 +1664,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	const VoxelGrid &voxelGrid, const std::vector<TextureData> &textures, int frameWidth,
+	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
 	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
@@ -2306,7 +2306,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection, 
 	const Double3 &normal, bool flipped, double fogDistance, const ShadingInfo &shadingInfo,
-	const TextureData &texture, int frameWidth, int frameHeight, double *depthBuffer,
+	const SoftwareTexture &texture, int frameWidth, int frameHeight, double *depthBuffer,
 	uint32_t *colorBuffer)
 {
 	// Values for the flat are interpolated from the right edge to the left edge
@@ -2594,7 +2594,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 			flat.direction.y).normalized();
 
 		// Texture of the flat and whether it's flipped horizontally.
-		const TextureData &texture = textures[flat.textureID];
+		const SoftwareTexture &texture = textures[flat.textureID];
 		const bool flipped = flat.flipped;
 
 		SoftwareRenderer::drawFlat(x, flatProjection, flatNormal, flipped, 
