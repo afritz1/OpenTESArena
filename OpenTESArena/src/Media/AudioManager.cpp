@@ -13,7 +13,7 @@
 #include "alc.h"
 
 #include "AudioManager.h"
-#include "WildMidi.hpp"
+#include "WildMidi.h"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
 #include "../Utilities/Debug.h"

@@ -1,7 +1,7 @@
-#ifndef MEDIA_WILDMIDI_HPP
-#define MEDIA_WILDMIDI_HPP
+#ifndef MEDIA_WILDMIDI_H
+#define MEDIA_WILDMIDI_H
 
-#include "Midi.hpp"
+#include "Midi.h"
 
 #ifdef HAVE_WILDMIDI
 
@@ -18,4 +18,4 @@ public:
 
 #endif /* HAVE_WILDMIDI */
 
-#endif /* MEDIA_WILDMIDI_HPP */
+#endif /* MEDIA_WILDMIDI_H */

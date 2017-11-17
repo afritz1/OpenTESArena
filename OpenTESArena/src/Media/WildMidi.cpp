@@ -1,4 +1,4 @@
-#include "WildMidi.hpp"
+#include "WildMidi.h"
 
 #ifdef HAVE_WILDMIDI
 

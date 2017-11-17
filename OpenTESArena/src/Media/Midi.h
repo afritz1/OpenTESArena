@@ -1,5 +1,5 @@
-#ifndef MEDIA_MIDI_HPP
-#define MEDIA_MIDI_HPP
+#ifndef MEDIA_MIDI_H
+#define MEDIA_MIDI_H
 
 #include <memory>
 #include <string>
@@ -41,4 +41,4 @@ public:
     static MidiDevice &get() { return *sInstance.get(); }
 };
 
-#endif /* MEDIA_MIDI_HPP */
+#endif /* MEDIA_MIDI_H */
