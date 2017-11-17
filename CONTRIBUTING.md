@@ -5,7 +5,7 @@ If you'd like to report a problem or a bug you've found, feel free to use the [I
 ### File Structure
 All source filenames are UpperCamelCase and use .h or .cpp extensions. 
 
-This is the typical layout of my C++ header files:
+This is the typical layout of the C++ header files:
 ```C++
 #include <standard lib 1.h>
 #include <standard lib 2.h>
@@ -37,7 +37,7 @@ public:
 };
 ```
 
-And my .cpp files:
+And the .cpp files:
 ```C++
 #include <standard lib 3.h>
 #include <standard lib 4.h>
@@ -85,6 +85,7 @@ We're using C++11, so we regularly use all of the nice features like:
 - Prefer pure functions and immutable data.
 - Avoid mutable globals and static variables.
 - Don't use `new` without `std::unique_ptr`. `delete` should never be necessary.
+- Use post-increment (`i++`) everywhere except with iterators, in which case use pre-increment (`++iter`) to avoid unnecessary copies.
 - Code should work in both 32-bit and 64-bit, and on Windows and Linux (fortunately, SDL2 and the C++11 standard library take care of a lot of this for us).
 - Alphabetize each group of header includes. This makes it much easier to find the one you're looking for (via binary search!).
 - Personally, I use `this` for accessing class members. It is very convenient to use with Visual Studio's auto-complete, it keeps local variables unambiguous, and I've never needed to mangle the names of class members with sigils.
