@@ -175,7 +175,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 		// Uncompressed raw CIF.
 		const int imageCount = rawOverride->second.first;
 
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			this->pixels.push_back(std::unique_ptr<uint32_t[]>(new uint32_t[width * height]));
 			this->offsets.push_back(Int2(xoff, yoff));

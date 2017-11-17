@@ -47,7 +47,7 @@ FontFile::FontFile(const std::string &filename)
 
 	// Start at index 1 since the width of a space (index 0) depends on the exclamation mark.
 	// Adapted from WinArena "ParseBSA.cpp".
-	for (size_t i = 1; i < symbols.size(); ++i)
+	for (size_t i = 1; i < symbols.size(); i++)
 	{
 		FontElement &element = symbols.at(i);
 		element.height = charHeight;
@@ -55,14 +55,14 @@ FontFile::FontFile(const std::string &filename)
 		// For each line of pixel data, check how many pixels are needed to draw it.
 		// Update the max width with the current maximum as it is found.
 		uint32_t maxWidth = 0;
-		for (uint32_t lineNum = 0; lineNum < element.height; ++lineNum)
+		for (uint32_t lineNum = 0; lineNum < element.height; lineNum++)
 		{
 			uint16_t &line = element.lines.at(lineNum);
 			line = *lines;
 			lines++;
 
 			uint16_t mask = 0x8000;
-			for (uint32_t c = 0; c < 16; ++c)
+			for (uint32_t c = 0; c < 16; c++)
 			{
 				if (((line & mask) != 0) && (maxWidth < (c + 1)))
 				{
@@ -94,7 +94,7 @@ FontFile::FontFile(const std::string &filename)
 	const uint32_t white = Color(255, 255, 255, 255).toARGB();
 
 	// Adapted from WinArena "Raster.cpp".
-	for (size_t i = 0; i < symbols.size(); ++i)
+	for (size_t i = 0; i < symbols.size(); i++)
 	{
 		// Use white for pixels and transparent for background.
 		FontElement &element = symbols.at(i);
@@ -104,12 +104,12 @@ FontFile::FontFile(const std::string &filename)
 			new uint32_t[element.width * element.height]));
 
 		uint32_t *pixels = pair.second.get();
-		for (uint32_t cy = 0; cy < element.height; ++cy)
+		for (uint32_t cy = 0; cy < element.height; cy++)
 		{
 			uint16_t mask = 0x8000;
 			uint16_t bits = element.lines.at(cy);
 
-			for (uint32_t cx = 0; cx < element.width; ++cx)
+			for (uint32_t cx = 0; cx < element.width; cx++)
 			{
 				const int index = cx + (cy * element.width);
 

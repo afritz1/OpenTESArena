@@ -153,7 +153,7 @@ void ListBox::updateDisplay()
 	const int indexEnd = std::min(this->scrollIndex + maxDisplayed, totalElements);
 
 	// Draw the relevant text boxes according to scroll index.
-	for (int i = this->scrollIndex; i < indexEnd; ++i)
+	for (int i = this->scrollIndex; i < indexEnd; i++)
 	{
 		const SDL_Surface *surface = this->textBoxes.at(i)->getSurface();
 

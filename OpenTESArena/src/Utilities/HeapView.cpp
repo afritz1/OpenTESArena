@@ -75,7 +75,7 @@ void HeapView::deallocate(size_t offset)
 		auto it = this->blocks.begin();
 		while (it->offset <= offset)
 		{
-			it++;
+			++it;
 		}
 
 		return it;

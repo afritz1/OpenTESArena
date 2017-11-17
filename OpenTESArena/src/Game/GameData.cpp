@@ -337,18 +337,18 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 
 	// Set voxel IDs with indices into the voxel data.
 	// City walls.
-	for (int j = 0; j < (gridHeight - 1); ++j)
+	for (int j = 0; j < (gridHeight - 1); j++)
 	{
-		for (int k = 0; k < gridDepth; ++k)
+		for (int k = 0; k < gridDepth; k++)
 		{
 			setVoxel(0, j, k, cityWallID);
 			setVoxel(gridWidth - 1, j, k, cityWallID);
 		}
 	}
 
-	for (int j = 0; j < (gridHeight - 1); ++j)
+	for (int j = 0; j < (gridHeight - 1); j++)
 	{
-		for (int i = 0; i < gridWidth; ++i)
+		for (int i = 0; i < gridWidth; i++)
 		{
 			setVoxel(i, j, 0, cityWallID);
 			setVoxel(i, j, gridDepth - 1, cityWallID);
@@ -356,16 +356,16 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	}
 
 	// Grass fill.
-	for (int k = 1; k < (gridDepth - 1); ++k)
+	for (int k = 1; k < (gridDepth - 1); k++)
 	{
-		for (int i = 1; i < (gridWidth - 1); ++i)
+		for (int i = 1; i < (gridWidth - 1); i++)
 		{
 			setVoxel(i, 0, k, grassID);
 		}
 	}
 
 	// Road.
-	for (int i = 1; i < (gridWidth - 1); ++i)
+	for (int i = 1; i < (gridWidth - 1); i++)
 	{
 		setVoxel(i, 0, 11, roadID);
 		setVoxel(i, 0, 12, roadID);
@@ -373,7 +373,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	}
 
 	// Trench.
-	for (int k = 1; k < (gridDepth - 1); ++k)
+	for (int k = 1; k < (gridDepth - 1); k++)
 	{
 		setVoxel(11, 0, k, waterID);
 		setVoxel(12, 0, k, waterID);
@@ -383,11 +383,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	Random random(0);
 
 	// Tavern.
-	for (int k = 5; k < 10; ++k)
+	for (int k = 5; k < 10; k++)
 	{
-		for (int j = 1; j < 3; ++j)
+		for (int j = 1; j < 3; j++)
 		{
-			for (int i = 2; i < 6; ++i)
+			for (int i = 2; i < 6; i++)
 			{
 				setVoxel(i, j, k, tavern1ID + random.next(3));
 			}
@@ -401,11 +401,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(3, 0, 10, gravelID);
 
 	// Temple.
-	for (int k = 2; k < 10; ++k)
+	for (int k = 2; k < 10; k++)
 	{
-		for (int j = 1; j < 4; ++j)
+		for (int j = 1; j < 4; j++)
 		{
-			for (int i = 7; i < 10; ++i)
+			for (int i = 7; i < 10; i++)
 			{
 				setVoxel(i, j, k, temple1ID + random.next(5));
 			}
@@ -419,11 +419,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(8, 0, 10, gravelID);
 
 	// Mages' guild.
-	for (int k = 15; k < 20; ++k)
+	for (int k = 15; k < 20; k++)
 	{
-		for (int j = 1; j < 3; ++j)
+		for (int j = 1; j < 3; j++)
 		{
-			for (int i = 7; i < 10; ++i)
+			for (int i = 7; i < 10; i++)
 			{
 				setVoxel(i, j, k, mages1ID + random.next(5));
 			}
@@ -437,11 +437,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(8, 0, 14, gravelID);
 
 	// Equipment store.
-	for (int k = 15; k < 19; ++k)
+	for (int k = 15; k < 19; k++)
 	{
-		for (int j = 1; j < 2; ++j)
+		for (int j = 1; j < 2; j++)
 		{
-			for (int i = 2; i < 5; ++i)
+			for (int i = 2; i < 5; i++)
 			{
 				setVoxel(i, j, k, equip1ID + random.next(3));
 			}
@@ -455,11 +455,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(3, 0, 14, gravelID);
 
 	// Low house.
-	for (int k = 15; k < 20; ++k)
+	for (int k = 15; k < 20; k++)
 	{
-		for (int j = 1; j < 2; ++j)
+		for (int j = 1; j < 2; j++)
 		{
-			for (int i = 14; i < 18; ++i)
+			for (int i = 14; i < 18; i++)
 			{
 				setVoxel(i, j, k, lowHouse1ID + random.next(4));
 			}
@@ -473,11 +473,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(15, 0, 14, gravelID);
 
 	// Medium house.
-	for (int k = 15; k < 19; ++k)
+	for (int k = 15; k < 19; k++)
 	{
-		for (int j = 1; j < 3; ++j)
+		for (int j = 1; j < 3; j++)
 		{
-			for (int i = 19; i < 22; ++i)
+			for (int i = 19; i < 22; i++)
 			{
 				setVoxel(i, j, k, medHouse1ID + random.next(3));
 			}
@@ -491,11 +491,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(20, 0, 14, gravelID);
 
 	// Noble house.
-	for (int k = 4; k < 9; ++k)
+	for (int k = 4; k < 9; k++)
 	{
-		for (int j = 1; j < 3; ++j)
+		for (int j = 1; j < 3; j++)
 		{
-			for (int i = 16; i < 20; ++i)
+			for (int i = 16; i < 20; i++)
 			{
 				setVoxel(i, j, k, noble1ID + random.next(3));
 			}
@@ -510,19 +510,19 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	setVoxel(17, 0, 10, gravelID);
 
 	// Noble house hedges.
-	for (int k = 2; k < 10; ++k)
+	for (int k = 2; k < 10; k++)
 	{
 		setVoxel(14, 1, k, hedgeID);
 		setVoxel(21, 1, k, hedgeID);
 	}
 
-	for (int i = 15; i < 21; ++i)
+	for (int i = 15; i < 21; i++)
 	{
 		setVoxel(i, 1, 2, hedgeID);
 	}
 
 	// Bridge.
-	for (int k = 11; k < 14; ++k)
+	for (int k = 11; k < 14; k++)
 	{
 		setVoxel(10, 1, k, bridge1ID);
 		setVoxel(11, 1, k, bridge2ID);

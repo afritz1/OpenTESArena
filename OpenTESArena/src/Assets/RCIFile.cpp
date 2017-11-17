@@ -25,7 +25,7 @@ RCIFile::RCIFile(const std::string &filename, const Palette &palette)
 	const int frameCount = static_cast<int>(fileSize) / RCIFile::FRAME_SIZE;
 
 	// Create an image for each uncompressed frame using the given palette.
-	for (int frameIndex = 0; frameIndex < frameCount; ++frameIndex)
+	for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
 	{
 		this->frames.push_back(std::unique_ptr<uint32_t[]>(
 			new uint32_t[RCIFile::FRAME_SIZE]));

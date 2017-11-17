@@ -21,7 +21,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount,
 
 			const uint32_t count = static_cast<uint32_t>(sample) - 0x7F;
 
-			for (uint32_t j = 0; j < count; ++j)
+			for (uint32_t j = 0; j < count; j++)
 			{
 				out.at(o) = value;
 				o++;
@@ -31,7 +31,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount,
 		{
 			const uint32_t count = static_cast<uint32_t>(sample) + 1;
 
-			for (uint32_t j = 0; j < count; ++j)
+			for (uint32_t j = 0; j < count; j++)
 			{
 				out.at(o) = src[i];
 				o++;

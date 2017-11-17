@@ -52,7 +52,7 @@ namespace
 			BitTree::Node *node = &this->root;
 
 			// Walk the tree, creating new nodes as necessary. Internal nodes have null values.
-			for (size_t i = 0; i < bits.size(); ++i)
+			for (size_t i = 0; i < bits.size(); i++)
 			{
 				const bool bit = bits.at(i);
 
@@ -223,19 +223,19 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 	// a special case at index 11, split the insertions up for the first bit tree.
 	BitTree bitTree1, bitTree2;
 
-	for (int i = 0; i < 11; ++i)
+	for (int i = 0; i < 11; i++)
 	{
 		bitTree1.insert(Duplication1.at(i), i + 2);
 	}
 
 	bitTree1.insert(Duplication1.at(11), 13);
 
-	for (int i = 12; i < Duplication1.size(); ++i)
+	for (int i = 12; i < Duplication1.size(); i++)
 	{
 		bitTree1.insert(Duplication1.at(i), i + 1);
 	}
 
-	for (int i = 0; i < Duplication2.size(); ++i)
+	for (int i = 0; i < Duplication2.size(); i++)
 	{
 		bitTree2.insert(Duplication2.at(i), i);
 	}
@@ -408,7 +408,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			// Finally, duplicate the decompressed data using the calculated offset and size.
 			const size_t duplicateBegin = decompIndex - offset;
 			const size_t duplicateEnd = duplicateBegin + copyCount;
-			for (size_t i = duplicateBegin; i < duplicateEnd; ++i, ++decompIndex)
+			for (size_t i = duplicateBegin; i < duplicateEnd; i++, decompIndex++)
 			{
 				decomp.at(decompIndex) = decomp.at(i);
 			}

@@ -90,7 +90,7 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
 	// would be a megabyte).
 	Double4 *texturePixels = texture.pixels.data();
-	for (int i = 0; i < pixelCount; ++i)
+	for (int i = 0; i < pixelCount; i++)
 	{
 		texturePixels[i] = Double4::fromARGB(pixels[i]);
 
@@ -165,7 +165,7 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 {
 	this->skyPalette = std::vector<Double3>(count);
 
-	for (size_t i = 0; i < this->skyPalette.size(); ++i)
+	for (size_t i = 0; i < this->skyPalette.size(); i++)
 	{
 		this->skyPalette[i] = Double3::fromRGB(colors[i]);
 	}
@@ -2746,7 +2746,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	std::vector<std::thread> renderThreads(this->renderThreadCount);
 
 	// Start clearing the frame buffer with the render threads.
-	for (size_t i = 0; i < renderThreads.size(); ++i)
+	for (size_t i = 0; i < renderThreads.size(); i++)
 	{
 		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
@@ -2771,7 +2771,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	sortThread.join();
 
 	// Start rendering the scene with the render threads.
-	for (size_t i = 0; i < renderThreads.size(); ++i)
+	for (size_t i = 0; i < renderThreads.size(); i++)
 	{
 		// "blockSize" is the approximate number of columns per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.

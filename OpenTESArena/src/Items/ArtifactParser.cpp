@@ -256,7 +256,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		int index = 0;
 		while (line.at(index) != comma)
 		{
-			++index;
+			index++;
 		}
 
 		std::string displayName = line.substr(0, index);
@@ -266,7 +266,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		int oldIndex = index;
 		while (line.at(index) != comma)
 		{
-			++index;
+			index++;
 		}
 
 		std::string typesString = line.substr(oldIndex, index - oldIndex);
@@ -277,7 +277,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		oldIndex = index;
 		while (line.at(index) != comma)
 		{
-			++index;
+			index++;
 		}
 
 		std::string provincesString = line.substr(oldIndex, index - oldIndex);
@@ -288,7 +288,7 @@ std::vector<std::unique_ptr<ArtifactData>> ArtifactParser::parse()
 		oldIndex = index;
 		while ((line.at(index) != '\r') && (line.at(index) != '\n'))
 		{
-			++index;
+			index++;
 		}
 
 		std::string description = line.substr(oldIndex, index - oldIndex - 1);

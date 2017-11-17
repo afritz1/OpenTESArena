@@ -87,13 +87,14 @@ public:
 					throw std::runtime_error("Decoded image overflow.");
 				}
 
-				for (int i = 0; i < tocopy; ++i)
+				for (int i = 0; i < tocopy; i++)
 				{
 					*dst = history[copypos++ & 0x0FFF];
 					history[historypos++ & 0x0FFF] = *(dst++);
 				}
 			}
-			--bitcount;
+
+			bitcount--;
 		}
 
 		std::fill(dst, out.end(), 0);
@@ -197,7 +198,7 @@ public:
 
 				node = NodeTree.at(node + ((bitmask >> 15) & 1));
 				bitmask <<= 1;
-				--validbits;
+				validbits--;
 			}
 
 			// Increment the use count (frequency) of this node, and ensure the
@@ -211,9 +212,9 @@ public:
 				{
 					// Find the next frequency count that's not greater than the new frequency.
 					do {
-						++nextidx;
+						nextidx++;
 					} while (nextidx < NodeFreq.size() && NodeFreq[nextidx] < freq);
-					--nextidx;
+					nextidx--;
 
 					// Swap 'em, placing the new frequency just before the next
 					// greater one. Since the freq only incremented by 1, this
@@ -274,7 +275,7 @@ public:
 				uint16_t offsetHigh = highOffsetBits[tableidx] << 6;
 				uint16_t bitcount = lowOffsetBitCount[tableidx] - 2;
 				uint16_t offsetLow = tableidx;
-				for (uint16_t i = 0; i < bitcount; ++i)
+				for (uint16_t i = 0; i < bitcount; i++)
 				{
 					while (validbits < 9)
 					{
@@ -288,12 +289,12 @@ public:
 
 					offsetLow = (offsetLow << 1) | ((bitmask >> 15) & 1);
 					bitmask <<= 1;
-					--validbits;
+					validbits--;
 				}
 
 				uint16_t copypos = historypos - (offsetHigh | (offsetLow & 0x003F)) - 1;
 				uint16_t tocopy = codeword - 256 + 3;
-				for (uint16_t i = 0; i < tocopy; ++i)
+				for (uint16_t i = 0; i < tocopy; i++)
 				{
 					*dst = history[copypos++ & 0x0FFF];
 					history[historypos++ & 0x0FFF] = *(dst++);

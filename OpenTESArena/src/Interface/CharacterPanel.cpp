@@ -119,7 +119,7 @@ CharacterPanel::CharacterPanel(Game &game)
 		player.getGenderName(), player.getRaceID(), false);
 	CIFFile cifFile(headsFilename, Palette());
 
-	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	for (int i = 0; i < cifFile.getImageCount(); i++)
 	{
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}

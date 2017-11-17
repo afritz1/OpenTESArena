@@ -140,7 +140,7 @@ FLCFile::FLCFile(const std::string &filename)
 		{
 			// Check each chunk's type and decode its data if relevant.
 			uint32_t chunkOffset = sizeof(FrameHeader);
-			for (uint16_t i = 0; i < frameHeader.chunkCount; ++i)
+			for (uint16_t i = 0; i < frameHeader.chunkCount; i++)
 			{
 				// Pointer to the chunk's header.
 				const uint8_t *chunkPtr = framePtr + chunkOffset;
@@ -219,7 +219,7 @@ void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 	// Read through the RGB components and place them in the palette. There isn't 
 	// a need for the first color to be transparent.
 	const uint8_t *colorData = chunkData + 4;
-	for (int i = 0; i < 255; ++i)
+	for (int i = 0; i < 255; i++)
 	{
 		const uint8_t *ptr = colorData + (i * 3);
 		const uint8_t r = *(ptr + 0);
@@ -240,7 +240,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	const int lineCount = this->height;
 
 	int offset = 0;
-	for (int rowsDone = 0; rowsDone < lineCount; ++rowsDone)
+	for (int rowsDone = 0; rowsDone < lineCount; rowsDone++)
 	{
 		// The first byte of each line is the ignored packet count. The total width 
 		// of the line after decoding pixels is used instead.
@@ -260,7 +260,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 				// value of "type". This is probably used frequently for black pixels.
 				const uint8_t pixel = *(chunkData + offset + 1);
 
-				for (int i = 0; i < type; ++i)
+				for (int i = 0; i < type; i++)
 				{
 					decomp.at((rowPixelsDone + i) + (rowsDone * this->width)) = pixel;
 				}
@@ -274,7 +274,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 				// to the output.
 				const int8_t pixelCount = -type;
 
-				for (int i = 0; i < pixelCount; ++i)
+				for (int i = 0; i < pixelCount; i++)
 				{
 					const uint8_t pixel = *(chunkData + offset + 1 + i);
 					decomp.at((rowPixelsDone + i) + (rowsDone * this->width)) = pixel;
@@ -319,7 +319,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 	// Byte offset in chunkData.
 	int offset = 2;
 
-	for (int linesDone = 0; linesDone < lineCount; ++y, ++linesDone)
+	for (int linesDone = 0; linesDone < lineCount; y++, linesDone++)
 	{
 		// The packet count is obtained from a packet whose two most significant 
 		// bits are zero.
@@ -367,7 +367,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 
 		// A packet with a non-negative value was found. Decode the following bytes
 		// and write their values to the output buffer.
-		for (int i = 0; i < packetCount; ++i)
+		for (int i = 0; i < packetCount; i++)
 		{
 			// The first byte is the column skip count.
 			x += *(chunkData + offset);
@@ -380,7 +380,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 			if (count > 0)
 			{
 				// Read "count" * 2 colors and write them to the output frame.
-				for (int i = 0; (i < count) && (x < this->width); ++i)
+				for (int i = 0; (i < count) && (x < this->width); i++)
 				{
 					const uint8_t color1 = *(chunkData + offset);
 					const uint8_t color2 = *(chunkData + offset + 1);
@@ -406,7 +406,7 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 				// Reverse the sign of count so it's positive.
 				const int8_t positiveCount = -count;
 
-				for (int i = 0; (i < positiveCount) && (x < this->width); ++i)
+				for (int i = 0; (i < positiveCount) && (x < this->width); i++)
 				{
 					initialFrame.at(x + (y * this->width)) = color1;
 					x++;

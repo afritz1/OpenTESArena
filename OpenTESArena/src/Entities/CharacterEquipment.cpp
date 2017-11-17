@@ -74,7 +74,7 @@ int CharacterEquipment::getAccessoryCount(AccessoryType accessoryType) const
 	{
 		if (accessory->getAccessoryType() == accessoryType)
 		{
-			++count;
+			count++;
 		}
 	}
 
@@ -88,7 +88,7 @@ int CharacterEquipment::getTrinketCount(TrinketType trinketType) const
 	{
 		if (trinket->getTrinketType() == trinketType)
 		{
-			++count;
+			count++;
 		}
 	}
 

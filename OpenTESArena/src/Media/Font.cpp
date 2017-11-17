@@ -42,7 +42,7 @@ Font::Font(FontName fontName)
 
 	// Create an SDL surface for each character image. Start with space (ASCII 32), 
 	// and end with delete (ASCII 127).
-	for (int i = 0; i < 96; ++i)
+	for (int i = 0; i < 96; i++)
 	{
 		const char c = i + 32;
 		const int elementWidth = fontFile.getWidth(c);
@@ -54,7 +54,7 @@ Font::Font(FontName fontName)
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
 		const int pixelCount = surface->w * surface->h;
 
-		for (int index = 0; index < pixelCount; ++index)
+		for (int index = 0; index < pixelCount; index++)
 		{
 			pixels[index] = elementPixels[index];
 		}

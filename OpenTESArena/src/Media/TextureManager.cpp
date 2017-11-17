@@ -138,7 +138,7 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 			Renderer::DEFAULT_PIXELFORMAT);
 		
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		for (size_t i = 0; i < colPalette.get().size(); ++i)
+		for (size_t i = 0; i < colPalette.get().size(); i++)
 		{
 			pixels[i] = colPalette.get()[i].toARGB();
 		}
@@ -291,7 +291,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each image in the CFA.
 		const int imageCount = cfaFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = cfaFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -309,7 +309,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each image in the CIF.
 		const int imageCount = cifFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = cifFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -327,7 +327,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each image in the DFA.
 		const int imageCount = dfaFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = dfaFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -345,7 +345,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each frame in the FLC.
 		const int imageCount = flcFile.getFrameCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = flcFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -363,7 +363,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each image in the RCI.
 		const int imageCount = rciFile.getCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = rciFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -381,7 +381,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 
 		// Create an SDL_Surface for each image in the SET.
 		const int imageCount = setFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			uint32_t *pixels = setFile.getPixels(i);
 			SDL_Surface *surface = Surface::createSurfaceWithFormat(
@@ -455,7 +455,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each image in the CFA.
 		const int imageCount = cfaFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
@@ -475,7 +475,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each image in the CIF.
 		const int imageCount = cifFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
@@ -495,7 +495,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each image in the DFA.
 		const int imageCount = dfaFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
@@ -515,7 +515,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each frame in the FLC.
 		const int imageCount = flcFile.getFrameCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
@@ -535,7 +535,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each image in the RCI.
 		const int imageCount = rciFile.getCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
@@ -555,7 +555,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 		// Create an SDL_Texture for each image in the SET.
 		const int imageCount = setFile.getImageCount();
-		for (int i = 0; i < imageCount; ++i)
+		for (int i = 0; i < imageCount; i++)
 		{
 			SDL_Texture *texture = this->renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,

@@ -34,7 +34,7 @@ std::unique_ptr<uint32_t[]> PPMFile::read(const std::string &filename,
 	std::unique_ptr<uint32_t[]> pixels(new uint32_t[width * height]);
 	std::fill(pixels.get(), pixels.get() + (width * height), 0);
 
-	for (int y = 0; y < height; ++y)
+	for (int y = 0; y < height; y++)
 	{
 		// A component here is an ASCII value between 0-255.
 		const std::vector<std::string> components = String::split(lines.at(4 + y));
@@ -72,9 +72,9 @@ void PPMFile::write(const uint32_t *pixels, int width, int height,
 		std::to_string(height) << "\n" << std::to_string(uchar_max) << "\n";
 
 	// Write color data out to file.
-	for (int y = 0; y < height; ++y)
+	for (int y = 0; y < height; y++)
 	{
-		for (int x = 0; x < width; ++x)
+		for (int x = 0; x < width; x++)
 		{
 			// Assume 0x00RRGGBB color format.
 			const uint32_t color = pixels[x + (y * width)];

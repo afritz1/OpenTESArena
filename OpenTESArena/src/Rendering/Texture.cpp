@@ -177,7 +177,7 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 
 		// Color edges.
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		for (int x = 0; x < surface->w; ++x)
+		for (int x = 0; x < surface->w; x++)
 		{
 			pixels[x] = topColor;
 			pixels[x + surface->w] = topColor;
@@ -185,7 +185,7 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 			pixels[x + ((surface->h - 1) * surface->w)] = bottomColor;
 		}
 
-		for (int y = 0; y < surface->h; ++y)
+		for (int y = 0; y < surface->h; y++)
 		{
 			pixels[y * surface->w] = leftColor;
 			pixels[1 + (y * surface->w)] = leftColor;
@@ -217,13 +217,13 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 
 		// Color edges.
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		for (int x = 0; x < surface->w; ++x)
+		for (int x = 0; x < surface->w; x++)
 		{
 			pixels[x] = lightBorder;
 			pixels[x + ((surface->h - 1) * surface->w)] = darkBorder;
 		}
 
-		for (int y = 0; y < surface->h; ++y)
+		for (int y = 0; y < surface->h; y++)
 		{
 			pixels[y * surface->w] = darkBorder;
 			pixels[(surface->w - 1) + (y * surface->w)] = lightBorder;

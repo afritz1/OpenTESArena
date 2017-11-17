@@ -35,7 +35,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	Compression::decodeRLE(srcData.data() + 12, width * height, frames.at(0));
 
 	// Make copies of the original frame for each update chunk.
-	for (int i = 1; i < imageCount; ++i)
+	for (int i = 1; i < imageCount; i++)
 	{
 		frames.push_back(frames.at(0));
 	}
@@ -68,7 +68,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 			// Move the offset past the update header.
 			offset += 4;
 
-			for (uint32_t i = 0; i < updateCount; ++i)
+			for (uint32_t i = 0; i < updateCount; i++)
 			{
 				frame.at(updateOffset + i) = *(srcData.begin() + offset);
 				offset++;

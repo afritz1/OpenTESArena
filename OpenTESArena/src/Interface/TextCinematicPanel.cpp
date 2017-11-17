@@ -44,11 +44,11 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 		// Group up to three text lines per text box.
 		std::vector<std::unique_ptr<TextBox>> textBoxes;
 		int textBoxesToMake = static_cast<int>(std::ceil(newLineCount / 3)) + 1;
-		for (int i = 0; i < textBoxesToMake; ++i)
+		for (int i = 0; i < textBoxesToMake; i++)
 		{
 			std::string textBoxText;
 			int linesToUse = std::min(newLineCount - (i * 3), 3);
-			for (int j = 0; j < linesToUse; ++j)
+			for (int j = 0; j < linesToUse; j++)
 			{
 				const std::string &textLine = textLines.at(j + (i * 3));
 				textBoxText.append(textLine);

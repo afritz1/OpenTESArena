@@ -120,7 +120,7 @@ class OpenALStream {
 				break;
 			mBufferIdx = (mBufferIdx + 1) % mBuffers.size();
 			alSourceQueueBuffers(mSource, 1, &bufid);
-			++queued;
+			queued++;
 		}
 		return queued;
 	}
@@ -154,7 +154,7 @@ class OpenALStream {
 				{
 					ALuint bufid;
 					alSourceUnqueueBuffers(mSource, 1, &bufid);
-					--processed;
+					processed--;
 				}
 
 				/* Make sure the buffer queue is still filled, in case another
@@ -189,7 +189,7 @@ class OpenALStream {
 			{
 				ALuint bufid;
 				alSourceUnqueueBuffers(mSource, 1, &bufid);
-				--processed;
+				processed--;
 			}
 		}
 	}

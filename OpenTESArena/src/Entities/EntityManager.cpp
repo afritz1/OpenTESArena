@@ -57,7 +57,7 @@ int EntityManager::nextID() const
 	int id = 0;
 	while (this->entities.find(id) != this->entities.end())
 	{
-		++id;
+		id++;
 	}
 
 	return id;

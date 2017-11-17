@@ -245,7 +245,7 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 		int lengthCounter = 0;
 
 		// Collect all allowed armor display names for the class.
-		for (int i = 0; i < armorCount; ++i)
+		for (int i = 0; i < armorCount; i++)
 		{
 			const auto materialType = allowedArmors.at(i);
 			auto materialString = ArmorMaterial::typeToString(materialType);
@@ -292,7 +292,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 		int lengthCounter = 0;
 
 		// Collect all allowed shield display names for the class.
-		for (int i = 0; i < shieldCount; ++i)
+		for (int i = 0; i < shieldCount; i++)
 		{
 			const auto shieldType = allowedShields.at(i);
 			auto dummyMetal = MetalType::Iron;
@@ -341,7 +341,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 		int lengthCounter = 0;
 
 		// Collect all allowed weapon display names for the class.
-		for (int i = 0; i < weaponCount; ++i)
+		for (int i = 0; i < weaponCount; i++)
 		{
 			const auto weaponType = allowedWeapons.at(i);
 			const auto dummyMetal = MetalType::Iron;

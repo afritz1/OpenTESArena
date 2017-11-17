@@ -397,7 +397,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
 	const CIFFile cifFile(weaponFilename, Palette());
 	
-	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	for (int i = 0; i < cifFile.getImageCount(); i++)
 	{
 		this->weaponOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
@@ -426,7 +426,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	else
 	{
 		// See which arrow cursor region the native mouse is in.
-		for (int i = 0; i < this->nativeCursorRegions.size(); ++i)
+		for (int i = 0; i < this->nativeCursorRegions.size(); i++)
 		{
 			if (this->nativeCursorRegions.at(i).contains(mousePosition))
 			{

@@ -198,7 +198,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	const std::string &headsFilename = PortraitFile::getHeads(gender, raceID, false);
 	CIFFile cifFile(headsFilename, Palette());
 
-	for (int i = 0; i < cifFile.getImageCount(); ++i)
+	for (int i = 0; i < cifFile.getImageCount(); i++)
 	{
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}

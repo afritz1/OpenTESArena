@@ -61,7 +61,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	// so this value can simply be incremented by the compressed width.
 	uint32_t offset = 0;
 
-	for (uint32_t frameNum = 0; frameNum < frameCount; ++frameNum)
+	for (uint32_t frameNum = 0; frameNum < frameCount; frameNum++)
 	{
 		// Allocate a new output frame.
 		frames.push_back(std::vector<uint8_t>(widthUncompressed * height));
@@ -70,7 +70,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 		std::vector<uint8_t> &dst = frames.at(frames.size() - 1);
 		uint32_t dstOffset = 0;
 
-		for (uint32_t y = 0; y < height; ++y)
+		for (uint32_t y = 0; y < height; y++)
 		{
 			uint32_t count = widthUncompressed;
 
@@ -82,14 +82,14 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 				uint32_t end, void(*demux)(const uint8_t*, uint8_t*),
 				uint32_t demuxMultiplier, uint32_t upToMin)
 			{
-				for (uint32_t x = 0; x < end; ++x)
+				for (uint32_t x = 0; x < end; x++)
 				{
 					demux(encoded.data() + (x * demuxMultiplier), translate.data());
 
 					uint32_t upTo = std::min(upToMin, count);
 					count -= upTo;
 
-					for (uint32_t i = 0; i < upTo; ++i)
+					for (uint32_t i = 0; i < upTo; i++)
 					{
 						dst.at((x * upToMin) + i + dstOffset) = lookUpTable[translate.at(i)];
 					}
@@ -100,7 +100,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 			if (bitsPerPixel == 8)
 			{
 				// No demuxing needed.
-				for (uint32_t x = 0; x < widthCompressed; ++x)
+				for (uint32_t x = 0; x < widthCompressed; x++)
 				{
 					dst.at(x + dstOffset) = encoded.at(x);
 				}
