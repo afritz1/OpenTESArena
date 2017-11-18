@@ -7,6 +7,7 @@
 #include "Player.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
+#include "../Game/Options.h"
 #include "../Items/WeaponType.h"
 #include "../Math/Constants.h"
 #include "../Utilities/String.h"
@@ -221,13 +222,15 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 	if (!xVoxel.isAir() && !isBridge(xVoxel))
 	{
-		//this->velocity.x = 0.0;
+		this->velocity.x = 0.0;
 	}
 
 	if (!zVoxel.isAir() && !isBridge(zVoxel))
 	{
-		//this->velocity.z = 0.0;
+		this->velocity.z = 0.0;
 	}
+
+	this->velocity.y = 0.0;
 	// -- end hack --
 
 	/*if (!xVoxel.isAir())
@@ -239,9 +242,6 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	{
 		this->velocity.z = 0.0;
 	}*/
-
-	// To do: Y collision (snap Y position above ground if inside ground?).
-	this->velocity.y = 0.0;
 
 	// To do: use an axis-aligned bounding box or cylinder instead of a point?
 }
@@ -291,13 +291,22 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const WorldData &worldData, double dt)
+void Player::updatePhysics(const WorldData &worldData, bool collision, double dt)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
 
 	// Change the player's velocity based on collision.
-	this->handleCollision(worldData, dt);
+	if (collision)
+	{
+		this->handleCollision(worldData, dt);
+	}
+	else
+	{
+		// Keep the player's Y position constant, but otherwise let them act as a ghost.
+		this->camera.position.y = Player::HEIGHT + 1.0;
+		this->velocity.y = 0.0;
+	}
 
 	// Simple Euler integration for updating the player's position.
 	Double3 newPosition = this->camera.position + (this->velocity * dt);
@@ -326,7 +335,8 @@ void Player::updatePhysics(const WorldData &worldData, double dt)
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	this->updatePhysics(game.getGameData().getWorldData(), dt);
+	this->updatePhysics(game.getGameData().getWorldData(), 
+		game.getOptions().getCollision(), dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

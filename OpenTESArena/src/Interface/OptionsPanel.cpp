@@ -27,6 +27,11 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
+namespace
+{
+	const int ToggleButtonSize = 8;
+}
+
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
 const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
@@ -35,6 +40,8 @@ const std::string OptionsPanel::CURSOR_SCALE_TEXT = "Cursor Scale: ";
 const std::string OptionsPanel::LETTERBOX_ASPECT_TEXT = "Letterbox Aspect: ";
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT = "H. Sensitivity: ";
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
+const std::string OptionsPanel::COLLISION_TEXT = "Collision: ";
+const std::string OptionsPanel::SKIP_INTRO_TEXT = "Skip Intro: ";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
@@ -220,6 +227,44 @@ OptionsPanel::OptionsPanel(Game &game)
 			x, y, richText, game.getRenderer()));
 	}();
 
+	this->collisionTextBox = [&game]()
+	{
+		const int x = 175;
+		const int y = 82;
+
+		const std::string text = OptionsPanel::COLLISION_TEXT +
+			(game.getOptions().getCollision() ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game.getRenderer()));
+	}();
+
+	this->skipIntroTextBox = [&game]()
+	{
+		const int x = 175;
+		const int y = 96;
+
+		const std::string text = OptionsPanel::SKIP_INTRO_TEXT +
+			(game.getOptions().getSkipIntro() ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game.getRenderer()));
+	}();
+
 	this->backToPauseButton = []()
 	{
 		const Int2 center(
@@ -318,8 +363,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 136;
 		const int y = 86;
-		const int width = 8;
-		const int height = 8;
+		const int width = ToggleButtonSize;
+		const int height = ToggleButtonSize;
 		auto function = [](OptionsPanel *panel, Options &options,
 			Player &player, Renderer &renderer)
 		{
@@ -489,7 +534,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
 
-	this->vSensitivityUpButton = [this]()
+	this->vSensitivityUpButton = []()
 	{
 		const int x = 256;
 		const int y = 61;
@@ -519,6 +564,40 @@ OptionsPanel::OptionsPanel(Game &game)
 				options.getVerticalSensitivity() - 0.50, Options::MIN_VERTICAL_SENSITIVITY);
 			options.setVerticalSensitivity(newVerticalSensitivity);
 			panel->updateVerticalSensitivityText(newVerticalSensitivity);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->collisionButton = [this]()
+	{
+		const int x = 232;
+		const int y = 82;
+		const int width = ToggleButtonSize;
+		const int height = ToggleButtonSize;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			// Toggle the collision option.
+			const bool newCollision = !options.getCollision();
+			options.setCollision(newCollision);
+			panel->updateCollisionText(newCollision);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
+			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->skipIntroButton = [this]()
+	{
+		const int x = 240;
+		const int y = 96;
+		const int width = ToggleButtonSize;
+		const int height = ToggleButtonSize;
+		auto function = [](OptionsPanel *panel, Options &options)
+		{
+			// Toggle the skip intro option.
+			const bool newSkipIntro = !options.getSkipIntro();
+			options.setSkipIntro(newSkipIntro);
+			panel->updateSkipIntroText(newSkipIntro);
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
@@ -721,6 +800,50 @@ void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
 	}();
 }
 
+void OptionsPanel::updateCollisionText(bool collision)
+{
+	assert(this->collisionTextBox.get() != nullptr);
+
+	this->collisionTextBox = [this, collision]()
+	{
+		const RichTextString &oldRichText = this->collisionTextBox->getRichText();
+		const std::string text = OptionsPanel::COLLISION_TEXT + (collision ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame().getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->collisionTextBox->getX(), this->collisionTextBox->getY(),
+			richText, this->getGame().getRenderer()));
+	}();
+}
+
+void OptionsPanel::updateSkipIntroText(bool skip)
+{
+	assert(this->skipIntroTextBox.get() != nullptr);
+
+	this->skipIntroTextBox = [this, skip]()
+	{
+		const RichTextString &oldRichText = this->skipIntroTextBox->getRichText();
+		const std::string text = OptionsPanel::SKIP_INTRO_TEXT + (skip ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame().getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY(),
+			richText, this->getGame().getRenderer()));
+	}();
+}
+
 void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
@@ -832,6 +955,14 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		{
 			this->vSensitivityDownButton->click(this, this->getGame().getOptions());
 		}
+		else if (this->collisionButton->contains(mouseOriginalPoint))
+		{
+			this->collisionButton->click(this, this->getGame().getOptions());
+		}
+		else if (this->skipIntroButton->contains(mouseOriginalPoint))
+		{
+			this->skipIntroButton->click(this, this->getGame().getOptions());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -870,11 +1001,15 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.drawOriginal(arrows.get(), this->vSensitivityUpButton->getX(),
 		this->vSensitivityUpButton->getY());
 
-	Texture playerInterfaceBackground(Texture::generate(Texture::PatternType::Custom1,
+	Texture toggleButtonBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->playerInterfaceButton->getWidth(), this->playerInterfaceButton->getHeight(),
 		textureManager, renderer));
-	renderer.drawOriginal(playerInterfaceBackground.get(), this->playerInterfaceButton->getX(),
+	renderer.drawOriginal(toggleButtonBackground.get(), this->playerInterfaceButton->getX(),
 		this->playerInterfaceButton->getY());
+	renderer.drawOriginal(toggleButtonBackground.get(), this->collisionButton->getX(),
+		this->collisionButton->getY());
+	renderer.drawOriginal(toggleButtonBackground.get(), this->skipIntroButton->getX(),
+		this->skipIntroButton->getY());
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
@@ -903,6 +1038,10 @@ void OptionsPanel::render(Renderer &renderer)
 		this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY());
 	renderer.drawOriginal(this->vSensitivityTextBox->getTexture(),
 		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
+	renderer.drawOriginal(this->collisionTextBox->getTexture(),
+		this->collisionTextBox->getX(), this->collisionTextBox->getY());
+	renderer.drawOriginal(this->skipIntroTextBox->getTexture(),
+		this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY());
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

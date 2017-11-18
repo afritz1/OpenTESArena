@@ -41,7 +41,7 @@ private:
 	void handleCollision(const WorldData &worldData, double dt);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const WorldData &worldData, double dt);
+	void updatePhysics(const WorldData &worldData, bool collision, double dt);
 public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,

@@ -32,6 +32,7 @@ enum class OptionName
 	SoundChannels,
 
 	ArenaPath,
+	Collision,
 	SkipIntro,
 	ShowDebug
 };
@@ -164,6 +165,7 @@ void set##name(const std::string &value) \
 	OPTION_INT(SoundChannels)
 
 	OPTION_STRING(ArenaPath)
+	OPTION_BOOL(Collision)
 	OPTION_BOOL(SkipIntro)
 	OPTION_BOOL(ShowDebug)
 

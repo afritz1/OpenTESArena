@@ -24,14 +24,18 @@ private:
 	static const std::string LETTERBOX_ASPECT_TEXT;
 	static const std::string HORIZONTAL_SENSITIVITY_TEXT;
 	static const std::string VERTICAL_SENSITIVITY_TEXT;
+	static const std::string COLLISION_TEXT;
+	static const std::string SKIP_INTRO_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox,
 		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox,
-		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox;
+		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox,
+		collisionTextBox, skipIntroTextBox;
 	std::unique_ptr<Button<Game&>> backToPauseButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
-		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton;
+		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton,
+		collisionButton, skipIntroButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>> resolutionScaleUpButton,
 		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Player&, Renderer&>> playerInterfaceButton;
@@ -46,6 +50,8 @@ private:
 	void updateLetterboxAspectText(double letterboxAspect);
 	void updateHorizontalSensitivityText(double hSensitivity);
 	void updateVerticalSensitivityText(double vSensitivity);
+	void updateCollisionText(bool collision);
+	void updateSkipIntroText(bool skip);
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:

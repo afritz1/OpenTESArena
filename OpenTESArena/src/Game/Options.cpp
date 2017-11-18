@@ -36,6 +36,7 @@ namespace
 		{ "SoundChannels", { OptionName::SoundChannels, OptionType::Int } },
 
 		{ "ArenaPath", { OptionName::ArenaPath, OptionType::String } },
+		{ "Collision", { OptionName::Collision, OptionType::Bool } },
 		{ "SkipIntro", { OptionName::SkipIntro, OptionType::Bool } },
 		{ "ShowDebug", { OptionName::ShowDebug, OptionType::Bool } }
 	};

@@ -51,6 +51,9 @@ SoundChannels=32
 # set by a wizard instead.
 ArenaPath=data/ARENA
 
+# Determines whether collision detection is calculated for the player.
+Collision=true
+
 # Skips the opening cinematic on program start.
 SkipIntro=false
 
