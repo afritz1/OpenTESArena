@@ -26,18 +26,20 @@ private:
 	static const std::string VERTICAL_SENSITIVITY_TEXT;
 	static const std::string COLLISION_TEXT;
 	static const std::string SKIP_INTRO_TEXT;
+	static const std::string FULLSCREEN_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox,
 		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox,
 		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox,
-		collisionTextBox, skipIntroTextBox;
+		collisionTextBox, skipIntroTextBox, fullscreenTextBox;
 	std::unique_ptr<Button<Game&>> backToPauseButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&>> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
 		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton,
 		collisionButton, skipIntroButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>> resolutionScaleUpButton,
-		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton;
+		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton,
+		fullscreenButton;
 	std::unique_ptr<Button<OptionsPanel*, Options&, Player&, Renderer&>> playerInterfaceButton;
 
 	static std::string getPlayerInterfaceString(bool modernInterface);
@@ -52,6 +54,7 @@ private:
 	void updateVerticalSensitivityText(double vSensitivity);
 	void updateCollisionText(bool collision);
 	void updateSkipIntroText(bool skip);
+	void updateFullscreenText(bool fullscreen);
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:

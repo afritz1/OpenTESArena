@@ -34,11 +34,13 @@ Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspec
 	this->window = [width, height, fullscreen]()
 	{
 		const std::string &title = Renderer::DEFAULT_TITLE;
-		return fullscreen ?
-			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_UNDEFINED,
-				SDL_WINDOWPOS_UNDEFINED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP) :
-			SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
-				SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE);
+		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
+		const uint32_t flags = SDL_WINDOW_RESIZABLE |
+			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+		
+		// If fullscreen is true, then width and height are ignored. They are stored
+		// behind the scenes for when the user changes to windowed mode, however.
+		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
 	}();
 
 	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
@@ -344,6 +346,17 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 void Renderer::setLetterboxAspect(double letterboxAspect)
 {
 	this->letterboxAspect = letterboxAspect;
+}
+
+void Renderer::setFullscreen(bool fullscreen)
+{
+	// Use "fake" fullscreen for now.
+	uint32_t flags = fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+	SDL_SetWindowFullscreen(this->window, flags);
+
+	// Reset the cursor to the center of the screen for consistency.
+	const Int2 windowDims = this->getWindowDimensions();
+	this->warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
 void Renderer::setWindowIcon(SDL_Surface *icon)

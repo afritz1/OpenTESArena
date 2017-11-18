@@ -42,6 +42,7 @@ const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT = "H. Sensitivity: "
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
 const std::string OptionsPanel::COLLISION_TEXT = "Collision: ";
 const std::string OptionsPanel::SKIP_INTRO_TEXT = "Skip Intro: ";
+const std::string OptionsPanel::FULLSCREEN_TEXT = "Fullscreen: ";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
@@ -253,6 +254,25 @@ OptionsPanel::OptionsPanel(Game &game)
 
 		const std::string text = OptionsPanel::SKIP_INTRO_TEXT +
 			(game.getOptions().getSkipIntro() ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game.getRenderer()));
+	}();
+
+	this->fullscreenTextBox = [&game]()
+	{
+		const int x = 175;
+		const int y = 110;
+
+		const std::string text = OptionsPanel::FULLSCREEN_TEXT +
+			(game.getOptions().getFullscreen() ? "On" : "Off");
 
 		const RichTextString richText(
 			text,
@@ -569,7 +589,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
 
-	this->collisionButton = [this]()
+	this->collisionButton = []()
 	{
 		const int x = 232;
 		const int y = 82;
@@ -586,7 +606,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
 	}();
 
-	this->skipIntroButton = [this]()
+	this->skipIntroButton = []()
 	{
 		const int x = 240;
 		const int y = 96;
@@ -601,6 +621,24 @@ OptionsPanel::OptionsPanel(Game &game)
 		};
 		return std::unique_ptr<Button<OptionsPanel*, Options&>>(
 			new Button<OptionsPanel*, Options&>(x, y, width, height, function));
+	}();
+
+	this->fullscreenButton = []()
+	{
+		const int x = 245;
+		const int y = 110;
+		const int width = ToggleButtonSize;
+		const int height = ToggleButtonSize;
+		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		{
+			// Toggle the fullscreen option.
+			const bool newFullscreen = !options.getFullscreen();
+			options.setFullscreen(newFullscreen);
+			renderer.setFullscreen(newFullscreen);
+			panel->updateFullscreenText(newFullscreen);
+		};
+		return std::unique_ptr<Button<OptionsPanel*, Options&, Renderer&>>(
+			new Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function));
 	}();
 }
 
@@ -844,6 +882,28 @@ void OptionsPanel::updateSkipIntroText(bool skip)
 	}();
 }
 
+void OptionsPanel::updateFullscreenText(bool fullscreen)
+{
+	assert(this->fullscreenTextBox.get() != nullptr);
+
+	this->fullscreenTextBox = [this, fullscreen]()
+	{
+		const RichTextString &oldRichText = this->fullscreenTextBox->getRichText();
+		const std::string text = OptionsPanel::FULLSCREEN_TEXT + (fullscreen ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame().getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY(),
+			richText, this->getGame().getRenderer()));
+	}();
+}
+
 void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
@@ -963,6 +1023,11 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		{
 			this->skipIntroButton->click(this, this->getGame().getOptions());
 		}
+		else if (this->fullscreenButton->contains(mouseOriginalPoint))
+		{
+			this->fullscreenButton->click(this, this->getGame().getOptions(),
+				this->getGame().getRenderer());
+		}
 		else if (this->backToPauseButton->contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton->click(this->getGame());
@@ -1010,6 +1075,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->collisionButton->getY());
 	renderer.drawOriginal(toggleButtonBackground.get(), this->skipIntroButton->getX(),
 		this->skipIntroButton->getY());
+	renderer.drawOriginal(toggleButtonBackground.get(), this->fullscreenButton->getX(),
+		this->fullscreenButton->getY());
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton->getWidth(), this->backToPauseButton->getHeight(),
@@ -1042,6 +1109,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->collisionTextBox->getX(), this->collisionTextBox->getY());
 	renderer.drawOriginal(this->skipIntroTextBox->getTexture(),
 		this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY());
+	renderer.drawOriginal(this->fullscreenTextBox->getTexture(),
+		this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY());
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

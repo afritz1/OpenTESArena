@@ -102,6 +102,9 @@ public:
 	// aspect for simulating tall pixels on a 640x480 display.
 	void setLetterboxAspect(double letterboxAspect);
 
+	// Sets whether the program is windowed or fullscreen.
+	void setFullscreen(bool fullscreen);
+
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(SDL_Surface *icon);
 
