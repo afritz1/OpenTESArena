@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -39,7 +39,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGender),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseGender),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
@@ -54,7 +54,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderMale),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseGenderMale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
@@ -69,7 +69,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseGenderFemale),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseGenderFemale),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,

@@ -1,5 +1,5 @@
-#ifndef TEXT_ASSETS_H
-#define TEXT_ASSETS_H
+#ifndef MISC_ASSETS_H
+#define MISC_ASSETS_H
 
 #include <array>
 #include <memory>
@@ -18,7 +18,7 @@
 
 class ExeStrings;
 
-class TextAssets
+class MiscAssets
 {	
 private:
 	static const std::string AExeKeyValuesMapPath;
@@ -46,8 +46,8 @@ private:
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
 public:
-	TextAssets();
-	~TextAssets();
+	MiscAssets();
+	~MiscAssets();
 
 	// Gets the ExeStrings object for obtaining floppy disk executable strings with.
 	const ExeStrings &getAExeStrings() const;

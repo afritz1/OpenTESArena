@@ -11,7 +11,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -41,7 +41,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 		const int x = 26;
 		const int y = 82;
 
-		std::string text = game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseName);
+		std::string text = game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseName);
 		text = String::replace(text, "%s", charClass.getName());
 
 		const RichTextString richText(

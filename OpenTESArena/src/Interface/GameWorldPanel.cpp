@@ -17,7 +17,7 @@
 #include "WorldMapPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
 #include "../Entities/Player.h"
@@ -224,17 +224,17 @@ GameWorldPanel::GameWorldPanel(Game &game)
 						return 0;
 					}();
 
-					const std::string &timeOfDayString = game.getTextAssets().getAExeStrings()
+					const std::string &timeOfDayString = game.getMiscAssets().getAExeStrings()
 						.getList(ExeStringKey::TimesOfDay).at(timeOfDayIndex);
 
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
 				const auto &date = game.getGameData().getDate();
-				const std::string &weekdayString = game.getTextAssets().getAExeStrings().getList(
+				const std::string &weekdayString = game.getMiscAssets().getAExeStrings().getList(
 					ExeStringKey::WeekdayNames).at(date.getWeekday());
 				const std::string dayString = date.getOrdinalDay();
-				const std::string &monthString = game.getTextAssets().getAExeStrings().getList(
+				const std::string &monthString = game.getMiscAssets().getAExeStrings().getList(
 					ExeStringKey::MonthNames).at(date.getMonth());
 				const std::string yearString = std::to_string(date.getEra()) + "E " +
 					std::to_string(date.getYear());

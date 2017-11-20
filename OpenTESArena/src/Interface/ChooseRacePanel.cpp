@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -87,7 +87,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 		const std::string text = [&game, &charClass, &name]()
 		{
-			std::string segment = game.getTextAssets().getAExeStrings().get(
+			std::string segment = game.getMiscAssets().getAExeStrings().get(
 				ExeStringKey::ChooseRace);
 			segment = String::replace(segment, '\r', '\n');
 
@@ -185,7 +185,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
 	assert(provinceID != (ProvinceClickAreas.size() - 1));
-	const std::string &raceName = this->getGame().getTextAssets().getAExeStrings().getList(
+	const std::string &raceName = this->getGame().getMiscAssets().getAExeStrings().getList(
 		ExeStringKey::RaceNamesPlural).at(provinceID);
 	
 	const Texture tooltip(Panel::createTooltip(

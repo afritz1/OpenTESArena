@@ -9,7 +9,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -34,7 +34,7 @@ LogbookPanel::LogbookPanel(Game &game)
 			Renderer::ORIGINAL_HEIGHT / 2);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::LogbookIsEmpty),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::LogbookIsEmpty),
 			FontName::A,
 			Color(255, 207, 12),
 			TextAlignment::Center,

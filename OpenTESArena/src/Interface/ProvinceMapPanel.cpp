@@ -14,7 +14,7 @@
 #include "WorldMapPanel.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -225,7 +225,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Get the filename of the province map.
 	const std::string backgroundFilename = [this]()
 	{
-		const std::string &filename = this->getGame().getTextAssets().getAExeStrings().getList(
+		const std::string &filename = this->getGame().getMiscAssets().getAExeStrings().getList(
 			ExeStringKey::ProvinceIMGFilenames).at(this->provinceID);
 
 		// Set all characters to uppercase because the texture manager expects 

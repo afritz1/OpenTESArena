@@ -12,7 +12,7 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Interface/Panel.h"
 #include "../Media/FontManager.h"
 #include "../Media/MusicFile.h"
@@ -99,8 +99,8 @@ Game::Game()
 	// Initialize the font manager. Fonts (i.e., FONT_A.DAT) are loaded on demand.
 	this->fontManager = std::unique_ptr<FontManager>(new FontManager());
 
-	// Load various plain text assets.
-	this->textAssets = std::unique_ptr<TextAssets>(new TextAssets());
+	// Load various miscellaneous assets.
+	this->miscAssets = std::unique_ptr<MiscAssets>(new MiscAssets());
 
 	// Load city data file.
 	this->cityDataFile = std::unique_ptr<CityDataFile>(new CityDataFile("CITYDATA.00"));
@@ -182,9 +182,9 @@ TextureManager &Game::getTextureManager() const
 	return *this->textureManager.get();
 }
 
-TextAssets &Game::getTextAssets() const
+MiscAssets &Game::getMiscAssets() const
 {
-	return *this->textAssets.get();
+	return *this->miscAssets.get();
 }
 
 CityDataFile &Game::getCityDataFile() const

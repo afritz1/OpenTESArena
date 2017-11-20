@@ -13,7 +13,7 @@
 #include "TextSubPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -61,7 +61,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 		const int x = 10;
 		const int y = 17;
 
-		const std::string &text = game.getTextAssets().getAExeStrings().getList(
+		const std::string &text = game.getMiscAssets().getAExeStrings().getList(
 			ExeStringKey::RaceNamesSingular).at(raceID);
 
 		const RichTextString richText(
@@ -142,7 +142,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			// for every subsequent screen forward by a little bit.
 
 			// Read Ria Silmane's text from TEMPLATE.DAT.
-			std::string silmaneText = game.getTextAssets().getTemplateDatText("#1400");
+			std::string silmaneText = game.getMiscAssets().getTemplateDatText("#1400");
 			silmaneText.append("\n");
 
 			// Replace all instances of %pcf with the player's first name.
@@ -214,7 +214,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 		const std::string text = [&game]()
 		{
-			std::string segment = game.getTextAssets().getAExeStrings().get(
+			std::string segment = game.getMiscAssets().getAExeStrings().get(
 				ExeStringKey::DistributeClassPoints);
 			segment = String::replace(segment, '\r', '\n');
 

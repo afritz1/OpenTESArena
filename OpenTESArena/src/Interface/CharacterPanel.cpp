@@ -11,7 +11,7 @@
 #include "TextBox.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
@@ -54,7 +54,7 @@ CharacterPanel::CharacterPanel(Game &game)
 		const int y = 17;
 
 		const auto &player = game.getGameData().getPlayer();
-		const std::string &text = game.getTextAssets().getAExeStrings().getList(
+		const std::string &text = game.getMiscAssets().getAExeStrings().getList(
 			ExeStringKey::RaceNamesSingular).at(player.getRaceID());
 
 		const RichTextString richText(

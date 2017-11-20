@@ -22,11 +22,11 @@
 class CityDataFile;
 class GameData;
 class FontManager;
+class MiscAssets;
 class Options;
 class Panel;
 class Renderer;
 class TextureManager;
-class TextAssets;
 
 enum class MusicName;
 
@@ -45,7 +45,7 @@ private:
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
-	std::unique_ptr<TextAssets> textAssets;
+	std::unique_ptr<MiscAssets> miscAssets;
 	std::unique_ptr<CityDataFile> cityDataFile;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
@@ -101,8 +101,8 @@ public:
 	// Gets the texture manager object for loading images from file.
 	TextureManager &getTextureManager() const;
 
-	// Gets the text assets object for loading Arena-related text files.
-	TextAssets &getTextAssets() const;
+	// Gets the miscellaneous assets object for loading some Arena-related files.
+	MiscAssets &getMiscAssets() const;
 
 	// Gets the data object for world map locations.
 	CityDataFile &getCityDataFile() const;

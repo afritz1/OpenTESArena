@@ -12,7 +12,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Game/Game.h"
@@ -39,7 +39,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game)
 {
 	// Read in character classes (just copy from misc. assets for now).
-	const auto &classDefs = game.getTextAssets().getClassDefinitions();
+	const auto &classDefs = game.getMiscAssets().getClassDefinitions();
 	this->charClasses = std::vector<CharacterClass>(classDefs.begin(), classDefs.end());
 	assert(this->charClasses.size() > 0);
 
@@ -56,7 +56,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const int y = 32;
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
 			FontName::C,
 			Color(211, 211, 211),
 			TextAlignment::Left,

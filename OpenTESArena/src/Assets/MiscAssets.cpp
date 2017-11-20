@@ -6,7 +6,7 @@
 
 #include "ExeStrings.h"
 #include "ExeUnpacker.h"
-#include "TextAssets.h"
+#include "MiscAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
@@ -18,9 +18,9 @@
 
 #include "components/vfs/manager.hpp"
 
-const std::string TextAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
+const std::string MiscAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
 
-TextAssets::TextAssets()
+MiscAssets::MiscAssets()
 {
 	// Decompress A.EXE and place it in a string for later use.
 	const ExeUnpacker floppyExe("A.EXE");
@@ -28,7 +28,7 @@ TextAssets::TextAssets()
 
 	// Generate a map of interesting strings from the text of A.EXE.
 	this->aExeStrings = std::unique_ptr<ExeStrings>(new ExeStrings(
-		this->aExe, Platform::getBasePath() + TextAssets::AExeKeyValuesMapPath));
+		this->aExe, Platform::getBasePath() + MiscAssets::AExeKeyValuesMapPath));
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
 	this->parseTemplateDat();
@@ -48,12 +48,12 @@ TextAssets::TextAssets()
 	this->parseDungeonTxt();
 }
 
-TextAssets::~TextAssets()
+MiscAssets::~MiscAssets()
 {
 
 }
 
-void TextAssets::parseTemplateDat()
+void MiscAssets::parseTemplateDat()
 {
 	const std::string filename = "TEMPLATE.DAT";
 
@@ -115,7 +115,7 @@ void TextAssets::parseTemplateDat()
 	this->templateDat.erase("");
 }
 
-void TextAssets::parseQuestionTxt()
+void MiscAssets::parseQuestionTxt()
 {
 	const std::string filename = "QUESTION.TXT";
 
@@ -239,7 +239,7 @@ void TextAssets::parseQuestionTxt()
 	addQuestion(description, a, b, c);
 }
 
-void TextAssets::parseClasses(const std::string &exeText, const ExeStrings &exeStrings,
+void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeStrings,
 	int dataSegmentOffset)
 {
 	const std::string filename = "CLASSES.DAT";
@@ -520,7 +520,7 @@ void TextAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 	}
 }
 
-void TextAssets::parseDungeonTxt()
+void MiscAssets::parseDungeonTxt()
 {
 	const std::string filename = "DUNGEON.TXT";
 
@@ -584,12 +584,12 @@ void TextAssets::parseDungeonTxt()
 	}
 }
 
-const ExeStrings &TextAssets::getAExeStrings() const
+const ExeStrings &MiscAssets::getAExeStrings() const
 {
 	return *this->aExeStrings.get();
 }
 
-const std::string &TextAssets::getTemplateDatText(const std::string &key)
+const std::string &MiscAssets::getTemplateDatText(const std::string &key)
 {
 	const auto iter = this->templateDat.find(key);
 	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" +
@@ -599,22 +599,22 @@ const std::string &TextAssets::getTemplateDatText(const std::string &key)
 	return value;
 }
 
-const std::vector<CharacterQuestion> &TextAssets::getQuestionTxtQuestions() const
+const std::vector<CharacterQuestion> &MiscAssets::getQuestionTxtQuestions() const
 {
 	return this->questionTxt;
 }
 
-const CharacterClassGeneration &TextAssets::getClassGenData() const
+const CharacterClassGeneration &MiscAssets::getClassGenData() const
 {
 	return this->classesDat;
 }
 
-const std::vector<CharacterClass> &TextAssets::getClassDefinitions() const
+const std::vector<CharacterClass> &MiscAssets::getClassDefinitions() const
 {
 	return this->classDefinitions;
 }
 
-const std::vector<std::pair<std::string, std::string>> &TextAssets::getDungeonTxtDungeons() const
+const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTxtDungeons() const
 {
 	return this->dungeonTxt;
 }

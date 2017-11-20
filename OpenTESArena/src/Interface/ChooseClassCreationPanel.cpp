@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeStrings.h"
-#include "../Assets/TextAssets.h"
+#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -38,7 +38,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 80);
 
-		std::string text = game.getTextAssets().getAExeStrings().get(
+		std::string text = game.getMiscAssets().getAExeStrings().get(
 			ExeStringKey::ChooseClassCreation);
 		text = String::replace(text, '\r', '\n');
 
@@ -61,7 +61,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationGenerate),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationGenerate),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
@@ -76,7 +76,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 
 		const RichTextString richText(
-			game.getTextAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationSelect),
+			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseClassCreationSelect),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
