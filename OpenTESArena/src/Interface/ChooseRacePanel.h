@@ -15,9 +15,8 @@ enum class GenderName;
 class ChooseRacePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>> backToGenderButton;
-	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&, 
-		GenderName, int>> acceptButton;
+	Button<Game&, const CharacterClass&, const std::string&> backToGenderButton;
+	Button<Game&, const CharacterClass&, const std::string&, GenderName, int> acceptButton;
 	CharacterClass charClass;
 	GenderName gender;
 	std::string name;

@@ -94,8 +94,7 @@ CharacterPanel::CharacterPanel(Game &game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, width, height, function));
+		return Button<Game&>(center, width, height, function);
 	}();
 
 	this->nextPageButton = []()
@@ -109,8 +108,7 @@ CharacterPanel::CharacterPanel(Game &game)
 			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(game));
 			game.setPanel(std::move(equipmentPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, width, height, function));
+		return Button<Game&>(x, y, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -147,7 +145,7 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || tabPressed)
 	{
-		this->doneButton->click(this->getGame());
+		this->doneButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -158,13 +156,13 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->doneButton->contains(mouseOriginalPoint))
+		if (this->doneButton.contains(mouseOriginalPoint))
 		{
-			this->doneButton->click(this->getGame());
+			this->doneButton.click(this->getGame());
 		}
-		else if (this->nextPageButton->contains(mouseOriginalPoint))
+		else if (this->nextPageButton.contains(mouseOriginalPoint))
 		{
-			this->nextPageButton->click(this->getGame());
+			this->nextPageButton.click(this->getGame());
 		}
 	}
 }

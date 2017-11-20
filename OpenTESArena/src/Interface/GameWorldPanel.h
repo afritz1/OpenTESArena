@@ -22,12 +22,12 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	std::unique_ptr<Button<Game&>> characterSheetButton, statusButton,
+	Button<Game&> characterSheetButton, statusButton,
 		logbookButton, pauseButton;
-	std::unique_ptr<Button<Player&>> drawWeaponButton;
-	std::unique_ptr<Button<>> stealButton, magicButton, useItemButton, campButton;
-	std::unique_ptr<Button<GameWorldPanel*>> scrollUpButton, scrollDownButton;
-	std::unique_ptr<Button<Game&, bool>> mapButton;
+	Button<Player&> drawWeaponButton;
+	Button<> stealButton, magicButton, useItemButton, campButton;
+	Button<GameWorldPanel*> scrollUpButton, scrollDownButton;
+	Button<Game&, bool> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
 

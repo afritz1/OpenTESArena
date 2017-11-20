@@ -20,7 +20,7 @@ class ChooseClassCreationPanel : public Panel
 private:
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
-	std::unique_ptr<Button<Game&>> backToMainMenuButton, generateButton, selectButton;
+	Button<Game&> backToMainMenuButton, generateButton, selectButton;
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:

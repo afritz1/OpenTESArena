@@ -19,7 +19,7 @@ ImagePanel::ImagePanel(Game &game, const std::string &paletteName,
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
+		return Button<Game&>(endingAction);
 	}();
 
 	this->secondsToDisplay = secondsToDisplay;
@@ -44,7 +44,7 @@ void ImagePanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick || skipHotkeyPressed)
 	{
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}	
 }
 
@@ -53,7 +53,7 @@ void ImagePanel::tick(double dt)
 	this->currentSeconds += dt;
 	if (this->currentSeconds > this->secondsToDisplay)
 	{
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}
 }
 

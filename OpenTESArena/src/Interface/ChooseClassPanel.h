@@ -25,9 +25,9 @@ private:
 
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
-	std::unique_ptr<Button<Game&>> backToClassCreationButton;
-	std::unique_ptr<Button<ChooseClassPanel*>> upButton, downButton;
-	std::unique_ptr<Button<Game&, const CharacterClass&>> acceptButton;
+	Button<Game&> backToClassCreationButton;
+	Button<ChooseClassPanel*> upButton, downButton;
+	Button<Game&, const CharacterClass&> acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClass> charClasses;
 

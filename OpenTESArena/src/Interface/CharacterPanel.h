@@ -20,7 +20,7 @@ class CharacterPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
-	std::unique_ptr<Button<Game&>> doneButton, nextPageButton;
+	Button<Game&> doneButton, nextPageButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterPanel(Game &game);

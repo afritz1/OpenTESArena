@@ -27,8 +27,8 @@ private:
 
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
-	std::unique_ptr<Button<Game&>> backToClassButton;
-	std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>> acceptButton;
+	Button<Game&> backToClassButton;
+	Button<Game&, const CharacterClass&, const std::string&> acceptButton;
 	CharacterClass charClass;
 	std::string name;
 public:

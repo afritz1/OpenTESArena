@@ -99,7 +99,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 				game, charClass, name, gender));
 			game.setPanel(std::move(racePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->doneButton = [this, &charClass, &name, gender, raceID]()
@@ -165,8 +165,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			game.setMusic(MusicName::Vision);
 		};
 
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, width, height, cinematicFunction));
+		return Button<Game&>(center, width, height, cinematicFunction);
 	}();
 
 	this->portraitButton = []()
@@ -190,8 +189,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					maxID : (panel->portraitID - 1);
 			}
 		};
-		return std::unique_ptr<Button<ChooseAttributesPanel*, bool>>(
-			new Button<ChooseAttributesPanel*, bool>(center, width, height, function));
+		return Button<ChooseAttributesPanel*, bool>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -272,7 +270,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToRaceButton->click(this->getGame());
+		this->backToRaceButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -284,23 +282,23 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick)
 	{
-		if (this->doneButton->contains(mouseOriginalPoint))
+		if (this->doneButton.contains(mouseOriginalPoint))
 		{
-			this->doneButton->click(this->getGame());
+			this->doneButton.click(this->getGame());
 		}
-		else if (this->portraitButton->contains(mouseOriginalPoint))
+		else if (this->portraitButton.contains(mouseOriginalPoint))
 		{
 			// Pass 'true' to increment the portrait ID.
-			this->portraitButton->click(this, true);
+			this->portraitButton.click(this, true);
 		}
 	}
 
 	if (rightClick)
 	{
-		if (this->portraitButton->contains(mouseOriginalPoint))
+		if (this->portraitButton.contains(mouseOriginalPoint))
 		{
 			// Pass 'false' to decrement the portrait ID.
-			this->portraitButton->click(this, false);
+			this->portraitButton.click(this, false);
 		}
 	}	
 }

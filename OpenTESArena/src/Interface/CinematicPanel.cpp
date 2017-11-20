@@ -15,7 +15,7 @@ CinematicPanel::CinematicPanel(Game &game,
 {
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
+		return Button<Game&>(endingAction);
 	}();
 
 	this->secondsPerImage = secondsPerImage;
@@ -41,7 +41,7 @@ void CinematicPanel::handleEvent(const SDL_Event &e)
 
 	if (leftClick || skipHotkeyPressed)
 	{
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}
 }
 
@@ -64,7 +64,7 @@ void CinematicPanel::tick(double dt)
 	if (this->imageIndex >= textures.size())
 	{
 		this->imageIndex = static_cast<int>(textures.size() - 1);
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}
 }
 

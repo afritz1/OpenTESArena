@@ -26,7 +26,7 @@ ImageSequencePanel::ImageSequencePanel(Game &game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
+		return Button<Game&>(endingAction);
 	}();
 
 	this->currentSeconds = 0.0;
@@ -49,7 +49,7 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 
 	if (skipAllHotkeyPressed)
 	{
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}
 	else if (leftClick || skipOneHotkeyPressed)
 	{
@@ -61,7 +61,7 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 
 		if (this->imageIndex == imageCount)
 		{
-			this->skipButton->click(this->getGame());
+			this->skipButton.click(this->getGame());
 		}
 	}	
 }
@@ -84,7 +84,7 @@ void ImageSequencePanel::tick(double dt)
 			// Check if the last image is now over.
 			if (this->imageIndex == imageCount)
 			{
-				this->skipButton->click(this->getGame());
+				this->skipButton.click(this->getGame());
 			}
 		}
 	}

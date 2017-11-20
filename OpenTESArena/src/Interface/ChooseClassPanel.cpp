@@ -98,7 +98,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
 			game.setPanel(std::move(creationPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->upButton = []
@@ -114,8 +114,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 				panel->classesListBox->scrollUp();
 			}
 		};
-		return std::unique_ptr<Button<ChooseClassPanel*>>(
-			new Button<ChooseClassPanel*>(center, w, h, function));
+		return Button<ChooseClassPanel*>(center, w, h, function);
 	}();
 
 	this->downButton = []
@@ -134,8 +133,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 				panel->classesListBox->scrollDown();
 			}
 		};
-		return std::unique_ptr<Button<ChooseClassPanel*>>(
-			new Button<ChooseClassPanel*>(center, w, h, function));
+		return Button<ChooseClassPanel*>(center, w, h, function);
 	}();
 
 	this->acceptButton = []
@@ -145,8 +143,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(game, charClass));
 			game.setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&>>(
-			new Button<Game&, const CharacterClass&>(function));
+		return Button<Game&, const CharacterClass&>(function);
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
@@ -178,7 +175,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToClassCreationButton->click(this->getGame());
+		this->backToClassCreationButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -198,29 +195,29 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
-				this->acceptButton->click(this->getGame(), this->charClasses.at(index));
+				this->acceptButton.click(this->getGame(), this->charClasses.at(index));
 			}
 		}
 		else if (mouseWheelUp)
 		{
-			this->upButton->click(this);
+			this->upButton.click(this);
 		}
 		else if (mouseWheelDown)
 		{
-			this->downButton->click(this);
+			this->downButton.click(this);
 		}
 	}
 
 	if (leftClick)
 	{
 		// Check scroll buttons (they are outside the list box to the left).
-		if (this->upButton->contains(mouseOriginalPoint))
+		if (this->upButton.contains(mouseOriginalPoint))
 		{
-			this->upButton->click(this);
+			this->upButton.click(this);
 		}
-		else if (this->downButton->contains(mouseOriginalPoint))
+		else if (this->downButton.contains(mouseOriginalPoint))
 		{
-			this->downButton->click(this);
+			this->downButton.click(this);
 		}
 	}
 }

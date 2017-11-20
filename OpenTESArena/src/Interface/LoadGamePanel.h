@@ -11,7 +11,7 @@ class TextBox;
 class LoadGamePanel : public Panel
 {
 private:
-	std::unique_ptr<Button<Game&>> backButton;
+	Button<Game&> backButton;
 	// up/down arrow buttons, saved game buttons...
 public:
 	LoadGamePanel(Game &game);

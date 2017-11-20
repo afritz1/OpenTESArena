@@ -114,8 +114,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
 			game.setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, 64, 29, function));
+		return Button<Game&>(x, y, 64, 29, function);
 	}();
 
 	this->exitButton = []()
@@ -129,7 +128,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			evt.quit.timestamp = 0;
 			SDL_PushEvent(&evt);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, 64, 29, function));
+		return Button<>(x, y, 64, 29, function);
 	}();
 
 	this->newButton = []()
@@ -144,8 +143,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			game.setPanel(std::move(mainMenuPanel));
 			game.setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, 65, 29, function));
+		return Button<Game&>(x, y, 65, 29, function);
 	}();
 
 	this->saveButton = []()
@@ -158,8 +156,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
 			//game.setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, 64, 29, function));
+		return Button<Game&>(x, y, 64, 29, function);
 	}();
 
 	this->resumeButton = []()
@@ -171,8 +168,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, 64, 29, function));
+		return Button<Game&>(x, y, 64, 29, function);
 	}();
 
 	this->optionsButton = []()
@@ -184,8 +180,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
 			game.setPanel(std::move(optionsPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, 145, 14, function));
+		return Button<Game&>(x, y, 145, 14, function);
 	}();
 
 	this->musicUpButton = []()
@@ -201,8 +196,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			// Update the music volume text.
 			panel->updateMusicText(options.getMusicVolume());
 		};
-		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
-			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
+		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
 	}();
 
 	this->musicDownButton = []()
@@ -218,8 +212,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			// Update the music volume text.
 			panel->updateMusicText(options.getMusicVolume());
 		};
-		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
-			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
+		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
 	}();
 
 	this->soundUpButton = []()
@@ -235,8 +228,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			// Update the sound volume text.
 			panel->updateSoundText(options.getSoundVolume());
 		};
-		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
-			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
+		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
 	}();
 
 	this->soundDownButton = []()
@@ -252,8 +244,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			// Update the sound volume text.
 			panel->updateSoundText(options.getSoundVolume());
 		};
-		return std::unique_ptr<Button<Options&, AudioManager&, PauseMenuPanel*>>(
-			new Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function));
+		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
 	}();
 }
 
@@ -322,7 +313,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->resumeButton->click(this->getGame());
+		this->resumeButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -338,45 +329,45 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 
 		// See if any of the buttons are clicked.
 		// (This code is getting kind of bad now. Maybe use a vector?)
-		if (this->loadButton->contains(mouseOriginalPoint))
+		if (this->loadButton.contains(mouseOriginalPoint))
 		{
-			this->loadButton->click(this->getGame());
+			this->loadButton.click(this->getGame());
 		}
-		else if (this->exitButton->contains(mouseOriginalPoint))
+		else if (this->exitButton.contains(mouseOriginalPoint))
 		{
-			this->exitButton->click();
+			this->exitButton.click();
 		}
-		else if (this->newButton->contains(mouseOriginalPoint))
+		else if (this->newButton.contains(mouseOriginalPoint))
 		{
-			this->newButton->click(this->getGame());
+			this->newButton.click(this->getGame());
 		}
-		else if (this->saveButton->contains(mouseOriginalPoint))
+		else if (this->saveButton.contains(mouseOriginalPoint))
 		{
-			this->saveButton->click(this->getGame());
+			this->saveButton.click(this->getGame());
 		}
-		else if (this->resumeButton->contains(mouseOriginalPoint))
+		else if (this->resumeButton.contains(mouseOriginalPoint))
 		{
-			this->resumeButton->click(this->getGame());
+			this->resumeButton.click(this->getGame());
 		}
-		else if (this->optionsButton->contains(mouseOriginalPoint))
+		else if (this->optionsButton.contains(mouseOriginalPoint))
 		{
-			this->optionsButton->click(this->getGame());
+			this->optionsButton.click(this->getGame());
 		}
-		else if (this->musicUpButton->contains(mouseOriginalPoint))
+		else if (this->musicUpButton.contains(mouseOriginalPoint))
 		{
-			this->musicUpButton->click(options, audioManager, this);
+			this->musicUpButton.click(options, audioManager, this);
 		}
-		else if (this->musicDownButton->contains(mouseOriginalPoint))
+		else if (this->musicDownButton.contains(mouseOriginalPoint))
 		{
-			this->musicDownButton->click(options, audioManager, this);
+			this->musicDownButton.click(options, audioManager, this);
 		}
-		else if (this->soundUpButton->contains(mouseOriginalPoint))
+		else if (this->soundUpButton.contains(mouseOriginalPoint))
 		{
-			this->soundUpButton->click(options, audioManager, this);
+			this->soundUpButton.click(options, audioManager, this);
 		}
-		else if (this->soundDownButton->contains(mouseOriginalPoint))
+		else if (this->soundDownButton.contains(mouseOriginalPoint))
 		{
-			this->soundDownButton->click(options, audioManager, this);
+			this->soundDownButton.click(options, audioManager, this);
 		}
 	}
 }
@@ -422,10 +413,10 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	// Cover up the detail slider with a new options background.
 	Texture optionsBackground(Texture::generate(Texture::PatternType::Custom1,
-		this->optionsButton->getWidth(), this->optionsButton->getHeight(),
+		this->optionsButton.getWidth(), this->optionsButton.getHeight(),
 		textureManager, renderer));
-	renderer.drawOriginal(optionsBackground.get(), this->optionsButton->getX(),
-		this->optionsButton->getY());
+	renderer.drawOriginal(optionsBackground.get(), this->optionsButton.getX(),
+		this->optionsButton.getY());
 
 	// Draw text: player's name, music volume, sound volume, options.
 	renderer.drawOriginal(this->playerNameTextBox->getTexture(),

@@ -82,7 +82,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 
 	this->skipButton = [&endingAction]()
 	{
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(endingAction));
+		return Button<Game&>(endingAction);
 	}();
 
 	this->secondsPerImage = secondsPerImage;
@@ -104,7 +104,7 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 	if (escapePressed)
 	{
 		// Force the cinematic to end.
-		this->skipButton->click(this->getGame());
+		this->skipButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -123,7 +123,7 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 		if (this->textIndex >= textBoxCount)
 		{
 			this->textIndex = textBoxCount - 1;
-			this->skipButton->click(this->getGame());
+			this->skipButton.click(this->getGame());
 		}
 	}	
 }

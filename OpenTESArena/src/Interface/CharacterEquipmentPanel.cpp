@@ -93,8 +93,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			std::unique_ptr<Panel> characterPanel(new CharacterPanel(game));
 			game.setPanel(std::move(characterPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, width, height, function));
+		return Button<Game&>(x, y, width, height, function);
 	}();
 
 	this->spellbookButton = []()
@@ -108,7 +107,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			// Nothing yet.
 			// Might eventually take an argument for a panel?
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return Button<>(x, y, width, height, function);
 	}();
 
 	this->dropButton = []()
@@ -122,8 +121,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			// Nothing yet.
 			// The index parameter will point to which item in the list to drop.
 		};
-		return std::unique_ptr<Button<Game&, int>>(
-			new Button<Game&, int>(x, y, width, height, function));
+		return Button<Game&, int>(x, y, width, height, function);
 	}();
 
 	this->scrollDownButton = []()
@@ -135,8 +133,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<CharacterEquipmentPanel*>>(
-			new Button<CharacterEquipmentPanel*>(center, width, height, function));
+		return Button<CharacterEquipmentPanel*>(center, width, height, function);
 	}();
 
 	this->scrollUpButton = []()
@@ -148,8 +145,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<CharacterEquipmentPanel*>>(
-			new Button<CharacterEquipmentPanel*>(center, width, height, function));
+		return Button<CharacterEquipmentPanel*>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -186,7 +182,7 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || tabPressed)
 	{
-		this->backToStatsButton->click(this->getGame());
+		this->backToStatsButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -197,26 +193,26 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->backToStatsButton->contains(mouseOriginalPoint))
+		if (this->backToStatsButton.contains(mouseOriginalPoint))
 		{
-			this->backToStatsButton->click(this->getGame());
+			this->backToStatsButton.click(this->getGame());
 		}
-		else if (this->spellbookButton->contains(mouseOriginalPoint))
+		else if (this->spellbookButton.contains(mouseOriginalPoint))
 		{
-			this->spellbookButton->click();
+			this->spellbookButton.click();
 		}
-		else if (this->dropButton->contains(mouseOriginalPoint))
+		else if (this->dropButton.contains(mouseOriginalPoint))
 		{
 			// Eventually give the index of the clicked item instead.
-			this->dropButton->click(this->getGame(), 0);
+			this->dropButton.click(this->getGame(), 0);
 		}
-		else if (this->scrollUpButton->contains(mouseOriginalPoint))
+		else if (this->scrollUpButton.contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton->click(this);
+			this->scrollUpButton.click(this);
 		}
-		else if (this->scrollDownButton->contains(mouseOriginalPoint))
+		else if (this->scrollDownButton.contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton->click(this);
+			this->scrollDownButton.click(this);
 		}
 	}
 }

@@ -76,7 +76,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return Button<>(x, y, width, height, function);
 	}();
 
 	this->travelButton = []()
@@ -90,7 +90,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		{
 			// Nothing yet.
 		};
-		return std::unique_ptr<Button<>>(new Button<>(x, y, width, height, function));
+		return Button<>(x, y, width, height, function);
 	}();
 
 	this->backToWorldMapButton = []()
@@ -105,8 +105,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
 			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(x, y, width, height, function));
+		return Button<Game&>(x, y, width, height, function);
 	}();
 
 	this->provinceID = provinceID;
@@ -136,7 +135,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || rightClick)
 	{
-		this->backToWorldMapButton->click(this->getGame());
+		this->backToWorldMapButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -147,17 +146,17 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->searchButton->contains(mouseOriginalPoint))
+		if (this->searchButton.contains(mouseOriginalPoint))
 		{
-			this->searchButton->click();
+			this->searchButton.click();
 		}
-		else if (this->travelButton->contains(mouseOriginalPoint))
+		else if (this->travelButton.contains(mouseOriginalPoint))
 		{
-			this->travelButton->click();
+			this->travelButton.click();
 		}
-		else if (this->backToWorldMapButton->contains(mouseOriginalPoint))
+		else if (this->backToWorldMapButton.contains(mouseOriginalPoint))
 		{
-			this->backToWorldMapButton->click(this->getGame());
+			this->backToWorldMapButton.click(this->getGame());
 		}
 
 		// Check locations for clicks...

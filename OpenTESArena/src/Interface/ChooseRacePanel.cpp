@@ -60,8 +60,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 				game, charClass, name));
 			game.setPanel(std::move(namePanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
-			new Button<Game&, const CharacterClass&, const std::string&>(function));
+		return Button<Game&, const CharacterClass&, const std::string&>(function);
 	}();
 
 	this->acceptButton = []()
@@ -73,9 +72,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 				game, charClass, name, gender, raceID));
 			game.setPanel(std::move(attributesPanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&, 
-			GenderName, int>>(new Button<Game&, const CharacterClass&, const std::string&, 
-				GenderName, int>(function));
+		return Button<Game&, const CharacterClass&, 
+			const std::string&, GenderName, int>(function);
 	}();
 	
 	// @todo: maybe allocate std::unique_ptr<std::function> for unravelling the map?
@@ -156,7 +154,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	// Interact with the map screen.
 	if (escapePressed)
 	{
-		this->backToGenderButton->click(this->getGame(), this->charClass, this->name);
+		this->backToGenderButton.click(this->getGame(), this->charClass, this->name);
 	}
 	else if (leftClick)
 	{
@@ -175,7 +173,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 				(provinceID != (ProvinceClickAreas.size() - 1)))
 			{
 				// Go to the attributes panel.
-				this->acceptButton->click(this->getGame(), this->charClass,
+				this->acceptButton.click(this->getGame(), this->charClass,
 					this->name, this->gender, provinceID);
 				break;
 			}

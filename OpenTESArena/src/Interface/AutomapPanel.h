@@ -16,7 +16,7 @@ class AutomapPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> locationTextBox;
-	std::unique_ptr<Button<Game&>> backToGameButton;
+	Button<Game&> backToGameButton;
 	Texture mapTexture;
 	Double2 automapOffset; // Displayed XZ coordinate offset from (0, 0).
 

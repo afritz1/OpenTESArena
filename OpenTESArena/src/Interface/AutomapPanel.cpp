@@ -102,8 +102,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
 			game.setPanel(std::move(gamePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, width, height, function));
+		return Button<Game&>(center, width, height, function);
 	}();
 
 	this->mapTexture = [this, &playerPosition, &playerDirection, &voxelGrid]()
@@ -289,7 +288,7 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || nPressed)
 	{
-		this->backToGameButton->click(this->getGame());
+		this->backToGameButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -301,9 +300,9 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 			.nativePointToOriginal(mousePosition);
 
 		// Check if "Exit" was clicked.
-		if (this->backToGameButton->contains(mouseOriginalPoint))
+		if (this->backToGameButton.contains(mouseOriginalPoint))
 		{
-			this->backToGameButton->click(this->getGame());
+			this->backToGameButton.click(this->getGame());
 		}
 	}
 }

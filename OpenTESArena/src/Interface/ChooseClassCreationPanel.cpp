@@ -94,7 +94,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			game.setPanel(std::move(mainMenuPanel));
 			game.setMusic(MusicName::PercIntro);
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->generateButton = []()
@@ -106,8 +106,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
 			game.setPanel(std::move(classPanel));*/
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, 175, 35, function));
+		return Button<Game&>(center, 175, 35, function);
 	}();
 
 	this->selectButton = []()
@@ -118,8 +117,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
 			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, 175, 35, function));
+		return Button<Game&>(center, 175, 35, function);
 	}();
 }
 
@@ -144,7 +142,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToMainMenuButton->click(this->getGame());
+		this->backToMainMenuButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -155,13 +153,13 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->generateButton->contains(mouseOriginalPoint))
+		if (this->generateButton.contains(mouseOriginalPoint))
 		{
-			this->generateButton->click(this->getGame());
+			this->generateButton.click(this->getGame());
 		}
-		else if (this->selectButton->contains(mouseOriginalPoint))
+		else if (this->selectButton.contains(mouseOriginalPoint))
 		{
-			this->selectButton->click(this->getGame());
+			this->selectButton.click(this->getGame());
 		}
 	}
 }
@@ -222,11 +220,11 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativePointToOriginal(mousePosition);
 
-	if (this->generateButton->contains(originalPoint))
+	if (this->generateButton.contains(originalPoint))
 	{
 		this->drawTooltip("Answer questions\n(not implemented)", renderer);
 	}
-	else if (this->selectButton->contains(originalPoint))
+	else if (this->selectButton.contains(originalPoint))
 	{
 		this->drawTooltip("Choose from a list", renderer);
 	}

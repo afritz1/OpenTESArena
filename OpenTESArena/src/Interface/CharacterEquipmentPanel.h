@@ -15,10 +15,10 @@ class CharacterEquipmentPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
-	std::unique_ptr<Button<Game&>> backToStatsButton;
-	std::unique_ptr<Button<>> spellbookButton;
-	std::unique_ptr<Button<Game&, int>> dropButton;
-	std::unique_ptr<Button<CharacterEquipmentPanel*>> scrollDownButton, scrollUpButton;
+	Button<Game&> backToStatsButton;
+	Button<> spellbookButton;
+	Button<Game&, int> dropButton;
+	Button<CharacterEquipmentPanel*> scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterEquipmentPanel(Game &game);

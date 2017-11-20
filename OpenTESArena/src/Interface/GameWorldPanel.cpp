@@ -120,8 +120,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
 			game.setPanel(std::move(sheetPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(14, 166, 40, 29, function));
+		return Button<Game&>(14, 166, 40, 29, function);
 	}();
 
 	this->drawWeaponButton = []()
@@ -141,7 +140,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				weaponAnimation.setState(WeaponAnimation::State::Sheathing);
 			}
 		};
-		return std::unique_ptr<Button<Player&>>(new Button<Player&>(88, 151, 29, 22, function));
+		return Button<Player&>(88, 151, 29, 22, function);
 	}();
 
 	this->stealButton = []()
@@ -150,7 +149,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			DebugMention("Steal.");
 		};
-		return std::unique_ptr<Button<>>(new Button<>(147, 151, 29, 22, function));
+		return Button<>(147, 151, 29, 22, function);
 	}();
 
 	this->statusButton = []()
@@ -275,7 +274,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			game.pushSubPanel(std::move(textSubPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(177, 151, 29, 22, function));
+		return Button<Game&>(177, 151, 29, 22, function);
 	}();
 
 	this->magicButton = []()
@@ -284,7 +283,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			DebugMention("Magic.");
 		};
-		return std::unique_ptr<Button<>>(new Button<>(88, 175, 29, 22, function));
+		return Button<>(88, 175, 29, 22, function);
 	}();
 
 	this->logbookButton = []()
@@ -294,8 +293,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
 			game.setPanel(std::move(logbookPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(118, 175, 29, 22, function));
+		return Button<Game&>(118, 175, 29, 22, function);
 	}();
 
 	this->useItemButton = []()
@@ -304,7 +302,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			DebugMention("Use item.");
 		};
-		return std::unique_ptr<Button<>>(new Button<>(147, 175, 29, 22, function));
+		return Button<>(147, 175, 29, 22, function);
 	}();
 
 	this->campButton = []()
@@ -313,39 +311,34 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			DebugMention("Camp.");
 		};
-		return std::unique_ptr<Button<>>(new Button<>(177, 175, 29, 22, function));
+		return Button<>(177, 175, 29, 22, function);
 	}();
 
 	this->scrollUpButton = []()
 	{
+		// Y position is based on height of interface image.
+		const int x = 208;
+		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 3;
+
 		auto function = [](GameWorldPanel *panel)
 		{
 			// Nothing yet.
 		};
 
-		// Y position is based on height of interface image.
-		return std::unique_ptr<Button<GameWorldPanel*>>(new Button<GameWorldPanel*>(
-			208,
-			(Renderer::ORIGINAL_HEIGHT - 53) + 3,
-			9,
-			9,
-			function));
+		return Button<GameWorldPanel*>(x, y, 9, 9, function);
 	}();
 
 	this->scrollDownButton = []()
 	{
+		// Y position is based on height of interface image.
+		const int x = 208;
+		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 44;
+
 		auto function = [](GameWorldPanel *panel)
 		{
 			// Nothing yet.
 		};
-
-		// Y position is based on height of interface image.
-		return std::unique_ptr<Button<GameWorldPanel*>>(new Button<GameWorldPanel*>(
-			208,
-			(Renderer::ORIGINAL_HEIGHT - 53) + 44,
-			9,
-			9,
-			function));
+		return Button<GameWorldPanel*>(x, y, 9, 9, function);
 	}();
 
 	this->pauseButton = []()
@@ -355,7 +348,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
 			game.setPanel(std::move(pausePanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->mapButton = []()
@@ -382,8 +375,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				game.setPanel(std::move(worldMapPanel));
 			}
 		};
-		return std::unique_ptr<Button<Game&, bool>>(
-			new Button<Game&, bool>(118, 151, 29, 22, function));
+		return Button<Game&, bool>(118, 151, 29, 22, function);
 	}();
 
 	// Set all of the cursor regions relative to the current window.
@@ -451,7 +443,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->pauseButton->click(this->getGame());
+		this->pauseButton.click(this->getGame());
 	}
 	else if (f4Pressed)
 	{
@@ -469,23 +461,23 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	if (automapHotkeyPressed)
 	{
-		this->mapButton->click(this->getGame(), true);
+		this->mapButton.click(this->getGame(), true);
 	}
 	else if (logbookHotkeyPressed)
 	{
-		this->logbookButton->click(this->getGame());
+		this->logbookButton.click(this->getGame());
 	}
 	else if (sheetHotkeyPressed)
 	{
-		this->characterSheetButton->click(this->getGame());
+		this->characterSheetButton.click(this->getGame());
 	}
 	else if (statusHotkeyPressed)
 	{
-		this->statusButton->click(this->getGame());
+		this->statusButton.click(this->getGame());
 	}
 	else if (worldMapHotkeyPressed)
 	{
-		this->mapButton->click(this->getGame(), false);
+		this->mapButton.click(this->getGame(), false);
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -504,50 +496,50 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		if (leftClick)
 		{
 			// Was an interface button clicked?
-			if (this->characterSheetButton->contains(originalPosition))
+			if (this->characterSheetButton.contains(originalPosition))
 			{
-				this->characterSheetButton->click(this->getGame());
+				this->characterSheetButton.click(this->getGame());
 			}
-			else if (this->drawWeaponButton->contains(originalPosition))
+			else if (this->drawWeaponButton.contains(originalPosition))
 			{
-				this->drawWeaponButton->click(this->getGame().getGameData().getPlayer());
+				this->drawWeaponButton.click(this->getGame().getGameData().getPlayer());
 			}
-			else if (this->mapButton->contains(originalPosition))
+			else if (this->mapButton.contains(originalPosition))
 			{
-				this->mapButton->click(this->getGame(), true);
+				this->mapButton.click(this->getGame(), true);
 			}
-			else if (this->stealButton->contains(originalPosition))
+			else if (this->stealButton.contains(originalPosition))
 			{
-				this->stealButton->click();
+				this->stealButton.click();
 			}
-			else if (this->statusButton->contains(originalPosition))
+			else if (this->statusButton.contains(originalPosition))
 			{
-				this->statusButton->click(this->getGame());
+				this->statusButton.click(this->getGame());
 			}
-			else if (this->magicButton->contains(originalPosition))
+			else if (this->magicButton.contains(originalPosition))
 			{
-				this->magicButton->click();
+				this->magicButton.click();
 			}
-			else if (this->logbookButton->contains(originalPosition))
+			else if (this->logbookButton.contains(originalPosition))
 			{
-				this->logbookButton->click(this->getGame());
+				this->logbookButton.click(this->getGame());
 			}
-			else if (this->useItemButton->contains(originalPosition))
+			else if (this->useItemButton.contains(originalPosition))
 			{
-				this->useItemButton->click();
+				this->useItemButton.click();
 			}
-			else if (this->campButton->contains(originalPosition))
+			else if (this->campButton.contains(originalPosition))
 			{
-				this->campButton->click();
+				this->campButton.click();
 			}
 
 			// Later... any entities in the world clicked?
 		}
 		else if (rightClick)
 		{
-			if (this->mapButton->contains(originalPosition))
+			if (this->mapButton.contains(originalPosition))
 			{
-				this->mapButton->click(this->getGame(), false);
+				this->mapButton.click(this->getGame(), false);
 			}
 		}
 	}
@@ -1351,40 +1343,40 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Check if the mouse is over one of the buttons for tooltips.
 		const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
 
-		if (this->characterSheetButton->contains(originalPosition))
+		if (this->characterSheetButton.contains(originalPosition))
 		{
 			this->drawTooltip("Character Sheet", renderer);
 		}
-		else if (this->drawWeaponButton->contains(originalPosition))
+		else if (this->drawWeaponButton.contains(originalPosition))
 		{
 			this->drawTooltip("Draw/Sheathe Weapon", renderer);
 		}
-		else if (this->mapButton->contains(originalPosition))
+		else if (this->mapButton.contains(originalPosition))
 		{
 			this->drawTooltip("Automap/World Map", renderer);
 		}
-		else if (this->stealButton->contains(originalPosition))
+		else if (this->stealButton.contains(originalPosition))
 		{
 			this->drawTooltip("Steal", renderer);
 		}
-		else if (this->statusButton->contains(originalPosition))
+		else if (this->statusButton.contains(originalPosition))
 		{
 			this->drawTooltip("Status", renderer);
 		}
-		else if (this->magicButton->contains(originalPosition) &&
+		else if (this->magicButton.contains(originalPosition) &&
 			player.getCharacterClass().canCastMagic())
 		{
 			this->drawTooltip("Spells", renderer);
 		}
-		else if (this->logbookButton->contains(originalPosition))
+		else if (this->logbookButton.contains(originalPosition))
 		{
 			this->drawTooltip("Logbook", renderer);
 		}
-		else if (this->useItemButton->contains(originalPosition))
+		else if (this->useItemButton.contains(originalPosition))
 		{
 			this->drawTooltip("Use Item", renderer);
 		}
-		else if (this->campButton->contains(originalPosition))
+		else if (this->campButton.contains(originalPosition))
 		{
 			this->drawTooltip("Camp", renderer);
 		}

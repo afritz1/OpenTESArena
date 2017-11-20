@@ -44,8 +44,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
 			game.setPanel(std::move(loadPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, width, height, function));
+		return Button<Game&>(center, width, height, function);
 	}();
 
 	this->newButton = []()
@@ -103,8 +102,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel(std::move(cinematicPanel));
 			game.setMusic(MusicName::EvilIntro);
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, width, height, function));
+		return Button<Game&>(center, width, height, function);
 	}();
 
 	this->fastStartButton = [&game]()
@@ -142,7 +140,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel(std::move(gameWorldPanel));
 			game.setMusic(MusicName::Dungeon1);
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->exitButton = []()
@@ -157,7 +155,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			e.quit.timestamp = 0;
             SDL_PushEvent(&e);
 		};
-		return std::unique_ptr<Button<>>(new Button<>(center, width, height, function));
+		return Button<>(center, width, height, function);
 	}();
 
 	// The game data should not be active on the main menu.
@@ -188,20 +186,20 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 
 	if (lPressed)
 	{
-		this->loadButton->click(this->getGame());
+		this->loadButton.click(this->getGame());
 	}
 	else if (sPressed)
 	{
-		this->newButton->click(this->getGame());
+		this->newButton.click(this->getGame());
 	}
 	else if (ePressed)
 	{
-		this->exitButton->click();
+		this->exitButton.click();
 	}
 	else if (fPressed)
 	{
 		// Enter the game world immediately, for testing purposes.
-		this->fastStartButton->click(this->getGame());
+		this->fastStartButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -212,17 +210,17 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->loadButton->contains(mouseOriginalPoint))
+		if (this->loadButton.contains(mouseOriginalPoint))
 		{
-			this->loadButton->click(this->getGame());
+			this->loadButton.click(this->getGame());
 		}
-		else if (this->newButton->contains(mouseOriginalPoint))
+		else if (this->newButton.contains(mouseOriginalPoint))
 		{
-			this->newButton->click(this->getGame());
+			this->newButton.click(this->getGame());
 		}
-		else if (this->exitButton->contains(mouseOriginalPoint))
+		else if (this->exitButton.contains(mouseOriginalPoint))
 		{
-			this->exitButton->click();
+			this->exitButton.click();
 		}
 	}
 }

@@ -28,7 +28,7 @@ class TextCinematicPanel : public Panel
 {
 private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
-	std::unique_ptr<Button<Game&>> skipButton;
+	Button<Game&> skipButton;
 	std::string sequenceName;
 	double secondsPerImage, currentImageSeconds;
 	int imageIndex, textIndex;

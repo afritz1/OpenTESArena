@@ -86,8 +86,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 			game.setPanel(std::unique_ptr<Panel>(new ChooseNamePanel(
 				game, charClass)));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&>>(
-			new Button<Game&, const CharacterClass&>(function));
+		return Button<Game&, const CharacterClass&>(function);
 	}();
 
 	this->maleButton = []()
@@ -100,8 +99,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 				game, charClass, name, GenderName::Male));
 			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
-			new Button<Game&, const CharacterClass&, const std::string&>(center, 175, 35, function));
+		return Button<Game&, const CharacterClass&, 
+			const std::string&>(center, 175, 35, function);
 	}();
 
 	this->femaleButton = []()
@@ -114,8 +113,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 				game, charClass, name, GenderName::Female));
 			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
-			new Button<Game&, const CharacterClass&, const std::string&>(center, 175, 35, function));
+		return Button<Game&, const CharacterClass&, 
+			const std::string&>(center, 175, 35, function);
 	}();
 }
 
@@ -140,7 +139,7 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToNameButton->click(this->getGame(), this->charClass);
+		this->backToNameButton.click(this->getGame(), this->charClass);
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -151,13 +150,13 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->maleButton->contains(mouseOriginalPoint))
+		if (this->maleButton.contains(mouseOriginalPoint))
 		{
-			this->maleButton->click(this->getGame(), this->charClass, this->name);
+			this->maleButton.click(this->getGame(), this->charClass, this->name);
 		}
-		else if (this->femaleButton->contains(mouseOriginalPoint))
+		else if (this->femaleButton.contains(mouseOriginalPoint))
 		{
-			this->femaleButton->click(this->getGame(), this->charClass, this->name);
+			this->femaleButton.click(this->getGame(), this->charClass, this->name);
 		}
 	}
 }

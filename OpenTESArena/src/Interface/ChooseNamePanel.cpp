@@ -78,7 +78,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
 			game.setPanel(std::move(classPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 
 	this->acceptButton = []()
@@ -90,8 +90,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 				game, charClass, name));
 			game.setPanel(std::move(genderPanel));
 		};
-		return std::unique_ptr<Button<Game&, const CharacterClass&, const std::string&>>(
-			new Button<Game&, const CharacterClass&, const std::string&>(function));
+		return Button<Game&, const CharacterClass&, const std::string&>(function);
 	}();
 }
 
@@ -118,13 +117,13 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToClassButton->click(this->getGame());
+		this->backToClassButton.click(this->getGame());
 	}
 
 	// Only accept the name if it has a positive size.
 	if (enterPressed && (this->name.size() > 0))
 	{
-		this->acceptButton->click(this->getGame(), this->charClass, this->name);
+		this->acceptButton.click(this->getGame(), this->charClass, this->name);
 	}
 
 	// --------------

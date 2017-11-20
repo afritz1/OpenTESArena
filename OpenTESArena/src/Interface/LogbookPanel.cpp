@@ -30,7 +30,7 @@ LogbookPanel::LogbookPanel(Game &game)
 	this->titleTextBox = [&game]()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH / 2, 
+			Renderer::ORIGINAL_WIDTH / 2,
 			Renderer::ORIGINAL_HEIGHT / 2);
 
 		const RichTextString richText(
@@ -47,7 +47,7 @@ LogbookPanel::LogbookPanel(Game &game)
 	this->backButton = []()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH - 40, 
+			Renderer::ORIGINAL_WIDTH - 40,
 			Renderer::ORIGINAL_HEIGHT - 13);
 
 		auto function = [](Game &game)
@@ -55,8 +55,7 @@ LogbookPanel::LogbookPanel(Game &game)
 			std::unique_ptr<Panel> backPanel(new GameWorldPanel(game));
 			game.setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(
-			new Button<Game&>(center, 34, 14, function));
+		return Button<Game&>(center, 34, 14, function);
 	}();
 }
 
@@ -82,7 +81,7 @@ void LogbookPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || lPressed)
 	{
-		this->backButton->click(this->getGame());
+		this->backButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -93,9 +92,9 @@ void LogbookPanel::handleEvent(const SDL_Event &e)
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->backButton->contains(mouseOriginalPoint))
+		if (this->backButton.contains(mouseOriginalPoint))
 		{
-			this->backButton->click(this->getGame());
+			this->backButton.click(this->getGame());
 		}
 	}
 }

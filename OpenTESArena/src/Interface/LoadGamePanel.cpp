@@ -36,7 +36,7 @@ LoadGamePanel::LoadGamePanel(Game &game)
 				std::unique_ptr<Panel>(new MainMenuPanel(game));
 			game.setPanel(std::move(backPanel));
 		};
-		return std::unique_ptr<Button<Game&>>(new Button<Game&>(function));
+		return Button<Game&>(function);
 	}();
 }
 
@@ -61,7 +61,7 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backButton->click(this->getGame());
+		this->backButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
