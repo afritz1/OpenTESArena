@@ -7,6 +7,8 @@
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
+#include "../Assets/MiscAssets.h"
+#include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -18,26 +20,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-
-namespace
-{
-	// Mouse click areas for the world map, ordered by how Arena originally
-	// indexes them (read top left to bottom right on world map, center province 
-	// is last).
-	// - Eventually replace this with an index into the IMG file.
-	const std::vector<Rect> ProvinceClickAreas =
-	{
-		Rect(52, 51, 44, 11),
-		Rect(72, 75, 50, 11),
-		Rect(142, 44, 34, 11),
-		Rect(222, 84, 52, 11),
-		Rect(37, 149, 49, 19),
-		Rect(106, 147, 49, 10),
-		Rect(148, 127, 37, 11),
-		Rect(216, 144, 55, 12),
-		Rect(133, 105, 83, 11)
-	};
-}
 
 WorldMapPanel::WorldMapPanel(Game &game)
 	: Panel(game)
@@ -96,25 +78,38 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		const Int2 originalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->backToGameButton.contains(mouseOriginalPoint))
+		// Listen for clicks on the map and exit button.
+		const auto &worldMapMasks = this->getGame().getMiscAssets().getWorldMapMasks();
+		const int maskCount = static_cast<int>(worldMapMasks.size());
+		for (int maskID = 0; maskID < maskCount; maskID++)
 		{
-			this->backToGameButton.click(this->getGame());
-		}
+			const WorldMapMask &mapMask = worldMapMasks.at(maskID);
+			const Rect &maskRect = mapMask.getRect();
 
-		// Listen for map clicks.
-		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
-		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
-		{
-			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
-
-			if (clickArea.contains(mouseOriginalPoint))
+			if (maskRect.contains(originalPoint))
 			{
-				// Go to the province panel.
-				this->provinceButton.click(this->getGame(), provinceID);
-				break;
+				// See if the clicked pixel is set in the bitmask.
+				const bool success = mapMask.get(originalPoint.x, originalPoint.y);
+
+				if (success)
+				{
+					// Mask IDs 0 through 8 are provinces, and 9 is the "Exit" button.
+					if (maskID < 9)
+					{
+						// Go to the selected province panel.
+						this->provinceButton.click(this->getGame(), maskID);
+					}
+					else
+					{
+						// Exit the world map panel.
+						this->backToGameButton.click(this->getGame());
+					}
+					
+					break;
+				}
 			}
 		}
 	}	
