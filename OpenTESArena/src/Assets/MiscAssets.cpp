@@ -6,7 +6,6 @@
 
 #include "ExeStrings.h"
 #include "ExeUnpacker.h"
-#include "IMGFile.h"
 #include "MiscAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
