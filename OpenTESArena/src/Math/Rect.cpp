@@ -1,7 +1,5 @@
 #include <cassert>
 
-#include "SDL.h"
-
 #include "Rect.h"
 
 Rect::Rect(int x, int y, int width, int height)
@@ -86,15 +84,9 @@ Int2 Rect::getCenter() const
 		(this->getTop() + (this->getHeight() / 2)));
 }
 
-bool Rect::isEmpty() const
+const SDL_Rect &Rect::getRect() const
 {
-	return (this->getLeft() == 0) && (this->getRight() == 0) &&
-		(this->getWidth() == 0) && (this->getHeight() == 0);
-}
-
-const SDL_Rect *Rect::getRect() const
-{
-	return this->isEmpty() ? nullptr : (&this->rect);
+	return this->rect;
 }
 
 void Rect::setX(int x)

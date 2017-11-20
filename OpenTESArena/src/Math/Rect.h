@@ -1,8 +1,6 @@
 #ifndef RECTANGLE_H
 #define RECTANGLE_H
 
-#include <memory>
-
 #include "SDL.h"
 
 #include "../Math/Vector2.h"
@@ -11,8 +9,6 @@ class Rect
 {
 private:
 	SDL_Rect rect;
-
-	bool isEmpty() const;
 public:
 	Rect(int x, int y, int width, int height);
 	Rect(int width, int height);
@@ -31,7 +27,7 @@ public:
 	Int2 getBottomLeft() const;
 	Int2 getBottomRight() const;
 	Int2 getCenter() const;
-	const SDL_Rect *getRect() const;
+	const SDL_Rect &getRect() const;
 
 	void setX(int x);
 	void setY(int y);

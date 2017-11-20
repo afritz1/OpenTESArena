@@ -550,7 +550,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
-	SDL_RenderFillRect(this->renderer, rect.getRect());
+	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
@@ -681,7 +681,7 @@ void Renderer::drawOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 	// to native space.
 	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
 
-	SDL_RenderCopy(this->renderer, texture, nullptr, rect.getRect());
+	SDL_RenderCopy(this->renderer, texture, nullptr, &rect.getRect());
 }
 
 void Renderer::drawOriginal(SDL_Texture *texture, int x, int y)

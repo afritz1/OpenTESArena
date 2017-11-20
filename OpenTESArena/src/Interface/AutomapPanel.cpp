@@ -383,7 +383,7 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Only draw the part of the automap within the drawing area.
 	const Rect nativeDrawingArea = renderer.originalRectToNative(DrawingArea);
-	renderer.setClipRect(nativeDrawingArea.getRect());
+	renderer.setClipRect(&nativeDrawingArea.getRect());
 
 	// Draw automap. Remember that +X is north and +Z is east (aliased as Y), and that
 	// the map texture is scaled by 3 (for the 3x3 player pixel).
