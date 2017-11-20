@@ -19,7 +19,6 @@
 
 // Game members should be available through a getter so panels can access them.
 
-class CityDataFile;
 class GameData;
 class FontManager;
 class MiscAssets;
@@ -46,7 +45,6 @@ private:
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
 	std::unique_ptr<MiscAssets> miscAssets;
-	std::unique_ptr<CityDataFile> cityDataFile;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
@@ -103,9 +101,6 @@ public:
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets() const;
-
-	// Gets the data object for world map locations.
-	CityDataFile &getCityDataFile() const;
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;

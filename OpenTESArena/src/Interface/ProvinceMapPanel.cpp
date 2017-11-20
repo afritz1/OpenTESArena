@@ -294,7 +294,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const auto &villageIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
 
-	const auto &province = this->getGame().getCityDataFile()
+	const auto &province = this->getGame().getMiscAssets().getCityDataFile()
 		.getProvinceData(this->provinceID);
 
 	// Draw city-state icons.

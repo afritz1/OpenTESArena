@@ -102,9 +102,6 @@ Game::Game()
 	// Load various miscellaneous assets.
 	this->miscAssets = std::unique_ptr<MiscAssets>(new MiscAssets());
 
-	// Load city data file.
-	this->cityDataFile = std::unique_ptr<CityDataFile>(new CityDataFile("CITYDATA.00"));
-
 	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
 	std::unique_ptr<uint32_t[]> iconPixels = PPMFile::read(
@@ -185,11 +182,6 @@ TextureManager &Game::getTextureManager() const
 MiscAssets &Game::getMiscAssets() const
 {
 	return *this->miscAssets.get();
-}
-
-CityDataFile &Game::getCityDataFile() const
-{
-	return *this->cityDataFile.get();
 }
 
 const FPSCounter &Game::getFPSCounter() const

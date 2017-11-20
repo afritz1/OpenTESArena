@@ -6,6 +6,7 @@
 
 #include "ExeStrings.h"
 #include "ExeUnpacker.h"
+#include "IMGFile.h"
 #include "MiscAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
@@ -21,6 +22,7 @@
 const std::string MiscAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
 
 MiscAssets::MiscAssets()
+	: cityDataFile("CITYDATA.00")
 {
 	// Decompress A.EXE and place it in a string for later use.
 	const ExeUnpacker floppyExe("A.EXE");
@@ -46,6 +48,9 @@ MiscAssets::MiscAssets()
 
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
+
+	// Read in the world map mask data from TAMRIEL.MNU.
+	this->parseWorldMapMasks();
 }
 
 MiscAssets::~MiscAssets()
@@ -584,6 +589,61 @@ void MiscAssets::parseDungeonTxt()
 	}
 }
 
+void MiscAssets::parseWorldMapMasks()
+{
+	const std::string filename = "TAMRIEL.MNU";
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	std::vector<uint8_t> srcData(stream->tellg());
+	stream->seekg(0, std::ios::beg);
+
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+	// Beginning of the mask data.
+	const int startOffset = 0x87D5;
+
+	// Each province's mask rectangle is a set of bits packed together with others.
+	const std::array<Rect, 10> MaskRects =
+	{
+		Rect(37, 32, 86, 57),
+		Rect(47, 53, 90, 62),
+		Rect(113, 29, 88, 53),
+		Rect(190, 31, 102, 93),
+		Rect(31, 131, 65, 52),
+		Rect(100, 118, 61, 55),
+		Rect(144, 119, 50, 57),
+		Rect(204, 116, 67, 67),
+		Rect(103, 72, 131, 84),
+		Rect(279, 188, 37, 11) // "Exit" button.
+	};
+
+	// Initialize each of the world map masks, moving the offset to the beginning
+	// of the next data each loop.
+	int offset = 0;
+	for (size_t i = 0; i < this->worldMapMasks.size(); i++)
+	{
+		const Rect &rect = MaskRects.at(i);
+
+		// The number of bytes in the mask rect.
+		const int byteCount = 
+			WorldMapMask::getAdjustedWidth(rect.getWidth()) * rect.getHeight();
+
+		// Copy the segment of mask bytes to a new vector.
+		const auto maskStart = srcData.begin() + startOffset + offset;
+		const auto maskEnd = maskStart + byteCount;
+		std::vector<uint8_t> maskData(maskStart, maskEnd);
+
+		// Assign the map mask onto the map masks list.
+		this->worldMapMasks.at(i) = WorldMapMask(std::move(maskData), rect);
+
+		// Move to the next mask.
+		offset += byteCount;
+	}
+}
+
 const ExeStrings &MiscAssets::getAExeStrings() const
 {
 	return *this->aExeStrings.get();
@@ -617,4 +677,14 @@ const std::vector<CharacterClass> &MiscAssets::getClassDefinitions() const
 const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTxtDungeons() const
 {
 	return this->dungeonTxt;
+}
+
+const CityDataFile &MiscAssets::getCityDataFile() const
+{
+	return this->cityDataFile;
+}
+
+const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const
+{
+	return this->worldMapMasks;
 }

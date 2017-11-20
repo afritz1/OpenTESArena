@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "CityDataFile.h"
+#include "WorldMapMask.h"
 #include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
 #include "../Game/CharacterQuestion.h"
@@ -19,7 +21,7 @@
 class ExeStrings;
 
 class MiscAssets
-{	
+{
 private:
 	static const std::string AExeKeyValuesMapPath;
 
@@ -30,6 +32,8 @@ private:
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
+	CityDataFile cityDataFile;
+	std::array<WorldMapMask, 10> worldMapMasks;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
 	void parseTemplateDat();
@@ -45,6 +49,9 @@ private:
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
+
+	// Reads the mask data from TAMRIEL.MNU.
+	void parseWorldMapMasks();
 public:
 	MiscAssets();
 	~MiscAssets();
@@ -65,6 +72,13 @@ public:
 	// These are just the dungeons with a unique icon on the world map, not the 
 	// lesser dungeons.
 	const std::vector<std::pair<std::string, std::string>> &getDungeonTxtDungeons() const;
+
+	// Gets the data object for world map locations.
+	const CityDataFile &getCityDataFile() const;
+
+	// Gets the mask rectangles used for registering clicks on the world map. There are
+	// ten entries -- the first nine are provinces and the last is the "Exit" button.
+	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
 };
 
 #endif
