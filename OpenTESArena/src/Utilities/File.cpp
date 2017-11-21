@@ -2,33 +2,29 @@
 #include <fstream>
 #include <vector>
 
-#include "SDL_platform.h"
-
 #include "Debug.h"
 #include "File.h"
+#include "Platform.h"
 
 std::string File::readAllText(const std::string &filename)
 {
-	std::ifstream ifs(filename, std::ios::in | std::ios::binary | std::ios::ate);
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
 
 	DebugAssert(ifs.is_open(), "Could not open \"" + filename + "\".");
 
-	const auto fileSize = ifs.tellg();
+	ifs.seekg(0, std::ios::end);
+	std::string text(ifs.tellg(), '\0');
 	ifs.seekg(0, std::ios::beg);
-
-	std::vector<char> bytes(fileSize);
-	ifs.read(bytes.data(), fileSize);
-	ifs.close();
-
-	return std::string(bytes.data(), fileSize);
+	
+	ifs.read(&text[0], text.size());
+	
+	return text;
 }
 
 bool File::exists(const std::string &filename)
 {
 	std::ifstream ifs(filename);
 	const bool isOpen = ifs.good();
-
-	ifs.close();
 	return isOpen;
 }
 
@@ -37,7 +33,7 @@ bool File::pathIsRelative(const std::string &filename)
 	DebugAssert(filename.size() > 0, "Path cannot be empty.");
 
 	// See which platform we're running on by comparing with names provided by SDL.
-	const std::string platformName(SDL_GetPlatform());
+	const std::string platformName = Platform::getPlatform();
 
 	if (platformName == "Windows")
 	{
@@ -66,7 +62,4 @@ void File::copy(const std::string &srcFilename, const std::string &dstFilename)
 
 	// Copy the source file to the destination.
 	ofs << ifs.rdbuf();
-
-	ifs.close();
-	ofs.close();
 }
