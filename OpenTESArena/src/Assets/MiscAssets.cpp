@@ -64,15 +64,13 @@ void MiscAssets::parseTemplateDat()
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
-	// Read TEMPLATE.DAT into a string.
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	std::vector<char> bytes(fileSize);
-	stream->read(bytes.data(), fileSize);
-
-	const std::string text(bytes.data(), fileSize);
+	// Read TEMPLATE.DAT into a string.
+	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
 
 	// Step line by line through the text, inserting keys and values into the map.
 	std::istringstream iss(text);
@@ -126,15 +124,13 @@ void MiscAssets::parseQuestionTxt()
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
-	// Read QUESTION.TXT into a string.
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	std::vector<char> bytes(fileSize);
-	stream->read(bytes.data(), fileSize);
-
-	const std::string text(bytes.data(), fileSize);
+	// Read QUESTION.TXT into a string.
+	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
 
 	// Lambda for adding a new question to the questions list.
 	auto addQuestion = [this](const std::string &description,
@@ -252,11 +248,9 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
-	stream->read(reinterpret_cast<char*>(srcData.data()), fileSize);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Initialize the class generation data with zeroes.
 	auto &classes = this->classesDat.classes;
@@ -532,13 +526,11 @@ void MiscAssets::parseDungeonTxt()
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	std::vector<char> bytes(fileSize);
-	stream->read(bytes.data(), fileSize);
-
-	const std::string text(bytes.data(), fileSize);
+	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
 
 	// Step line by line through the text, inserting data into the dungeon list.
 	std::istringstream iss(text);
@@ -598,7 +590,6 @@ void MiscAssets::parseWorldMapMasks()
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Beginning of the mask data.

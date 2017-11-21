@@ -15,14 +15,12 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Number of uncompressed chunks packed in the SET.
-	const int chunkCount = static_cast<int>(fileSize) / SETFile::CHUNK_SIZE;
+	const int chunkCount = static_cast<int>(srcData.size()) / SETFile::CHUNK_SIZE;
 
 	// Create an image for each uncompressed chunk using the given palette.
 	for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)

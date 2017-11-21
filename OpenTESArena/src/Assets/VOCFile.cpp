@@ -28,10 +28,8 @@ VOCFile::VOCFile(const std::string &filename)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Read part of the .VOC header. Bytes 0 to 18 contain "Creative Voice File",

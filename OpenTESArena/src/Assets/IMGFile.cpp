@@ -37,10 +37,8 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	uint16_t xoff, yoff, width, height, flags, len;
@@ -195,10 +193,8 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Read the flags and IMG file length. Skip the X and Y offsets and dimensions.

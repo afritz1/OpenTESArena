@@ -15,10 +15,8 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Read CFA header. Fortunately, all CFAs have headers, unlike IMGs and CIFs.

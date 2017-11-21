@@ -15,14 +15,12 @@ RCIFile::RCIFile(const std::string &filename, const Palette &palette)
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
-	const auto fileSize = stream->tellg();
+	std::vector<uint8_t> srcData(stream->tellg());
 	stream->seekg(0, std::ios::beg);
-
-	std::vector<uint8_t> srcData(fileSize);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Number of uncompressed frames packed in the RCI.
-	const int frameCount = static_cast<int>(fileSize) / RCIFile::FRAME_SIZE;
+	const int frameCount = static_cast<int>(srcData.size()) / RCIFile::FRAME_SIZE;
 
 	// Create an image for each uncompressed frame using the given palette.
 	for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
