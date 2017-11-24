@@ -192,7 +192,6 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
-	assert(provinceID != (ProvinceClickAreas.size() - 1));
 	const std::string &raceName = this->getGame().getMiscAssets().getAExeStrings().getList(
 		ExeStringKey::RaceNamesPlural).at(provinceID);
 
