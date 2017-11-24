@@ -11,10 +11,10 @@
 #include "TextSubPanel.h"
 #include "../Assets/ExeStrings.h"
 #include "../Assets/MiscAssets.h"
+#include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
-#include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -27,25 +27,7 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/String.h"
 
-namespace
-{
-	// Mouse click areas for the world map, ordered by how Arena originally
-	// indexes them (read top left to bottom right on world map, center province 
-	// is last).
-	// - Eventually replace this with an index into the IMG file.
-	const std::vector<Rect> ProvinceClickAreas =
-	{
-		Rect(52, 51, 44, 11),
-		Rect(72, 75, 50, 11),
-		Rect(142, 44, 34, 11),
-		Rect(222, 84, 52, 11),
-		Rect(37, 149, 49, 19),
-		Rect(106, 147, 49, 10),
-		Rect(148, 127, 37, 11),
-		Rect(216, 144, 55, 12),
-		Rect(133, 105, 83, 11)
-	};
-}
+const int ChooseRacePanel::NO_ID = -1;
 
 ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 	const std::string &name, GenderName gender)
@@ -53,7 +35,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 {
 	this->backToGenderButton = []()
 	{
-		auto function = [](Game &game, const CharacterClass &charClass, 
+		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
 			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
@@ -72,10 +54,10 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 				game, charClass, name, gender, raceID));
 			game.setPanel(std::move(attributesPanel));
 		};
-		return Button<Game&, const CharacterClass&, 
+		return Button<Game&, const CharacterClass&,
 			const std::string&, GenderName, int>(function);
 	}();
-	
+
 	// @todo: maybe allocate std::unique_ptr<std::function> for unravelling the map?
 	// When done, set to null and push initial parchment sub-panel?
 
@@ -122,7 +104,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 		// The sub-panel does nothing after it's removed.
 		auto function = [](Game &game) {};
-		
+
 		return std::unique_ptr<Panel>(new TextSubPanel(
 			game, center, richText, function, std::move(texture), textureCenter));
 	}();
@@ -132,7 +114,41 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 ChooseRacePanel::~ChooseRacePanel()
 {
-	
+
+}
+
+int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
+{
+	const auto &worldMapMasks = this->getGame().getMiscAssets().getWorldMapMasks();
+	const int maskCount = static_cast<int>(worldMapMasks.size());
+	for (int maskID = 0; maskID < maskCount; maskID++)
+	{
+		// Ignore the center province and the "Exit" button.
+		const int lastProvinceID = 8;
+		const int exitButtonID = 9;
+		if ((maskID == lastProvinceID) || (maskID == exitButtonID))
+		{
+			continue;
+		}
+
+		const WorldMapMask &mapMask = worldMapMasks.at(maskID);
+		const Rect &maskRect = mapMask.getRect();
+
+		if (maskRect.contains(position))
+		{
+			// See if the pixel is set in the bitmask.
+			const bool success = mapMask.get(position.x, position.y);
+
+			if (success)
+			{
+				// Return the mask's ID.
+				return maskID;
+			}
+		}
+	}
+
+	// No province mask found at the given location.
+	return ChooseRacePanel::NO_ID;
 }
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
@@ -159,26 +175,18 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		const Int2 originalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		// Listen for map clicks.
-		const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
-		for (int provinceID = 0; provinceID < provinceCount; provinceID++)
+		// Listen for clicks on the map, checking if the mouse is over a province mask.
+		const int maskID = this->getProvinceMaskID(originalPoint);
+		if (maskID != ChooseRacePanel::NO_ID)
 		{
-			const Rect &clickArea = ProvinceClickAreas.at(provinceID);
-
-			// Ignore the Imperial province.
-			if (clickArea.contains(mouseOriginalPoint) && 
-				(provinceID != (ProvinceClickAreas.size() - 1)))
-			{
-				// Go to the attributes panel.
-				this->acceptButton.click(this->getGame(), this->charClass,
-					this->name, this->gender, provinceID);
-				break;
-			}
+			// Choose the selected province.
+			this->acceptButton.click(this->getGame(), this->charClass,
+				this->name, this->gender, maskID);
 		}
-	}	
+	}
 }
 
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
@@ -187,7 +195,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	assert(provinceID != (ProvinceClickAreas.size() - 1));
 	const std::string &raceName = this->getGame().getMiscAssets().getAExeStrings().getList(
 		ExeStringKey::RaceNamesPlural).at(provinceID);
-	
+
 	const Texture tooltip(Panel::createTooltip(
 		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer));
 
@@ -215,7 +223,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Draw background map.
 	const auto &raceSelectMap = textureManager.getTexture(
-		TextureFile::fromName(TextureName::RaceSelect), 
+		TextureFile::fromName(TextureName::RaceSelect),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawOriginal(raceSelectMap.get());
 
@@ -231,20 +239,13 @@ void ChooseRacePanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Draw hovered province tooltip.
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+	const Int2 originalPoint = this->getGame().getRenderer()
 		.nativePointToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.
-	const int provinceCount = static_cast<int>(ProvinceClickAreas.size());
-	for (int provinceID = 0; provinceID < provinceCount; provinceID++)
+	const int maskID = this->getProvinceMaskID(originalPoint);
+	if (maskID != ChooseRacePanel::NO_ID)
 	{
-		const Rect &clickArea = ProvinceClickAreas.at(provinceID);
-
-		// Ignore the Imperial province.
-		if (clickArea.contains(mouseOriginalPoint) &&
-			(provinceID != (ProvinceClickAreas.size() - 1)))
-		{
-			this->drawProvinceTooltip(provinceID, renderer);
-		}
+		this->drawProvinceTooltip(maskID, renderer);
 	}
 }
