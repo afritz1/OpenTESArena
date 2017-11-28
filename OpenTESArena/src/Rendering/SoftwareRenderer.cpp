@@ -2277,9 +2277,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 }
 
 void SoftwareRenderer::drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
-	bool flipped, double fogDistance, const Double2 &eye, const Matrix4d &transform,
-	double yShear, const ShadingInfo &shadingInfo, const SoftwareTexture &texture,
-	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+	bool flipped, const Double2 &eye, const Matrix4d &transform, double yShear, 
+	const ShadingInfo &shadingInfo, const SoftwareTexture &texture, int frameWidth, 
+	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -2356,7 +2356,7 @@ void SoftwareRenderer::drawFlat(int x, const Flat::Frame &flatFrame, const Doubl
 	const double z = (Double2(topPoint.x, topPoint.z) - eye).length();
 
 	// Linearly interpolated fog.
-	const double fogPercent = std::min(z / fogDistance, 1.0);
+	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
 	for (int y = drawStart; y < drawEnd; y++)
@@ -2589,8 +2589,8 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 		const Double2 eye2D(eye.x, eye.z);
 
-		SoftwareRenderer::drawFlat(x, flatFrame, flatNormal, flipped, this->fogDistance, 
-			eye2D, transform, yShear, shadingInfo, texture, this->width, this->height, 
+		SoftwareRenderer::drawFlat(x, flatFrame, flatNormal, flipped, eye2D, 
+			transform, yShear, shadingInfo, texture, this->width, this->height, 
 			this->depthBuffer.data(), colorBuffer);
 	}
 }

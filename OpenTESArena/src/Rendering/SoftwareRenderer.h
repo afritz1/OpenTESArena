@@ -169,9 +169,9 @@ private:
 
 	// Draws a slice of a flat in the given X column of the screen.
 	static void drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
-		bool flipped, double fogDistance, const Double2 &eye, const Matrix4d &transform, 
-		double yShear, const ShadingInfo &shadingInfo, const SoftwareTexture &texture, 
-		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+		bool flipped, const Double2 &eye, const Matrix4d &transform, double yShear, 
+		const ShadingInfo &shadingInfo, const SoftwareTexture &texture, int frameWidth, 
+		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
