@@ -29,8 +29,9 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
 	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
-	this->zBuffer = std::vector<double>(pixelCount);
-	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
+	this->depthBuffer = std::vector<double>(pixelCount);
+	std::fill(this->depthBuffer.begin(), this->depthBuffer.end(), 
+		std::numeric_limits<double>::infinity());
 
 	this->width = width;
 	this->height = height;
@@ -194,24 +195,23 @@ void SoftwareRenderer::removeAllTextures()
 void SoftwareRenderer::resize(int width, int height)
 {
 	const int pixelCount = width * height;
-	this->zBuffer.resize(pixelCount);
-	std::fill(this->zBuffer.begin(), this->zBuffer.end(), std::numeric_limits<double>::infinity());
+	this->depthBuffer.resize(pixelCount);
+	std::fill(this->depthBuffer.begin(), this->depthBuffer.end(), 
+		std::numeric_limits<double>::infinity());
 
 	this->width = width;
 	this->height = height;
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double yShear,
+void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &direction,
 	const Matrix4d &transform)
 {
+	assert(direction.isNormalized());
+
 	this->visibleFlats.clear();
 
-	// Used with calculating distances in the XZ plane.
-	const Double2 eye2D(eye.x, eye.z);
-
-	// This is essentially a visible sprite determination algorithm mixed with a 
-	// trimmed-down vertex shader. It goes through all the flats and sees if they 
-	// would be at least partially visible in the view frustum each frame.
+	// This is the visible flat determination algorithm. It goes through all flats and sees 
+	// which ones would be at least partially visible in the view frustum.
 	for (const auto &pair : this->flats)
 	{
 		const Flat &flat = pair.second;
@@ -223,96 +223,68 @@ void SoftwareRenderer::updateVisibleFlats(const Double3 &eye, double yShear,
 
 		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
 		const Double3 flatUpScaled = flatUp * flat.height;
+		
+		// Calculate each corner of the flat in world space. Leave the frame's start and end
+		// X and Z values for later since they only apply to visible flats.
+		Flat::Frame flatFrame;
+		flatFrame.bottomStart = flat.position + flatRightScaled;
+		flatFrame.bottomEnd = flat.position - flatRightScaled;
+		flatFrame.topStart = flatFrame.bottomStart + flatUpScaled;
+		flatFrame.topEnd = flatFrame.bottomEnd + flatUpScaled;
 
-		// Calculate just the bottom two corners of the flat in world space.
-		// Line clipping needs to be done first before calculating the other corners.
-		Double3 bottomLeft = flat.position - flatRightScaled;
-		Double3 bottomRight = flat.position + flatRightScaled;
+		// If the flat would be at least partially visible, put it into the draw list.
+		// Calculate vectors from the eye to the flat's right and left edges and do
+		// dot products.
+		const Double2 flatStart2D(flatFrame.bottomStart.x, flatFrame.bottomStart.z);
+		const Double2 flatEnd2D(flatFrame.bottomEnd.x, flatFrame.bottomEnd.z);
+		const Double2 startDir = (flatStart2D - eye).normalized();
+		const Double2 endDir = (flatEnd2D - eye).normalized();
 
-		// Transform the two points to camera space (projection * view).
-		Double4 blPoint = transform * Double4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0);
-		Double4 brPoint = transform * Double4(bottomRight.x, bottomRight.y, bottomRight.z, 1.0);
+		// To do: make this more strict; i.e., make the 0.0 be a function of the
+		// view frustum's half width instead.
+		const bool startsInFrustum = direction.dot(startDir) > 0.0;
+		const bool endsInFrustum = direction.dot(endDir) > 0.0;
 
-		// Check if the line segment needs clipping.
-		const bool leftCloseEnough = blPoint.z < SoftwareRenderer::FAR_PLANE;
-		const bool leftFarEnough = blPoint.z > SoftwareRenderer::NEAR_PLANE;
-		const bool rightCloseEnough = brPoint.z < SoftwareRenderer::FAR_PLANE;
-		const bool rightFarEnough = brPoint.z > SoftwareRenderer::NEAR_PLANE;
-
-		const bool leftBounded = leftCloseEnough && leftFarEnough;
-		const bool rightBounded = rightCloseEnough && rightFarEnough;
-
-		// If both points are outside the clipping planes, the flat is not visible.
-		if (!leftBounded && !rightBounded)
+		if (startsInFrustum || endsInFrustum)
 		{
-			continue;
+			// Now calculate the start and end X and Z values of the flat in camera space.
+			// The Z values are used with flat sorting only (not rendering), and the X values
+			// are used for bounding the flat during rendering (i.e., skipping a flat if 
+			// current slice is not contained within its X range).
+			const Double4 projStart = transform * Double4(
+				flatFrame.bottomStart.x, flatFrame.bottomStart.y, flatFrame.bottomStart.z, 1.0);
+			const Double4 projEnd = transform * Double4(
+				flatFrame.bottomEnd.x, flatFrame.bottomEnd.y, flatFrame.bottomEnd.z, 1.0);
+
+			// Normalize the X and Z coordinates and give them to the flat frame.
+			flatFrame.startX = 0.50 + ((projStart.x / projStart.w) * 0.50);
+			flatFrame.endX = 0.50 + ((projEnd.x / projEnd.w) * 0.50);
+			flatFrame.startZ = projStart.z / projStart.w;
+			flatFrame.endZ = projEnd.z / projEnd.w;
+
+			// Check that at least one Z value is within the clipping planes. It's okay if
+			// one value is outside the clipping planes because the flat would only be partially 
+			// visible then (hence the clipping). The clipping is done by the renderer.
+			const bool startsInPlanes = (flatFrame.startZ >= SoftwareRenderer::NEAR_PLANE) &&
+				(flatFrame.startZ <= SoftwareRenderer::FAR_PLANE);
+			const bool endsInPlanes = (flatFrame.endZ >= SoftwareRenderer::NEAR_PLANE) &&
+				(flatFrame.endZ <= SoftwareRenderer::FAR_PLANE);
+
+			if (startsInPlanes || endsInPlanes)
+			{
+				// Add the flat data to the draw list.
+				this->visibleFlats.push_back(std::make_pair(&flat, std::move(flatFrame)));
+			}
 		}
-
-		// Horizontal texture coordinates (modified by line clipping if needed).
-		double leftU = 1.0;
-		double rightU = 0.0;
-
-		// Clip line if needed by interpolating between the bad point and good point.
-		if (!leftFarEnough)
-		{
-			const double percent = (SoftwareRenderer::NEAR_PLANE - blPoint.z) /
-				(brPoint.z - blPoint.z);
-
-			bottomLeft = bottomLeft.lerp(bottomRight, percent);
-			blPoint = transform * Double4(bottomLeft.x, bottomLeft.y, bottomLeft.z, 1.0);
-			leftU = 1.0 - percent;
-		}
-		else if (!rightFarEnough)
-		{
-			const double percent = (SoftwareRenderer::NEAR_PLANE - brPoint.z) /
-				(blPoint.z - brPoint.z);
-
-			bottomRight = bottomRight.lerp(bottomLeft, percent);
-			brPoint = transform * Double4(bottomRight.x, bottomRight.y, bottomRight.z, 1.0);
-			rightU = percent;
-		}
-
-		// Generate the other two corners.
-		const Double3 topLeft = bottomLeft + flatUpScaled;
-		const Double3 topRight = bottomRight + flatUpScaled;
-
-		// Normalize coordinates.
-		blPoint = blPoint / blPoint.w;
-		brPoint = brPoint / brPoint.w;
-
-		// Calculate top left and right projected Y (no need for X; it's equal to each bottom X).
-		const double topLeftProjY = SoftwareRenderer::getProjectedY(topLeft, transform, yShear);
-		const double topRightProjY = SoftwareRenderer::getProjectedY(topRight, transform, yShear);
-
-		// Create projection data for the flat.
-		Flat::Projection flatProjection;
-
-		// Translate coordinates on the screen relative to the middle (0.5, 0.5). Multiply 
-		// by 0.5 to apply the correct aspect ratio. Calculate true distances from the camera 
-		// to the left and right edges in the XZ plane.
-		flatProjection.left.x = 0.50 + (blPoint.x * 0.50);
-		flatProjection.left.topY = topLeftProjY;
-		flatProjection.left.bottomY = (0.50 + yShear) - (blPoint.y * 0.50);
-		flatProjection.left.z = (Double2(bottomLeft.x, bottomLeft.z) - eye2D).length();
-		flatProjection.left.u = leftU;
-
-		flatProjection.right.x = 0.50 + (brPoint.x * 0.50);
-		flatProjection.right.topY = topRightProjY;
-		flatProjection.right.bottomY = (0.50 + yShear) - (brPoint.y * 0.50);
-		flatProjection.right.z = (Double2(bottomRight.x, bottomRight.z) - eye2D).length();
-		flatProjection.right.u = rightU;
-
-		this->visibleFlats.push_back(std::make_pair(&flat, flatProjection));
 	}
 
-	// Sort the visible flat data farthest to nearest (this may be relevant for
-	// transparencies).
+	// Sort the visible flats farthest to nearest (relevant for transparencies).
 	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
-		[](const std::pair<const Flat*, Flat::Projection> &a,
-			const std::pair<const Flat*, Flat::Projection> &b)
+		[](const std::pair<const Flat*, Flat::Frame> &a,
+			const std::pair<const Flat*, Flat::Frame> &b)
 	{
-		return std::min(a.second.left.z, a.second.right.z) >
-			std::min(b.second.left.z, b.second.right.z);
+		return std::min(a.second.endZ, a.second.startZ) >
+			std::min(b.second.endZ, b.second.startZ);
 	});
 }
 
@@ -2304,16 +2276,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	}
 }
 
-void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection, 
-	const Double3 &normal, bool flipped, double fogDistance, const ShadingInfo &shadingInfo,
-	const SoftwareTexture &texture, int frameWidth, int frameHeight, double *depthBuffer,
-	uint32_t *colorBuffer)
+void SoftwareRenderer::drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
+	bool flipped, double fogDistance, const Double2 &eye, const Matrix4d &transform,
+	double yShear, const ShadingInfo &shadingInfo, const SoftwareTexture &texture,
+	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
-	// Values for the flat are interpolated from the right edge to the left edge
-	// (not necessarily right to left on-screen).
-	const Flat::Projection::Edge &startEdge = flatProjection.right;
-	const Flat::Projection::Edge &endEdge = flatProjection.left;
-
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
 	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
@@ -2323,32 +2290,56 @@ void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection,
 	const double xPercent = (static_cast<double>(x) + 0.50) /
 		static_cast<double>(frameWidth);
 
-	// Find where the column is within the X range of the flat. This is the percent
-	// showing how far the column is from the start edge to the end edge in X.
-	const double flatPercent = (xPercent - startEdge.x) / (endEdge.x - startEdge.x);
+	// Use the flat's projected X values to determine whether the current column is 
+	// contained within the flat's X range in screen-space. The "flat percent" determines 
+	// the start-to-end percentage of the column within the flat's X range.
+	const double flatPercent = (xPercent - flatFrame.startX) / 
+		(flatFrame.endX - flatFrame.startX);
 
-	// Don't render the flat if the column percent is invalid.
+	// Don't render the flat if the column percent is invalid (in other words, the current
+	// column is not slicing the flat).
 	if ((flatPercent < 0.0) || (flatPercent > 1.0))
 	{
 		return;
 	}
 
-	// Horizontal texture coordinate in the flat.
-	const double u = std::max(std::min(
-		startEdge.u + ((endEdge.u - startEdge.u) * flatPercent),
-		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+	// Obtain the points on the top and bottom edges of the flat relative to the flat percent.
+	// These two points combined create a projected screen column.
+	const Double3 topPoint = flatFrame.topStart.lerp(flatFrame.topEnd, flatPercent);
+	const Double3 bottomPoint = flatFrame.bottomStart.lerp(flatFrame.bottomEnd, flatPercent);
 
-	// Interpolate the projected Y coordinates based on the X range.
-	const double projectedY1 = startEdge.topY +
-		((endEdge.topY - startEdge.topY) * flatPercent);
-	const double projectedY2 = startEdge.bottomY +
-		((endEdge.bottomY - startEdge.bottomY) * flatPercent);
+	// Transform the top and bottom points from world space to camera space.
+	const Double4 topProj = transform * Double4(topPoint.x, topPoint.y, topPoint.z, 1.0);
+	const Double4 bottomProj = transform * Double4(bottomPoint.x, bottomPoint.y, bottomPoint.z, 1.0);
+	const double projZ = topProj.z / topProj.w;
+
+	// The renderer may be given flats that intersect with a clipping plane, so the
+	// projected Z needs to be checked to see if it still lies within that range.
+	const bool inPlanes = (projZ >= SoftwareRenderer::NEAR_PLANE) &&
+		(projZ <= SoftwareRenderer::FAR_PLANE);
+
+	if (!inPlanes)
+	{
+		return;
+	}
+
+	// Normalized Y coordinates.
+	const double topProjYNorm = topProj.y / topProj.w;
+	const double bottomProjYNorm = bottomProj.y / bottomProj.w;
+
+	// Actual projected Y coordinates on screen (accounting for Y-shear and aspect).
+	const double projYStart = (0.50 + yShear) - (topProjYNorm * 0.50);
+	const double projYEnd = (0.50 + yShear) - (bottomProjYNorm * 0.50);
+
+	// Horizontal texture coordinate in the flat. Although the flat percent can be
+	// equal to 1.0, the texture coordinate needs to be less than 1.0.
+	const double u = std::max(std::min(flatPercent, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
 
 	// Get the start and end Y coordinates of the projected points (potentially
 	// outside the top or bottom of the screen).
 	const double heightReal = static_cast<double>(frameHeight);
-	const double projectedStart = projectedY1 * heightReal;
-	const double projectedEnd = projectedY2 * heightReal;
+	const double projectedStart = projYStart * heightReal;
+	const double projectedEnd = projYEnd * heightReal;
 
 	// Clamp the Y coordinates for where the flat starts and stops on the screen.
 	const int drawStart = std::min(std::max(0,
@@ -2361,19 +2352,18 @@ void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection,
 		(flipped ? (SoftwareRenderer::JUST_BELOW_ONE - u) : u) *
 		static_cast<double>(texture.width));
 
-	// I think this needs to be perspective correct. Currently, it's like affine
-	// texture mapping, but for depth.
-	const double zDistance = startEdge.z + ((endEdge.z - startEdge.z) * flatPercent);
+	// Get the true XZ distance for the depth.
+	const double z = (Double2(topPoint.x, topPoint.z) - eye).length();
 
 	// Linearly interpolated fog.
-	const double fogPercent = std::min(zDistance / fogDistance, 1.0);
+	const double fogPercent = std::min(z / fogDistance, 1.0);
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
 	for (int y = drawStart; y < drawEnd; y++)
 	{
 		const int index = x + (y * frameWidth);
 
-		if (zDistance <= depthBuffer[index])
+		if (z <= depthBuffer[index])
 		{
 			// Vertical texture coordinate.
 			const double v = ((static_cast<double>(y) + 0.50) - projectedStart) /
@@ -2393,7 +2383,7 @@ void SoftwareRenderer::drawFlat(int x, const Flat::Projection &flatProjection,
 					texel.z * (shadingInfo.ambient + sunComponent.z));
 
 				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = zDistance;
+				depthBuffer[index] = z;
 			}
 		}
 	}
@@ -2512,7 +2502,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		SoftwareRenderer::drawInitialVoxelColumn(x, startCell.x, startCell.z, eye.y,
 			wallFacing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
 			zDistance, transform, yShear, shadingInfo, voxelGrid, this->textures, this->width, 
-			this->height, this->zBuffer.data(), colorBuffer);
+			this->height, this->depthBuffer.data(), colorBuffer);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -2574,17 +2564,17 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, eye.y, savedNormal,
 			nearPoint, farPoint, wallDistance, zDistance, transform, yShear, shadingInfo, 
-			voxelGrid, this->textures, this->width, this->height, this->zBuffer.data(), 
+			voxelGrid, this->textures, this->width, this->height, this->depthBuffer.data(),
 			colorBuffer);
 	}
 
-	// Draw flats (sprites, fences, signs, etc.).
+	// Draw flats.
 	// - Flats could be done outside the ray casting loop, but they would then need to be
 	//   parallelized a bit differently (instead of by-column like this method).
 	for (const auto &pair : this->visibleFlats)
 	{
 		const Flat &flat = *pair.first;
-		const Flat::Projection &flatProjection = pair.second;
+		const Flat::Frame &flatFrame = pair.second;
 
 		// Normal of the flat (not all flats face the camera, but every flat's normal
 		// is perpendicular to the Y axis).
@@ -2597,9 +2587,11 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		const SoftwareTexture &texture = textures[flat.textureID];
 		const bool flipped = flat.flipped;
 
-		SoftwareRenderer::drawFlat(x, flatProjection, flatNormal, flipped, 
-			this->fogDistance, shadingInfo, texture, this->width, this->height, 
-			this->zBuffer.data(), colorBuffer);
+		const Double2 eye2D(eye.x, eye.z);
+
+		SoftwareRenderer::drawFlat(x, flatFrame, flatNormal, flipped, this->fogDistance, 
+			eye2D, transform, yShear, shadingInfo, texture, this->width, this->height, 
+			this->depthBuffer.data(), colorBuffer);
 	}
 }
 
@@ -2722,7 +2714,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		const int endIndex = endY * this->width;
 
 		uint32_t *colorPtr = colorBuffer;
-		double *depthPtr = this->zBuffer.data();
+		double *depthPtr = this->depthBuffer.data();
 
 		const uint32_t colorValue = horizonFogColor.toRGB();
 		const double depthValue = std::numeric_limits<double>::infinity();
@@ -2737,9 +2729,11 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this, eye, yShear, &transform]
+	std::thread sortThread([this, &eye, &forwardXZ, &transform]
 	{ 
-		this->updateVisibleFlats(eye, yShear, transform);
+		const Double2 eye2D(eye.x, eye.z);
+		const Double2 direction2D(forwardXZ.x, forwardXZ.z);
+		this->updateVisibleFlats(eye2D, direction2D, transform);
 	});
 
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.

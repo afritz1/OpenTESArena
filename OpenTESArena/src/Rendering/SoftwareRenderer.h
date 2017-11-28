@@ -59,7 +59,7 @@ private:
 	};
 
 	// A flat is a 2D surface always facing perpendicular to the Y axis (not necessarily
-	// facing the camera). It might be a door, sprite, store sign, etc..
+	// facing the camera).
 	struct Flat
 	{
 		Double3 position; // Center of bottom edge.
@@ -68,19 +68,22 @@ private:
 		int textureID;
 		bool flipped;
 
-		// A flat's projection consists of two vertical line segments that are interpolated
-		// between by the renderer.
-		struct Projection
+		// A flat's frame consists of their four corner points in world space, and some
+		// screen-space values. The corners are used when interpolating and rendering each 
+		// slice of the flat.
+		struct Frame
 		{
-			// An edge represents a projected column on the screen in XY screen coordinates 
-			// (that is, (0, 0) is at the center). Z is true distance from the camera in the
-			// XZ plane. U is for horizontal texture coordinates (in case of line clipping).
-			struct Edge
-			{
-				double x, topY, bottomY, z, u;
-			};
+			// Each "start" is the flat's right or top, and each "end" is the opposite side.
+			// For texture coordinates, start is inclusive, end is exclusive.
+			Double3 topStart, topEnd, bottomStart, bottomEnd;
 
-			Edge left, right;
+			// Screen-space X coordinates of the flat. Intended only for determining which columns 
+			// the flat occupies on-screen.
+			double startX, endX;
+
+			// Depth of the flat's right and left edges in camera space. Intended only for depth 
+			// sorting, since the renderer uses true XZ depth with each column instead.
+			double startZ, endZ;
 		};
 	};
 
@@ -91,9 +94,9 @@ private:
 	// A value just below one for keeping texture coordinates from overflowing.
 	static const double JUST_BELOW_ONE;
 
-	std::vector<double> zBuffer;
-	std::unordered_map<int, Flat> flats;
-	std::vector<std::pair<const Flat*, Flat::Projection>> visibleFlats;
+	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
+	std::unordered_map<int, Flat> flats; // All flats in world.
+	std::vector<std::pair<const Flat*, Flat::Frame>> visibleFlats; // Flats to be drawn.
 	std::vector<SoftwareTexture> textures;
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
@@ -165,10 +168,10 @@ private:
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Draws a slice of a flat in the given X column of the screen.
-	static void drawFlat(int x, const Flat::Projection &flatProjection, const Double3 &normal, 
-		bool flipped, double fogDistance, const ShadingInfo &shadingInfo, 
-		const SoftwareTexture &texture, int frameWidth, int frameHeight, double *depthBuffer,
-		uint32_t *colorBuffer);
+	static void drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
+		bool flipped, double fogDistance, const Double2 &eye, const Matrix4d &transform, 
+		double yShear, const ShadingInfo &shadingInfo, const SoftwareTexture &texture, 
+		int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
@@ -176,10 +179,9 @@ private:
 		const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
 		const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 
-	// Refreshes the list of flats that are within the viewing frustum. "yShear" is the 
-	// Y-shearing component of the projection plane, and "transform" is the projection * 
-	// view matrix.
-	void updateVisibleFlats(const Double3 &eye, double yShear, const Matrix4d &transform);
+	// Refreshes the list of flats to be drawn.
+	void updateVisibleFlats(const Double2 &eye, const Double2 &direction,
+		const Matrix4d &transform);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
