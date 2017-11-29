@@ -1212,11 +1212,9 @@ void GameWorldPanel::tick(double dt)
 		// if they face the player each frame (like a sprite).
 		auto &renderer = game.getRenderer();
 		const Double3 position = entity->getPosition();
-		const Double2 direction = -player.getGroundDirection();
 		const int textureID = entity->getTextureID();
 		const bool flipped = entity->getFlipped();
-		renderer.updateFlat(entity->getID(), &position,
-			entity->facesPlayer() ? &direction : nullptr, nullptr, nullptr,
+		renderer.updateFlat(entity->getID(), &position, nullptr, nullptr,
 			&textureID, &flipped);
 	}
 }

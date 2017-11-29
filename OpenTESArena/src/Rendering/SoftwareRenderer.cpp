@@ -48,8 +48,8 @@ SoftwareRenderer::~SoftwareRenderer()
 
 }
 
-void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &direction,
-	double width, double height, int textureID)
+void SoftwareRenderer::addFlat(int id, const Double3 &position, double width, 
+	double height, int textureID)
 {
 	// Verify that the ID is not already in use.
 	DebugAssert(this->flats.find(id) == this->flats.end(), 
@@ -57,7 +57,6 @@ void SoftwareRenderer::addFlat(int id, const Double3 &position, const Double2 &d
 
 	SoftwareRenderer::Flat flat;
 	flat.position = position;
-	flat.direction = direction;
 	flat.width = width;
 	flat.height = height;
 	flat.textureID = textureID;
@@ -110,8 +109,8 @@ int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
 	return static_cast<int>(this->textures.size() - 1);
 }
 
-void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2 *direction,
-	const double *width, const double *height, const int *textureID, const bool *flipped)
+void SoftwareRenderer::updateFlat(int id, const Double3 *position, const double *width, 
+	const double *height, const int *textureID, const bool *flipped)
 {
 	const auto flatIter = this->flats.find(id);
 	DebugAssert(flatIter != this->flats.end(), 
@@ -123,11 +122,6 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const Double2
 	if (position != nullptr)
 	{
 		flat.position = *position;
-	}
-
-	if (direction != nullptr)
-	{
-		flat.direction = *direction;
 	}
 
 	if (width != nullptr)
@@ -204,11 +198,17 @@ void SoftwareRenderer::resize(int width, int height)
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &direction,
-	const Matrix4d &transform)
+	const Matrix4d &transform, double yShear, double aspect, double zoom)
 {
 	assert(direction.isNormalized());
 
 	this->visibleFlats.clear();
+
+	// Each flat shares the same axes. The forward direction always faces opposite to 
+	// the camera direction.
+	const Double3 flatForward = Double3(-direction.x, 0.0, -direction.y).normalized();
+	const Double3 flatUp = Double3::UnitY;
+	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
 	// This is the visible flat determination algorithm. It goes through all flats and sees 
 	// which ones would be at least partially visible in the view frustum.
@@ -216,61 +216,48 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 	{
 		const Flat &flat = pair.second;
 
-		// Get the flat's axes. UnitY is "global up".
-		const Double3 flatForward = Double3(flat.direction.x, 0.0, flat.direction.y).normalized();
-		const Double3 flatUp = Double3::UnitY;
-		const Double3 flatRight = flatForward.cross(flatUp).normalized();
-
+		// Scaled axes based on flat dimensions.
 		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
 		const Double3 flatUpScaled = flatUp * flat.height;
 		
-		// Calculate each corner of the flat in world space. Leave the frame's start and end
-		// X and Z values for later since they only apply to visible flats.
+		// Calculate each corner of the flat in world space.
 		Flat::Frame flatFrame;
 		flatFrame.bottomStart = flat.position + flatRightScaled;
 		flatFrame.bottomEnd = flat.position - flatRightScaled;
 		flatFrame.topStart = flatFrame.bottomStart + flatUpScaled;
 		flatFrame.topEnd = flatFrame.bottomEnd + flatUpScaled;
 
-		// If the flat would be at least partially visible, put it into the draw list.
-		// Calculate vectors from the eye to the flat's right and left edges and do
-		// dot products.
-		const Double2 flatStart2D(flatFrame.bottomStart.x, flatFrame.bottomStart.z);
-		const Double2 flatEnd2D(flatFrame.bottomEnd.x, flatFrame.bottomEnd.z);
-		const Double2 startDir = (flatStart2D - eye).normalized();
-		const Double2 endDir = (flatEnd2D - eye).normalized();
+		// If the flat is somewhere in front of the camera, do further checks.
+		const Double2 flatPosition2D(flat.position.x, flat.position.z);
+		const Double2 flatEyeDiff = (flatPosition2D - eye).normalized();
+		const bool inFrontOfCamera = direction.dot(flatEyeDiff) > 0.0;
 
-		// To do: make this more strict; i.e., make the 0.0 be a function of the
-		// view frustum's half width instead.
-		const bool startsInFrustum = direction.dot(startDir) > 0.0;
-		const bool endsInFrustum = direction.dot(endDir) > 0.0;
-
-		if (startsInFrustum || endsInFrustum)
+		if (inFrontOfCamera)
 		{
-			// Now calculate the start and end X and Z values of the flat in camera space.
-			// The Z values are used with flat sorting only (not rendering), and the X values
-			// are used for bounding the flat during rendering (i.e., skipping a flat if 
-			// current slice is not contained within its X range).
-			const Double4 projStart = transform * Double4(
-				flatFrame.bottomStart.x, flatFrame.bottomStart.y, flatFrame.bottomStart.z, 1.0);
-			const Double4 projEnd = transform * Double4(
+			// Now project two of the flat's opposing corner points into camera space.
+			// The Z value is used with flat sorting (not rendering), and the X and Y values 
+			// are used to find where the flat is on-screen.
+			Double4 projStart = transform * Double4(
+				flatFrame.topStart.x, flatFrame.topStart.y, flatFrame.topStart.z, 1.0);
+			Double4 projEnd = transform * Double4(
 				flatFrame.bottomEnd.x, flatFrame.bottomEnd.y, flatFrame.bottomEnd.z, 1.0);
 
-			// Normalize the X and Z coordinates and give them to the flat frame.
-			flatFrame.startX = 0.50 + ((projStart.x / projStart.w) * 0.50);
-			flatFrame.endX = 0.50 + ((projEnd.x / projEnd.w) * 0.50);
-			flatFrame.startZ = projStart.z / projStart.w;
-			flatFrame.endZ = projEnd.z / projEnd.w;
+			// Normalize coordinates.
+			projStart = projStart / projStart.w;
+			projEnd = projEnd / projEnd.w;
 
-			// Check that at least one Z value is within the clipping planes. It's okay if
-			// one value is outside the clipping planes because the flat would only be partially 
-			// visible then (hence the clipping). The clipping is done by the renderer.
-			const bool startsInPlanes = (flatFrame.startZ >= SoftwareRenderer::NEAR_PLANE) &&
-				(flatFrame.startZ <= SoftwareRenderer::FAR_PLANE);
-			const bool endsInPlanes = (flatFrame.endZ >= SoftwareRenderer::NEAR_PLANE) &&
-				(flatFrame.endZ <= SoftwareRenderer::FAR_PLANE);
+			// Assign each screen value to the flat frame data.
+			flatFrame.startX = 0.50 + (projStart.x * 0.50);
+			flatFrame.endX = 0.50 + (projEnd.x * 0.50);
+			flatFrame.startY = (0.50 + yShear) - (projStart.y * 0.50);
+			flatFrame.endY = (0.50 + yShear) - (projEnd.y * 0.50);
+			flatFrame.z = projStart.z;
 
-			if (startsInPlanes || endsInPlanes)
+			// Check that the Z value is within the clipping planes.
+			const bool inPlanes = (flatFrame.z >= SoftwareRenderer::NEAR_PLANE) &&
+				(flatFrame.z <= SoftwareRenderer::FAR_PLANE);
+
+			if (inPlanes)
 			{
 				// Add the flat data to the draw list.
 				this->visibleFlats.push_back(std::make_pair(&flat, std::move(flatFrame)));
@@ -283,8 +270,7 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 		[](const std::pair<const Flat*, Flat::Frame> &a,
 			const std::pair<const Flat*, Flat::Frame> &b)
 	{
-		return std::min(a.second.endZ, a.second.startZ) >
-			std::min(b.second.endZ, b.second.startZ);
+		return a.second.z > b.second.z;
 	});
 }
 
@@ -2276,114 +2262,127 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	}
 }
 
-void SoftwareRenderer::drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
-	bool flipped, const Double2 &eye, const Matrix4d &transform, double yShear, 
-	const ShadingInfo &shadingInfo, const SoftwareTexture &texture, int frameWidth, 
-	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFrame,
+	const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo,
+	const SoftwareTexture &texture, int frameWidth, int frameHeight,
+	double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
 	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
 		0.0, 1.0 - shadingInfo.ambient);
 
-	// X percent across the screen.
-	const double xPercent = (static_cast<double>(x) + 0.50) /
+	// X percents across the screen for the given start and end columns.
+	const double startXPercent = (static_cast<double>(startX) + 0.50) / 
+		static_cast<double>(frameWidth);
+	const double endXPercent = (static_cast<double>(endX) + 0.50) /
 		static_cast<double>(frameWidth);
 
-	// Use the flat's projected X values to determine whether the current column is 
-	// contained within the flat's X range in screen-space. The "flat percent" determines 
-	// the start-to-end percentage of the column within the flat's X range.
-	const double flatPercent = (xPercent - flatFrame.startX) / 
+	const bool startsInRange =
+		(flatFrame.startX >= startXPercent) && (flatFrame.startX <= endXPercent);
+	const bool endsInRange = 
+		(flatFrame.endX >= startXPercent) && (flatFrame.endX <= endXPercent);
+	const bool coversRange =
+		(flatFrame.startX <= startXPercent) && (flatFrame.endX >= endXPercent);
+
+	// Throw out the draw call if the flat is not in the X range.
+	if (!startsInRange && !endsInRange && !coversRange)
+	{
+		return;
+	}
+
+	// Get the min and max X range of coordinates in screen-space. This range is completely 
+	// contained within the flat.
+	const double clampedStartXPercent = std::max(startXPercent,
+		std::min(flatFrame.startX, flatFrame.endX));
+	const double clampedEndXPercent = std::min(endXPercent,
+		std::max(flatFrame.startX, flatFrame.endX));
+
+	// The percentages from start to end within the flat.
+	const double startFlatPercent = (clampedStartXPercent - flatFrame.startX) /
+		(flatFrame.endX - flatFrame.startX);
+	const double endFlatPercent = (clampedEndXPercent - flatFrame.startX) /
 		(flatFrame.endX - flatFrame.startX);
 
-	// Don't render the flat if the column percent is invalid (in other words, the current
-	// column is not slicing the flat).
-	if ((flatPercent < 0.0) || (flatPercent > 1.0))
-	{
-		return;
-	}
+	// Points interpolated between for per-column depth calculations in the XZ plane.
+	const Double3 startTopPoint = flatFrame.topStart.lerp(flatFrame.topEnd, startFlatPercent);
+	const Double3 endTopPoint = flatFrame.topStart.lerp(flatFrame.topEnd, endFlatPercent);
 
-	// Obtain the points on the top and bottom edges of the flat relative to the flat percent.
-	// These two points combined create a projected screen column.
-	const Double3 topPoint = flatFrame.topStart.lerp(flatFrame.topEnd, flatPercent);
-	const Double3 bottomPoint = flatFrame.bottomStart.lerp(flatFrame.bottomEnd, flatPercent);
-
-	// Transform the top and bottom points from world space to camera space.
-	const Double4 topProj = transform * Double4(topPoint.x, topPoint.y, topPoint.z, 1.0);
-	const Double4 bottomProj = transform * Double4(bottomPoint.x, bottomPoint.y, bottomPoint.z, 1.0);
-	const double projZ = topProj.z / topProj.w;
-
-	// The renderer may be given flats that intersect with a clipping plane, so the
-	// projected Z needs to be checked to see if it still lies within that range.
-	const bool inPlanes = (projZ >= SoftwareRenderer::NEAR_PLANE) &&
-		(projZ <= SoftwareRenderer::FAR_PLANE);
-
-	if (!inPlanes)
-	{
-		return;
-	}
-
-	// Normalized Y coordinates.
-	const double topProjYNorm = topProj.y / topProj.w;
-	const double bottomProjYNorm = bottomProj.y / bottomProj.w;
-
-	// Actual projected Y coordinates on screen (accounting for Y-shear and aspect).
-	const double projYStart = (0.50 + yShear) - (topProjYNorm * 0.50);
-	const double projYEnd = (0.50 + yShear) - (bottomProjYNorm * 0.50);
-
-	// Horizontal texture coordinate in the flat. Although the flat percent can be
+	// Horizontal texture coordinates in the flat. Although the flat percent can be
 	// equal to 1.0, the texture coordinate needs to be less than 1.0.
-	const double u = std::max(std::min(flatPercent, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+	const double startU = std::max(std::min(startFlatPercent, 
+		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+	const double endU = std::max(std::min(endFlatPercent, 
+		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
 
-	// Get the start and end Y coordinates of the projected points (potentially
-	// outside the top or bottom of the screen).
+	// Get the start and end coordinates of the projected points (Y values potentially
+	// outside the screen).
+	const double widthReal = static_cast<double>(frameWidth);
 	const double heightReal = static_cast<double>(frameHeight);
-	const double projectedStart = projYStart * heightReal;
-	const double projectedEnd = projYEnd * heightReal;
+	const double projectedXStart = clampedStartXPercent * widthReal;
+	const double projectedXEnd = clampedEndXPercent * widthReal;
+	const double projectedYStart = flatFrame.startY * heightReal;
+	const double projectedYEnd = flatFrame.endY * heightReal;
 
-	// Clamp the Y coordinates for where the flat starts and stops on the screen.
-	const int drawStart = std::min(std::max(0,
-		static_cast<int>(std::ceil(projectedStart - 0.50))), frameHeight);
-	const int drawEnd = std::min(std::max(0,
-		static_cast<int>(std::floor(projectedEnd + 0.50))), frameHeight);
+	// Clamp the coordinates for where the flat starts and stops on the screen.
+	const int xStart = std::min(std::max(0,
+		static_cast<int>(std::ceil(projectedXStart - 0.50))), frameWidth);
+	const int xEnd = std::min(std::max(0,
+		static_cast<int>(std::floor(projectedXEnd + 0.50))), frameWidth);
+	const int yStart = std::min(std::max(0,
+		static_cast<int>(std::ceil(projectedYStart - 0.50))), frameHeight);
+	const int yEnd = std::min(std::max(0,
+		static_cast<int>(std::floor(projectedYEnd + 0.50))), frameHeight);
 
-	// Horizontal texel position.
-	const int textureX = static_cast<int>(
-		(flipped ? (SoftwareRenderer::JUST_BELOW_ONE - u) : u) *
-		static_cast<double>(texture.width));
-
-	// Get the true XZ distance for the depth.
-	const double z = (Double2(topPoint.x, topPoint.z) - eye).length();
-
-	// Linearly interpolated fog.
-	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
-	const Double3 &fogColor = shadingInfo.horizonSkyColor;
-
-	for (int y = drawStart; y < drawEnd; y++)
+	// Draw by-column, similar to wall rendering.
+	for (int x = xStart; x < xEnd; x++)
 	{
-		const int index = x + (y * frameWidth);
+		const double xPercent = ((static_cast<double>(x) + 0.50) - projectedXStart) /
+			(projectedXEnd - projectedXStart);
 
-		if (z <= depthBuffer[index])
+		// Horizontal texture coordinate.
+		const double u = startU + ((endU - startU) * xPercent);
+
+		// Horizontal texel position.
+		const int textureX = static_cast<int>(
+			(flipped ? (SoftwareRenderer::JUST_BELOW_ONE - u) : u) *
+			static_cast<double>(texture.width));
+
+		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
+
+		// Get the true XZ distance for the depth.
+		const double z = (Double2(topPoint.x, topPoint.z) - eye).length();
+
+		for (int y = yStart; y < yEnd; y++)
 		{
+			const int index = x + (y * frameWidth);
+
 			// Vertical texture coordinate.
-			const double v = ((static_cast<double>(y) + 0.50) - projectedStart) /
-				static_cast<double>(projectedEnd - projectedStart);
+			const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) /
+				(projectedYEnd - projectedYStart);
 
 			// Vertical texel position.
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
-			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+			// Linearly interpolated fog.
+			const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
+			const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
-			// Draw only if the texel is not transparent.
-			if (texel.w > 0.0)
+			if (z <= depthBuffer[index])
 			{
-				const Double3 color(
-					texel.x * (shadingInfo.ambient + sunComponent.x),
-					texel.y * (shadingInfo.ambient + sunComponent.y),
-					texel.z * (shadingInfo.ambient + sunComponent.z));
+				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 
-				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
+				// Draw only if the texel is not transparent.
+				if (texel.w > 0.0)
+				{
+					const Double3 color(
+						texel.x * (shadingInfo.ambient + sunComponent.x),
+						texel.y * (shadingInfo.ambient + sunComponent.y),
+						texel.z * (shadingInfo.ambient + sunComponent.z));
+
+					colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
+					depthBuffer[index] = z;
+				}
 			}
 		}
 	}
@@ -2567,32 +2566,6 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 			voxelGrid, this->textures, this->width, this->height, this->depthBuffer.data(),
 			colorBuffer);
 	}
-
-	// Draw flats.
-	// - Flats could be done outside the ray casting loop, but they would then need to be
-	//   parallelized a bit differently (instead of by-column like this method).
-	for (const auto &pair : this->visibleFlats)
-	{
-		const Flat &flat = *pair.first;
-		const Flat::Frame &flatFrame = pair.second;
-
-		// Normal of the flat (not all flats face the camera, but every flat's normal
-		// is perpendicular to the Y axis).
-		const Double3 flatNormal = Double3(
-			flat.direction.x,
-			0.0,
-			flat.direction.y).normalized();
-
-		// Texture of the flat and whether it's flipped horizontally.
-		const SoftwareTexture &texture = textures[flat.textureID];
-		const bool flipped = flat.flipped;
-
-		const Double2 eye2D(eye.x, eye.z);
-
-		SoftwareRenderer::drawFlat(x, flatFrame, flatNormal, flipped, eye2D, 
-			transform, yShear, shadingInfo, texture, this->width, this->height, 
-			this->depthBuffer.data(), colorBuffer);
-	}
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
@@ -2682,9 +2655,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
 		sunDirection, ambient, this->fogDistance);
 
-	// Lambda for rendering some columns of pixels using 2.5D ray casting. This is
-	// the cheaper form of ray casting (although still not very efficient), and results
-	// in a "fake" 3D scene.
+	// Lambda for rendering some columns of pixels. The voxel rendering portion uses 2.5D 
+	// ray casting, which is the cheaper form of ray casting (although still not very 
+	// efficient overall), and results in a "fake" 3D scene.
 	auto renderColumns = [this, &eye, &voxelGrid, colorBuffer, &shadingInfo, widthReal, 
 		&transform, yShear, &forwardComp, &right2D](int startX, int endX)
 	{
@@ -2704,6 +2677,27 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->rayCast2D(x, eye, direction, transform, yShear, shadingInfo, 
 				voxelGrid, colorBuffer);
+		}
+
+		// Iterate through all flats, rendering those visible within the given X range of 
+		// the screen.
+		for (const auto &pair : this->visibleFlats)
+		{
+			const Flat &flat = *pair.first;
+			const Flat::Frame &flatFrame = pair.second;
+
+			// Normal of the flat (always facing the camera).
+			const Double3 flatNormal = Double3(-forwardComp.x, 0.0, -forwardComp.y).normalized();
+
+			// Texture of the flat. It might be flipped horizontally as well, given by
+			// the "flat.flipped" value.
+			const SoftwareTexture &texture = textures[flat.textureID];
+
+			const Double2 eye2D(eye.x, eye.z);
+
+			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped, 
+				eye2D, shadingInfo, texture, this->width, this->height, 
+				this->depthBuffer.data(), colorBuffer);
 		}
 	};
 
@@ -2729,11 +2723,11 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this, &eye, &forwardXZ, &transform]
+	std::thread sortThread([this, &eye, &forwardXZ, &transform, yShear, aspect, zoom]
 	{ 
 		const Double2 eye2D(eye.x, eye.z);
 		const Double2 direction2D(forwardXZ.x, forwardXZ.z);
-		this->updateVisibleFlats(eye2D, direction2D, transform);
+		this->updateVisibleFlats(eye2D, direction2D, transform, yShear, aspect, zoom);
 	});
 
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.

@@ -581,8 +581,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		std::unique_ptr<Doodad> doodad(new Doodad(animation, position, entityManager));
 
 		// Assign the entity ID with the first texture.
-		renderer.addFlat(doodad->getID(), position, Double2::UnitX,
-			width, height, textureIDs.at(0));
+		renderer.addFlat(doodad->getID(), position, width, height, textureIDs.at(0));
 
 		entityManager.add(std::move(doodad));
 	};
@@ -607,8 +606,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 			deathAnimation, entityManager));
 
 		// Assign the entity ID with the first texture.
-		renderer.addFlat(nonPlayer->getID(), position, direction,
-			width, height, idleIDs.at(0));
+		renderer.addFlat(nonPlayer->getID(), position, width, height, idleIDs.at(0));
 
 		entityManager.add(std::move(nonPlayer));
 	};

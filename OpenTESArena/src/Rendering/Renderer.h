@@ -129,13 +129,11 @@ public:
 	// - Some 'add' methods take a unique ID and parameters to create a new object.
 	// - 'update' methods take optional parameters for updating, ignoring null ones.
 	// - 'remove' methods delete an object from renderer memory if it exists.
-	void addFlat(int id, const Double3 &position, const Double2 &direction, double width,
-		double height, int textureID);
+	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
 	int addTexture(const uint32_t *pixels, int width, int height);
-	void updateFlat(int id, const Double3 *position, const Double2 *direction,
-		const double *width, const double *height, const int *textureID,
-		const bool *flipped);
+	void updateFlat(int id, const Double3 *position, const double *width, 
+		const double *height, const int *textureID, const bool *flipped);
 	void updateLight(int id, const Double3 *point, const Double3 *color,
 		const double *intensity);
 	void setFogDistance(double fogDistance);

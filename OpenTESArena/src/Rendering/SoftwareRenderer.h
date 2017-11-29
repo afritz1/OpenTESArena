@@ -58,32 +58,30 @@ private:
 			double fogDistance);
 	};
 
-	// A flat is a 2D surface always facing perpendicular to the Y axis (not necessarily
-	// facing the camera).
+	// A flat is a 2D surface always facing perpendicular to the Y axis, and opposite to
+	// the camera's XZ direction.
 	struct Flat
 	{
 		Double3 position; // Center of bottom edge.
-		Double2 direction; // In XZ plane.
 		double width, height;
 		int textureID;
 		bool flipped;
 
 		// A flat's frame consists of their four corner points in world space, and some
-		// screen-space values. The corners are used when interpolating and rendering each 
-		// slice of the flat.
+		// screen-space values.
 		struct Frame
 		{
 			// Each "start" is the flat's right or top, and each "end" is the opposite side.
 			// For texture coordinates, start is inclusive, end is exclusive.
 			Double3 topStart, topEnd, bottomStart, bottomEnd;
 
-			// Screen-space X coordinates of the flat. Intended only for determining which columns 
-			// the flat occupies on-screen.
-			double startX, endX;
+			// Screen-space coordinates of the flat. The X values determine which columns the 
+			// flat occupies on-screen, and the Y values determine which rows.
+			double startX, endX, startY, endY;
 
-			// Depth of the flat's right and left edges in camera space. Intended only for depth 
-			// sorting, since the renderer uses true XZ depth with each column instead.
-			double startZ, endZ;
+			// Depth of the flat in camera space. Intended only for depth sorting, since the 
+			// renderer uses true XZ depth with each pixel column instead.
+			double z;
 		};
 	};
 
@@ -167,11 +165,12 @@ private:
 		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
 		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
 
-	// Draws a slice of a flat in the given X column of the screen.
-	static void drawFlat(int x, const Flat::Frame &flatFrame, const Double3 &normal,
-		bool flipped, const Double2 &eye, const Matrix4d &transform, double yShear, 
-		const ShadingInfo &shadingInfo, const SoftwareTexture &texture, int frameWidth, 
-		int frameHeight, double *depthBuffer, uint32_t *colorBuffer);
+	// Draws the portion of a flat contained within the given X range of the screen. The end
+	// X value is exclusive.
+	static void drawFlat(int startX, int endX, const Flat::Frame &flatFrame, 
+		const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo, 
+		const SoftwareTexture &texture, int frameWidth, int frameHeight, 
+		double *depthBuffer, uint32_t *colorBuffer);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
@@ -181,14 +180,13 @@ private:
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Double2 &eye, const Double2 &direction,
-		const Matrix4d &transform);
+		const Matrix4d &transform, double yShear, double aspect, double zoom);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
 
 	// Adds a flat. Causes an error if the ID exists.
-	void addFlat(int id, const Double3 &position, const Double2 &direction, double width,
-		double height, int textureID);
+	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 
 	// Adds a light. Causes an error if the ID exists.
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
@@ -198,9 +196,8 @@ public:
 
 	// Updates various data for a flat. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.
-	void updateFlat(int id, const Double3 *position, const Double2 *direction,
-		const double *width, const double *height, const int *textureID,
-		const bool *flipped);
+	void updateFlat(int id, const Double3 *position, const double *width, 
+		const double *height, const int *textureID, const bool *flipped);
 
 	// Updates various data for a light. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.

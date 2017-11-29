@@ -281,7 +281,7 @@ Vector2f<T> Vector2f<T>::leftPerp() const
 template <class T>
 Vector2f<T> Vector2f<T>::rightPerp() const
 {
-	return Vector2f<T>(this->y, this->x);
+	return Vector2f<T>(this->y, -this->x);
 }
 
 // Template instantiations.

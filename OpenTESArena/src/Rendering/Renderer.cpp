@@ -410,12 +410,11 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		renderWidth, renderHeight));
 }
 
-void Renderer::addFlat(int id, const Double3 &position, const Double2 &direction, 
-	double width, double height, int textureID)
+void Renderer::addFlat(int id, const Double3 &position, double width, 
+	double height, int textureID)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->addFlat(id, position, direction,
-		width, height, textureID);
+	this->softwareRenderer->addFlat(id, position, width, height, textureID);
 }
 
 void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
@@ -430,13 +429,11 @@ int Renderer::addTexture(const uint32_t *pixels, int width, int height)
 	return this->softwareRenderer->addTexture(pixels, width, height);
 }
 
-void Renderer::updateFlat(int id, const Double3 *position, const Double2 *direction, 
-	const double *width, const double *height, const int *textureID,
-	const bool *flipped)
+void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
+	const double *height, const int *textureID, const bool *flipped)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->updateFlat(id, position, direction,
-		width, height, textureID, flipped);
+	this->softwareRenderer->updateFlat(id, position, width, height, textureID, flipped);
 }
 
 void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
