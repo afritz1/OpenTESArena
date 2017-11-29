@@ -35,8 +35,7 @@ Matrix4d Camera3D::getViewMatrix() const
 	const Matrix4d rotation(rotationX, rotationY, rotationZ, Double4::UnitW);
 
 	// Column vector.
-	const Double4 translationW(-this->position.x,
-		-this->position.y, -this->position.z, 1.0);
+	const Double4 translationW(-this->position, 1.0);
 
 	const Matrix4d translation(Double4::UnitX, Double4::UnitY, 
 		Double4::UnitZ, translationW);

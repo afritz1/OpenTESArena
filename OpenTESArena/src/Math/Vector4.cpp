@@ -131,6 +131,15 @@ Vector4f<T>::Vector4f(T x, T y, T z, T w)
 }
 
 template <class T>
+Vector4f<T>::Vector4f(const Vector3f<T> &xyz, T w)
+{
+	this->x = xyz.x;
+	this->y = xyz.y;
+	this->z = xyz.z;
+	this->w = w;
+}
+
+template <class T>
 Vector4f<T>::Vector4f()
 {
 	this->x = static_cast<T>(0.0);

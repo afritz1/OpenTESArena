@@ -6,6 +6,8 @@
 #include <string>
 #include <type_traits>
 
+#include "Vector3.h"
+
 template <class T>
 class Vector4i
 {
@@ -54,6 +56,7 @@ public:
 	T x, y, z, w;
 
 	Vector4f(T x, T y, T z, T w);
+	Vector4f(const Vector3f<T> &xyz, T w);
 	Vector4f();
 	~Vector4f();
 

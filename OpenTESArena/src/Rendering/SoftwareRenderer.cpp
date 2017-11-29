@@ -237,10 +237,8 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
 			// are used to find where the flat is on-screen.
-			Double4 projStart = transform * Double4(
-				flatFrame.topStart.x, flatFrame.topStart.y, flatFrame.topStart.z, 1.0);
-			Double4 projEnd = transform * Double4(
-				flatFrame.bottomEnd.x, flatFrame.bottomEnd.y, flatFrame.bottomEnd.z, 1.0);
+			Double4 projStart = transform * Double4(flatFrame.topStart, 1.0);
+			Double4 projEnd = transform * Double4(flatFrame.bottomEnd, 1.0);
 
 			// Normalize coordinates.
 			projStart = projStart / projStart.w;
@@ -630,11 +628,11 @@ Double3 SoftwareRenderer::getWallNormal(WallFacing wallFacing)
 	}
 }
 
-double SoftwareRenderer::getProjectedY(const Double3 &point, const Matrix4d &transform, 
-	double yShear)
+double SoftwareRenderer::getProjectedY(const Double3 &point, 
+	const Matrix4d &transform, double yShear)
 {
 	// Project the 3D point to camera space.
-	Double4 projected = transform * Double4(point.x, point.y, point.z, 1.0);
+	Double4 projected = transform * Double4(point, 1.0);
 
 	// Convert the projected Y to normalized coordinates.
 	projected.y /= projected.w;
