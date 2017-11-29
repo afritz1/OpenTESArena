@@ -346,6 +346,11 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 					// Transparent block with 2-sided texture on one side (i.e., fence).
 					// - This will use "VoxelType::TransparentEdge".
 					// To do.
+
+					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north and
+					// C is east.
+					const int orientation = (map1Voxel & 0x00F0) >> 4;
+					const int textureIndex = map1Voxel & 0x000F;
 				}
 				else if (mostSigNibble == 0xB)
 				{
