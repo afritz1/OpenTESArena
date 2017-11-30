@@ -1012,7 +1012,20 @@ const INFFile::FlatData &INFFile::getItem(int index) const
 
 const std::string &INFFile::getSound(int index) const
 {
-	return this->sounds.at(index);
+	const auto soundIter = this->sounds.find(index);
+
+	// The sound indices are sometimes out-of-bounds, which means that the program
+	// needs to modify them in some way. For now, just print a warning and return
+	// some default sound.
+	if (soundIter != this->sounds.end())
+	{
+		return soundIter->second;
+	}
+	else
+	{
+		DebugWarning("Invalid sound index \"" + std::to_string(index) + "\".");
+		return this->sounds.at(0);
+	}
 }
 
 bool INFFile::hasKeyIndex(int index) const
