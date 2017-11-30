@@ -44,7 +44,7 @@ namespace
 		{ MusicName::Magic, "MAGIC_2.XMI" },
 		{ MusicName::Night, "NIGHT.XMI" },
 		{ MusicName::Overcast, "OVERCAST.XMI" },
-		{ MusicName::OverSnow, "OVERSNOW.XMI" },
+		{ MusicName::OverSnow, "OVERSNOW.XFM" },
 		{ MusicName::Palace, "PALACE.XMI" },
 		{ MusicName::PercIntro, "PERCNTRO.XMI" },
 		{ MusicName::Raining, "RAINING.XMI" },
