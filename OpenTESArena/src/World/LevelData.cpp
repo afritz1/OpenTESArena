@@ -458,7 +458,78 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	}
 	else if (level.map2.size() > 0)
 	{
-		// To do: Write second story voxels, and extend them higher if necessary.
+		// Load MAP2 voxels.
+		const uint8_t *map2Data = level.map2.data();
+		int map2Index = 0;
+
+		auto getNextMap2Voxel = [map2Data, &map2Index]()
+		{
+			const uint16_t voxel = Bytes::getLE16(map2Data + map2Index);
+			map2Index += 2;
+			return voxel;
+		};
+
+		// Mappings of second floor IDs to voxel data indices.
+		std::unordered_map<uint16_t, int> map2DataMappings;
+
+		for (int x = (gridWidth - 1); x >= 0; x--)
+		{
+			for (int z = (gridDepth - 1); z >= 0; z--)
+			{
+				const int index = x + (z * gridWidth);
+				const uint16_t map2Voxel = getNextMap2Voxel();
+
+				if (map2Voxel != 0)
+				{
+					// Number of blocks to extend upwards (including second story).
+					const int height = [map2Voxel]()
+					{
+						if ((map2Voxel & 0x80) == 0x80)
+						{
+							return 2;
+						}
+						else if ((map2Voxel & 0x8000) == 0x8000)
+						{
+							return 3;
+						}
+						else if ((map2Voxel & 0x8080) == 0x8080)
+						{
+							return 4;
+						}
+						else
+						{
+							return 1;
+						}
+					}();
+
+					const int dataIndex = [this, &inf, &map2DataMappings,
+						ceilingHeight, map2Voxel, height]()
+					{
+						const auto map2Iter = map2DataMappings.find(map2Voxel);
+						if (map2Iter != map2DataMappings.end())
+						{
+							return map2Iter->second;
+						}
+						else
+						{
+							const int textureIndex = map2Voxel & 0x007F;
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								textureIndex,
+								textureIndex,
+								textureIndex,
+								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
+							return map2DataMappings.insert(
+								std::make_pair(map2Voxel, index)).first->second;
+						}
+					}();
+
+					for (int y = 2; y < (height + 2); y++)
+					{
+						setVoxel(x, y, z, dataIndex);
+					}
+				}
+			}
+		}
 	}
 
 	// Assign locks.
