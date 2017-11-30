@@ -29,12 +29,24 @@ namespace
 		{ "UPDOWN.IMG", { 8, 16 } },
 		{ "VILLAGE.IMG", { 8,  8 } }
 	};
+
+	// Some .IMG filenames are misspelled and need a replacement.
+	const std::unordered_map<std::string, std::string> MisspelledIMGs =
+	{
+		{ "SFOUNF1M.IMG", "SFOUNT1M.IMG" },
+		{ "SFOUNF1T.IMG", "SFOUNT1T.IMG" }
+	};
 }
 
 IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	// Revise the filename if it is misspelled.
+	const auto nameIter = MisspelledIMGs.find(filename);
+	const std::string &correctFilename = (nameIter == MisspelledIMGs.end()) ?
+		filename : nameIter->second;
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(correctFilename);
+	DebugAssert(stream != nullptr, "Could not open \"" + correctFilename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -44,7 +56,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	uint16_t xoff, yoff, width, height, flags, len;
 
 	// Read header data if not raw. Wall IMGs have no header and are 4096 bytes.
-	const auto rawOverride = RawImgOverride.find(filename);
+	const auto rawOverride = RawImgOverride.find(correctFilename);
 	const bool isRaw = rawOverride != RawImgOverride.end();
 	if (isRaw)
 	{
@@ -88,7 +100,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		// This code might run even if the IMG doesn't have a palette, because
 		// some IMGs have no header and are not "raw" (like walls, for instance).
-		DebugAssert((flags & 0x0100) != 0, "\"" + filename + 
+		DebugAssert((flags & 0x0100) != 0, "\"" + correctFilename +
 			"\" does not have a built-in palette.");
 
 		// Read the palette data and write it to the destination palette.
@@ -154,7 +166,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		}
 		else
 		{
-			DebugCrash("Unrecognized IMG \"" + filename + "\".");
+			DebugCrash("Unrecognized IMG \"" + correctFilename + "\".");
 		}
 	}
 }
