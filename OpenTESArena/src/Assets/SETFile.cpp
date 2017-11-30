@@ -19,6 +19,15 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 	stream->seekg(0, std::ios::beg);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
+	// There is one .SET file with a file size of 0x3FFF, so it is a special case.
+	const bool isSpecialCase = filename == "TBS2.SET";
+
+	if (isSpecialCase)
+	{
+		// Add a dummy byte onto the end.
+		srcData.push_back(0);
+	}
+
 	// Number of uncompressed chunks packed in the SET.
 	const int chunkCount = static_cast<int>(srcData.size()) / SETFile::CHUNK_SIZE;
 
