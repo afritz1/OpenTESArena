@@ -1,7 +1,7 @@
 #include <cassert>
 #include <map>
 
-#include "ClimateName.h"
+#include "ClimateType.h"
 #include "Location.h"
 #include "LocationType.h"
 
@@ -20,12 +20,12 @@ const std::map<LocationType, std::string> LocationTypeDisplayNames =
 };
 
 Location::Location(const std::string &name, int provinceID,
-	LocationType locationType, ClimateName climateName)
+	LocationType locationType, ClimateType climateType)
 	: name(name)
 {
 	this->provinceID = provinceID;
 	this->locationType = locationType;
-	this->climateName = climateName;
+	this->climateType = climateType;
 }
 
 Location::~Location()
@@ -43,9 +43,9 @@ LocationType Location::getLocationType() const
 	return this->locationType;
 }
 
-ClimateName Location::getClimateName() const
+ClimateType Location::getClimateType() const
 {
-	return this->climateName;
+	return this->climateType;
 }
 
 const std::string &Location::getName() const

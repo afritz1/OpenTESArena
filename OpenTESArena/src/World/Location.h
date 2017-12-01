@@ -11,7 +11,7 @@
 // Later this might also have a unique seed ID, so if a location is a city, town, 
 // or village, its voxel data can be regenerated.
 
-enum class ClimateName;
+enum class ClimateType;
 enum class LocationType;
 
 class Location
@@ -20,15 +20,15 @@ private:
 	std::string name;
 	int provinceID;
 	LocationType locationType;
-	ClimateName climateName;
+	ClimateType climateType;
 public:
-	Location(const std::string &name, int provinceID, 
-		LocationType locationType, ClimateName climateName);
+	Location(const std::string &name, int provinceID,
+		LocationType locationType, ClimateType climateType);
 	~Location();
 
 	int getProvinceID() const;
 	LocationType getLocationType() const;
-	ClimateName getClimateName() const;
+	ClimateType getClimateType() const;
 	const std::string &getName() const;
 	std::string typeToString() const;
 };

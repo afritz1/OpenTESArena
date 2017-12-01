@@ -16,15 +16,18 @@ class MIFFile;
 class Renderer;
 class TextureManager;
 
+enum class WorldType;
+
 class WorldData
 {	
 private:
 	std::vector<LevelData> levels;
 	std::vector<Double2> startPoints;
 	EntityManager entityManager;
+	WorldType worldType;
 	int currentLevel;
 public:
-	WorldData(const MIFFile &mif, const INFFile &inf);
+	WorldData(const MIFFile &mif, const INFFile &inf, WorldType type);
 	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager); // Used with test city.
 	WorldData(WorldData &&worldData) = default;
 	~WorldData();
@@ -32,6 +35,7 @@ public:
 	WorldData &operator=(WorldData &&worldData) = default;
 
 	int getCurrentLevel() const;
+	WorldType getWorldType() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 	const std::vector<Double2> &getStartPoints() const;

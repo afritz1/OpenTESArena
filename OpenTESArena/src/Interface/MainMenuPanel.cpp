@@ -1,4 +1,5 @@
 #include <cassert>
+#include <map>
 #include <vector>
 
 #include "SDL.h"
@@ -17,6 +18,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
+#include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/MusicName.h"
@@ -30,6 +32,9 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
+#include "../World/ClimateType.h"
+#include "../World/WeatherType.h"
+#include "../World/WorldType.h"
 
 MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game)
@@ -120,25 +125,202 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				game.getMiscAssets().getClassDefinitions(), game.getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
-			const MIFFile mif("START.MIF");
-			//const MIFFile mif("39699021.MIF");
-			const INFFile inf(String::toUppercase(
-				mif.getLevels().at(mif.getStartingLevelIndex()).info));
+			//const std::string mifName("START.MIF");
+			//const std::string mifName("39699021.MIF");
+			const std::string mifName("IMPERIAL.MIF");
+			const MIFFile mif(mifName);
+
+			// These values determine some traits of the quickstart city.
+			const ClimateType climateType = ClimateType::Temperate;
+			const WeatherType weatherType = WeatherType::Clear;
+			const WorldType worldType = WorldType::City;
+
+			const std::string infName = [&mif, climateType, weatherType, worldType]()
+			{
+				if (worldType == WorldType::Interior)
+				{
+					return String::toUppercase(
+						mif.getLevels().at(mif.getStartingLevelIndex()).info);
+				}
+				else
+				{
+					// Exterior location, get the biome-associated pattern.
+					const std::string biomeLetter = [climateType]()
+					{
+						if (climateType == ClimateType::Temperate)
+						{
+							return "T";
+						}
+						else if (climateType == ClimateType::Desert)
+						{
+							return "D";
+						}
+						else
+						{
+							return "M";
+						}
+					}();
+
+					const std::string locationLetter = [worldType]()
+					{
+						if (worldType == WorldType::City)
+						{
+							return "C";
+						}
+						else
+						{
+							return "W";
+						}
+					}();
+
+					const std::string weatherLetter = [weatherType]()
+					{
+						if ((weatherType == WeatherType::Clear) ||
+							(weatherType == WeatherType::Overcast))
+						{
+							return "N";
+						}
+						else if (weatherType == WeatherType::Rain)
+						{
+							return "R";
+						}
+						else if (weatherType == WeatherType::Snow)
+						{
+							return "S";
+						}
+						else
+						{
+							// Not sure what this letter represents.
+							return "W";
+						}
+					}();
+
+					return biomeLetter + locationLetter + weatherLetter + ".INF";
+				}
+			}();
+
+			const INFFile inf(infName);
 
 			auto &player = gameData->getPlayer();
 			Double3 playerPosition = player.getPosition();
-			GameData::loadFromMIF(mif, inf, playerPosition, 
+			GameData::loadFromMIF(mif, inf, worldType, weatherType, playerPosition,
 				gameData->getWorldData(), game.getTextureManager(), renderer);
 
 			player.teleport(playerPosition);
 
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
+			
+			// Set weather-relative fog distance.
+			const double fogDistance = [weatherType]()
+			{
+				// Just some arbitrary values.
+				if (weatherType == WeatherType::Clear)
+				{
+					return 75.0;
+				}
+				else if (weatherType == WeatherType::Overcast)
+				{
+					return 25.0;
+				}
+				else if (weatherType == WeatherType::Rain)
+				{
+					return 45.0;
+				}
+				else
+				{
+					return 15.0;
+				}
+			}();
+
+			renderer.setFogDistance(fogDistance);
+
+			// To do: organize this code somewhere (GameData perhaps).
+			// - Maybe GameWorldPanel::tick() can check newMusicName vs. old each frame.
+			const MusicName musicName = [&mifName, worldType, weatherType]()
+			{
+				if ((worldType == WorldType::City) ||
+					(worldType == WorldType::Wilderness))
+				{
+					// Get weather-associated music.
+					const std::map<WeatherType, MusicName> WeatherMusics =
+					{
+						{ WeatherType::Clear, MusicName::SunnyDay },
+						{ WeatherType::Overcast, MusicName::Overcast },
+						{ WeatherType::Rain, MusicName::Raining },
+						{ WeatherType::Snow, MusicName::Snowing }
+					};
+
+					return WeatherMusics.at(weatherType);
+				}
+				else
+				{
+					// Interior. See if it's a town interior or a dungeon.
+					const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
+					const bool isHouse = (mifName.find("BS") != std::string::npos) ||
+						(mifName.find("NOBLE") != std::string::npos);
+					const bool isMagesGuild = mifName.find("MAGE") != std::string::npos;
+					const bool isPalace = (mifName.find("PALACE") != std::string::npos) ||
+						(mifName.find("TOWNPAL") != std::string::npos) ||
+						(mifName.find("VILPAL") != std::string::npos);
+					const bool isTavern = mifName.find("TAVERN") != std::string::npos;
+					const bool isTemple = mifName.find("TEMPLE") != std::string::npos;
+
+					if (isEquipmentStore)
+					{
+						return MusicName::Equipment;
+					}
+					else if (isHouse)
+					{
+						return MusicName::Sneaking;
+					}
+					else if (isMagesGuild)
+					{
+						return MusicName::Magic;
+					}
+					else if (isPalace)
+					{
+						return MusicName::Palace;
+					}
+					else if (isTavern)
+					{
+						const std::vector<MusicName> TavernMusics =
+						{
+							MusicName::Square,
+							MusicName::Tavern
+						};
+
+						Random random;
+						return TavernMusics.at(random.next(
+							static_cast<int>(TavernMusics.size())));
+					}
+					else if (isTemple)
+					{
+						return MusicName::Temple;
+					}
+					else
+					{
+						// Dungeon.
+						const std::vector<MusicName> DungeonMusics =
+						{
+							MusicName::Dungeon1,
+							MusicName::Dungeon2,
+							MusicName::Dungeon3,
+							MusicName::Dungeon4,
+							MusicName::Dungeon5
+						};
+
+						Random random;
+						return DungeonMusics.at(random.next(
+							static_cast<int>(DungeonMusics.size())));
+					}
+				}
+			}();
 
 			// Initialize game world panel.
 			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
 			game.setPanel(std::move(gameWorldPanel));
-			game.setMusic(MusicName::Dungeon1);
+			game.setMusic(musicName);
 		};
 		return Button<Game&>(function);
 	}();
@@ -150,10 +332,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		int height = 20;
 		auto function = []()
 		{
-            SDL_Event e;
+			SDL_Event e;
 			e.quit.type = SDL_QUIT;
 			e.quit.timestamp = 0;
-            SDL_PushEvent(&e);
+			SDL_PushEvent(&e);
 		};
 		return Button<>(center, width, height, function);
 	}();
@@ -236,7 +418,7 @@ void MainMenuPanel::render(Renderer &renderer)
 
 	// Draw main menu.
 	const auto &mainMenu = textureManager.getTexture(
-		TextureFile::fromName(TextureName::MainMenu), 
+		TextureFile::fromName(TextureName::MainMenu),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawOriginal(mainMenu.get());
 }

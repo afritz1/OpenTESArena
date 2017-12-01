@@ -7,8 +7,8 @@ enum class WeatherType
 {
 	Clear,
 	Overcast,
-	Rainy,
-	Snowy
+	Rain,
+	Snow
 };
 
 #endif

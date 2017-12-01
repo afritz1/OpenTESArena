@@ -59,7 +59,7 @@ void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 }
 
 LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
-	int gridWidth, int gridDepth)
+	int gridWidth, int gridDepth, bool isInterior)
 	: voxelGrid(gridWidth, level.getHeight(), gridDepth)
 {
 	// Arena's level origins start at the top-right corner of the map, so X increases 
@@ -413,14 +413,12 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 		}
 	}
 
-	// Fill the second floor with the ceiling tiles if it's an interior, or MAP2 if it exists.
-	const INFFile::CeilingData &ceiling = inf.getCeiling();
-
-	// To do: Replace this. Figure out how to determine if some place is an interior.
-	const bool isInterior = !ceiling.outdoorDungeon;
-
+	// Fill the second floor with the ceiling tiles if it's an interior location, or MAP2 if 
+	// it's an exterior location.
 	if (isInterior)
 	{
+		const INFFile::CeilingData &ceiling = inf.getCeiling();
+
 		// Get the index of the ceiling texture name in the textures array.
 		const int ceilingIndex = [&inf, &ceiling]()
 		{

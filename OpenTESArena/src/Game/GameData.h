@@ -29,6 +29,8 @@ class Renderer;
 class TextureManager;
 
 enum class GenderName;
+enum class WeatherType;
+enum class WorldType;
 
 class GameData
 {
@@ -44,7 +46,12 @@ private:
 	Date date;
 	Clock clock;
 	double fogDistance;
-	// weather...
+	WeatherType weatherType;
+
+	// Creates a sky palette from the given palette filename (DAYTIME.COL, DREARY.COL, etc.).
+	// This palette covers the entire day (including night colors).
+	static std::vector<uint32_t> makeExteriorSkyPalette(const std::string &paletteName,
+		TextureManager &textureManager);
 public:
 	GameData(Player &&player, WorldData &&worldData, const Location &location, 
 		const Date &date, const Clock &clock, double fogDistance);
@@ -52,8 +59,9 @@ public:
 
 	// Takes a .MIF file with its associated .INF file and writes data into the given 
 	// reference parameters. This overwrites parts of the existing game session.
-	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
-		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
+	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType worldType,
+		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData, 
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,

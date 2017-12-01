@@ -52,7 +52,8 @@ private:
 	std::unordered_map<Int2, std::string> soundTriggers;
 	VoxelGrid voxelGrid;
 public:
-	LevelData(const MIFFile::Level &level, const INFFile &inf, int gridWidth, int gridDepth);
+	LevelData(const MIFFile::Level &level, const INFFile &inf, int gridWidth, 
+		int gridDepth, bool isInterior);
 	LevelData(VoxelGrid &&voxelGrid); // Used with test city.
 	LevelData(LevelData &&levelData) = default;
 	~LevelData();

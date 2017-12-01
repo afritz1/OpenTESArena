@@ -25,10 +25,12 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
-#include "../World/ClimateName.h"
+#include "../World/ClimateType.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
 #include "../World/VoxelType.h"
+#include "../World/WeatherType.h"
+#include "../World/WorldType.h"
 
 // Arbitrary value for testing. One real second = six game minutes.
 // The value used in Arena is one real second = twenty game seconds.
@@ -49,8 +51,31 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
-void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &playerPosition, 
-	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
+std::vector<uint32_t> GameData::makeExteriorSkyPalette(const std::string &paletteName,
+	TextureManager &textureManager)
+{
+	// The palettes in the data files only cover half of the day, so some added
+	// darkness is needed for the other half.
+	const SDL_Surface *palette = textureManager.getSurface(paletteName);
+	const uint32_t *pixels = static_cast<const uint32_t*>(palette->pixels);
+	const int pixelCount = palette->w * palette->h;
+
+	std::vector<uint32_t> fullPalette(pixelCount * 2);
+
+	// Fill with darkness (the first color in the palette is the closest to night).
+	const uint32_t darkness = pixels[0];
+	std::fill(fullPalette.begin(), fullPalette.end(), darkness);
+
+	// Copy the sky palette over the center of the full palette.
+	std::copy(pixels, pixels + pixelCount, 
+		fullPalette.data() + (fullPalette.size() / 4));
+
+	return fullPalette;
+}
+
+void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType worldType, 
+	WeatherType weatherType, Double3 &playerPosition, WorldData &worldData, 
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear all entities.
 	auto &entityManager = worldData.getEntityManager();
@@ -63,17 +88,40 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, Double3 &play
 	// Clear software renderer textures (so the .INF file indices are correct).
 	renderer.removeAllWorldTextures();
 
-	// Set sky to black (assuming all .MIFs are indoors for now).
-	const uint32_t black = 0x0;
-	renderer.setSkyPalette(&black, 1);
+	// Set sky palette based on world type and weather.
+	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
+	{
+		// Regular sky palette, based on weather.
+		const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
+			(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", 
+			textureManager);
+		renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+	}
+	else
+	{
+		// Interior location. See if it's an "outdoor dungeon" (i.e., one with no ceiling),
+		// or a typical interior.
+		const uint32_t skyColor = inf.getCeiling().outdoorDungeon ?
+			Color::Gray.toARGB() : Color::Black.toARGB();
+		renderer.setSkyPalette(&skyColor, 1);
+	}
 
 	// Load the world data from the .MIF and .INF files.
-	worldData = WorldData(mif, inf);
+	worldData = WorldData(mif, inf, worldType);
 
 	// Convert start point to new coordinate system and set player's location 
 	// (player Y value is arbitrary for now).
-	const auto &startPoints = worldData.getStartPoints();
-	const Double2 &startPoint = startPoints.at(worldData.getCurrentLevel());
+	const Double2 &startPoint = [&worldData]()
+	{
+		// To do: fix how start points are obtained (sometimes there's an out-of-range
+		// access in the start points array without the currentLevel clamp). Maybe use
+		// a fixed size array (max 4)?
+		const auto &startPoints = worldData.getStartPoints();
+		const int currentLevel = worldData.getCurrentLevel();
+		return (currentLevel < startPoints.size()) ?
+			startPoints.at(currentLevel) : Double2();
+	}();
+
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 	
 	// Load .INF textures into the renderer.
@@ -635,31 +683,13 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// The sky palette is used to color the sky and fog. The renderer chooses
 	// which color to use based on the time of day. Interiors should just have
 	// one pixel as the sky palette (usually black).
-	const std::vector<uint32_t> fullSkyPalette = [&textureManager]()
-	{
-		// The palettes in the data files only cover half of the day, so some added
-		// darkness is needed for the other half.
-		const SDL_Surface *skyPalette = textureManager.getSurface("DAYTIME.COL");
-		const uint32_t *skyPalettePixels = static_cast<const uint32_t*>(skyPalette->pixels);
-		const int skyPaletteSize = skyPalette->w * skyPalette->h;
-
-		std::vector<uint32_t> fullPalette(skyPaletteSize * 2);
-
-		// Fill with darkness.
-		const uint32_t darkness = skyPalettePixels[0];
-		std::fill(fullPalette.begin(), fullPalette.end(), darkness);
-
-		// Copy the sky palette over the center of the full palette.
-		std::copy(skyPalettePixels, skyPalettePixels + skyPaletteSize,
-			fullPalette.data() + (fullPalette.size() / 4));
-
-		return fullPalette;
-	}();
+	const std::vector<uint32_t> fullSkyPalette = 
+		GameData::makeExteriorSkyPalette("DAYTIME.COL", textureManager);
 
 	renderer.setSkyPalette(fullSkyPalette.data(), static_cast<int>(fullSkyPalette.size()));
 
 	Location location("Test City", player.getRaceID(),
-		LocationType::CityState, ClimateName::Cold);
+		LocationType::CityState, ClimateType::Mountain);
 
 	// Start the date on the first day of the first month.
 	const int month = 0;
@@ -727,7 +757,7 @@ double GameData::getFogDistance() const
 
 double GameData::getAmbientPercent() const
 {
-	if (this->location.getClimateName() == ClimateName::Interior)
+	if (this->worldData.getWorldType() == WorldType::Interior)
 	{
 		// Completely dark indoors (some places might be an exception to this, and those
 		// would be handled eventually).
