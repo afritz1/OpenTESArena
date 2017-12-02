@@ -111,16 +111,7 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 
 	// Convert start point to new coordinate system and set player's location 
 	// (player Y value is arbitrary for now).
-	const Double2 &startPoint = [&worldData]()
-	{
-		// To do: fix how start points are obtained (sometimes there's an out-of-range
-		// access in the start points array without the currentLevel clamp). Maybe use
-		// a fixed size array (max 4)?
-		const auto &startPoints = worldData.getStartPoints();
-		const int currentLevel = worldData.getCurrentLevel();
-		return (currentLevel < startPoints.size()) ?
-			startPoints.at(currentLevel) : Double2();
-	}();
+	const Double2 &startPoint = worldData.getStartPoints().at(0);
 
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 	

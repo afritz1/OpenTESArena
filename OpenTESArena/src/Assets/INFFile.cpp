@@ -221,7 +221,7 @@ INFFile::INFFile(const std::string &filename)
 	// The parse mode indicates which '@' section is currently being parsed.
 	enum class ParseMode
 	{
-		None, Floors, Walls, Flats, Sound, Text
+		Floors, Walls, Flats, Sound, Text
 	};
 
 	// Initialize loop states to null (they are non-null when in use by the loop).
@@ -892,9 +892,12 @@ INFFile::INFFile(const std::string &filename)
 		}
 	};
 
+	// Default to "@FLOORS" since the final staff piece dungeon doesn't have that
+	// tag even when it's needed.
+	ParseMode parseMode = ParseMode::Floors;
+
 	std::stringstream ss(text);
 	std::string line;
-	ParseMode parseMode = ParseMode::None;
 
 	while (std::getline(ss, line))
 	{
@@ -990,7 +993,20 @@ const int *INFFile::getBoxCap(int index) const
 const int *INFFile::getBoxSide(int index) const
 {
 	const int *ptr = &this->boxSides.at(index);
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+
+	// Some null pointers were being returned here, and they appear to be errors within
+	// the Arena data (i.e., the initial level in some noble houses asks for wall texture 
+	// #14, which doesn't exist in NOBLE1.INF), so maybe it should resort to a default 
+	// index instead.
+	if ((*ptr) != INFFile::NO_INDEX)
+	{
+		return ptr;
+	}
+	else
+	{
+		DebugWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
+		return &this->boxSides.at(0);
+	}
 }
 
 const int *INFFile::getMenu(int index) const

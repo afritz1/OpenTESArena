@@ -60,29 +60,29 @@ MIFFile::MIFFile(const std::string &filename)
 
 	// Get data from the header (after "MHDR"). Constant for all levels. The header 
 	// size should be 61.
-	const uint8_t *headerStart = srcData.data();
-	const uint8_t headerSize = *(headerStart + 4);
-	const uint8_t unknown1 = *(headerStart + 6);
-	const uint8_t entryCount = *(headerStart + 7);
-	const uint16_t mapWidth = Bytes::getLE16(headerStart + 27);
-	const uint16_t mapDepth = Bytes::getLE16(headerStart + 29);
-
-	// Load start locations from the header.
-	for (size_t i = 0; i < entryCount; i++)
+	const uint8_t headerSize = *(srcData.data() + 4);
+	const uint8_t unknown1 = *(srcData.data() + 6);
+	const uint8_t entryCount = *(srcData.data() + 7);
+	const uint16_t mapWidth = Bytes::getLE16(srcData.data() + 27);
+	const uint16_t mapDepth = Bytes::getLE16(srcData.data() + 29);
+	
+	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
+	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
+		const uint16_t mifX = Bytes::getLE16(srcData.data() + 8 + (i * 2));
+		const uint16_t mifY = Bytes::getLE16(srcData.data() + 16 + (i * 2));
+
 		// Convert the coordinates from .MIF format to voxel format. The remainder
 		// of the division is used for positioning within the voxel.
-		const double x = static_cast<double>(
-			Bytes::getLE16(headerStart + 8 + (i * 2))) / MIFFile::ARENA_UNITS;
-		const double y = static_cast<double>(
-			Bytes::getLE16(headerStart + 16 + (i * 2))) / MIFFile::ARENA_UNITS;
+		const double x = static_cast<double>(mifX) / MIFFile::ARENA_UNITS;
+		const double y = static_cast<double>(mifY) / MIFFile::ARENA_UNITS;
 
-		this->startPoints.push_back(Double2(x, y));
+		this->startPoints.at(i) = Double2(x, y);
 	}
 
 	// Get starting level index. The level count (a single byte) comes right after this, 
 	// but it is unused in this reader (it's inferred by the level loading loop).
-	this->startingLevelIndex = *(headerStart + 24);
+	this->startingLevelIndex = *(srcData.data() + 24);
 
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,
 	// so this needs to be in a loop.
@@ -94,7 +94,7 @@ MIFFile::MIFFile(const std::string &filename)
 
 		// Begin loading the level data at the current LEVL, and get the offset
 		// to the next LEVL.
-		const uint8_t *levelStart = headerStart + levelOffset;
+		const uint8_t *levelStart = srcData.data() + levelOffset;
 		levelOffset += level.load(levelStart);
 
 		// Add to list of levels.
@@ -138,7 +138,7 @@ int MIFFile::getStartingLevelIndex() const
 	return this->startingLevelIndex;
 }
 
-const std::vector<Double2> &MIFFile::getStartPoints() const
+const std::array<Double2, 4> &MIFFile::getStartPoints() const
 {
 	return this->startPoints;
 }

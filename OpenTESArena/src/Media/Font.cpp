@@ -96,8 +96,14 @@ FontName Font::getFontName() const
 
 SDL_Surface *Font::getSurface(char c) const
 {
-	DebugAssert((c >= 32) && (c <= 127), "Character value \"" +
-		std::to_string(c) + "\" out of range (must be ASCII 32-127).");
+	// If an invalid character is requested, print a warning and return
+	// a default character.
+	if ((c < 32) || (c > 127))
+	{
+		DebugWarning("Character value \"" + std::to_string(c) +
+			"\" out of range (must be ASCII 32-127).");
+		return this->characters.at(0);
+	}
 
 	// Space (ASCII 32) is at index 0.
 	SDL_Surface *surface = this->characters.at(c - 32);
