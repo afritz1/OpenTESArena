@@ -47,15 +47,14 @@ namespace
 			Menu, Transition, TransWalkThru, WalkThru, WetChasm
 		};
 
+		std::vector<int> boxCapIDs, boxSideIDs;
 		std::string textureName;
 		WallState::Mode mode;
-		int boxCapID, boxSideID, menuID;
+		int menuID;
 
 		WallState()
 		{
 			this->mode = WallState::Mode::None;
-			this->boxCapID = INFFile::NO_INDEX;
-			this->boxSideID = INFFile::NO_INDEX;
 			this->menuID = INFFile::NO_INDEX;
 		}
 	};
@@ -449,12 +448,12 @@ INFFile::INFFile(const std::string &filename)
 			if (firstTokenType == BOXCAP_STR)
 			{
 				wallState->mode = WallState::Mode::BoxCap;
-				wallState->boxCapID = std::stoi(tokens.at(1));
+				wallState->boxCapIDs.push_back(std::stoi(tokens.at(1)));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
-				wallState->boxSideID = std::stoi(tokens.at(1));
+				wallState->boxSideIDs.push_back(std::stoi(tokens.at(1)));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
@@ -560,14 +559,14 @@ INFFile::INFFile(const std::string &filename)
 
 			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the 
 			// current wall state.
-			if (wallState->boxCapID != INFFile::NO_INDEX)
+			for (int boxCapID : wallState->boxCapIDs)
 			{
-				this->boxCaps.at(wallState->boxCapID) = currentIndex;
+				this->boxCaps.at(boxCapID) = currentIndex;
 			}
 
-			if (wallState->boxSideID != INFFile::NO_INDEX)
+			for (int boxSideID : wallState->boxSideIDs)
 			{
-				this->boxSides.at(wallState->boxSideID) = currentIndex;
+				this->boxSides.at(boxSideID) = currentIndex;
 			}
 
 			if (wallState->menuID != INFFile::NO_INDEX)
