@@ -27,10 +27,6 @@ namespace
 	{
 		enum class Mode { None, BoxCap, Ceiling };
 
-		// Arbitrary ID indicating no *BOXCAP found yet for the current floor state. 
-		// The ID member could be nullable, but this saves an unnecessary allocation.
-		static const int NO_ID = -1;
-
 		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
 		std::string textureName;
 		FloorState::Mode mode;
@@ -39,7 +35,7 @@ namespace
 		FloorState()
 		{
 			this->mode = FloorState::Mode::None;
-			this->boxCapID = FloorState::NO_ID;
+			this->boxCapID = INFFile::NO_INDEX;
 		}
 	};
 
@@ -51,9 +47,6 @@ namespace
 			Menu, Transition, TransWalkThru, WalkThru, WetChasm
 		};
 
-		// Arbitrary ID for uninitialized "*..." members.
-		static const int NO_ID = -1;
-
 		std::string textureName;
 		WallState::Mode mode;
 		int boxCapID, boxSideID, menuID;
@@ -61,9 +54,9 @@ namespace
 		WallState()
 		{
 			this->mode = WallState::Mode::None;
-			this->boxCapID = WallState::NO_ID;
-			this->boxSideID = WallState::NO_ID;
-			this->menuID = WallState::NO_ID;
+			this->boxCapID = INFFile::NO_INDEX;
+			this->boxSideID = INFFile::NO_INDEX;
+			this->menuID = INFFile::NO_INDEX;
 		}
 	};
 
@@ -71,16 +64,13 @@ namespace
 	{
 		enum class Mode { None, Item };
 
-		// Arbitrary ID for uninitialized "*..." members.
-		static const int NO_ID = -1;
-
 		FlatState::Mode mode;
 		int itemID;
 
 		FlatState()
 		{
 			this->mode = FlatState::Mode::None;
-			this->itemID = FlatState::NO_ID;
+			this->itemID = INFFile::NO_INDEX;
 		}
 	};
 
@@ -404,7 +394,7 @@ INFFile::INFFile(const std::string &filename)
 			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
 			// The floor state ID will be unset for loose filenames that don't have an 
 			// associated *BOXCAP line, but might have an associated *CEILING line.
-			if (floorState->boxCapID != FloorState::NO_ID)
+			if (floorState->boxCapID != INFFile::NO_INDEX)
 			{
 				this->boxCaps.at(floorState->boxCapID) = currentIndex;
 			}
@@ -570,17 +560,17 @@ INFFile::INFFile(const std::string &filename)
 
 			// Write ID-related data for each tag (*BOXCAP, *BOXSIDE, etc.) found in the 
 			// current wall state.
-			if (wallState->boxCapID != WallState::NO_ID)
+			if (wallState->boxCapID != INFFile::NO_INDEX)
 			{
 				this->boxCaps.at(wallState->boxCapID) = currentIndex;
 			}
 
-			if (wallState->boxSideID != WallState::NO_ID)
+			if (wallState->boxSideID != INFFile::NO_INDEX)
 			{
 				this->boxSides.at(wallState->boxSideID) = currentIndex;
 			}
 
-			if (wallState->menuID != WallState::NO_ID)
+			if (wallState->menuID != INFFile::NO_INDEX)
 			{
 				this->menus.at(wallState->menuID) = currentIndex;
 			}
@@ -689,7 +679,7 @@ INFFile::INFFile(const std::string &filename)
 
 			// The current line is "loose" if the previous line was not an *ITEM line.
 			const bool looseTextureName = (flatState.get() == nullptr) || 
-				(flatState->itemID == FlatState::NO_ID);
+				(flatState->itemID == INFFile::NO_INDEX);
 
 			// If an *ITEM index is currently stored, then pair it with the new flat's index.
 			if (!looseTextureName)
