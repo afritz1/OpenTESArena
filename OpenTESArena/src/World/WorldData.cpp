@@ -32,14 +32,14 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, WorldType type)
 		}();
 
 		this->levels.push_back(LevelData(level, inf, 
-			mif.getWidth(), mif.getDepth(), isInterior));
+			mif.getDepth(), mif.getWidth(), isInterior));
 	}
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
 	{
 		this->startPoints.push_back(VoxelGrid::arenaVoxelToNewVoxel(
-			point, mif.getWidth(), mif.getDepth()));
+			point, mif.getDepth(), mif.getWidth()));
 	}
 
 	this->currentLevel = mif.getStartingLevelIndex();
