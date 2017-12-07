@@ -1,8 +1,10 @@
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Compression.h"
 #include "IMGFile.h"
 #include "../Math/Vector2.h"
+#include "../Media/Color.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 
@@ -10,7 +12,7 @@
 
 namespace
 {
-	// These IMG files are actually headerless/raw files with hardcoded dimensions.
+	// These .IMG files are actually headerless/raw files with hardcoded dimensions.
 	const std::unordered_map<std::string, Int2> RawImgOverride =
 	{
 		{ "ARENARW.IMG", { 16, 16 } },
@@ -29,10 +31,29 @@ namespace
 		{ "UPDOWN.IMG", { 8, 16 } },
 		{ "VILLAGE.IMG", { 8,  8 } }
 	};
+
+	// These .IMG filenames are misspelled, and Arena does not use them in-game.
+	const std::unordered_set<std::string> MisspelledIMGs =
+	{
+		"SFOUNF1M.IMG",
+		"SFOUNF1T.IMG"
+	};
 }
 
 IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 {
+	// There are a couple .INFs that reference misspelled .IMGs. Arena doesn't seem
+	// to use them, so if they are requested here, just return a dummy image.
+	if (MisspelledIMGs.find(filename) != MisspelledIMGs.end())
+	{
+		this->width = 1;
+		this->height = 1;
+		this->pixels = std::unique_ptr<uint32_t[]>(
+			new uint32_t[this->width * this->height]);
+		this->pixels[0] = Color::Black.toARGB();
+		return;
+	}
+
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
