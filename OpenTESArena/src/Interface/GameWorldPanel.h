@@ -17,6 +17,7 @@
 class Player;
 class Renderer;
 class TextBox;
+class TextureManager;
 
 class GameWorldPanel : public Panel
 {
@@ -57,6 +58,10 @@ private:
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
+
+	// Draws the compass for some given player direction in the XZ plane.
+	void drawCompass(const Double2 &direction, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Draws some debug text.
 	void drawDebugText(Renderer &renderer);

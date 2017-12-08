@@ -1082,6 +1082,43 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
+void GameWorldPanel::drawCompass(const Double2 &direction, 
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Draw compass slider based on player direction. +X is north, +Z is east.
+	const auto &compassSlider = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CompassSlider));
+
+	// Angle between 0 and 2 pi.
+	const double angle = std::atan2(direction.y, direction.x);
+
+	// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a 
+	// small "pop-in" when turning from N to NE, because N is drawn in two places, 
+	// but the second place (offset == 256) has tick marks where "NE" should be.
+	const int xOffset = static_cast<int>(240.0 +
+		std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
+
+	// Clip area for the visible part of the slider.
+	const Rect clipRect(xOffset, 0, 32, compassSlider.getHeight());
+
+	// Top-left corner of the slider in 320x200 space.
+	const int sliderX = (Renderer::ORIGINAL_WIDTH / 2) - (clipRect.getWidth() / 2);
+	const int sliderY = clipRect.getHeight();
+
+	// Since there are some off-by-one rounding errors with SDL_RenderCopy,
+	// draw a black rectangle behind the slider to cover up gaps.
+	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
+		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
+
+	renderer.drawOriginalClipped(compassSlider.get(), clipRect, sliderX, sliderY);
+
+	// Draw the compass frame over the slider.
+	const auto &compassFrame = textureManager.getTexture(
+		TextureFile::fromName(TextureName::CompassFrame));
+	renderer.drawOriginal(compassFrame.get(),
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+}
+
 void GameWorldPanel::drawDebugText(Renderer &renderer)
 {
 	const Int2 windowDims = renderer.getWindowDimensions();
@@ -1261,48 +1298,8 @@ void GameWorldPanel::render(Renderer &renderer)
 			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
 	}
 
-	// Draw compass slider based on player direction. +X is north, +Z is east.
-	auto *compassSlider = textureManager.getSurface(
-		TextureFile::fromName(TextureName::CompassSlider));
-	const Double2 groundDirection = player.getGroundDirection();
-
-	Texture compassSliderSegment = [&renderer, &compassSlider, &groundDirection]()
-	{
-		SDL_Surface *segmentTemp = Surface::createSurfaceWithFormat(32, 7,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-
-		// Angle between 0 and 2 pi.
-		const double angle = std::atan2(groundDirection.y, groundDirection.x);
-
-		// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a 
-		// small "pop-in" when turning from N to NE, because N is drawn in two places, 
-		// but the second place (offset == 256) has tick marks where "NE" should be.
-		const int xOffset = static_cast<int>(240.0 +
-			std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
-
-		SDL_Rect clipRect;
-		clipRect.x = xOffset;
-		clipRect.y = 0;
-		clipRect.w = segmentTemp->w;
-		clipRect.h = segmentTemp->h;
-
-		SDL_BlitSurface(compassSlider, &clipRect, segmentTemp, nullptr);
-
-		SDL_Texture *segment = renderer.createTextureFromSurface(segmentTemp);
-		SDL_FreeSurface(segmentTemp);
-
-		return Texture(segment);
-	}();
-
-	renderer.drawOriginal(compassSliderSegment.get(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassSliderSegment.getWidth() / 2),
-		compassSliderSegment.getHeight());
-
-	// Draw compass frame over the headings.
-	const auto &compassFrame = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CompassFrame));
-	renderer.drawOriginal(compassFrame.get(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+	// Draw the visible portion of the compass slider, and the frame over it.
+	this->drawCompass(player.getGroundDirection(), textureManager, renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

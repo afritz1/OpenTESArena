@@ -670,6 +670,17 @@ void Renderer::draw(SDL_Texture *texture)
 	this->draw(texture, 0, 0);
 }
 
+void Renderer::drawClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_RenderCopy(this->renderer, texture, &srcRect.getRect(), &dstRect.getRect());
+}
+
+void Renderer::drawClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y)
+{
+	this->drawClipped(texture, srcRect, Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
+}
+
 void Renderer::drawOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
@@ -692,6 +703,23 @@ void Renderer::drawOriginal(SDL_Texture *texture, int x, int y)
 void Renderer::drawOriginal(SDL_Texture *texture)
 {
 	this->drawOriginal(texture, 0, 0);
+}
+
+void Renderer::drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect)
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+
+	// The destination coordinates and dimensions are in 320x200 space, so transform 
+	// them to native space.
+	const Rect rect = this->originalRectToNative(dstRect);
+
+	SDL_RenderCopy(this->renderer, texture, &srcRect.getRect(), &rect.getRect());
+}
+
+void Renderer::drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y)
+{
+	this->drawOriginalClipped(texture, srcRect, 
+		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
 }
 
 void Renderer::fill(SDL_Texture *texture)

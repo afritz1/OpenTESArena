@@ -171,9 +171,13 @@ public:
 	void draw(SDL_Texture *texture, int x, int y, int w, int h);
 	void draw(SDL_Texture *texture, int x, int y);
 	void draw(SDL_Texture *texture);
+	void drawClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect);
+	void drawClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y);
 	void drawOriginal(SDL_Texture *texture, int x, int y, int w, int h);
 	void drawOriginal(SDL_Texture *texture, int x, int y);
 	void drawOriginal(SDL_Texture *texture);
+	void drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect);
+	void drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y);
 
 	// Stretches a texture over the entire native frame buffer.
 	void fill(SDL_Texture *texture);
