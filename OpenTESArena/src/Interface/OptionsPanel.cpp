@@ -305,13 +305,13 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 41;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const int newFPS = options.getTargetFPS() + 5;
 			options.setTargetFPS(newFPS);
-			panel->updateFPSText(newFPS);
+			panel.updateFPSText(newFPS);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->fpsDownButton = [this]()
@@ -320,13 +320,13 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = this->fpsUpButton.getY() + this->fpsUpButton.getHeight();
 		const int width = this->fpsUpButton.getWidth();
 		const int height = this->fpsUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const int newFPS = std::max(options.getTargetFPS() - 5, options.MIN_FPS);
 			options.setTargetFPS(newFPS);
-			panel->updateFPSText(newFPS);
+			panel.updateFPSText(newFPS);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->resolutionScaleUpButton = []()
@@ -335,12 +335,12 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 61;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::min(
 				options.getResolutionScale() + 0.05, options.MAX_RESOLUTION_SCALE);
 			options.setResolutionScale(newResolutionScale);
-			panel->updateResolutionScaleText(newResolutionScale);
+			panel.updateResolutionScaleText(newResolutionScale);
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
@@ -348,7 +348,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
-		return Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
 
 	this->resolutionScaleDownButton = [this]()
@@ -358,12 +358,12 @@ OptionsPanel::OptionsPanel(Game &game)
 			this->resolutionScaleUpButton.getHeight();
 		const int width = this->resolutionScaleUpButton.getWidth();
 		const int height = this->resolutionScaleUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::max(
 				options.getResolutionScale() - 0.05, options.MIN_RESOLUTION_SCALE);
 			options.setResolutionScale(newResolutionScale);
-			panel->updateResolutionScaleText(newResolutionScale);
+			panel.updateResolutionScaleText(newResolutionScale);
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
@@ -371,7 +371,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
-		return Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
 
 	this->playerInterfaceButton = []()
@@ -380,14 +380,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 86;
 		const int width = ToggleButtonSize;
 		const int height = ToggleButtonSize;
-		auto function = [](OptionsPanel *panel, Options &options,
+		auto function = [](OptionsPanel &panel, Options &options,
 			Player &player, Renderer &renderer)
 		{
 			// Toggle the player interface option.
 			const auto newPlayerInterface = options.getModernInterface() ?
 				PlayerInterface::Classic : PlayerInterface::Modern;
 			options.setModernInterface(newPlayerInterface == PlayerInterface::Modern);
-			panel->updatePlayerInterfaceText(newPlayerInterface);
+			panel.updatePlayerInterfaceText(newPlayerInterface);
 
 			// If classic mode, make sure the player is looking straight forward.
 			// This is a restriction on the camera to retain the original feel.
@@ -405,7 +405,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				options.getResolutionScale(), fullGameWindow);
 		};
-		return Button<OptionsPanel*, Options&, Player&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Player&, Renderer&>(x, y, width, height, function);
 	}();
 
 	this->verticalFOVUpButton = []()
@@ -414,14 +414,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 101;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0,
 				Options::MAX_VERTICAL_FOV);
 			options.setVerticalFOV(newVerticalFOV);
-			panel->updateVerticalFOVText(newVerticalFOV);
+			panel.updateVerticalFOVText(newVerticalFOV);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->verticalFOVDownButton = [this]()
@@ -430,14 +430,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = this->verticalFOVUpButton.getY() + this->verticalFOVUpButton.getHeight();
 		const int width = this->verticalFOVUpButton.getWidth();
 		const int height = this->verticalFOVUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalFOV = std::max(options.getVerticalFOV() - 5.0,
 				Options::MIN_VERTICAL_FOV);
 			options.setVerticalFOV(newVerticalFOV);
-			panel->updateVerticalFOVText(newVerticalFOV);
+			panel.updateVerticalFOVText(newVerticalFOV);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->cursorScaleUpButton = []()
@@ -446,14 +446,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 121;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newCursorScale = std::min(options.getCursorScale() + 0.10,
 				Options::MAX_CURSOR_SCALE);
 			options.setCursorScale(newCursorScale);
-			panel->updateCursorScaleText(newCursorScale);
+			panel.updateCursorScaleText(newCursorScale);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->cursorScaleDownButton = [this]()
@@ -462,14 +462,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = this->cursorScaleUpButton.getY() + this->cursorScaleUpButton.getHeight();
 		const int width = this->cursorScaleUpButton.getWidth();
 		const int height = this->cursorScaleUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newCursorScale = std::max(options.getCursorScale() - 0.10,
 				Options::MIN_CURSOR_SCALE);
 			options.setCursorScale(newCursorScale);
-			panel->updateCursorScaleText(newCursorScale);
+			panel.updateCursorScaleText(newCursorScale);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->letterboxAspectUpButton = []()
@@ -478,15 +478,15 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 141;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newLetterboxAspect = std::min(options.getLetterboxAspect() + 0.010,
 				Options::MAX_LETTERBOX_ASPECT);
 			options.setLetterboxAspect(newLetterboxAspect);
-			panel->updateLetterboxAspectText(newLetterboxAspect);
+			panel.updateLetterboxAspectText(newLetterboxAspect);
 			renderer.setLetterboxAspect(newLetterboxAspect);
 		};
-		return Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
 
 	this->letterboxAspectDownButton = [this]()
@@ -496,15 +496,15 @@ OptionsPanel::OptionsPanel(Game &game)
 			this->letterboxAspectUpButton.getHeight();
 		const int width = this->letterboxAspectUpButton.getWidth();
 		const int height = this->letterboxAspectUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newLetterboxAspect = std::max(options.getLetterboxAspect() - 0.010,
 				Options::MIN_LETTERBOX_ASPECT);
 			options.setLetterboxAspect(newLetterboxAspect);
-			panel->updateLetterboxAspectText(newLetterboxAspect);
+			panel.updateLetterboxAspectText(newLetterboxAspect);
 			renderer.setLetterboxAspect(newLetterboxAspect);
 		};
-		return Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
 
 	this->hSensitivityUpButton = []()
@@ -513,14 +513,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 41;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::min(
 				options.getHorizontalSensitivity() + 0.50, Options::MAX_HORIZONTAL_SENSITIVITY);
 			options.setHorizontalSensitivity(newHorizontalSensitivity);
-			panel->updateHorizontalSensitivityText(newHorizontalSensitivity);
+			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->hSensitivityDownButton = [this]()
@@ -530,14 +530,14 @@ OptionsPanel::OptionsPanel(Game &game)
 			this->hSensitivityUpButton.getHeight();
 		const int width = this->hSensitivityUpButton.getWidth();
 		const int height = this->hSensitivityUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::max(
 				options.getHorizontalSensitivity() - 0.50, Options::MIN_HORIZONTAL_SENSITIVITY);
 			options.setHorizontalSensitivity(newHorizontalSensitivity);
-			panel->updateHorizontalSensitivityText(newHorizontalSensitivity);
+			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->vSensitivityUpButton = []()
@@ -546,14 +546,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 61;
 		const int width = 8;
 		const int height = 8;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::min(
 				options.getVerticalSensitivity() + 0.50, Options::MAX_VERTICAL_SENSITIVITY);
 			options.setVerticalSensitivity(newVerticalSensitivity);
-			panel->updateVerticalSensitivityText(newVerticalSensitivity);
+			panel.updateVerticalSensitivityText(newVerticalSensitivity);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->vSensitivityDownButton = [this]()
@@ -563,14 +563,14 @@ OptionsPanel::OptionsPanel(Game &game)
 			this->vSensitivityUpButton.getHeight();
 		const int width = this->vSensitivityUpButton.getWidth();
 		const int height = this->vSensitivityUpButton.getHeight();
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::max(
 				options.getVerticalSensitivity() - 0.50, Options::MIN_VERTICAL_SENSITIVITY);
 			options.setVerticalSensitivity(newVerticalSensitivity);
-			panel->updateVerticalSensitivityText(newVerticalSensitivity);
+			panel.updateVerticalSensitivityText(newVerticalSensitivity);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->collisionButton = []()
@@ -579,14 +579,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 82;
 		const int width = ToggleButtonSize;
 		const int height = ToggleButtonSize;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the collision option.
 			const bool newCollision = !options.getCollision();
 			options.setCollision(newCollision);
-			panel->updateCollisionText(newCollision);
+			panel.updateCollisionText(newCollision);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->skipIntroButton = []()
@@ -595,14 +595,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 96;
 		const int width = ToggleButtonSize;
 		const int height = ToggleButtonSize;
-		auto function = [](OptionsPanel *panel, Options &options)
+		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the skip intro option.
 			const bool newSkipIntro = !options.getSkipIntro();
 			options.setSkipIntro(newSkipIntro);
-			panel->updateSkipIntroText(newSkipIntro);
+			panel.updateSkipIntroText(newSkipIntro);
 		};
-		return Button<OptionsPanel*, Options&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
 	}();
 
 	this->fullscreenButton = []()
@@ -611,15 +611,15 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 110;
 		const int width = ToggleButtonSize;
 		const int height = ToggleButtonSize;
-		auto function = [](OptionsPanel *panel, Options &options, Renderer &renderer)
+		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			// Toggle the fullscreen option.
 			const bool newFullscreen = !options.getFullscreen();
 			options.setFullscreen(newFullscreen);
 			renderer.setFullscreen(newFullscreen);
-			panel->updateFullscreenText(newFullscreen);
+			panel.updateFullscreenText(newFullscreen);
 		};
-		return Button<OptionsPanel*, Options&, Renderer&>(x, y, width, height, function);
+		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
 }
 
@@ -933,80 +933,80 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		// Check for various button clicks.
 		if (this->fpsUpButton.contains(mouseOriginalPoint))
 		{
-			this->fpsUpButton.click(this, this->getGame().getOptions());
+			this->fpsUpButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->fpsDownButton.contains(mouseOriginalPoint))
 		{
-			this->fpsDownButton.click(this, this->getGame().getOptions());
+			this->fpsDownButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->resolutionScaleUpButton.contains(mouseOriginalPoint))
 		{
-			this->resolutionScaleUpButton.click(this, this->getGame().getOptions(),
+			this->resolutionScaleUpButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
 		else if (this->resolutionScaleDownButton.contains(mouseOriginalPoint))
 		{
-			this->resolutionScaleDownButton.click(this, this->getGame().getOptions(),
+			this->resolutionScaleDownButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
 		else if (this->playerInterfaceButton.contains(mouseOriginalPoint))
 		{
-			this->playerInterfaceButton.click(this, this->getGame().getOptions(),
+			this->playerInterfaceButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getGameData().getPlayer(), this->getGame().getRenderer());
 		}
 		else if (this->verticalFOVUpButton.contains(mouseOriginalPoint))
 		{
-			this->verticalFOVUpButton.click(this, this->getGame().getOptions());
+			this->verticalFOVUpButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->verticalFOVDownButton.contains(mouseOriginalPoint))
 		{
-			this->verticalFOVDownButton.click(this, this->getGame().getOptions());
+			this->verticalFOVDownButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->cursorScaleUpButton.contains(mouseOriginalPoint))
 		{
-			this->cursorScaleUpButton.click(this, this->getGame().getOptions());
+			this->cursorScaleUpButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->cursorScaleDownButton.contains(mouseOriginalPoint))
 		{
-			this->cursorScaleDownButton.click(this, this->getGame().getOptions());
+			this->cursorScaleDownButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->letterboxAspectUpButton.contains(mouseOriginalPoint))
 		{
-			this->letterboxAspectUpButton.click(this, this->getGame().getOptions(),
+			this->letterboxAspectUpButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
 		else if (this->letterboxAspectDownButton.contains(mouseOriginalPoint))
 		{
-			this->letterboxAspectDownButton.click(this, this->getGame().getOptions(),
+			this->letterboxAspectDownButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
 		else if (this->hSensitivityUpButton.contains(mouseOriginalPoint))
 		{
-			this->hSensitivityUpButton.click(this, this->getGame().getOptions());
+			this->hSensitivityUpButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->hSensitivityDownButton.contains(mouseOriginalPoint))
 		{
-			this->hSensitivityDownButton.click(this, this->getGame().getOptions());
+			this->hSensitivityDownButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->vSensitivityUpButton.contains(mouseOriginalPoint))
 		{
-			this->vSensitivityUpButton.click(this, this->getGame().getOptions());
+			this->vSensitivityUpButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->vSensitivityDownButton.contains(mouseOriginalPoint))
 		{
-			this->vSensitivityDownButton.click(this, this->getGame().getOptions());
+			this->vSensitivityDownButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->collisionButton.contains(mouseOriginalPoint))
 		{
-			this->collisionButton.click(this, this->getGame().getOptions());
+			this->collisionButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->skipIntroButton.contains(mouseOriginalPoint))
 		{
-			this->skipIntroButton.click(this, this->getGame().getOptions());
+			this->skipIntroButton.click(*this, this->getGame().getOptions());
 		}
 		else if (this->fullscreenButton.contains(mouseOriginalPoint))
 		{
-			this->fullscreenButton.click(this, this->getGame().getOptions(),
+			this->fullscreenButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
 		else if (this->backToPauseButton.contains(mouseOriginalPoint))

@@ -33,14 +33,14 @@ private:
 		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox,
 		collisionTextBox, skipIntroTextBox, fullscreenTextBox;
 	Button<Game&> backToPauseButton;
-	Button<OptionsPanel*, Options&> fpsUpButton, fpsDownButton,
+	Button<OptionsPanel&, Options&> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
 		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton,
 		collisionButton, skipIntroButton;
-	Button<OptionsPanel*, Options&, Renderer&> resolutionScaleUpButton,
+	Button<OptionsPanel&, Options&, Renderer&> resolutionScaleUpButton,
 		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton,
 		fullscreenButton;
-	Button<OptionsPanel*, Options&, Player&, Renderer&> playerInterfaceButton;
+	Button<OptionsPanel&, Options&, Player&, Renderer&> playerInterfaceButton;
 
 	static std::string getPlayerInterfaceString(bool modernInterface);
 
