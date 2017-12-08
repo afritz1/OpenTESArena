@@ -106,15 +106,15 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const Int2 center(68, 22);
 		const int w = 8;
 		const int h = 8;
-		auto function = [](ChooseClassPanel *panel)
+		auto function = [](ChooseClassPanel &panel)
 		{
 			// Scroll the list box up one if able.
-			if (panel->classesListBox->getScrollIndex() > 0)
+			if (panel.classesListBox->getScrollIndex() > 0)
 			{
-				panel->classesListBox->scrollUp();
+				panel.classesListBox->scrollUp();
 			}
 		};
-		return Button<ChooseClassPanel*>(center, w, h, function);
+		return Button<ChooseClassPanel&>(center, w, h, function);
 	}();
 
 	this->downButton = []
@@ -122,18 +122,18 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const Int2 center(68, 117);
 		const int w = 8;
 		const int h = 8;
-		auto function = [](ChooseClassPanel *panel)
+		auto function = [](ChooseClassPanel &panel)
 		{
 			// Scroll the list box down one if able.
-			const int scrollIndex = panel->classesListBox->getScrollIndex();
-			const int elementCount = panel->classesListBox->getElementCount();
-			const int maxDisplayedCount = panel->classesListBox->getMaxDisplayedCount();
+			const int scrollIndex = panel.classesListBox->getScrollIndex();
+			const int elementCount = panel.classesListBox->getElementCount();
+			const int maxDisplayedCount = panel.classesListBox->getMaxDisplayedCount();
 			if (scrollIndex < (elementCount - maxDisplayedCount))
 			{
-				panel->classesListBox->scrollDown();
+				panel.classesListBox->scrollDown();
 			}
 		};
-		return Button<ChooseClassPanel*>(center, w, h, function);
+		return Button<ChooseClassPanel&>(center, w, h, function);
 	}();
 
 	this->acceptButton = []
@@ -200,11 +200,11 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (mouseWheelUp)
 		{
-			this->upButton.click(this);
+			this->upButton.click(*this);
 		}
 		else if (mouseWheelDown)
 		{
-			this->downButton.click(this);
+			this->downButton.click(*this);
 		}
 	}
 
@@ -213,11 +213,11 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		// Check scroll buttons (they are outside the list box to the left).
 		if (this->upButton.contains(mouseOriginalPoint))
 		{
-			this->upButton.click(this);
+			this->upButton.click(*this);
 		}
 		else if (this->downButton.contains(mouseOriginalPoint))
 		{
-			this->downButton.click(this);
+			this->downButton.click(*this);
 		}
 	}
 }

@@ -26,7 +26,7 @@ class ChooseAttributesPanel : public Panel
 private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
 	Button<Game&> backToRaceButton, doneButton;
-	Button<ChooseAttributesPanel*, bool> portraitButton;
+	Button<ChooseAttributesPanel&, bool> portraitButton;
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;
 	GenderName gender;

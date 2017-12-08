@@ -27,7 +27,7 @@ private:
 		logbookButton, pauseButton;
 	Button<Player&> drawWeaponButton;
 	Button<> stealButton, magicButton, useItemButton, campButton;
-	Button<GameWorldPanel*> scrollUpButton, scrollDownButton;
+	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;

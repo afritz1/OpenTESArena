@@ -320,12 +320,12 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		const int x = 208;
 		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 3;
 
-		auto function = [](GameWorldPanel *panel)
+		auto function = [](GameWorldPanel &panel)
 		{
 			// Nothing yet.
 		};
 
-		return Button<GameWorldPanel*>(x, y, 9, 9, function);
+		return Button<GameWorldPanel&>(x, y, 9, 9, function);
 	}();
 
 	this->scrollDownButton = []()
@@ -334,11 +334,11 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		const int x = 208;
 		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 44;
 
-		auto function = [](GameWorldPanel *panel)
+		auto function = [](GameWorldPanel &panel)
 		{
 			// Nothing yet.
 		};
-		return Button<GameWorldPanel*>(x, y, 9, 9, function);
+		return Button<GameWorldPanel&>(x, y, 9, 9, function);
 	}();
 
 	this->pauseButton = []()

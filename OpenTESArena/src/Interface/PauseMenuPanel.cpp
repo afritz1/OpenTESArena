@@ -188,15 +188,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int x = 119;
 		const int y = 79;
 		auto function = [](Options &options, AudioManager &audioManager,
-			PauseMenuPanel *panel)
+			PauseMenuPanel &panel)
 		{
 			options.setMusicVolume(std::min(options.getMusicVolume() + 0.050, 1.0));
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
-			panel->updateMusicText(options.getMusicVolume());
+			panel.updateMusicText(options.getMusicVolume());
 		};
-		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
+		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
 
 	this->musicDownButton = []()
@@ -204,15 +204,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int x = 119;
 		const int y = 104;
 		auto function = [](Options &options, AudioManager &audioManager,
-			PauseMenuPanel *panel)
+			PauseMenuPanel &panel)
 		{
 			options.setMusicVolume(std::max(options.getMusicVolume() - 0.050, 0.0));
 			audioManager.setMusicVolume(options.getMusicVolume());
 
 			// Update the music volume text.
-			panel->updateMusicText(options.getMusicVolume());
+			panel.updateMusicText(options.getMusicVolume());
 		};
-		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
+		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
 
 	this->soundUpButton = []()
@@ -220,15 +220,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int x = 46;
 		const int y = 79;
 		auto function = [](Options &options, AudioManager &audioManager,
-			PauseMenuPanel *panel)
+			PauseMenuPanel &panel)
 		{
 			options.setSoundVolume(std::min(options.getSoundVolume() + 0.050, 1.0));
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
-			panel->updateSoundText(options.getSoundVolume());
+			panel.updateSoundText(options.getSoundVolume());
 		};
-		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
+		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
 
 	this->soundDownButton = []()
@@ -236,15 +236,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int x = 46;
 		const int y = 104;
 		auto function = [](Options &options, AudioManager &audioManager,
-			PauseMenuPanel *panel)
+			PauseMenuPanel &panel)
 		{
 			options.setSoundVolume(std::max(options.getSoundVolume() - 0.050, 0.0));
 			audioManager.setSoundVolume(options.getSoundVolume());
 
 			// Update the sound volume text.
-			panel->updateSoundText(options.getSoundVolume());
+			panel.updateSoundText(options.getSoundVolume());
 		};
-		return Button<Options&, AudioManager&, PauseMenuPanel*>(x, y, 17, 9, function);
+		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
 }
 
@@ -355,19 +355,19 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->musicUpButton.contains(mouseOriginalPoint))
 		{
-			this->musicUpButton.click(options, audioManager, this);
+			this->musicUpButton.click(options, audioManager, *this);
 		}
 		else if (this->musicDownButton.contains(mouseOriginalPoint))
 		{
-			this->musicDownButton.click(options, audioManager, this);
+			this->musicDownButton.click(options, audioManager, *this);
 		}
 		else if (this->soundUpButton.contains(mouseOriginalPoint))
 		{
-			this->soundUpButton.click(options, audioManager, this);
+			this->soundUpButton.click(options, audioManager, *this);
 		}
 		else if (this->soundDownButton.contains(mouseOriginalPoint))
 		{
-			this->soundDownButton.click(options, audioManager, this);
+			this->soundDownButton.click(options, audioManager, *this);
 		}
 	}
 }

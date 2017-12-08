@@ -173,23 +173,23 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 		const Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
 		const int width = 60;
 		const int height = 42;
-		auto function = [](ChooseAttributesPanel *panel, bool increment)
+		auto function = [](ChooseAttributesPanel &panel, bool increment)
 		{
 			const int minID = 0;
 			const int maxID = 9;
 
 			if (increment)
 			{
-				panel->portraitID = (panel->portraitID == maxID) ?
-					minID : (panel->portraitID + 1);
+				panel.portraitID = (panel.portraitID == maxID) ?
+					minID : (panel.portraitID + 1);
 			}
 			else
 			{
-				panel->portraitID = (panel->portraitID == minID) ?
-					maxID : (panel->portraitID - 1);
+				panel.portraitID = (panel.portraitID == minID) ?
+					maxID : (panel.portraitID - 1);
 			}
 		};
-		return Button<ChooseAttributesPanel*, bool>(center, width, height, function);
+		return Button<ChooseAttributesPanel&, bool>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -289,7 +289,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		else if (this->portraitButton.contains(mouseOriginalPoint))
 		{
 			// Pass 'true' to increment the portrait ID.
-			this->portraitButton.click(this, true);
+			this->portraitButton.click(*this, true);
 		}
 	}
 
@@ -298,7 +298,7 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		if (this->portraitButton.contains(mouseOriginalPoint))
 		{
 			// Pass 'false' to decrement the portrait ID.
-			this->portraitButton.click(this, false);
+			this->portraitButton.click(*this, false);
 		}
 	}	
 }

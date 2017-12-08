@@ -18,7 +18,7 @@ private:
 	Button<Game&> loadButton;
 	Button<> exitButton;
 	Button<Game&> newButton, saveButton, resumeButton, optionsButton;
-	Button<Options&, AudioManager&, PauseMenuPanel*> musicUpButton, 
+	Button<Options&, AudioManager&, PauseMenuPanel&> musicUpButton,
 		musicDownButton, soundUpButton, soundDownButton;
 
 	void updateMusicText(double volume);
