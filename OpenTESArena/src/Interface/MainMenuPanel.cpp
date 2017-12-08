@@ -18,9 +18,13 @@
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
+#include "../Interface/RichTextString.h"
+#include "../Interface/TextAlignment.h"
+#include "../Interface/TextBox.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -31,10 +35,73 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
+
+namespace
+{
+	const int MaxTestTypes = 3;
+	const int TestType_MainQuest = 0;
+	const int TestType_Interior = 1;
+	const int TestType_Exterior = 2;
+
+	// .MIF filenames for each main quest dungeon, ordered by their appearance in the 
+	// game (in pairs, except for the first and last ones).
+	const std::vector<std::string> MainQuestLocations =
+	{
+		"START.MIF",
+		"39699021.MIF", "42068779.MIF",
+		"42110737.MIF", "41418704.MIF",
+		"40642738.MIF", "40852494.MIF",
+		"40370128.MIF", "39300577.MIF",
+		"41229981.MIF", "42488253.MIF",
+		"40181409.MIF", "41649375.MIF",
+		"42194658.MIF", "40516921.MIF",
+		"39950681.MIF", "42026882.MIF",
+		"IMPPAL.MIF"
+	};
+
+	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
+	// These also need ".MIF" appended at the end.
+	const std::vector<std::pair<std::string, std::pair<int, int>>> InteriorLocations =
+	{
+		{ "BS", { 1, 5 } },
+		{ "EQUIP", { 1, 8 } },
+		{ "MAGE", { 1, 8 } },
+		{ "NOBLE", { 1, 8 } },
+		{ "PALACE", { 1, 5 } },
+		{ "TAVERN", { 1, 8 } },
+		{ "TEMPLE", { 1, 8 } },
+		{ "TOWER", { 1, 8 } },
+		{ "TOWNPAL", { 1, 3 } },
+		{ "VILPAL", { 1, 3 } },
+		{ "WCRYPT", { 1, 8 } }
+	};
+
+	const std::vector<std::string> ExteriorLocations =
+	{
+		"IMPERIAL.MIF"
+	};
+
+	// Values for testing.
+	const std::vector<ClimateType> Climates =
+	{
+		ClimateType::Temperate,
+		ClimateType::Desert,
+		ClimateType::Mountain
+	};
+
+	const std::vector<WeatherType> Weathers =
+	{
+		WeatherType::Clear,
+		WeatherType::Overcast,
+		WeatherType::Rain,
+		WeatherType::Snow
+	};
+}
 
 MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game)
@@ -110,9 +177,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		return Button<Game&>(center, width, height, function);
 	}();
 
-	this->fastStartButton = [&game]()
+	this->quickStartButton = [&game]()
 	{
-		auto function = [](Game &game)
+		auto function = [](Game &game, const std::string &mifName, ClimateType climateType,
+			WeatherType weatherType, WorldType worldType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -125,15 +193,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				game.getMiscAssets().getClassDefinitions(), game.getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
-			//const std::string mifName("START.MIF");
-			//const std::string mifName("39699021.MIF");
-			const std::string mifName("IMPERIAL.MIF");
 			const MIFFile mif(mifName);
-
-			// These values determine some traits of the quickstart city.
-			const ClimateType climateType = ClimateType::Temperate;
-			const WeatherType weatherType = WeatherType::Clear;
-			const WorldType worldType = WorldType::City;
 
 			const std::string infName = [&mif, climateType, weatherType, worldType]()
 			{
@@ -210,26 +270,33 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
-			
-			// Set weather-relative fog distance.
-			const double fogDistance = [weatherType]()
+
+			// Set world and weather-relative fog distance.
+			const double fogDistance = [worldType, weatherType]()
 			{
 				// Just some arbitrary values.
-				if (weatherType == WeatherType::Clear)
-				{
-					return 75.0;
-				}
-				else if (weatherType == WeatherType::Overcast)
+				if (worldType == WorldType::Interior)
 				{
 					return 25.0;
 				}
-				else if (weatherType == WeatherType::Rain)
-				{
-					return 45.0;
-				}
 				else
 				{
-					return 15.0;
+					if (weatherType == WeatherType::Clear)
+					{
+						return 75.0;
+					}
+					else if (weatherType == WeatherType::Overcast)
+					{
+						return 25.0;
+					}
+					else if (weatherType == WeatherType::Rain)
+					{
+						return 35.0;
+					}
+					else
+					{
+						return 15.0;
+					}
 				}
 			}();
 
@@ -322,7 +389,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel(std::move(gameWorldPanel));
 			game.setMusic(musicName);
 		};
-		return Button<Game&>(function);
+		return Button<Game&, const std::string&, ClimateType, WeatherType, WorldType>(function);
 	}();
 
 	this->exitButton = []()
@@ -340,6 +407,260 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		return Button<>(center, width, height, function);
 	}();
 
+	this->testTypeUpButton = []()
+	{
+		const int x = 312;
+		const int y = 164;
+		const int width = 8;
+		const int height = 8;
+		auto function = [](MainMenuPanel &panel)
+		{
+			panel.testType = (panel.testType > 0) ? (panel.testType - 1) : (MaxTestTypes - 1);
+
+			// Reset the other indices.
+			panel.testIndex = 0;
+			panel.testIndex2 = 1;
+			panel.testClimate = 0;
+			panel.testWeather = 0;
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testTypeDownButton = [this]()
+	{
+		const int x = this->testTypeUpButton.getX();
+		const int y = this->testTypeUpButton.getY() + this->testTypeUpButton.getHeight();
+		const int width = this->testTypeUpButton.getWidth();
+		const int height = this->testTypeUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			panel.testType = (panel.testType < (MaxTestTypes - 1)) ? (panel.testType + 1) : 0;
+
+			// Reset the other indices.
+			panel.testIndex = 0;
+			panel.testIndex2 = 1;
+			panel.testClimate = 0;
+			panel.testWeather = 0;
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testIndexUpButton = [this]()
+	{
+		const int x = this->testTypeUpButton.getX() - this->testTypeUpButton.getWidth() - 2;
+		const int y = this->testTypeUpButton.getY() +
+			(this->testTypeUpButton.getHeight() * 2) + 2;
+		const int width = this->testTypeDownButton.getWidth();
+		const int height = this->testTypeDownButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			const int count = [&panel]()
+			{
+				// Check test type to determine the max.
+				if (panel.testType == TestType_MainQuest)
+				{
+					return static_cast<int>(MainQuestLocations.size());
+				}
+				else if (panel.testType == TestType_Interior)
+				{
+					return static_cast<int>(InteriorLocations.size());
+				}
+				else
+				{
+					return static_cast<int>(ExteriorLocations.size());
+				}
+			}();
+
+			panel.testIndex = (panel.testIndex > 0) ? (panel.testIndex - 1) : (count - 1);
+
+			if (panel.testType == TestType_Interior)
+			{
+				// Reset the second index.
+				panel.testIndex2 = 1;
+			}
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testIndexDownButton = [this]()
+	{
+		const int x = this->testIndexUpButton.getX();
+		const int y = this->testIndexUpButton.getY() + this->testIndexUpButton.getHeight();
+		const int width = this->testIndexUpButton.getWidth();
+		const int height = this->testIndexUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			const int count = [&panel]()
+			{
+				// Check test type to determine the max.
+				if (panel.testType == TestType_MainQuest)
+				{
+					return static_cast<int>(MainQuestLocations.size());
+				}
+				else if (panel.testType == TestType_Interior)
+				{
+					return static_cast<int>(InteriorLocations.size());
+				}
+				else
+				{
+					return static_cast<int>(ExteriorLocations.size());
+				}
+			}();
+
+			panel.testIndex = (panel.testIndex < (count - 1)) ? (panel.testIndex + 1) : 0;
+
+			if (panel.testType == TestType_Interior)
+			{
+				// Reset the second index.
+				panel.testIndex2 = 1;
+			}
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testIndex2UpButton = [this]()
+	{
+		const int x = this->testIndexUpButton.getX() + 10;
+		const int y = this->testIndexUpButton.getY();
+		const int width = this->testIndexUpButton.getWidth();
+		const int height = this->testIndexUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Interior);
+
+			// Interior range.
+			const auto &interior = InteriorLocations.at(panel.testIndex);
+			const int minIndex = interior.second.first;
+			const int maxIndex = interior.second.second;
+
+			panel.testIndex2 = (panel.testIndex2 < maxIndex) ? (panel.testIndex2 + 1) : minIndex;
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testIndex2DownButton = [this]()
+	{
+		const int x = this->testIndex2UpButton.getX();
+		const int y = this->testIndex2UpButton.getY() + this->testIndex2UpButton.getHeight();
+		const int width = this->testIndex2UpButton.getWidth();
+		const int height = this->testIndex2UpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Interior);
+
+			// Interior range.
+			const auto &interior = InteriorLocations.at(panel.testIndex);
+			const int minIndex = interior.second.first;
+			const int maxIndex = interior.second.second;
+
+			panel.testIndex2 = (panel.testIndex2 > minIndex) ? (panel.testIndex2 - 1) : maxIndex;
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testClimateUpButton = [this]()
+	{
+		const int x = this->testTypeUpButton.getX();
+		const int y = this->testTypeUpButton.getY() - 4 -
+			(4 * this->testTypeUpButton.getHeight());
+		const int width = this->testTypeUpButton.getWidth();
+		const int height = this->testTypeUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Exterior);
+
+			const int count = static_cast<int>(Climates.size());
+			panel.testClimate = (panel.testClimate > 0) ? (panel.testClimate - 1) : (count - 1);
+
+			// Reset weather index.
+			panel.testWeather = 0;
+
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testClimateDownButton = [this]()
+	{
+		const int x = this->testClimateUpButton.getX();
+		const int y = this->testClimateUpButton.getY() + this->testClimateUpButton.getHeight();
+		const int width = this->testClimateUpButton.getWidth();
+		const int height = this->testClimateUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Exterior);
+
+			const int count = static_cast<int>(Climates.size());
+			panel.testClimate = (panel.testClimate < (count - 1)) ? (panel.testClimate + 1) : 0;
+
+			// Reset weather index.
+			panel.testWeather = 0;
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testWeatherUpButton = [this]()
+	{
+		const int x = this->testClimateUpButton.getX();
+		const int y = this->testClimateUpButton.getY() + 2 +
+			(2 * this->testClimateUpButton.getHeight());
+		const int width = this->testClimateUpButton.getWidth();
+		const int height = this->testClimateUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Exterior);
+
+			panel.testWeather = [&panel]()
+			{
+				const int count = static_cast<int>(Weathers.size());
+
+				if (panel.getSelectedTestClimateType() != ClimateType::Desert)
+				{
+					return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 1);
+				}
+				else
+				{
+					// Deserts can't have snow.
+					return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 2);
+				}
+			}();
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testWeatherDownButton = [this]()
+	{
+		const int x = this->testWeatherUpButton.getX();
+		const int y = this->testWeatherUpButton.getY() + this->testWeatherUpButton.getHeight();
+		const int width = this->testWeatherUpButton.getWidth();
+		const int height = this->testWeatherUpButton.getHeight();
+		auto function = [](MainMenuPanel &panel)
+		{
+			assert(panel.testType == TestType_Exterior);
+
+			panel.testWeather = [&panel]()
+			{
+				const int count = static_cast<int>(Weathers.size());
+
+				if (panel.getSelectedTestClimateType() != ClimateType::Desert)
+				{
+					return (panel.testWeather < (count - 1)) ? (panel.testWeather + 1) : 0;
+				}
+				else
+				{
+					// Deserts can't have snow.
+					return (panel.testWeather < (count - 2)) ? (panel.testWeather + 1) : 0;
+				}
+			}();
+		};
+		return Button<MainMenuPanel&>(x, y, width, height, function);
+	}();
+
+	this->testType = 0;
+	this->testIndex = 0;
+	this->testIndex2 = 1;
+	this->testClimate = 0;
+	this->testWeather = 0;
+
 	// The game data should not be active on the main menu.
 	assert(!game.gameDataIsActive());
 }
@@ -347,6 +668,54 @@ MainMenuPanel::MainMenuPanel(Game &game)
 MainMenuPanel::~MainMenuPanel()
 {
 
+}
+
+std::string MainMenuPanel::getSelectedTestName() const
+{
+	if (this->testType == TestType_MainQuest)
+	{
+		return MainQuestLocations.at(this->testIndex);
+	}
+	else if (this->testType == TestType_Interior)
+	{
+		const auto &interior = InteriorLocations.at(this->testIndex);
+		return interior.first + std::to_string(this->testIndex2) + ".MIF";
+	}
+	else if (this->testType == TestType_Exterior)
+	{
+		return ExteriorLocations.at(this->testIndex);
+	}
+	else
+	{
+		throw std::runtime_error("Bad test type.");
+	}
+}
+
+ClimateType MainMenuPanel::getSelectedTestClimateType() const
+{
+	return Climates.at(this->testClimate);
+}
+
+WeatherType MainMenuPanel::getSelectedTestWeatherType() const
+{
+	return Weathers.at(this->testWeather);
+}
+
+WorldType MainMenuPanel::getSelectedTestWorldType() const
+{
+	if ((this->testType == TestType_MainQuest) ||
+		(this->testType == TestType_Interior))
+	{
+		return WorldType::Interior;
+	}
+	else if (this->testType == TestType_Exterior)
+	{
+		return WorldType::City;
+	}
+	else
+	{
+		throw std::runtime_error("Bad test type.");
+	}
 }
 
 std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
@@ -380,8 +749,13 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (fPressed)
 	{
-		// Enter the game world immediately, for testing purposes.
-		this->fastStartButton.click(this->getGame());
+		// Enter the game world immediately (for testing purposes). Use the test traits
+		// selected on the main menu.
+		this->quickStartButton.click(this->getGame(),
+			this->getSelectedTestName(),
+			this->getSelectedTestClimateType(),
+			this->getSelectedTestWeatherType(),
+			this->getSelectedTestWorldType());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -389,20 +763,68 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		const Int2 originalPoint = this->getGame().getRenderer()
 			.nativePointToOriginal(mousePosition);
 
-		if (this->loadButton.contains(mouseOriginalPoint))
+		if (this->loadButton.contains(originalPoint))
 		{
 			this->loadButton.click(this->getGame());
 		}
-		else if (this->newButton.contains(mouseOriginalPoint))
+		else if (this->newButton.contains(originalPoint))
 		{
 			this->newButton.click(this->getGame());
 		}
-		else if (this->exitButton.contains(mouseOriginalPoint))
+		else if (this->exitButton.contains(originalPoint))
 		{
 			this->exitButton.click();
+		}
+		else if (this->testTypeUpButton.contains(originalPoint))
+		{
+			this->testTypeUpButton.click(*this);
+		}
+		else if (this->testTypeDownButton.contains(originalPoint))
+		{
+			this->testTypeDownButton.click(*this);
+		}
+		else if (this->testIndexUpButton.contains(originalPoint))
+		{
+			this->testIndexUpButton.click(*this);
+		}
+		else if (this->testIndexDownButton.contains(originalPoint))
+		{
+			this->testIndexDownButton.click(*this);
+		}
+		else if (this->testType == TestType_Interior)
+		{
+			// These buttons are only available when selecting interior names.
+			if (this->testIndex2UpButton.contains(originalPoint))
+			{
+				this->testIndex2UpButton.click(*this);
+			}
+			else if (this->testIndex2DownButton.contains(originalPoint))
+			{
+				this->testIndex2DownButton.click(*this);
+			}
+		}
+		else if (this->testType == TestType_Exterior)
+		{
+			// These buttons are only available when selecting exterior names.
+			if (this->testClimateUpButton.contains(originalPoint))
+			{
+				this->testClimateUpButton.click(*this);
+			}
+			else if (this->testClimateDownButton.contains(originalPoint))
+			{
+				this->testClimateDownButton.click(*this);
+			}
+			else if (this->testWeatherUpButton.contains(originalPoint))
+			{
+				this->testWeatherUpButton.click(*this);
+			}
+			else if (this->testWeatherDownButton.contains(originalPoint))
+			{
+				this->testWeatherDownButton.click(*this);
+			}
 		}
 	}
 }
@@ -421,4 +843,162 @@ void MainMenuPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::MainMenu),
 		PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawOriginal(mainMenu.get());
+
+	// Draw test buttons.
+	const auto &arrows = textureManager.getTexture(
+		TextureFile::fromName(TextureName::UpDown),
+		PaletteFile::fromName(PaletteName::CharSheet));
+	renderer.drawOriginal(arrows.get(), this->testTypeUpButton.getX(),
+		this->testTypeUpButton.getY());
+	renderer.drawOriginal(arrows.get(), this->testIndexUpButton.getX(),
+		this->testIndexUpButton.getY());
+
+	if (this->testType == TestType_Interior)
+	{
+		renderer.drawOriginal(arrows.get(), this->testIndex2UpButton.getX(),
+			this->testIndex2UpButton.getY());
+	}
+	else if (this->testType == TestType_Exterior)
+	{
+		renderer.drawOriginal(arrows.get(), this->testClimateUpButton.getX(),
+			this->testClimateUpButton.getY());
+		renderer.drawOriginal(arrows.get(), this->testWeatherUpButton.getX(),
+			this->testWeatherUpButton.getY());
+	}
+
+	// Draw test text.
+	const std::string testTypeName = [this]()
+	{
+		if (this->testType == TestType_MainQuest)
+		{
+			return "Main Quest";
+		}
+		else if (this->testType == TestType_Interior)
+		{
+			return "Interior";
+		}
+		else if (this->testType == TestType_Exterior)
+		{
+			return "Exterior";
+		}
+		else
+		{
+			throw std::runtime_error("Bad test type.");
+		}
+	}();
+
+	const RichTextString testTypeText(
+		"Test type: " + testTypeName,
+		FontName::Arena,
+		Color::White,
+		TextAlignment::Left,
+		this->getGame().getFontManager());
+
+	const int testTypeTextBoxX = this->testTypeUpButton.getX() -
+		testTypeText.getDimensions().x - 2;
+	const int testTypeTextBoxY = this->testTypeUpButton.getY() +
+		(testTypeText.getDimensions().y / 2);
+	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY, testTypeText, renderer);
+
+	renderer.drawOriginal(testTypeTextBox.getTexture(),
+		testTypeTextBox.getX(), testTypeTextBox.getY());
+
+	const RichTextString testNameText(
+		"Test location: " + this->getSelectedTestName(),
+		testTypeText.getFontName(),
+		testTypeText.getColor(),
+		testTypeText.getAlignment(),
+		this->getGame().getFontManager());
+	const int testNameTextBoxX = this->testIndexUpButton.getX() -
+		testNameText.getDimensions().x - 2;
+	const int testNameTextBoxY = this->testIndexUpButton.getY() +
+		(testNameText.getDimensions().y / 2);
+	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY, testNameText, renderer);
+	renderer.drawOriginal(testNameTextBox.getTexture(),
+		testNameTextBox.getX(), testNameTextBox.getY());
+
+	if (this->testType == TestType_Exterior)
+	{
+		const std::string testClimateName = [this]()
+		{
+			const ClimateType climateType = this->getSelectedTestClimateType();
+
+			if (climateType == ClimateType::Temperate)
+			{
+				return "Temperate";
+			}
+			else if (climateType == ClimateType::Desert)
+			{
+				return "Desert";
+			}
+			else if (climateType == ClimateType::Mountain)
+			{
+				return "Mountain";
+			}
+			else
+			{
+				throw std::runtime_error("Bad climate type.");
+			}
+		}();
+
+		const RichTextString testClimateText(
+			"Test climate: " + testClimateName,
+			testTypeText.getFontName(),
+			testTypeText.getColor(),
+			testTypeText.getAlignment(),
+			this->getGame().getFontManager());
+
+		const int testClimateTextBoxX = this->testClimateUpButton.getX() -
+			testClimateText.getDimensions().x - 2;
+		const int testClimateTextBoxY = this->testClimateUpButton.getY() +
+			(testClimateText.getDimensions().y / 2);
+		const TextBox testClimateTextBox(
+			testClimateTextBoxX, testClimateTextBoxY, testClimateText, renderer);
+
+		renderer.drawOriginal(testClimateTextBox.getTexture(),
+			testClimateTextBox.getX(), testClimateTextBox.getY());
+
+		const std::string weatherName = [this]()
+		{
+			const WeatherType weatherType = this->getSelectedTestWeatherType();
+
+			if (weatherType == WeatherType::Clear)
+			{
+				return "Clear";
+			}
+			else if (weatherType == WeatherType::Overcast)
+			{
+				return "Overcast";
+			}
+			else if (weatherType == WeatherType::Rain)
+			{
+				return "Rain";
+			}
+			else if (weatherType == WeatherType::Snow)
+			{
+				return "Snow";
+			}
+			else
+			{
+				throw std::runtime_error("Bad weather type.");
+			}
+		}();
+
+		const RichTextString testWeatherText(
+			"Test weather: " + weatherName,
+			testTypeText.getFontName(),
+			testTypeText.getColor(),
+			testTypeText.getAlignment(),
+			this->getGame().getFontManager());
+
+		const int testWeatherTextBoxX = this->testWeatherUpButton.getX() -
+			testWeatherText.getDimensions().x - 2;
+		const int testWeatherTextBoxY = this->testWeatherUpButton.getY() +
+			(testWeatherText.getDimensions().y / 2);
+		const TextBox testWeatherTextBox(
+			testWeatherTextBoxX, testWeatherTextBoxY, testWeatherText, renderer);
+
+		renderer.drawOriginal(testWeatherTextBox.getTexture(),
+			testWeatherTextBox.getX(), testWeatherTextBox.getY());
+	}
 }
