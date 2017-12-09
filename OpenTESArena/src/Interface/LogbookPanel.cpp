@@ -52,8 +52,7 @@ LogbookPanel::LogbookPanel(Game &game)
 
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> backPanel(new GameWorldPanel(game));
-			game.setPanel(std::move(backPanel));
+			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(center, 34, 14, function);
 	}();

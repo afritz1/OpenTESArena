@@ -95,8 +95,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
-			game.setPanel(std::move(creationPanel));
+			game.setPanel<ChooseClassCreationPanel>(game);
 		};
 		return Button<Game&>(function);
 	}();
@@ -140,8 +139,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	{
 		auto function = [](Game &game, const CharacterClass &charClass)
 		{
-			std::unique_ptr<Panel> namePanel(new ChooseNamePanel(game, charClass));
-			game.setPanel(std::move(namePanel));
+			game.setPanel<ChooseNamePanel>(game, charClass);
 		};
 		return Button<Game&, const CharacterClass&>(function);
 	}();

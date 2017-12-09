@@ -31,8 +31,7 @@ WorldMapPanel::WorldMapPanel(Game &game)
 		int height = 9;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gamePanel));
+			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();
@@ -41,8 +40,7 @@ WorldMapPanel::WorldMapPanel(Game &game)
 	{
 		auto function = [](Game &game, int provinceID)
 		{
-			std::unique_ptr<Panel> provincePanel(new ProvinceMapPanel(game, provinceID));
-			game.setPanel(std::move(provincePanel));
+			game.setPanel<ProvinceMapPanel>(game, provinceID);
 		};
 		return Button<Game&, int>(function);
 	}();

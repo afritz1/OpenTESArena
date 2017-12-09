@@ -90,8 +90,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-			game.setPanel(std::move(mainMenuPanel));
+			game.setPanel<MainMenuPanel>(game);
 			game.setMusic(MusicName::PercIntro);
 		};
 		return Button<Game&>(function);
@@ -103,8 +102,6 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		auto function = [](Game &game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
-			/*std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game.setPanel(std::move(classPanel));*/
 		};
 		return Button<Game&>(center, 175, 35, function);
 	}();
@@ -114,8 +111,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game.setPanel(std::move(classPanel));
+			game.setPanel<ChooseClassPanel>(game);
 		};
 		return Button<Game&>(center, 175, 35, function);
 	}();

@@ -102,8 +102,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int height = clickArea.getHeight();
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> gamePanel(new WorldMapPanel(game));
-			game.setPanel(std::move(gamePanel));
+			game.setPanel<WorldMapPanel>(game);
 		};
 		return Button<Game&>(x, y, width, height, function);
 	}();

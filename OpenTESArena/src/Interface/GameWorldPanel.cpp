@@ -117,8 +117,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> sheetPanel(new CharacterPanel(game));
-			game.setPanel(std::move(sheetPanel));
+			game.setPanel<CharacterPanel>(game);
 		};
 		return Button<Game&>(14, 166, 40, 29, function);
 	}();
@@ -269,10 +268,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			// The sub-panel does nothing after it's removed.
 			auto function = [](Game &game) {};
 
-			std::unique_ptr<Panel> textSubPanel(new TextSubPanel(
-				game, center, richText, function, std::move(texture), textureCenter));
-
-			game.pushSubPanel(std::move(textSubPanel));
+			game.pushSubPanel<TextSubPanel>(game, center, richText, function, 
+				std::move(texture), textureCenter);
 		};
 		return Button<Game&>(177, 151, 29, 22, function);
 	}();
@@ -290,8 +287,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> logbookPanel(new LogbookPanel(game));
-			game.setPanel(std::move(logbookPanel));
+			game.setPanel<LogbookPanel>(game);
 		};
 		return Button<Game&>(118, 175, 29, 22, function);
 	}();
@@ -345,8 +341,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
-			game.setPanel(std::move(pausePanel));
+			game.setPanel<PauseMenuPanel>(game);
 		};
 		return Button<Game&>(function);
 	}();
@@ -364,15 +359,12 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const Location &location = gameData.getLocation();
 				const Double3 &position = player.getPosition();
 
-				std::unique_ptr<Panel> automapPanel(new AutomapPanel(game,
-					Double2(position.x, position.z), player.getGroundDirection(), 
-					level.getVoxelGrid(), location.getName()));
-				game.setPanel(std::move(automapPanel));
+				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), 
+					player.getGroundDirection(), level.getVoxelGrid(), location.getName());
 			}
 			else
 			{
-				std::unique_ptr<Panel> worldMapPanel(new WorldMapPanel(game));
-				game.setPanel(std::move(worldMapPanel));
+				game.setPanel<WorldMapPanel>(game);
 			}
 		};
 		return Button<Game&, bool>(118, 151, 29, 22, function);

@@ -38,9 +38,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
-			std::unique_ptr<Panel> namePanel(new ChooseGenderPanel(
-				game, charClass, name));
-			game.setPanel(std::move(namePanel));
+			game.setPanel<ChooseGenderPanel>(game, charClass, name);
 		};
 		return Button<Game&, const CharacterClass&, const std::string&>(function);
 	}();
@@ -50,9 +48,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name, GenderName gender, int raceID)
 		{
-			std::unique_ptr<Panel> attributesPanel(new ChooseAttributesPanel(
-				game, charClass, name, gender, raceID));
-			game.setPanel(std::move(attributesPanel));
+			game.setPanel<ChooseAttributesPanel>(game, charClass, name, gender, raceID);
 		};
 		return Button<Game&, const CharacterClass&,
 			const std::string&, GenderName, int>(function);

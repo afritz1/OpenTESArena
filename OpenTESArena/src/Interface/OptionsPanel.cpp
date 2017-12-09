@@ -293,8 +293,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> pausePanel(new PauseMenuPanel(game));
-			game.setPanel(std::move(pausePanel));
+			game.setPanel<PauseMenuPanel>(game);
 		};
 		return Button<Game&>(center, 40, 16, function);
 	}();

@@ -91,8 +91,7 @@ CharacterPanel::CharacterPanel(Game &game)
 		int height = 13;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gamePanel));
+			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();
@@ -105,8 +104,7 @@ CharacterPanel::CharacterPanel(Game &game)
 		int height = 13;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> equipmentPanel(new CharacterEquipmentPanel(game));
-			game.setPanel(std::move(equipmentPanel));
+			game.setPanel<CharacterEquipmentPanel>(game);
 		};
 		return Button<Game&>(x, y, width, height, function);
 	}();

@@ -106,11 +106,26 @@ public:
 	const FPSCounter &getFPSCounter() const;
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
-	// interfering with the current panel).
-	void setPanel(std::unique_ptr<Panel> nextPanel);
+	// interfering with the current panel). This uses template parameters for
+	// convenience (to avoid writing a unique_ptr at each callsite).
+	template <class T, typename... Args>
+	void setPanel(Args&&... args)
+	{
+		this->nextPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
+	}
 
 	// Adds a new sub-panel after the current SDL event has been processed (to avoid
-	// adding multiple pop-ups from the same panel or sub-panel).
+	// adding multiple pop-ups from the same panel or sub-panel). This uses template 
+	// parameters for convenience (to avoid writing a unique_ptr at each callsite).
+	template <class T, typename... Args>
+	void pushSubPanel(Args&&... args)
+	{
+		this->nextSubPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
+	}
+
+	// Non-templated substitute for pushSubPanel(), for when the panel takes considerable
+	// effort at the callsite to construct (i.e., several parameters, intermediate
+	// calculations, etc.).
 	void pushSubPanel(std::unique_ptr<Panel> nextSubPanel);
 
 	// Pops the current sub-panel off the stack after the current SDL event has been

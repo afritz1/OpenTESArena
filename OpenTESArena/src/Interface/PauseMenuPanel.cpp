@@ -111,8 +111,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int y = 118;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
-			game.setPanel(std::move(loadPanel));
+			game.setPanel<LoadGamePanel>(game);
 		};
 		return Button<Game&>(x, y, 64, 29, function);
 	}();
@@ -138,9 +137,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Game &game)
 		{
 			game.setGameData(nullptr);
-
-			std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-			game.setPanel(std::move(mainMenuPanel));
+			game.setPanel<MainMenuPanel>(game);
 			game.setMusic(MusicName::PercIntro);
 		};
 		return Button<Game&>(x, y, 65, 29, function);
@@ -165,8 +162,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int y = 118;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gamePanel));
+			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(x, y, 64, 29, function);
 	}();
@@ -177,8 +173,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int y = 89;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
-			game.setPanel(std::move(optionsPanel));
+			game.setPanel<OptionsPanel>(game);
 		};
 		return Button<Game&>(x, y, 145, 14, function);
 	}();

@@ -60,7 +60,7 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 	// Create background. Make it a little bigger than the text box.
 	const int padding = 4;
 	SDL_Surface *background = Surface::createSurfaceWithFormat(
-		textSurface->w + padding, textSurface->h + padding, 
+		textSurface->w + padding, textSurface->h + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	SDL_FillRect(background, nullptr, SDL_MapRGBA(background->format, backColor.r,
 		backColor.g, backColor.b, backColor.a));
@@ -95,8 +95,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	// argument.
 	auto changeToMainMenu = [](Game &game)
 	{
-		std::unique_ptr<Panel> mainMenuPanel(new MainMenuPanel(game));
-		game.setPanel(std::move(mainMenuPanel));
+		game.setPanel<MainMenuPanel>(game);
 	};
 
 	auto changeToIntroStory = [changeToMainMenu](Game &game)
@@ -118,58 +117,49 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 			13.0, 13.0, 10.0
 		};
 
-		std::unique_ptr<Panel> introStoryPanel(new ImageSequencePanel(
-			game,
-			paletteNames,
-			textureNames,
-			imageDurations,
-			changeToMainMenu));
-
-		game.setPanel(std::move(introStoryPanel));
+		game.setPanel<ImageSequencePanel>(game, paletteNames, textureNames,
+			imageDurations, changeToMainMenu);
 	};
 
 	auto changeToScrolling = [changeToIntroStory](Game &game)
 	{
-		std::unique_ptr<Panel> scrollingPanel(new CinematicPanel(
+		game.setPanel<CinematicPanel>(
 			game,
 			PaletteFile::fromName(PaletteName::Default),
 			TextureFile::fromName(TextureSequenceName::OpeningScroll),
 			0.042,
-			changeToIntroStory));
-		game.setPanel(std::move(scrollingPanel));
+			changeToIntroStory);
 	};
 
 	auto changeToQuote = [changeToScrolling](Game &game)
 	{
 		const double secondsToDisplay = 5.0;
-		std::unique_ptr<Panel> quotePanel(new ImagePanel(
+		game.setPanel<ImagePanel>(
 			game,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroQuote),
 			secondsToDisplay,
-			changeToScrolling));
-		game.setPanel(std::move(quotePanel));
+			changeToScrolling);
 	};
 
 	auto makeIntroTitlePanel = [changeToQuote, &game]()
 	{
 		const double secondsToDisplay = 5.0;
-		std::unique_ptr<Panel> titlePanel(new ImagePanel(
+		return std::unique_ptr<Panel>(new ImagePanel(
 			game,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroTitle),
 			secondsToDisplay,
 			changeToQuote));
-		return std::move(titlePanel);
 	};
 
-	auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game &game)
+	// Uncomment this for the CD version.
+	/*auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game &game)
 	{
-		std::unique_ptr<Panel> titlePanel = makeIntroTitlePanel();
-		game.setPanel(std::move(titlePanel));
+		game.setPanel<ImagePanel>(makeIntroTitlePanel());
 	};
 
-	/*auto makeIntroBookPanel = [changeToTitle, game]()
+	auto makeIntroBookPanel = [changeToTitle, game]()
 	{
 		std::unique_ptr<Panel> introBook(new CinematicPanel(
 			game,

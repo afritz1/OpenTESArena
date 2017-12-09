@@ -113,8 +113,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		int height = 20;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> loadPanel(new LoadGamePanel(game));
-			game.setPanel(std::move(loadPanel));
+			game.setPanel<LoadGamePanel>(game);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();
@@ -129,8 +128,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Link together the opening scroll, intro cinematic, and character creation.
 			auto changeToCharCreation = [](Game &game)
 			{
-				std::unique_ptr<Panel> creationPanel(new ChooseClassCreationPanel(game));
-				game.setPanel(std::move(creationPanel));
+				game.setPanel<ChooseClassCreationPanel>(game);
 				game.setMusic(MusicName::Sheet);
 			};
 
@@ -155,23 +153,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0
 				};
 
-				std::unique_ptr<Panel> newGameStoryPanel(new ImageSequencePanel(
+				game.setPanel<ImageSequencePanel>(
 					game,
 					paletteNames,
 					textureNames,
 					imageDurations,
-					changeToCharCreation));
-
-				game.setPanel(std::move(newGameStoryPanel));
+					changeToCharCreation);
 			};
 
-			std::unique_ptr<Panel> cinematicPanel(new CinematicPanel(
+			game.setPanel<CinematicPanel>(
 				game,
 				PaletteFile::fromName(PaletteName::Default),
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				0.042,
-				changeToNewGameStory));
-			game.setPanel(std::move(cinematicPanel));
+				changeToNewGameStory);
 			game.setMusic(MusicName::EvilIntro);
 		};
 		return Button<Game&>(center, width, height, function);
@@ -385,8 +380,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			}();
 
 			// Initialize game world panel.
-			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gameWorldPanel));
+			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(musicName);
 		};
 		return Button<Game&, const std::string&, ClimateType, WeatherType, WorldType>(function);

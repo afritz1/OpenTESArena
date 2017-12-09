@@ -99,8 +99,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		int height = 13;
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> gamePanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gamePanel));
+			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();

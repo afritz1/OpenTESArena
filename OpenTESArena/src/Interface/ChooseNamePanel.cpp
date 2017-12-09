@@ -75,8 +75,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	{
 		auto function = [](Game &game)
 		{
-			std::unique_ptr<Panel> classPanel(new ChooseClassPanel(game));
-			game.setPanel(std::move(classPanel));
+			game.setPanel<ChooseClassPanel>(game);
 		};
 		return Button<Game&>(function);
 	}();
@@ -86,9 +85,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
-			std::unique_ptr<Panel> genderPanel(new ChooseGenderPanel(
-				game, charClass, name));
-			game.setPanel(std::move(genderPanel));
+			game.setPanel<ChooseGenderPanel>(game, charClass, name);
 		};
 		return Button<Game&, const CharacterClass&, const std::string&>(function);
 	}();

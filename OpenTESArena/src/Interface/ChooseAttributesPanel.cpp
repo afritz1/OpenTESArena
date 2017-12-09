@@ -95,9 +95,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	{
 		auto function = [charClass, name, gender](Game &game)
 		{
-			std::unique_ptr<Panel> racePanel(new ChooseRacePanel(
-				game, charClass, name, gender));
-			game.setPanel(std::move(racePanel));
+			game.setPanel<ChooseRacePanel>(game, charClass, name, gender);
 		};
 		return Button<Game&>(function);
 	}();
@@ -127,8 +125,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 		auto gameFunction = [](Game &game)
 		{
-			std::unique_ptr<Panel> gameWorldPanel(new GameWorldPanel(game));
-			game.setPanel(std::move(gameWorldPanel));
+			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(MusicName::SunnyDay);
 		};
 
@@ -154,14 +151,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			// That is, replace all new lines with spaces and redistribute new lines given
 			// some max line length value.
 
-			std::unique_ptr<Panel> cinematicPanel(new TextCinematicPanel(
+			game.setPanel<TextCinematicPanel>(
 				game,
 				TextureFile::fromName(TextureSequenceName::Silmane),
 				silmaneText,
 				0.171,
-				gameFunction));
-
-			game.setPanel(std::move(cinematicPanel));
+				gameFunction);
 			game.setMusic(MusicName::Vision);
 		};
 

@@ -30,11 +30,15 @@ LoadGamePanel::LoadGamePanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
-			// Back button behavior depends on if game data is active.
-			auto backPanel = game.gameDataIsActive() ?
-				std::unique_ptr<Panel>(new PauseMenuPanel(game)) :
-				std::unique_ptr<Panel>(new MainMenuPanel(game));
-			game.setPanel(std::move(backPanel));
+			// Back button behavior depends on whether game data is active.
+			if (game.gameDataIsActive())
+			{
+				game.setPanel<PauseMenuPanel>(game);
+			}
+			else
+			{
+				game.setPanel<MainMenuPanel>(game);
+			}
 		};
 		return Button<Game&>(function);
 	}();
