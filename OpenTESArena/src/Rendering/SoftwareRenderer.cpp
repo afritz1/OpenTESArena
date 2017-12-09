@@ -630,16 +630,18 @@ Double3 SoftwareRenderer::getWallNormal(WallFacing wallFacing)
 
 double SoftwareRenderer::getProjectedY(const Double3 &point, 
 	const Matrix4d &transform, double yShear)
-{
-	// Project the 3D point to camera space.
-	Double4 projected = transform * Double4(point, 1.0);
+{	
+	// Just do 3D projection for the Y and W coordinates instead of a whole
+	// matrix * vector4 multiplication to keep from doing some unnecessary work.
+	double projectedY, projectedW;
+	transform.ywMultiply(point, projectedY, projectedW);
 
 	// Convert the projected Y to normalized coordinates.
-	projected.y /= projected.w;
+	projectedY /= projectedW;
 
 	// Calculate the Y position relative to the center row of the screen, and offset it by 
 	// the Y-shear. Multiply by 0.5 for the correct aspect ratio.
-	return (0.50 + yShear) - (projected.y * 0.50);
+	return (0.50 + yShear) - (projectedY * 0.50);
 }
 
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,

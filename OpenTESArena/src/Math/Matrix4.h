@@ -36,7 +36,13 @@ public:
 	static Matrix4<T> perspective(T fovY, T aspect, T near, T far);
 
 	Matrix4<T> operator*(const Matrix4<T> &m) const;
-	Vector4f<T> operator*(const Vector4f<T> &f) const;
+	Vector4f<T> operator*(const Vector4f<T> &v) const;
+
+	// A partial vector multiplication, calculating only the Y and W values instead
+	// of all four (X, Y, Z, W). Intended for use with ray casted columns. The
+	// fourth input component (W) is omitted since it's a constant.
+	void ywMultiply(const Vector3f<T> &v, T &outY, T &outW) const;
+
 	std::string toString() const;
 };
 
