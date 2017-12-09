@@ -861,8 +861,7 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
 {
 	// Horizontal offset in texture.
-	const int textureX = static_cast<int>(u *
-		static_cast<double>(texture.width)) % texture.width;
+	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 	// Linearly interpolated fog.
 	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
@@ -888,11 +887,11 @@ void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYSt
 				static_cast<double>(projectedYEnd - projectedYStart);
 
 			// Vertical texture coordinate.
-			const double v = topV + ((bottomV - topV) * yPercent);
+			const double v = std::max(std::min(topV + ((bottomV - topV) * yPercent),
+				SoftwareRenderer::JUST_BELOW_ONE), 0.0);
 
 			// Y position in texture.
-			const int textureY = static_cast<int>(v * 
-				static_cast<double>(texture.height)) % texture.height;
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 
@@ -952,18 +951,20 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 		if (z <= depthBuffer[index])
 		{
 			// Horizontal texture coordinate.
-			const double u = 1.0 - (currentPoint.x - std::floor(currentPoint.x));
+			const double u = std::max(std::min(SoftwareRenderer::JUST_BELOW_ONE,
+				SoftwareRenderer::JUST_BELOW_ONE - (currentPoint.x - std::floor(currentPoint.x))),
+				0.0);
 
 			// Horizontal offset in texture.
-			const int textureX = static_cast<int>(u *
-				static_cast<double>(texture.width)) % texture.width;
+			const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 			// Vertical texture coordinate.
-			const double v = 1.0 - (currentPoint.y - std::floor(currentPoint.y));
+			const double v = std::max(std::min(SoftwareRenderer::JUST_BELOW_ONE,
+				SoftwareRenderer::JUST_BELOW_ONE - (currentPoint.y - std::floor(currentPoint.y))),
+				0.0);
 
 			// Y position in texture.
-			const int textureY = static_cast<int>(v *
-				static_cast<double>(texture.height)) % texture.height;
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
 
@@ -1008,22 +1009,27 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	// voxel column.
 	const double u = [&farPoint, wallFacing]()
 	{
-		if (wallFacing == WallFacing::PositiveX)
+		const double uVal = [&farPoint, wallFacing]()
 		{
-			return farPoint.y - std::floor(farPoint.y);
-		}
-		else if (wallFacing == WallFacing::NegativeX)
-		{
-			return 1.0 - (farPoint.y - std::floor(farPoint.y));
-		}
-		else if (wallFacing == WallFacing::PositiveZ)
-		{
-			return 1.0 - (farPoint.x - std::floor(farPoint.x));
-		}
-		else
-		{
-			return farPoint.x - std::floor(farPoint.x);
-		}
+			if (wallFacing == WallFacing::PositiveX)
+			{
+				return farPoint.y - std::floor(farPoint.y);
+			}
+			else if (wallFacing == WallFacing::NegativeX)
+			{
+				return SoftwareRenderer::JUST_BELOW_ONE - (farPoint.y - std::floor(farPoint.y));
+			}
+			else if (wallFacing == WallFacing::PositiveZ)
+			{
+				return SoftwareRenderer::JUST_BELOW_ONE - (farPoint.x - std::floor(farPoint.x));
+			}
+			else
+			{
+				return farPoint.x - std::floor(farPoint.x);
+			}
+		}();
+
+		return std::max(std::min(uVal, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
 	}();
 
 	// Wall normals are always reversed for the initial voxel column.
@@ -1650,22 +1656,27 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	// voxel column.
 	const double u = [&nearPoint, wallFacing]()
 	{
-		if (wallFacing == WallFacing::PositiveX)
+		const double uVal = [&nearPoint, wallFacing]()
 		{
-			return 1.0 - (nearPoint.y - std::floor(nearPoint.y));
-		}
-		else if (wallFacing == WallFacing::NegativeX)
-		{
-			return nearPoint.y - std::floor(nearPoint.y);
-		}
-		else if (wallFacing == WallFacing::PositiveZ)
-		{
-			return nearPoint.x - std::floor(nearPoint.x);
-		}
-		else
-		{
-			return 1.0 - (nearPoint.x - std::floor(nearPoint.x));
-		}
+			if (wallFacing == WallFacing::PositiveX)
+			{
+				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.y - std::floor(nearPoint.y));
+			}
+			else if (wallFacing == WallFacing::NegativeX)
+			{
+				return nearPoint.y - std::floor(nearPoint.y);
+			}
+			else if (wallFacing == WallFacing::PositiveZ)
+			{
+				return nearPoint.x - std::floor(nearPoint.x);
+			}
+			else
+			{
+				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.x - std::floor(nearPoint.x));
+			}
+		}();
+
+		return std::max(std::min(uVal, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
 	}();
 
 	// Wall normals behave as they usually would when rendering after the initial voxel 
