@@ -43,7 +43,7 @@ WorldData::WorldData(const MIFFile &mif, const INFFile &inf, WorldType type)
 	}
 
 	this->currentLevel = mif.getStartingLevelIndex();
-	this->worldType = worldType;
+	this->worldType = type;
 }
 
 WorldData::WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager)
@@ -51,6 +51,7 @@ WorldData::WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager)
 {
 	this->levels.push_back(LevelData(std::move(voxelGrid)));
 	this->currentLevel = 0;
+	this->worldType = WorldType::City;
 }
 
 WorldData::~WorldData()
