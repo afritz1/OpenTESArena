@@ -51,6 +51,14 @@ private:
 	std::unordered_map<Int2, TextTrigger> textTriggers;
 	std::unordered_map<Int2, std::string> soundTriggers;
 	VoxelGrid voxelGrid;
+	double ceilingHeight;
+
+	void setVoxel(int x, int y, int z, int id);
+	void readFLOR(const std::vector<uint8_t> &flor, int width, int depth);
+	void readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
+		const INFFile &inf);
+	void readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
+		const INFFile &inf);
 public:
 	LevelData(const MIFFile::Level &level, const INFFile &inf, int gridWidth, 
 		int gridDepth, bool isInterior);

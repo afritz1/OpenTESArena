@@ -1,3 +1,5 @@
+#include <array>
+
 #include "LevelData.h"
 #include "../Assets/INFFile.h"
 #include "../Media/TextureManager.h"
@@ -73,345 +75,15 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	// |
 	// Max (mapWidth - 1, mapDepth - 1)
 
+	// Ceiling height of the .INF file.
+	this->ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+
 	// Empty voxel data (for air).
 	const int emptyID = voxelGrid.addVoxelData(VoxelData(0, VoxelType::Empty));
 
-	// Lambda for setting a voxel at some coordinate to some ID.
-	auto setVoxel = [this](int x, int y, int z, int id)
-	{
-		char *voxels = this->voxelGrid.getVoxels();
-		voxels[x + (y * this->voxelGrid.getWidth()) +
-			(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight())] = id;
-	};
-
-	// Get FLOR and MAP1 data from the level (should be present in all .MIF files).
-	const uint8_t *florData = level.flor.data();
-	const uint8_t *map1Data = level.map1.data();
-
-	// Indices for voxel data, stepping two bytes at a time.
-	int floorIndex = 0;
-	int map1Index = 0;
-
-	auto getNextFloorVoxel = [florData, &floorIndex]()
-	{
-		const uint16_t voxel = Bytes::getLE16(florData + floorIndex);
-		floorIndex += 2;
-		return voxel;
-	};
-
-	auto getNextMap1Voxel = [map1Data, &map1Index]()
-	{
-		const uint16_t voxel = Bytes::getLE16(map1Data + map1Index);
-		map1Index += 2;
-		return voxel;
-	};
-
-	// Mappings of floor and wall IDs to voxel data indices.
-	std::unordered_map<uint16_t, int> floorDataMappings, wallDataMappings;
-
-	// Ceiling height of the .INF file.
-	const double ceilingHeight =
-		static_cast<double>(inf.getCeiling().height) /
-		MIFFile::ARENA_UNITS;
-
-	// Write the .MIF file's voxel IDs into the voxel grid.
-	for (int x = (gridWidth - 1); x >= 0; x--)
-	{
-		for (int z = (gridDepth - 1); z >= 0; z--)
-		{
-			const int index = x + (z * gridWidth);
-			const uint16_t florVoxel = getNextFloorVoxel();
-			const uint16_t map1Voxel = getNextMap1Voxel();
-
-			// The floor voxel has a texture if it's not a chasm.
-			const int floorTextureID = (florVoxel & 0xFF00) >> 8;
-			if ((floorTextureID != MIFFile::DRY_CHASM) &&
-				(floorTextureID != MIFFile::WET_CHASM) &&
-				(floorTextureID != MIFFile::LAVA_CHASM))
-			{
-				// Get the voxel data index associated with the floor value, or add it
-				// if it doesn't exist yet.
-				const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
-				{
-					const auto floorIter = floorDataMappings.find(florVoxel);
-					if (floorIter != floorDataMappings.end())
-					{
-						return floorIter->second;
-					}
-					else
-					{
-						// To do: Also assign some "seawall" texture for interiors and exteriors.
-						// Retrieve it beforehand from the *...CHASM members and assign here?
-						// Not sure how that works.
-						const int index = this->voxelGrid.addVoxelData(VoxelData(
-							floorTextureID + 1, VoxelType::Solid));
-						return floorDataMappings.insert(
-							std::make_pair(florVoxel, index)).first->second;
-					}
-				}();
-
-				setVoxel(x, 0, z, dataIndex);
-			}
-			else
-			{
-				// Assign voxel types to the empty voxels (i.e., a water voxel is a different
-				// type than a lava voxel).
-				if (floorTextureID == MIFFile::DRY_CHASM)
-				{
-					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
-					{
-						const auto floorIter = floorDataMappings.find(florVoxel);
-						if (floorIter != floorDataMappings.end())
-						{
-							return floorIter->second;
-						}
-						else
-						{
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								0, VoxelType::DryChasm));
-							return floorDataMappings.insert(
-								std::make_pair(florVoxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 0, z, dataIndex);
-				}
-				else if (floorTextureID == MIFFile::WET_CHASM)
-				{
-					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
-					{
-						const auto floorIter = floorDataMappings.find(florVoxel);
-						if (floorIter != floorDataMappings.end())
-						{
-							return floorIter->second;
-						}
-						else
-						{
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								0, VoxelType::WetChasm));
-							return floorDataMappings.insert(
-								std::make_pair(florVoxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 0, z, dataIndex);
-				}
-				else if (floorTextureID == MIFFile::LAVA_CHASM)
-				{
-					const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
-					{
-						const auto floorIter = floorDataMappings.find(florVoxel);
-						if (floorIter != floorDataMappings.end())
-						{
-							return floorIter->second;
-						}
-						else
-						{
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								0, VoxelType::LavaChasm));
-							return floorDataMappings.insert(
-								std::make_pair(florVoxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 0, z, dataIndex);
-				}
-			}
-
-			if ((map1Voxel & 0x8000) == 0)
-			{
-				// A voxel of some kind.
-				const bool voxelIsEmpty = map1Voxel == 0;
-
-				if (!voxelIsEmpty)
-				{
-					const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
-					const uint8_t leastSigByte = map1Voxel & 0x007F;
-					const bool voxelIsSolid = mostSigByte == leastSigByte;
-
-					if (voxelIsSolid)
-					{
-						// Regular 1x1x1 wall.
-						const int wallTextureID = mostSigByte;
-
-						// Get the voxel data index associated with the wall value, or add it
-						// if it doesn't exist yet.
-						const int dataIndex = [this, &inf, &wallDataMappings,
-							map1Voxel, ceilingHeight, wallTextureID]()
-						{
-							const auto wallIter = wallDataMappings.find(map1Voxel);
-							if (wallIter != wallDataMappings.end())
-							{
-								return wallIter->second;
-							}
-							else
-							{
-								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									wallTextureID,
-									wallTextureID,
-									wallTextureID,
-									0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
-								return wallDataMappings.insert(
-									std::make_pair(map1Voxel, index)).first->second;
-							}
-						}();
-
-						setVoxel(x, 1, z, dataIndex);
-					}
-					else
-					{
-						// Raised platform. The height appears to be some fraction of 64,
-						// and when it's greater than 64, then that determines the offset?
-						const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
-						const uint8_t wallTextureID = map1Voxel & 0x000F;
-						const double platformHeight = static_cast<double>(mostSigByte) /
-							static_cast<double>(MIFFile::ARENA_UNITS);
-
-						// Get the voxel data index associated with the wall value, or add it
-						// if it doesn't exist yet.
-						const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel,
-							capTextureID, wallTextureID, platformHeight]()
-						{
-							const auto wallIter = wallDataMappings.find(map1Voxel);
-							if (wallIter != wallDataMappings.end())
-							{
-								return wallIter->second;
-							}
-							else
-							{
-								// To do: Clamp top V coordinate positive until the correct platform 
-								// height calculation is figured out. Maybe the platform height
-								// needs to be multiplied by the ratio between the current ceiling
-								// height and the default ceiling height (128)? I.e., multiply by
-								// the "ceilingHeight" local variable used a couple dozen lines up?
-								const double topV = std::max(0.0, 1.0 - platformHeight);
-								const double bottomV = 1.0; // To do: should also be a function.
-
-								const int index = this->voxelGrid.addVoxelData(VoxelData(
-									(*inf.getBoxSide(wallTextureID)) + 1,
-									inf.getCeiling().textureIndex + 1,
-									(*inf.getBoxCap(capTextureID)) + 1,
-									0.0, platformHeight, topV, bottomV, VoxelType::Raised));
-								return wallDataMappings.insert(
-									std::make_pair(map1Voxel, index)).first->second;
-							}
-						}();
-
-						setVoxel(x, 1, z, dataIndex);
-					}
-				}
-			}
-			else
-			{
-				// A special voxel, or an object of some kind.
-				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
-
-				if (mostSigNibble == 0x8)
-				{
-					// The lower byte determines the index of a FLAT for an object.
-					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					// To do.
-				}
-				else if (mostSigNibble == 0x9)
-				{
-					// Transparent block with 1-sided texture on all sides, such as wooden 
-					// arches in dungeons. These do not have backfaces (especially when 
-					// standing in the voxel itself), so the renderer needs to handle that.
-					const int dataIndex = [this, &inf, &wallDataMappings, 
-						map1Voxel, ceilingHeight]()
-					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const int textureIndex = map1Voxel & 0x00FF;
-
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								textureIndex, 
-								0, 
-								0, 
-								0.0, ceilingHeight, 0.0, 1.0, VoxelType::TransparentWall));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 1, z, dataIndex);
-				}
-				else if (mostSigNibble == 0xA)
-				{
-					// Transparent block with 2-sided texture on one side (i.e., fence).
-					// - This will use "VoxelType::TransparentEdge".
-					// To do.
-
-					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north and
-					// C is east.
-					const int orientation = (map1Voxel & 0x00F0) >> 4;
-					const int textureIndex = map1Voxel & 0x000F;
-				}
-				else if (mostSigNibble == 0xB)
-				{
-					// Door with texture.
-					const int dataIndex = [this, &inf, &wallDataMappings, 
-						map1Voxel, ceilingHeight]()
-					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const int doorTextureIndex = map1Voxel & 0x003F;
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								doorTextureIndex,
-								0,
-								0,
-								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Door));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 1, z, dataIndex);
-				}
-				else if (mostSigNibble == 0xC)
-				{
-					// Unknown (perhaps "curtains" for beds?).
-					// To do.
-				}
-				else if (mostSigNibble == 0xD)
-				{
-					// Diagonal wall -- direction depends on the nineth bit.
-					const int dataIndex = [this, &inf, &wallDataMappings, 
-						map1Voxel, ceilingHeight]()
-					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-							const int diagTextureIndex = map1Voxel & 0x00FF;
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								isRightDiag ? diagTextureIndex : 0,
-								!isRightDiag ? diagTextureIndex : 0,
-								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Diagonal));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
-
-					setVoxel(x, 1, z, dataIndex);
-				}
-			}
-		}
-	}
+	// Load FLOR and MAP1 voxels.
+	this->readFLOR(level.flor, gridWidth, gridDepth);
+	this->readMAP1(level.map1, gridWidth, gridDepth, inf);
 
 	// Fill the second floor with the ceiling tiles if it's an interior location, or MAP2 if 
 	// it's an exterior location.
@@ -439,7 +111,7 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 			0,
 			ceilingIndex + 1,
 			0,
-			(static_cast<double>(ceiling.height) / MIFFile::ARENA_UNITS) - 1.0,
+			this->ceilingHeight - 1.0,
 			1.0,
 			0.0,
 			1.0,
@@ -450,84 +122,14 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 		{
 			for (int z = 0; z < gridDepth; z++)
 			{
-				setVoxel(x, 2, z, index);
+				this->setVoxel(x, 2, z, index);
 			}
 		}
 	}
 	else if (level.map2.size() > 0)
 	{
 		// Load MAP2 voxels.
-		const uint8_t *map2Data = level.map2.data();
-		int map2Index = 0;
-
-		auto getNextMap2Voxel = [map2Data, &map2Index]()
-		{
-			const uint16_t voxel = Bytes::getLE16(map2Data + map2Index);
-			map2Index += 2;
-			return voxel;
-		};
-
-		// Mappings of second floor IDs to voxel data indices.
-		std::unordered_map<uint16_t, int> map2DataMappings;
-
-		for (int x = (gridWidth - 1); x >= 0; x--)
-		{
-			for (int z = (gridDepth - 1); z >= 0; z--)
-			{
-				const int index = x + (z * gridWidth);
-				const uint16_t map2Voxel = getNextMap2Voxel();
-
-				if (map2Voxel != 0)
-				{
-					// Number of blocks to extend upwards (including second story).
-					const int height = [map2Voxel]()
-					{
-						if ((map2Voxel & 0x80) == 0x80)
-						{
-							return 2;
-						}
-						else if ((map2Voxel & 0x8000) == 0x8000)
-						{
-							return 3;
-						}
-						else if ((map2Voxel & 0x8080) == 0x8080)
-						{
-							return 4;
-						}
-						else
-						{
-							return 1;
-						}
-					}();
-
-					const int dataIndex = [this, &inf, &map2DataMappings,
-						ceilingHeight, map2Voxel, height]()
-					{
-						const auto map2Iter = map2DataMappings.find(map2Voxel);
-						if (map2Iter != map2DataMappings.end())
-						{
-							return map2Iter->second;
-						}
-						else
-						{
-							const int textureIndex = map2Voxel & 0x007F;
-							const int index = this->voxelGrid.addVoxelData(VoxelData(
-								textureIndex,
-								textureIndex,
-								textureIndex,
-								0.0, ceilingHeight, 0.0, 1.0, VoxelType::Solid));
-							return map2DataMappings.insert(
-								std::make_pair(map2Voxel, index)).first->second;
-						}
-					}();
-
-					for (int y = 2; y < (height + 2); y++)
-					{
-						setVoxel(x, y, z, dataIndex);
-					}
-				}
-			}
-		}
+		this->readMAP2(level.map2, gridWidth, gridDepth, inf);
 	}
 
 	// Assign locks.
@@ -601,4 +203,463 @@ const std::string *LevelData::getSoundTrigger(const Int2 &voxel) const
 {
 	const auto soundIter = this->soundTriggers.find(voxel);
 	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
+}
+
+void LevelData::setVoxel(int x, int y, int z, int id)
+{
+	char *voxels = this->voxelGrid.getVoxels();
+	const int index = x + (y * this->voxelGrid.getWidth()) +
+		(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight());
+
+	voxels[index] = id;
+}
+
+// Hash specialization for readFLOR() chasm mappings.
+namespace std
+{
+	template <>
+	struct hash<std::pair<uint16_t, std::array<bool, 4>>>
+	{
+		size_t operator()(const std::pair<uint16_t, std::array<bool, 4>> &p) const
+		{
+			// XOR with some arbitrary prime numbers (not sure if this is any good).
+			return static_cast<size_t>(p.first ^
+				(p.second.at(0) ? 41 : 73) ^
+				(p.second.at(1) ? 89 : 113) ^
+				(p.second.at(2) ? 127 : 149) ^
+				(p.second.at(3) ? 157 : 193));
+		}
+	};
+}
+
+void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth)
+{
+	// Indices for voxel data, stepping two bytes at a time.
+	int floorIndex = 0;
+
+	auto getNextFloorVoxel = [&flor, &floorIndex]()
+	{
+		const uint16_t voxel = Bytes::getLE16(flor.data() + floorIndex);
+		floorIndex += 2;
+		return voxel;
+	};
+
+	// Mappings of floor and chasm IDs to voxel data indices. Chasms are treated
+	// separately since their voxel data index is also a function of the four
+	// adjacent voxels.
+	std::unordered_map<uint16_t, int> floorDataMappings;
+	std::unordered_map<std::pair<uint16_t, std::array<bool, 4>>, int> chasmDataMappings;
+
+	// Write the .MIF file's voxel IDs into the voxel grid.
+	for (int x = (width - 1); x >= 0; x--)
+	{
+		for (int z = (depth - 1); z >= 0; z--)
+		{
+			const int index = x + (z * width);
+			const uint16_t florVoxel = getNextFloorVoxel();
+
+			// The floor voxel has a texture if it's not a chasm.
+			const int floorTextureID = (florVoxel & 0xFF00) >> 8;
+			if ((floorTextureID != MIFFile::DRY_CHASM) &&
+				(floorTextureID != MIFFile::WET_CHASM) &&
+				(floorTextureID != MIFFile::LAVA_CHASM))
+			{
+				// Get the voxel data index associated with the floor value, or add it
+				// if it doesn't exist yet.
+				const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
+				{
+					const auto floorIter = floorDataMappings.find(florVoxel);
+					if (floorIter != floorDataMappings.end())
+					{
+						return floorIter->second;
+					}
+					else
+					{
+						// To do: Also assign some "seawall" texture for interiors and exteriors.
+						// Retrieve it beforehand from the *...CHASM members and assign here?
+						// Not sure how that works.
+						const int index = this->voxelGrid.addVoxelData(VoxelData(
+							floorTextureID + 1, VoxelType::Solid));
+						return floorDataMappings.insert(
+							std::make_pair(florVoxel, index)).first->second;
+					}
+				}();
+
+				this->setVoxel(x, 0, z, dataIndex);
+			}
+			else
+			{
+				// Assign voxel types to the empty voxels (i.e., a water voxel is a different
+				// type than a lava voxel).
+
+				// To do: there are ~10 combinations of chasm faces, which means there will be
+				// up to ~10 voxel data for each type of chasm. The voxel data index is a function 
+				// of the four surrounding voxels in addition to the voxel ID itself.
+
+				// To do: get 4 adjacent voxels (for each: true if floor is solid).
+				// - The resulting voxel data arguments depend on this (each wall face).
+				const std::array<bool, 4> adjacentFaces{ false, false, false, false };
+
+				if (floorTextureID == MIFFile::DRY_CHASM)
+				{
+					const int dataIndex = [this, &chasmDataMappings, florVoxel, 
+						floorTextureID, &adjacentFaces]()
+					{
+						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
+						const auto chasmIter = chasmDataMappings.find(chasmPair);
+						if (chasmIter != chasmDataMappings.end())
+						{
+							return chasmIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::DryChasm));
+							return chasmDataMappings.insert(
+								std::make_pair(chasmPair, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 0, z, dataIndex);
+				}
+				else if (floorTextureID == MIFFile::WET_CHASM)
+				{
+					const int dataIndex = [this, &chasmDataMappings, florVoxel, 
+						floorTextureID, &adjacentFaces]()
+					{
+						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
+						const auto chasmIter = chasmDataMappings.find(chasmPair);
+						if (chasmIter != chasmDataMappings.end())
+						{
+							return chasmIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::WetChasm));
+							return chasmDataMappings.insert(
+								std::make_pair(chasmPair, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 0, z, dataIndex);
+				}
+				else if (floorTextureID == MIFFile::LAVA_CHASM)
+				{
+					const int dataIndex = [this, &chasmDataMappings, florVoxel, 
+						floorTextureID, &adjacentFaces]()
+					{
+						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
+						const auto chasmIter = chasmDataMappings.find(chasmPair);
+						if (chasmIter != chasmDataMappings.end())
+						{
+							return chasmIter->second;
+						}
+						else
+						{
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								0, VoxelType::LavaChasm));
+							return chasmDataMappings.insert(
+								std::make_pair(chasmPair, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 0, z, dataIndex);
+				}
+			}
+		}
+	}
+}
+
+void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
+	const INFFile &inf)
+{
+	// Indices for voxel data, stepping two bytes at a time.
+	int map1Index = 0;
+
+	auto getNextMap1Voxel = [&map1, &map1Index]()
+	{
+		const uint16_t voxel = Bytes::getLE16(map1.data() + map1Index);
+		map1Index += 2;
+		return voxel;
+	};
+
+	// Mappings of wall IDs to voxel data indices.
+	std::unordered_map<uint16_t, int> wallDataMappings;
+
+	// Write the .MIF file's voxel IDs into the voxel grid.
+	for (int x = (width - 1); x >= 0; x--)
+	{
+		for (int z = (depth - 1); z >= 0; z--)
+		{
+			const int index = x + (z * width);
+			const uint16_t map1Voxel = getNextMap1Voxel();
+
+			if ((map1Voxel & 0x8000) == 0)
+			{
+				// A voxel of some kind.
+				const bool voxelIsEmpty = map1Voxel == 0;
+
+				if (!voxelIsEmpty)
+				{
+					const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
+					const uint8_t leastSigByte = map1Voxel & 0x007F;
+					const bool voxelIsSolid = mostSigByte == leastSigByte;
+
+					if (voxelIsSolid)
+					{
+						// Regular 1x1x1 wall.
+						const int wallTextureID = mostSigByte;
+
+						// Get the voxel data index associated with the wall value, or add it
+						// if it doesn't exist yet.
+						const int dataIndex = [this, &inf, &wallDataMappings,
+							map1Voxel, wallTextureID]()
+						{
+							const auto wallIter = wallDataMappings.find(map1Voxel);
+							if (wallIter != wallDataMappings.end())
+							{
+								return wallIter->second;
+							}
+							else
+							{
+								const int index = this->voxelGrid.addVoxelData(VoxelData(
+									wallTextureID,
+									wallTextureID,
+									wallTextureID,
+									0.0, this->ceilingHeight, 0.0, 1.0, VoxelType::Solid));
+								return wallDataMappings.insert(
+									std::make_pair(map1Voxel, index)).first->second;
+							}
+						}();
+
+						this->setVoxel(x, 1, z, dataIndex);
+					}
+					else
+					{
+						// Raised platform. The height appears to be some fraction of 64,
+						// and when it's greater than 64, then that determines the offset?
+						const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
+						const uint8_t wallTextureID = map1Voxel & 0x000F;
+						const double platformHeight = static_cast<double>(mostSigByte) /
+							static_cast<double>(MIFFile::ARENA_UNITS);
+
+						// Get the voxel data index associated with the wall value, or add it
+						// if it doesn't exist yet.
+						const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel,
+							capTextureID, wallTextureID, platformHeight]()
+						{
+							const auto wallIter = wallDataMappings.find(map1Voxel);
+							if (wallIter != wallDataMappings.end())
+							{
+								return wallIter->second;
+							}
+							else
+							{
+								// To do: Clamp top V coordinate positive until the correct platform 
+								// height calculation is figured out. Maybe the platform height
+								// needs to be multiplied by the ratio between the current ceiling
+								// height and the default ceiling height (128)? I.e., multiply by
+								// the "ceilingHeight" local variable used a couple dozen lines up?
+								const double topV = std::max(0.0, 1.0 - platformHeight);
+								const double bottomV = 1.0; // To do: should also be a function.
+
+								const int index = this->voxelGrid.addVoxelData(VoxelData(
+									(*inf.getBoxSide(wallTextureID)) + 1,
+									inf.getCeiling().textureIndex + 1,
+									(*inf.getBoxCap(capTextureID)) + 1,
+									0.0, platformHeight, topV, bottomV, VoxelType::Raised));
+								return wallDataMappings.insert(
+									std::make_pair(map1Voxel, index)).first->second;
+							}
+						}();
+
+						this->setVoxel(x, 1, z, dataIndex);
+					}
+				}
+			}
+			else
+			{
+				// A special voxel, or an object of some kind.
+				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
+
+				if (mostSigNibble == 0x8)
+				{
+					// The lower byte determines the index of a FLAT for an object.
+					const uint8_t flatIndex = map1Voxel & 0x00FF;
+					// To do.
+				}
+				else if (mostSigNibble == 0x9)
+				{
+					// Transparent block with 1-sided texture on all sides, such as wooden 
+					// arches in dungeons. These do not have backfaces (especially when 
+					// standing in the voxel itself), so the renderer needs to handle that.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const int textureIndex = map1Voxel & 0x00FF;
+
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								textureIndex,
+								0,
+								0,
+								0.0, this->ceilingHeight, 0.0, 1.0, VoxelType::TransparentWall));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 1, z, dataIndex);
+				}
+				else if (mostSigNibble == 0xA)
+				{
+					// Transparent block with 2-sided texture on one side (i.e., fence).
+					// - This will use "VoxelType::TransparentEdge".
+					// To do.
+
+					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north and
+					// C is east.
+					const int orientation = (map1Voxel & 0x00F0) >> 4;
+					const int textureIndex = map1Voxel & 0x000F;
+				}
+				else if (mostSigNibble == 0xB)
+				{
+					// Door voxel.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const int doorTextureIndex = map1Voxel & 0x003F;
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								doorTextureIndex,
+								0,
+								0,
+								0.0, this->ceilingHeight, 0.0, 1.0, VoxelType::Door));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 1, z, dataIndex);
+				}
+				else if (mostSigNibble == 0xC)
+				{
+					// Unknown.
+					// To do.
+				}
+				else if (mostSigNibble == 0xD)
+				{
+					// Diagonal wall -- direction depends on the nineth bit.
+					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					{
+						const auto wallIter = wallDataMappings.find(map1Voxel);
+						if (wallIter != wallDataMappings.end())
+						{
+							return wallIter->second;
+						}
+						else
+						{
+							const bool isRightDiag = (map1Voxel & 0x0100) == 0;
+							const int diagTextureIndex = map1Voxel & 0x00FF;
+							const int index = this->voxelGrid.addVoxelData(VoxelData(
+								isRightDiag ? diagTextureIndex : 0,
+								!isRightDiag ? diagTextureIndex : 0,
+								0.0, this->ceilingHeight, 0.0, 1.0, VoxelType::Diagonal));
+							return wallDataMappings.insert(
+								std::make_pair(map1Voxel, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 1, z, dataIndex);
+				}
+			}
+		}
+	}
+}
+
+void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
+	const INFFile &inf)
+{
+	const uint8_t *map2Data = map2.data();
+	int map2Index = 0;
+
+	auto getNextMap2Voxel = [map2Data, &map2Index]()
+	{
+		const uint16_t voxel = Bytes::getLE16(map2Data + map2Index);
+		map2Index += 2;
+		return voxel;
+	};
+
+	// Mappings of second floor IDs to voxel data indices.
+	std::unordered_map<uint16_t, int> map2DataMappings;
+
+	// Write the .MIF file's voxel IDs into the voxel grid.
+	for (int x = (width - 1); x >= 0; x--)
+	{
+		for (int z = (depth - 1); z >= 0; z--)
+		{
+			const int index = x + (z * width);
+			const uint16_t map2Voxel = getNextMap2Voxel();
+
+			if (map2Voxel != 0)
+			{
+				// Number of blocks to extend upwards (including second story).
+				const int height = [map2Voxel]()
+				{
+					if ((map2Voxel & 0x80) == 0x80)
+					{
+						return 2;
+					}
+					else if ((map2Voxel & 0x8000) == 0x8000)
+					{
+						return 3;
+					}
+					else if ((map2Voxel & 0x8080) == 0x8080)
+					{
+						return 4;
+					}
+					else
+					{
+						return 1;
+					}
+				}();
+
+				const int dataIndex = [this, &inf, &map2DataMappings, map2Voxel, height]()
+				{
+					const auto map2Iter = map2DataMappings.find(map2Voxel);
+					if (map2Iter != map2DataMappings.end())
+					{
+						return map2Iter->second;
+					}
+					else
+					{
+						const int textureIndex = map2Voxel & 0x007F;
+						const int index = this->voxelGrid.addVoxelData(VoxelData(
+							textureIndex,
+							textureIndex,
+							textureIndex,
+							0.0, this->ceilingHeight, 0.0, 1.0, VoxelType::Solid));
+						return map2DataMappings.insert(
+							std::make_pair(map2Voxel, index)).first->second;
+					}
+				}();
+
+				for (int y = 2; y < (height + 2); y++)
+				{
+					this->setVoxel(x, y, z, dataIndex);
+				}
+			}
+		}
+	}
 }
