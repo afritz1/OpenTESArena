@@ -1,12 +1,30 @@
 #include "VoxelData.h"
 #include "VoxelType.h"
+#include "../Utilities/Debug.h"
+
+const int VoxelData::TOTAL_IDS = 64;
 
 VoxelData::VoxelData(int sideID, int floorID, int ceilingID, double yOffset, 
 	double ySize, double topV, double bottomV, VoxelType type)
 {
-	this->sideID = sideID;
-	this->floorID = floorID;
-	this->ceilingID = ceilingID;
+	if (sideID >= VoxelData::TOTAL_IDS)
+	{
+		DebugWarning("Side ID \"" + std::to_string(sideID) + "\" out of range.");
+	}
+
+	if (floorID >= VoxelData::TOTAL_IDS)
+	{
+		DebugWarning("Floor ID \"" + std::to_string(floorID) + "\" out of range.");
+	}
+
+	if (ceilingID >= VoxelData::TOTAL_IDS)
+	{
+		DebugWarning("Ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
+	}
+
+	this->sideID = sideID % VoxelData::TOTAL_IDS;
+	this->floorID = floorID % VoxelData::TOTAL_IDS;
+	this->ceilingID = ceilingID % VoxelData::TOTAL_IDS;
 	this->diag1ID = 0;
 	this->diag2ID = 0;
 	this->yOffset = yOffset;
@@ -22,11 +40,21 @@ VoxelData::VoxelData(int sideID, int floorID, int ceilingID, VoxelType type)
 VoxelData::VoxelData(int diag1ID, int diag2ID, double yOffset, double ySize,
 	double topV, double bottomV, VoxelType type)
 {
+	if (diag1ID >= VoxelData::TOTAL_IDS)
+	{
+		DebugWarning("Diag1 ID \"" + std::to_string(diag1ID) + "\" out of range.");
+	}
+
+	if (diag2ID >= VoxelData::TOTAL_IDS)
+	{
+		DebugWarning("Diag2 ID \"" + std::to_string(diag2ID) + "\" out of range.");
+	}
+
 	this->sideID = 0;
 	this->floorID = 0;
 	this->ceilingID = 0;
-	this->diag1ID = diag1ID;
-	this->diag2ID = diag2ID;
+	this->diag1ID = diag1ID % VoxelData::TOTAL_IDS;
+	this->diag2ID = diag2ID % VoxelData::TOTAL_IDS;
 	this->yOffset = yOffset;
 	this->ySize = ySize;
 	this->topV = topV;

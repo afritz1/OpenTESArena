@@ -19,6 +19,9 @@ enum class VoxelType;
 class VoxelData
 {
 public:
+	// IDs range from 0 to 63.
+	static const int TOTAL_IDS;
+
 	int sideID, floorID, ceilingID, diag1ID, diag2ID;
 	double yOffset, ySize; // Offset from bottom of voxel, and "thickness" in Y.
 	double topV, bottomV; // V texture coordinates between 0.0 and 1.0.
