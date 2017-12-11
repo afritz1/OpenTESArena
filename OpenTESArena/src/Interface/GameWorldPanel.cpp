@@ -1309,6 +1309,28 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw the visible portion of the compass slider, and the frame over it.
 	this->drawCompass(player.getGroundDirection(), textureManager, renderer);
 
+	// Draw pop-up text if its duration is positive.
+	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
+	//   subtracting the time in tick() because it would always be one frame shorter then.
+	if (this->triggerText.first > 0.0)
+	{
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface));
+
+		const auto &triggerTextBox = *this->triggerText.second.get();
+		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
+			(triggerTextBox.getSurface()->w / 2) - 1;
+		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
+		{
+			const int interfaceOffset = modernInterface ?
+				(gameInterface.getHeight() / 2) : gameInterface.getHeight();
+			return Renderer::ORIGINAL_HEIGHT - interfaceOffset -
+				triggerTextBox.getSurface()->h - 2;
+		}();
+
+		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
+	}
+
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
@@ -1383,28 +1405,6 @@ void GameWorldPanel::render(Renderer &renderer)
 		{
 			this->drawTooltip("Camp", renderer);
 		}
-	}
-
-	// Draw pop-up text if its duration is positive.
-	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
-	//   subtracting the time in tick() because it would always be one frame shorter then.
-	if (this->triggerText.first > 0.0)
-	{
-		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface));
-
-		const auto &triggerTextBox = *this->triggerText.second.get();
-		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - 
-			(triggerTextBox.getSurface()->w / 2) - 1;
-		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
-		{
-			const int interfaceOffset = modernInterface ?
-				(gameInterface.getHeight() / 2) : gameInterface.getHeight();
-			return Renderer::ORIGINAL_HEIGHT - interfaceOffset - 
-				triggerTextBox.getSurface()->h - 2;
-		}();
-
-		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 
 	// To do: draw "action text" and "effect text" (similar to trigger text).
