@@ -296,7 +296,7 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		// Check if "Exit" was clicked.
 		if (this->backToGameButton.contains(mouseOriginalPoint))
@@ -313,7 +313,7 @@ void AutomapPanel::handleMouse(double dt)
 
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativePointToOriginal(mousePosition);
+		.nativeToOriginal(mousePosition);
 
 	// Check if the LMB is held on one of the compass directions.
 	if (leftClick)
@@ -348,7 +348,7 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
@@ -380,7 +380,7 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.drawOriginal(automapBackground.get());
 
 	// Only draw the part of the automap within the drawing area.
-	const Rect nativeDrawingArea = renderer.originalRectToNative(DrawingArea);
+	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);
 	renderer.setClipRect(&nativeDrawingArea.getRect());
 
 	// Draw automap. Remember that +X is north and +Z is east (aliased as Y), and that
@@ -402,7 +402,7 @@ void AutomapPanel::render(Renderer &renderer)
 	// Check if the mouse is over the compass directions for tooltips.
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
 	if (UpRegion.contains(originalPosition))
 	{

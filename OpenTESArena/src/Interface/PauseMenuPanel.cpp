@@ -317,7 +317,7 @@ void PauseMenuPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		auto &options = this->getGame().getOptions();
 		auto &audioManager = this->getGame().getAudioManager();

@@ -890,7 +890,7 @@ void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		text, FontName::D, this->getGame().getFontManager(), renderer));
 
 	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 originalPosition = renderer.nativePointToOriginal(
+	const Int2 originalPosition = renderer.nativeToOriginal(
 		inputManager.getMousePosition());
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
@@ -927,7 +927,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		// Check for various button clicks.
 		if (this->fpsUpButton.contains(mouseOriginalPoint))
@@ -1094,7 +1094,7 @@ void OptionsPanel::render(Renderer &renderer)
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
 	// Draw tooltips for certain things.
 	if (this->resolutionScaleTextBox->getRect().contains(originalPosition))

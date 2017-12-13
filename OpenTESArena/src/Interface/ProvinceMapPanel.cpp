@@ -143,7 +143,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		if (this->searchButton.contains(mouseOriginalPoint))
 		{
@@ -177,7 +177,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
@@ -242,7 +242,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = this->getGame().getRenderer()
-		.nativePointToOriginal(mousePosition);
+		.nativeToOriginal(mousePosition);
 
 	// Initialize the current closest position to something very far away (watch out for
 	// integer multiplication overflow with closest distance).

@@ -172,7 +172,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map, checking if the mouse is over a province mask.
 		const int maskID = this->getProvinceMaskID(originalPoint);
@@ -196,7 +196,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
@@ -235,7 +235,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Draw hovered province tooltip.
 	const Int2 originalPoint = this->getGame().getRenderer()
-		.nativePointToOriginal(mousePosition);
+		.nativeToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.
 	const int maskID = this->getProvinceMaskID(originalPoint);

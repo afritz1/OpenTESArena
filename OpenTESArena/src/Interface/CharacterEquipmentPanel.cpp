@@ -190,7 +190,7 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		if (this->backToStatsButton.contains(mouseOriginalPoint))
 		{

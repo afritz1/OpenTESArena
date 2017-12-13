@@ -68,7 +68,7 @@ void TextSubPanel::render(Renderer &renderer)
 			this->textureCenter.y - (this->texture.getHeight() / 2),
 			this->texture.getWidth(),
 			this->texture.getHeight());
-		const Rect nativeTextureRect = renderer.originalRectToNative(textureRect);
+		const Rect nativeTextureRect = renderer.originalToNative(textureRect);
 
 		renderer.draw(this->texture.get(),
 			nativeTextureRect.getLeft(),
@@ -77,7 +77,7 @@ void TextSubPanel::render(Renderer &renderer)
 			nativeTextureRect.getHeight());
 	}
 
-	const Rect nativeTextBoxRect = renderer.originalRectToNative(this->textBox->getRect());
+	const Rect nativeTextBoxRect = renderer.originalToNative(this->textBox->getRect());
 
 	// Draw text.
 	renderer.draw(this->textBox->getTexture(),

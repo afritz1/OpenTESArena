@@ -147,7 +147,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		if (this->generateButton.contains(mouseOriginalPoint))
 		{
@@ -167,7 +167,7 @@ void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &re
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
@@ -214,7 +214,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	// Check if the mouse is hovered over one of the boxes for tooltips.
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
 	if (this->generateButton.contains(originalPoint))
 	{

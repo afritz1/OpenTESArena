@@ -210,7 +210,7 @@ SDL_Surface *Renderer::getScreenshot() const
 	return screenshot;
 }
 
-Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
+Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 {
 	// From native point to letterbox point.
 	const Int2 windowDimensions = this->getWindowDimensions();
@@ -236,7 +236,18 @@ Int2 Renderer::nativePointToOriginal(const Int2 &nativePoint) const
 	return originalPoint;
 }
 
-Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
+Rect Renderer::nativeToOriginal(const Rect &nativeRect) const
+{
+	const Int2 newTopLeft = this->nativeToOriginal(nativeRect.getTopLeft());
+	const Int2 newBottomRight = this->nativeToOriginal(nativeRect.getBottomRight());
+	return Rect(
+		newTopLeft.x,
+		newTopLeft.y,
+		newBottomRight.x - newTopLeft.x,
+		newBottomRight.y - newTopLeft.y);
+}
+
+Int2 Renderer::originalToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
 	const double originalXPercent = static_cast<double>(originalPoint.x) /
@@ -262,21 +273,10 @@ Int2 Renderer::originalPointToNative(const Int2 &originalPoint) const
 	return nativePoint;
 }
 
-Rect Renderer::nativeRectToOriginal(const Rect &nativeRect) const
+Rect Renderer::originalToNative(const Rect &originalRect) const
 {
-	const Int2 newTopLeft = this->nativePointToOriginal(nativeRect.getTopLeft());
-	const Int2 newBottomRight = this->nativePointToOriginal(nativeRect.getBottomRight());
-	return Rect(
-		newTopLeft.x,
-		newTopLeft.y,
-		newBottomRight.x - newTopLeft.x,
-		newBottomRight.y - newTopLeft.y);
-}
-
-Rect Renderer::originalRectToNative(const Rect &originalRect) const
-{
-	const Int2 newTopLeft = this->originalPointToNative(originalRect.getTopLeft());
-	const Int2 newBottomRight = this->originalPointToNative(originalRect.getBottomRight());
+	const Int2 newTopLeft = this->originalToNative(originalRect.getTopLeft());
+	const Int2 newBottomRight = this->originalToNative(originalRect.getBottomRight());
 	return Rect(
 		newTopLeft.x,
 		newTopLeft.y,
@@ -546,7 +546,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
-	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
+	const Rect rect = this->originalToNative(Rect(x, y, w, h));
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
@@ -687,7 +687,7 @@ void Renderer::drawOriginal(SDL_Texture *texture, int x, int y, int w, int h)
 	
 	// The given coordinates and dimensions are in 320x200 space, so transform them
 	// to native space.
-	const Rect rect = this->originalRectToNative(Rect(x, y, w, h));
+	const Rect rect = this->originalToNative(Rect(x, y, w, h));
 
 	SDL_RenderCopy(this->renderer, texture, nullptr, &rect.getRect());
 }
@@ -711,7 +711,7 @@ void Renderer::drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, co
 
 	// The destination coordinates and dimensions are in 320x200 space, so transform 
 	// them to native space.
-	const Rect rect = this->originalRectToNative(dstRect);
+	const Rect rect = this->originalToNative(dstRect);
 
 	SDL_RenderCopy(this->renderer, texture, &srcRect.getRect(), &rect.getRect());
 }

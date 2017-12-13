@@ -182,7 +182,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativePointToOriginal(mousePosition);
+		.nativeToOriginal(mousePosition);
 
 	// See if a class in the list was clicked, or if it is being scrolled.
 	if (this->classesListBox->contains(mouseOriginalPoint))
@@ -391,7 +391,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
 	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
@@ -434,7 +434,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Draw tooltip if over a valid element in the list box.
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	Int2 mouseOriginalPoint = renderer.nativePointToOriginal(mousePosition);
+	Int2 mouseOriginalPoint = renderer.nativeToOriginal(mousePosition);
 
 	if (this->classesListBox->contains(mouseOriginalPoint))
 	{

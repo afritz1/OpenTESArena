@@ -40,7 +40,7 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		// See if any of the buttons were clicked.
 		const Rect textBoxRect = this->textBox->getRect();

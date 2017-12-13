@@ -484,7 +484,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Get mouse position relative to letterbox coordinates.
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
 		if (leftClick)
 		{
@@ -1366,7 +1366,7 @@ void GameWorldPanel::render(Renderer &renderer)
 			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 
 		// Check if the mouse is over one of the buttons for tooltips.
-		const Int2 originalPosition = renderer.nativePointToOriginal(mousePosition);
+		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
 		if (this->characterSheetButton.contains(originalPosition))
 		{

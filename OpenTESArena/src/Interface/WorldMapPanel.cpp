@@ -77,7 +77,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativePointToOriginal(mousePosition);
+			.nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map and exit button.
 		const auto &worldMapMasks = this->getGame().getMiscAssets().getWorldMapMasks();
