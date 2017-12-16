@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "VoxelData.h"
 #include "VoxelDataType.h"
 #include "VoxelType.h"
