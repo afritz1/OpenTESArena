@@ -54,7 +54,8 @@ private:
 	double ceilingHeight;
 
 	void setVoxel(int x, int y, int z, int id);
-	void readFLOR(const std::vector<uint8_t> &flor, int width, int depth);
+	void readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
+		const INFFile &inf);
 	void readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 		const INFFile &inf);
 	void readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
@@ -65,6 +66,8 @@ public:
 	LevelData(VoxelGrid &&voxelGrid); // Used with test city.
 	LevelData(LevelData &&levelData) = default;
 	~LevelData();
+
+	double getCeilingHeight() const;
 
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;

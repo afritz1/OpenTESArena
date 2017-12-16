@@ -12,6 +12,7 @@
 #include "../Math/Constants.h"
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
+#include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
 #include "../World/VoxelType.h"
 #include "../World/WorldData.h"
@@ -181,7 +182,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			(y < 0) || (y >= voxelGrid.getHeight()) ||
 			(z < 0) || (z >= voxelGrid.getDepth()))
 		{
-			return VoxelData(0, VoxelType::Empty);
+			return VoxelData();
 		}
 		else
 		{
@@ -216,16 +217,24 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// -- Temp hack until Y collision detection is implemented --
 	auto isBridge = [](const VoxelData &voxel)
 	{
-		return (voxel.sideID == 42) && (voxel.floorID == 43) &&
-			(voxel.ceilingID == 43);
+		if (voxel.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raised = voxel.raised;
+			return (raised.sideID == 42) && (raised.floorID == 43) &&
+				(raised.ceilingID == 43);
+		}
+		else
+		{
+			return false;
+		}
 	};
 
-	if (!xVoxel.isAir() && !isBridge(xVoxel))
+	if ((xVoxel.type != VoxelType::Empty) && !isBridge(xVoxel))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if (!zVoxel.isAir() && !isBridge(zVoxel))
+	if ((zVoxel.type != VoxelType::Empty) && !isBridge(zVoxel))
 	{
 		this->velocity.z = 0.0;
 	}

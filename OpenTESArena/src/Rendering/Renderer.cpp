@@ -423,10 +423,10 @@ void Renderer::addLight(int id, const Double3 &point, const Double3 &color, doub
 	this->softwareRenderer->addLight(id, point, color, intensity);
 }
 
-int Renderer::addTexture(const uint32_t *pixels, int width, int height)
+int Renderer::addTexture(const uint32_t *texels, int width, int height)
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	return this->softwareRenderer->addTexture(pixels, width, height);
+	return this->softwareRenderer->addTexture(texels, width, height);
 }
 
 void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
@@ -551,7 +551,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
-	double ambient, double daytimePercent, const VoxelGrid &voxelGrid)
+	double ambient, double daytimePercent, double ceilingHeight, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	assert(this->softwareRenderer.get() != nullptr);
@@ -568,7 +568,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 
 	// Render the game world to the game world frame buffer.
 	this->softwareRenderer->render(eye, forward, fovY, ambient, daytimePercent, 
-		voxelGrid, gameWorldPixels);
+		ceilingHeight, voxelGrid, gameWorldPixels);
 
 	// Update the game world texture with the new ARGB8888 pixels.
 	SDL_UnlockTexture(this->gameWorldTexture);

@@ -1280,8 +1280,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	}();
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getVerticalFOV(), ambientPercent,
-		gameData.getDaytimePercent(), level.getVoxelGrid());
+		options.getVerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
+		level.getCeilingHeight(), level.getVoxelGrid());
 
 	// Set screen palette.
 	auto &textureManager = this->getGame().getTextureManager();

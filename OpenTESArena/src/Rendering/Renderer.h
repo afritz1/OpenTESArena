@@ -127,7 +127,7 @@ public:
 	// - 'remove' methods delete an object from renderer memory if it exists.
 	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-	int addTexture(const uint32_t *pixels, int width, int height);
+	int addTexture(const uint32_t *texels, int width, int height);
 	void updateFlat(int id, const Double3 *position, const double *width, 
 		const double *height, const int *textureID, const bool *flipped);
 	void updateLight(int id, const Double3 *point, const Double3 *color,
@@ -156,7 +156,8 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
-		double ambient, double daytimePercent, const VoxelGrid &voxelGrid);
+		double ambient, double daytimePercent, double ceilingHeight, 
+		const VoxelGrid &voxelGrid);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

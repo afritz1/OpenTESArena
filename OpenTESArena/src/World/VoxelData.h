@@ -1,19 +1,17 @@
 #ifndef VOXEL_DATA_H
 #define VOXEL_DATA_H
 
-// Voxel data is the definition of a voxel that a voxel ID points to.
-// Since there will only be a few kinds of voxel data per world, their size
-// can be much larger than just a byte or two.
+// Voxel data is the definition of a voxel that a voxel ID points to. Since there will 
+// only be a few kinds of voxel data per world, their size can be much larger than just 
+// a byte or two.
 
-// A voxel is "air" if all of its IDs are zero.
+// A voxel's data is used for multiple things, such as rendering, collision detection,
+// and color-coding on the automap.
 
-// Perhaps much later, when voxel destruction spells like Passwall are added, 
-// more data could be added here that represents a percentage of "fade".
+// Perhaps, when voxel destruction spells like Passwall are added, more data could be 
+// added here that represents a percentage of "fade".
 
-// "Diagonal 1" starts at (nearX, nearZ) and ends at (farX, farZ). "Diagonal 2"
-// starts at (farX, nearZ) and ends at (nearX, farZ). The line equations for each
-// are z = x and z = -x + 1, respectively.
-
+enum class VoxelDataType;
 enum class VoxelType;
 
 class VoxelData
@@ -22,31 +20,110 @@ public:
 	// IDs range from 0 to 63.
 	static const int TOTAL_IDS;
 
-	int sideID, floorID, ceilingID, diag1ID, diag2ID;
-	double yOffset, ySize; // Offset from bottom of voxel, and "thickness" in Y.
-	double topV, bottomV; // V texture coordinates between 0.0 and 1.0.
-	VoxelType type; // A helper value, secondary to the IDs.
+	// This defines which axis a wall's normal is facing towards on the outside
+	// (i.e., away from the center of the voxel). Used with edges and rendering.
+	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
-	VoxelData(int sideID, int floorID, int ceilingID, double yOffset, double ySize,
-		double topV, double bottomV, VoxelType type);
+	// Regular wall with Y size equal to ceiling height if on main floor, otherwise 1.0.
+	// Y offset is 0, and Y size can be inferred by the renderer on the main floor.
+	struct WallData
+	{
+		int sideID, floorID, ceilingID;
+	};
 
-	// Default constructor for most voxels; a Y offset of 0.0 and Y size of 1.0, 
-	// with the default texture coordinates.
-	VoxelData(int sideID, int floorID, int ceilingID, VoxelType type);
+	// Floors only have their top rendered.
+	struct FloorData
+	{
+		int id;
+	};
 
-	VoxelData(int diag1ID, int diag2ID, double yOffset, double ySize,
-		double topV, double bottomV, VoxelType type);
+	// Ceilings only have their bottom rendered.
+	struct CeilingData
+	{
+		int id;
+	};
 
-	// Diagonal wall constructor. Only one of the IDs should be non-zero.
-	VoxelData(int diag1ID, int diag2ID, VoxelType type);
+	// Raised platform.
+	struct RaisedData
+	{
+		int sideID, floorID, ceilingID;
+		double yOffset, ySize, vTop, vBottom;
+	};
 
-	// Default constructor for a 1x1x1 voxel with all sides using the same texture.
-	VoxelData(int id, VoxelType type);
+	// Diagonal. The type determines the start and end corners.
+	struct DiagonalData
+	{
+		int id;
+		bool type1; // Type 1 is '/', (nearX, nearZ) -> (farX, farZ).
+	};
 
+	// Transparent walls only shows front-facing textures (wooden arches, hedges, etc.).
+	// Nothing is drawn when the player is in the same voxel column.
+	struct TransparentWallData
+	{
+		int id;
+	};
+
+	// Rendered on one edge of a voxel with height equal to ceiling height.
+	// The facing determines which side the edge is on.
+	struct EdgeData
+	{
+		int id;
+		Facing facing;
+	};
+
+	// Chasms have zero to four visible faces depending on adjacent floors. Each face is 
+	// front-facing and back-facing.
+	struct ChasmData
+	{
+		enum class Type { Dry, Wet, Lava };
+
+		int id;
+		bool north, east, south, west;
+		Type type;
+	};
+
+	struct DoorData
+	{
+		// Each type of door. Most doors swing open, while others raise up or slide to the 
+		// side. I don't know if any split, but I believe they're supported by the engine.
+		enum class Type { Swinging, Raising, Sliding, Splitting };
+
+		int id;
+		Type type;
+	};
+
+	// Only one voxel data type can be active at a time, given by "dataType".
+	union
+	{
+		WallData wall;
+		FloorData floor;
+		CeilingData ceiling;
+		RaisedData raised;
+		DiagonalData diagonal;
+		TransparentWallData transparentWall;
+		EdgeData edge;
+		ChasmData chasm;
+		DoorData door;
+	};
+
+	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
+	VoxelType type; // Defines what the voxel is.
+
+	VoxelData();
 	~VoxelData();
 
-	// Returns whether all of the voxel's sides have an ID of zero.
-	bool isAir() const;
+	static VoxelData makeWall(int sideID, int floorID, int ceilingID, VoxelType type);
+	static VoxelData makeFloor(int id);
+	static VoxelData makeCeiling(int id);
+	static VoxelData makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
+		double ySize, double vTop, double vBottom);
+	static VoxelData makeDiagonal(int id, bool type1);
+	static VoxelData makeTransparentWall(int id);
+	static VoxelData makeEdge(int id, Facing facing);
+	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
+		ChasmData::Type type);
+	static VoxelData makeDoor(int id, DoorData::Type type);
 };
 
 #endif

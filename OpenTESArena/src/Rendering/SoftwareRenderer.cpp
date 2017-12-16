@@ -9,7 +9,17 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
 #include "../World/VoxelData.h"
+#include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
+
+SoftwareRenderer::OcclusionData::OcclusionData(int yMin, int yMax)
+{
+	this->yMin = yMin;
+	this->yMax = yMax;
+}
+
+SoftwareRenderer::OcclusionData::OcclusionData()
+	: OcclusionData(0, 0) { }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor, 
 	const Double3 &zenithSkyColor, const Double3 &sunColor, 
@@ -21,17 +31,27 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor,
 	this->fogDistance = fogDistance;
 }
 
+SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffer, 
+	int width, int height)
+{
+	this->colorBuffer = colorBuffer;
+	this->depthBuffer = depthBuffer;
+	this->width = width;
+	this->height = height;
+}
+
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
-const double SoftwareRenderer::JUST_BELOW_ONE = std::nextafter(1.0, 0.0);
 
 SoftwareRenderer::SoftwareRenderer(int width, int height)
 {
 	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
-	this->depthBuffer = std::vector<double>(pixelCount);
-	std::fill(this->depthBuffer.begin(), this->depthBuffer.end(), 
+	this->depthBuffer = std::vector<double>(pixelCount,
 		std::numeric_limits<double>::infinity());
+
+	// Initialize occlusion columns.
+	this->occlusion = std::vector<OcclusionData>(width, OcclusionData(0, height - 1));
 
 	this->width = width;
 	this->height = height;
@@ -60,7 +80,7 @@ void SoftwareRenderer::addFlat(int id, const Double3 &position, double width,
 	flat.width = width;
 	flat.height = height;
 	flat.textureID = textureID;
-	flat.flipped = false; // The initial value doesn't matter, it's updated frequently.
+	flat.flipped = false; // The initial value doesn't matter; it's updated frequently.
 
 	// Add the flat (sprite, door, store sign, etc.).
 	this->flats.insert(std::make_pair(id, flat));
@@ -72,36 +92,23 @@ void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &col
 	DebugNotImplemented();
 }
 
-int SoftwareRenderer::addTexture(const uint32_t *pixels, int width, int height)
+int SoftwareRenderer::addTexture(const uint32_t *texels, int width, int height)
 {
-	const int pixelCount = width * height;
+	const int texelCount = width * height;
 
 	SoftwareTexture texture;
-	texture.pixels = std::vector<Double4>(pixelCount);
+	texture.texels = std::vector<Double4>(texelCount);
 	texture.width = width;
 	texture.height = height;
-
-	// Initialize the transparency boolean to false, and set it to true if any
-	// non-opaque texels exist in the texture.
-	texture.containsTransparency = false;
 
 	// Convert ARGB color from integer to double-precision format for speed.
 	// This does waste an extreme amount of memory (32 bytes per pixel!), but
 	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
 	// would be a megabyte).
-	Double4 *texturePixels = texture.pixels.data();
-	for (int i = 0; i < pixelCount; i++)
+	Double4 *textureTexels = texture.texels.data();
+	for (int i = 0; i < texelCount; i++)
 	{
-		texturePixels[i] = Double4::fromARGB(pixels[i]);
-
-		// Set the transparency boolean if the texture contains any non-opaque texels
-		// (like with hedges). This only affects how occlusion culling is handled, and 
-		// isn't used with partially transparent texels because that would require a
-		// reordering of how voxels are rendered.
-		if (!texture.containsTransparency && (texturePixels[i].w < 1.0))
-		{
-			texture.containsTransparency = true;
-		}
+		textureTexels[i] = Double4::fromARGB(texels[i]);
 	}
 
 	this->textures.push_back(std::move(texture));
@@ -192,6 +199,10 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.resize(pixelCount);
 	std::fill(this->depthBuffer.begin(), this->depthBuffer.end(), 
 		std::numeric_limits<double>::infinity());
+
+	this->occlusion.resize(width);
+	std::fill(this->occlusion.begin(), this->occlusion.end(),
+		OcclusionData(0, height - 1));
 
 	this->width = width;
 	this->height = height;
@@ -605,20 +616,20 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 }
 
-Double3 SoftwareRenderer::getWallNormal(WallFacing wallFacing)
+Double3 SoftwareRenderer::getNormal(VoxelData::Facing facing)
 {
-	// Decide what the wall normal is, based on the wall facing. It can only be on the 
-	// X or Z axis because floors and ceilings are drawn separately from walls, and their 
+	// Decide what the normal is, based on the facing. It can only be on the X or Z axis 
+	// because floors and ceilings are drawn separately from walls, and their 
 	// normals are trivial.
-	if (wallFacing == WallFacing::PositiveX)
+	if (facing == VoxelData::Facing::PositiveX)
 	{
 		return Double3::UnitX;
 	}
-	else if (wallFacing == WallFacing::NegativeX)
+	else if (facing == VoxelData::Facing::NegativeX)
 	{
 		return -Double3::UnitX;
 	}
-	else if (wallFacing == WallFacing::PositiveZ)
+	else if (facing == VoxelData::Facing::PositiveZ)
 	{
 		return Double3::UnitZ;
 	}
@@ -644,8 +655,20 @@ double SoftwareRenderer::getProjectedY(const Double3 &point,
 	return (0.50 + yShear) - (projectedY * 0.50);
 }
 
+int SoftwareRenderer::getLowerBoundedPixel(double projected, int frameDim)
+{
+	return std::min(std::max(0,
+		static_cast<int>(std::ceil(projected - 0.50))), frameDim);
+}
+
+int SoftwareRenderer::getUpperBoundedPixel(double projected, int frameDim)
+{
+	return std::min(std::max(0,
+		static_cast<int>(std::floor(projected + 0.50))), frameDim);
+}
+
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, DiagonalHit &hit)
+	const Double2 &farPoint, RayHit &hit)
 {
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
 	const Double2 diagStart(
@@ -655,8 +678,8 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 		static_cast<double>(voxelX) + 0.50,
 		static_cast<double>(voxelZ) + 0.50);
 	const Double2 diagEnd(
-		static_cast<double>(voxelX) + SoftwareRenderer::JUST_BELOW_ONE,
-		static_cast<double>(voxelZ) + SoftwareRenderer::JUST_BELOW_ONE);
+		static_cast<double>(voxelX) + Constants::JustBelowOne,
+		static_cast<double>(voxelZ) + Constants::JustBelowOne);
 
 	// Normals for the left and right faces of the wall, facing up-left and down-right
 	// respectively (magic number is sqrt(2) / 2).
@@ -718,7 +741,7 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 		}();
 
 		// Set the hit data.
-		hit.u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		hit.u = std::max(std::min(hitCoordinate, Constants::JustBelowOne), 0.0);
 		hit.point = Double2(
 			static_cast<double>(voxelX) + hit.u,
 			static_cast<double>(voxelZ) + hit.u);
@@ -735,21 +758,21 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 }
 
 bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, DiagonalHit &hit)
+	const Double2 &farPoint, RayHit &hit)
 {
 	// Mostly a copy of findDiag1Intersection(), though with a couple different values
 	// for the diagonal (end points, slope, etc.).
 
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
 	const Double2 diagStart(
-		static_cast<double>(voxelX) + SoftwareRenderer::JUST_BELOW_ONE,
+		static_cast<double>(voxelX) + Constants::JustBelowOne,
 		static_cast<double>(voxelZ));
 	const Double2 diagMiddle(
 		static_cast<double>(voxelX) + 0.50,
 		static_cast<double>(voxelZ) + 0.50);
 	const Double2 diagEnd(
 		static_cast<double>(voxelX),
-		static_cast<double>(voxelZ) + SoftwareRenderer::JUST_BELOW_ONE);
+		static_cast<double>(voxelZ) + Constants::JustBelowOne);
 
 	// Normals for the left and right faces of the wall, facing up-right and down-left
 	// respectively (magic number is sqrt(2) / 2).
@@ -783,12 +806,12 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 			if (isHorizontal)
 			{
 				// The X axis intercept is the compliment of the intersection coordinate.
-				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.x - diagStart.x);
+				return Constants::JustBelowOne - (nearPoint.x - diagStart.x);
 			}
 			else if (isVertical)
 			{
 				// The Z axis intercept is the compliment of the intersection coordinate.
-				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.y - diagStart.y);
+				return Constants::JustBelowOne - (nearPoint.y - diagStart.y);
 			}
 			else
 			{
@@ -811,9 +834,9 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 		}();
 
 		// Set the hit data.
-		hit.u = std::max(std::min(hitCoordinate, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		hit.u = std::max(std::min(hitCoordinate, Constants::JustBelowOne), 0.0);
 		hit.point = Double2(
-			static_cast<double>(voxelX) + (SoftwareRenderer::JUST_BELOW_ONE - hit.u),
+			static_cast<double>(voxelX) + (Constants::JustBelowOne - hit.u),
 			static_cast<double>(voxelZ) + hit.u);
 		hit.innerZ = (hit.point - nearPoint).length();
 		hit.normal = nearOnLeft ? leftNormal : rightNormal;
@@ -827,20 +850,29 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 	}
 }
 
-void SoftwareRenderer::diagonalProjection(double voxelYReal, const VoxelData &voxelData,
-	const Double2 &point, const Matrix4d &transform, double yShear, int frameHeight,
-	double heightReal, double &diagTopScreenY, double &diagBottomScreenY, int &diagStart, 
-	int &diagEnd)
+bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing facing,
+	const Double2 &nearPoint, const Double2 &farPoint, RayHit &hit)
+{
+	// To do.
+	return false;
+}
+
+bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
+	VoxelData::DoorData::Type doorType, const Double2 &nearPoint, 
+	const Double2 &farPoint, RayHit &hit)
+{
+	// To do.
+	return false;
+}
+
+void SoftwareRenderer::diagProjection(double voxelYReal, double voxelHeight,
+	const Double2 &point, const Matrix4d &transform, double yShear, int frameHeight, 
+	double heightReal, double &diagTopScreenY, double &diagBottomScreenY, 
+	int &diagStart, int &diagEnd)
 {
 	// Points in world space for the top and bottom of the diagonal wall slice.
-	const Double3 diagTop(
-		point.x,
-		voxelYReal + voxelData.yOffset + voxelData.ySize,
-		point.y);
-	const Double3 diagBottom(
-		point.x,
-		voxelYReal + voxelData.yOffset,
-		point.y);
+	const Double3 diagTop(point.x, voxelYReal + voxelHeight, point.y);
+	const Double3 diagBottom(point.x, voxelYReal, point.y);
 
 	// Projected Y coordinates on-screen.
 	diagTopScreenY = SoftwareRenderer::getProjectedY(
@@ -855,73 +887,86 @@ void SoftwareRenderer::diagonalProjection(double voxelYReal, const VoxelData &vo
 		static_cast<int>(std::floor(diagBottomScreenY + 0.50))), frameHeight);
 }
 
-void SoftwareRenderer::drawWall(int x, int yStart, int yEnd, double projectedYStart,
-	double projectedYEnd, double z, double u, double topV, double bottomV, 
+void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedYStart,
+	double projectedYEnd, double depth, double u, double vStart, double vEnd,
 	const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
-	int frameWidth, int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+	const FrameView &frame)
 {
 	// Horizontal offset in texture.
 	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 	// Linearly interpolated fog.
-	const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
 	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
 		0.0, 1.0 - shadingInfo.ambient);
 
+	// Shading on the texture.
+	// - To do: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
+
 	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
-		const int index = x + (y * frameWidth);
+		const int index = x + (y * frame.width);
 
-		// Check depth of the pixel. A bias of epsilon is added to reduce artifacts from
-		// adjacent walls sharing the same Z value. More strict drawing rules (voxel
-		// stepping order? Occlusion culling?) might be a better fix for this.
-		if (z <= (depthBuffer[index] - Constants::Epsilon))
+		// Check depth of the pixel before rendering.
+		// - To do: implement occlusion so this depth check isn't needed.
+		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
 		{
 			// Percent stepped from beginning to end on the column.
-			const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
-				static_cast<double>(projectedYEnd - projectedYStart);
+			const double yPercent = 
+				((static_cast<double>(y) + 0.50) - projectedYStart) /
+				(projectedYEnd - projectedYStart);
 
 			// Vertical texture coordinate.
-			const double v = std::max(std::min(topV + ((bottomV - topV) * yPercent),
-				SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+			const double v = vStart + ((vEnd - vStart) * yPercent);
 
 			// Y position in texture.
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
-			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+			// Alpha is ignored in this loop, so transparent texels will appear black.
+			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
 
-			// Draw only if the texel is not transparent.
-			if (texel.w > 0.0)
-			{
-				const Double3 color(
-					texel.x * (shadingInfo.ambient + sunComponent.x),
-					texel.y * (shadingInfo.ambient + sunComponent.y),
-					texel.z * (shadingInfo.ambient + sunComponent.z));
+			// Texture color with shading.
+			double colorR = texel.x * shading.x;
+			double colorG = texel.y * shading.y;
+			double colorB = texel.z * shading.z;
 
-				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
-			}
+			// Linearly interpolate with fog.
+			colorR += (fogColor.x - colorR) * fogPercent;
+			colorG += (fogColor.y - colorG) * fogPercent;
+			colorB += (fogColor.z - colorB) * fogPercent;
+
+			// Clamp maximum (don't worry about negative values).
+			const double high = 1.0;
+			colorR = (colorR > high) ? high : colorR;
+			colorG = (colorG > high) ? high : colorG;
+			colorB = (colorB > high) ? high : colorB;
+
+			// Convert floats to integers.
+			const uint32_t colorRGB = static_cast<uint32_t>(
+				((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+				((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+				((static_cast<uint8_t>(colorB * 255.0))));
+
+			frame.colorBuffer[index] = colorRGB;
+			frame.depthBuffer[index] = depth;
 		}
 	}
 }
 
-void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double projectedYStart,
-	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
-	double startZ, double endZ, const Double3 &normal, const SoftwareTexture &texture,
-	const ShadingInfo &shadingInfo, int frameWidth, int frameHeight, double *depthBuffer,
-	uint32_t *colorBuffer)
+void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
+	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, double depthStart,
+	double depthEnd, const Double3 &normal, const SoftwareTexture &texture,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	// Values for perspective-correct interpolation.
-	const double startZRecip = 1.0 / startZ;
-	const double endZRecip = 1.0 / endZ;
-	const Double2 startPointDiv = startPoint * startZRecip;
-	const Double2 endPointDiv = endPoint * endZRecip;
-
 	// Fog color to interpolate with.
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
@@ -930,64 +975,175 @@ void SoftwareRenderer::drawFloorOrCeiling(int x, int yStart, int yEnd, double pr
 	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
 		0.0, 1.0 - shadingInfo.ambient);
 
+	// Shading on the texture.
+	// - To do: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
+
+	// Values for perspective-correct interpolation.
+	const double depthStartRecip = 1.0 / depthStart;
+	const double depthEndRecip = 1.0 / depthEnd;
+	const Double2 startPointDiv = startPoint * depthStartRecip;
+	const Double2 endPointDiv = endPoint * depthEndRecip;
+
 	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
-		const int index = x + (y * frameWidth);
+		const int index = x + (y * frame.width);
 
 		// Percent stepped from beginning to end on the column.
-		const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
-			static_cast<double>(projectedYEnd - projectedYStart);
+		const double yPercent = 
+			((static_cast<double>(y) + 0.50) - projectedYStart) /
+			(projectedYEnd - projectedYStart);
 
-		// Interpolate between the near and far point.
-		const Double2 currentPoint =
-			(startPointDiv + ((endPointDiv - startPointDiv) * yPercent)) /
-			(startZRecip + ((endZRecip - startZRecip) * yPercent));
-		const double z = 1.0 / (startZRecip + ((endZRecip - startZRecip) * yPercent));
+		// Interpolate between the near and far depth.
+		const double depth = 1.0 / 
+			(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
 
 		// Linearly interpolated fog.
-		const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
+		const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
-		if (z <= depthBuffer[index])
+		// Check depth of the pixel before rendering.
+		// - To do: implement occlusion so this depth check isn't needed.
+		if (depth <= frame.depthBuffer[index])
 		{
+			// Interpolate between the near and far point.
+			const Double2 currentPoint =
+				(startPointDiv + ((endPointDiv - startPointDiv) * yPercent)) /
+				(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
+
 			// Horizontal texture coordinate.
-			const double u = std::max(std::min(SoftwareRenderer::JUST_BELOW_ONE,
-				SoftwareRenderer::JUST_BELOW_ONE - (currentPoint.x - std::floor(currentPoint.x))),
+			const double u = std::max(std::min(Constants::JustBelowOne,
+				Constants::JustBelowOne - (currentPoint.x - std::floor(currentPoint.x))),
 				0.0);
 
 			// Horizontal offset in texture.
 			const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 			// Vertical texture coordinate.
-			const double v = std::max(std::min(SoftwareRenderer::JUST_BELOW_ONE,
-				SoftwareRenderer::JUST_BELOW_ONE - (currentPoint.y - std::floor(currentPoint.y))),
+			const double v = std::max(std::min(Constants::JustBelowOne,
+				Constants::JustBelowOne - (currentPoint.y - std::floor(currentPoint.y))),
 				0.0);
 
 			// Y position in texture.
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
-			const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+			// Alpha is ignored in this loop, so transparent texels will appear black.
+			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
 
-			// Draw only if the texel is not transparent.
+			// Texture color with shading.
+			double colorR = texel.x * shading.x;
+			double colorG = texel.y * shading.y;
+			double colorB = texel.z * shading.z;
+
+			// Linearly interpolate with fog.
+			colorR += (fogColor.x - colorR) * fogPercent;
+			colorG += (fogColor.y - colorG) * fogPercent;
+			colorB += (fogColor.z - colorB) * fogPercent;
+
+			// Clamp maximum (don't worry about negative values).
+			const double high = 1.0;
+			colorR = (colorR > high) ? high : colorR;
+			colorG = (colorG > high) ? high : colorG;
+			colorB = (colorB > high) ? high : colorB;
+
+			// Convert floats to integers.
+			const uint32_t colorRGB = static_cast<uint32_t>(
+				((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+				((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+				((static_cast<uint8_t>(colorB * 255.0))));
+
+			frame.colorBuffer[index] = colorRGB;
+			frame.depthBuffer[index] = depth;
+		}
+	}
+}
+
+void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
+	double projectedYEnd, double depth, double u, double vStart, double vEnd,
+	const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
+{
+	// Horizontal offset in texture.
+	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+
+	// Linearly interpolated fog.
+	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
+
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
+
+	// Shading on the texture.
+	// - To do: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frame.width);
+
+		// Check depth of the pixel before rendering.
+		// - To do: implement occlusion so this depth check isn't needed.
+		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
+		{
+			// Percent stepped from beginning to end on the column.
+			const double yPercent =
+				((static_cast<double>(y) + 0.50) - projectedYStart) /
+				(projectedYEnd - projectedYStart);
+
+			// Vertical texture coordinate.
+			const double v = vStart + ((vEnd - vStart) * yPercent);
+
+			// Y position in texture.
+			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+			// Alpha is checked in this loop, and transparent texels are not drawn.
+			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+			
 			if (texel.w > 0.0)
 			{
-				const Double3 color(
-					texel.x * (shadingInfo.ambient + sunComponent.x),
-					texel.y * (shadingInfo.ambient + sunComponent.y),
-					texel.z * (shadingInfo.ambient + sunComponent.z));
+				// Texture color with shading.
+				double colorR = texel.x * shading.x;
+				double colorG = texel.y * shading.y;
+				double colorB = texel.z * shading.z;
 
-				colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-				depthBuffer[index] = z;
+				// Linearly interpolate with fog.
+				colorR += (fogColor.x - colorR) * fogPercent;
+				colorG += (fogColor.y - colorG) * fogPercent;
+				colorB += (fogColor.z - colorB) * fogPercent;
+				
+				// Clamp maximum (don't worry about negative values).
+				const double high = 1.0;
+				colorR = (colorR > high) ? high : colorR;
+				colorG = (colorG > high) ? high : colorG;
+				colorB = (colorB > high) ? high : colorB;
+
+				// Convert floats to integers.
+				const uint32_t colorRGB = static_cast<uint32_t>(
+					((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+					((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+					((static_cast<uint8_t>(colorB * 255.0))));
+
+				frame.colorBuffer[index] = colorRGB;
+				frame.depthBuffer[index] = depth;
 			}
 		}
 	}
 }
 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
-	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+	double ceilingHeight, const VoxelGrid &voxelGrid,
+	const std::vector<SoftwareTexture> &textures, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -997,7 +1153,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
 
-	const double heightReal = static_cast<double>(frameHeight);
+	const double heightReal = static_cast<double>(frame.height);
 
 	// Y position at the base of the player's voxel.
 	const double playerYFloor = std::floor(playerY);
@@ -1005,23 +1161,21 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	// Voxel Y of the player.
 	const int playerVoxelY = static_cast<int>(playerYFloor);
 
-	// Horizontal texture coordinate for the inner wall. Shared between all voxels in this
-	// voxel column.
-	const double u = [&farPoint, wallFacing]()
+	const double wallU = [&farPoint, facing]()
 	{
-		const double uVal = [&farPoint, wallFacing]()
+		const double uVal = [&farPoint, facing]()
 		{
-			if (wallFacing == WallFacing::PositiveX)
+			if (facing == VoxelData::Facing::PositiveX)
 			{
 				return farPoint.y - std::floor(farPoint.y);
 			}
-			else if (wallFacing == WallFacing::NegativeX)
+			else if (facing == VoxelData::Facing::NegativeX)
 			{
-				return SoftwareRenderer::JUST_BELOW_ONE - (farPoint.y - std::floor(farPoint.y));
+				return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 			}
-			else if (wallFacing == WallFacing::PositiveZ)
+			else if (facing == VoxelData::Facing::PositiveZ)
 			{
-				return SoftwareRenderer::JUST_BELOW_ONE - (farPoint.x - std::floor(farPoint.x));
+				return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 			}
 			else
 			{
@@ -1029,596 +1183,820 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			}
 		}();
 
-		return std::max(std::min(uVal, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 	}();
 
-	// Wall normals are always reversed for the initial voxel column.
-	const Double3 wallNormal = -SoftwareRenderer::getWallNormal(wallFacing);
+	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
+	// this voxel column.
+	const Double3 wallNormal = -SoftwareRenderer::getNormal(facing);
 
-	auto drawPlayersVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint, 
-		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, 
-		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
+	auto drawInitialVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal,
+		&nearPoint, &farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo,
+		ceilingHeight, &voxelGrid, &textures, &frame, heightReal]()
 	{
 		const int voxelY = static_cast<int>(playerYFloor);
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x, 
-			playerYFloor + voxelData.yOffset + voxelData.ySize, 
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			playerYFloor + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			playerYFloor + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			playerYFloor + voxelData.yOffset,
-			nearPoint.y);
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
 
-		// Y position of the player relative to the base of the voxel.
-		const double playerYRelative = playerY - playerYFloor;
-
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-		
-		// Decide which order to draw each pixel column in, based on the player's Y position.
-		if (playerYRelative > (voxelData.yOffset + voxelData.ySize))
+		if (voxelData.dataType == VoxelDataType::Wall)
 		{
-			// Above wall (drawing order matters).
-			const int ceilingStart = std::min(std::max(0, 
-				static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
-			const int wallStart = ceilingStart;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+			// Draw inner ceiling, wall, and floor.
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				playerYFloor + voxelHeight,
+				farPoint.y);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				farCeilingPoint.y,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				playerYFloor,
+				farPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				farFloorPoint.y,
+				nearPoint.y);
+
+			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+				farCeilingPoint, transform, yShear) * heightReal;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+				farFloorPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farCeilingScreenY, frame.height);
+			const int wallStart = ceilingEnd;
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farFloorScreenY, frame.height);
 			const int floorStart = wallEnd;
-			const int floorEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
 
-			// 1) Ceiling.
-			if (voxelData.ceilingID > 0)
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+				nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(wallData.ceilingID - 1),
+				shadingInfo, frame);
+
+			// Side.
+			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, farCeilingScreenY,
+				farFloorScreenY, farZ, wallU, 0.0, Constants::JustBelowOne,
+				wallNormal, textures.at(wallData.sideID - 1), shadingInfo, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+				farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(wallData.floorID - 1),
+				shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Floor)
+		{
+			// Do nothing. Floors can only be seen from above.
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Do nothing. Ceilings can only be seen from below.
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				playerYFloor + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				playerYFloor + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
 			{
-				const Double3 ceilingNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearCeilingScreenY, frame.height);
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
 			}
-
-			// 2) Diagonal 1.
-			if (voxelData.diag1ID > 0)
+			else if (playerY < nearFloorPoint.y)
 			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
 
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
 
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
+				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearFloorScreenY, frame.height);
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
 
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
 			}
-
-			// 3) Diagonal 2.
-			if (voxelData.diag2ID > 0)
+			else
 			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
+				// Between top and bottom.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
 
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
 
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int wallStart = ceilingEnd;
+				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
 
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
 
-			// 4) Inner wall.
-			if (voxelData.sideID > 0)
-			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
 
-			// 5) Inner floor.
-			if (voxelData.floorID > 0)
-			{
-				const Double3 floorNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
 			}
 		}
-		else if (playerYRelative < voxelData.yOffset)
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
 		{
-			// Below wall (drawing order matters).
-			const int ceilingStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-			const int wallStart = ceilingEnd;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
-			const int floorStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(nearFloorScreenY - 0.50))), frameHeight);
-			const int floorEnd = wallEnd;
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
-			// 1) Floor.
-			if (voxelData.floorID > 0)
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+			if (success)
 			{
-				const Double3 floorNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
+				double diagTopScreenY, diagBottomScreenY;
+				int diagStart, diagEnd;
 
-			// 2) Diagonal 1.
-			if (voxelData.diag1ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
+				SoftwareRenderer::diagProjection(playerYFloor, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
+					diagBottomScreenY, diagStart, diagEnd);
 
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 3) Diagonal 2.
-			if (voxelData.diag2ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 4) Inner wall.
-			if (voxelData.sideID > 0)
-			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-
-			// 5) Inner ceiling.
-			if (voxelData.ceilingID > 0)
-			{
-				const Double3 ceilingNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
 			}
 		}
-		else
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
-			// Inside wall (drawing order does not matter).
-			const int ceilingStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-			const int wallStart = ceilingEnd;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
-			const int floorStart = wallEnd;
-			const int floorEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			// Do nothing. Transparent walls have no back-faces.
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
 
-			// 1) Diagonal 1.
-			if (voxelData.diag1ID > 0)
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+
+			if (success)
 			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					playerYFloor + voxelHeight,
+					hit.point.y);
 
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					playerYFloor,
+					hit.point.y);
 
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
 
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
 			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Chasm)
+		{
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
-			// 2) Diagonal 2.
-			if (voxelData.diag2ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 3) Inner ceiling.
-			if (voxelData.ceilingID > 0)
-			{
-				const Double3 ceilingNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-
-			// 4) Inner wall.
-			if (voxelData.sideID > 0)
-			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-
-			// 5) Inner floor.
-			if (voxelData.floorID > 0)
-			{
-				const Double3 floorNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
+			// To do.
+		}
+		else if (voxelData.dataType == VoxelDataType::Door)
+		{
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// Render nothing for now.
 		}
 	};
 
-	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
-		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
-		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
+		&voxelGrid, &textures, &frame, heightReal](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
 
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset,
-			nearPoint.y);
-		
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-		
-		const int ceilingStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
-		const int ceilingEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
-		const int wallStart = ceilingStart;
-		const int wallEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
-		const int floorStart = wallEnd;
-		const int floorEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
-		
-		// 1) Ceiling.
-		if (voxelData.ceilingID > 0)
-		{
-			const Double3 ceilingNormal = Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
-		}
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
 
-		// 2) Diagonal 1.
-		if (voxelData.diag1ID > 0)
+		if (voxelData.dataType == VoxelDataType::Wall)
 		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				farCeilingPoint.y,
+				nearPoint.y);
+
+			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+				farCeilingPoint, transform, yShear) * heightReal;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+
+			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+				farCeilingScreenY, frame.height);
+			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearCeilingScreenY, frame.height);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID - 1),
+				shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Floor)
+		{
+			// Draw top of floor voxel.
+			const VoxelData::FloorData &floorData = voxelData.floor;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				farCeilingPoint.y,
+				nearPoint.y);
+
+			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+				farCeilingPoint, transform, yShear) * heightReal;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+
+			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+				farCeilingScreenY, frame.height);
+			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearCeilingScreenY, frame.height);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(floorData.id), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Do nothing. Ceilings can only be seen from below.
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
+			{
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearCeilingScreenY, frame.height);
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+			}
+			else if (playerY < nearFloorPoint.y)
+			{
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+
+				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearFloorScreenY, frame.height);
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
+			}
+			else
+			{
+				// Between top and bottom.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int wallStart = ceilingEnd;
+				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		{
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 3) Diagonal 2.
-		if (voxelData.diag2ID > 0)
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			// Do nothing. Transparent walls have no back-faces.
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					voxelYReal,
+					hit.point.y);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
+
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 4) Inner wall.
-		if (voxelData.sideID > 0)
+		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+			// To do.
 		}
-
-		// 5) Inner floor.
-		if (voxelData.floorID > 0)
+		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// Render nothing for now.
 		}
 	};
 
-	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint,
-		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
-		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
+	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
+		&voxelGrid, &textures, &frame, heightReal](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
 
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset,
-			nearPoint.y);
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
 
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-
-		const int ceilingStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-		const int ceilingEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-		const int wallStart = ceilingEnd;
-		const int wallEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
-		const int floorStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(nearFloorScreenY - 0.50))), frameHeight);
-		const int floorEnd = wallEnd;
-
-		// 1) Floor.
-		if (voxelData.floorID > 0)
+		if (voxelData.dataType == VoxelDataType::Wall)
 		{
-			const Double3 floorNormal = -Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+				farFloorPoint, transform, yShear) * heightReal;
+
+			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearFloorScreenY, frame.height);
+			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farFloorScreenY, frame.height);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(wallData.floorID - 1),
+				shadingInfo, frame);
 		}
-
-		// 2) Diagonal 1.
-		if (voxelData.diag1ID > 0)
+		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			// Do nothing. Floors can only be seen from above.
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Draw bottom of ceiling voxel.
+			const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				1.0 + ceilingHeight,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+				farFloorPoint, transform, yShear) * heightReal;
+
+			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearFloorScreenY, frame.height);
+			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
+				frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
+			{
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearCeilingScreenY, frame.height);
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+			}
+			else if (playerY < nearFloorPoint.y)
+			{
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+
+				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearFloorScreenY, frame.height);
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
+			}
+			else
+			{
+				// Between top and bottom.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, transform, yShear) * heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int wallStart = ceilingEnd;
+				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		{
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 3) Diagonal 2.
-		if (voxelData.diag2ID > 0)
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			// Do nothing. Transparent walls have no back-faces.
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					voxelYReal,
+					hit.point.y);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
+
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 4) Inner wall.
-		if (voxelData.sideID > 0)
+		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			SoftwareRenderer::drawWall(x, wallStart, wallEnd, farCeilingScreenY,
-				farFloorScreenY, farZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+			// To do.
 		}
-
-		// 5) Inner ceiling.
-		if (voxelData.ceilingID > 0)
+		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			const Double3 ceilingNormal = -Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// Render nothing for now.
 		}
 	};
 
-	// Draw the voxel that the player is in first.
-	drawPlayersVoxel();
+	// Draw the player's current voxel first.
+	drawInitialVoxel();
 
-	// Draw voxels below the player.
+	// Draw voxels below the player's voxel.
 	for (int voxelY = (playerVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		drawInitialVoxelBelow(voxelY);
 	}
 
-	// Draw voxels above the player.
+	// Draw voxels above the player's voxel.
 	for (int voxelY = (playerVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		drawInitialVoxelAbove(voxelY);
@@ -1626,17 +2004,16 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 }
 
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
-	WallFacing wallFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures, int frameWidth,
-	int frameHeight, double *depthBuffer, uint32_t *colorBuffer)
+	double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+	const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
 	// and the drawing orders being slightly modified. The reason for having so much code is
-	// so we cover all the different ray casting cases efficiently. The initial voxel column 
-	// drawing is its own method because it's the only one that needs to handle back-faces of 
-	// wall sides.
+	// so we cover all the different ray casting cases efficiently. It would slow down this 
+	// method if it had an "initialColumn" boolean that was false 90% of the time.
 
 	// When clamping Y values for drawing ranges, subtract 0.5 from starts and add 0.5 to 
 	// ends before converting to integers because the drawing methods sample at the center 
@@ -1644,7 +2021,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
 
-	const double heightReal = static_cast<double>(frameHeight);
+	const double heightReal = static_cast<double>(frame.height);
 
 	// Y position at the base of the player's voxel.
 	const double playerYFloor = std::floor(playerY);
@@ -1652,608 +2029,890 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	// Voxel Y of the player.
 	const int playerVoxelY = static_cast<int>(playerYFloor);
 
-	// Horizontal texture coordinate for the wall. Shared between all voxels in this
-	// voxel column.
-	const double u = [&nearPoint, wallFacing]()
+	// Horizontal texture coordinate for the wall, potentially shared between multiple voxels
+	// in this voxel column.
+	const double wallU = [&nearPoint, facing]()
 	{
-		const double uVal = [&nearPoint, wallFacing]()
+		const double uVal = [&nearPoint, facing]()
 		{
-			if (wallFacing == WallFacing::PositiveX)
+			if (facing == VoxelData::Facing::PositiveX)
 			{
-				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.y - std::floor(nearPoint.y));
+				return Constants::JustBelowOne - (nearPoint.y - std::floor(nearPoint.y));
 			}
-			else if (wallFacing == WallFacing::NegativeX)
+			else if (facing == VoxelData::Facing::NegativeX)
 			{
 				return nearPoint.y - std::floor(nearPoint.y);
 			}
-			else if (wallFacing == WallFacing::PositiveZ)
+			else if (facing == VoxelData::Facing::PositiveZ)
 			{
 				return nearPoint.x - std::floor(nearPoint.x);
 			}
 			else
 			{
-				return SoftwareRenderer::JUST_BELOW_ONE - (nearPoint.x - std::floor(nearPoint.x));
+				return Constants::JustBelowOne - (nearPoint.x - std::floor(nearPoint.x));
 			}
 		}();
 
-		return std::max(std::min(uVal, SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+		return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 	}();
 
-	// Wall normals behave as they usually would when rendering after the initial voxel 
-	// column; no need to cover special cases like wall back faces.
-	const Double3 wallNormal = SoftwareRenderer::getWallNormal(wallFacing);
+	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
+	// this voxel column.
+	const Double3 wallNormal = SoftwareRenderer::getNormal(facing);
 
-	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures,
-		frameWidth, frameHeight, heightReal, depthBuffer, colorBuffer]()
+	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint, 
+		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
+		&voxelGrid, &textures, &frame, heightReal]()
 	{
 		const int voxelY = static_cast<int>(playerYFloor);
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x,
-			playerYFloor + voxelData.yOffset + voxelData.ySize,
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			playerYFloor + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			playerYFloor + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			playerYFloor + voxelData.yOffset,
-			nearPoint.y);
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
 
-		// Y position of the player relative to the base of the voxel.
-		const double playerYRelative = playerY - playerYFloor;
-
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-
-		// Decide which order to draw each pixel column in, based on the player's Y position.
-		if (playerYRelative > (voxelData.yOffset + voxelData.ySize))
+		if (voxelData.dataType == VoxelDataType::Wall)
 		{
-			// Above voxel (draw inner floor last).
-			const int ceilingStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
+			// Draw side.
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				playerYFloor + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				playerYFloor,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+			
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne,
+				wallNormal, textures.at(wallData.sideID - 1), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Floor)
+		{
+			// Do nothing. Floors can only be seen from above.
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Do nothing. Ceilings can only be seen from below.
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				playerYFloor + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				playerYFloor + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
+			{
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = wallStart;
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+			}
+			else if (playerY < nearFloorPoint.y)
+			{
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
+			}
+			else
+			{
+				// Between top and bottom.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		{
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+			if (success)
+			{
+				double diagTopScreenY, diagBottomScreenY;
+				int diagStart, diagEnd;
+
+				SoftwareRenderer::diagProjection(playerYFloor, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
+					diagBottomScreenY, diagStart, diagEnd);
+
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne, 
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		{
+			// Draw transparent side.
+			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				playerYFloor + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				playerYFloor,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal, 
+				textures.at(transparentWallData.id - 1), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+
+			if (success)
+			{
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					playerYFloor + voxelHeight,
+					hit.point.y);
+
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					playerYFloor,
+					hit.point.y);
+
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
+
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Chasm)
+		{
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+			// To do.
+		}
+		else if (voxelData.dataType == VoxelDataType::Door)
+		{
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+
+			// Just render as transparent wall for now.
+			const VoxelData::DoorData &doorData = voxelData.door;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				playerYFloor + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				playerYFloor,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+				textures.at(doorData.id - 1), shadingInfo, frame);
+		}
+	};
+
+	auto drawVoxelBelow = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint, 
+		nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight, &voxelGrid,
+		&textures, &frame, heightReal](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+
+		if (voxelData.dataType == VoxelDataType::Wall)
+		{
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				farCeilingPoint.y,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+
+			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+				farCeilingPoint, transform, yShear) * heightReal;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+				farCeilingScreenY, frame.height);
+			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearCeilingScreenY, frame.height);
 			const int wallStart = ceilingEnd;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
-			const int floorStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
-			const int floorEnd = wallEnd;
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
 
-			// 1) Ceiling.
-			if (voxelData.ceilingID > 0)
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID - 1),
+				shadingInfo, frame);
+
+			// Side.
+			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne,
+				wallNormal, textures.at(wallData.sideID - 1), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Floor)
+		{
+			// Draw top of floor voxel.
+			const VoxelData::FloorData &floorData = voxelData.floor;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				farCeilingPoint.y,
+				nearPoint.y);
+
+			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+				farCeilingPoint, transform, yShear) * heightReal;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+
+			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+				farCeilingScreenY, frame.height);
+			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearCeilingScreenY, frame.height);
+
+			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(floorData.id), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Do nothing. Ceilings can only be seen from below.
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
 			{
-				const Double3 ceilingNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = wallStart;
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
 			}
-
-			// 2) Wall.
-			if (voxelData.sideID > 0)
+			else if (playerY < nearFloorPoint.y)
 			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
 			}
-
-			// 3) Diagonal 1.
-			if (voxelData.diag1ID > 0)
+			else
 			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 4) Diagonal 2.
-			if (voxelData.diag2ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 5) Inner floor.
-			if (voxelData.floorID > 0)
-			{
-				const Double3 floorNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Between top and bottom.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
 			}
 		}
-		else if (playerYRelative < voxelData.yOffset)
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
 		{
-			// Below voxel (draw inner ceiling last).
-			const int ceilingStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-			const int wallStart = ceilingStart;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+			if (success)
+			{
+				double diagTopScreenY, diagBottomScreenY;
+				int diagStart, diagEnd;
+
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
+					diagBottomScreenY, diagStart, diagEnd);
+
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		{
+			// Draw transparent side.
+			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+				textures.at(transparentWallData.id - 1), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+
+			if (success)
+			{
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					voxelYReal,
+					hit.point.y);
+
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
+
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
+			}
+		}
+		else if (voxelData.dataType == VoxelDataType::Chasm)
+		{
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+			// To do.
+		}
+		else if (voxelData.dataType == VoxelDataType::Door)
+		{
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+
+			// Just render as transparent wall for now.
+			const VoxelData::DoorData &doorData = voxelData.door;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+				textures.at(doorData.id - 1), shadingInfo, frame);
+		}
+	};
+
+	auto drawVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint, 
+		nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight, &voxelGrid,
+		&textures, &frame, heightReal](int voxelY)
+	{
+		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const double voxelYReal = static_cast<double>(voxelY);
+
+		// Height of the voxel depends on whether it's the main floor.
+		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+
+		if (voxelData.dataType == VoxelDataType::Wall)
+		{
+			const VoxelData::WallData &wallData = voxelData.wall;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+				farFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
 			const int floorStart = wallEnd;
-			const int floorEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
+			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farFloorScreenY, frame.height);
+			
+			// Side.
+			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne,
+				wallNormal, textures.at(wallData.sideID - 1), shadingInfo, frame);
 
-			// 1) Wall.
-			if (voxelData.sideID > 0)
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(wallData.floorID - 1),
+				shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Floor)
+		{
+			// Do nothing. Floors can only be seen from above.
+		}
+		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		{
+			// Draw bottom of ceiling voxel.
+			const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				1.0 + ceilingHeight,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+				farFloorPoint, transform, yShear) * heightReal;
+
+			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearFloorScreenY, frame.height);
+			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+				farFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
+				frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Raised)
+		{
+			const VoxelData::RaisedData &raisedData = voxelData.raised;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal + (raisedData.yOffset * voxelHeight),
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			// Draw order depends on the player's Y position relative to the platform.
+			if (playerY > nearCeilingPoint.y)
 			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Above platform.
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					nearCeilingPoint.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, transform, yShear) * heightReal;
+
+				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int ceilingEnd = wallStart;
+
+				// Ceiling.
+				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
+					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
+					shadingInfo, frame);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
 			}
-
-			// 2) Floor.
-			if (voxelData.floorID > 0)
+			else if (playerY < nearFloorPoint.y)
 			{
-				const Double3 floorNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Below platform.
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, transform, yShear) * heightReal;
+
+				const int floorStart = wallEnd;
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				// Side.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
+
+				// Floor.
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID - 1),
+					shadingInfo, frame);
 			}
-
-			// 3) Diagonal 1.
-			if (voxelData.diag1ID > 0)
+			else
 			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 4) Diagonal 2.
-			if (voxelData.diag2ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 5) Inner ceiling.
-			if (voxelData.ceilingID > 0)
-			{
-				const Double3 ceilingNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-					nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
+				// Between top and bottom.
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
+					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, frame);
 			}
 		}
-		else
+		else if (voxelData.dataType == VoxelDataType::Diagonal)
 		{
-			// Between top and bottom (draw wall first).
-			const int ceilingStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-			const int ceilingEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-			const int wallStart = ceilingStart;
-			const int wallEnd = std::min(std::max(0,
-				static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
-			const int floorStart = std::min(std::max(0,
-				static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
-			const int floorEnd = wallEnd;
+			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
-			// 1) Wall.
-			if (voxelData.sideID > 0)
-			{
-				SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-					textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-
-			// 2) Diagonal 1.
-			if (voxelData.diag1ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag1Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY, 
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 3) Diagonal 2.
-			if (voxelData.diag2ID > 0)
-			{
-				DiagonalHit hit;
-				const bool success = SoftwareRenderer::findDiag2Intersection(
-					voxelX, voxelZ, nearPoint, farPoint, hit);
-
-				if (success)
-				{
-					double diagTopScreenY, diagBottomScreenY;
-					int diagStart, diagEnd;
-
-					// Assign the diagonal projection values to the declared variables.
-					SoftwareRenderer::diagonalProjection(playerYFloor, voxelData, hit.point,
-						transform, yShear, frameHeight, heightReal, diagTopScreenY,
-						diagBottomScreenY, diagStart, diagEnd);
-
-					SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-						diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-						voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-						shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-				}
-			}
-
-			// 4) Inner ceiling.
-			if (voxelData.ceilingID > 0)
-			{
-				const Double3 ceilingNormal = -Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
-					farCeilingScreenY, nearPoint, farPoint, nearZ, farZ, ceilingNormal,
-					textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-
-			// 5) Inner floor.
-			if (voxelData.floorID > 0)
-			{
-				const Double3 floorNormal = Double3::UnitY;
-				SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-					nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-					textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-					depthBuffer, colorBuffer);
-			}
-		}
-	};
-
-	auto drawVoxelBelow = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
-		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
-		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
-	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset,
-			nearPoint.y);
-
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-
-		const int ceilingStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(farCeilingScreenY - 0.50))), frameHeight);
-		const int ceilingEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(nearCeilingScreenY + 0.50))), frameHeight);
-		const int wallStart = ceilingEnd;
-		const int wallEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
-		const int floorStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(farFloorScreenY - 0.50))), frameHeight);
-		const int floorEnd = wallEnd;
-
-		// 1) Ceiling.
-		if (voxelData.ceilingID > 0)
-		{
-			const Double3 ceilingNormal = Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, farCeilingScreenY,
-				nearCeilingScreenY, farPoint, nearPoint, farZ, nearZ, ceilingNormal,
-				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
-		}
-
-		// 2) Wall.
-		if (voxelData.sideID > 0)
-		{
-			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
-		}
-
-		// 3) Diagonal 1.
-		if (voxelData.diag1ID > 0)
-		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			// Find intersection.
+			RayHit hit;
+			const bool success = diagData.type1 ?
+				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
 
 			if (success)
 			{
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
+					transform, yShear, frame.height, heightReal, diagTopScreenY,
 					diagBottomScreenY, diagStart, diagEnd);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
+					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(diagData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 4) Diagonal 2.
-		if (voxelData.diag2ID > 0)
+		else if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			// Draw transparent side.
+			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
+
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
+
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+				textures.at(transparentWallData.id - 1), shadingInfo, frame);
+		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+			// Find intersection.
+			RayHit hit;
+			const bool success = SoftwareRenderer::findEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 edgeTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+				const Double3 edgeBottomPoint(
+					hit.point.x,
+					voxelYReal,
+					hit.point.y);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
+				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
+					edgeTopPoint, transform, yShear) * heightReal;
+				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
+					edgeBottomPoint, transform, yShear) * heightReal;
+
+				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
+					edgeTopScreenY, frame.height);
+				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
+					edgeBottomScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
+					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
+					hit.normal, textures.at(edgeData.id - 1), shadingInfo, frame);
 			}
 		}
-
-		// 5) Inner floor.
-		if (voxelData.floorID > 0)
+		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, farFloorScreenY,
-				nearFloorScreenY, farPoint, nearPoint, farZ, nearZ, floorNormal,
-				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			// Render front and back-faces.
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+			// To do.
 		}
-	};
-
-	auto drawVoxelAbove = [x, voxelX, voxelZ, &wallNormal, &nearPoint, &farPoint,
-		nearZ, farZ, u, &transform, yShear, &shadingInfo, &voxelGrid, &textures, frameWidth,
-		frameHeight, heightReal, depthBuffer, colorBuffer](int voxelY)
-	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// 3D points to be used for rendering columns once they are projected.
-		const Double3 farCeilingPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			farPoint.y);
-		const Double3 nearCeilingPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset + voxelData.ySize,
-			nearPoint.y);
-		const Double3 farFloorPoint(
-			farPoint.x,
-			voxelYReal + voxelData.yOffset,
-			farPoint.y);
-		const Double3 nearFloorPoint(
-			nearPoint.x,
-			voxelYReal + voxelData.yOffset,
-			nearPoint.y);
-
-		// Y screen positions of the projections (unclamped; potentially outside the screen).
-		// Once they are clamped and are converted to integers, then they are suitable for 
-		// defining drawing ranges.
-		const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-			farCeilingPoint, transform, yShear) * heightReal;
-		const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-			nearCeilingPoint, transform, yShear) * heightReal;
-		const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-			farFloorPoint, transform, yShear) * heightReal;
-		const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-			nearFloorPoint, transform, yShear) * heightReal;
-
-		const int ceilingStart = std::min(std::max(0,
-			static_cast<int>(std::ceil(nearCeilingScreenY - 0.50))), frameHeight);
-		const int ceilingEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(farCeilingScreenY + 0.50))), frameHeight);
-		const int wallStart = ceilingStart;
-		const int wallEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(nearFloorScreenY + 0.50))), frameHeight);
-		const int floorStart = wallEnd;
-		const int floorEnd = std::min(std::max(0,
-			static_cast<int>(std::floor(farFloorScreenY + 0.50))), frameHeight);
-
-		// 1) Floor.
-		if (voxelData.floorID > 0)
+		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			const Double3 floorNormal = -Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, floorStart, floorEnd, nearFloorScreenY,
-				farFloorScreenY, nearPoint, farPoint, nearZ, farZ, floorNormal,
-				textures.at(voxelData.floorID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
-		}
+			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
 
-		// 2) Wall.
-		if (voxelData.sideID > 0)
-		{
-			SoftwareRenderer::drawWall(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, u, voxelData.topV, voxelData.bottomV, wallNormal,
-				textures.at(voxelData.sideID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
-		}
+			// Just render as transparent wall for now.
+			const VoxelData::DoorData &doorData = voxelData.door;
 
-		// 3) Diagonal 1.
-		if (voxelData.diag1ID > 0)
-		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag1Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
 
-			if (success)
-			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+				nearCeilingPoint, transform, yShear) * heightReal;
+			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+				nearFloorPoint, transform, yShear) * heightReal;
 
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+				nearCeilingScreenY, frame.height);
+			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+				nearFloorScreenY, frame.height);
 
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag1ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-			}
-		}
-
-		// 4) Diagonal 2.
-		if (voxelData.diag2ID > 0)
-		{
-			DiagonalHit hit;
-			const bool success = SoftwareRenderer::findDiag2Intersection(
-				voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
-
-				// Assign the diagonal projection values to the declared variables.
-				SoftwareRenderer::diagonalProjection(voxelYReal, voxelData, hit.point,
-					transform, yShear, frameHeight, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
-
-				SoftwareRenderer::drawWall(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, voxelData.topV, 
-					voxelData.bottomV, hit.normal, textures.at(voxelData.diag2ID - 1), 
-					shadingInfo, frameWidth, frameHeight, depthBuffer, colorBuffer);
-			}
-		}
-		
-		// 5) Inner ceiling.
-		if (voxelData.ceilingID > 0)
-		{
-			const Double3 ceilingNormal = -Double3::UnitY;
-			SoftwareRenderer::drawFloorOrCeiling(x, ceilingStart, ceilingEnd, nearCeilingScreenY,
-				farCeilingScreenY, nearPoint, farPoint, nearZ, farZ, ceilingNormal,
-				textures.at(voxelData.ceilingID - 1), shadingInfo, frameWidth, frameHeight,
-				depthBuffer, colorBuffer);
+			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+				textures.at(doorData.id - 1), shadingInfo, frame);
 		}
 	};
 
@@ -2275,8 +2934,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFrame,
 	const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo,
-	const SoftwareTexture &texture, int frameWidth, int frameHeight,
-	double *depthBuffer, uint32_t *colorBuffer)
+	const SoftwareTexture &texture, const FrameView &frame)
 {
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -2285,9 +2943,9 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// X percents across the screen for the given start and end columns.
 	const double startXPercent = (static_cast<double>(startX) + 0.50) / 
-		static_cast<double>(frameWidth);
+		static_cast<double>(frame.width);
 	const double endXPercent = (static_cast<double>(endX) + 0.50) /
-		static_cast<double>(frameWidth);
+		static_cast<double>(frame.width);
 
 	const bool startsInRange =
 		(flatFrame.startX >= startXPercent) && (flatFrame.startX <= endXPercent);
@@ -2295,7 +2953,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 		(flatFrame.endX >= startXPercent) && (flatFrame.endX <= endXPercent);
 	const bool coversRange =
 		(flatFrame.startX <= startXPercent) && (flatFrame.endX >= endXPercent);
-
+	
 	// Throw out the draw call if the flat is not in the X range.
 	if (!startsInRange && !endsInRange && !coversRange)
 	{
@@ -2321,29 +2979,30 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// Horizontal texture coordinates in the flat. Although the flat percent can be
 	// equal to 1.0, the texture coordinate needs to be less than 1.0.
-	const double startU = std::max(std::min(startFlatPercent, 
-		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
-	const double endU = std::max(std::min(endFlatPercent, 
-		SoftwareRenderer::JUST_BELOW_ONE), 0.0);
+	const double startU = std::max(std::min(startFlatPercent, Constants::JustBelowOne), 0.0);
+	const double endU = std::max(std::min(endFlatPercent, Constants::JustBelowOne), 0.0);
 
 	// Get the start and end coordinates of the projected points (Y values potentially
 	// outside the screen).
-	const double widthReal = static_cast<double>(frameWidth);
-	const double heightReal = static_cast<double>(frameHeight);
+	const double widthReal = static_cast<double>(frame.width);
+	const double heightReal = static_cast<double>(frame.height);
 	const double projectedXStart = clampedStartXPercent * widthReal;
 	const double projectedXEnd = clampedEndXPercent * widthReal;
 	const double projectedYStart = flatFrame.startY * heightReal;
 	const double projectedYEnd = flatFrame.endY * heightReal;
 
 	// Clamp the coordinates for where the flat starts and stops on the screen.
-	const int xStart = std::min(std::max(0,
-		static_cast<int>(std::ceil(projectedXStart - 0.50))), frameWidth);
-	const int xEnd = std::min(std::max(0,
-		static_cast<int>(std::floor(projectedXEnd + 0.50))), frameWidth);
-	const int yStart = std::min(std::max(0,
-		static_cast<int>(std::ceil(projectedYStart - 0.50))), frameHeight);
-	const int yEnd = std::min(std::max(0,
-		static_cast<int>(std::floor(projectedYEnd + 0.50))), frameHeight);
+	const int xStart = SoftwareRenderer::getLowerBoundedPixel(projectedXStart, frame.width);
+	const int xEnd = SoftwareRenderer::getUpperBoundedPixel(projectedXEnd, frame.width);
+	const int yStart = SoftwareRenderer::getLowerBoundedPixel(projectedYStart, frame.height);
+	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(projectedYEnd, frame.height);
+
+	// Shading on the texture.
+	// - To do: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
 
 	// Draw by-column, similar to wall rendering.
 	for (int x = xStart; x < xEnd; x++)
@@ -2356,43 +3015,64 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 		// Horizontal texel position.
 		const int textureX = static_cast<int>(
-			(flipped ? (SoftwareRenderer::JUST_BELOW_ONE - u) : u) *
+			(flipped ? (Constants::JustBelowOne - u) : u) *
 			static_cast<double>(texture.width));
 
 		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
 
 		// Get the true XZ distance for the depth.
-		const double z = (Double2(topPoint.x, topPoint.z) - eye).length();
+		const double depth = (Double2(topPoint.x, topPoint.z) - eye).length();
+
+		// Linearly interpolated fog.
+		const Double3 &fogColor = shadingInfo.horizonSkyColor;
+		const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 		for (int y = yStart; y < yEnd; y++)
 		{
-			const int index = x + (y * frameWidth);
+			const int index = x + (y * frame.width);
 
-			// Vertical texture coordinate.
-			const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) /
-				(projectedYEnd - projectedYStart);
-
-			// Vertical texel position.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-			// Linearly interpolated fog.
-			const double fogPercent = std::min(z / shadingInfo.fogDistance, 1.0);
-			const Double3 &fogColor = shadingInfo.horizonSkyColor;
-
-			if (z <= depthBuffer[index])
+			if (depth <= frame.depthBuffer[index])
 			{
-				const Double4 &texel = texture.pixels[textureX + (textureY * texture.width)];
+				const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
+					(projectedYEnd - projectedYStart);
 
-				// Draw only if the texel is not transparent.
+				// Vertical texture coordinate.
+				const double startV = 0.0;
+				const double endV = Constants::JustBelowOne;
+				const double v = startV + ((endV - startV) * yPercent);
+
+				// Vertical texel position.
+				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+				// Alpha is checked in this loop, and transparent texels are not drawn.
+				const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+
 				if (texel.w > 0.0)
 				{
-					const Double3 color(
-						texel.x * (shadingInfo.ambient + sunComponent.x),
-						texel.y * (shadingInfo.ambient + sunComponent.y),
-						texel.z * (shadingInfo.ambient + sunComponent.z));
+					// Texture color with shading.
+					double colorR = texel.x * shading.x;
+					double colorG = texel.y * shading.y;
+					double colorB = texel.z * shading.z;
 
-					colorBuffer[index] = color.lerp(fogColor, fogPercent).clamped().toRGB();
-					depthBuffer[index] = z;
+					// Linearly interpolate with fog.
+					colorR += (fogColor.x - colorR) * fogPercent;
+					colorG += (fogColor.y - colorG) * fogPercent;
+					colorB += (fogColor.z - colorB) * fogPercent;
+
+					// Clamp maximum (don't worry about negative values).
+					const double high = 1.0;
+					colorR = (colorR > high) ? high : colorR;
+					colorG = (colorG > high) ? high : colorG;
+					colorB = (colorB > high) ? high : colorB;
+
+					// Convert floats to integers.
+					const uint32_t colorRGB = static_cast<uint32_t>(
+						((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+						((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+						((static_cast<uint8_t>(colorB * 255.0))));
+
+					frame.colorBuffer[index] = colorRGB;
+					frame.depthBuffer[index] = depth;
 				}
 			}
 		}
@@ -2401,7 +3081,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direction,
 	const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
+	double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+	const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
 	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
@@ -2471,7 +3152,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
 	// DDA loop.
 	double zDistance;
-	WallFacing wallFacing;
+	VoxelData::Facing facing;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
 	bool voxelIsValid = (startCell.x >= 0) && (startCell.y >= 0) && (startCell.z >= 0) &&
@@ -2488,12 +3169,14 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		if (sideDistX < sideDistZ)
 		{
 			zDistance = sideDistX;
-			wallFacing = nonNegativeDirX ? WallFacing::NegativeX : WallFacing::PositiveX;
+			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : 
+				VoxelData::Facing::PositiveX;
 		}
 		else
 		{
 			zDistance = sideDistZ;
-			wallFacing = nonNegativeDirZ ? WallFacing::NegativeZ : WallFacing::PositiveZ;
+			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : 
+				VoxelData::Facing::PositiveZ;
 		}
 
 		// The initial near point is directly in front of the player in the near Z 
@@ -2510,9 +3193,9 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, startCell.x, startCell.z, eye.y,
-			wallFacing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
-			zDistance, transform, yShear, shadingInfo, voxelGrid, this->textures, this->width, 
-			this->height, this->depthBuffer.data(), colorBuffer);
+			facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			zDistance, transform, yShear, shadingInfo, ceilingHeight, voxelGrid, 
+			textures, frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -2521,26 +3204,30 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
 	// distance for the current edge point.
-	auto doDDAStep = [&sideDistX, &sideDistZ, &cell, &wallFacing, &voxelIsValid, &zDistance,
-		deltaDistX, deltaDistZ, stepX, stepZ, dirX, dirZ, nonNegativeDirX, nonNegativeDirZ,
-		&eye, &voxelGrid]()
+	auto doDDAStep = [&eye, &voxelGrid, &sideDistX, &sideDistZ, &cell, &facing,
+		&voxelIsValid, &zDistance, deltaDistX, deltaDistZ, stepX, stepZ, dirX, dirZ,
+		nonNegativeDirX, nonNegativeDirZ]()
 	{
 		if (sideDistX < sideDistZ)
 		{
 			sideDistX += deltaDistX;
 			cell.x += stepX;
-			wallFacing = nonNegativeDirX ? WallFacing::NegativeX : WallFacing::PositiveX;
+			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : 
+				VoxelData::Facing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
 			cell.z += stepZ;
-			wallFacing = nonNegativeDirZ ? WallFacing::NegativeZ : WallFacing::PositiveZ;
+			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : 
+				VoxelData::Facing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
 		}
 
-		zDistance = ((wallFacing == WallFacing::PositiveX) || (wallFacing == WallFacing::NegativeX)) ?
+		const bool onXAxis = (facing == VoxelData::Facing::PositiveX) || 
+			(facing == VoxelData::Facing::NegativeX);
+		zDistance = onXAxis ?
 			(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
 			(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
 	};
@@ -2550,13 +3237,13 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 	// Step through the voxel grid while the current coordinate is valid and
 	// the distance stepped is less than the distance at which fog is maximum.
-	while (voxelIsValid && (zDistance < this->fogDistance))
+	while (voxelIsValid && (zDistance < shadingInfo.fogDistance))
 	{
 		// Store the cell coordinates, axis, and Z distance for wall rendering. The
 		// loop needs to do another DDA step to calculate the far point.
 		const int savedCellX = cell.x;
 		const int savedCellZ = cell.z;
-		const WallFacing savedNormal = wallFacing;
+		const VoxelData::Facing savedNormal = facing;
 		const double wallDistance = zDistance;
 
 		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
@@ -2572,15 +3259,15 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 			eye.z + (dirZ * zDistance));
 
 		// Draw all voxels in a column at the given XZ coordinate.
-		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, eye.y, savedNormal,
+		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, eye.y, savedNormal, 
 			nearPoint, farPoint, wallDistance, zDistance, transform, yShear, shadingInfo, 
-			voxelGrid, this->textures, this->width, this->height, this->depthBuffer.data(),
-			colorBuffer);
+			ceilingHeight, voxelGrid, textures, frame);
 	}
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, const VoxelGrid &voxelGrid, uint32_t *colorBuffer)
+	double ambient, double daytimePercent, double ceilingHeight, const VoxelGrid &voxelGrid, 
+	uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -2663,14 +3350,16 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			(baseColor * (1.0 - (5.0 * std::abs(sunDirection.y)))).clamped();
 	}();
 
+	// Create some helper structs to keep similar values together.
 	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
 		sunDirection, ambient, this->fogDistance);
+	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Lambda for rendering some columns of pixels. The voxel rendering portion uses 2.5D 
 	// ray casting, which is the cheaper form of ray casting (although still not very 
 	// efficient overall), and results in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, &voxelGrid, colorBuffer, &shadingInfo, widthReal, 
-		&transform, yShear, &forwardComp, &right2D](int startX, int endX)
+	auto renderColumns = [this, &eye, ceilingHeight, &voxelGrid, &shadingInfo,
+		widthReal, &transform, yShear, &forwardComp, &right2D, &frame](int startX, int endX)
 	{
 		for (int x = startX; x < endX; x++)
 		{
@@ -2687,7 +3376,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->rayCast2D(x, eye, direction, transform, yShear, shadingInfo, 
-				voxelGrid, colorBuffer);
+				ceilingHeight, voxelGrid, this->textures, frame);
 		}
 
 		// Iterate through all flats, rendering those visible within the given X range of 
@@ -2707,8 +3396,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			const Double2 eye2D(eye.x, eye.z);
 
 			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped, 
-				eye2D, shadingInfo, texture, this->width, this->height, 
-				this->depthBuffer.data(), colorBuffer);
+				eye2D, shadingInfo, texture, frame);
 		}
 	};
 
@@ -2759,6 +3447,10 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 		renderThreads[i] = std::thread(clearRows, startY, endY);
 	}
+
+	// Reset occlusion.
+	std::fill(this->occlusion.begin(), this->occlusion.end(),
+		OcclusionData(0, this->height - 1));
 
 	// Wait for the render threads to finish clearing.
 	for (auto &thread : renderThreads)

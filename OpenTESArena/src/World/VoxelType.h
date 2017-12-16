@@ -16,7 +16,7 @@ enum class VoxelType
 	Raised,
 	Diagonal,
 	TransparentWall, // 1-sided texture (i.e., wooden arches).
-	TransparentEdge, // 2-sided texture (i.e., fence).
+	Edge, // 2-sided texture (i.e., fence).
 	Door,
 	LevelUp,
 	LevelDown,
