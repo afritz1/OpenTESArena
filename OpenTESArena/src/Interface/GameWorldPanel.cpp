@@ -1259,8 +1259,7 @@ void GameWorldPanel::tick(double dt)
 		// Tick entity state.
 		entity->tick(game, dt);
 
-		// Update entity flat properties for rendering. Only update the flat's direction
-		// if they face the player each frame (like a sprite).
+		// Update entity flat properties for rendering.
 		const Double3 position = entity->getPosition();
 		const int textureID = entity->getTextureID();
 		const bool flipped = entity->getFlipped();
