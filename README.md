@@ -10,9 +10,9 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 This project is early in development.
 
-There is partial collision detection, but no jumping yet. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+All of the main quest dungeons, several interior locations, and one exterior location can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'. Transitions aren't implemented yet, so only the first levels of interiors are accessible. City and wilderness generation should be implemented in the not-too-distant future.
 
-Press 'F' at the main menu to do a quickstart with a random character (for faster testing).
+There is partial collision detection, and motion is currently restricted to the horizontal plane. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some keys in the game world:
 - WASD - move and turn. Hold LCtrl to strafe with A and D.
@@ -33,20 +33,13 @@ Here are some keys in the game world:
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake (and it still is quite an experiment), but now the project is steadily inching closer to something akin to the original.
 
-I've been experimenting with various methods of rendering looking for the right one. Versions 0.2.0 and before use 3D ray casting with OpenCL on the GPU, and it allows for some really nice-looking dynamic shadows. I'm trying out a software ray casting method instead to see if it would be a better fit. Of course there's always OpenGL, but this project (and Arena's low geometry count) affords me the opportunity to experiment. I want to see how the software renderer turns out before I think about reintroducing a graphics card API.
-
-Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is being designed for use with that. The user must still acquire their own copy of Arena, though.
+Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is currently only compatible with that. The user must still acquire their own copy of Arena in any case because OpenTESArena is just an engine and does not contain any content.
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
 ## Installation
 
-There are two options files, `options-default.txt` and `options-changes.txt`. The first one stores default settings and the second one stores user-specific settings. The "changes" file is stored in your prefs folder, and you can either create it yourself or let the program create it. In the future, a wizard will take care of this instead.
-- Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
-- Linux: `~/.local/share/OpenTESArena/options/`
-- macOS: `~/Library/Application Support/OpenTESArena/options/`
-
-The engine uses `MidiConfig` and `ArenaPath` in the options file to find where the MIDI config and game files are.
+The engine uses `MidiConfig` and `ArenaPath` from the options file to find where the MIDI config and game files are (see **Options files** below).
 
 #### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
@@ -69,6 +62,12 @@ rar x Arena106.exe
 cd ..
 ./run.sh
 ```
+
+#### Options files
+There are two options files, `options-default.txt` and `options-changes.txt`. The first one comes with releases and stores default settings. The second one is generated in your user prefs folder and stores user-specific settings, and you can either create it yourself or let the program create it. For now, you can change things like `ArenaPath` in `options-default.txt`, but in the future, a wizard will take care of this instead. The prefs folders are:
+- Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
+- Linux: `~/.local/share/OpenTESArena/options/`
+- macOS: `~/Library/Application Support/OpenTESArena/options/`
 
 #### Obtaining a MIDI sound patches library (for music):
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
