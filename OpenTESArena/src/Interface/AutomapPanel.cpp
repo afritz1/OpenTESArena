@@ -194,7 +194,13 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 						}
 						else if (wallType == VoxelType::TransparentWall)
 						{
-							return AutomapFloor;
+							// To do: arches are not drawn on the automap, but hedges are.
+							// - Figure out how to differentiate between them.
+							return AutomapWall;
+						}
+						else if (wallType == VoxelType::Edge)
+						{
+							return AutomapWall;
 						}
 						else if (wallType == VoxelType::LevelUp)
 						{
