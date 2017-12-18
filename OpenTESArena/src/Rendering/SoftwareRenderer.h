@@ -30,11 +30,18 @@ private:
 	// casting loop can return early.
 	struct OcclusionData
 	{
-		// Inclusive values, initialized to 0 and frameHeight - 1, respectively.
+		// Min is inclusive, max is exclusive.
 		int yMin, yMax;
 
 		OcclusionData(int yMin, int yMax);
 		OcclusionData();
+
+		// Modifies the given start and end pixel coordinates based on the current occlusion.
+		// This will either keep (yEnd - yStart) the same or less than it was before.
+		void clipRange(int *yStart, int *yEnd) const;
+
+		// Updates the occlusion range given some range of opaque pixels.
+		void update(int yStart, int yEnd);
 	};
 
 	// Helper struct for ray search operations (i.e., finding if a ray intersects a 
@@ -176,34 +183,36 @@ private:
 	static void drawPixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, double depth, double u, double vStart, double vEnd,
 		const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo, 
-		const FrameView &frame);
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
 		double depthStart, double depthEnd, const Double3 &normal, const SoftwareTexture &texture,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with transparency but no perspective.
 	static void drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, double depth, double u, double vStart, double vEnd,
 		const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo, 
-		const FrameView &frame);
+		const OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, const FrameView &frame);
+		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
+		const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
 		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
 		double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, const FrameView &frame);
+		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
+		const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
@@ -219,7 +228,8 @@ private:
 	static void rayCast2D(int x, const Double3 &eye, const Double2 &direction,
 		const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
 		double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, const FrameView &frame);
+		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
+		const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Double2 &eye, const Double2 &direction,
