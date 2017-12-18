@@ -268,6 +268,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
 
+			// -- temp, set night lights on while the hardcoded start time is early morning. --
+			// - To do: day/night event is only done twice a day, so this needs to be
+			//   coupled with world/clock creation instead (as part of "construction").
+			renderer.setNightLightsActive(true);
+
 			// Set world and weather-relative fog distance.
 			const double fogDistance = [worldType, weatherType]()
 			{

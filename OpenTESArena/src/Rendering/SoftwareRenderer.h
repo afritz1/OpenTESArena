@@ -21,6 +21,8 @@ private:
 	struct SoftwareTexture
 	{
 		std::vector<Double4> texels;
+		std::vector<double> emissionTexels; // Percentage value for night light texels.
+		std::vector<Int2> lightTexels; // Black during the day, yellow at night.
 		int width, height;
 	};
 
@@ -263,6 +265,9 @@ public:
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
+
+	// Sets whether night lights and night textures are active.
+	void setNightLightsActive(bool active);
 
 	// Removes a flat. Causes an error if no ID matches.
 	void removeFlat(int id);

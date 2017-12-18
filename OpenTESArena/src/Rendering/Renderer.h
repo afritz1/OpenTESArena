@@ -134,6 +134,7 @@ public:
 		const double *intensity);
 	void setFogDistance(double fogDistance);
 	void setSkyPalette(const uint32_t *colors, int count);
+	void setNightLightsActive(bool active);
 	void removeFlat(int id);
 	void removeLight(int id);
 	void removeAllWorldTextures();

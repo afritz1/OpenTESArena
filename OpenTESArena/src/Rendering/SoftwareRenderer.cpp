@@ -6,6 +6,7 @@
 
 #include "SoftwareRenderer.h"
 #include "../Math/Constants.h"
+#include "../Media/Color.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
 #include "../World/VoxelData.h"
@@ -147,6 +148,9 @@ int SoftwareRenderer::addTexture(const uint32_t *texels, int width, int height)
 
 	SoftwareTexture texture;
 	texture.texels = std::vector<Double4>(texelCount);
+	texture.emissionTexels = std::vector<double>(texelCount);
+	std::fill(texture.emissionTexels.begin(), texture.emissionTexels.end(), 0.0);
+
 	texture.width = width;
 	texture.height = height;
 
@@ -155,9 +159,22 @@ int SoftwareRenderer::addTexture(const uint32_t *texels, int width, int height)
 	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
 	// would be a megabyte).
 	Double4 *textureTexels = texture.texels.data();
-	for (int i = 0; i < texelCount; i++)
+	for (int y = 0; y < height; y++)
 	{
-		textureTexels[i] = Double4::fromARGB(texels[i]);
+		for (int x = 0; x < width; x++)
+		{
+			const int index = x + (y * width);
+			textureTexels[index] = Double4::fromARGB(texels[index]);
+
+			// If it's a white texel, it's used with night lights (i.e., yellow at night).
+			const Double4 &texel = textureTexels[index];
+			const bool isWhite = (texel.x == 1.0) && (texel.y == 1.0) && (texel.z == 1.0);
+
+			if (isWhite)
+			{
+				texture.lightTexels.push_back(Int2(x, y));
+			}
+		}
 	}
 
 	this->textures.push_back(std::move(texture));
@@ -219,6 +236,29 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 	for (size_t i = 0; i < this->skyPalette.size(); i++)
 	{
 		this->skyPalette[i] = Double3::fromRGB(colors[i]);
+	}
+}
+
+void SoftwareRenderer::setNightLightsActive(bool active)
+{
+	// To do: activate lights (don't worry about textures).
+
+	// Change voxel texels based on whether it's night.
+	const Double4 texelColor = Double4::fromARGB(
+		(active ? Color(255, 166, 0) : Color::Black).toARGB());
+	const double texelEmission = active ? 1.0 : 0.0;
+
+	for (auto &texture : this->textures)
+	{
+		std::vector<Double4> &texels = texture.texels;
+		std::vector<double> &emissionTexels = texture.emissionTexels;
+
+		for (const auto &lightTexels : texture.lightTexels)
+		{
+			const int index = lightTexels.x + (lightTexels.y * texture.width);
+			texels.at(index) = texelColor;
+			emissionTexels.at(index) = texelEmission;
+		}
 	}
 }
 
@@ -985,12 +1025,15 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+			const int textureIndex = textureX + (textureY * texture.width);
+			const Double4 &texel = texture.texels[textureIndex];
+			const double emission = texture.emissionTexels[textureIndex];
 
 			// Texture color with shading.
-			double colorR = texel.x * shading.x;
-			double colorG = texel.y * shading.y;
-			double colorB = texel.z * shading.z;
+			const double shadingMax = 1.0;
+			double colorR = texel.x * std::min(shading.x + emission, shadingMax);
+			double colorG = texel.y * std::min(shading.y + emission, shadingMax);
+			double colorB = texel.z * std::min(shading.z + emission, shadingMax);
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -1089,12 +1132,15 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+			const int textureIndex = textureX + (textureY * texture.width);
+			const Double4 &texel = texture.texels[textureIndex];
+			const double emission = texture.emissionTexels[textureIndex];
 
 			// Texture color with shading.
-			double colorR = texel.x * shading.x;
-			double colorG = texel.y * shading.y;
-			double colorB = texel.z * shading.z;
+			const double shadingMax = 1.0;
+			double colorR = texel.x * std::min(shading.x + emission, shadingMax);
+			double colorG = texel.y * std::min(shading.y + emission, shadingMax);
+			double colorB = texel.z * std::min(shading.z + emission, shadingMax);
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -1169,14 +1215,17 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			// Alpha is checked in this loop, and transparent texels are not drawn.
-			const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+			const int textureIndex = textureX + (textureY * texture.width);
+			const Double4 &texel = texture.texels[textureIndex];
+			const double emission = texture.emissionTexels[textureIndex];
 			
 			if (texel.w > 0.0)
 			{
 				// Texture color with shading.
-				double colorR = texel.x * shading.x;
-				double colorG = texel.y * shading.y;
-				double colorB = texel.z * shading.z;
+				const double shadingMax = 1.0;
+				double colorR = texel.x * std::min(shading.x + emission, shadingMax);
+				double colorG = texel.y * std::min(shading.y + emission, shadingMax);
+				double colorB = texel.z * std::min(shading.z + emission, shadingMax);
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;
@@ -3115,14 +3164,17 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 				// Alpha is checked in this loop, and transparent texels are not drawn.
-				const Double4 &texel = texture.texels[textureX + (textureY * texture.width)];
+				// Flats do not have emission, so ignore it.
+				const int textureIndex = textureX + (textureY * texture.width);
+				const Double4 &texel = texture.texels[textureIndex];
 
 				if (texel.w > 0.0)
 				{
 					// Texture color with shading.
-					double colorR = texel.x * shading.x;
-					double colorG = texel.y * shading.y;
-					double colorB = texel.z * shading.z;
+					const double shadingMax = 1.0;
+					double colorR = texel.x * std::min(shading.x, shadingMax);
+					double colorG = texel.y * std::min(shading.y, shadingMax);
+					double colorB = texel.z * std::min(shading.z, shadingMax);
 
 					// Linearly interpolate with fog.
 					colorR += (fogColor.x - colorR) * fogPercent;

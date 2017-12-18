@@ -698,6 +698,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 
 	// Start the clock at 5:00am.
 	Clock clock(5, 0, 0);
+	renderer.setNightLightsActive(true);
 
 	return std::unique_ptr<GameData>(new GameData(
 		std::move(player), WorldData(std::move(voxelGrid), std::move(entityManager)),

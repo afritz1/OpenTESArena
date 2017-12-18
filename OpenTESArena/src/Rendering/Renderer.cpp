@@ -455,6 +455,12 @@ void Renderer::setSkyPalette(const uint32_t *colors, int count)
 	this->softwareRenderer->setSkyPalette(colors, count);
 }
 
+void Renderer::setNightLightsActive(bool active)
+{
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setNightLightsActive(active);
+}
+
 void Renderer::removeFlat(int id)
 {
 	assert(this->softwareRenderer.get() != nullptr);

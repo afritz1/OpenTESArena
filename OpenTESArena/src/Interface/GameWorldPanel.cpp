@@ -1204,7 +1204,28 @@ void GameWorldPanel::tick(double dt)
 	// Tick the game world clock time.
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
+	const Clock oldClock = gameData.getClock();
 	gameData.tickTime(dt);
+	const Clock newClock = gameData.getClock();
+
+	auto &renderer = game.getRenderer();
+
+	// See if the clock passed the boundary between night and day, and vice versa.
+	const bool activateNightLights = 
+		(oldClock.getPreciseTotalSeconds() < Clock::LamppostActivate.getPreciseTotalSeconds()) &&
+		(newClock.getPreciseTotalSeconds() >= Clock::LamppostActivate.getPreciseTotalSeconds());
+	const bool deactivateNightLights = 
+		(oldClock.getPreciseTotalSeconds() < Clock::LamppostDeactivate.getPreciseTotalSeconds()) &&
+		(newClock.getPreciseTotalSeconds() >= Clock::LamppostDeactivate.getPreciseTotalSeconds());
+
+	if (activateNightLights)
+	{
+		renderer.setNightLightsActive(true);
+	}
+	else if (deactivateNightLights)
+	{
+		renderer.setNightLightsActive(false);
+	}
 
 	// Tick the triggered text timer if the remaining duration is positive.
 	if (this->triggerText.first > 0.0)
@@ -1240,7 +1261,6 @@ void GameWorldPanel::tick(double dt)
 
 		// Update entity flat properties for rendering. Only update the flat's direction
 		// if they face the player each frame (like a sprite).
-		auto &renderer = game.getRenderer();
 		const Double3 position = entity->getPosition();
 		const int textureID = entity->getTextureID();
 		const bool flipped = entity->getFlipped();
