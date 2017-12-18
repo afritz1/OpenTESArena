@@ -51,11 +51,15 @@ namespace
 		std::string textureName;
 		WallState::Mode mode;
 		int menuID;
+		bool dryChasm, lavaChasm, wetChasm;
 
 		WallState()
 		{
 			this->mode = WallState::Mode::None;
 			this->menuID = INFFile::NO_INDEX;
+			this->dryChasm = false;
+			this->lavaChasm = false;
+			this->wetChasm = false;
 		}
 	};
 
@@ -463,10 +467,12 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == DRYCHASM_STR)
 			{
 				wallState->mode = WallState::Mode::DryChasm;
+				wallState->dryChasm = true;
 			}
 			else if (firstTokenType == LAVACHASM_STR)
 			{
 				wallState->mode = WallState::Mode::LavaChasm;
+				wallState->lavaChasm = true;
 			}
 			else if (firstTokenType == LEVELDOWN_STR)
 			{
@@ -496,6 +502,7 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == WETCHASM_STR)
 			{
 				wallState->mode = WallState::Mode::WetChasm;
+				wallState->wetChasm = true;
 			}
 			else
 			{
@@ -569,22 +576,28 @@ INFFile::INFFile(const std::string &filename)
 				this->boxSides.at(boxSideID) = currentIndex;
 			}
 
+			// Write *MENU ID (if any).
 			if (wallState->menuID != INFFile::NO_INDEX)
 			{
 				this->menus.at(wallState->menuID) = currentIndex;
 			}
 
-			// Write the texture index based on the wall mode (excluding some since they're
-			// handled differently -- i.e., with more than one line of state, or with an ID).
-			if (wallState->mode == WallState::Mode::DryChasm)
+			// Write texture index for any chasms.
+			if (wallState->dryChasm)
 			{
 				this->dryChasmIndex = currentIndex;
 			}
-			else if (wallState->mode == WallState::Mode::LavaChasm)
+			else if (wallState->lavaChasm)
 			{
 				this->lavaChasmIndex = currentIndex;
 			}
-			else if (wallState->mode == WallState::Mode::LevelDown)
+			else if (wallState->wetChasm)
+			{
+				this->wetChasmIndex = currentIndex;
+			}
+
+			// Write the texture index based on remaining wall modes.
+			if (wallState->mode == WallState::Mode::LevelDown)
 			{
 				this->levelDownIndex = currentIndex;
 			}
@@ -603,10 +616,6 @@ INFFile::INFFile(const std::string &filename)
 			else if (wallState->mode == WallState::Mode::WalkThru)
 			{
 				this->walkThruIndex = currentIndex;
-			}
-			else if (wallState->mode == WallState::Mode::WetChasm)
-			{
-				this->wetChasmIndex = currentIndex;
 			}
 
 			wallState = std::unique_ptr<WallState>(new WallState());
