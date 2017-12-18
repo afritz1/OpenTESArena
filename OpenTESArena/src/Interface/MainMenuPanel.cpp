@@ -48,6 +48,8 @@ namespace
 	const int TestType_Interior = 1;
 	const int TestType_Exterior = 2;
 
+	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
+
 	// .MIF filenames for each main quest dungeon, ordered by their appearance in the 
 	// game (in pairs, except for the first and last ones).
 	const std::vector<std::string> MainQuestLocations =
@@ -772,6 +774,16 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		{
 			this->exitButton.click();
 		}
+		else if (TestButtonRect.contains(originalPoint))
+		{
+			// Enter the game world immediately (for testing purposes). Use the test traits
+			// selected on the main menu.
+			this->quickStartButton.click(this->getGame(),
+				this->getSelectedTestName(),
+				this->getSelectedTestClimateType(),
+				this->getSelectedTestWeatherType(),
+				this->getSelectedTestWorldType());
+		}
 		else if (this->testTypeUpButton.contains(originalPoint))
 		{
 			this->testTypeUpButton.click(*this);
@@ -860,7 +872,29 @@ void MainMenuPanel::render(Renderer &renderer)
 			this->testWeatherUpButton.getY());
 	}
 
+	const Texture testButton(Texture::generate(
+		Texture::PatternType::Custom1, TestButtonRect.getWidth(), 
+		TestButtonRect.getHeight(), textureManager, renderer));
+	renderer.drawOriginal(testButton.get(), 
+		TestButtonRect.getLeft(), TestButtonRect.getTop(),
+		testButton.getWidth(), testButton.getHeight());
+
 	// Draw test text.
+	const RichTextString testButtonText(
+		"Test",
+		FontName::Arena,
+		Color::White,
+		TextAlignment::Center,
+		this->getGame().getFontManager());
+
+	const Int2 testButtonTextBoxPoint(
+		TestButtonRect.getLeft() + (TestButtonRect.getWidth() / 2),
+		TestButtonRect.getTop() + (TestButtonRect.getHeight() / 2));
+	const TextBox testButtonTextBox(testButtonTextBoxPoint, testButtonText, renderer);
+
+	renderer.drawOriginal(testButtonTextBox.getTexture(),
+		testButtonTextBox.getX(), testButtonTextBox.getY());
+
 	const std::string testTypeName = [this]()
 	{
 		if (this->testType == TestType_MainQuest)
@@ -883,8 +917,8 @@ void MainMenuPanel::render(Renderer &renderer)
 
 	const RichTextString testTypeText(
 		"Test type: " + testTypeName,
-		FontName::Arena,
-		Color::White,
+		testButtonText.getFontName(),
+		testButtonText.getColor(),
 		TextAlignment::Left,
 		this->getGame().getFontManager());
 
