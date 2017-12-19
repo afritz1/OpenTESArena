@@ -140,8 +140,6 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	for (const auto &trigger : level.trig)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		// - For some reason, the grid dimensions have a minus one here, whereas
-		//   the dimensions for player starting points do not.
 		const Int2 voxel = VoxelGrid::arenaVoxelToNewVoxel(
 			Int2(trigger.x, trigger.y), gridWidth, gridDepth);
 
