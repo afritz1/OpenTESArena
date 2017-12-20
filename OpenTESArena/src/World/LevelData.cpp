@@ -236,13 +236,12 @@ namespace std
 void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 	const INFFile &inf)
 {
-	// Indices for voxel data, stepping two bytes at a time.
-	int floorIndex = 0;
-
-	auto getNextFloorVoxel = [&flor, &floorIndex]()
+	// Lambda for obtaining a two-byte FLOR voxel.
+	auto getFloorVoxel = [&flor, width, depth](int x, int z)
 	{
-		const uint16_t voxel = Bytes::getLE16(flor.data() + floorIndex);
-		floorIndex += 2;
+		// Read voxel data in reverse order.
+		const int index = (((depth - 1) - z) * 2) + ((((width - 1) - x) * 2) * depth);
+		const uint16_t voxel = Bytes::getLE16(flor.data() + index);
 		return voxel;
 	};
 
@@ -253,12 +252,11 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 	std::unordered_map<std::pair<uint16_t, std::array<bool, 4>>, int> chasmDataMappings;
 
 	// Write the .MIF file's voxel IDs into the voxel grid.
-	for (int x = (width - 1); x >= 0; x--)
+	for (int x = 0; x < width; x++)
 	{
-		for (int z = (depth - 1); z >= 0; z--)
+		for (int z = 0; z < depth; z++)
 		{
-			const int index = x + (z * width);
-			const uint16_t florVoxel = getNextFloorVoxel();
+			const uint16_t florVoxel = getFloorVoxel(x, z);
 
 			// The floor voxel has a texture if it's not a chasm.
 			const int floorTextureID = (florVoxel & 0xFF00) >> 8;
@@ -436,13 +434,12 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 	const INFFile &inf)
 {
-	// Indices for voxel data, stepping two bytes at a time.
-	int map1Index = 0;
-
-	auto getNextMap1Voxel = [&map1, &map1Index]()
+	// Lambda for obtaining a two-byte MAP1 voxel.
+	auto getMap1Voxel = [&map1, width, depth](int x, int z)
 	{
-		const uint16_t voxel = Bytes::getLE16(map1.data() + map1Index);
-		map1Index += 2;
+		// Read voxel data in reverse order.
+		const int index = (((depth - 1) - z) * 2) + ((((width - 1) - x) * 2) * depth);
+		const uint16_t voxel = Bytes::getLE16(map1.data() + index);
 		return voxel;
 	};
 
@@ -450,12 +447,11 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 	std::unordered_map<uint16_t, int> wallDataMappings;
 
 	// Write the .MIF file's voxel IDs into the voxel grid.
-	for (int x = (width - 1); x >= 0; x--)
+	for (int x = 0; x < width; x++)
 	{
-		for (int z = (depth - 1); z >= 0; z--)
+		for (int z = 0; z < depth; z++)
 		{
-			const int index = x + (z * width);
-			const uint16_t map1Voxel = getNextMap1Voxel();
+			const uint16_t map1Voxel = getMap1Voxel(x, z);
 
 			if ((map1Voxel & 0x8000) == 0)
 			{
@@ -709,12 +705,12 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
 	const INFFile &inf)
 {
 	const uint8_t *map2Data = map2.data();
-	int map2Index = 0;
 
-	auto getNextMap2Voxel = [map2Data, &map2Index]()
+	// Lambda for obtaining a two-byte MAP2 voxel.
+	auto getMap2Voxel = [&map2, width, depth](int x, int z)
 	{
-		const uint16_t voxel = Bytes::getLE16(map2Data + map2Index);
-		map2Index += 2;
+		const int index = (z * 2) + ((x * 2) * width);
+		const uint16_t voxel = Bytes::getLE16(map2.data() + index);
 		return voxel;
 	};
 
@@ -722,12 +718,11 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
 	std::unordered_map<uint16_t, int> map2DataMappings;
 
 	// Write the .MIF file's voxel IDs into the voxel grid.
-	for (int x = (width - 1); x >= 0; x--)
+	for (int x = 0; x < width; x++)
 	{
-		for (int z = (depth - 1); z >= 0; z--)
+		for (int z = 0; z < depth; z++)
 		{
-			const int index = x + (z * width);
-			const uint16_t map2Voxel = getNextMap2Voxel();
+			const uint16_t map2Voxel = getMap2Voxel(x, z);
 
 			if (map2Voxel != 0)
 			{
