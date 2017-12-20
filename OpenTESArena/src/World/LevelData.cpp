@@ -256,13 +256,23 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 	{
 		for (int z = 0; z < depth; z++)
 		{
-			const uint16_t florVoxel = getFloorVoxel(x, z);
+			auto getFloorTextureID = [](uint16_t voxel)
+			{
+				return (voxel & 0xFF00) >> 8;
+			};
 
-			// The floor voxel has a texture if it's not a chasm.
-			const int floorTextureID = (florVoxel & 0xFF00) >> 8;
-			if ((floorTextureID != MIFFile::DRY_CHASM) &&
-				(floorTextureID != MIFFile::WET_CHASM) &&
-				(floorTextureID != MIFFile::LAVA_CHASM))
+			auto isChasm = [](int id)
+			{
+				return (id == MIFFile::DRY_CHASM) ||
+					(id == MIFFile::LAVA_CHASM) ||
+					(id == MIFFile::WET_CHASM);
+			};
+
+			const uint16_t florVoxel = getFloorVoxel(x, z);
+			const int floorTextureID = getFloorTextureID(florVoxel);
+
+			// See if the floor voxel is either solid or a chasm.
+			if (!isChasm(floorTextureID))
 			{
 				// Get the voxel data index associated with the floor value, or add it
 				// if it doesn't exist yet.
@@ -286,21 +296,19 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 			}
 			else
 			{
-				// Assign voxel types to the empty voxels (i.e., a water voxel is a different
-				// type than a lava voxel).
+				// The voxel is a chasm. See which of its four faces are adjacent to
+				// a solid floor voxel.
+				const uint16_t northVoxel = getFloorVoxel(std::min(x + 1, width - 1), z);
+				const uint16_t eastVoxel = getFloorVoxel(x, std::min(z + 1, depth - 1));
+				const uint16_t southVoxel = getFloorVoxel(std::max(x - 1, 0), z);
+				const uint16_t westVoxel = getFloorVoxel(x, std::max(z - 1, 0));
 
-				// To do: there are ~10 combinations of chasm faces, which means there will be
-				// up to ~10 voxel data for each type of chasm. The voxel data index is a function 
-				// of the four surrounding voxels in addition to the voxel ID itself.
-
-				// To do: get 4 adjacent voxels (for each: true if floor is solid).
-				// - The resulting voxel data arguments depend on this (each wall face).
 				const std::array<bool, 4> adjacentFaces
 				{
-					false, // North.
-					false, // East.
-					false, // South.
-					false // West.
+					!isChasm(getFloorTextureID(northVoxel)), // North.
+					!isChasm(getFloorTextureID(eastVoxel)), // East.
+					!isChasm(getFloorTextureID(southVoxel)), // South.
+					!isChasm(getFloorTextureID(westVoxel)) // West.
 				};
 
 				if (floorTextureID == MIFFile::DRY_CHASM)
@@ -344,47 +352,6 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 
 					this->setVoxel(x, 0, z, dataIndex);
 				}
-				else if (floorTextureID == MIFFile::WET_CHASM)
-				{
-					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
-						floorTextureID, &adjacentFaces]()
-					{
-						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-						const auto chasmIter = chasmDataMappings.find(chasmPair);
-						if (chasmIter != chasmDataMappings.end())
-						{
-							return chasmIter->second;
-						}
-						else
-						{
-							const int wetChasmID = [&inf]()
-							{
-								const int *ptr = inf.getWetChasmIndex();
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugWarning("Missing *WETCHASM ID.");
-									return 0;
-								}
-							}();
-
-							const int index = this->voxelGrid.addVoxelData(VoxelData::makeChasm(
-								wetChasmID,
-								adjacentFaces.at(0),
-								adjacentFaces.at(1),
-								adjacentFaces.at(2),
-								adjacentFaces.at(3),
-								VoxelData::ChasmData::Type::Wet));
-							return chasmDataMappings.insert(
-								std::make_pair(chasmPair, index)).first->second;
-						}
-					}();
-
-					this->setVoxel(x, 0, z, dataIndex);
-				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
 					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
@@ -419,6 +386,47 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 								adjacentFaces.at(2),
 								adjacentFaces.at(3),
 								VoxelData::ChasmData::Type::Lava));
+							return chasmDataMappings.insert(
+								std::make_pair(chasmPair, index)).first->second;
+						}
+					}();
+
+					this->setVoxel(x, 0, z, dataIndex);
+				}
+				else if (floorTextureID == MIFFile::WET_CHASM)
+				{
+					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
+						floorTextureID, &adjacentFaces]()
+					{
+						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
+						const auto chasmIter = chasmDataMappings.find(chasmPair);
+						if (chasmIter != chasmDataMappings.end())
+						{
+							return chasmIter->second;
+						}
+						else
+						{
+							const int wetChasmID = [&inf]()
+							{
+								const int *ptr = inf.getWetChasmIndex();
+								if (ptr != nullptr)
+								{
+									return *ptr;
+								}
+								else
+								{
+									DebugWarning("Missing *WETCHASM ID.");
+									return 0;
+								}
+							}();
+
+							const int index = this->voxelGrid.addVoxelData(VoxelData::makeChasm(
+								wetChasmID,
+								adjacentFaces.at(0),
+								adjacentFaces.at(1),
+								adjacentFaces.at(2),
+								adjacentFaces.at(3),
+								VoxelData::ChasmData::Type::Wet));
 							return chasmDataMappings.insert(
 								std::make_pair(chasmPair, index)).first->second;
 						}
