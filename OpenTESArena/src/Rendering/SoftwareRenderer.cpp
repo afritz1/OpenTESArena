@@ -1083,6 +1083,9 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 	const double depthEndRecip = 1.0 / depthEnd;
 	const Double2 startPointDiv = startPoint * depthStartRecip;
 	const Double2 endPointDiv = endPoint * depthEndRecip;
+	const Double2 pointDivDiff(
+		endPointDiv.x - startPointDiv.x,
+		endPointDiv.y - startPointDiv.y);
 	
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
@@ -1110,25 +1113,18 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 			// Linearly interpolated fog.
 			const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
-			// Interpolate between the near and far point.
-			const Double2 currentPoint =
-				(startPointDiv + ((endPointDiv - startPointDiv) * yPercent)) /
-				(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
+			// Interpolate between start and end points.
+			const double currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
+			const double currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
-			// Horizontal texture coordinate.
+			// Texture coordinates.
 			const double u = std::max(std::min(Constants::JustBelowOne,
-				Constants::JustBelowOne - (currentPoint.x - std::floor(currentPoint.x))),
-				0.0);
-
-			// Horizontal offset in texture.
-			const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
-
-			// Vertical texture coordinate.
+				Constants::JustBelowOne - (currentPointX - std::floor(currentPointX))), 0.0);
 			const double v = std::max(std::min(Constants::JustBelowOne,
-				Constants::JustBelowOne - (currentPoint.y - std::floor(currentPoint.y))),
-				0.0);
+				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY))), 0.0);
 
-			// Y position in texture.
+			// Offsets in texture.
+			const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
 			// Alpha is ignored in this loop, so transparent texels will appear black.
