@@ -1003,14 +1003,14 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 	occlusion.clipRange(&yStart, &yEnd);
 	occlusion.update(yStart, yEnd);
 
-	// Draw the column to the output buffer. No need to check per-pixel depth thanks to 
-	// occlusion clipping.
+	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
 		const int index = x + (y * frame.width);
 
 		// Check depth of the pixel before rendering.
-		// - To do: implement occlusion so this depth check isn't needed.
+		// - To do: implement occlusion culling and back-to-front transparent rendering so
+		//   this depth check isn't needed.
 		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
 		{
 			// Percent stepped from beginning to end on the column.
@@ -1088,8 +1088,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 	occlusion.clipRange(&yStart, &yEnd);
 	occlusion.update(yStart, yEnd);
 
-	// Draw the column to the output buffer. No need to check per-pixel depth thanks to 
-	// occlusion clipping.
+	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
 		const int index = x + (y * frame.width);
@@ -1104,7 +1103,8 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 			(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
 
 		// Check depth of the pixel before rendering.
-		// - To do: implement occlusion so this depth check isn't needed.
+		// - To do: implement occlusion culling and back-to-front transparent rendering so
+		//   this depth check isn't needed.
 		if (depth <= frame.depthBuffer[index])
 		{
 			// Linearly interpolated fog.
@@ -1193,14 +1193,12 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 	// because transparent ranges do not occlude as simply as opaque ranges.
 	occlusion.clipRange(&yStart, &yEnd);
 
-	// Draw the column to the output buffer. No need to check per-pixel depth thanks to 
-	// occlusion clipping.
+	// Draw the column to the output buffer.
 	for (int y = yStart; y < yEnd; y++)
 	{
 		const int index = x + (y * frame.width);
 
 		// Check depth of the pixel before rendering.
-		// - To do: implement occlusion so this depth check isn't needed.
 		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
 		{
 			// Percent stepped from beginning to end on the column.
