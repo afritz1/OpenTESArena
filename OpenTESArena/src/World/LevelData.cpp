@@ -709,7 +709,8 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
 	// Lambda for obtaining a two-byte MAP2 voxel.
 	auto getMap2Voxel = [&map2, width, depth](int x, int z)
 	{
-		const int index = (z * 2) + ((x * 2) * width);
+		// Read voxel data in reverse order.
+		const int index = (((depth - 1) - z) * 2) + ((((width - 1) - x) * 2) * depth);
 		const uint16_t voxel = Bytes::getLE16(map2.data() + index);
 		return voxel;
 	};
