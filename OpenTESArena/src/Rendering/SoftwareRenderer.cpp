@@ -1083,9 +1083,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 	const double depthEndRecip = 1.0 / depthEnd;
 	const Double2 startPointDiv = startPoint * depthStartRecip;
 	const Double2 endPointDiv = endPoint * depthEndRecip;
-	const Double2 pointDivDiff(
-		endPointDiv.x - startPointDiv.x,
-		endPointDiv.y - startPointDiv.y);
+	const Double2 pointDivDiff = endPointDiv - startPointDiv;
 	
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
