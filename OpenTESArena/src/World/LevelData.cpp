@@ -206,9 +206,9 @@ const std::string *LevelData::getSoundTrigger(const Int2 &voxel) const
 	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
 }
 
-void LevelData::setVoxel(int x, int y, int z, int id)
+void LevelData::setVoxel(int x, int y, int z, uint8_t id)
 {
-	char *voxels = this->voxelGrid.getVoxels();
+	uint8_t *voxels = this->voxelGrid.getVoxels();
 	const int index = x + (y * this->voxelGrid.getWidth()) +
 		(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight());
 

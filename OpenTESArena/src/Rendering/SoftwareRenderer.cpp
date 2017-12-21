@@ -3260,7 +3260,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	}
 
 	// Pointer to voxel ID grid data.
-	const char *voxels = voxelGrid.getVoxels();
+	const uint8_t *voxels = voxelGrid.getVoxels();
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
@@ -3275,10 +3275,6 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 	if (voxelIsValid)
 	{
-		// Get the initial voxel ID and see how it should be rendered.
-		const char initialVoxelID = voxels[startCell.x + (startCell.y * voxelGrid.getWidth()) +
-			(startCell.z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-
 		// Decide how far the wall is, and which voxel face was hit.
 		if (sideDistX < sideDistZ)
 		{

@@ -1,6 +1,7 @@
 #ifndef VOXEL_GRID_H
 #define VOXEL_GRID_H
 
+#include <cstdint>
 #include <vector>
 
 #include "VoxelData.h"
@@ -8,10 +9,14 @@
 
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
 
+// In very complex scenes with several different kinds of voxels (including chasms, etc.),
+// there are roughly 120-140 unique voxel data definitions, which mandates that the voxel
+// type itself be at least unsigned 8-bit.
+
 class VoxelGrid
 {
 private:
-	std::vector<char> voxels;
+	std::vector<uint8_t> voxels;
 	std::vector<VoxelData> voxelData;
 	int width, height, depth;
 public:
@@ -23,22 +28,21 @@ public:
 	static Int2 arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridDepth);
 	static Double2 arenaVoxelToNewVoxel(const Double2 &voxel, int gridWidth, int gridDepth);
 
-	// Methods for obtaining the dimensions of the voxel grid.
+	// Gets the dimensions of the voxel grid.
 	int getWidth() const;
 	int getHeight() const;
 	int getDepth() const;
 
 	// Gets a pointer to the voxel grid data.
-	char *getVoxels();
-	const char *getVoxels() const;
+	uint8_t *getVoxels();
+	const uint8_t *getVoxels() const;
 
-	// Gets the voxel data associated with an ID. If the voxel ID of air is 0,
-	// then pass the voxel ID minus 1 instead to get the first one.
-	VoxelData &getVoxelData(int id);
-	const VoxelData &getVoxelData(int id) const;
+	// Gets the voxel data associated with an ID.
+	VoxelData &getVoxelData(uint8_t id);
+	const VoxelData &getVoxelData(uint8_t id) const;
 
-	// Adds a voxel data object and returns its assigned ID (index).
-	int addVoxelData(const VoxelData &voxelData);
+	// Adds a voxel data object and returns its assigned ID.
+	uint8_t addVoxelData(const VoxelData &voxelData);
 };
 
 #endif

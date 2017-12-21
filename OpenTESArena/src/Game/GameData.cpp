@@ -378,7 +378,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
 	{
-		char *voxels = voxelGrid.getVoxels();
+		uint8_t *voxels = voxelGrid.getVoxels();
 		voxels[x + (y * voxelGrid.getWidth()) +
 			(z * voxelGrid.getWidth() * voxelGrid.getHeight())] = id;
 	};

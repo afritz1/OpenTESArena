@@ -53,7 +53,7 @@ private:
 	VoxelGrid voxelGrid;
 	double ceilingHeight;
 
-	void setVoxel(int x, int y, int z, int id);
+	void setVoxel(int x, int y, int z, uint8_t id);
 	void readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 		const INFFile &inf);
 	void readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
