@@ -13,6 +13,97 @@
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
 
+SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
+	double fovY, double aspect)
+	: eye(eye)
+{
+	// Variations of eye position for certain voxel calculations.
+	this->eyeVoxelReal = Double3(
+		std::floor(eye.x),
+		std::floor(eye.y),
+		std::floor(eye.z));
+	this->eyeVoxel = Int3(
+		static_cast<int>(this->eyeVoxelReal.x),
+		static_cast<int>(this->eyeVoxelReal.y),
+		static_cast<int>(this->eyeVoxelReal.z));
+
+	// Camera axes. We trick the 2.5D ray caster into thinking the player is always looking
+	// straight forward, but we use the Y component of the player's direction to offset 
+	// projected coordinates via Y-shearing.
+	const Double3 forwardXZ = Double3(direction.x, 0.0, direction.z).normalized();
+	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
+
+	// Transformation matrix (model matrix isn't required because it's just the identity).
+	this->transform = [&eye, &forwardXZ, &rightXZ, fovY, aspect]()
+	{
+		// Global up vector.
+		const Double3 up = Double3::UnitY;
+
+		const Matrix4d view = Matrix4d::view(eye, forwardXZ, rightXZ, up);
+		const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
+			SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
+		return projection * view;
+	}();
+
+	this->forwardX = forwardXZ.x;
+	this->forwardZ = forwardXZ.z;
+	this->rightX = rightXZ.x;
+	this->rightZ = rightXZ.z;
+
+	this->fovY = fovY;
+
+	// Zoom of the camera, based on vertical field of view.
+	this->zoom = 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+
+	this->aspect = aspect;
+
+	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
+	// player's 3D direction and field of view. First get the player's angle relative to the 
+	// horizon, then get the tangent of that angle. The Y component of the player's direction
+	// must be clamped less than 1 because 1 would imply they are looking straight up or down, 
+	// which is impossible in 2.5D rendering (the vertical line segment of the view frustum 
+	// would be infinitely high or low). The camera code should take care of the clamping for us.
+	this->yShear = [this, &direction]()
+	{
+		// Get the vertical angle of the player's direction.
+		const double angleRadians = [&direction]()
+		{
+			// Get the length of the direction vector's projection onto the XZ plane.
+			const double xzProjection = std::sqrt(
+				(direction.x * direction.x) + (direction.z * direction.z));
+
+			if (direction.y > 0.0)
+			{
+				// Above the horizon.
+				return std::acos(xzProjection);
+			}
+			else if (direction.y < 0.0)
+			{
+				// Below the horizon.
+				return -std::acos(xzProjection);
+			}
+			else
+			{
+				// At the horizon.
+				return 0.0;
+			}
+		}();
+
+		// Get the number of screen heights to translate all projected Y coordinates by, 
+		// relative to the current zoom. As a reference, this should be some value roughly 
+		// between -1.0 and 1.0 for "acceptable skewing" at a vertical FOV of 90.0. If the 
+		// camera is not clamped, this could theoretically be between -infinity and infinity, 
+		// but it would result in far too much skewing.
+		return std::tan(angleRadians) * this->zoom;
+	}();
+}
+
+SoftwareRenderer::Ray::Ray(double dirX, double dirZ)
+{
+	this->dirX = dirX;
+	this->dirZ = dirZ;
+}
+
 SoftwareRenderer::OcclusionData::OcclusionData(int yMin, int yMax)
 {
 	this->yMin = yMin;
@@ -88,6 +179,8 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->depthBuffer = depthBuffer;
 	this->width = width;
 	this->height = height;
+	this->widthReal = static_cast<double>(width);
+	this->heightReal = static_cast<double>(height);
 }
 
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
@@ -296,18 +389,18 @@ void SoftwareRenderer::resize(int width, int height)
 	this->height = height;
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &direction,
-	const Matrix4d &transform, double yShear, double aspect, double zoom)
+void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 {
-	assert(direction.isNormalized());
-
 	this->visibleFlats.clear();
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
-	const Double3 flatForward = Double3(-direction.x, 0.0, -direction.y).normalized();
+	const Double3 flatForward = Double3(-camera.forwardX, 0.0, -camera.forwardZ).normalized();
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
+
+	const Double2 eye2D(camera.eye.x, camera.eye.z);
+	const Double2 direction(camera.forwardX, camera.forwardZ);
 
 	// This is the visible flat determination algorithm. It goes through all flats and sees 
 	// which ones would be at least partially visible in the view frustum.
@@ -328,7 +421,7 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 
 		// If the flat is somewhere in front of the camera, do further checks.
 		const Double2 flatPosition2D(flat.position.x, flat.position.z);
-		const Double2 flatEyeDiff = (flatPosition2D - eye).normalized();
+		const Double2 flatEyeDiff = (flatPosition2D - eye2D).normalized();
 		const bool inFrontOfCamera = direction.dot(flatEyeDiff) > 0.0;
 
 		if (inFrontOfCamera)
@@ -336,8 +429,8 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
 			// are used to find where the flat is on-screen.
-			Double4 projStart = transform * Double4(flatFrame.topStart, 1.0);
-			Double4 projEnd = transform * Double4(flatFrame.bottomEnd, 1.0);
+			Double4 projStart = camera.transform * Double4(flatFrame.topStart, 1.0);
+			Double4 projEnd = camera.transform * Double4(flatFrame.bottomEnd, 1.0);
 
 			// Normalize coordinates.
 			projStart = projStart / projStart.w;
@@ -346,8 +439,8 @@ void SoftwareRenderer::updateVisibleFlats(const Double2 &eye, const Double2 &dir
 			// Assign each screen value to the flat frame data.
 			flatFrame.startX = 0.50 + (projStart.x * 0.50);
 			flatFrame.endX = 0.50 + (projEnd.x * 0.50);
-			flatFrame.startY = (0.50 + yShear) - (projStart.y * 0.50);
-			flatFrame.endY = (0.50 + yShear) - (projEnd.y * 0.50);
+			flatFrame.startY = (0.50 + camera.yShear) - (projStart.y * 0.50);
+			flatFrame.endY = (0.50 + camera.yShear) - (projEnd.y * 0.50);
 			flatFrame.z = projStart.z;
 
 			// Check that the Z value is within the clipping planes.
@@ -1243,10 +1336,9 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	double ceilingHeight, const VoxelGrid &voxelGrid,
+	double farZ, const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
 	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
@@ -1256,14 +1348,6 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	// of pixels. The clamping function depends on which side of the range is being clamped; 
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
-
-	const double heightReal = static_cast<double>(frame.height);
-
-	// Y position at the base of the player's voxel.
-	const double playerYFloor = std::floor(playerY);
-
-	// Voxel Y of the player.
-	const int playerVoxelY = static_cast<int>(playerYFloor);
 
 	const double wallU = [&farPoint, facing]()
 	{
@@ -1294,11 +1378,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	// this voxel column.
 	const Double3 wallNormal = -SoftwareRenderer::getNormal(facing);
 
-	auto drawInitialVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal,
-		&nearPoint, &farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo,
-		ceilingHeight, &voxelGrid, &textures, &occlusion, &frame, heightReal]()
+	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
+		&textures, &occlusion, &frame]()
 	{
-		const int voxelY = static_cast<int>(playerYFloor);
+		const int voxelY = camera.eyeVoxel.y;
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
@@ -1313,7 +1397,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
-				playerYFloor + voxelHeight,
+				camera.eyeVoxelReal.y + voxelHeight,
 				farPoint.y);
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -1321,7 +1405,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 			const Double3 farFloorPoint(
 				farPoint.x,
-				playerYFloor,
+				camera.eyeVoxelReal.y,
 				farPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
@@ -1329,13 +1413,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 
 			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, transform, yShear) * heightReal;
+				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, transform, yShear) * heightReal;
+				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -1379,15 +1463,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				playerYFloor + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				camera.eyeVoxelReal.y + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				playerYFloor + (raisedData.yOffset * voxelHeight),
+				camera.eyeVoxelReal.y + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -1396,9 +1480,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -1411,7 +1495,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
 					shadingInfo, occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -1420,9 +1504,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearFloorScreenY, frame.height);
@@ -1448,13 +1532,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearCeilingScreenY, frame.height);
@@ -1500,9 +1584,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				SoftwareRenderer::diagProjection(playerYFloor, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+				SoftwareRenderer::diagProjection(camera.eyeVoxelReal.y, voxelHeight, hit.point,
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
@@ -1526,18 +1610,18 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					playerYFloor + voxelHeight,
+					camera.eyeVoxelReal.y + voxelHeight,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					playerYFloor,
+					camera.eyeVoxelReal.y,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -1563,9 +1647,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		}
 	};
 
-	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
-		&voxelGrid, &textures, &occlusion, &frame, heightReal](int voxelY)
+	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
+		&textures, &occlusion, &frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -1589,9 +1673,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 
 			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, transform, yShear) * heightReal;
+				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 				farCeilingScreenY, frame.height);
@@ -1619,9 +1703,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 
 			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, transform, yShear) * heightReal;
+				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 				farCeilingScreenY, frame.height);
@@ -1652,7 +1736,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -1661,9 +1745,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -1676,7 +1760,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
 					shadingInfo, occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -1685,9 +1769,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearFloorScreenY, frame.height);
@@ -1713,13 +1797,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearCeilingScreenY, frame.height);
@@ -1766,8 +1850,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
@@ -1800,9 +1884,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -1828,9 +1912,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		}
 	};
 
-	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
-		&voxelGrid, &textures, &occlusion, &frame, heightReal](int voxelY)
+	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, 
+		&textures, &occlusion, &frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -1854,9 +1938,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				farPoint.y);
 
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, transform, yShear) * heightReal;
+				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearFloorScreenY, frame.height);
@@ -1888,9 +1972,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				farPoint.y);
 
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, transform, yShear) * heightReal;
+				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearFloorScreenY, frame.height);
@@ -1916,7 +2000,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				nearPoint.y);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -1925,9 +2009,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -1940,7 +2024,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID - 1),
 					shadingInfo, occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -1949,9 +2033,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearFloorScreenY, frame.height);
@@ -1977,13 +2061,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, transform, yShear) * heightReal;
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, transform, yShear) * heightReal;
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					nearCeilingScreenY, frame.height);
@@ -2031,8 +2115,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 				int diagStart, diagEnd;
 
 				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
@@ -2065,9 +2149,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -2081,10 +2165,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			// Render front and back-faces.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
-
-			// To do.
+			// Ignore. Chasms should never be above the player's voxel.
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -2097,43 +2178,35 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, dou
 	drawInitialVoxel();
 
 	// Draw voxels below the player's voxel.
-	for (int voxelY = (playerVoxelY - 1); voxelY >= 0; voxelY--)
+	for (int voxelY = (camera.eyeVoxel.y - 1); voxelY >= 0; voxelY--)
 	{
 		drawInitialVoxelBelow(voxelY);
 	}
 
 	// Draw voxels above the player's voxel.
-	for (int voxelY = (playerVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	for (int voxelY = (camera.eyeVoxel.y + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		drawInitialVoxelAbove(voxelY);
 	}
 }
 
-void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-	double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+	double farZ, const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
 	// and the drawing orders being slightly modified. The reason for having so much code is
 	// so we cover all the different ray casting cases efficiently. It would slow down this 
-	// method if it had an "initialColumn" boolean that was false 90% of the time.
+	// method if it had to worry about an "initialColumn" boolean that's always false in the
+	// general case.
 
 	// When clamping Y values for drawing ranges, subtract 0.5 from starts and add 0.5 to 
 	// ends before converting to integers because the drawing methods sample at the center 
 	// of pixels. The clamping function depends on which side of the range is being clamped; 
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
-
-	const double heightReal = static_cast<double>(frame.height);
-
-	// Y position at the base of the player's voxel.
-	const double playerYFloor = std::floor(playerY);
-
-	// Voxel Y of the player.
-	const int playerVoxelY = static_cast<int>(playerYFloor);
 
 	// Horizontal texture coordinate for the wall, potentially shared between multiple voxels
 	// in this voxel column.
@@ -2166,11 +2239,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	// this voxel column.
 	const Double3 wallNormal = SoftwareRenderer::getNormal(facing);
 
-	auto drawVoxel = [x, voxelX, voxelZ, playerY, playerYFloor, &wallNormal, &nearPoint, 
-		&farPoint, nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight,
-		&voxelGrid, &textures, &occlusion, &frame, heightReal]()
+	auto drawVoxel = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint,
+		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
+		&occlusion, &frame]()
 	{
-		const int voxelY = static_cast<int>(playerYFloor);
+		const int voxelY = camera.eyeVoxel.y;
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
@@ -2185,17 +2258,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				playerYFloor + voxelHeight,
+				camera.eyeVoxelReal.y + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				playerYFloor,
+				camera.eyeVoxelReal.y,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2220,17 +2293,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				playerYFloor + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				camera.eyeVoxelReal.y + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				playerYFloor + (raisedData.yOffset * voxelHeight),
+				camera.eyeVoxelReal.y + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2238,7 +2311,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearFloorScreenY, frame.height);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -2247,7 +2320,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -2265,7 +2338,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo,
 					occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -2274,7 +2347,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = wallEnd;
 				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
@@ -2314,9 +2387,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				SoftwareRenderer::diagProjection(playerYFloor, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+				SoftwareRenderer::diagProjection(camera.eyeVoxelReal.y, voxelHeight, hit.point,
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne, 
@@ -2330,17 +2403,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				playerYFloor + voxelHeight,
+				camera.eyeVoxelReal.y + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				playerYFloor,
+				camera.eyeVoxelReal.y,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2364,18 +2437,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					playerYFloor + voxelHeight,
+					camera.eyeVoxelReal.y + voxelHeight,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					playerYFloor,
+					camera.eyeVoxelReal.y,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -2403,17 +2476,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				playerYFloor + voxelHeight,
+				camera.eyeVoxelReal.y + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				playerYFloor,
+				camera.eyeVoxelReal.y,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2426,9 +2499,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		}
 	};
 
-	auto drawVoxelBelow = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint, 
-		nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight, &voxelGrid,
-		&textures, &occlusion, &frame, heightReal](int voxelY)
+	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint, 
+		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures, &occlusion,
+		&frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -2456,11 +2529,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, transform, yShear) * heightReal;
+				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 				farCeilingScreenY, frame.height);
@@ -2496,9 +2569,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, transform, yShear) * heightReal;
+				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 				farCeilingScreenY, frame.height);
@@ -2528,9 +2601,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2538,7 +2611,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearFloorScreenY, frame.height);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -2547,7 +2620,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -2565,7 +2638,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, 
 					occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -2574,7 +2647,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = wallEnd;
 				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
@@ -2615,8 +2688,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
@@ -2638,9 +2711,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2673,9 +2746,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -2711,9 +2784,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2726,9 +2799,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		}
 	};
 
-	auto drawVoxelAbove = [x, voxelX, voxelZ, playerY, &wallNormal, &nearPoint, &farPoint, 
-		nearZ, farZ, wallU, &transform, yShear, &shadingInfo, ceilingHeight, &voxelGrid,
-		&textures, &occlusion, &frame, heightReal](int voxelY)
+	auto drawVoxelAbove = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint, 
+		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures, &occlusion,
+		&frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -2756,11 +2829,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				farPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, transform, yShear) * heightReal;
+				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2800,9 +2873,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				farPoint.y);
 
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, transform, yShear) * heightReal;
+				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearFloorScreenY, frame.height);
@@ -2828,9 +2901,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2838,7 +2911,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearFloorScreenY, frame.height);
 
 			// Draw order depends on the player's Y position relative to the platform.
-			if (playerY > nearCeilingPoint.y)
+			if (camera.eye.y > nearCeilingPoint.y)
 			{
 				// Above platform.
 				const Double3 farCeilingPoint(
@@ -2847,7 +2920,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, transform, yShear) * heightReal;
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
 					farCeilingScreenY, frame.height);
@@ -2865,7 +2938,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					wallNormal, textures.at(raisedData.sideID - 1), shadingInfo, 
 					occlusion, frame);
 			}
-			else if (playerY < nearFloorPoint.y)
+			else if (camera.eye.y < nearFloorPoint.y)
 			{
 				// Below platform.
 				const Double3 farFloorPoint(
@@ -2874,7 +2947,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					farPoint.y);
 
 				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, transform, yShear) * heightReal;
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int floorStart = wallEnd;
 				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
@@ -2916,8 +2989,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				int diagStart, diagEnd;
 
 				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					transform, yShear, frame.height, heightReal, diagTopScreenY,
-					diagBottomScreenY, diagStart, diagEnd);
+					camera.transform, camera.yShear, frame.height, frame.heightReal,
+					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
 				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
 					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
@@ -2939,9 +3012,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -2974,9 +3047,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, transform, yShear) * heightReal;
+					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
 				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, transform, yShear) * heightReal;
+					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
 					edgeTopScreenY, frame.height);
@@ -2990,10 +3063,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			// Render front and back-faces.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
-
-			// To do.
+			// Ignore. Chasms should never be above the player's voxel.
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -3012,9 +3082,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, transform, yShear) * heightReal;
+				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
 			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, transform, yShear) * heightReal;
+				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
 
 			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
 				nearCeilingScreenY, frame.height);
@@ -3031,13 +3101,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, double pla
 	drawVoxel();
 
 	// Draw voxels below the voxel.
-	for (int voxelY = (playerVoxelY - 1); voxelY >= 0; voxelY--)
+	for (int voxelY = (camera.eyeVoxel.y - 1); voxelY >= 0; voxelY--)
 	{
 		drawVoxelBelow(voxelY);
 	}
 
 	// Draw voxels above the voxel.
-	for (int voxelY = (playerVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	for (int voxelY = (camera.eyeVoxel.y + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		drawVoxelAbove(voxelY);
 	}
@@ -3095,12 +3165,10 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// Get the start and end coordinates of the projected points (Y values potentially
 	// outside the screen).
-	const double widthReal = static_cast<double>(frame.width);
-	const double heightReal = static_cast<double>(frame.height);
-	const double projectedXStart = clampedStartXPercent * widthReal;
-	const double projectedXEnd = clampedEndXPercent * widthReal;
-	const double projectedYStart = flatFrame.startY * heightReal;
-	const double projectedYEnd = flatFrame.endY * heightReal;
+	const double projectedXStart = clampedStartXPercent * frame.widthReal;
+	const double projectedXEnd = clampedEndXPercent * frame.widthReal;
+	const double projectedYStart = flatFrame.startY * frame.heightReal;
+	const double projectedYEnd = flatFrame.endY * frame.heightReal;
 
 	// Clamp the coordinates for where the flat starts and stops on the screen.
 	const int xStart = SoftwareRenderer::getLowerBoundedPixel(projectedXStart, frame.width);
@@ -3193,15 +3261,13 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 	}
 }
 
-void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direction,
-	const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-	double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
+	const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
-	// Initially based on Lode Vandevenne's algorithm, this method of rendering is more 
-	// expensive than cheap 2.5D ray casting, as it does not stop at the first wall 
-	// intersection, and it also renders walls above and below, but it is more correct 
-	// as a result. Assume "direction" is normalized.
+	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
+	// expensive as it does not stop at the first wall intersection, and it also renders voxels 
+	// above and below the current floor.
 
 	// Some floating point behavior assumptions:
 	// -> (value / 0.0) == infinity
@@ -3210,53 +3276,37 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
 
-	// Because 2D vectors use "X" and "Y", the Z component is actually
-	// aliased as "Y", which is a minor annoyance.
-	const double dirX = direction.x;
-	const double dirZ = direction.y;
-	const double dirXSquared = direction.x * direction.x;
-	const double dirZSquared = direction.y * direction.y;
+	const double dirXSquared = ray.dirX * ray.dirX;
+	const double dirZSquared = ray.dirZ * ray.dirZ;
 
 	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
 	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
 
-	const bool nonNegativeDirX = direction.x >= 0.0;
-	const bool nonNegativeDirZ = direction.y >= 0.0;
-
-	// Constant DDA-related values.
-	// - Technically, these could be moved out of the ray casting method, but they
-	//   are not a performance concern for now. It's just to minimize renderer state.
-	const Double3 startCellReal(
-		std::floor(eye.x),
-		std::floor(eye.y),
-		std::floor(eye.z));
-	const Int3 startCell(
-		static_cast<int>(startCellReal.x),
-		static_cast<int>(startCellReal.y),
-		static_cast<int>(startCellReal.z));
+	const bool nonNegativeDirX = ray.dirX >= 0.0;
+	const bool nonNegativeDirZ = ray.dirZ >= 0.0;
 
 	int stepX, stepZ;
 	double sideDistX, sideDistZ;
 	if (nonNegativeDirX)
 	{
 		stepX = 1;
-		sideDistX = (startCellReal.x + 1.0 - eye.x) * deltaDistX;
+		sideDistX = (camera.eyeVoxelReal.x + 1.0 - camera.eye.x) * deltaDistX;
 	}
 	else
 	{
 		stepX = -1;
-		sideDistX = (eye.x - startCellReal.x) * deltaDistX;
+		sideDistX = (camera.eye.x - camera.eyeVoxelReal.x) * deltaDistX;
 	}
 
 	if (nonNegativeDirZ)
 	{
 		stepZ = 1;
-		sideDistZ = (startCellReal.z + 1.0 - eye.z) * deltaDistZ;
+		sideDistZ = (camera.eyeVoxelReal.z + 1.0 - camera.eye.z) * deltaDistZ;
 	}
 	else
 	{
 		stepZ = -1;
-		sideDistZ = (eye.z - startCellReal.z) * deltaDistZ;
+		sideDistZ = (camera.eye.z - camera.eyeVoxelReal.z) * deltaDistZ;
 	}
 
 	// Pointer to voxel ID grid data.
@@ -3269,9 +3319,13 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 	VoxelData::Facing facing;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
-	bool voxelIsValid = (startCell.x >= 0) && (startCell.y >= 0) && (startCell.z >= 0) &&
-		(startCell.x < voxelGrid.getWidth()) && (startCell.y < voxelGrid.getHeight()) && 
-		(startCell.z < voxelGrid.getDepth());
+	bool voxelIsValid = 
+		(camera.eyeVoxel.x >= 0) && 
+		(camera.eyeVoxel.y >= 0) && 
+		(camera.eyeVoxel.z >= 0) &&
+		(camera.eyeVoxel.x < voxelGrid.getWidth()) && 
+		(camera.eyeVoxel.y < voxelGrid.getHeight()) &&
+		(camera.eyeVoxel.z < voxelGrid.getDepth());
 
 	if (voxelIsValid)
 	{
@@ -3292,30 +3346,29 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		// The initial near point is directly in front of the player in the near Z 
 		// camera plane.
 		const Double2 initialNearPoint(
-			eye.x + (dirX * SoftwareRenderer::NEAR_PLANE),
-			eye.z + (dirZ * SoftwareRenderer::NEAR_PLANE));
+			camera.eye.x + (ray.dirX * SoftwareRenderer::NEAR_PLANE),
+			camera.eye.z + (ray.dirZ * SoftwareRenderer::NEAR_PLANE));
 
 		// The initial far point is the wall hit. This is used with the player's position 
 		// for drawing the initial floor and ceiling.
 		const Double2 initialFarPoint(
-			eye.x + (dirX * zDistance),
-			eye.z + (dirZ * zDistance));
+			camera.eye.x + (ray.dirX * zDistance),
+			camera.eye.z + (ray.dirZ * zDistance));
 
 		// Draw all voxels in a column at the player's XZ coordinate.
-		SoftwareRenderer::drawInitialVoxelColumn(x, startCell.x, startCell.z, eye.y,
-			facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
-			zDistance, transform, yShear, shadingInfo, ceilingHeight, voxelGrid, 
-			textures, occlusion, frame);
+		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
+			camera, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			zDistance, shadingInfo, ceilingHeight, voxelGrid, textures, occlusion, frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
 	// the Y cell coordinate is constant.
-	Int3 cell(startCell.x, startCell.y, startCell.z);
+	Int3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
 
 	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
 	// distance for the current edge point.
-	auto doDDAStep = [&eye, &voxelGrid, &sideDistX, &sideDistZ, &cell, &facing,
-		&voxelIsValid, &zDistance, deltaDistX, deltaDistZ, stepX, stepZ, dirX, dirZ,
+	auto doDDAStep = [&camera, &ray, &voxelGrid, &sideDistX, &sideDistZ, &cell,
+		&facing, &voxelIsValid, &zDistance, deltaDistX, deltaDistZ, stepX, stepZ,
 		nonNegativeDirX, nonNegativeDirZ]()
 	{
 		if (sideDistX < sideDistZ)
@@ -3337,9 +3390,18 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 
 		const bool onXAxis = (facing == VoxelData::Facing::PositiveX) || 
 			(facing == VoxelData::Facing::NegativeX);
-		zDistance = onXAxis ?
-			(static_cast<double>(cell.x) - eye.x + static_cast<double>((1 - stepX) / 2)) / dirX :
-			(static_cast<double>(cell.z) - eye.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
+
+		// Update the Z distance depending on which axis was stepped with.
+		if (onXAxis)
+		{
+			zDistance = (static_cast<double>(cell.x) - 
+				camera.eye.x + static_cast<double>((1 - stepX) / 2)) / ray.dirX;
+		}
+		else
+		{
+			zDistance = (static_cast<double>(cell.z) -
+				camera.eye.z + static_cast<double>((1 - stepZ) / 2)) / ray.dirZ;
+		}
 	};
 
 	// Step forward in the grid once to leave the initial voxel and update the Z distance.
@@ -3355,7 +3417,7 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		// loop needs to do another DDA step to calculate the far point.
 		const int savedCellX = cell.x;
 		const int savedCellZ = cell.z;
-		const VoxelData::Facing savedNormal = facing;
+		const VoxelData::Facing savedFacing = facing;
 		const double wallDistance = zDistance;
 
 		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
@@ -3364,16 +3426,16 @@ void SoftwareRenderer::rayCast2D(int x, const Double3 &eye, const Double2 &direc
 		// Near and far points in the XZ plane. The near point is where the wall is, and 
 		// the far point is used with the near point for drawing the floor and ceiling.
 		const Double2 nearPoint(
-			eye.x + (dirX * wallDistance),
-			eye.z + (dirZ * wallDistance));
+			camera.eye.x + (ray.dirX * wallDistance),
+			camera.eye.z + (ray.dirZ * wallDistance));
 		const Double2 farPoint(
-			eye.x + (dirX * zDistance),
-			eye.z + (dirZ * zDistance));
+			camera.eye.x + (ray.dirX * zDistance),
+			camera.eye.z + (ray.dirZ * zDistance));
 
 		// Draw all voxels in a column at the given XZ coordinate.
-		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, eye.y, savedNormal, 
-			nearPoint, farPoint, wallDistance, zDistance, transform, yShear, shadingInfo, 
-			ceilingHeight, voxelGrid, textures, occlusion, frame);
+		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, savedFacing,
+			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, ceilingHeight, 
+			voxelGrid, textures, occlusion, frame);
 	}
 }
 
@@ -3386,66 +3448,14 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
 
-	// Camera values for rendering. We trick the 2.5D ray caster into thinking the player is 
-	// always looking straight forward, but we use the Y component of the player's direction 
-	// to offset projected coordinates via Y-shearing. Assume "direction" is normalized.
-	const Double3 forwardXZ = Double3(direction.x, 0.0, direction.z).normalized();
-	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
-	const Double3 up = Double3::UnitY;
-
-	// Zoom of the camera, based on vertical field of view.
-	const double zoom = 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
-
-	// Refresh transformation matrix (model matrix isn't required because it's just 
-	// the identity matrix).
-	const Matrix4d view = Matrix4d::view(eye, forwardXZ, rightXZ, up);
-	const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
-		SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
-	const Matrix4d transform = projection * view;
-
-	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
-	// player's 3D direction and field of view. First get the player's angle relative to the 
-	// horizon, then get the tangent of that angle. The Y component of the player's direction
-	// must be clamped less than 1 because 1 would imply they are looking straight up or down, 
-	// which is impossible in 2.5D rendering (the vertical line segment of the view frustum 
-	// would be infinitely high or low). The camera code should take care of the clamping for us.
-	const double yShear = [&direction, zoom]()
-	{
-		// Get the vertical angle of the player's direction.
-		const double angleRadians = [&direction]()
-		{
-			// Get the length of the direction vector's projection onto the XZ plane.
-			const double xzProjection = std::sqrt(
-				(direction.x * direction.x) + (direction.z * direction.z));
-
-			if (direction.y > 0.0)
-			{
-				// Above the horizon.
-				return std::acos(xzProjection);
-			}
-			else if (direction.y < 0.0)
-			{
-				// Below the horizon.
-				return -std::acos(xzProjection);
-			}
-			else
-			{
-				// At the horizon.
-				return 0.0;
-			}
-		}();
-
-		// Get the number of screen heights to translate all projected Y coordinates by, 
-		// relative to the current zoom. As a reference, this should be some value roughly 
-		// between -1.0 and 1.0 for "acceptable skewing" at a vertical FOV of 90.0. If the 
-		// camera is not clamped, this could theoretically be between -infinity and infinity, 
-		// but it would result in far too much skewing.
-		return std::tan(angleRadians) * zoom;
-	}();
+	// 2.5D camera definition.
+	const Camera camera(eye, direction, fovY, aspect);
 
 	// Camera values for generating 2D rays with.
-	const Double2 forwardComp = Double2(forwardXZ.x, forwardXZ.z).normalized() * zoom;
-	const Double2 right2D = Double2(rightXZ.x, rightXZ.z).normalized() * aspect;
+	const Double2 forwardComp = 
+		Double2(camera.forwardX, camera.forwardZ).normalized() * camera.zoom;
+	const Double2 right2D = 
+		Double2(camera.rightX, camera.rightZ).normalized() * camera.aspect;
 
 	// Calculate shading information.
 	const Double3 horizonFogColor = this->getFogColor(daytimePercent);
@@ -3470,8 +3480,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Lambda for rendering some columns of pixels. The voxel rendering portion uses 2.5D 
 	// ray casting, which is the cheaper form of ray casting (although still not very 
 	// efficient overall), and results in a "fake" 3D scene.
-	auto renderColumns = [this, &eye, ceilingHeight, &voxelGrid, &shadingInfo,
-		widthReal, &transform, yShear, &forwardComp, &right2D, &frame](int startX, int endX)
+	auto renderColumns = [this, &camera, ceilingHeight, &voxelGrid, &shadingInfo,
+		widthReal, &forwardComp, &right2D, &frame](int startX, int endX)
 	{
 		for (int x = startX; x < endX; x++)
 		{
@@ -3485,10 +3495,11 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			// - If un-normalized, it uses the Z distance, but the insides of voxels
 			//   don't look right then.
 			const Double2 direction = (forwardComp + rightComp).normalized();
+			const Ray ray(direction.x, direction.y);
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->rayCast2D(x, eye, direction, transform, yShear, shadingInfo, 
-				ceilingHeight, voxelGrid, this->textures, this->occlusion.at(x), frame);
+			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, 
+				voxelGrid, this->textures, this->occlusion.at(x), frame);
 		}
 
 		// Iterate through all flats, rendering those visible within the given X range of 
@@ -3505,7 +3516,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			// the "flat.flipped" value.
 			const SoftwareTexture &texture = textures[flat.textureID];
 
-			const Double2 eye2D(eye.x, eye.z);
+			const Double2 eye2D(camera.eye.x, camera.eye.z);
 
 			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped, 
 				eye2D, shadingInfo, texture, frame);
@@ -3534,12 +3545,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this, &eye, &forwardXZ, &transform, yShear, aspect, zoom]
-	{ 
-		const Double2 eye2D(eye.x, eye.z);
-		const Double2 direction2D(forwardXZ.x, forwardXZ.z);
-		this->updateVisibleFlats(eye2D, direction2D, transform, yShear, aspect, zoom);
-	});
+	std::thread sortThread([this, &camera] { this->updateVisibleFlats(camera); });
 
 	// Prepare render threads. These are used for clearing the frame buffer and rendering.
 	std::vector<std::thread> renderThreads(this->renderThreadCount);

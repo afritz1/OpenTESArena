@@ -26,6 +26,29 @@ private:
 		int width, height;
 	};
 
+	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
+	struct Camera
+	{
+		Double3 eye; // Camera position.
+		Double3 eyeVoxelReal; // 'eye' with each component floored.
+		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
+		Matrix4d transform; // Perspective transformation matrix.
+		double forwardX, forwardZ; // Forward components.
+		double rightX, rightZ; // Right components.
+		double fovY, zoom, aspect;
+		double yShear; // Projected Y-coordinate translation.
+
+		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect);
+	};
+
+	// Ray for 2.5D ray casting. The start point is always at the camera's eye.
+	struct Ray
+	{
+		double dirX, dirZ; // Normalized components in XZ plane.
+
+		Ray(double dirX, double dirZ);
+	};
+
 	// Occlusion defines a "drawing window" that shrinks as opaque pixels are drawn in each 
 	// column of the screen. Drawing ranges lying within an occluded area are thrown out, 
 	// and partially occluded ranges are clipped. If an entire column is occluded, the ray 
@@ -84,6 +107,7 @@ private:
 		uint32_t *colorBuffer;
 		double *depthBuffer;
 		int width, height;
+		double widthReal, heightReal;
 
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
@@ -201,20 +225,18 @@ private:
 		const OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
-	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
-		const FrameView &frame);
+		double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
+		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
-	static void drawVoxelColumn(int x, int voxelX, int voxelZ, double playerY,
+	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-		double farZ, const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
-		double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
-		const FrameView &frame);
+		double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
+		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
@@ -227,15 +249,13 @@ private:
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
-	static void rayCast2D(int x, const Double3 &eye, const Double2 &direction,
-		const Matrix4d &transform, double yShear, const ShadingInfo &shadingInfo, 
-		double ceilingHeight, const VoxelGrid &voxelGrid, 
+	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
+		const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid, 
 		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
 		const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Double2 &eye, const Double2 &direction,
-		const Matrix4d &transform, double yShear, double aspect, double zoom);
+	void updateVisibleFlats(const Camera &camera);
 public:
 	SoftwareRenderer(int width, int height);
 	~SoftwareRenderer();
