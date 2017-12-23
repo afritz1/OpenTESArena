@@ -81,6 +81,8 @@ public:
 		int id;
 		bool north, east, south, west;
 		Type type;
+
+		bool faceIsVisible(VoxelData::Facing facing) const;
 	};
 
 	struct DoorData

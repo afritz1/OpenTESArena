@@ -797,6 +797,12 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 }
 
+double SoftwareRenderer::fullAtan2(double y, double x)
+{
+	const double angle = std::atan2(y, x);
+	return (angle >= 0.0) ? angle : ((2.0 * Constants::Pi) + angle);
+}
+
 Double3 SoftwareRenderer::getNormal(VoxelData::Facing facing)
 {
 	// Decide what the normal is, based on the facing. It can only be on the X or Z axis 
@@ -817,6 +823,275 @@ Double3 SoftwareRenderer::getNormal(VoxelData::Facing facing)
 	else
 	{
 		return -Double3::UnitZ;
+	}
+}
+
+VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
+	const Double2 &eye, const Ray &ray)
+{
+	// Angle of the ray from the camera eye.
+	const double angle = SoftwareRenderer::fullAtan2(ray.dirX, ray.dirZ);
+
+	// Corners in world space.
+	const Double2 bottomLeftCorner(
+		static_cast<double>(voxelX),
+		static_cast<double>(voxelZ));
+	const Double2 topLeftCorner(
+		bottomLeftCorner.x + 1.0,
+		bottomLeftCorner.y);
+	const Double2 bottomRightCorner(
+		bottomLeftCorner.x,
+		bottomLeftCorner.y + 1.0);
+	const Double2 topRightCorner(
+		topLeftCorner.x,
+		bottomRightCorner.y);
+
+	const Double2 upLeft = (topLeftCorner - eye).normalized();
+	const Double2 upRight = (topRightCorner - eye).normalized();
+	const Double2 downLeft = (bottomLeftCorner - eye).normalized();
+	const Double2 downRight = (bottomRightCorner - eye).normalized();
+	const double upLeftAngle = SoftwareRenderer::fullAtan2(upLeft.x, upLeft.y);
+	const double upRightAngle = SoftwareRenderer::fullAtan2(upRight.x, upRight.y);
+	const double downLeftAngle = SoftwareRenderer::fullAtan2(downLeft.x, downLeft.y);
+	const double downRightAngle = SoftwareRenderer::fullAtan2(downRight.x, downRight.y);
+
+	// Find which range the ray's angle lies within.
+	if ((angle < upRightAngle) || (angle > downRightAngle))
+	{
+		return VoxelData::Facing::PositiveZ;
+	}
+	else if (angle < upLeftAngle)
+	{
+		return VoxelData::Facing::PositiveX;
+	}
+	else if (angle < downLeftAngle)
+	{
+		return VoxelData::Facing::NegativeZ;
+	}
+	else
+	{
+		return VoxelData::Facing::NegativeX;
+	}
+}
+
+VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ, 
+	VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray)
+{
+	const Double2 eye2D(camera.eye.x, camera.eye.z);
+	
+	// Angle of the ray from the camera eye.
+	const double angle = SoftwareRenderer::fullAtan2(ray.dirX, ray.dirZ);
+
+	// Corners in world space.
+	const Double2 bottomLeftCorner(
+		static_cast<double>(voxelX),
+		static_cast<double>(voxelZ));
+	const Double2 topLeftCorner(
+		bottomLeftCorner.x + 1.0,
+		bottomLeftCorner.y);
+	const Double2 bottomRightCorner(
+		bottomLeftCorner.x,
+		bottomLeftCorner.y + 1.0);
+	const Double2 topRightCorner(
+		topLeftCorner.x,
+		bottomRightCorner.y);
+
+	const Double2 upLeft = (topLeftCorner - eye2D).normalized();
+	const Double2 upRight = (topRightCorner - eye2D).normalized();
+	const Double2 downLeft = (bottomLeftCorner - eye2D).normalized();
+	const Double2 downRight = (bottomRightCorner - eye2D).normalized();
+	const double upLeftAngle = SoftwareRenderer::fullAtan2(upLeft.x, upLeft.y);
+	const double upRightAngle = SoftwareRenderer::fullAtan2(upRight.x, upRight.y);
+	const double downLeftAngle = SoftwareRenderer::fullAtan2(downLeft.x, downLeft.y);
+	const double downRightAngle = SoftwareRenderer::fullAtan2(downRight.x, downRight.y);
+
+	// Find which side it starts on, then do some checks against line angles.
+	// When the ray origin is at a diagonal to the voxel, ignore the corner
+	// closest to that origin.
+	if (nearFacing == VoxelData::Facing::PositiveX)
+	{
+		// Starts on (1.0, z).
+		const bool onRight = camera.eyeVoxel.z > voxelZ;
+		const bool onLeft = camera.eyeVoxel.z < voxelZ;
+		
+		if (onRight)
+		{
+			// Ignore top-right corner.
+			if (angle < downLeftAngle)
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+		}
+		else if (onLeft)
+		{
+			// Ignore top-left corner.
+			if ((angle > downLeftAngle) && (angle < downRightAngle))
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+			else
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+		}
+		else
+		{
+			if (angle > downRightAngle)
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+			else if (angle > downLeftAngle)
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+		}
+	}
+	else if (nearFacing == VoxelData::Facing::NegativeX)
+	{
+		// Starts on (0.0, z).
+		const bool onRight = camera.eyeVoxel.z > voxelZ;
+		const bool onLeft = camera.eyeVoxel.z < voxelZ;
+
+		if (onRight)
+		{
+			// Ignore bottom-right corner.
+			if (angle < upLeftAngle)
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+		}
+		else if (onLeft)
+		{
+			// Ignore bottom-left corner.
+			if (angle < upRightAngle)
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+			else
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+		}
+		else
+		{
+			if (angle < upRightAngle)
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+			else if (angle < upLeftAngle)
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+		}
+	}				
+	else if (nearFacing == VoxelData::Facing::PositiveZ)
+	{
+		// Starts on (x, 1.0).
+		const bool onTop = camera.eyeVoxel.x > voxelX;
+		const bool onBottom = camera.eyeVoxel.x < voxelX;
+
+		if (onTop)
+		{
+			// Ignore top-right corner.
+			if (angle < downLeftAngle)
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+		}
+		else if (onBottom)
+		{
+			// Ignore bottom-right corner.
+			if (angle < upLeftAngle)
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+		}
+		else
+		{
+			if (angle < upLeftAngle)
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+			else if (angle < downLeftAngle)
+			{
+				return VoxelData::Facing::NegativeZ;
+			}
+			else
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+		}
+	}
+	else
+	{
+		// Starts on (x, 0.0). This one splits the origin, so it needs some 
+		// special cases.
+		const bool onTop = camera.eyeVoxel.x > voxelX;
+		const bool onBottom = camera.eyeVoxel.x < voxelX;
+
+		if (onTop)
+		{
+			// Ignore top-left corner.
+			if ((angle > downLeftAngle) && (angle < downRightAngle))
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+			else
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+		}
+		else if (onBottom)
+		{
+			// Ignore bottom-left corner.
+			if ((angle > upRightAngle) && (angle < upLeftAngle))
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+			else
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+		}
+		else
+		{
+			if ((angle < upRightAngle) || (angle > downRightAngle))
+			{
+				return VoxelData::Facing::PositiveZ;
+			}
+			else if (angle > downLeftAngle)
+			{
+				return VoxelData::Facing::NegativeX;
+			}
+			else
+			{
+				return VoxelData::Facing::PositiveX;
+			}
+		}
 	}
 }
 
@@ -1337,9 +1612,10 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 }
 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-	double farZ, const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
+	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
+	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -1378,7 +1654,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	// this voxel column.
 	const Double3 wallNormal = -SoftwareRenderer::getNormal(facing);
 
-	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
 		&textures, &occlusion, &frame]()
 	{
@@ -1635,10 +1911,66 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			// Render front and back-faces.
+			// Render back-face.
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
-			// To do.
+			// Find which far face on the chasm was intersected.
+			const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+
+			// Far.
+			if (chasmData.faceIsVisible(farFacing))
+			{
+				const double farU = [&farPoint, farFacing]()
+				{
+					const double uVal = [&farPoint, farFacing]()
+					{
+						if (farFacing == VoxelData::Facing::PositiveX)
+						{
+							return farPoint.y - std::floor(farPoint.y);
+						}
+						else if (farFacing == VoxelData::Facing::NegativeX)
+						{
+							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+						}
+						else if (farFacing == VoxelData::Facing::PositiveZ)
+						{
+							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+						}
+						else
+						{
+							return farPoint.x - std::floor(farPoint.x);
+						}
+					}();
+
+					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+				}();
+
+				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					camera.eyeVoxelReal.y + voxelHeight,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					camera.eyeVoxelReal.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -1647,7 +1979,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 	};
 
-	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
@@ -1900,10 +2232,66 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
 		{
-			// Render front and back-faces.
+			// Render back-face.
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
-			// To do.
+			// Find which far face on the chasm was intersected.
+			const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+
+			// Far.
+			if (chasmData.faceIsVisible(farFacing))
+			{
+				const double farU = [&farPoint, farFacing]()
+				{
+					const double uVal = [&farPoint, farFacing]()
+					{
+						if (farFacing == VoxelData::Facing::PositiveX)
+						{
+							return farPoint.y - std::floor(farPoint.y);
+						}
+						else if (farFacing == VoxelData::Facing::NegativeX)
+						{
+							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+						}
+						else if (farFacing == VoxelData::Facing::PositiveZ)
+						{
+							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+						}
+						else
+						{
+							return farPoint.x - std::floor(farPoint.x);
+						}
+					}();
+
+					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+				}();
+
+				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					voxelYReal + voxelHeight,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					voxelYReal,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -2191,9 +2579,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 }
 
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-	double farZ, const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
+	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
+	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -2239,8 +2628,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	// this voxel column.
 	const Double3 wallNormal = SoftwareRenderer::getNormal(facing);
 
-	auto drawVoxel = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint,
-		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
+	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
 		&occlusion, &frame]()
 	{
 		const int voxelY = camera.eyeVoxel.y;
@@ -2465,7 +2854,94 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Render front and back-faces.
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
-			// To do.
+			// Find which faces on the chasm were intersected.
+			const VoxelData::Facing nearFacing = facing;
+			const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+				voxelX, voxelZ, nearFacing, camera, ray);
+
+			// Near.
+			if (chasmData.faceIsVisible(nearFacing))
+			{
+				const double nearU = Constants::JustBelowOne - wallU;
+				const Double3 nearNormal = wallNormal;
+
+				const Double3 nearCeilingPoint(
+					nearPoint.x,
+					camera.eyeVoxelReal.y + voxelHeight,
+					nearPoint.y);
+				const Double3 nearFloorPoint(
+					nearPoint.x,
+					camera.eyeVoxelReal.y,
+					nearPoint.y);
+
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int nearStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int nearEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, nearStart, nearEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, nearU, 0.0, Constants::JustBelowOne, nearNormal,
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
+
+			// Far.
+			if (chasmData.faceIsVisible(farFacing))
+			{
+				const double farU = [&farPoint, farFacing]()
+				{
+					const double uVal = [&farPoint, farFacing]()
+					{
+						if (farFacing == VoxelData::Facing::PositiveX)
+						{
+							return farPoint.y - std::floor(farPoint.y);
+						}
+						else if (farFacing == VoxelData::Facing::NegativeX)
+						{
+							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+						}
+						else if (farFacing == VoxelData::Facing::PositiveZ)
+						{
+							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+						}
+						else
+						{
+							return farPoint.x - std::floor(farPoint.x);
+						}
+					}();
+
+					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+				}();
+
+				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					camera.eyeVoxelReal.y + voxelHeight,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					camera.eyeVoxelReal.y,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -2499,9 +2975,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 	};
 
-	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint, 
-		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures, &occlusion,
-		&frame](int voxelY)
+	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
+		&occlusion, &frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -2765,7 +3241,94 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Render front and back-faces.
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
-			// To do.
+			// Find which faces on the chasm were intersected.
+			const VoxelData::Facing nearFacing = facing;
+			const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+				voxelX, voxelZ, nearFacing, camera, ray);
+
+			// Near.
+			if (chasmData.faceIsVisible(nearFacing))
+			{
+				const double nearU = Constants::JustBelowOne - wallU;
+				const Double3 nearNormal = wallNormal;
+
+				const Double3 nearCeilingPoint(
+					nearPoint.x,
+					voxelYReal + voxelHeight,
+					nearPoint.y);
+				const Double3 nearFloorPoint(
+					nearPoint.x,
+					voxelYReal,
+					nearPoint.y);
+
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int nearStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int nearEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, nearStart, nearEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, nearU, 0.0, Constants::JustBelowOne, nearNormal,
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
+
+			// Far.
+			if (chasmData.faceIsVisible(farFacing))
+			{
+				const double farU = [&farPoint, farFacing]()
+				{
+					const double uVal = [&farPoint, farFacing]()
+					{
+						if (farFacing == VoxelData::Facing::PositiveX)
+						{
+							return farPoint.y - std::floor(farPoint.y);
+						}
+						else if (farFacing == VoxelData::Facing::NegativeX)
+						{
+							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+						}
+						else if (farFacing == VoxelData::Facing::PositiveZ)
+						{
+							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+						}
+						else
+						{
+							return farPoint.x - std::floor(farPoint.x);
+						}
+					}();
+
+					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+				}();
+
+				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+
+				const Double3 farCeilingPoint(
+					farPoint.x,
+					voxelYReal + voxelHeight,
+					farPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					voxelYReal,
+					farPoint.y);
+
+				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
+					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
+					farCeilingScreenY, frame.height);
+				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
+					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal, 
+					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
@@ -3357,7 +3920,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
-			camera, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
 			zDistance, shadingInfo, ceilingHeight, voxelGrid, textures, occlusion, frame);
 	}
 
@@ -3433,7 +3996,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 			camera.eye.z + (ray.dirZ * zDistance));
 
 		// Draw all voxels in a column at the given XZ coordinate.
-		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, savedFacing,
+		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
 			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, ceilingHeight, 
 			voxelGrid, textures, occlusion, frame);
 	}

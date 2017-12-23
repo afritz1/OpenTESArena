@@ -144,7 +144,7 @@ private:
 	static const double FAR_PLANE;
 
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
-	std::vector<OcclusionData> occlusion; // Inclusive min and max Y for each column.
+	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<std::pair<const Flat*, Flat::Frame>> visibleFlats; // Flats to be drawn.
 	std::vector<SoftwareTexture> textures;
@@ -160,8 +160,17 @@ private:
 	// Gets the current sun direction based on the time of day.
 	Double3 getSunDirection(double daytimePercent) const;
 
+	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
+	static double fullAtan2(double y, double x);
+
 	// Gets the normal associated with a facing.
 	static Double3 getNormal(VoxelData::Facing facing);
+
+	// Gets the facing value for the far side of a chasm.
+	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
+		const Double2 &eye, const Ray &ray);
+	static VoxelData::Facing getChasmFarFacing(int voxelX, int voxelZ,
+		VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray);
 
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
@@ -226,17 +235,19 @@ private:
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-		double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-		OcclusionData &occlusion, const FrameView &frame);
+		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const VoxelGrid &voxelGrid,
+		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
-		double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-		const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-		OcclusionData &occlusion, const FrameView &frame);
+		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const VoxelGrid &voxelGrid,
+		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.

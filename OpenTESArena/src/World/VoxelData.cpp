@@ -5,6 +5,26 @@
 #include "VoxelType.h"
 #include "../Utilities/Debug.h"
 
+bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
+{
+	if (facing == VoxelData::Facing::PositiveX)
+	{
+		return this->north;
+	}
+	else if (facing == VoxelData::Facing::PositiveZ)
+	{
+		return this->east;
+	}
+	else if (facing == VoxelData::Facing::NegativeX)
+	{
+		return this->south;
+	}
+	else
+	{
+		return this->west;
+	}
+}
+
 const int VoxelData::TOTAL_IDS = 64;
 
 VoxelData::VoxelData()
