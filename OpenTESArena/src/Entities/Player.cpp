@@ -229,12 +229,21 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 	};
 
-	if ((xVoxel.type != VoxelType::Empty) && !isBridge(xVoxel))
+	// To do: formalize the collision calculation and get rid of this hack.
+	if ((xVoxel.type != VoxelType::Empty) && 
+		(xVoxel.type != VoxelType::Door) &&
+		(xVoxel.type != VoxelType::Edge) &&
+		(xVoxel.type != VoxelType::TransparentWall) &&
+		!isBridge(xVoxel))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if ((zVoxel.type != VoxelType::Empty) && !isBridge(zVoxel))
+	if ((zVoxel.type != VoxelType::Empty) && 
+		(zVoxel.type != VoxelType::Door) &&
+		(zVoxel.type != VoxelType::Edge) &&
+		(zVoxel.type != VoxelType::TransparentWall) &&
+		!isBridge(zVoxel))
 	{
 		this->velocity.z = 0.0;
 	}
