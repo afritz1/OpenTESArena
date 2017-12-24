@@ -369,46 +369,44 @@ void Options::saveChanges()
 
 	if (ofs.is_open())
 	{
-		const std::string newline = (Platform::getPlatform() == "Windows") ? "\r\n" : "\n";
+		ofs << "# \"Changed\" options file for OpenTESArena. This is where the program" << '\n' <<
+			"# saves options that differ from the defaults." << '\n';
 
-		ofs << "# \"Changed\" options file for OpenTESArena. This is where the program" << newline <<
-			"# saves options that differ from the defaults." << newline;
-
-		ofs << newline;
+		ofs << '\n';
 
 		// Save each option to the "changes" options file.
 		// - To do: order these by their appearance in options-default.txt.
 		for (const auto &pair : this->changedBools)
 		{
 			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << (pair.second ? "true" : "false") << newline;
+			ofs << nameString << '=' << (pair.second ? "true" : "false") << '\n';
 		}
 
-		ofs << newline;
+		ofs << '\n';
 
 		for (const auto &pair : this->changedInts)
 		{
 			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << std::to_string(pair.second) << newline;
+			ofs << nameString << '=' << std::to_string(pair.second) << '\n';
 		}
 
-		ofs << newline;
+		ofs << '\n';
 
 		for (const auto &pair : this->changedDoubles)
 		{
 			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << String::fixedPrecision(pair.second, 4) << newline;
+			ofs << nameString << '=' << String::fixedPrecision(pair.second, 4) << '\n';
 		}
 
-		ofs << newline;
+		ofs << '\n';
 
 		for (const auto &pair : this->changedStrings)
 		{
 			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << pair.second << newline;
+			ofs << nameString << '=' << pair.second << '\n';
 		}
 
-		ofs << newline;
+		ofs << '\n';
 
 		DebugMention("Saved settings in \"" + filename + "\".");
 	}
