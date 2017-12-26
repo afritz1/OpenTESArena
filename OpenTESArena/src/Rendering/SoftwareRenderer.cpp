@@ -1306,11 +1306,113 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 	}
 }
 
-bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing facing,
-	const Double2 &nearPoint, const Double2 &farPoint, RayHit &hit)
+bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ, 
+	VoxelData::Facing edgeFacing, const Double2 &nearPoint, const Double2 &farPoint,
+	const Camera &camera, const Ray &ray, RayHit &hit)
 {
-	// To do.
-	return false;
+	// Reuse the chasm facing code to find which face is intersected.
+	const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+		voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+
+	// If the edge facing and far facing match, there's an intersection.
+	if (edgeFacing == farFacing)
+	{
+		hit.innerZ = (farPoint - nearPoint).length();
+		hit.u = [&farPoint, farFacing]()
+		{
+			const double uVal = [&farPoint, farFacing]()
+			{
+				if (farFacing == VoxelData::Facing::PositiveX)
+				{
+					return farPoint.y - std::floor(farPoint.y);
+				}
+				else if (farFacing == VoxelData::Facing::NegativeX)
+				{
+					return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+				}
+				else if (farFacing == VoxelData::Facing::PositiveZ)
+				{
+					return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+				}
+				else
+				{
+					return farPoint.x - std::floor(farPoint.x);
+				}
+			}();
+
+			return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+		}();
+
+		hit.point = farPoint;
+		hit.normal = -SoftwareRenderer::getNormal(farFacing);
+		return true;
+	}
+	else
+	{
+		// No intersection.
+		return false;
+	}
+}
+
+bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
+	VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearU,
+	const Camera &camera, const Ray &ray, RayHit &hit)
+{
+	// If the edge facing and near facing match, the intersection is trivial.
+	if (edgeFacing == nearFacing)
+	{
+		hit.innerZ = 0.0;
+		hit.u = nearU;
+		hit.point = nearPoint;
+		hit.normal = SoftwareRenderer::getNormal(nearFacing);
+		return true;
+	}
+	else
+	{
+		// A search is needed to see whether an intersection occurred. Reuse the chasm
+		// facing code to find what the far facing is.
+		const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+			voxelX, voxelZ, nearFacing, camera, ray);
+
+		// If the edge facing and far facing match, there's an intersection.
+		if (edgeFacing == farFacing)
+		{
+			hit.innerZ = (farPoint - nearPoint).length();
+			hit.u = [&farPoint, farFacing]()
+			{
+				const double uVal = [&farPoint, farFacing]()
+				{
+					if (farFacing == VoxelData::Facing::PositiveX)
+					{
+						return farPoint.y - std::floor(farPoint.y);
+					}
+					else if (farFacing == VoxelData::Facing::NegativeX)
+					{
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					}
+					else if (farFacing == VoxelData::Facing::PositiveZ)
+					{
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					}
+					else
+					{
+						return farPoint.x - std::floor(farPoint.x);
+					}
+				}();
+
+				return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+			}();
+
+			hit.point = farPoint;
+			hit.normal = -SoftwareRenderer::getNormal(farFacing);
+			return true;
+		}
+		else
+		{
+			// No intersection.
+			return false;
+		}
+	}
 }
 
 bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
@@ -1879,8 +1981,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
 
 			if (success)
 			{
@@ -1906,7 +2008,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -2200,8 +2302,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
 
 			if (success)
 			{
@@ -2227,7 +2329,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -2300,7 +2402,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 	};
 
-	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint,
+	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, 
 		&textures, &occlusion, &frame](int voxelY)
 	{
@@ -2521,8 +2623,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
 
 			if (success)
 			{
@@ -2548,7 +2650,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -2819,8 +2921,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
 
 			if (success)
 			{
@@ -2846,7 +2948,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -3206,8 +3308,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
 
 			if (success)
 			{
@@ -3233,7 +3335,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -3362,9 +3464,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 	};
 
-	auto drawVoxelAbove = [x, voxelX, voxelZ, &camera, &wallNormal, &nearPoint, &farPoint, 
-		nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures, &occlusion,
-		&frame](int voxelY)
+	auto drawVoxelAbove = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
+		&occlusion, &frame](int voxelY)
 	{
 		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -3594,8 +3696,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			// Find intersection.
 			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, hit);
+			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
 
 			if (success)
 			{
@@ -3621,7 +3723,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
 					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id - 1), shadingInfo, occlusion, frame);
+					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)

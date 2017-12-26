@@ -193,10 +193,18 @@ private:
 	static bool findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
 		const Double2 &farPoint, RayHit &hit);
 
+	// Gathers potential intersection data from an initial voxel containing an edge ID. The
+	// facing determines which edge of the voxel an intersection can occur on.
+	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
+		const Double2 &nearPoint, const Double2 &farPoint, const Camera &camera,
+		const Ray &ray, RayHit &hit);
+
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
-	// determines which edge of the voxel an intersection can occur.
-	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing facing,
-		const Double2 &nearPoint, const Double2 &farPoint, RayHit &hit);
+	// determines which edge of the voxel an intersection can occur on.. This function is separate
+	// from the initial case since it's a trivial solution when the edge and near facings match.
+	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
+		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for intersection.
