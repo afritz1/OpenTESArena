@@ -369,11 +369,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int bridge2ID = voxelGrid.addVoxelData(VoxelData::makeRaised(
 		42, 43, 43, 0.10, 0.125, 0.775, 0.90));
 
-	// Water (no longer correct because of new chasm wall behavior).
-	// - To do: perhaps have two water IDs, one for the north side and
-	//   another for the south side.
-	const int waterID = voxelGrid.addVoxelData(VoxelData::makeChasm(
-		0, false, false, false, false, VoxelData::ChasmData::Type::Wet));
+	// Water.
+	const int water1ID = voxelGrid.addVoxelData(VoxelData::makeChasm(
+		1, false, false, true, false, VoxelData::ChasmData::Type::Wet));
+	const int water2ID = voxelGrid.addVoxelData(VoxelData::makeChasm(
+		1, true, false, false, false, VoxelData::ChasmData::Type::Wet));
 
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
@@ -423,8 +423,8 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// Trench.
 	for (int k = 1; k < (gridDepth - 1); k++)
 	{
-		setVoxel(11, 0, k, waterID);
-		setVoxel(12, 0, k, waterID);
+		setVoxel(11, 0, k, water1ID);
+		setVoxel(12, 0, k, water2ID);
 	}
 
 	// Random number generator with an arbitrary seed.
