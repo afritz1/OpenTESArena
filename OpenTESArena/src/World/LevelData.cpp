@@ -608,51 +608,56 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 				else if (mostSigNibble == 0xA)
 				{
 					// Transparent block with 2-sided texture on one side (i.e., fence).
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int textureIndex = (map1Voxel & 0x003F) - 1;
+
+					// It is clamped non-negative due to a case in IMPERIAL.MIF where one temple
+					// voxel has all zeroes for its texture index, and it appears solid gray
+					// in the original game (presumably a silent bug).
+					if (textureIndex >= 0)
 					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
+						const int dataIndex = [this, &inf, &wallDataMappings,
+							map1Voxel, textureIndex]()
 						{
-							return wallIter->second;
-						}
-						else
-						{
-							// Check the lowest 6 bits for the texture index, then subtract 1.
-							// It is clamped positive due to a case in IMPERIAL.MIF where one
-							// temple voxel has all zeroes for its texture.
-							const int textureIndex = std::max((map1Voxel & 0x003F) - 1, 0);
-
-							const VoxelData::Facing facing = [map1Voxel]()
+							const auto wallIter = wallDataMappings.find(map1Voxel);
+							if (wallIter != wallDataMappings.end())
 							{
-								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north 
-								// and C is east. It is stored in two bits above the texture index.
-								const int orientation = (map1Voxel & 0x00C0) >> 4;
-								if (orientation == 0x0)
+								return wallIter->second;
+							}
+							else
+							{
+								const VoxelData::Facing facing = [map1Voxel]()
 								{
-									return VoxelData::Facing::PositiveX;
-								}
-								else if (orientation == 0x4)
-								{
-									return VoxelData::Facing::NegativeZ;
-								}
-								else if (orientation == 0x8)
-								{
-									return VoxelData::Facing::NegativeX;
-								}
-								else
-								{
-									return VoxelData::Facing::PositiveZ;
-								}
-							}();
+									// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is
+									// north and C is east. It is stored in two bits above the
+									// texture index.
+									const int orientation = (map1Voxel & 0x00C0) >> 4;
+									if (orientation == 0x0)
+									{
+										return VoxelData::Facing::PositiveX;
+									}
+									else if (orientation == 0x4)
+									{
+										return VoxelData::Facing::NegativeZ;
+									}
+									else if (orientation == 0x8)
+									{
+										return VoxelData::Facing::NegativeX;
+									}
+									else
+									{
+										return VoxelData::Facing::PositiveZ;
+									}
+								}();
 
-							const int index = this->voxelGrid.addVoxelData(
-								VoxelData::makeEdge(textureIndex, facing));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
+								const int index = this->voxelGrid.addVoxelData(
+									VoxelData::makeEdge(textureIndex, facing));
+								return wallDataMappings.insert(
+									std::make_pair(map1Voxel, index)).first->second;
+							}
+						}();
 
-					this->setVoxel(x, 1, z, dataIndex);
+						this->setVoxel(x, 1, z, dataIndex);
+					}
 				}
 				else if (mostSigNibble == 0xB)
 				{
