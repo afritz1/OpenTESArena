@@ -617,13 +617,16 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 						}
 						else
 						{
-							const int textureIndex = map1Voxel & 0x000F;
+							// Check the lowest 6 bits for the texture index, then subtract 1.
+							// It is clamped positive due to a case in IMPERIAL.MIF where one
+							// temple voxel has all zeroes for its texture.
+							const int textureIndex = std::max((map1Voxel & 0x003F) - 1, 0);
 
 							const VoxelData::Facing facing = [map1Voxel]()
 							{
 								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north 
-								// and C is east.
-								const int orientation = (map1Voxel & 0x00F0) >> 4;
+								// and C is east. It is stored in two bits above the texture index.
+								const int orientation = (map1Voxel & 0x00C0) >> 4;
 								if (orientation == 0x0)
 								{
 									return VoxelData::Facing::PositiveX;
