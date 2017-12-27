@@ -1,4 +1,5 @@
 #include <array>
+#include <functional>
 
 #include "LevelData.h"
 #include "../Assets/INFFile.h"
@@ -311,126 +312,113 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 					!isChasm(getFloorTextureID(westVoxel)) // West.
 				};
 
+				// Lambda for obtaining the index of a newly-added VoxelData object, and
+				// inserting it into the chasm data mappings if it hasn't been already. The
+				// function parameter decodes the voxel and returns the created VoxelData.
+				auto getChasmDataIndex = [this, &inf, &chasmDataMappings, florVoxel,
+					&adjacentFaces](const std::function<VoxelData(void)> &function)
+				{
+					const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
+					const auto chasmIter = chasmDataMappings.find(chasmPair);
+					if (chasmIter != chasmDataMappings.end())
+					{
+						return chasmIter->second;
+					}
+					else
+					{
+						const int index = this->voxelGrid.addVoxelData(function());
+						return chasmDataMappings.insert(
+							std::make_pair(chasmPair, index)).first->second;
+					}
+				};
+
 				if (floorTextureID == MIFFile::DRY_CHASM)
 				{
-					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
-						floorTextureID, &adjacentFaces]()
+					const int dataIndex = getChasmDataIndex(
+						[&inf, floorTextureID, &adjacentFaces]()
 					{
-						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-						const auto chasmIter = chasmDataMappings.find(chasmPair);
-						if (chasmIter != chasmDataMappings.end())
+						const int dryChasmID = [&inf]()
 						{
-							return chasmIter->second;
-						}
-						else
-						{
-							const int dryChasmID = [&inf]()
+							const int *ptr = inf.getDryChasmIndex();
+							if (ptr != nullptr)
 							{
-								const int *ptr = inf.getDryChasmIndex();
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugWarning("Missing *DRYCHASM ID.");
-									return 0;
-								}
-							}();
+								return *ptr;
+							}
+							else
+							{
+								DebugWarning("Missing *DRYCHASM ID.");
+								return 0;
+							}
+						}();
 
-							const int index = this->voxelGrid.addVoxelData(VoxelData::makeChasm(
-								dryChasmID,
-								adjacentFaces.at(0),
-								adjacentFaces.at(1),
-								adjacentFaces.at(2),
-								adjacentFaces.at(3),
-								VoxelData::ChasmData::Type::Dry));
-							return chasmDataMappings.insert(
-								std::make_pair(chasmPair, index)).first->second;
-						}
-					}();
+						return VoxelData::makeChasm(
+							dryChasmID,
+							adjacentFaces.at(0),
+							adjacentFaces.at(1),
+							adjacentFaces.at(2),
+							adjacentFaces.at(3),
+							VoxelData::ChasmData::Type::Dry);
+					});
 
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
-					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
-						floorTextureID, &adjacentFaces]()
+					const int dataIndex = getChasmDataIndex(
+						[&inf, floorTextureID, &adjacentFaces]()
 					{
-						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-						const auto chasmIter = chasmDataMappings.find(chasmPair);
-						if (chasmIter != chasmDataMappings.end())
+						const int lavaChasmID = [&inf]()
 						{
-							return chasmIter->second;
-						}
-						else
-						{
-							const int lavaChasmID = [&inf]()
+							const int *ptr = inf.getLavaChasmIndex();
+							if (ptr != nullptr)
 							{
-								const int *ptr = inf.getLavaChasmIndex();
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugWarning("Missing *LAVACHASM ID.");
-									return 0;
-								}
-							}();
+								return *ptr;
+							}
+							else
+							{
+								DebugWarning("Missing *LAVACHASM ID.");
+								return 0;
+							}
+						}();
 
-							const int index = this->voxelGrid.addVoxelData(VoxelData::makeChasm(
-								lavaChasmID,
-								adjacentFaces.at(0),
-								adjacentFaces.at(1),
-								adjacentFaces.at(2),
-								adjacentFaces.at(3),
-								VoxelData::ChasmData::Type::Lava));
-							return chasmDataMappings.insert(
-								std::make_pair(chasmPair, index)).first->second;
-						}
-					}();
+						return VoxelData::makeChasm(
+							lavaChasmID,
+							adjacentFaces.at(0),
+							adjacentFaces.at(1),
+							adjacentFaces.at(2),
+							adjacentFaces.at(3),
+							VoxelData::ChasmData::Type::Lava);
+					});
 
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::WET_CHASM)
 				{
-					const int dataIndex = [this, &inf, &chasmDataMappings, florVoxel,
-						floorTextureID, &adjacentFaces]()
+					const int dataIndex = getChasmDataIndex(
+						[&inf, floorTextureID, &adjacentFaces]()
 					{
-						const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-						const auto chasmIter = chasmDataMappings.find(chasmPair);
-						if (chasmIter != chasmDataMappings.end())
+						const int wetChasmID = [&inf]()
 						{
-							return chasmIter->second;
-						}
-						else
-						{
-							const int wetChasmID = [&inf]()
+							const int *ptr = inf.getWetChasmIndex();
+							if (ptr != nullptr)
 							{
-								const int *ptr = inf.getWetChasmIndex();
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugWarning("Missing *WETCHASM ID.");
-									return 0;
-								}
-							}();
+								return *ptr;
+							}
+							else
+							{
+								DebugWarning("Missing *WETCHASM ID.");
+								return 0;
+							}
+						}();
 
-							const int index = this->voxelGrid.addVoxelData(VoxelData::makeChasm(
-								wetChasmID,
-								adjacentFaces.at(0),
-								adjacentFaces.at(1),
-								adjacentFaces.at(2),
-								adjacentFaces.at(3),
-								VoxelData::ChasmData::Type::Wet));
-							return chasmDataMappings.insert(
-								std::make_pair(chasmPair, index)).first->second;
-						}
-					}();
+						return VoxelData::makeChasm(
+							wetChasmID,
+							adjacentFaces.at(0),
+							adjacentFaces.at(1),
+							adjacentFaces.at(2),
+							adjacentFaces.at(3),
+							VoxelData::ChasmData::Type::Wet);
+					});
 
 					this->setVoxel(x, 0, z, dataIndex);
 				}
@@ -461,6 +449,25 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 		{
 			const uint16_t map1Voxel = getMap1Voxel(x, z);
 
+			// Lambda for obtaining the index of a newly-added VoxelData object, and inserting
+			// it into the data mappings if it hasn't been already. The function parameter
+			// decodes the voxel and returns the created VoxelData.
+			auto getDataIndex = [this, &inf, &wallDataMappings, map1Voxel](
+				const std::function<VoxelData(void)> &function)
+			{
+				const auto wallIter = wallDataMappings.find(map1Voxel);
+				if (wallIter != wallDataMappings.end())
+				{
+					return wallIter->second;
+				}
+				else
+				{
+					const int index = this->voxelGrid.addVoxelData(function());
+					return wallDataMappings.insert(
+						std::make_pair(map1Voxel, index)).first->second;
+				}
+			};
+
 			if ((map1Voxel & 0x8000) == 0)
 			{
 				// A voxel of some kind.
@@ -475,96 +482,74 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 					if (voxelIsSolid)
 					{
 						// Regular solid wall.
-						const int dataIndex = [this, &inf, &wallDataMappings,
-							map1Voxel, mostSigByte]()
+						const int dataIndex = getDataIndex([mostSigByte]()
 						{
-							const auto wallIter = wallDataMappings.find(map1Voxel);
-							if (wallIter != wallDataMappings.end())
-							{
-								return wallIter->second;
-							}
-							else
-							{
-								const int textureIndex = mostSigByte;
-								const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
-									textureIndex, textureIndex, textureIndex, VoxelType::Solid));
-								return wallDataMappings.insert(
-									std::make_pair(map1Voxel, index)).first->second;
-							}
-						}();
+							const int textureIndex = mostSigByte;
+							return VoxelData::makeWall(
+								textureIndex, textureIndex, textureIndex, VoxelType::Solid);
+						});
 
 						this->setVoxel(x, 1, z, dataIndex);
 					}
 					else
 					{
 						// Raised platform.
-						const int dataIndex = [this, &inf, &wallDataMappings,
-							map1Voxel, mostSigByte]()
+						const int dataIndex = getDataIndex([&inf, map1Voxel, mostSigByte]()
 						{
-							const auto wallIter = wallDataMappings.find(map1Voxel);
-							if (wallIter != wallDataMappings.end())
+							const uint8_t wallTextureID = map1Voxel & 0x000F;
+							const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
+
+							const int sideID = [&inf, wallTextureID]()
 							{
-								return wallIter->second;
-							}
-							else
+								const int *ptr = inf.getBoxSide(wallTextureID);
+								if (ptr != nullptr)
+								{
+									return *ptr + 1;
+								}
+								else
+								{
+									DebugWarning("Missing *BOXSIDE ID \"" +
+										std::to_string(wallTextureID) + "\".");
+									return 0;
+								}
+							}();
+
+							const int floorID = inf.getCeiling().textureIndex + 1;
+
+							const int ceilingID = [&inf, capTextureID]()
 							{
-								const uint8_t wallTextureID = map1Voxel & 0x000F;
-								const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
-
-								const int sideID = [&inf, wallTextureID]()
+								const int *ptr = inf.getBoxCap(capTextureID);
+								if (ptr != nullptr)
 								{
-									const int *ptr = inf.getBoxSide(wallTextureID);
-									if (ptr != nullptr)
-									{
-										return *ptr + 1;
-									}
-									else
-									{
-										DebugWarning("Missing *BOXSIDE ID \"" +
-											std::to_string(wallTextureID) + "\".");
-										return 0;
-									}
-								}();
-
-								const int floorID = inf.getCeiling().textureIndex + 1;
-
-								const int ceilingID = [&inf, capTextureID]()
+									return *ptr + 1;
+								}
+								else
 								{
-									const int *ptr = inf.getBoxCap(capTextureID);
-									if (ptr != nullptr)
-									{
-										return *ptr + 1;
-									}
-									else
-									{
-										DebugWarning("Missing *BOXCAP ID \"" +
-											std::to_string(capTextureID) + "\".");
-										return 0;
-									}
-								}();
+									DebugWarning("Missing *BOXCAP ID \"" +
+										std::to_string(capTextureID) + "\".");
+									return 0;
+								}
+							}();
 
-								// To do: The height appears to be some fraction of 64, and 
-								// when it's greater than 64, then that determines the offset?
-								const double platformHeight = static_cast<double>(mostSigByte) /
-									static_cast<double>(MIFFile::ARENA_UNITS);
+							// To do: The height appears to be some fraction of 64, and 
+							// when it's greater than 64, then that determines the offset?
+							const double platformHeight = static_cast<double>(mostSigByte) /
+								static_cast<double>(MIFFile::ARENA_UNITS);
 
-								const double yOffset = 0.0;
-								const double ySize = platformHeight;
+							const double yOffset = 0.0;
+							const double ySize = platformHeight;
 
-								// To do: Clamp top V coordinate positive until the correct platform 
-								// height calculation is figured out. Maybe the platform height
-								// needs to be multiplied by the ratio between the current ceiling
-								// height and the default ceiling height (128)? I.e., multiply by
-								// "ceilingHeight"?
-								const double vTop = std::max(0.0, 1.0 - platformHeight);
-								const double vBottom = Constants::JustBelowOne; // To do: should also be a function.
+							// To do: Clamp top V coordinate positive until the correct platform 
+							// height calculation is figured out. Maybe the platform height
+							// needs to be multiplied by the ratio between the current ceiling
+							// height and the default ceiling height (128)? I.e., multiply by
+							// "ceilingHeight"?
+							const double vTop = std::max(0.0, 1.0 - platformHeight);
+							const double vBottom = Constants::JustBelowOne; // To do: should also be a function.
 
-								const int index = this->voxelGrid.addVoxelData(VoxelData::makeRaised(
-									sideID, floorID, ceilingID, yOffset, ySize, vTop, vBottom));
-								return wallDataMappings.insert(
-									std::make_pair(map1Voxel, index)).first->second;
-							}
-						}();
+							return VoxelData::makeRaised(sideID, floorID, ceilingID,
+								yOffset, ySize, vTop, vBottom);
+						});
 
 						this->setVoxel(x, 1, z, dataIndex);
 					}
@@ -586,22 +571,11 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 					// Transparent block with 1-sided texture on all sides, such as wooden 
 					// arches in dungeons. These do not have back-faces (especially when 
 					// standing in the voxel itself).
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const int textureIndex = map1Voxel & 0x00FF;
-							const int index = this->voxelGrid.addVoxelData(
-								VoxelData::makeTransparentWall(textureIndex));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
+						const int textureIndex = map1Voxel & 0x00FF;
+						return VoxelData::makeTransparentWall(textureIndex);
+					});
 
 					this->setVoxel(x, 1, z, dataIndex);
 				}
@@ -615,46 +589,33 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 					// in the original game (presumably a silent bug).
 					if (textureIndex >= 0)
 					{
-						const int dataIndex = [this, &inf, &wallDataMappings,
-							map1Voxel, textureIndex]()
+						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()
 						{
-							const auto wallIter = wallDataMappings.find(map1Voxel);
-							if (wallIter != wallDataMappings.end())
+							const VoxelData::Facing facing = [map1Voxel]()
 							{
-								return wallIter->second;
-							}
-							else
-							{
-								const VoxelData::Facing facing = [map1Voxel]()
+								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
+								// and C is east. It is stored in two bits above the texture index.
+								const int orientation = (map1Voxel & 0x00C0) >> 4;
+								if (orientation == 0x0)
 								{
-									// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is
-									// north and C is east. It is stored in two bits above the
-									// texture index.
-									const int orientation = (map1Voxel & 0x00C0) >> 4;
-									if (orientation == 0x0)
-									{
-										return VoxelData::Facing::PositiveX;
-									}
-									else if (orientation == 0x4)
-									{
-										return VoxelData::Facing::NegativeZ;
-									}
-									else if (orientation == 0x8)
-									{
-										return VoxelData::Facing::NegativeX;
-									}
-									else
-									{
-										return VoxelData::Facing::PositiveZ;
-									}
-								}();
+									return VoxelData::Facing::PositiveX;
+								}
+								else if (orientation == 0x4)
+								{
+									return VoxelData::Facing::NegativeZ;
+								}
+								else if (orientation == 0x8)
+								{
+									return VoxelData::Facing::NegativeX;
+								}
+								else
+								{
+									return VoxelData::Facing::PositiveZ;
+								}
+							}();
 
-								const int index = this->voxelGrid.addVoxelData(
-									VoxelData::makeEdge(textureIndex, facing));
-								return wallDataMappings.insert(
-									std::make_pair(map1Voxel, index)).first->second;
-							}
-						}();
+							return VoxelData::makeEdge(textureIndex, facing);
+						});
 
 						this->setVoxel(x, 1, z, dataIndex);
 					}
@@ -662,25 +623,15 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 				else if (mostSigNibble == 0xB)
 				{
 					// Door voxel.
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const int textureIndex = map1Voxel & 0x003F;
+						const int textureIndex = map1Voxel & 0x003F;
 
-							// To do: see if *DOOR values in the .INF should actually be used 
-							// to determine which door type it is.
-							const int index = this->voxelGrid.addVoxelData(VoxelData::makeDoor(
-								textureIndex, VoxelData::DoorData::Type::Swinging));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
+						// To do: see if *DOOR values in the .INF should actually be used 
+						// to determine which door type it is.
+						return VoxelData::makeDoor(
+							textureIndex, VoxelData::DoorData::Type::Swinging);
+					});
 
 					this->setVoxel(x, 1, z, dataIndex);
 				}
@@ -692,23 +643,12 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 				else if (mostSigNibble == 0xD)
 				{
 					// Diagonal wall. Its type is determined by the nineth bit.
-					const int dataIndex = [this, &inf, &wallDataMappings, map1Voxel]()
+					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const auto wallIter = wallDataMappings.find(map1Voxel);
-						if (wallIter != wallDataMappings.end())
-						{
-							return wallIter->second;
-						}
-						else
-						{
-							const int textureIndex = map1Voxel & 0x00FF;
-							const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-							const int index = this->voxelGrid.addVoxelData(
-								VoxelData::makeDiagonal(textureIndex, isRightDiag));
-							return wallDataMappings.insert(
-								std::make_pair(map1Voxel, index)).first->second;
-						}
-					}();
+						const int textureIndex = map1Voxel & 0x00FF;
+						const bool isRightDiag = (map1Voxel & 0x0100) == 0;
+						return VoxelData::makeDiagonal(textureIndex, isRightDiag);
+					});
 
 					this->setVoxel(x, 1, z, dataIndex);
 				}
