@@ -4,6 +4,7 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 - Version: 0.6.0
 - License: MIT
+- Discord: https://discord.gg/BhmVJt
 - IRC: #opentesarena on [webchat.freenode.net](https://webchat.freenode.net/)
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
@@ -51,7 +52,7 @@ The engine uses `MidiConfig` and `ArenaPath` from the options file to find where
 - If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
 
 #### Linux (Ubuntu 16.04)
-Substitute `<version>` with the current version number (i.e., `0.5.0`), and `<arch>` with the desired architecture (`32` or `64`).
+Substitute `<version>` with the current version number (i.e., `0.6.0`), and `<arch>` with the desired architecture (`32` or `64`).
 ```bash
 sudo apt-get install wget unzip rar
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
