@@ -358,20 +358,35 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	// Initialize the OpenAL device and context.
 	ALCdevice *device = alcOpenDevice(nullptr);
-	DebugAssert(device != nullptr, "alcOpenDevice");
+	if (device == nullptr)
+	{
+		DebugWarning("alcOpenDevice() failed (error " + std::to_string(alGetError()) + ").");
+	}
 
 	ALCcontext *context = alcCreateContext(device, nullptr);
-	DebugAssert(context != nullptr, "alcCreateContext");
+	if (context == nullptr)
+	{
+		DebugWarning("alcCreateContext() failed (error " + std::to_string(alGetError()) + ").");
+	}
 
-	ALCboolean success = alcMakeContextCurrent(context);
-	DebugAssert(success == AL_TRUE, "alcMakeContextCurrent");
+	const ALCboolean success = alcMakeContextCurrent(context);
+	if (success != AL_TRUE)
+	{
+		DebugWarning("alcMakeContextCurrent() failed (error " +
+			std::to_string(alGetError()) + ").");
+	}
 
 	// Generate the sound sources.
 	for (int i = 0; i < maxChannels; i++)
 	{
 		ALuint source;
 		alGenSources(1, &source);
-		DebugAssert(alGetError() == AL_NO_ERROR, "alGenSources");
+
+		const ALenum status = alGetError();
+		if (status != AL_NO_ERROR)
+		{
+			DebugWarning("alGenSources() failed (error " + std::to_string(status) + ").");
+		}
 
 		mFreeSources.push_back(source);
 	}
