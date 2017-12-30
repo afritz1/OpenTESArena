@@ -49,7 +49,7 @@ The engine uses `MidiConfig` and `ArenaPath` from the options file to find where
 - Pick a destination folder anywhere and install.
 - Point `ArenaPath` in the options file to the `ARENA` folder.
 - If you receive an error about missing MSVCP140.dll, you will need to download and run the Visual C++ 2015 Redistributable installer from [here](https://www.microsoft.com/en-us/download/details.aspx?id=53587) for your desired target (x64 for 64-bit, x86 for 32-bit).
-- If you receive an error about "alcOpenDevice", you will need to download and run the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/).
+- If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
 
 #### Linux (Ubuntu 16.04)
 Substitute `<version>` with the current version number (i.e., `0.6.0`), and `<arch>` with the desired architecture (`32` or `64`).
