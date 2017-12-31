@@ -1,18 +1,16 @@
 #ifndef METALLIC_H
 #define METALLIC_H
 
-#include <memory>
+#include "Metal.h"
 
 // Inherit this class if the item type has any kind of metal associated with it.
-
-class Metal;
 
 enum class MetalType;
 
 class Metallic
 {
 private:
-	std::unique_ptr<Metal> metal;
+	Metal metal;
 public:
 	Metallic(MetalType metalType);
 	~Metallic();

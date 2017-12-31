@@ -1,13 +1,9 @@
-#include <cassert>
-
 #include "Metal.h"
 #include "Metallic.h"
 #include "MetalType.h"
 
 Metallic::Metallic(MetalType metalType)
-{
-	this->metal = std::unique_ptr<Metal>(new Metal(metalType));
-}
+	: metal(metalType) { }
 
 Metallic::~Metallic()
 {
@@ -16,7 +12,5 @@ Metallic::~Metallic()
 
 const Metal &Metallic::getMetal() const
 {
-	assert(this->metal.get() != nullptr);
-
-	return *this->metal;
+	return this->metal;
 }
