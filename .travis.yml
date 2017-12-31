@@ -2,7 +2,9 @@ language: cpp
 sudo: required
 dist: trusty
 os: linux
-compiler: gcc
+compiler:
+  - clang
+  - gcc
 group: stable
 
 before_install:
