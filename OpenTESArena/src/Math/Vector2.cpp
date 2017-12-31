@@ -97,14 +97,6 @@ std::string Vector2i<T>::toString() const
 // -- Vector2f --
 
 template <class T>
-const Vector2f<T> Vector2f<T>::UnitX =
-	Vector2f<T>(static_cast<T>(1.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector2f<T> Vector2f<T>::UnitY =
-	Vector2f<T>(static_cast<T>(0.0), static_cast<T>(1.0));
-
-template <class T>
 Vector2f<T>::Vector2f(T x, T y)
 {
 	this->x = x;

@@ -86,6 +86,13 @@ public:
 	Vector2f<T> rightPerp() const;
 };
 
+// Unit vector definitions (can't be in .cpp file on Clang).
+template <class T>
+const Vector2f<T> Vector2f<T>::UnitX(static_cast<T>(1.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector2f<T> Vector2f<T>::UnitY(static_cast<T>(0.0), static_cast<T>(1.0));
+
 // The template instantiations are at the end of the .cpp file.
 typedef Vector2i<char> Char2;
 typedef Vector2i<unsigned char> Uchar2;

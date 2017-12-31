@@ -100,18 +100,6 @@ std::string Vector3i<T>::toString() const
 // -- Vector3f --
 
 template <class T>
-const Vector3f<T> Vector3f<T>::UnitX =
-	Vector3f<T>(static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector3f<T> Vector3f<T>::UnitY =
-	Vector3f<T>(static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector3f<T> Vector3f<T>::UnitZ =
-	Vector3f<T>(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
-
-template <class T>
 Vector3f<T>::Vector3f(T x, T y, T z)
 {
 	this->x = x;

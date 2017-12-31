@@ -15,7 +15,7 @@ public:
 		const std::string &flavorText, const std::vector<int> &provinceIDs);
 	virtual ~ArmorArtifactData();
 
-	virtual std::unique_ptr<ArtifactData> clone() const = 0;
+	virtual std::unique_ptr<ArtifactData> clone() const override = 0;
 
 	virtual ItemType getItemType() const override;
 

@@ -94,6 +94,19 @@ public:
 	Vector3f<T> componentMax(const Vector3f<T> &v) const;
 };
 
+// Unit vector definitions (can't be in .cpp file on Clang).
+template <class T>
+const Vector3f<T> Vector3f<T>::UnitX(
+	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector3f<T> Vector3f<T>::UnitY(
+	static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector3f<T> Vector3f<T>::UnitZ(
+	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
+
 // The template instantiations are at the end of the .cpp file.
 // - size_t vector types cause issues with GCC 4.8.4 32-bit (identical to unsigned int).
 typedef Vector3i<char> Char3;

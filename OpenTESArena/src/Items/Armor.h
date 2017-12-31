@@ -20,12 +20,12 @@ public:
 	Armor(const ArtifactData *artifactData);
 	virtual ~Armor();
 
-	virtual std::unique_ptr<Item> clone() const = 0;
+	virtual std::unique_ptr<Item> clone() const override = 0;
 
 	virtual ItemType getItemType() const override;
-	virtual double getWeight() const = 0;
-	virtual int getGoldValue() const = 0;
-	virtual std::string getDisplayName() const = 0;
+	virtual double getWeight() const override = 0;
+	virtual int getGoldValue() const override = 0;
+	virtual std::string getDisplayName() const override = 0;
 
 	virtual ArmorType getArmorType() const = 0;
 

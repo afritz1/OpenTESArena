@@ -106,22 +106,6 @@ std::string Vector4i<T>::toString() const
 // -- Vector4f --
 
 template <class T>
-const Vector4f<T> Vector4f<T>::UnitX =
-	Vector4f<T>(static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector4f<T> Vector4f<T>::UnitY =
-	Vector4f<T>(static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector4f<T> Vector4f<T>::UnitZ =
-	Vector4f<T>(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
-
-template <class T>
-const Vector4f<T> Vector4f<T>::UnitW =
-	Vector4f<T>(static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
-
-template <class T>
 Vector4f<T>::Vector4f(T x, T y, T z, T w)
 {
 	this->x = x;

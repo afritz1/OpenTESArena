@@ -85,6 +85,23 @@ public:
 	Vector4f<T> clamped() const;
 };
 
+// Unit vector definitions (can't be in .cpp file on Clang).
+template <class T>
+const Vector4f<T> Vector4f<T>::UnitX(
+	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector4f<T> Vector4f<T>::UnitY(
+	static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector4f<T> Vector4f<T>::UnitZ(
+	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
+
+template <class T>
+const Vector4f<T> Vector4f<T>::UnitW(
+	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
+
 // The template instantiations are at the end of the .cpp file.
 typedef Vector4i<char> Char4;
 typedef Vector4i<unsigned char> Uchar4;
