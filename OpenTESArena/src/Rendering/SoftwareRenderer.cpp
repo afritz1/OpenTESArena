@@ -13,6 +13,23 @@
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
 
+SoftwareRenderer::VoxelTexel::VoxelTexel()
+{
+	this->r = 0.0;
+	this->g = 0.0;
+	this->b = 0.0;
+	this->a = 0.0;
+	this->emission = 0.0;
+}
+
+SoftwareRenderer::FlatTexel::FlatTexel()
+{
+	this->r = 0.0;
+	this->g = 0.0;
+	this->b = 0.0;
+	this->a = 0.0;
+}
+
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	double fovY, double aspect)
 	: eye(eye)
@@ -196,6 +213,14 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	// Initialize occlusion columns.
 	this->occlusion = std::vector<OcclusionData>(width, OcclusionData(0, height));
 
+	// Initialize flat textures to empty.
+	for (auto &texture : this->flatTextures)
+	{
+		texture.texels = std::vector<FlatTexel>();
+		texture.width = 0;
+		texture.height = 0;
+	}
+
 	this->width = width;
 	this->height = height;
 
@@ -235,33 +260,34 @@ void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &col
 	DebugNotImplemented();
 }
 
-int SoftwareRenderer::addTexture(const uint32_t *texels, int width, int height)
+void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
-	const int texelCount = width * height;
+	// Clear the selected texture.
+	VoxelTexture &texture = this->voxelTextures.at(id);
+	std::fill(texture.texels.begin(), texture.texels.end(), VoxelTexel());
+	texture.lightTexels.clear();
 
-	SoftwareTexture texture;
-	texture.texels = std::vector<Double4>(texelCount);
-	texture.emissionTexels = std::vector<double>(texelCount);
-	std::fill(texture.emissionTexels.begin(), texture.emissionTexels.end(), 0.0);
-
-	texture.width = width;
-	texture.height = height;
-
-	// Convert ARGB color from integer to double-precision format for speed.
-	// This does waste an extreme amount of memory (32 bytes per pixel!), but
-	// it's not a big deal for Arena's textures (mostly 64x64, so eight textures
-	// would be a megabyte).
-	Double4 *textureTexels = texture.texels.data();
-	for (int y = 0; y < height; y++)
+	for (int y = 0; y < VoxelTexture::HEIGHT; y++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < VoxelTexture::WIDTH; x++)
 		{
-			const int index = x + (y * width);
-			textureTexels[index] = Double4::fromARGB(texels[index]);
+			// To do: change this calculation for rotated textures. Make sure to have a 
+			// source index and destination index.
+			// - "dstX" and "dstY" should be calculated, and also used with lightTexels.
+			const int index = x + (y * VoxelTexture::WIDTH);
+
+			// Convert ARGB color from integer to double-precision format. This does waste
+			// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
+			// for Arena's textures (eight textures is a megabyte).
+			const Double4 srcTexel = Double4::fromARGB(srcTexels[index]);
+			VoxelTexel &dstTexel = texture.texels[index];
+			dstTexel.r = srcTexel.x;
+			dstTexel.g = srcTexel.y;
+			dstTexel.b = srcTexel.z;
+			dstTexel.a = srcTexel.w;
 
 			// If it's a white texel, it's used with night lights (i.e., yellow at night).
-			const Double4 &texel = textureTexels[index];
-			const bool isWhite = (texel.x == 1.0) && (texel.y == 1.0) && (texel.z == 1.0);
+			const bool isWhite = (srcTexel.x == 1.0) && (srcTexel.y == 1.0) && (srcTexel.z == 1.0);
 
 			if (isWhite)
 			{
@@ -269,10 +295,27 @@ int SoftwareRenderer::addTexture(const uint32_t *texels, int width, int height)
 			}
 		}
 	}
+}
 
-	this->textures.push_back(std::move(texture));
+void SoftwareRenderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
+{
+	const int texelCount = width * height;
 
-	return static_cast<int>(this->textures.size() - 1);
+	// Reset the selected texture.
+	FlatTexture &texture = this->flatTextures.at(id);
+	texture.texels = std::vector<FlatTexel>(texelCount);
+	texture.width = width;
+	texture.height = height;
+
+	for (int i = 0; i < texelCount; i++)
+	{
+		const Double4 srcTexel = Double4::fromARGB(srcTexels[i]);
+		FlatTexel &dstTexel = texture.texels[i];
+		dstTexel.r = srcTexel.x;
+		dstTexel.g = srcTexel.y;
+		dstTexel.b = srcTexel.z;
+		dstTexel.a = srcTexel.w;
+	}
 }
 
 void SoftwareRenderer::updateFlat(int id, const Double3 *position, const double *width, 
@@ -341,16 +384,20 @@ void SoftwareRenderer::setNightLightsActive(bool active)
 		(active ? Color(255, 166, 0) : Color::Black).toARGB());
 	const double texelEmission = active ? 1.0 : 0.0;
 
-	for (auto &texture : this->textures)
+	for (auto &voxelTexture : this->voxelTextures)
 	{
-		std::vector<Double4> &texels = texture.texels;
-		std::vector<double> &emissionTexels = texture.emissionTexels;
+		auto &texels = voxelTexture.texels;
 
-		for (const auto &lightTexels : texture.lightTexels)
+		for (const auto &lightTexels : voxelTexture.lightTexels)
 		{
-			const int index = lightTexels.x + (lightTexels.y * texture.width);
-			texels.at(index) = texelColor;
-			emissionTexels.at(index) = texelEmission;
+			const int index = lightTexels.x + (lightTexels.y * VoxelTexture::WIDTH);
+
+			VoxelTexel &texel = texels.at(index);
+			texel.r = texelColor.x;
+			texel.g = texelColor.y;
+			texel.b = texelColor.z;
+			texel.a = texelColor.w;
+			texel.emission = texelEmission;
 		}
 	}
 }
@@ -370,9 +417,20 @@ void SoftwareRenderer::removeLight(int id)
 	DebugNotImplemented();
 }
 
-void SoftwareRenderer::removeAllTextures()
+void SoftwareRenderer::clearTextures()
 {
-	this->textures.clear();
+	for (auto &texture : this->voxelTextures)
+	{
+		std::fill(texture.texels.begin(), texture.texels.end(), VoxelTexel());
+		texture.lightTexels.clear();
+	}
+
+	for (auto &texture : this->flatTextures)
+	{
+		std::fill(texture.texels.begin(), texture.texels.end(), FlatTexel());
+		texture.width = 0;
+		texture.height = 0;
+	}
 }
 
 void SoftwareRenderer::resize(int width, int height)
@@ -1447,11 +1505,11 @@ void SoftwareRenderer::diagProjection(double voxelYReal, double voxelHeight,
 
 void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, double depth, double u, double vStart, double vEnd,
-	const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
+	const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
 	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Horizontal offset in texture.
-	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
@@ -1492,18 +1550,17 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
 			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
 
 			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const int textureIndex = textureX + (textureY * texture.width);
-			const Double4 &texel = texture.texels[textureIndex];
-			const double emission = texture.emissionTexels[textureIndex];
+			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+			const VoxelTexel &texel = texture.texels[textureIndex];
 
 			// Texture color with shading.
 			const double shadingMax = 1.0;
-			double colorR = texel.x * std::min(shading.x + emission, shadingMax);
-			double colorG = texel.y * std::min(shading.y + emission, shadingMax);
-			double colorB = texel.z * std::min(shading.z + emission, shadingMax);
+			double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
+			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
+			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -1530,7 +1587,7 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 
 void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, double depthStart,
-	double depthEnd, const Double3 &normal, const SoftwareTexture &texture,
+	double depthEnd, const Double3 &normal, const VoxelTexture &texture,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Fog color to interpolate with.
@@ -1592,19 +1649,18 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY))), 0.0);
 
 			// Offsets in texture.
-			const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+			const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
 
 			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const int textureIndex = textureX + (textureY * texture.width);
-			const Double4 &texel = texture.texels[textureIndex];
-			const double emission = texture.emissionTexels[textureIndex];
+			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+			const VoxelTexel &texel = texture.texels[textureIndex];
 
 			// Texture color with shading.
 			const double shadingMax = 1.0;
-			double colorR = texel.x * std::min(shading.x + emission, shadingMax);
-			double colorG = texel.y * std::min(shading.y + emission, shadingMax);
-			double colorB = texel.z * std::min(shading.z + emission, shadingMax);
+			double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
+			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
+			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -1631,11 +1687,11 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 
 void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
 	double projectedYEnd, double depth, double u, double vStart, double vEnd,
-	const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo,
+	const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
 	const OcclusionData &occlusion, const FrameView &frame)
 {
 	// Horizontal offset in texture.
-	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
@@ -1674,20 +1730,19 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
 			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
 
 			// Alpha is checked in this loop, and transparent texels are not drawn.
-			const int textureIndex = textureX + (textureY * texture.width);
-			const Double4 &texel = texture.texels[textureIndex];
-			const double emission = texture.emissionTexels[textureIndex];
+			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+			const VoxelTexel &texel = texture.texels[textureIndex];
 			
-			if (texel.w > 0.0)
+			if (texel.a > 0.0)
 			{
 				// Texture color with shading.
 				const double shadingMax = 1.0;
-				double colorR = texel.x * std::min(shading.x + emission, shadingMax);
-				double colorG = texel.y * std::min(shading.y + emission, shadingMax);
-				double colorB = texel.z * std::min(shading.z + emission, shadingMax);
+				double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
+				double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
+				double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;
@@ -1716,8 +1771,8 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+	const VoxelGrid &voxelGrid, const VoxelTextureArray &textures, OcclusionData &occlusion,
+	const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -2683,8 +2738,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const std::vector<SoftwareTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+	const VoxelGrid &voxelGrid, const VoxelTextureArray &textures, OcclusionData &occlusion,
+	const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -3780,7 +3835,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFrame,
 	const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo,
-	const SoftwareTexture &texture, const FrameView &frame)
+	const FlatTexture &texture, const FrameView &frame)
 {
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -3891,15 +3946,15 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 				// Alpha is checked in this loop, and transparent texels are not drawn.
 				// Flats do not have emission, so ignore it.
 				const int textureIndex = textureX + (textureY * texture.width);
-				const Double4 &texel = texture.texels[textureIndex];
+				const FlatTexel &texel = texture.texels[textureIndex];
 
-				if (texel.w > 0.0)
+				if (texel.a > 0.0)
 				{
 					// Texture color with shading.
 					const double shadingMax = 1.0;
-					double colorR = texel.x * std::min(shading.x, shadingMax);
-					double colorG = texel.y * std::min(shading.y, shadingMax);
-					double colorB = texel.z * std::min(shading.z, shadingMax);
+					double colorR = texel.r * std::min(shading.x, shadingMax);
+					double colorG = texel.g * std::min(shading.y, shadingMax);
+					double colorB = texel.b * std::min(shading.z, shadingMax);
 
 					// Linearly interpolate with fog.
 					colorR += (fogColor.x - colorR) * fogPercent;
@@ -3928,7 +3983,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
 	// expensive as it does not stop at the first wall intersection, and it also renders voxels 
@@ -4164,7 +4219,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 			// Cast the 2D ray and fill in the column's pixels with color.
 			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, 
-				voxelGrid, this->textures, this->occlusion.at(x), frame);
+				voxelGrid, this->voxelTextures, this->occlusion.at(x), frame);
 		}
 
 		// Iterate through all flats, rendering those visible within the given X range of 
@@ -4179,7 +4234,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 			// Texture of the flat. It might be flipped horizontally as well, given by
 			// the "flat.flipped" value.
-			const SoftwareTexture &texture = textures[flat.textureID];
+			const FlatTexture &texture = this->flatTextures[flat.textureID];
 
 			const Double2 eye2D(camera.eye.x, camera.eye.z);
 

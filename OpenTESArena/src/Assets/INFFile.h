@@ -17,15 +17,24 @@ public:
 	// To do: this could be defined somewhere else in the code.
 	enum class DoorType { Swing = 0, Slide = 1, Up = 2, Split = 3 };
 
-	struct TextureData
+	struct VoxelTextureData
 	{
 		std::string filename;
-		std::unique_ptr<int> setIndex; // Non-null when texture is a .SET file.
+		int setIndex; // -1 when texture is not a .SET file; index into the .SET otherwise.
 
-		TextureData(const std::string &filename, int setIndex);
-		TextureData(const std::string &filename);
-		TextureData(TextureData&&) = default;
-		TextureData() = default;
+		VoxelTextureData(const std::string &filename, int setIndex);
+		VoxelTextureData(const std::string &filename);
+		VoxelTextureData(VoxelTextureData&&) = default;
+		VoxelTextureData() = default;
+	};
+
+	struct FlatTextureData
+	{
+		std::string filename;
+
+		FlatTextureData(const std::string &filename);
+		FlatTextureData(FlatTextureData&&) = default;
+		FlatTextureData() = default;
 	};
 
 	struct CeilingData
@@ -93,7 +102,8 @@ private:
 	// Texture filenames in the order they are discovered. .SET files are expanded;
 	// that is, a four-element .SET will occupy four consecutive indices, and each integer
 	// pointer will contain the index (otherwise it is null).
-	std::vector<TextureData> textures;
+	std::vector<VoxelTextureData> voxelTextures;
+	std::vector<FlatTextureData> flatTextures;
 
 	// References to texture names in the textures vector. -1 if unset.
 	std::array<int, 16> boxCaps, boxSides, menus;
@@ -132,10 +142,11 @@ public:
 	INFFile(const std::string &filename);
 	~INFFile();
 
-	// Arbitrary index used for unset texture indices.
+	// Arbitrary index used for unset indices.
 	static const int NO_INDEX;
 
-	const std::vector<TextureData> &getTextures() const;
+	const std::vector<VoxelTextureData> &getVoxelTextures() const;
+	const std::vector<FlatTextureData> &getFlatTextures() const;
 	const int *getBoxCap(int index) const;
 	const int *getBoxSide(int index) const;
 	const int *getMenu(int index) const;

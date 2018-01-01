@@ -423,12 +423,6 @@ void Renderer::addLight(int id, const Double3 &point, const Double3 &color, doub
 	this->softwareRenderer->addLight(id, point, color, intensity);
 }
 
-int Renderer::addTexture(const uint32_t *texels, int width, int height)
-{
-	assert(this->softwareRenderer.get() != nullptr);
-	return this->softwareRenderer->addTexture(texels, width, height);
-}
-
 void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
 	const double *height, const int *textureID, const bool *flipped)
 {
@@ -447,6 +441,18 @@ void Renderer::setFogDistance(double fogDistance)
 {
 	assert(this->softwareRenderer.get() != nullptr);
 	this->softwareRenderer->setFogDistance(fogDistance);
+}
+
+void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
+{
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setVoxelTexture(id, srcTexels);
+}
+
+void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
+{
+	assert(this->softwareRenderer.get() != nullptr);
+	this->softwareRenderer->setFlatTexture(id, srcTexels, width, height);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
@@ -473,10 +479,10 @@ void Renderer::removeLight(int id)
 	this->softwareRenderer->removeLight(id);
 }
 
-void Renderer::removeAllWorldTextures()
+void Renderer::clearTextures()
 {
 	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->removeAllTextures();
+	this->softwareRenderer->clearTextures();
 }
 
 void Renderer::clear(const Color &color)

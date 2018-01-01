@@ -85,8 +85,8 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 		entityManager.remove(entity->getID());
 	}
 
-	// Clear software renderer textures (so the .INF file indices are correct).
-	renderer.removeAllWorldTextures();
+	// Clear software renderer textures.
+	renderer.clearTextures();
 
 	// Set sky palette based on world type and weather.
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
@@ -115,13 +115,15 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 	
-	// Load .INF textures into the renderer.
-	for (const auto &textureData : inf.getTextures())
+	// Load .INF voxel textures into the renderer. Assume all voxel textures are 64x64.
+	const int voxelTextureCount = static_cast<int>(inf.getVoxelTextures().size());
+	for (int i = 0; i < voxelTextureCount; i++)
 	{
+		const auto &textureData = inf.getVoxelTextures().at(i);
+
 		const std::string textureName = String::toUppercase(textureData.filename);
 		const std::string extension = String::getExtension(textureName);
 
-		const bool isDFA = extension == ".DFA";
 		const bool isIMG = extension == ".IMG";
 		const bool isSET = extension == ".SET";
 		const bool noExtension = extension.size() == 0;
@@ -130,11 +132,42 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 		{
 			// Use the texture data's .SET index to obtain the correct surface.
 			const auto &surfaces = textureManager.getSurfaces(textureName);
-			const SDL_Surface *surface = surfaces.at(*textureData.setIndex.get());
-			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels), 
-				surface->w, surface->h);
+			const SDL_Surface *surface = surfaces.at(textureData.setIndex);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
 		}
-		else if (isDFA)
+		else if (isIMG)
+		{
+			const SDL_Surface *surface = textureManager.getSurface(textureName);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
+		}
+		else if (noExtension)
+		{
+			// Ignore texture names with no extension. They appear to be lore-related names
+			// that were used at one point in Arena's development.
+			static_cast<void>(textureData);
+		}
+		else
+		{
+			DebugCrash("Unrecognized voxel texture extension \"" + extension + "\".");
+		}
+	}
+
+	// Load .INF flat textures into the renderer.
+	// - To do: maybe turn this into a while loop, so the index variable can be incremented
+	//   by the size of each .DFA. It's incorrect as-is.
+	const int flatTextureCount = static_cast<int>(inf.getFlatTextures().size());
+	for (int i = 0; i < flatTextureCount; i++)
+	{
+		const auto &textureData = inf.getFlatTextures().at(i);
+
+		const std::string textureName = String::toUppercase(textureData.filename);
+		const std::string extension = String::getExtension(textureName);
+
+		const bool isDFA = extension == ".DFA";
+		const bool isIMG = extension == ".IMG";
+		const bool noExtension = extension.size() == 0;
+
+		if (isDFA)
 		{
 			// To do: creatures don't have .DFA files (although they're referenced in the .INF
 			// files), so I think the extension needs to be .CFA instead for them.
@@ -148,7 +181,7 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 		else if (isIMG)
 		{
 			const SDL_Surface *surface = textureManager.getSurface(textureName);
-			renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface->pixels),
 				surface->w, surface->h);
 		}
 		else if (noExtension)
@@ -159,16 +192,8 @@ void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType wor
 		}
 		else
 		{
-			DebugCrash("Unrecognized texture extension \"" + extension + "\".");
+			DebugCrash("Unrecognized flat texture extension \"" + extension + "\".");
 		}
-	}
-
-	// -- temp -- Add some debug textures for good measure (to avoid out-of-range accesses).
-	for (int i = 0; i < 64; i++)
-	{
-		std::vector<uint32_t> colors(64 * 64);
-		std::fill(colors.begin(), colors.end(), 0xFF0000FF);
-		renderer.addTexture(colors.data(), 64, 64);
 	}
 }
 
@@ -280,10 +305,11 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		textureManager.getSurface("NBRIDGE.IMG"),
 	};
 
-	for (const auto *surface : surfaces)
+	const int wallTextureCount = static_cast<int>(surfaces.size());
+	for (int i = 0; i < wallTextureCount; i++)
 	{
-		renderer.addTexture(static_cast<uint32_t*>(surface->pixels),
-			surface->w, surface->h);
+		const SDL_Surface *surface = surfaces.at(i);
+		renderer.setVoxelTexture(i, static_cast<uint32_t*>(surface->pixels));
 	}
 
 	// Make an empty voxel grid with some arbitrary dimensions.
@@ -578,36 +604,46 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		setVoxel(13, 1, k, bridge1ID);
 	}
 
-	// Lambdas for adding a new texture to the renderer and returning the assigned ID.
-	auto addTexture = [&textureManager, &renderer](const std::string &filename)
+	// Lambdas for adding a new flat texture to the renderer.
+	auto setFlatTexture = [&textureManager, &renderer](int id, const std::string &filename)
 	{
 		const SDL_Surface *surface = textureManager.getSurface(filename);
-		return renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+		renderer.setFlatTexture(id, static_cast<const uint32_t*>(surface->pixels),
 			surface->w, surface->h);
 	};
 
-	auto addTextures = [&textureManager, &renderer](const std::string &filename)
+	auto setFlatTextures = [&textureManager, &renderer](int startID, const std::string &filename)
 	{
 		const std::vector<SDL_Surface*> &surfaces = textureManager.getSurfaces(filename);
 
-		std::vector<int> textureIDs;
-		for (const auto *surface : surfaces)
+		std::vector<int> textureIDs;		
+		const int surfaceCount = static_cast<int>(surfaces.size());
+		for (int i = 0; i < surfaceCount; i++)
 		{
-			const int textureID = renderer.addTexture(
-				static_cast<const uint32_t*>(surface->pixels), surface->w, surface->h);
+			const SDL_Surface *surface = surfaces.at(i);
+			const int textureID = startID + i;
+			renderer.setFlatTexture(textureID, static_cast<const uint32_t*>(surface->pixels),
+				surface->w, surface->h);
 			textureIDs.push_back(textureID);
 		}
 
 		return textureIDs;
 	};
 
-	// Flat texture properties.
-	const int tree1TextureID = addTexture("NPINE1.IMG");
-	const int tree2TextureID = addTexture("NPINE4.IMG");
-	const int statueTextureID = addTexture("NSTATUE1.IMG");
-	const std::vector<int> lampPostTextureIDs = addTextures("NLAMP1.DFA");
-	const std::vector<int> womanTextureIDs = addTextures("FMGEN01.CFA"); // To do: Allow sub-ranges.
-	const std::vector<int> manTextureIDs = addTextures("MLGEN01W.CFA");
+	// Flat texture properties. Also add them to the renderer.
+	const int tree1TextureID = 0;
+	const int tree2TextureID = 1;
+	const int statueTextureID = 2;
+
+	setFlatTexture(tree1TextureID, "NPINE1.IMG");
+	setFlatTexture(tree2TextureID, "NPINE4.IMG");
+	setFlatTexture(statueTextureID, "NSTATUE1.IMG");
+	const std::vector<int> lampPostTextureIDs = setFlatTextures(
+		statueTextureID + 1, "NLAMP1.DFA");
+	const std::vector<int> womanTextureIDs = setFlatTextures(
+		lampPostTextureIDs.back() + 1, "FMGEN01.CFA");
+	const std::vector<int> manTextureIDs = setFlatTextures(
+		womanTextureIDs.back() + 1, "MLGEN01W.CFA");
 
 	const double tree1Scale = 2.0;
 	const double tree2Scale = 2.0;

@@ -109,10 +109,13 @@ namespace
 	};
 }
 
-INFFile::TextureData::TextureData(const std::string &filename, int setIndex)
-	: filename(filename), setIndex(new int(setIndex)) { }
+INFFile::VoxelTextureData::VoxelTextureData(const std::string &filename, int setIndex)
+	: filename(filename), setIndex(setIndex) { }
 
-INFFile::TextureData::TextureData(const std::string &filename)
+INFFile::VoxelTextureData::VoxelTextureData(const std::string &filename)
+	: filename(filename), setIndex(INFFile::NO_INDEX) { }
+
+INFFile::FlatTextureData::FlatTextureData(const std::string &filename)
 	: filename(filename) { }
 
 INFFile::CeilingData::CeilingData()
@@ -347,7 +350,7 @@ INFFile::INFFile(const std::string &filename)
 			if (tokens.size() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->textures.push_back(TextureData(line));
+				this->voxelTextures.push_back(VoxelTextureData(line));
 			}
 			else
 			{
@@ -357,7 +360,7 @@ INFFile::INFFile(const std::string &filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->textures.push_back(TextureData(textureName, i));
+					this->voxelTextures.push_back(VoxelTextureData(textureName, i));
 				}
 			}
 		}
@@ -376,8 +379,8 @@ INFFile::INFFile(const std::string &filename)
 					// Just a regular texture (like an .IMG).
 					floorState->textureName = line;
 
-					this->textures.push_back(TextureData(floorState->textureName));
-					return static_cast<int>(this->textures.size()) - 1;
+					this->voxelTextures.push_back(VoxelTextureData(floorState->textureName));
+					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
@@ -387,10 +390,11 @@ INFFile::INFFile(const std::string &filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->textures.push_back(TextureData(floorState->textureName, i));
+						this->voxelTextures.push_back(
+							VoxelTextureData(floorState->textureName, i));
 					}
 
-					return static_cast<int>(this->textures.size()) - setSize;
+					return static_cast<int>(this->voxelTextures.size()) - setSize;
 				}
 			}();
 
@@ -517,7 +521,7 @@ INFFile::INFFile(const std::string &filename)
 			if (tokens.size() == 1)
 			{
 				// A regular filename (like an .IMG).
-				this->textures.push_back(TextureData(line));
+				this->voxelTextures.push_back(VoxelTextureData(line));
 			}
 			else
 			{
@@ -527,7 +531,7 @@ INFFile::INFFile(const std::string &filename)
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->textures.push_back(TextureData(textureName, i));
+					this->voxelTextures.push_back(VoxelTextureData(textureName, i));
 				}
 			}
 		}
@@ -546,8 +550,8 @@ INFFile::INFFile(const std::string &filename)
 					// Just a regular texture (like an .IMG).
 					wallState->textureName = line;
 
-					this->textures.push_back(TextureData(wallState->textureName));
-					return static_cast<int>(this->textures.size()) - 1;
+					this->voxelTextures.push_back(VoxelTextureData(wallState->textureName));
+					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
@@ -557,10 +561,10 @@ INFFile::INFFile(const std::string &filename)
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->textures.push_back(TextureData(wallState->textureName, i));
+						this->voxelTextures.push_back(VoxelTextureData(wallState->textureName, i));
 					}
 
-					return static_cast<int>(this->textures.size()) - setSize;
+					return static_cast<int>(this->voxelTextures.size()) - setSize;
 				}
 			}();
 
@@ -679,7 +683,7 @@ INFFile::INFFile(const std::string &filename)
 				hasDash ? firstToken.substr(1, firstToken.size() - 1) : firstToken);
 
 			// Add the flat's texture name to the textures vector.
-			this->textures.push_back(TextureData(textureName));
+			this->flatTextures.push_back(FlatTextureData(textureName));
 
 			// Add a new flat data record and keep its index.
 			this->flats.push_back(INFFile::FlatData());
@@ -697,7 +701,7 @@ INFFile::INFFile(const std::string &filename)
 
 			// Assign the current line's values and modifiers to the new flat.
 			INFFile::FlatData &flat = this->flats.back();
-			flat.textureIndex = static_cast<int>(this->textures.size() - 1);
+			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
 
 			// If the flat also has modifiers, then check each modifier and mutate the 
 			// flat accordingly.
@@ -977,9 +981,14 @@ INFFile::~INFFile()
 
 }
 
-const std::vector<INFFile::TextureData> &INFFile::getTextures() const
+const std::vector<INFFile::VoxelTextureData> &INFFile::getVoxelTextures() const
 {
-	return this->textures;
+	return this->voxelTextures;
+}
+
+const std::vector<INFFile::FlatTextureData> &INFFile::getFlatTextures() const
+{
+	return this->flatTextures;
 }
 
 const int *INFFile::getBoxCap(int index) const

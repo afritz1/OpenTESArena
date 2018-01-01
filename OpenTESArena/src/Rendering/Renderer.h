@@ -127,17 +127,18 @@ public:
 	// - 'remove' methods delete an object from renderer memory if it exists.
 	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-	int addTexture(const uint32_t *texels, int width, int height);
 	void updateFlat(int id, const Double3 *position, const double *width, 
 		const double *height, const int *textureID, const bool *flipped);
 	void updateLight(int id, const Double3 *point, const Double3 *color,
 		const double *intensity);
 	void setFogDistance(double fogDistance);
+	void setVoxelTexture(int id, const uint32_t *srcTexels);
+	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
 	void removeFlat(int id);
 	void removeLight(int id);
-	void removeAllWorldTextures();
+	void clearTextures();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);

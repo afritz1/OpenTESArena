@@ -1,6 +1,7 @@
 #ifndef SOFTWARE_RENDERER_H
 #define SOFTWARE_RENDERER_H
 
+#include <array>
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -18,11 +19,33 @@ class VoxelGrid;
 class SoftwareRenderer
 {
 private:
-	struct SoftwareTexture
+	struct VoxelTexel
 	{
-		std::vector<Double4> texels;
-		std::vector<double> emissionTexels; // Percentage value for night light texels.
+		double r, g, b, a, emission;
+
+		VoxelTexel();
+	};
+
+	struct FlatTexel
+	{
+		double r, g, b, a;
+
+		FlatTexel();
+	};
+
+	struct VoxelTexture
+	{
+		static const int WIDTH = 64;
+		static const int HEIGHT = VoxelTexture::WIDTH;
+		static const int TEXEL_COUNT = VoxelTexture::WIDTH * VoxelTexture::HEIGHT;
+
+		std::array<VoxelTexel, VoxelTexture::TEXEL_COUNT> texels;
 		std::vector<Int2> lightTexels; // Black during the day, yellow at night.
+	};
+
+	struct FlatTexture
+	{
+		std::vector<FlatTexel> texels;
 		int width, height;
 	};
 
@@ -139,6 +162,9 @@ private:
 		};
 	};
 
+	typedef std::array<VoxelTexture, 64> VoxelTextureArray;
+	typedef std::array<FlatTexture, 256> FlatTextureArray;
+
 	// Clipping planes for Z coordinates.
 	static const double NEAR_PLANE;
 	static const double FAR_PLANE;
@@ -147,7 +173,8 @@ private:
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<std::pair<const Flat*, Flat::Frame>> visibleFlats; // Flats to be drawn.
-	std::vector<SoftwareTexture> textures;
+	VoxelTextureArray voxelTextures;
+	FlatTextureArray flatTextures;
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
@@ -225,20 +252,20 @@ private:
 	// Draws a column of pixels with no perspective or transparency.
 	static void drawPixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, double depth, double u, double vStart, double vEnd,
-		const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo, 
+		const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo, 
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
-		double depthStart, double depthEnd, const Double3 &normal, const SoftwareTexture &texture,
+		double depthStart, double depthEnd, const Double3 &normal, const VoxelTexture &texture,
 		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with transparency but no perspective.
 	static void drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
 		double projectedYEnd, double depth, double u, double vStart, double vEnd,
-		const Double3 &normal, const SoftwareTexture &texture, const ShadingInfo &shadingInfo, 
+		const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
 		const OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
@@ -246,22 +273,20 @@ private:
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const VoxelGrid &voxelGrid,
-		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion,
-		const FrameView &frame);
+		const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid,
-		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion,
-		const FrameView &frame);
+		double ceilingHeight, const VoxelGrid &voxelGrid, const VoxelTextureArray &textures,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const Flat::Frame &flatFrame, 
 		const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo, 
-		const SoftwareTexture &texture, const FrameView &frame);
+		const FlatTexture &texture, const FrameView &frame);
 
 	// To do: drawAlphaFlat(...), for flats with partial transparency.
 	// - Must be back to front.
@@ -270,8 +295,7 @@ private:
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const std::vector<SoftwareTexture> &textures, OcclusionData &occlusion, 
-		const FrameView &frame);
+		const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -284,9 +308,6 @@ public:
 
 	// Adds a light. Causes an error if the ID exists.
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-
-	// Adds a texture and returns its assigned ID (index).
-	int addTexture(const uint32_t *texels, int width, int height);
 
 	// Updates various data for a flat. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.
@@ -305,6 +326,12 @@ public:
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
 
+	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
+	void setVoxelTexture(int id, const uint32_t *srcTexels);
+
+	// Overwrites the selected flat texture's data with the given set of texels and dimensions.
+	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
+
 	// Sets whether night lights and night textures are active.
 	void setNightLightsActive(bool active);
 
@@ -314,10 +341,8 @@ public:
 	// Removes a light. Causes an error if no ID matches.
 	void removeLight(int id);
 
-	// Removes all textures from the renderer. Useful when changing to a new map.
-	// (Individual textures can't be removed due to the simple array implementation
-	// and small API).
-	void removeAllTextures();
+	// Zeroes out all voxel and flat textures.
+	void clearTextures();
 
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);
