@@ -47,6 +47,11 @@ VOCFile::VOCFile(const std::string &filename)
 	// for all of its sound data (error otherwise).
 	this->sampleRate = 0;
 
+	// Variables for repeating data (only for DRUMS.VOC).
+	std::vector<uint8_t> repeatData;
+	uint16_t repeatCount = 0;
+	bool repeating = false;
+
 	// Read data blocks.
 	int offset = headerSize;
 	while (offset < srcData.size())
@@ -93,26 +98,41 @@ VOCFile::VOCFile(const std::string &filename)
 				assert(this->sampleRate == sampleRate);
 			}
 			
-			// Append the PCM data to the audio vector.
-			this->audioData.insert(this->audioData.end(), audioBegin, audioEnd);
+			// Append the PCM data to the target vector depending on whether it's in
+			// repeating mode or not.
+			if (repeating)
+			{
+				repeatData.insert(repeatData.end(), audioBegin, audioEnd);
+			}
+			else
+			{
+				this->audioData.insert(this->audioData.end(), audioBegin, audioEnd);
+			}
 		}
 		else if (blockType == BlockType::RepeatStart)
 		{
-			// Only used with DRUMS.VOC. Ignore this functionality for now, it's not necessary.
-
+			// Only used with DRUMS.VOC.
 			// The sound blocks following this block should be repeated some number of times.
-			//const uint16_t repeatCount = Bytes::getLE16(blockData) - 1;
+			repeatCount = Bytes::getLE16(blockData) + 1;
+			repeating = true;
 
-			// To do. 
-			// - Maybe keep a "repeating" boolean outside the loop? Append data blocks to
-			//   a temp vector until "end" block is reached, where they're then appended to 
-			//   the main vector 'count' times, and then 'repeating' is reset to false.
+			// Don't handle the 0xFFFF special case (no .VOC repeats indefinitely in Arena).
+			assert(repeatCount != 0xFFFF);
 		}
 		else if (blockType == BlockType::RepeatEnd)
 		{
+			// Only used with DRUMS.VOC.
 			// An empty block like the terminator, tells when to stop repeating data blocks.
+			// Take the repeat vector and append it onto the audio vector "repeatCount" times.
+			for (int i = 0; i < repeatCount; i++)
+			{
+				this->audioData.insert(this->audioData.end(),
+					repeatData.begin(), repeatData.end());
+			}
 
-			// To do.
+			repeatData.clear();
+			repeatCount = 0;
+			repeating = false;
 		}
 		else
 		{
