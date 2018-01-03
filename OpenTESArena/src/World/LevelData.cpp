@@ -482,11 +482,53 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 					if (voxelIsSolid)
 					{
 						// Regular solid wall.
-						const int dataIndex = getDataIndex([mostSigByte]()
+						const int dataIndex = getDataIndex([&inf, mostSigByte]()
 						{
-							const int textureIndex = mostSigByte;
+							const int textureIndex = mostSigByte - 1;
+
+							// Determine what the type of the voxel is (level up/down, menu,
+							// transition, etc.).
+							const VoxelType type = [&inf, textureIndex]()
+							{
+								// Returns whether the given index pointer is non-null and
+								// matches the current texture index.
+								auto matchesIndex = [textureIndex](const int *index)
+								{
+									return (index != nullptr) && (*index == textureIndex);
+								};
+
+								if (matchesIndex(inf.getLevelUpIndex()))
+								{
+									return VoxelType::LevelUp;
+								}
+								else if (matchesIndex(inf.getLevelDownIndex()))
+								{
+									return VoxelType::LevelDown;
+								}
+								else if (inf.indexIsMenu(textureIndex))
+								{
+									return VoxelType::Menu;
+								}
+								else if (matchesIndex(inf.getTransitionIndex()))
+								{
+									return VoxelType::Transition;
+								}
+								else if (matchesIndex(inf.getTransWalkThruIndex()))
+								{
+									return VoxelType::TransWalkThru;
+								}
+								else if (matchesIndex(inf.getWalkThruIndex()))
+								{
+									return VoxelType::WalkThru;
+								}
+								else
+								{
+									return VoxelType::Solid;
+								}
+							}();
+
 							return VoxelData::makeWall(
-								textureIndex, textureIndex, textureIndex, VoxelType::Solid);
+								textureIndex, textureIndex, textureIndex, type);
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);
@@ -713,7 +755,7 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
 					}
 					else
 					{
-						const int textureIndex = map2Voxel & 0x007F;
+						const int textureIndex = (map2Voxel & 0x007F) - 1;
 						const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
 							textureIndex, textureIndex, textureIndex, VoxelType::Solid));
 						return map2DataMappings.insert(

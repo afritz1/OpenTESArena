@@ -1016,6 +1016,19 @@ const int *INFFile::getBoxSide(int index) const
 	}
 }
 
+const bool INFFile::indexIsMenu(int index) const
+{
+	for (const int menuIndex : this->menus)
+	{
+		if (index == menuIndex)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 const int *INFFile::getMenu(int index) const
 {
 	const int *ptr = &this->menus.at(index);

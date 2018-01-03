@@ -210,6 +210,10 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 						{
 							return AutomapLevelDown;
 						}
+						else if (wallType == VoxelType::Menu)
+						{
+							return AutomapDoor;
+						}
 						else
 						{
 							DebugMention("Unrecognized wall type \"" +

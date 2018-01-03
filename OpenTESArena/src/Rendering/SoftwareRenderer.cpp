@@ -1868,18 +1868,18 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
 				nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.ceilingID - 1), shadingInfo,
+				farZ, -Double3::UnitY, textures.at(wallData.ceilingID), shadingInfo,
 				occlusion, frame);
 
 			// Side.
 			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, farCeilingScreenY,
 				farFloorScreenY, farZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID - 1), shadingInfo, occlusion, frame);
+				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
 				farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.floorID - 1), shadingInfo,
+				nearZ, Double3::UnitY, textures.at(wallData.floorID), shadingInfo,
 				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
@@ -2174,7 +2174,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
 				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID - 1),
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID),
 				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
@@ -2495,7 +2495,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
 				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.floorID - 1),
+				farZ, -Double3::UnitY, textures.at(wallData.floorID),
 				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
@@ -2823,7 +2823,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
 				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID - 1), shadingInfo, occlusion, frame);
+				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -3179,13 +3179,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
 				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID - 1),
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID),
 				shadingInfo, occlusion, frame);
 
 			// Side.
 			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
 				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID - 1), shadingInfo, occlusion, frame);
+				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -3566,12 +3566,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Side.
 			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
 				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID - 1), shadingInfo, occlusion, frame);
+				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
 				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.floorID - 1),
+				farZ, -Double3::UnitY, textures.at(wallData.floorID),
 				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
