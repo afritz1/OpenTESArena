@@ -7,6 +7,7 @@
 #include <functional>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "al.h"
@@ -18,12 +19,27 @@
 #include "../Game/Options.h"
 #include "../Utilities/Debug.h"
 
+namespace
+{
+	// These sounds in Arena should only be played one at a time, otherwise they would
+	// sound a bit obnoxious. This functionality is added to OpenTESArena because the
+	// original game can only play one sound at a time, so it doesn't have this problem.
+	const std::unordered_set<std::string> SingleInstanceSounds =
+	{
+		"DRUMS.VOC"
+	};
+}
+
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
 class OpenALStream;
 
 class AudioManagerImpl
 {
+private:
+	// Returns whether the given sound is currently playing. Intended for limiting certain
+	// sounds to only have one instance at a time.
+	bool soundIsPlaying(const std::string &filename) const;
 public:
 	float mMusicVolume;
 	float mSfxVolume;
@@ -39,8 +55,10 @@ public:
 	std::deque<ALuint> mFreeSources;
 
 	// A deque of currently used sources for sounds (the music source is owned 
-	// by OpenALStream).
-	std::deque<ALuint> mUsedSources;
+	// by OpenALStream). The string is the filename and the integer is the ID.
+	// The filename is required for some sounds that can only have one instance
+	// active at a time.
+	std::deque<std::pair<std::string, ALuint>> mUsedSources;
 
 	AudioManagerImpl();
 	~AudioManagerImpl();
@@ -347,6 +365,20 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
+bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
+{
+	// Check through used sources' filenames.
+	for (const auto &pair : mUsedSources)
+	{
+		if (pair.first == filename)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
 	const std::string &midiConfig)
 {
@@ -425,7 +457,15 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 
 void AudioManagerImpl::playSound(const std::string &filename)
 {
-	if (!mFreeSources.empty())
+	// Certain sounds (like DRUMS.VOC) should only have one live instance at a time.
+	// This is purely an arbitrary rule to avoid having long sounds overlap each other
+	// which would ultimately be very annoying and/or distracting for the player.
+	const bool isSingleInstance =
+		SingleInstanceSounds.find(filename) != SingleInstanceSounds.end();
+	const bool allowedToPlay = !isSingleInstance ||
+		(isSingleInstance && !this->soundIsPlaying(filename));
+
+	if (!mFreeSources.empty() && allowedToPlay)
 	{
 		auto vocIter = mSoundBuffers.find(filename);
 
@@ -453,7 +493,7 @@ void AudioManagerImpl::playSound(const std::string &filename)
 		alSourcei(source, AL_BUFFER, vocIter->second);
 		alSourcePlay(source);
 
-		mUsedSources.push_front(source);
+		mUsedSources.push_front(std::make_pair(filename, source));
 		mFreeSources.pop_front();
 	}
 }
@@ -472,8 +512,9 @@ void AudioManagerImpl::stopMusic()
 void AudioManagerImpl::stopSound()
 {
 	// Reset all used sources and return them to the free sources.
-	for (ALuint source : mUsedSources)
+	for (const auto &pair : mUsedSources)
 	{
+		const ALuint source = pair.second;
 		alSourceStop(source);
 		alSourceRewind(source);
 		alSourcei(source, AL_BUFFER, 0);
@@ -503,8 +544,9 @@ void AudioManagerImpl::setSoundVolume(double percent)
 		alSourcef(source, AL_GAIN, mSfxVolume);
 	}
 
-	for (ALuint source : mUsedSources)
+	for (const auto &pair : mUsedSources)
 	{
+		const ALuint source = pair.second;
 		alSourcef(source, AL_GAIN, mSfxVolume);
 	}
 }
@@ -514,7 +556,7 @@ void AudioManagerImpl::update()
 	// If a sound source is done, reset it and return the ID to the free sources.
 	for (size_t i = 0; i < mUsedSources.size(); i++)
 	{
-		const ALuint source = mUsedSources.at(i);
+		const ALuint source = mUsedSources.at(i).second;
 
 		ALint state;
 		alGetSourcei(source, AL_SOURCE_STATE, &state);
