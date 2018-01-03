@@ -368,15 +368,13 @@ AudioManagerImpl::~AudioManagerImpl()
 bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 {
 	// Check through used sources' filenames.
-	for (const auto &pair : mUsedSources)
+	const auto iter = std::find_if(mUsedSources.begin(), mUsedSources.end(),
+		[&filename](const std::pair<std::string, ALuint> &pair)
 	{
-		if (pair.first == filename)
-		{
-			return true;
-		}
-	}
+		return pair.first == filename;
+	});
 
-	return false;
+	return iter != mUsedSources.end();
 }
 
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,

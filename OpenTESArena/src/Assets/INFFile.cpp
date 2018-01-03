@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cctype>
 #include <sstream>
 #include <unordered_set>
@@ -1018,15 +1019,8 @@ const int *INFFile::getBoxSide(int index) const
 
 const bool INFFile::indexIsMenu(int index) const
 {
-	for (const int menuIndex : this->menus)
-	{
-		if (index == menuIndex)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	const auto iter = std::find(this->menus.begin(), this->menus.end(), index);
+	return iter != this->menus.end();
 }
 
 const int *INFFile::getMenu(int index) const

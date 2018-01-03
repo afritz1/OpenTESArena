@@ -57,9 +57,8 @@ namespace
 	bool WildMidiSong::seek(size_t offset)
 	{
 		unsigned long pos = static_cast<unsigned long>(offset);
-		if (WildMidi_FastSeek(mSong, &pos) < 0)
-			return false;
-		return true;
+		const int status = WildMidi_FastSeek(mSong, &pos);
+		return status >= 0;
 	}
 }
 
