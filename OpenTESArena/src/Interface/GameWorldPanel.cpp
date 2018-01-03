@@ -1306,6 +1306,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
+	const auto &gameInterface = textureManager.getTexture(
+		TextureFile::fromName(TextureName::GameWorldInterface));
+
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
 	const bool modernInterface = options.getModernInterface();
@@ -1317,12 +1320,13 @@ void GameWorldPanel::render(Renderer &renderer)
 		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
 		const Int2 &weaponOffset = this->weaponOffsets.at(index);
 
-		// Draw the current weapon image. Add 1 to the classic Y offset because Arena's
-		// renderer has an off-by-one bug, and a 1 pixel gap appears in my renderer unless 
-		// a small offset is added.
-		renderer.drawOriginal(weaponTexture.get(), weaponOffset.x, 
-			!modernInterface ? (weaponOffset.y + 1) : 
-			(Renderer::ORIGINAL_HEIGHT - weaponTexture.getHeight()));
+		// is added.
+		const int weaponX = weaponOffset.x;
+		const int weaponY = weaponOffset.y + (modernInterface ? gameInterface.getHeight() : 0);
+		const int weaponWidth = weaponTexture.getWidth();
+		const int weaponHeight = weaponTexture.getHeight() + 1;
+		renderer.drawOriginal(weaponTexture.get(),
+			weaponX, weaponY, weaponWidth, weaponHeight);
 	}
 
 	// Draw the visible portion of the compass slider, and the frame over it.
@@ -1333,9 +1337,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	if (this->triggerText.first > 0.0)
 	{
-		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface));
-
 		const auto &triggerTextBox = *this->triggerText.second.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
 			(triggerTextBox.getSurface()->w / 2) - 1;
