@@ -149,8 +149,8 @@ public:
 	const std::vector<FlatTextureData> &getFlatTextures() const;
 	const int *getBoxCap(int index) const;
 	const int *getBoxSide(int index) const;
-	const bool indexIsMenu(int index) const;
 	const int *getMenu(int index) const;
+	int getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
 	const FlatData &getItem(int index) const;
 	const std::string &getSound(int index) const;

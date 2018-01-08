@@ -486,9 +486,14 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 						{
 							const int textureIndex = mostSigByte - 1;
 
+							// Menu index if the voxel has the *MENU tag, or -1 if it is
+							// not a *MENU voxel.
+							const int menuIndex = inf.getMenuIndex(textureIndex);
+							const bool isMenu = menuIndex != -1;
+
 							// Determine what the type of the voxel is (level up/down, menu,
 							// transition, etc.).
-							const VoxelType type = [&inf, textureIndex]()
+							const VoxelType type = [&inf, textureIndex, isMenu]()
 							{
 								// Returns whether the given index pointer is non-null and
 								// matches the current texture index.
@@ -505,7 +510,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 								{
 									return VoxelType::LevelDown;
 								}
-								else if (inf.indexIsMenu(textureIndex))
+								else if (isMenu)
 								{
 									return VoxelType::Menu;
 								}
@@ -527,8 +532,17 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 								}
 							}();
 
-							return VoxelData::makeWall(
+							VoxelData voxelData = VoxelData::makeWall(
 								textureIndex, textureIndex, textureIndex, type);
+
+							// Set the *MENU index if it's a menu voxel.
+							if (isMenu)
+							{
+								VoxelData::WallData &wallData = voxelData.wall;
+								wallData.menuID = menuIndex;
+							}
+
+							return voxelData;
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);

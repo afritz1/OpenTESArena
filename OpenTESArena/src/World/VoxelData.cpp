@@ -5,6 +5,8 @@
 #include "VoxelType.h"
 #include "../Utilities/Debug.h"
 
+const int VoxelData::WallData::NO_MENU = -1;
+
 bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
 {
 	if (facing == VoxelData::Facing::PositiveX)
@@ -64,6 +66,7 @@ VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID, VoxelType 
 	wall.sideID = sideID % VoxelData::TOTAL_IDS;
 	wall.floorID = floorID % VoxelData::TOTAL_IDS;
 	wall.ceilingID = ceilingID % VoxelData::TOTAL_IDS;
+	wall.menuID = VoxelData::WallData::NO_MENU; // Assigned outside this method.
 
 	return data;
 }

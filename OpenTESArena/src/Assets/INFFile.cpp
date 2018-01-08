@@ -1017,16 +1017,18 @@ const int *INFFile::getBoxSide(int index) const
 	}
 }
 
-const bool INFFile::indexIsMenu(int index) const
-{
-	const auto iter = std::find(this->menus.begin(), this->menus.end(), index);
-	return iter != this->menus.end();
-}
-
 const int *INFFile::getMenu(int index) const
 {
 	const int *ptr = &this->menus.at(index);
 	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+}
+
+int INFFile::getMenuIndex(int textureID) const
+{
+	// Returns the index of the texture ID in the menus array, or -1 if not found.
+	const auto iter = std::find(this->menus.begin(), this->menus.end(), textureID);
+	return (iter != this->menus.end()) ? 
+		static_cast<int>(iter - this->menus.begin()) : -1;
 }
 
 const INFFile::FlatData &INFFile::getFlat(int index) const

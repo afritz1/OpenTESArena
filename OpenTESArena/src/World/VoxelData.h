@@ -28,7 +28,8 @@ public:
 	// Y offset is 0, and Y size can be inferred by the renderer on the main floor.
 	struct WallData
 	{
-		int sideID, floorID, ceilingID;
+		static const int NO_MENU;
+		int sideID, floorID, ceilingID, menuID;
 	};
 
 	// Floors only have their top rendered.
