@@ -48,6 +48,9 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/VoxelData.h"
+#include "../World/VoxelDataType.h"
+#include "../World/VoxelType.h"
 #include "../World/WorldType.h"
 
 namespace
@@ -1062,6 +1065,50 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 }
 
+void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
+{
+	auto &game = this->getGame();
+	auto &worldData = game.getGameData().getWorldData();
+	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	const auto &voxelGrid = level.getVoxelGrid();
+
+	// Get the voxel data associated with the voxel.
+	const auto &voxelData = [&voxel, &voxelGrid]()
+	{
+		const uint8_t voxelID = [&voxel, &voxelGrid]()
+		{
+			const int x = voxel.x;
+			const int y = 1;
+			const int z = voxel.y;
+			return voxelGrid.getVoxels()[x + (y * voxelGrid.getWidth()) +
+				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		}();
+
+		return voxelGrid.getVoxelData(voxelID);
+	}();
+
+	// If the associated voxel data is a wall, then it might be a transition voxel.
+	if (voxelData.dataType == VoxelDataType::Wall)
+	{
+		const VoxelData::WallData &wallData = voxelData.wall;
+
+		// Check the voxel type to determine what it is exactly.
+		if ((voxelData.type == VoxelType::Menu) &&
+			(wallData.menuID != VoxelData::WallData::NO_MENU))
+		{
+			DebugMention("Entered *MENU " + std::to_string(wallData.menuID) + ".");
+		}
+		else if (voxelData.type == VoxelType::LevelUp)
+		{
+			DebugMention("Entered *LEVELUP.");
+		}
+		else if (voxelData.type == VoxelType::LevelDown)
+		{
+			DebugMention("Entered *LEVELDOWN.");
+		}
+	}
+}
+
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
@@ -1239,14 +1286,6 @@ void GameWorldPanel::tick(double dt)
 	player.tick(game, dt);
 	const Int3 newPlayerVoxel = player.getVoxelPosition();
 
-	// See if the player changed voxels in the XZ plane, and trigger text and sound 
-	// events if so.
-	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
-		(newPlayerVoxel.z != oldPlayerVoxel.z))
-	{
-		this->handleTriggers(Int2(newPlayerVoxel.x, newPlayerVoxel.z));
-	}
-
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);
 
@@ -1265,6 +1304,20 @@ void GameWorldPanel::tick(double dt)
 		const bool flipped = entity->getFlipped();
 		renderer.updateFlat(entity->getID(), &position, nullptr, nullptr,
 			&textureID, &flipped);
+	}
+
+	// See if the player changed voxels in the XZ plane. If so, trigger text and
+	// sound events, and handle any level transition.
+	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
+		(newPlayerVoxel.z != oldPlayerVoxel.z))
+	{
+		const Int2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
+
+		this->handleTriggers(newPlayerVoxelXZ);
+
+		// To do: determine if the player would collide with the voxel instead
+		// of checking that they're in the voxel.
+		this->handleLevelTransition(newPlayerVoxelXZ);
 	}
 }
 
