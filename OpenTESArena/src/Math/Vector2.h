@@ -48,6 +48,7 @@ class Vector2f
 public:
 	static_assert(std::is_floating_point<T>::value, "Vector2f<T> must be floating-point type.");
 
+	static const Vector2f<T> Zero;
 	static const Vector2f<T> UnitX;
 	static const Vector2f<T> UnitY;
 
@@ -87,6 +88,9 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
+template <class T>
+const Vector2f<T> Vector2f<T>::Zero(static_cast<T>(0.0), static_cast<T>(0.0));
+
 template <class T>
 const Vector2f<T> Vector2f<T>::UnitX(static_cast<T>(1.0), static_cast<T>(0.0));
 

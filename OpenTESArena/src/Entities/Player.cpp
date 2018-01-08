@@ -266,7 +266,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 void Player::setVelocityToZero()
 {
-	this->velocity = Double3(0.0, 0.0, 0.0);
+	this->velocity = Double3::Zero;
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude,
@@ -298,7 +298,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 	// the velocity could remain at a tiny magnitude and never reach zero.
 	if (this->velocity.length() < 0.001)
 	{
-		this->velocity = Double3(0.0, 0.0, 0.0);
+		this->velocity = Double3::Zero;
 	}
 }
 

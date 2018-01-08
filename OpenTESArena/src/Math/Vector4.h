@@ -48,6 +48,7 @@ class Vector4f
 public:
 	static_assert(std::is_floating_point<T>::value, "Vector4f<T> must be floating-point type.");
 	
+	static const Vector4f<T> Zero;
 	static const Vector4f<T> UnitX;
 	static const Vector4f<T> UnitY;
 	static const Vector4f<T> UnitZ;
@@ -86,6 +87,10 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
+template <class T>
+const Vector4f<T> Vector4f<T>::Zero(
+	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
+
 template <class T>
 const Vector4f<T> Vector4f<T>::UnitX(
 	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));

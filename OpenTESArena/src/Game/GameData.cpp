@@ -206,7 +206,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// Some arbitrary player values.
 	const Double3 position = Double3(1.50, 1.70, 12.50);
 	const Double3 direction = Double3(1.0, 0.0, 0.0).normalized();
-	const Double3 velocity = Double3(0.0, 0.0, 0.0);
+	const Double3 velocity = Double3::Zero;
 	const double maxWalkSpeed = 2.0;
 	const double maxRunSpeed = 8.0;
 	const WeaponType weaponType = []()
