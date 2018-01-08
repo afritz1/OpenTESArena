@@ -29,6 +29,7 @@ class Renderer;
 class TextureManager;
 
 enum class GenderName;
+enum class ClimateType;
 enum class WeatherType;
 enum class WorldType;
 
@@ -57,11 +58,20 @@ public:
 		const Date &date, const Clock &clock, double fogDistance);
 	~GameData();
 
-	// Takes a .MIF file with its associated .INF file and writes data into the given 
-	// reference parameters. This overwrites parts of the existing game session.
-	static void loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType worldType,
-		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData, 
+	// Reads in data from an interior .MIF file and writes it to the reference parameters.
+	static void loadInterior(const MIFFile &mif, Double3 &playerPosition, WorldData &worldData,
 		TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from a premade exterior .MIF file and writes it to the reference parameters
+	// (only the center province uses this).
+	static void loadPremadeCity(const MIFFile &mif, ClimateType climateType,
+		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
+		TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from a city after determining its .MIF file, and writes it to the reference
+	// parameters.
+	static void loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &playerPosition,
+		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,

@@ -192,77 +192,42 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif(mifName);
 
-			const std::string infName = [&mif, climateType, weatherType, worldType]()
+			auto &player = gameData->getPlayer();
+			Double3 playerPosition = player.getPosition();
+
+			// Load the selected level based on world type.
+			if (worldType == WorldType::City)
 			{
-				if (worldType == WorldType::Interior)
+				// There is only one "premade" city (used by the center province). All others
+				// are randomly generated.
+				if (mifName == "IMPERIAL.MIF")
 				{
-					return String::toUppercase(
-						mif.getLevels().at(mif.getStartingLevelIndex()).info);
+					GameData::loadPremadeCity(mif, climateType, weatherType, playerPosition,
+						gameData->getWorldData(), game.getTextureManager(), renderer);
 				}
 				else
 				{
-					// Exterior location, get the biome-associated pattern.
-					const std::string biomeLetter = [climateType]()
-					{
-						if (climateType == ClimateType::Temperate)
-						{
-							return "T";
-						}
-						else if (climateType == ClimateType::Desert)
-						{
-							return "D";
-						}
-						else
-						{
-							return "M";
-						}
-					}();
-
-					const std::string locationLetter = [worldType]()
-					{
-						if (worldType == WorldType::City)
-						{
-							return "C";
-						}
-						else
-						{
-							return "W";
-						}
-					}();
-
-					const std::string weatherLetter = [weatherType]()
-					{
-						if ((weatherType == WeatherType::Clear) ||
-							(weatherType == WeatherType::Overcast))
-						{
-							return "N";
-						}
-						else if (weatherType == WeatherType::Rain)
-						{
-							return "R";
-						}
-						else if (weatherType == WeatherType::Snow)
-						{
-							return "S";
-						}
-						else
-						{
-							// Not sure what this letter represents.
-							return "W";
-						}
-					}();
-
-					return biomeLetter + locationLetter + weatherLetter + ".INF";
+					GameData::loadCity(mif, weatherType, playerPosition,
+						gameData->getWorldData(), game.getTextureManager(), renderer);
 				}
-			}();
+			}
+			else if (worldType == WorldType::Interior)
+			{
+				GameData::loadInterior(mif, playerPosition, gameData->getWorldData(),
+					game.getTextureManager(), renderer);
+			}
+			else if (worldType == WorldType::Wilderness)
+			{
+				// To do: wilderness loading.
+				DebugNotImplemented();
+			}
+			else
+			{
+				DebugCrash("Unrecognized world type \"" + 
+					std::to_string(static_cast<int>(worldType)) + "\".");
+			}
 
-			const INFFile inf(infName);
-
-			auto &player = gameData->getPlayer();
-			Double3 playerPosition = player.getPosition();
-			GameData::loadFromMIF(mif, inf, worldType, weatherType, playerPosition,
-				gameData->getWorldData(), game.getTextureManager(), renderer);
-
+			// Update the player's position to the starting point.
 			player.teleport(playerPosition);
 
 			// Set the game data before constructing the game world panel.
@@ -272,37 +237,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// - To do: day/night event is only done twice a day, so this needs to be
 			//   coupled with world/clock creation instead (as part of "construction").
 			renderer.setNightLightsActive(true);
-
-			// Set world and weather-relative fog distance.
-			const double fogDistance = [worldType, weatherType]()
-			{
-				// Just some arbitrary values.
-				if (worldType == WorldType::Interior)
-				{
-					return 25.0;
-				}
-				else
-				{
-					if (weatherType == WeatherType::Clear)
-					{
-						return 75.0;
-					}
-					else if (weatherType == WeatherType::Overcast)
-					{
-						return 25.0;
-					}
-					else if (weatherType == WeatherType::Rain)
-					{
-						return 35.0;
-					}
-					else
-					{
-						return 15.0;
-					}
-				}
-			}();
-
-			renderer.setFogDistance(fogDistance);
 
 			// To do: organize this code somewhere (GameData perhaps).
 			// - Maybe GameWorldPanel::tick() can check newMusicName vs. old each frame.

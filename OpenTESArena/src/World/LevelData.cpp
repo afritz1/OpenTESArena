@@ -8,6 +8,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 #include "../World/VoxelType.h"
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
@@ -63,107 +64,10 @@ void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 	this->previouslyDisplayed = previouslyDisplayed;
 }
 
-LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
-	int gridWidth, int gridDepth, bool isInterior)
-	: voxelGrid(gridWidth, level.getHeight(), gridDepth)
+LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth)
+	: voxelGrid(gridWidth, gridHeight, gridDepth)
 {
-	// Arena's level origins start at the top-right corner of the map, so X increases 
-	// going to the left, and Z increases going down. The wilderness uses this same 
-	// pattern. Each chunk looks like this:
-	// +++++++ <- Origin (0, 0)
-	// +++++++
-	// +++++++
-	// +++++++
-	// ^
-	// |
-	// Max (mapWidth - 1, mapDepth - 1)
-
-	// Ceiling height of the .INF file.
-	this->ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-
-	this->name = level.name;
-	this->infName = inf.getName();
-
-	// Empty voxel data (for air).
-	const int emptyID = voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR and MAP1 voxels.
-	this->readFLOR(level.flor, gridWidth, gridDepth, inf);
-	this->readMAP1(level.map1, gridWidth, gridDepth, inf);
-
-	// Fill the second floor with the ceiling tiles if it's an interior location, or MAP2 if 
-	// it's an exterior location.
-	if (isInterior)
-	{
-		const INFFile::CeilingData &ceiling = inf.getCeiling();
-
-		// Get the index of the ceiling texture name in the textures array.
-		const int ceilingIndex = [&inf, &ceiling]()
-		{
-			if (ceiling.textureIndex != INFFile::NO_INDEX)
-			{
-				return ceiling.textureIndex;
-			}
-			else
-			{
-				// To do: get ceiling from .INFs without *CEILING (like START.INF). Maybe
-				// hardcoding index 1 is enough?
-				return 1;
-			}
-		}();
-
-		// Define the ceiling voxel data.
-		const int index = this->voxelGrid.addVoxelData(
-			VoxelData::makeCeiling(ceilingIndex));
-
-		// Set all the ceiling voxels.
-		for (int x = 0; x < gridWidth; x++)
-		{
-			for (int z = 0; z < gridDepth; z++)
-			{
-				this->setVoxel(x, 2, z, index);
-			}
-		}
-	}
-	else if (level.map2.size() > 0)
-	{
-		// Load MAP2 voxels.
-		this->readMAP2(level.map2, gridWidth, gridDepth, inf);
-	}
-
-	// Assign locks.
-	for (const auto &lock : level.lock)
-	{
-		const Int2 lockPosition = VoxelGrid::arenaVoxelToNewVoxel(
-			Int2(lock.x, lock.y), gridWidth, gridDepth);
-		this->locks.insert(std::make_pair(
-			lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
-	}
-
-	// Assign text and sound triggers.
-	for (const auto &trigger : level.trig)
-	{
-		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const Int2 voxel = VoxelGrid::arenaVoxelToNewVoxel(
-			Int2(trigger.x, trigger.y), gridWidth, gridDepth);
-
-		// There can be a text trigger and sound trigger in the same voxel.
-		const bool isTextTrigger = trigger.textIndex != -1;
-		const bool isSoundTrigger = trigger.soundIndex != -1;
-
-		// Make sure the text index points to a text value (i.e., not a key or riddle).
-		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
-		{
-			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
-			this->textTriggers.insert(std::make_pair(
-				voxel, TextTrigger(textData.text, textData.displayedOnce)));
-		}
-
-		if (isSoundTrigger)
-		{
-			this->soundTriggers.insert(std::make_pair(voxel, inf.getSound(trigger.soundIndex)));
-		}
-	}
+	// Just for initializing grid dimensions. The rest is initialized by load methods.
 }
 
 LevelData::LevelData(VoxelGrid &&voxelGrid)
@@ -175,6 +79,96 @@ LevelData::LevelData(VoxelGrid &&voxelGrid)
 LevelData::~LevelData()
 {
 
+}
+
+LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth)
+{
+	// .INF file associated with the interior level.
+	const INFFile inf(String::toUppercase(level.info));
+
+	// Interior level.
+	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
+	levelData.name = level.name;
+	levelData.infName = inf.getName();
+	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+	levelData.outdoorDungeon = inf.getCeiling().outdoorDungeon;
+
+	// Empty voxel data (for air).
+	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+
+	// Load FLOR and MAP1 voxels.
+	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
+
+	// All interiors have ceilings except some main quest dungeons which have a 1
+	// as the third number after *CEILING in their .INF file.
+	const bool hasCeiling = !inf.getCeiling().outdoorDungeon;
+
+	// Fill the second floor with ceiling tiles if it's an "indoor dungeon". Otherwise,
+	// leave it empty (for some "outdoor dungeons").
+	if (hasCeiling)
+	{
+		levelData.readCeiling(inf, gridWidth, gridDepth);
+	}
+
+	// Assign locks.
+	levelData.readLocks(level.lock, gridWidth, gridDepth);
+
+	// Assign text and sound triggers.
+	levelData.readTriggers(level.trig, inf, gridWidth, gridDepth);
+
+	return levelData;
+}
+
+LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
+	int gridWidth, int gridDepth)
+{
+	// Premade exterior level (only used by center province).
+	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
+	levelData.name = level.name;
+	levelData.infName = inf.getName();
+	levelData.ceilingHeight = 1.0;
+	levelData.outdoorDungeon = false;
+
+	// Empty voxel data (for air).
+	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+
+	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
+	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
+	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+
+	return levelData;
+}
+
+LevelData LevelData::loadCity(const MIFFile::Level &level, const INFFile &inf,
+	int gridWidth, int gridDepth)
+{
+	// To do: city generation.
+	// - Load city skeleton from level parameter.
+	// - Figure out required .MIF chunks from city ID (pass cityID parameter?).
+
+	// Exterior level (skeleton + random chunks).
+	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
+	levelData.name = level.name;
+	levelData.infName = inf.getName();
+	levelData.ceilingHeight = 1.0;
+	levelData.outdoorDungeon = false;
+
+	// Empty voxel data (for air).
+	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+
+	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
+	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
+	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+
+	return levelData;
+}
+
+bool LevelData::isOutdoorDungeon() const
+{
+	return this->outdoorDungeon;
 }
 
 double LevelData::getCeilingHeight() const
@@ -247,8 +241,8 @@ namespace std
 	};
 }
 
-void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
-	const INFFile &inf)
+void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
+	int width, int depth)
 {
 	// Lambda for obtaining a two-byte FLOR voxel.
 	auto getFloorVoxel = [&flor, width, depth](int x, int z)
@@ -440,8 +434,8 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
 	}
 }
 
-void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
-	const INFFile &inf)
+void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
+	int width, int depth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [&map1, width, depth](int x, int z)
@@ -726,8 +720,8 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
 	}
 }
 
-void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
-	const INFFile &inf)
+void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
+	int width, int depth)
 {
 	const uint8_t *map2Data = map2.data();
 
@@ -795,6 +789,78 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
 					this->setVoxel(x, y, z, dataIndex);
 				}
 			}
+		}
+	}
+}
+
+void LevelData::readCeiling(const INFFile &inf, int width, int depth)
+{
+	const INFFile::CeilingData &ceiling = inf.getCeiling();
+
+	// Get the index of the ceiling texture name in the textures array.
+	const int ceilingIndex = [&ceiling]()
+	{
+		if (ceiling.textureIndex != INFFile::NO_INDEX)
+		{
+			return ceiling.textureIndex;
+		}
+		else
+		{
+			// To do: get ceiling from .INFs without *CEILING (like START.INF). Maybe
+			// hardcoding index 1 is enough?
+			return 1;
+		}
+	}();
+
+	// Define the ceiling voxel data.
+	const int index = this->voxelGrid.addVoxelData(
+		VoxelData::makeCeiling(ceilingIndex));
+
+	// Set all the ceiling voxels.
+	for (int x = 0; x < width; x++)
+	{
+		for (int z = 0; z < depth; z++)
+		{
+			this->setVoxel(x, 2, z, index);
+		}
+	}
+}
+
+void LevelData::readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth)
+{
+	for (const auto &lock : locks)
+	{
+		const Int2 lockPosition = VoxelGrid::arenaVoxelToNewVoxel(
+			Int2(lock.x, lock.y), width, depth);
+		this->locks.insert(std::make_pair(
+			lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
+	}
+}
+
+void LevelData::readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers,
+	const INFFile &inf, int width, int depth)
+{
+	for (const auto &trigger : triggers)
+	{
+		// Transform the voxel coordinates from the Arena layout to the new layout.
+		const Int2 voxel = VoxelGrid::arenaVoxelToNewVoxel(
+			Int2(trigger.x, trigger.y), width, depth);
+
+		// There can be a text trigger and sound trigger in the same voxel.
+		const bool isTextTrigger = trigger.textIndex != -1;
+		const bool isSoundTrigger = trigger.soundIndex != -1;
+
+		// Make sure the text index points to a text value (i.e., not a key or riddle).
+		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
+		{
+			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
+			this->textTriggers.insert(std::make_pair(
+				voxel, TextTrigger(textData.text, textData.displayedOnce)));
+		}
+
+		if (isSoundTrigger)
+		{
+			this->soundTriggers.insert(std::make_pair(voxel, inf.getSound(trigger.soundIndex)));
 		}
 	}
 }

@@ -1101,10 +1101,27 @@ void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
 		else if (voxelData.type == VoxelType::LevelUp)
 		{
 			DebugMention("Entered *LEVELUP.");
+			if (worldData.getCurrentLevel() > 0)
+			{
+				worldData.setLevelActive(worldData.getCurrentLevel() - 1,
+					game.getTextureManager(), game.getRenderer());
+
+				// -- temp --
+				auto &player = game.getGameData().getPlayer();
+				player.lookAt(player.getPosition() - player.getDirection());
+				player.setVelocityToZero();
+			}
 		}
 		else if (voxelData.type == VoxelType::LevelDown)
 		{
 			DebugMention("Entered *LEVELDOWN.");
+			worldData.setLevelActive(worldData.getCurrentLevel() + 1,
+				game.getTextureManager(), game.getRenderer());
+
+			// -- temp --
+			auto &player = game.getGameData().getPlayer();
+			player.lookAt(player.getPosition() - player.getDirection());
+			player.setVelocityToZero();
 		}
 	}
 }
@@ -1171,13 +1188,15 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Double3 &position = player.getPosition();
 	const Double3 &direction = player.getDirection();
 
-	const int x = 2;
-	const int y = 2;
+	const auto &worldData = gameData.getWorldData();
+	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 
 	const std::string text =
 		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
 		"FPS: " + String::fixedPrecision(game.getFPSCounter().getFPS(), 1) + "\n" +
+		"Map: " + worldData.getMifName() + "\n" +
+		"Info: " + level.getInfName() + "\n" +
 		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
 		"Y: " + String::fixedPrecision(position.y, 5) + "\n" +
 		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
@@ -1192,7 +1211,9 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 		TextAlignment::Left,
 		game.getFontManager());
 
-	TextBox tempText(x, y, richText, renderer);
+	const int x = 2;
+	const int y = 2;
+	const TextBox tempText(x, y, richText, renderer);
 
 	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
 }

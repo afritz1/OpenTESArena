@@ -16,33 +16,54 @@ class MIFFile;
 class Renderer;
 class TextureManager;
 
+enum class ClimateType;
+enum class WeatherType;
 enum class WorldType;
 
 class WorldData
 {	
 private:
+	// Private constructor for static WorldData load methods.
+	WorldData();
+
 	std::vector<LevelData> levels;
 	std::vector<Double2> startPoints;
 	EntityManager entityManager;
+	std::string mifName;
 	WorldType worldType;
 	int currentLevel;
+
+	// Generates the .INF name for a city given a climate and current weather.
+	static std::string generateCityInfName(ClimateType climateType, WeatherType weatherType);
 public:
-	WorldData(const MIFFile &mif, const INFFile &inf, WorldType type);
-	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager); // Used with test city.
+	// Used with test city.
+	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager);
 	WorldData(WorldData &&worldData) = default;
 	~WorldData();
 
 	WorldData &operator=(WorldData &&worldData) = default;
 
+	// Loads all levels of an interior .MIF file.
+	static WorldData loadInterior(const MIFFile &mif);
+
+	// Loads a premade exterior city (only used by center province).
+	static WorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
+		WeatherType weatherType);
+
+	// Loads an exterior city skeleton and its random .MIF chunks.
+	static WorldData loadCity(const MIFFile &mif, WeatherType weatherType);
+
 	int getCurrentLevel() const;
 	WorldType getWorldType() const;
+	const std::string &getMifName() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 	const std::vector<Double2> &getStartPoints() const;
 	std::vector<LevelData> &getLevels();
 	const std::vector<LevelData> &getLevels() const;
 
-	void switchToLevel(int levelIndex, TextureManager &textureManager,
+	// Refreshes texture manager and renderer state using the selected level's data.
+	void setLevelActive(int levelIndex, TextureManager &textureManager,
 		Renderer &renderer);
 };
 

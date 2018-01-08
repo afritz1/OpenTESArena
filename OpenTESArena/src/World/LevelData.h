@@ -10,6 +10,17 @@
 
 // Holds all the data necessary for defining the contents of a level.
 
+// Arena's level origins start at the top-right corner of the map, so X increases 
+// going to the left, and Z increases going down. The wilderness uses this same 
+// pattern. Each chunk looks like this:
+// +++++++ <- Origin (0, 0)
+// +++++++
+// +++++++
+// +++++++
+// ^
+// |
+// Max (mapWidth - 1, mapDepth - 1)
+
 class INFFile;
 
 class LevelData
@@ -50,21 +61,38 @@ private:
 	VoxelGrid voxelGrid;
 	std::string name, infName;
 	double ceilingHeight;
+	bool outdoorDungeon;
+
+	// Private constructor for static LevelData load methods.
+	LevelData(int gridWidth, int gridHeight, int gridDepth);
 
 	void setVoxel(int x, int y, int z, uint8_t id);
-	void readFLOR(const std::vector<uint8_t> &flor, int width, int depth,
-		const INFFile &inf);
-	void readMAP1(const std::vector<uint8_t> &map1, int width, int depth,
-		const INFFile &inf);
-	void readMAP2(const std::vector<uint8_t> &map2, int width, int depth,
-		const INFFile &inf);
+	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf, int width, int depth);
+	void readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf, int width, int depth);
+	void readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf, int width, int depth);
+	void readCeiling(const INFFile &inf, int width, int depth);
+	void readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth);
+	void readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers, const INFFile &inf,
+		int width, int depth);
 public:
-	LevelData(const MIFFile::Level &level, const INFFile &inf, int gridWidth, 
-		int gridDepth, bool isInterior);
 	LevelData(VoxelGrid &&voxelGrid); // Used with test city.
 	LevelData(LevelData &&levelData) = default;
 	~LevelData();
 
+	// Interior level. The .INF is obtained from the level's info member.
+	static LevelData loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth);
+
+	// Premade exterior level with a pre-defined .INF file. Only used by center province.
+	static LevelData loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
+		int gridWidth, int gridDepth);
+
+	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
+	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
+	// required .MIF chunks.
+	static LevelData loadCity(const MIFFile::Level &level, const INFFile &inf,
+		int gridWidth, int gridDepth);
+
+	bool isOutdoorDungeon() const;
 	double getCeilingHeight() const;
 
 	const std::string &getName() const;

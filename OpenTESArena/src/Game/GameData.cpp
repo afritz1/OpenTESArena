@@ -73,128 +73,106 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(const std::string &palett
 	return fullPalette;
 }
 
-void GameData::loadFromMIF(const MIFFile &mif, const INFFile &inf, WorldType worldType, 
-	WeatherType weatherType, Double3 &playerPosition, WorldData &worldData, 
+void GameData::loadInterior(const MIFFile &mif, Double3 &playerPosition, WorldData &worldData,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	// Clear all entities.
-	auto &entityManager = worldData.getEntityManager();
-	for (const auto *entity : entityManager.getAllEntities())
-	{
-		renderer.removeFlat(entity->getID());
-		entityManager.remove(entity->getID());
-	}
+	// Call interior WorldData loader.
+	worldData = WorldData::loadInterior(mif);
+	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Clear software renderer textures.
-	renderer.clearTextures();
-
-	// Set sky palette based on world type and weather.
-	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
-	{
-		// Regular sky palette, based on weather.
-		const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
-			(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", 
-			textureManager);
-		renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
-	}
-	else
-	{
-		// Interior location. See if it's an "outdoor dungeon" (i.e., one with no ceiling),
-		// or a typical interior.
-		const uint32_t skyColor = inf.getCeiling().outdoorDungeon ?
-			Color::Gray.toARGB() : Color::Black.toARGB();
-		renderer.setSkyPalette(&skyColor, 1);
-	}
-
-	// Load the world data from the .MIF and .INF files.
-	worldData = WorldData(mif, inf, worldType);
-
-	// Convert start point to new coordinate system and set player's location 
-	// (player Y value is arbitrary for now).
-	const Double2 &startPoint = worldData.getStartPoints().at(0);
-
+	// Set player starting position.
+	const Double2 &startPoint = worldData.getStartPoints().front();
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
+
+	// Set sky palette depending on whether it's an outdoor dungeon.
+	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	const uint32_t skyColor = level.isOutdoorDungeon() ?
+		Color::Gray.toARGB() : Color::Black.toARGB();
+	renderer.setSkyPalette(&skyColor, 1);
+
+	// Arbitrary interior fog distance.
+	renderer.setFogDistance(25.0);
+}
+
+void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
+	WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Call premade WorldData loader.
+	worldData = WorldData::loadPremadeCity(mif, climateType, weatherType);
+	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
+
+	// Set player starting position.
+	const Double2 &startPoint = worldData.getStartPoints().front();
+	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
+
+	// Regular sky palette based on weather.
+	const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
+		(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", textureManager);
+	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 	
-	// Load .INF voxel textures into the renderer. Assume all voxel textures are 64x64.
-	const int voxelTextureCount = static_cast<int>(inf.getVoxelTextures().size());
-	for (int i = 0; i < voxelTextureCount; i++)
+	// Arbitrary exterior fog distance.
+	const double fogDistance = [weatherType]()
 	{
-		const auto &textureData = inf.getVoxelTextures().at(i);
-
-		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string extension = String::getExtension(textureName);
-
-		const bool isIMG = extension == ".IMG";
-		const bool isSET = extension == ".SET";
-		const bool noExtension = extension.size() == 0;
-
-		if (isSET)
+		if (weatherType == WeatherType::Clear)
 		{
-			// Use the texture data's .SET index to obtain the correct surface.
-			const auto &surfaces = textureManager.getSurfaces(textureName);
-			const SDL_Surface *surface = surfaces.at(textureData.setIndex);
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
+			return 75.0;
 		}
-		else if (isIMG)
+		else if (weatherType == WeatherType::Overcast)
 		{
-			const SDL_Surface *surface = textureManager.getSurface(textureName);
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
+			return 25.0;
 		}
-		else if (noExtension)
+		else if (weatherType == WeatherType::Rain)
 		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(textureData);
+			return 35.0;
 		}
 		else
 		{
-			DebugCrash("Unrecognized voxel texture extension \"" + extension + "\".");
+			return 15.0;
 		}
-	}
+	}();
 
-	// Load .INF flat textures into the renderer.
-	// - To do: maybe turn this into a while loop, so the index variable can be incremented
-	//   by the size of each .DFA. It's incorrect as-is.
-	const int flatTextureCount = static_cast<int>(inf.getFlatTextures().size());
-	for (int i = 0; i < flatTextureCount; i++)
+	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &playerPosition,
+	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
+{
+	// Call random city WorldData loader.
+	worldData = WorldData::loadCity(mif, weatherType);
+	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
+
+	// Set player starting position.
+	const Double2 &startPoint = worldData.getStartPoints().front();
+	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
+
+	// Regular sky palette based on weather.
+	const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
+		(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", textureManager);
+	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+
+	// Arbitrary exterior fog distance.
+	const double fogDistance = [weatherType]()
 	{
-		const auto &textureData = inf.getFlatTextures().at(i);
-
-		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string extension = String::getExtension(textureName);
-
-		const bool isDFA = extension == ".DFA";
-		const bool isIMG = extension == ".IMG";
-		const bool noExtension = extension.size() == 0;
-
-		if (isDFA)
+		if (weatherType == WeatherType::Clear)
 		{
-			// To do: creatures don't have .DFA files (although they're referenced in the .INF
-			// files), so I think the extension needs to be .CFA instead for them.
-			/*const auto &surfaces = textureManager.getSurfaces(textureName);
-			for (const auto *surface : surfaces)
-			{
-				renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
-					surface->w, surface->h);
-			}*/
+			return 75.0;
 		}
-		else if (isIMG)
+		else if (weatherType == WeatherType::Overcast)
 		{
-			const SDL_Surface *surface = textureManager.getSurface(textureName);
-			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface->pixels),
-				surface->w, surface->h);
+			return 25.0;
 		}
-		else if (noExtension)
+		else if (weatherType == WeatherType::Rain)
 		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(textureData);
+			return 35.0;
 		}
 		else
 		{
-			DebugCrash("Unrecognized flat texture extension \"" + extension + "\".");
+			return 15.0;
 		}
-	}
+	}();
+
+	renderer.setFogDistance(fogDistance);
 }
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,

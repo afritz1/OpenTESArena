@@ -103,6 +103,7 @@ MIFFile::MIFFile(const std::string &filename)
 
 	this->width = mapWidth;
 	this->depth = mapDepth;
+	this->name = filename;
 }
 
 MIFFile::~MIFFile()
@@ -136,6 +137,11 @@ int MIFFile::getDepth() const
 int MIFFile::getStartingLevelIndex() const
 {
 	return this->startingLevelIndex;
+}
+
+const std::string &MIFFile::getName() const
+{
+	return this->name;
 }
 
 const std::array<Double2, 4> &MIFFile::getStartPoints() const

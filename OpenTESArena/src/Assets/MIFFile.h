@@ -67,6 +67,7 @@ private:
 	int startingLevelIndex;
 	std::array<Double2, 4> startPoints; // Entrance locations for the level (not always full).
 	std::vector<MIFFile::Level> levels;
+	std::string name;
 	// Should a vector of levels be exposed, or does the caller want a nicer format?
 	// VoxelGrid? Array of VoxelData?
 public:
@@ -96,6 +97,9 @@ public:
 
 	// Gets the starting level when the player enters the area.
 	int getStartingLevelIndex() const;
+
+	// Gets the name of the .MIF file.
+	const std::string &getName() const;
 
 	// Starting points for the player. The .MIF values require a division by 128 in order
 	// to become "voxel units" (including the decimal value).
