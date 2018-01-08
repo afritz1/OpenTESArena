@@ -51,6 +51,7 @@ private:
 	std::unordered_map<Int2, TextTrigger> textTriggers;
 	std::unordered_map<Int2, std::string> soundTriggers;
 	VoxelGrid voxelGrid;
+	std::string name, infName;
 	double ceilingHeight;
 
 	void setVoxel(int x, int y, int z, uint8_t id);
@@ -68,6 +69,9 @@ public:
 	~LevelData();
 
 	double getCeilingHeight() const;
+
+	const std::string &getName() const;
+	const std::string &getInfName() const;
 
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;

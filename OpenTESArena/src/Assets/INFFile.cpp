@@ -194,6 +194,8 @@ INFFile::INFFile(const std::string &filename)
 		}
 	}
 
+	this->name = filename;
+
 	// Initialize texture indices to "unset".
 	this->boxCaps.fill(INFFile::NO_INDEX);
 	this->boxSides.fill(INFFile::NO_INDEX);
@@ -1088,6 +1090,11 @@ const INFFile::RiddleData &INFFile::getRiddle(int index) const
 const INFFile::TextData &INFFile::getText(int index) const
 {
 	return this->texts.at(index);
+}
+
+const std::string &INFFile::getName() const
+{
+	return this->name;
 }
 
 const int *INFFile::getDryChasmIndex() const

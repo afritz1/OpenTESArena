@@ -132,6 +132,8 @@ private:
 	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, TextData> texts;
 
+	std::string name;
+
 	// References into the textures vector. -1 if unset.
 	int dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex,
 		transitionIndex, transWalkThruIndex, walkThruIndex, wetChasmIndex;
@@ -160,6 +162,7 @@ public:
 	const KeyData &getKey(int index) const;
 	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
+	const std::string &getName() const;
 	const int *getDryChasmIndex() const;
 	const int *getLavaChasmIndex() const;
 	const int *getLevelDownIndex() const;

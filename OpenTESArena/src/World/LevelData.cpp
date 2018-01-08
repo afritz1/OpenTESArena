@@ -81,6 +81,9 @@ LevelData::LevelData(const MIFFile::Level &level, const INFFile &inf,
 	// Ceiling height of the .INF file.
 	this->ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 
+	this->name = level.name;
+	this->infName = inf.getName();
+
 	// Empty voxel data (for air).
 	const int emptyID = voxelGrid.addVoxelData(VoxelData());
 
@@ -177,6 +180,16 @@ LevelData::~LevelData()
 double LevelData::getCeilingHeight() const
 {
 	return this->ceilingHeight;
+}
+
+const std::string &LevelData::getName() const
+{
+	return this->name;
+}
+
+const std::string &LevelData::getInfName() const
+{
+	return this->infName;
 }
 
 VoxelGrid &LevelData::getVoxelGrid()
