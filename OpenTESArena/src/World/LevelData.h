@@ -15,9 +15,6 @@ class INFFile;
 class LevelData
 {
 public:
-	enum class FloorType { None, Solid, Dry, Wet, Lava };
-	enum class WallType { None, Solid, Raised, Diag1, Diag2, Door, Transparent };
-
 	class Lock
 	{
 	private:
