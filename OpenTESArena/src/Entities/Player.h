@@ -87,6 +87,9 @@ public:
 	// Recalculates the player's view so they look at a point.
 	void lookAt(const Double3 &point);
 
+	// Sets velocity vector to zero. Intended for stopping the player after level transitions.
+	void setVelocityToZero();
+
 	// Changes the velocity (as a force) given a normalized direction, magnitude, 
 	// and delta time, as well as whether the player is running.
 	void accelerate(const Double3 &direction, double magnitude,

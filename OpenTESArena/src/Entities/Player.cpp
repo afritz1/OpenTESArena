@@ -264,6 +264,11 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// To do: use an axis-aligned bounding box or cylinder instead of a point?
 }
 
+void Player::setVelocityToZero()
+{
+	this->velocity = Double3(0.0, 0.0, 0.0);
+}
+
 void Player::accelerate(const Double3 &direction, double magnitude,
 	bool isRunning, double dt)
 {
