@@ -36,6 +36,8 @@ The concept began after I saw the success of other open-source projects like [Op
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is currently only compatible with that. The user must still acquire their own copy of Arena in any case because OpenTESArena is just an engine and does not contain any content.
 
+OpenTESArena is licensed under the MIT and uses code licensed under the GPL2. See [LICENSE.txt](LICENSE.txt) and [COPYING.txt](COPYING.txt) for details.
+
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
 ## Installation
