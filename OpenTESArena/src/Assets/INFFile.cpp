@@ -662,11 +662,14 @@ INFFile::INFFile(const std::string &filename)
 		}
 		else
 		{
+			// Separator for each modifier value to the right of the flat name.
+			const char MODIFIER_SEPARATOR = ':';
+
 			// A texture name potentially after an *ITEM line, and potentially with some 
 			// modifiers on the right. Each token might be split by tabs or spaces, so always 
 			// check for both cases. The texture name always has a tab on the right though 
 			// (if there's any whitespace).
-			const std::vector<std::string> tokens = [&line]()
+			const std::vector<std::string> tokens = [&line, MODIFIER_SEPARATOR]()
 			{
 				// Trim any extra whitespace (so there are no adjacent duplicates).
 				const std::string trimmedStr = String::trimExtra(line);
@@ -674,9 +677,18 @@ INFFile::INFFile(const std::string &filename)
 				// Replace tabs with spaces.
 				const std::string replacedStr = String::replace(trimmedStr, '\t', ' ');
 
-				// To do: refine String::split() to account for whitespace in general so
-				// we can avoid doing the extra steps above.
-				return String::split(replacedStr);
+				// Special case at *ITEM 55 in CRYSTAL3.INF: do not split on whitespace,
+				// because there are no modifiers.
+				if (replacedStr.find(MODIFIER_SEPARATOR) == std::string::npos)
+				{
+					return std::vector<std::string>{ replacedStr };
+				}
+				else
+				{
+					// To do: refine String::split() to account for whitespace in general so
+					// we can avoid doing the extra steps above.
+					return String::split(replacedStr);
+				}
 			}();
 
 			// Get the texture name and check if it starts with a dash.
@@ -712,7 +724,6 @@ INFFile::INFFile(const std::string &filename)
 			{
 				for (size_t i = 1; i < tokens.size(); i++)
 				{
-					const char MODIFIER_SEPARATOR = ':';
 					const char FLAT_PROPERTIES_MODIFIER = 'F';
 					const char LIGHT_MODIFIER = 'S';
 					const char Y_OFFSET_MODIFIER = 'Y';
