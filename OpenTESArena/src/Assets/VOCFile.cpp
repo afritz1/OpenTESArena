@@ -74,6 +74,11 @@ VOCFile::VOCFile(const std::string &filename)
 		// Pointer to the beginning of the block's data (after the common header).
 		const uint8_t *blockData = srcData.data() + offset + blockHeaderSize;
 
+		// Regarding this #define: the repeating drums are working just fine now, but they
+		// can get a little annoying after a while, so only define this name when repeating
+		// drums are desired (like in later builds, so we don't get sick of it now).
+//#define DRUMS_REPEAT
+
 		// Decide how to use the data block.
 		if (blockType == BlockType::SoundData)
 		{
@@ -111,6 +116,7 @@ VOCFile::VOCFile(const std::string &filename)
 		}
 		else if (blockType == BlockType::RepeatStart)
 		{
+#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// The sound blocks following this block should be repeated some number of times.
 			repeatCount = Bytes::getLE16(blockData) + 1;
@@ -118,9 +124,11 @@ VOCFile::VOCFile(const std::string &filename)
 
 			// Don't handle the 0xFFFF special case (no .VOC repeats indefinitely in Arena).
 			assert(repeatCount != 0xFFFF);
+#endif
 		}
 		else if (blockType == BlockType::RepeatEnd)
 		{
+#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// An empty block like the terminator, tells when to stop repeating data blocks.
 			// Take the repeat vector and append it onto the audio vector "repeatCount" times.
@@ -133,6 +141,7 @@ VOCFile::VOCFile(const std::string &filename)
 			repeatData.clear();
 			repeatCount = 0;
 			repeating = false;
+#endif
 		}
 		else
 		{
