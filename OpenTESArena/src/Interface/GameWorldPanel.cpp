@@ -1065,7 +1065,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 }
 
-void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
+void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel)
 {
 	auto &game = this->getGame();
 	auto &worldData = game.getGameData().getWorldData();
@@ -1073,13 +1073,13 @@ void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
 	const auto &voxelGrid = level.getVoxelGrid();
 
 	// Get the voxel data associated with the voxel.
-	const auto &voxelData = [&voxel, &voxelGrid]()
+	const auto &voxelData = [&transitionVoxel, &voxelGrid]()
 	{
-		const uint8_t voxelID = [&voxel, &voxelGrid]()
+		const uint8_t voxelID = [&transitionVoxel, &voxelGrid]()
 		{
-			const int x = voxel.x;
+			const int x = transitionVoxel.x;
 			const int y = 1;
-			const int z = voxel.y;
+			const int z = transitionVoxel.y;
 			return voxelGrid.getVoxels()[x + (y * voxelGrid.getWidth()) +
 				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		}();
@@ -1091,6 +1091,53 @@ void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
 	if (voxelData.dataType == VoxelDataType::Wall)
 	{
 		const VoxelData::WallData &wallData = voxelData.wall;
+		auto &player = game.getGameData().getPlayer();
+
+		// The direction from a level up/down voxel to where the player should end up after
+		// going through. In other words, it points to the destination voxel adjacent to the
+		// level up/down voxel.
+		auto dirToNewVoxel = [&playerVoxel, &transitionVoxel]()
+		{
+			const int diffX = transitionVoxel.x - playerVoxel.x;
+			const int diffZ = transitionVoxel.y - playerVoxel.y;
+
+			// To do: this probably isn't robust enough. Maybe also check the player's angle
+			// of velocity with angles to the voxel's corners to get the "arrival vector"
+			// and thus the "near face" that is intersected, because this method doesn't
+			// handle the player coming in at a diagonal.
+
+			// Check which way the player is going and get the reverse of it.
+			if (diffX > 0)
+			{
+				// From south to north.
+				return -Double3::UnitX;
+			}
+			else if (diffX < 0)
+			{
+				// From north to south.
+				return Double3::UnitX;
+			}
+			else if (diffZ > 0)
+			{
+				// From west to east.
+				return -Double3::UnitZ;
+			}
+			else if (diffZ < 0)
+			{
+				// From east to west.
+				return Double3::UnitZ;
+			}
+			else
+			{
+				throw std::runtime_error("Bad player transition voxel.");
+			}
+		}();
+
+		// Player destination after going through a level up/down voxel.
+		const Double3 destinationPoint(
+			(static_cast<double>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
+			player.getPosition().y,
+			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Check the voxel type to determine what it is exactly.
 		if ((voxelData.type == VoxelType::Menu) &&
@@ -1100,27 +1147,23 @@ void GameWorldPanel::handleLevelTransition(const Int2 &voxel)
 		}
 		else if (voxelData.type == VoxelType::LevelUp)
 		{
-			DebugMention("Entered *LEVELUP.");
 			if (worldData.getCurrentLevel() > 0)
 			{
 				worldData.setLevelActive(worldData.getCurrentLevel() - 1,
 					game.getTextureManager(), game.getRenderer());
 
-				// -- temp --
-				auto &player = game.getGameData().getPlayer();
-				player.lookAt(player.getPosition() - player.getDirection());
+				player.teleport(destinationPoint);
+				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
 			}
 		}
 		else if (voxelData.type == VoxelType::LevelDown)
 		{
-			DebugMention("Entered *LEVELDOWN.");
 			worldData.setLevelActive(worldData.getCurrentLevel() + 1,
 				game.getTextureManager(), game.getRenderer());
 
-			// -- temp --
-			auto &player = game.getGameData().getPlayer();
-			player.lookAt(player.getPosition() - player.getDirection());
+			player.teleport(destinationPoint);
+			player.lookAt(player.getPosition() + dirToNewVoxel);
 			player.setVelocityToZero();
 		}
 	}
@@ -1332,13 +1375,14 @@ void GameWorldPanel::tick(double dt)
 	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
 		(newPlayerVoxel.z != oldPlayerVoxel.z))
 	{
+		const Int2 oldPlayerVoxelXZ(oldPlayerVoxel.x, oldPlayerVoxel.z);
 		const Int2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
 
 		this->handleTriggers(newPlayerVoxelXZ);
 
 		// To do: determine if the player would collide with the voxel instead
 		// of checking that they're in the voxel.
-		this->handleLevelTransition(newPlayerVoxelXZ);
+		this->handleLevelTransition(oldPlayerVoxelXZ, newPlayerVoxelXZ);
 	}
 }
 

@@ -58,7 +58,7 @@ private:
 
 	// Checks the given voxel to see if it's a transition voxel (i.e., level up/down),
 	// and changes the current level if it is.
-	void handleLevelTransition(const Int2 &voxel);
+	void handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
