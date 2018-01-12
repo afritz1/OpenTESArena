@@ -830,7 +830,7 @@ void LevelData::readLocks(const std::vector<MIFFile::Level::Lock> &locks, int wi
 {
 	for (const auto &lock : locks)
 	{
-		const Int2 lockPosition = VoxelGrid::arenaVoxelToNewVoxel(
+		const Int2 lockPosition = VoxelGrid::getTransformedCoordinate(
 			Int2(lock.x, lock.y), width, depth);
 		this->locks.insert(std::make_pair(
 			lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
@@ -843,7 +843,7 @@ void LevelData::readTriggers(const std::vector<MIFFile::Level::Trigger> &trigger
 	for (const auto &trigger : triggers)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const Int2 voxel = VoxelGrid::arenaVoxelToNewVoxel(
+		const Int2 voxel = VoxelGrid::getTransformedCoordinate(
 			Int2(trigger.x, trigger.y), width, depth);
 
 		// There can be a text trigger and sound trigger in the same voxel.

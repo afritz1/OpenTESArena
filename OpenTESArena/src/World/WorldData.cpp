@@ -91,7 +91,7 @@ WorldData WorldData::loadInterior(const MIFFile &mif)
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
 	{
-		worldData.startPoints.push_back(VoxelGrid::arenaVoxelToNewVoxel(
+		worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
 			point, mif.getDepth(), mif.getWidth()));
 	}
 
@@ -117,7 +117,7 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
 	{
-		worldData.startPoints.push_back(VoxelGrid::arenaVoxelToNewVoxel(
+		worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
 			point, mif.getDepth(), mif.getWidth()));
 	}
 
@@ -146,7 +146,7 @@ WorldData WorldData::loadCity(const MIFFile &mif, WeatherType weatherType)
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
 	{
-		worldData.startPoints.push_back(VoxelGrid::arenaVoxelToNewVoxel(
+		worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
 			point, mif.getDepth(), mif.getWidth()));
 	}
 

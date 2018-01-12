@@ -18,7 +18,7 @@ VoxelGrid::~VoxelGrid()
 
 }
 
-Int2 VoxelGrid::arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridDepth)
+Int2 VoxelGrid::getTransformedCoordinate(const Int2 &voxel, int gridWidth, int gridDepth)
 {
 	// These have a -1 whereas the Double2 version does not since all .MIF start points
 	// are in the center of a voxel, giving a minimum distance of 0.5 from grid sides,
@@ -28,7 +28,7 @@ Int2 VoxelGrid::arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridD
 	return Int2((gridWidth - 1) - voxel.y, (gridDepth - 1) - voxel.x);
 }
 
-Double2 VoxelGrid::arenaVoxelToNewVoxel(const Double2 &voxel, int gridWidth, int gridDepth)
+Double2 VoxelGrid::getTransformedCoordinate(const Double2 &voxel, int gridWidth, int gridDepth)
 {
 	return Double2(
 		static_cast<double>(gridWidth) - voxel.y,

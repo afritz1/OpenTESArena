@@ -476,6 +476,47 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		this->mapButton.click(this->getGame(), false);
 	}
 
+	// Player's XY coordinate hotkey.
+	const bool f2Pressed = inputManager.keyPressed(e, SDLK_F2);
+
+	if (f2Pressed)
+	{
+		// Refresh player coordinates display (probably intended for debugging in the
+		// original game). These coordinates are in Arena's coordinate system.
+		auto &game = this->getGame();
+		const auto &worldData = game.getGameData().getWorldData();
+		const auto &voxelGrid = worldData.getLevels().at(0).getVoxelGrid();
+		const auto &player = game.getGameData().getPlayer();
+		const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+			Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
+			voxelGrid.getWidth(), voxelGrid.getDepth());
+
+		const std::string text = "Your position is " + std::to_string(originalVoxel.x) +
+			", " + std::to_string(originalVoxel.y) + ".";
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			ActionTextColor,
+			TextAlignment::Center,
+			game.getFontManager());
+
+		const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+		// Create the text box for display (set position to zero; the renderer will decide
+		// where to draw it).
+		std::unique_ptr<TextBox> textBox(new TextBox(
+			Int2(0, 0),
+			richText,
+			&shadowData,
+			game.getRenderer()));
+
+		// Assign the text box and its duration to the action text member. It will 
+		// be displayed in the render method until the duration is no longer positive.
+		const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
+		this->actionText = std::make_pair(duration, std::move(textBox));
+	}
+
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
@@ -1338,11 +1379,18 @@ void GameWorldPanel::tick(double dt)
 		renderer.setNightLightsActive(false);
 	}
 
-	// Tick the triggered text timer if the remaining duration is positive.
+	// Tick text timers if their remaining duration is positive.
 	if (this->triggerText.first > 0.0)
 	{
 		this->triggerText.first -= dt;
 	}
+
+	if (this->actionText.first > 0.0)
+	{
+		this->actionText.first -= dt;
+	}
+
+	// To do: tick effect text, and draw in render().
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
@@ -1469,6 +1517,15 @@ void GameWorldPanel::render(Renderer &renderer)
 		}();
 
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
+	}
+
+	if (this->actionText.first > 0.0)
+	{
+		const auto &actionTextBox = *this->actionText.second.get();
+		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -
+			(actionTextBox.getSurface()->w / 2);
+		const int textY = 20;
+		renderer.drawOriginal(actionTextBox.getTexture(), textX, textY);
 	}
 
 	const auto &inputManager = this->getGame().getInputManager();

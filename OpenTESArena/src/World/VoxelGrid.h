@@ -23,10 +23,11 @@ public:
 	VoxelGrid(int width, int height, int depth);
 	~VoxelGrid();
 
-	// Transformation methods for converting voxel coordinates from Arena's format
-	// (+X west, +Z south) to the new format (+X north, +Z east).
-	static Int2 arenaVoxelToNewVoxel(const Int2 &voxel, int gridWidth, int gridDepth);
-	static Double2 arenaVoxelToNewVoxel(const Double2 &voxel, int gridWidth, int gridDepth);
+	// Transformation methods for converting voxel coordinates between Arena's format
+	// (+X west, +Z south) and the new format (+X north, +Z east). This is a bi-directional
+	// conversion (i.e., it works both ways. Not exactly sure why).
+	static Int2 getTransformedCoordinate(const Int2 &voxel, int gridWidth, int gridDepth);
+	static Double2 getTransformedCoordinate(const Double2 &voxel, int gridWidth, int gridDepth);
 
 	// Gets the dimensions of the voxel grid.
 	int getWidth() const;
