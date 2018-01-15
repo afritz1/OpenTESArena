@@ -567,7 +567,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								const int *ptr = inf.getBoxSide(wallTextureID);
 								if (ptr != nullptr)
 								{
-									return *ptr + 1;
+									return *ptr;
 								}
 								else
 								{
@@ -577,14 +577,28 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								}
 							}();
 
-							const int floorID = inf.getCeiling().textureIndex + 1;
+							const int floorID = [&inf]()
+							{
+								const int id = inf.getCeiling().textureIndex;
+
+								if (id >= 0)
+								{
+									return id;
+								}
+								else
+								{
+									DebugWarning("Invalid platform floor ID \"" +
+										std::to_string(id) + "\".");
+									return 0;
+								}
+							}();
 
 							const int ceilingID = [&inf, capTextureID]()
 							{
 								const int *ptr = inf.getBoxCap(capTextureID);
 								if (ptr != nullptr)
 								{
-									return *ptr + 1;
+									return *ptr;
 								}
 								else
 								{
@@ -636,7 +650,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					// standing in the voxel itself).
 					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const int textureIndex = map1Voxel & 0x00FF;
+						const int textureIndex = (map1Voxel & 0x00FF) - 1;
 						return VoxelData::makeTransparentWall(textureIndex);
 					});
 
@@ -688,7 +702,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					// Door voxel.
 					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const int textureIndex = map1Voxel & 0x003F;
+						const int textureIndex = (map1Voxel & 0x003F) - 1;
 
 						// To do: see if *DOOR values in the .INF should actually be used 
 						// to determine which door type it is.
@@ -708,7 +722,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					// Diagonal wall. Its type is determined by the nineth bit.
 					const int dataIndex = getDataIndex([map1Voxel]()
 					{
-						const int textureIndex = map1Voxel & 0x00FF;
+						const int textureIndex = (map1Voxel & 0x00FF) - 1;
 						const bool isRightDiag = (map1Voxel & 0x0100) == 0;
 						return VoxelData::makeDiagonal(textureIndex, isRightDiag);
 					});

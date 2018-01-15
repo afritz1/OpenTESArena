@@ -280,7 +280,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 
 		// 41-42: Bridge
 		textureManager.getSurface("TTOWER.IMG"),
-		textureManager.getSurface("NBRIDGE.IMG"),
+		textureManager.getSurface("NBRIDGE.IMG")
 	};
 
 	const int wallTextureCount = static_cast<int>(surfaces.size());
@@ -306,11 +306,8 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 			VoxelData::makeWall(id, id, id, VoxelType::Solid));
 	};
 
-	// To do: now that the lowest texture ID can be 0 instead of 1, reduce all IDs
-	// here accordingly, so the renderer doesn't need to do -1.
-
 	// City wall.
-	const int cityWallID = addWall(1);
+	const int cityWallID = addWall(0);
 
 	// Ground.
 	const int gravelID = voxelGrid.addVoxelData(VoxelData::makeFloor(2));
@@ -318,60 +315,61 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int grassID = voxelGrid.addVoxelData(VoxelData::makeFloor(4));
 
 	// Tavern.
-	const int tavern1ID = addWall(8);
-	const int tavern2ID = addWall(9);
-	const int tavern3ID = addWall(10);
-	const int tavernDoorID = addWall(11);
+	const int tavern1ID = addWall(7);
+	const int tavern2ID = addWall(8);
+	const int tavern3ID = addWall(9);
+	const int tavernDoorID = addWall(10);
 
 	// Temple.
-	const int temple1ID = addWall(12);
-	const int temple2ID = addWall(13);
-	const int temple3ID = addWall(14);
-	const int temple4ID = addWall(15);
-	const int temple5ID = addWall(16);
-	const int templeDoorID = addWall(17);
+	const int temple1ID = addWall(11);
+	const int temple2ID = addWall(12);
+	const int temple3ID = addWall(13);
+	const int temple4ID = addWall(14);
+	const int temple5ID = addWall(15);
+	const int templeDoorID = addWall(16);
 
 	// Mage's guild.
-	const int mages1ID = addWall(18);
-	const int mages2ID = addWall(19);
-	const int mages3ID = addWall(20);
-	const int mages4ID = addWall(21);
-	const int mages5ID = addWall(22);
-	const int magesDoorID = addWall(23);
+	const int mages1ID = addWall(17);
+	const int mages2ID = addWall(18);
+	const int mages3ID = addWall(19);
+	const int mages4ID = addWall(20);
+	const int mages5ID = addWall(21);
+	const int magesDoorID = addWall(22);
 
 	// Equipment store.
-	const int equip1ID = addWall(24);
-	const int equip2ID = addWall(25);
-	const int equip3ID = addWall(26);
-	const int equipDoorID = addWall(27);
+	const int equip1ID = addWall(23);
+	const int equip2ID = addWall(24);
+	const int equip3ID = addWall(25);
+	const int equipDoorID = addWall(26);
 
 	// Low house.
-	const int lowHouse1ID = addWall(28);
-	const int lowHouse2ID = addWall(29);
-	const int lowHouse3ID = addWall(30);
-	const int lowHouse4ID = addWall(31);
-	const int lowHouseDoorID = addWall(32);
+	const int lowHouse1ID = addWall(27);
+	const int lowHouse2ID = addWall(28);
+	const int lowHouse3ID = addWall(29);
+	const int lowHouse4ID = addWall(30);
+	const int lowHouseDoorID = addWall(31);
 
 	// Medium house.
-	const int medHouse1ID = addWall(33);
-	const int medHouse2ID = addWall(34);
-	const int medHouse3ID = addWall(35);
-	const int medHouseDoorID = addWall(36);
+	const int medHouse1ID = addWall(32);
+	const int medHouse2ID = addWall(33);
+	const int medHouse3ID = addWall(34);
+	const int medHouseDoorID = addWall(35);
 
 	// Noble house.
-	const int noble1ID = addWall(37);
-	const int noble2ID = addWall(38);
-	const int noble3ID = addWall(39);
-	const int nobleDoorID = addWall(40);
+	const int noble1ID = addWall(36);
+	const int noble2ID = addWall(37);
+	const int noble3ID = addWall(38);
+	const int nobleDoorID = addWall(39);
 
 	// Hedge.
-	const int hedgeID = voxelGrid.addVoxelData(VoxelData::makeTransparentWall(41));
+	const int hedgeID = voxelGrid.addVoxelData(
+		VoxelData::makeTransparentWall(40));
 
 	// Bridge.
 	const int bridge1ID = voxelGrid.addVoxelData(VoxelData::makeRaised(
-		42, 43, 43, 0.0, 0.125, 0.875, Constants::JustBelowOne));
+		41, 42, 42, 0.0, 0.125, 0.875, Constants::JustBelowOne));
 	const int bridge2ID = voxelGrid.addVoxelData(VoxelData::makeRaised(
-		42, 43, 43, 0.10, 0.125, 0.775, 0.90));
+		41, 42, 42, 0.10, 0.125, 0.775, 0.90));
 
 	// Water.
 	const int water1ID = voxelGrid.addVoxelData(VoxelData::makeChasm(
