@@ -691,11 +691,28 @@ INFFile::INFFile(const std::string &filename)
 				}
 			}();
 
-			// Get the texture name and check if it starts with a dash.
-			const std::string &firstToken = tokens.at(0);
-			const bool hasDash = firstToken.at(0) == '-'; // To do: not sure what this does.
-			const std::string textureName = String::toUppercase(
-				hasDash ? firstToken.substr(1, firstToken.size() - 1) : firstToken);
+			// Creature flats are between *ITEM 32 and *ITEM 54. These do not need their
+			// texture line parsed.
+			const bool isCreatureFlat = (flatState.get() != nullptr) &&
+				(flatState->itemID >= 32) && (flatState->itemID <= 54);
+
+			// Get the texture name. Do not parse *ITEMs between 32 and 54 (return an empty
+			// string instead; they are obtained later as .CFAs).
+			const std::string textureName = [&tokens, isCreatureFlat]()
+			{
+				if (isCreatureFlat)
+				{
+					return std::string();
+				}
+				else
+				{
+					// It's not a creature flat. Return the string, excluding any dash.
+					const std::string &firstToken = tokens.at(0);
+					const bool hasDash = firstToken.at(0) == '-'; // To do: not sure what this is.
+					return String::toUppercase(hasDash ? 
+						firstToken.substr(1, firstToken.size() - 1) : firstToken);
+				}
+			}();
 
 			// Add the flat's texture name to the textures vector.
 			this->flatTextures.push_back(FlatTextureData(textureName));
@@ -704,8 +721,12 @@ INFFile::INFFile(const std::string &filename)
 			this->flats.push_back(INFFile::FlatData());
 			const int flatIndex = static_cast<int>(this->flats.size() - 1);
 
+			// Assign the current line's values and modifiers to the new flat.
+			INFFile::FlatData &flat = this->flats.back();
+			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
+
 			// The current line is "loose" if the previous line was not an *ITEM line.
-			const bool looseTextureName = (flatState.get() == nullptr) || 
+			const bool looseTextureName = (flatState.get() == nullptr) ||
 				(flatState->itemID == INFFile::NO_INDEX);
 
 			// If an *ITEM index is currently stored, then pair it with the new flat's index.
@@ -714,13 +735,9 @@ INFFile::INFFile(const std::string &filename)
 				this->items.at(flatState->itemID) = flatIndex;
 			}
 
-			// Assign the current line's values and modifiers to the new flat.
-			INFFile::FlatData &flat = this->flats.back();
-			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
-
-			// If the flat also has modifiers, then check each modifier and mutate the 
-			// flat accordingly.
-			if (tokens.size() >= 2)
+			// If the flat is not a creature and has modifiers, then check each modifier and
+			// mutate the flat accordingly.
+			if (!isCreatureFlat && (tokens.size() >= 2))
 			{
 				for (size_t i = 1; i < tokens.size(); i++)
 				{
@@ -758,7 +775,8 @@ INFFile::INFFile(const std::string &filename)
 					}
 					else
 					{
-						DebugCrash("Unrecognized modifier '" + std::to_string(modifierType) + "'.");
+						DebugCrash("Unrecognized modifier \""
+							+ std::to_string(modifierType) + "\".");
 					}
 				}
 			}
