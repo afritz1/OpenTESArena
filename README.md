@@ -114,6 +114,7 @@ cd ..
 #### Running the executable:
 - Verify that the `data` and `options` folders are in the same folder as the executable, and that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
+[Build manual for Visual Studio](docs/setup_windows.md)  
 [MSYS2 guide for Windows](docs/setup_windows_msys2.md)
 
 If there is a bug or technical problem in the program, check out the issues tab!
