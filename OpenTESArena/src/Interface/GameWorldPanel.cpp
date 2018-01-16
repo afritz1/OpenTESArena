@@ -433,47 +433,55 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 
 void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	auto &options = game.getOptions();
+	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
 
 	if (escapePressed)
 	{
-		this->pauseButton.click(this->getGame());
+		this->pauseButton.click(game);
 	}
 	else if (f4Pressed)
 	{
 		// Toggle debug display.
-		auto &options = this->getGame().getOptions();
 		options.setShowDebug(!options.getShowDebug());
 	}
 
 	// Listen for hotkeys.
 	bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
 	bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
-	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB);
+	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) ||
+		inputManager.keyPressed(e, SDLK_F1);
 	bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
 	bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
+	bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
 
 	if (automapHotkeyPressed)
 	{
-		this->mapButton.click(this->getGame(), true);
+		this->mapButton.click(game, true);
 	}
 	else if (logbookHotkeyPressed)
 	{
-		this->logbookButton.click(this->getGame());
+		this->logbookButton.click(game);
 	}
 	else if (sheetHotkeyPressed)
 	{
-		this->characterSheetButton.click(this->getGame());
+		this->characterSheetButton.click(game);
 	}
 	else if (statusHotkeyPressed)
 	{
-		this->statusButton.click(this->getGame());
+		this->statusButton.click(game);
 	}
 	else if (worldMapHotkeyPressed)
 	{
-		this->mapButton.click(this->getGame(), false);
+		this->mapButton.click(game, false);
+	}
+	else if (toggleCompassHotkeyPressed)
+	{
+		// Toggle compass display.
+		options.setShowCompass(!options.getShowCompass());
 	}
 
 	// Player's XY coordinate hotkey.
@@ -483,7 +491,6 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
-		auto &game = this->getGame();
 		const auto &worldData = game.getGameData().getWorldData();
 		const auto &voxelGrid = worldData.getLevels().at(0).getVoxelGrid();
 		const auto &player = game.getGameData().getPlayer();
@@ -520,10 +527,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
-	const auto &renderer = this->getGame().getRenderer();
+	const auto &renderer = game.getRenderer();
 
 	// Handle input events based on which player interface mode is active.
-	const bool modernInterface = this->getGame().getOptions().getModernInterface();
+	const bool modernInterface = game.getOptions().getModernInterface();
 	if (!modernInterface)
 	{
 		// Get mouse position relative to letterbox coordinates.
@@ -535,15 +542,15 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			// Was an interface button clicked?
 			if (this->characterSheetButton.contains(originalPosition))
 			{
-				this->characterSheetButton.click(this->getGame());
+				this->characterSheetButton.click(game);
 			}
 			else if (this->drawWeaponButton.contains(originalPosition))
 			{
-				this->drawWeaponButton.click(this->getGame().getGameData().getPlayer());
+				this->drawWeaponButton.click(game.getGameData().getPlayer());
 			}
 			else if (this->mapButton.contains(originalPosition))
 			{
-				this->mapButton.click(this->getGame(), true);
+				this->mapButton.click(game, true);
 			}
 			else if (this->stealButton.contains(originalPosition))
 			{
@@ -551,7 +558,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->statusButton.contains(originalPosition))
 			{
-				this->statusButton.click(this->getGame());
+				this->statusButton.click(game);
 			}
 			else if (this->magicButton.contains(originalPosition))
 			{
@@ -559,7 +566,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->logbookButton.contains(originalPosition))
 			{
-				this->logbookButton.click(this->getGame());
+				this->logbookButton.click(game);
 			}
 			else if (this->useItemButton.contains(originalPosition))
 			{
@@ -576,7 +583,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		{
 			if (this->mapButton.contains(originalPosition))
 			{
-				this->mapButton.click(this->getGame(), false);
+				this->mapButton.click(game, false);
 			}
 		}
 	}
@@ -1498,7 +1505,10 @@ void GameWorldPanel::render(Renderer &renderer)
 	}
 
 	// Draw the visible portion of the compass slider, and the frame over it.
-	this->drawCompass(player.getGroundDirection(), textureManager, renderer);
+	if (options.getShowCompass())
+	{
+		this->drawCompass(player.getGroundDirection(), textureManager, renderer);
+	}
 
 	// Draw pop-up text if its duration is positive.
 	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 

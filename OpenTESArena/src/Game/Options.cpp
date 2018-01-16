@@ -38,7 +38,8 @@ namespace
 		{ "ArenaPath", { OptionName::ArenaPath, OptionType::String } },
 		{ "Collision", { OptionName::Collision, OptionType::Bool } },
 		{ "SkipIntro", { OptionName::SkipIntro, OptionType::Bool } },
-		{ "ShowDebug", { OptionName::ShowDebug, OptionType::Bool } }
+		{ "ShowDebug", { OptionName::ShowDebug, OptionType::Bool } },
+		{ "ShowCompass", { OptionName::ShowCompass, OptionType::Bool } }
 	};
 }
 

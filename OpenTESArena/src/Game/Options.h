@@ -34,7 +34,8 @@ enum class OptionName
 	ArenaPath,
 	Collision,
 	SkipIntro,
-	ShowDebug
+	ShowDebug,
+	ShowCompass
 };
 
 namespace std
@@ -168,6 +169,7 @@ void set##name(const std::string &value) \
 	OPTION_BOOL(Collision)
 	OPTION_BOOL(SkipIntro)
 	OPTION_BOOL(ShowDebug)
+	OPTION_BOOL(ShowCompass)
 
 	// Reads all the key-value pairs from the given absolute path, overwriting any
 	// existing values.
