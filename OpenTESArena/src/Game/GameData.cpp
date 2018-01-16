@@ -795,7 +795,7 @@ double GameData::getAmbientPercent() const
 		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
 		// some values here that make testing easier.
 		const double minAmbient = 0.30;
-		const double maxAmbient = 0.90;
+		const double maxAmbient = 1.0;
 
 		if ((clockPreciseSeconds >= endBrighteningTime) &&
 			(clockPreciseSeconds < startDimmingTime))
