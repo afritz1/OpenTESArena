@@ -49,10 +49,12 @@ private:
 	double fogDistance;
 	WeatherType weatherType;
 
-	// Creates a sky palette from the given palette filename (DAYTIME.COL, DREARY.COL, etc.).
-	// This palette covers the entire day (including night colors).
-	static std::vector<uint32_t> makeExteriorSkyPalette(const std::string &paletteName,
+	// Creates a sky palette from the given weather. This palette covers the entire day
+	// (including night colors).
+	static std::vector<uint32_t> makeExteriorSkyPalette(WeatherType weatherType,
 		TextureManager &textureManager);
+
+	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
 	GameData(Player &&player, WorldData &&worldData, const Location &location, 
 		const Date &date, const Clock &clock, double fogDistance);

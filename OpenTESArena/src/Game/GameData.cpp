@@ -51,9 +51,13 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
-std::vector<uint32_t> GameData::makeExteriorSkyPalette(const std::string &paletteName,
+std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 	TextureManager &textureManager)
 {
+	// Get the palette name for the given weather.
+	const std::string paletteName = (weatherType == WeatherType::Clear) ?
+		"DAYTIME.COL" : "DREARY.COL";
+
 	// The palettes in the data files only cover half of the day, so some added
 	// darkness is needed for the other half.
 	const SDL_Surface *palette = textureManager.getSurface(paletteName);
@@ -71,6 +75,32 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(const std::string &palett
 		fullPalette.data() + (fullPalette.size() / 4));
 
 	return fullPalette;
+}
+
+double GameData::getFogDistanceFromWeather(WeatherType weatherType)
+{
+	// Arbitrary values, the distance at which fog is maximum.
+	if (weatherType == WeatherType::Clear)
+	{
+		return 75.0;
+	}
+	else if (weatherType == WeatherType::Overcast)
+	{
+		return 25.0;
+	}
+	else if (weatherType == WeatherType::Rain)
+	{
+		return 35.0;
+	}
+	else if (weatherType == WeatherType::Snow)
+	{
+		return 15.0;
+	}
+	else
+	{
+		throw std::runtime_error("Bad weather type \"" +
+			std::to_string(static_cast<int>(weatherType)) + "\".");
+	}
 }
 
 void GameData::loadInterior(const MIFFile &mif, Double3 &playerPosition, WorldData &worldData,
@@ -107,31 +137,11 @@ void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
-		(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", textureManager);
+	const std::vector<uint32_t> skyPalette =
+		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 	
-	// Arbitrary exterior fog distance.
-	const double fogDistance = [weatherType]()
-	{
-		if (weatherType == WeatherType::Clear)
-		{
-			return 75.0;
-		}
-		else if (weatherType == WeatherType::Overcast)
-		{
-			return 25.0;
-		}
-		else if (weatherType == WeatherType::Rain)
-		{
-			return 35.0;
-		}
-		else
-		{
-			return 15.0;
-		}
-	}();
-
+	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	renderer.setFogDistance(fogDistance);
 }
 
@@ -147,31 +157,11 @@ void GameData::loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &pl
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette = GameData::makeExteriorSkyPalette(
-		(weatherType == WeatherType::Clear) ? "DAYTIME.COL" : "DREARY.COL", textureManager);
+	const std::vector<uint32_t> skyPalette =
+		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 
-	// Arbitrary exterior fog distance.
-	const double fogDistance = [weatherType]()
-	{
-		if (weatherType == WeatherType::Clear)
-		{
-			return 75.0;
-		}
-		else if (weatherType == WeatherType::Overcast)
-		{
-			return 25.0;
-		}
-		else if (weatherType == WeatherType::Rain)
-		{
-			return 35.0;
-		}
-		else
-		{
-			return 15.0;
-		}
-	}();
-
+	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	renderer.setFogDistance(fogDistance);
 }
 
@@ -696,7 +686,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// which color to use based on the time of day. Interiors should just have
 	// one pixel as the sky palette (usually black).
 	const std::vector<uint32_t> fullSkyPalette = 
-		GameData::makeExteriorSkyPalette("DAYTIME.COL", textureManager);
+		GameData::makeExteriorSkyPalette(WeatherType::Clear, textureManager);
 
 	renderer.setSkyPalette(fullSkyPalette.data(), static_cast<int>(fullSkyPalette.size()));
 
