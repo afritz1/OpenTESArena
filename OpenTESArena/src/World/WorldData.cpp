@@ -213,9 +213,20 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 	// Clear software renderer textures.
 	renderer.clearTextures();
 
+	// Get the level being switched to.
+	const auto &level = this->levels.at(this->currentLevel);
+
+	// If the world is an interior, change the sky palette. The outdoor dungeons have a gray
+	// sky while their lower levels have a black sky.
+	if (this->worldType == WorldType::Interior)
+	{
+		const uint32_t skyColor = level.getInteriorSkyColor();
+		renderer.setSkyPalette(&skyColor, 1);
+	}
+
 	// Load the .INF file associated with the level.
 	// - To do: not sure if LevelData should store its own INFFile or just the name.
-	const INFFile inf(this->levels.at(this->currentLevel).getInfName());
+	const INFFile inf(level.getInfName());
 
 	// Load .INF voxel textures into the renderer. Assume all voxel textures are 64x64.
 	const int voxelTextureCount = static_cast<int>(inf.getVoxelTextures().size());

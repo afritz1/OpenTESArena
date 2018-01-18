@@ -1,6 +1,8 @@
 #ifndef LEVEL_DATA_H
 #define LEVEL_DATA_H
 
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -58,6 +60,7 @@ private:
 	std::unordered_map<Int2, Lock> locks;
 	std::unordered_map<Int2, TextTrigger> textTriggers;
 	std::unordered_map<Int2, std::string> soundTriggers;
+	std::unique_ptr<uint32_t> interiorSkyColor; // Null for exteriors, non-null for interiors.
 	VoxelGrid voxelGrid;
 	std::string name, infName;
 	double ceilingHeight;
@@ -97,6 +100,10 @@ public:
 
 	const std::string &getName() const;
 	const std::string &getInfName() const;
+
+	// Gets the level's interior sky color. Causes an error if the level is an exterior.
+	// Exteriors have dynamic sky palettes, so it cannot be stored by the level data.
+	uint32_t getInteriorSkyColor() const;
 
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;

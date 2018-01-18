@@ -114,10 +114,9 @@ void GameData::loadInterior(const MIFFile &mif, Double3 &playerPosition, WorldDa
 	const Double2 &startPoint = worldData.getStartPoints().front();
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
-	// Set sky palette depending on whether it's an outdoor dungeon.
+	// Set interior sky palette.
 	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
-	const uint32_t skyColor = level.isOutdoorDungeon() ?
-		Color::Gray.toARGB() : Color::Black.toARGB();
+	const uint32_t skyColor = level.getInteriorSkyColor();
 	renderer.setSkyPalette(&skyColor, 1);
 
 	// Arbitrary interior fog distance.

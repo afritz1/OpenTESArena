@@ -1,4 +1,5 @@
 #include <array>
+#include <cassert>
 #include <functional>
 
 #include "LevelData.h"
@@ -93,6 +94,10 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 	levelData.outdoorDungeon = inf.getCeiling().outdoorDungeon;
 
+	// Interior sky color (usually black, but also gray for "outdoor" dungeons).
+	levelData.interiorSkyColor = std::unique_ptr<uint32_t>(new uint32_t(
+		levelData.isOutdoorDungeon() ? Color::Gray.toARGB() : Color::Black.toARGB()));
+
 	// Empty voxel data (for air).
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
@@ -184,6 +189,12 @@ const std::string &LevelData::getName() const
 const std::string &LevelData::getInfName() const
 {
 	return this->infName;
+}
+
+uint32_t LevelData::getInteriorSkyColor() const
+{
+	assert(this->interiorSkyColor.get() != nullptr);
+	return *this->interiorSkyColor.get();
 }
 
 VoxelGrid &LevelData::getVoxelGrid()
