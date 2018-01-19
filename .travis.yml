@@ -1,19 +1,17 @@
 language: cpp
 sudo: required
 dist: trusty
-os: linux
+os:
+  - linux
+  - osx
 compiler:
   - clang
   - gcc
 group: stable
 
-before_install:
-  - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev libsdl2-dev libopenal-dev wildmidi
+before_install: ./CI/before_install.${TRAVIS_OS_NAME}.sh
 
-install:
-  - wget https://github.com/Mindwerks/wildmidi/archive/wildmidi-0.4.0.tar.gz
-  - tar -xzvf wildmidi-0.4.0.tar.gz
-  - pushd wildmidi-wildmidi-0.4.0 && mkdir build && pushd build && cmake .. && make && sudo make install && popd && popd
+install: ./CI/before_install.${TRAVIS_OS_NAME}.sh
 
 script:
   - mkdir build
