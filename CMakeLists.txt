@@ -18,11 +18,11 @@ IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     ENDIF(HAVE_STD_CXX11)
 
     # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC
-    IF (NOT WIN32)
+    IF (NOT WIN32 AND NOT APPLE)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
-    ENDIF (NOT WIN32)
+    ENDIF (NOT WIN32 AND NOT APPLE)
 ENDIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 # We want RelWithDebInfo to actually include debug stuff (define _DEBUG
