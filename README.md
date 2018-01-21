@@ -44,7 +44,7 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 
 The engine uses `MidiConfig` and `ArenaPath` from the options file to find where the MIDI config and game files are (see **Options files** below).
 
-#### Windows
+### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
 - [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
 - Extract Arena106Setup.zip and run Arena106.exe.
@@ -53,7 +53,23 @@ The engine uses `MidiConfig` and `ArenaPath` from the options file to find where
 - If you receive an error about missing MSVCP140.dll, you will need to download and run the Visual C++ 2015 Redistributable installer from [here](https://www.microsoft.com/en-us/download/details.aspx?id=53587) for your desired target (x64 for 64-bit, x86 for 32-bit).
 - If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
 
-#### Linux (Ubuntu 16.04)
+### macOS
+#### Get the data files for *The Elder Scrolls: Arena*
+- [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
+- Unzip `Arena106Setup.zip`
+- `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files.
+
+#### Install OpenTESArena
+- Download the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
+- Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location
+- Right-click on the app and choose "Show Package Contents"
+- Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
+- Return to the `Applications` folder or wherever you have the app installed and open OpenTESArena. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
+  - Right-click on the app and choose "Open"
+  - In the warning that appears saying that it is from an unidentified developer, choose "Open"
+  - The app will start. In the future, you can just double-click on the app without having to go through these steps.
+
+### Linux (Ubuntu 16.04)
 Substitute `<version>` with the current version number (i.e., `0.6.0`), and `<arch>` with the desired architecture (`32` or `64`).
 ```bash
 sudo apt-get install wget unzip rar
@@ -67,13 +83,13 @@ cd ..
 ./run.sh
 ```
 
-#### Options files
+### Options files
 There are two options files, `options-default.txt` and `options-changes.txt`. The first one comes with releases and stores default settings. The second one is generated in your user prefs folder and stores user-specific settings, and you can either create it yourself or let the program create it. For now, you can change things like `ArenaPath` in `options-default.txt`, but in the future, a wizard will take care of this instead. The prefs folders are:
 - Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
 - Linux: `~/.local/share/OpenTESArena/options/`
 - macOS: `~/Library/Application Support/OpenTESArena/options/`
 
-#### Obtaining a MIDI sound patches library (for music):
+### Obtaining a MIDI sound patches library (for music):
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
 - If you would like to use a different sound patches library, simply edit `MidiConfig` in the options file to point to another existing MIDI `.cfg` file.
 
