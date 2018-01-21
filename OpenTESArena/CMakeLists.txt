@@ -96,8 +96,12 @@ ELSE (APPLE)
     SET(MACOSX_BUNDLE_SHORT_VERSION_STRING ${OpenTESArena_VERSION})
 
     # Icon
-    SET(MACOSX_BUNDLE_ICON_FILE ${CMAKE_SOURCE_DIR}/macOS/OpenTESArena.icns)
-    SET_SOURCE_FILES_PROPERTIES(${CMAKE_SOURCE_DIR}/macOS/OpenTESArena.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    ## Find the file in source code
+    SET(TES_MAC_ICON ${CMAKE_SOURCE_DIR}/macOS/OpenTESArena.icns)
+    ## Set the destination location to the standard .app location
+    SET_SOURCE_FILES_PROPERTIES(${TES_MAC_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    ## Write the filename to the Info.plist file
+    SET(MACOSX_BUNDLE_ICON_FILE OpenTESArena.icns)
 
     # Copy over required files
     # Using direct copy workaround because SET_SOURCE_FILES_PROPERTIES doesn't work recursively due to bug in CMake.
@@ -106,7 +110,7 @@ ELSE (APPLE)
     FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../TESArena.app/Contents/Resources)
 
     # Add the rest
-    ADD_EXECUTABLE (TESArena MACOSX_BUNDLE ${TES_SOURCES} ${MACOSX_BUNDLE_ICON_FILE})
+    ADD_EXECUTABLE (TESArena MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
 ENDIF()
 
 TARGET_LINK_LIBRARIES(TESArena components ${EXTERNAL_LIBS})
