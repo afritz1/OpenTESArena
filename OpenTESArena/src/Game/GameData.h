@@ -26,6 +26,7 @@ class CharacterClass;
 class INFFile;
 class MIFFile;
 class Renderer;
+class TextBox;
 class TextureManager;
 
 enum class GenderName;
@@ -41,6 +42,14 @@ private:
 	static const double TIME_SCALE;
 
 	std::unordered_map<Int2, std::string> textTriggers, soundTriggers;
+
+	// Game world interface display texts with their associated time remaining. These values 
+	// are stored here so they are not destroyed when switching away from the game world panel.
+	// - Trigger text: lore message from voxel trigger
+	// - Action text: description of the player's current action
+	// - Effect text: effect on the player (disease, drunk, silence, etc.)
+	std::pair<double, std::unique_ptr<TextBox>> triggerText, actionText, effectText;
+
 	Player player;
 	WorldData worldData;
 	Location location;
@@ -83,6 +92,10 @@ public:
 	// Creates a game data object with random player data for testing.
 	static std::unique_ptr<GameData> createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
 		TextureManager &textureManager, Renderer &renderer);
+
+	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();
+	std::pair<double, std::unique_ptr<TextBox>> &getActionText();
+	std::pair<double, std::unique_ptr<TextBox>> &getEffectText();
 
 	Player &getPlayer();
 	WorldData &getWorldData();

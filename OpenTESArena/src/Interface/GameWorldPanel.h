@@ -32,12 +32,6 @@ private:
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
 
-	// Display texts with their associated time remaining. The "trigger text" is for
-	// lore messages from voxels. The "action text" is for descriptions of what the 
-	// player is doing. The "effect text" appears when the player is hit with some 
-	// negative effect (disease, drunk, silence, etc.).
-	std::pair<double, std::unique_ptr<TextBox>> triggerText, actionText, effectText;
-
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
 	void updateCursorRegions(int width, int height);

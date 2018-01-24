@@ -16,6 +16,7 @@
 #include "../Entities/GenderName.h"
 #include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
+#include "../Interface/TextBox.h"
 #include "../Items/WeaponType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -39,7 +40,8 @@ const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY)
 GameData::GameData(Player &&player, WorldData &&worldData, const Location &location,
 	const Date &date, const Clock &clock, double fogDistance)
 	: player(std::move(player)), worldData(std::move(worldData)), location(location),
-	date(date), clock(clock)
+	date(date), clock(clock), triggerText(0.0, nullptr), actionText(0.0, nullptr),
+	effectText(0.0, nullptr)
 {
 	DebugMention("Initializing.");
 
@@ -719,6 +721,21 @@ std::unique_ptr<GameData> GameData::createRandomPlayer(const std::vector<Charact
 
 	return GameData::createDefault(playerName, gender, raceID, charClass,
 		portraitID, textureManager, renderer);
+}
+
+std::pair<double, std::unique_ptr<TextBox>> &GameData::getTriggerText()
+{
+	return this->triggerText;
+}
+
+std::pair<double, std::unique_ptr<TextBox>> &GameData::getActionText()
+{
+	return this->actionText;
+}
+
+std::pair<double, std::unique_ptr<TextBox>> &GameData::getEffectText()
+{
+	return this->effectText;
 }
 
 Player &GameData::getPlayer()

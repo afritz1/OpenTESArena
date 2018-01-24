@@ -96,8 +96,7 @@ namespace
 }
 
 GameWorldPanel::GameWorldPanel(Game &game)
-	: Panel(game), triggerText(0.0, nullptr), actionText(0.0, nullptr), 
-	effectText(0.0, nullptr)
+	: Panel(game)
 {
 	assert(game.gameDataIsActive());
 
@@ -518,10 +517,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			&shadowData,
 			game.getRenderer()));
 
-		// Assign the text box and its duration to the action text member. It will 
-		// be displayed in the render method until the duration is no longer positive.
+		// Assign the text box and its duration to the action text.
+		auto &gameData = game.getGameData();
+		auto &actionText = gameData.getActionText();
 		const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
-		this->actionText = std::make_pair(duration, std::move(textBox));
+		actionText = std::make_pair(duration, std::move(textBox));
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1094,8 +1094,10 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 
 			// Assign the text box and its duration to the triggered text member. It will 
 			// be displayed in the render method until the duration is no longer positive.
+			auto &gameData = game.getGameData();
+			auto &triggerText = gameData.getTriggerText();
 			const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-			this->triggerText = std::make_pair(duration, std::move(textBox));
+			triggerText = std::make_pair(duration, std::move(textBox));
 
 			// Set the text trigger as activated (regardless of whether or not it's single-shot,
 			// just for consistency).
@@ -1387,14 +1389,17 @@ void GameWorldPanel::tick(double dt)
 	}
 
 	// Tick text timers if their remaining duration is positive.
-	if (this->triggerText.first > 0.0)
+	auto &triggerText = gameData.getTriggerText();
+	auto &actionText = gameData.getActionText();
+
+	if (triggerText.first > 0.0)
 	{
-		this->triggerText.first -= dt;
+		triggerText.first -= dt;
 	}
 
-	if (this->actionText.first > 0.0)
+	if (actionText.first > 0.0)
 	{
-		this->actionText.first -= dt;
+		actionText.first -= dt;
 	}
 
 	// To do: tick effect text, and draw in render().
@@ -1569,12 +1574,14 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		this->drawCompass(player.getGroundDirection(), textureManager, renderer);
 	}
 
-	// Draw pop-up text if its duration is positive.
+	// Draw each pop-up text if its duration is positive.
 	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
 	//   subtracting the time in tick() because it would always be one frame shorter then.
-	if (this->triggerText.first > 0.0)
+	auto &triggerText = gameData.getTriggerText();
+	auto &actionText = gameData.getActionText();
+	if (triggerText.first > 0.0)
 	{
-		const auto &triggerTextBox = *this->triggerText.second.get();
+		const auto &triggerTextBox = *triggerText.second.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
 			(triggerTextBox.getSurface()->w / 2) - 1;
 		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
@@ -1588,9 +1595,9 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 
-	if (this->actionText.first > 0.0)
+	if (actionText.first > 0.0)
 	{
-		const auto &actionTextBox = *this->actionText.second.get();
+		const auto &actionTextBox = *actionText.second.get();
 		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -
 			(actionTextBox.getSurface()->w / 2);
 		const int textY = 20;
