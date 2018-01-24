@@ -80,6 +80,7 @@ public:
 	virtual void resize(int windowWidth, int windowHeight) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
+	virtual void renderSecondary(Renderer &renderer) override;
 };
 
 #endif

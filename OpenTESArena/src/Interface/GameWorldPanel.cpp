@@ -1475,16 +1475,75 @@ void GameWorldPanel::render(Renderer &renderer)
 		options.getVerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
 		level.getCeilingHeight(), level.getVoxelGrid());
 
-	// Set screen palette.
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface));
 
+	const auto &inputManager = this->getGame().getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const bool modernInterface = options.getModernInterface();
+
+	// Continue drawing more interface objects if in classic mode.
+	// - To do: clamp game world interface to screen edges, not letterbox edges.
+	if (!modernInterface)
+	{
+		// Draw game world interface.
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface));
+		renderer.drawOriginal(gameInterface.get(), 0,
+			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
+
+		// Draw player portrait.
+		const auto &headsFilename = PortraitFile::getHeads(
+			player.getGenderName(), player.getRaceID(), true);
+		const auto &portrait = textureManager.getTextures(headsFilename)
+			.at(player.getPortraitID());
+		const auto &status = textureManager.getTextures(
+			TextureFile::fromName(TextureName::StatusGradients)).at(0);
+		renderer.drawOriginal(status.get(), 14, 166);
+		renderer.drawOriginal(portrait.get(), 14, 166);
+
+		// If the player's class can't use magic, show the darkened spell icon.
+		if (!player.getCharacterClass().canCastMagic())
+		{
+			const auto &nonMagicIcon = textureManager.getTexture(
+				TextureFile::fromName(TextureName::NoSpell));
+			renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
+		}
+
+		// Draw text: player name.
+		renderer.drawOriginal(this->playerNameTextBox->getTexture(),
+			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+	}
+
+	// Draw some optional debug text.
+	if (options.getShowDebug())
+	{
+		this->drawDebugText(renderer);
+	}
+}
+
+void GameWorldPanel::renderSecondary(Renderer &renderer)
+{
+	assert(this->getGame().gameDataIsActive());
+
+	// Several interface objects are in this method because they are hidden by the status
+	// pop-up and the spells list.
+	auto &textureManager = this->getGame().getTextureManager();
+	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
+
+	const auto &gameInterface = textureManager.getTexture(
+		TextureFile::fromName(TextureName::GameWorldInterface));
+
+	auto &gameData = this->getGame().getGameData();
+	auto &player = gameData.getPlayer();
+	const auto &options = this->getGame().getOptions();
+	const bool modernInterface = options.getModernInterface();
+
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
-	const bool modernInterface = options.getModernInterface();
 	const auto &weaponAnimation = player.getWeaponAnimation();
 	if (!weaponAnimation.isSheathed())
 	{
@@ -1538,89 +1597,65 @@ void GameWorldPanel::render(Renderer &renderer)
 		renderer.drawOriginal(actionTextBox.getTexture(), textX, textY);
 	}
 
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
+	// To do: draw "effect text" (similar to trigger text).
 
-	// Continue drawing more interface objects if in classic mode.
+	// Check if the mouse is over one of the buttons for tooltips in classic mode.
 	if (!modernInterface)
 	{
-		// Draw game world interface.
-		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface));
-		renderer.drawOriginal(gameInterface.get(), 0,
-			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
-
-		// Draw player portrait.
-		const auto &headsFilename = PortraitFile::getHeads(
-			player.getGenderName(), player.getRaceID(), true);
-		const auto &portrait = textureManager.getTextures(headsFilename)
-			.at(player.getPortraitID());
-		const auto &status = textureManager.getTextures(
-			TextureFile::fromName(TextureName::StatusGradients)).at(0);
-		renderer.drawOriginal(status.get(), 14, 166);
-		renderer.drawOriginal(portrait.get(), 14, 166);
-
-		// If the player's class can't use magic, show the darkened spell icon.
-		if (!player.getCharacterClass().canCastMagic())
-		{
-			const auto &nonMagicIcon = textureManager.getTexture(
-				TextureFile::fromName(TextureName::NoSpell));
-			renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
-		}
-
-		// Draw text: player name.
-		renderer.drawOriginal(this->playerNameTextBox->getTexture(),
-			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-
-		// Check if the mouse is over one of the buttons for tooltips.
+		const auto &inputManager = this->getGame().getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
-		if (this->characterSheetButton.contains(originalPosition))
+		// Get the hovered tooltip string, or the empty string if none are hovered over.
+		const std::string tooltip = [this, &player, &originalPosition]() -> std::string
 		{
-			this->drawTooltip("Character Sheet", renderer);
-		}
-		else if (this->drawWeaponButton.contains(originalPosition))
+			if (this->characterSheetButton.contains(originalPosition))
+			{
+				return "Character Sheet";
+			}
+			else if (this->drawWeaponButton.contains(originalPosition))
+			{
+				return "Draw/Sheathe Weapon";
+			}
+			else if (this->mapButton.contains(originalPosition))
+			{
+				return "Automap/World Map";
+			}
+			else if (this->stealButton.contains(originalPosition))
+			{
+				return "Steal";
+			}
+			else if (this->statusButton.contains(originalPosition))
+			{
+				return "Status";
+			}
+			else if (this->magicButton.contains(originalPosition) &&
+				player.getCharacterClass().canCastMagic())
+			{
+				return "Spells";
+			}
+			else if (this->logbookButton.contains(originalPosition))
+			{
+				return "Logbook";
+			}
+			else if (this->useItemButton.contains(originalPosition))
+			{
+				return "Use Item";
+			}
+			else if (this->campButton.contains(originalPosition))
+			{
+				return "Camp";
+			}
+			else
+			{
+				// None are hovered. Return empty string.
+				return std::string();
+			}
+		}();
+
+		if (tooltip.size() > 0)
 		{
-			this->drawTooltip("Draw/Sheathe Weapon", renderer);
-		}
-		else if (this->mapButton.contains(originalPosition))
-		{
-			this->drawTooltip("Automap/World Map", renderer);
-		}
-		else if (this->stealButton.contains(originalPosition))
-		{
-			this->drawTooltip("Steal", renderer);
-		}
-		else if (this->statusButton.contains(originalPosition))
-		{
-			this->drawTooltip("Status", renderer);
-		}
-		else if (this->magicButton.contains(originalPosition) &&
-			player.getCharacterClass().canCastMagic())
-		{
-			this->drawTooltip("Spells", renderer);
-		}
-		else if (this->logbookButton.contains(originalPosition))
-		{
-			this->drawTooltip("Logbook", renderer);
-		}
-		else if (this->useItemButton.contains(originalPosition))
-		{
-			this->drawTooltip("Use Item", renderer);
-		}
-		else if (this->campButton.contains(originalPosition))
-		{
-			this->drawTooltip("Camp", renderer);
+			this->drawTooltip(tooltip, renderer);
 		}
 	}
-
-	// To do: draw "action text" and "effect text" (similar to trigger text).
-
-	// Draw some optional debug text.
-	if (options.getShowDebug())
-	{
-		this->drawDebugText(renderer);
-	}
-
-	// To do: clamp game world interface to screen edges, not letterbox edges.
 }

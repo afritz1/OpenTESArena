@@ -316,6 +316,14 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Draw the name of the location closest to the mouse cursor.
 	this->drawLocationName(closestName, closestPosition, renderer);
+}
+
+void ProvinceMapPanel::renderSecondary(Renderer &renderer)
+{
+	const auto &inputManager = this->getGame().getInputManager();
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPosition = this->getGame().getRenderer()
+		.nativeToOriginal(mousePosition);
 
 	// Draw a tooltip if the mouse is over a button.
 	for (const auto &pair : ProvinceButtonTooltips)

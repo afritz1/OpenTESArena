@@ -229,7 +229,10 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.drawOriginal(exitCover.get(),
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
+}
 
+void ChooseRacePanel::renderSecondary(Renderer &renderer)
+{
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 
