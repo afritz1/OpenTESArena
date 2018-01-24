@@ -62,8 +62,14 @@ public:
 	// or a mouse button being held down.
 	virtual void tick(double dt);
 
-	// Draws the panel's contents onto the display.
+	// Draws the panel's main contents onto the display. Any contents that are hidden
+	// when this panel is not the top-most one should go in renderSecondary().
 	virtual void render(Renderer &renderer) = 0;
+
+	// Draws the panel's secondary contents (pop-up text, tooltips, etc.). Does not
+	// clear the frame buffer. This method is only called for the top-most panel, and
+	// does nothing by default.
+	virtual void renderSecondary(Renderer &renderer);
 };
 
 #endif

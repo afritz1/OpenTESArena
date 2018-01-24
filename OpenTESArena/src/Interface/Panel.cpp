@@ -206,3 +206,9 @@ void Panel::tick(double dt)
 	// Do nothing by default.
 	static_cast<void>(dt);
 }
+
+void Panel::renderSecondary(Renderer &renderer)
+{
+	// Do nothing by default.
+	static_cast<void>(renderer);
+}

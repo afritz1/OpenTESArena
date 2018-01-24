@@ -374,8 +374,21 @@ void Game::render()
 		subPanel->render(*this->renderer.get());
 	}
 
+	const bool subPanelsExist = this->subPanels.size() > 0;
+
+	// Call the top-most panel's secondary render method. Secondary render items are those
+	// that are hidden on panels below the active one.
+	if (subPanelsExist)
+	{
+		this->subPanels.back()->renderSecondary(*this->renderer.get());
+	}
+	else
+	{
+		this->panel->renderSecondary(*this->renderer.get());
+	}
+
 	// Get the active panel's cursor texture and alignment.
-	const std::pair<SDL_Texture*, CursorAlignment> cursor = (this->subPanels.size() > 0) ?
+	const std::pair<SDL_Texture*, CursorAlignment> cursor = subPanelsExist ?
 		this->subPanels.back()->getCurrentCursor() : this->panel->getCurrentCursor();
 
 	// Draw cursor if not null. Some panels do not define a cursor (like cinematics), 
