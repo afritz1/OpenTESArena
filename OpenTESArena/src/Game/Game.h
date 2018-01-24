@@ -25,6 +25,7 @@ class MiscAssets;
 class Options;
 class Panel;
 class Renderer;
+class Surface;
 class TextureManager;
 
 enum class MusicName;
@@ -51,6 +52,10 @@ private:
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
+
+	// Saves the given surface as a BMP file in the screenshots folder at the lowest
+	// available index.
+	void saveScreenshot(const Surface &surface);
 
 	// Handles any changes in panels after an SDL event or game tick.
 	void handlePanelChanges();

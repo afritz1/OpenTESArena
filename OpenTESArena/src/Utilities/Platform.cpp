@@ -47,6 +47,24 @@ std::string Platform::getOptionsPath()
 	return String::replace(optionsPathString, '\\', '/');
 }
 
+std::string Platform::getScreenshotPath()
+{
+	// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
+	char *screenshotPathPtr = SDL_GetPrefPath("OpenTESArena", "screenshots");
+
+	if (screenshotPathPtr == nullptr)
+	{
+		DebugMention("SDL_GetPrefPath() not available on this platform.");
+		screenshotPathPtr = SDL_strdup("screenshots/");
+	}
+
+	const std::string screenshotPathString(screenshotPathPtr);
+	SDL_free(screenshotPathPtr);
+
+	// Convert Windows backslashes to forward slashes.
+	return String::replace(screenshotPathString, '\\', '/');
+}
+
 std::string Platform::getLogPath()
 {
 	// Unfortunately there's no SDL_GetLogPath(), so we need to make our own.

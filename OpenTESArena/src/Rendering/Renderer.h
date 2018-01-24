@@ -16,6 +16,7 @@
 class Color;
 class Rect;
 class SoftwareRenderer;
+class Surface;
 class VoxelGrid;
 
 enum class CursorAlignment;
@@ -70,9 +71,8 @@ public:
 	// using the given letterbox aspect.
 	SDL_Rect getLetterboxDimensions() const;
 
-	// Gets a screenshot of the current window. The returned surface should be freed
-	// by the caller with SDL_FreeSurface() when finished.
-	SDL_Surface *getScreenshot() const;
+	// Gets a screenshot of the current window.
+	Surface getScreenshot() const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 

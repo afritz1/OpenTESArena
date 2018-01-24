@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -226,6 +227,45 @@ void Game::resizeWindow(int width, int height)
 	this->renderer->resize(width, height, options.getResolutionScale(), fullGameWindow);
 }
 
+void Game::saveScreenshot(const Surface &surface)
+{
+	// Get the path + filename to use for the new screenshot.
+	const std::string screenshotPath = []()
+	{
+		const std::string screenshotFolder = Platform::getScreenshotPath();
+		const std::string screenshotPrefix("screenshot");
+		int imageIndex = 0;
+
+		auto getNextAvailablePath = [&screenshotFolder, &screenshotPrefix, &imageIndex]()
+		{
+			std::stringstream ss;
+			ss << std::setw(3) << std::setfill('0') << imageIndex;
+			imageIndex++;
+			return screenshotFolder + screenshotPrefix + ss.str() + ".bmp";
+		};
+
+		std::string path = getNextAvailablePath();
+		while (File::exists(path))
+		{
+			path = getNextAvailablePath();
+		}
+
+		return path;
+	}();
+
+	const int status = SDL_SaveBMP(surface.get(), screenshotPath.c_str());
+
+	if (status == 0)
+	{
+		DebugMention("Screenshot saved to \"" + screenshotPath + "\".");
+	}
+	else
+	{
+		DebugCrash("Failed to save screenshot to \"" + screenshotPath + "\": " +
+			std::string(SDL_GetError()));
+	}
+}
+
 void Game::handlePanelChanges()
 {
 	// If a sub-panel pop was requested, then pop the top of the sub-panel stack.
@@ -285,9 +325,9 @@ void Game::handleEvents(bool &running)
 		if (takeScreenshot)
 		{
 			// Save a screenshot to the local folder.
-			auto &renderer = this->getRenderer();
-			Surface screenshot(renderer.getScreenshot());
-			SDL_SaveBMP(screenshot.get(), "out.bmp");
+			const auto &renderer = this->getRenderer();
+			const Surface screenshot = renderer.getScreenshot();
+			this->saveScreenshot(screenshot);
 		}
 
 		// Panel-specific events are handled by the active panel or sub-panel. If any 

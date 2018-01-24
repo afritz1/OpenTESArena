@@ -20,6 +20,9 @@ public:
 	// Gets the options folder path via SDL_GetPrefPath().
 	static std::string getOptionsPath();
 
+	// Gets the screenshot folder path via SDL_GetPrefPath().
+	static std::string getScreenshotPath();
+
 	// Gets the log folder path for logging program messages.
 	static std::string getLogPath();
 
