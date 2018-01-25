@@ -48,7 +48,8 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 	// Initialize the scratch surface to transparent.
 	SDL_Surface *surface = Surface::createSurfaceWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
+	const uint32_t clearColor = SDL_MapRGBA(surface->format, 0, 0, 0, 0);
+	SDL_FillRect(surface, nullptr, clearColor);
 
 	if (type == Texture::PatternType::Parchment)
 	{
@@ -105,6 +106,10 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 			rightRect.w = right->w;
 			rightRect.h = right->h;
 
+			// Remove any traces of body tiles underneath.
+			SDL_FillRect(surface, &leftRect, clearColor);
+			SDL_FillRect(surface, &rightRect, clearColor);
+
 			SDL_BlitSurface(left, nullptr, surface, &leftRect);
 			SDL_BlitSurface(right, nullptr, surface, &rightRect);
 		}
@@ -122,6 +127,10 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 			bottomRect.y = surface->h - bottom->h;
 			bottomRect.w = bottom->w;
 			bottomRect.h = bottom->h;
+
+			// Remove any traces of other tiles underneath.
+			SDL_FillRect(surface, &topRect, clearColor);
+			SDL_FillRect(surface, &bottomRect, clearColor);
 
 			SDL_BlitSurface(top, nullptr, surface, &topRect);
 			SDL_BlitSurface(bottom, nullptr, surface, &bottomRect);
@@ -151,6 +160,12 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 		bottomRightRect.y = surface->h - bottomRight->h;
 		bottomRightRect.w = bottomRight->w;
 		bottomRightRect.h = bottomRight->h;
+
+		// Remove any traces of other tiles underneath.
+		SDL_FillRect(surface, &topLeftRect, clearColor);
+		SDL_FillRect(surface, &topRightRect, clearColor);
+		SDL_FillRect(surface, &bottomLeftRect, clearColor);
+		SDL_FillRect(surface, &bottomRightRect, clearColor);
 
 		SDL_BlitSurface(topLeft, nullptr, surface, &topLeftRect);
 		SDL_BlitSurface(topRight, nullptr, surface, &topRightRect);
