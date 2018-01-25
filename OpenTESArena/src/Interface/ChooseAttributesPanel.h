@@ -33,6 +33,7 @@ private:
 	int raceID;
 	std::string name;
 	int portraitID;
+	bool canChangePortrait;
 public:
 	ChooseAttributesPanel(Game &game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender, int raceID);

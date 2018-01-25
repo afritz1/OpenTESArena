@@ -30,6 +30,9 @@ enum class ExeStringKey
 	ConfirmedRace3,
 	ConfirmedRace4,
 	DistributeClassPoints,
+	ChooseAttributesChoice,
+	ChooseAttributesSave,
+	ChooseAttributesReroll,
 	ChooseAppearance,
 
 	// Character class names (ordered by: mages, thieves, warriors).

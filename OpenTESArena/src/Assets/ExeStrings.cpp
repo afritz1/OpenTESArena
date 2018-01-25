@@ -29,6 +29,10 @@ namespace
 		{ ExeStringKey::ConfirmedRace3, "ConfirmedRace3" },
 		{ ExeStringKey::ConfirmedRace4, "ConfirmedRace4" },
 		{ ExeStringKey::DistributeClassPoints, "DistributeClassPoints" },
+		{ ExeStringKey::ChooseAttributesChoice, "ChooseAttributesChoice" },
+		{ ExeStringKey::ChooseAttributesSave, "ChooseAttributesSave" },
+		{ ExeStringKey::ChooseAttributesReroll, "ChooseAttributesReroll" },
+		{ ExeStringKey::ChooseAppearance, "ChooseAppearance" },
 
 		{ ExeStringKey::CharacterClassNames, "CharacterClassNames" },
 

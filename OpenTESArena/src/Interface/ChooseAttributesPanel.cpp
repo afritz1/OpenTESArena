@@ -6,6 +6,7 @@
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
+#include "MessageBoxSubPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -106,61 +107,252 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 		const int width = 21;
 		const int height = 12;
 
-		auto gameDataFunction = [this, charClass, name, gender, raceID](Game &game)
+		auto function = [this, charClass, name, gender, raceID](Game &game)
 		{
-			// Initialize 3D renderer.
+			// Generate the race selection message box.
+			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
-			const bool fullGameWindow = game.getOptions().getModernInterface();
-			renderer.initializeWorldRendering(
-				game.getOptions().getResolutionScale(), fullGameWindow);
 
-			// Generate the test world data.
-			std::unique_ptr<GameData> gameData = GameData::createDefault(
-				name, gender, raceID, charClass, this->portraitID,
-				game.getTextureManager(), renderer);
+			MessageBoxSubPanel::Title messageBoxTitle;
+			messageBoxTitle.textBox = [&game, raceID, &renderer]()
+			{
+				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesChoice);
 
-			// Set the game data before constructing the game world panel.
-			game.setGameData(std::move(gameData));
+				const Color textColor(199, 199, 199);
+
+				const RichTextString richText(
+					text,
+					FontName::A,
+					textColor,
+					TextAlignment::Center,
+					game.getFontManager());
+
+				const Int2 center(
+					(Renderer::ORIGINAL_WIDTH / 2),
+					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
+
+				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+			}();
+
+			messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
+			{
+				const int width = messageBoxTitle.textBox->getRect().getWidth() + 12;
+				const int height = 24;
+				return Texture(Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer));
+			}();
+
+			messageBoxTitle.textureX = (Renderer::ORIGINAL_WIDTH / 2) -
+				(messageBoxTitle.texture.getWidth() / 2) - 1;
+			messageBoxTitle.textureY = (Renderer::ORIGINAL_HEIGHT / 2) -
+				(messageBoxTitle.texture.getHeight() / 2) - 21;
+
+			const Color buttonTextColor(190, 113, 0);
+
+			MessageBoxSubPanel::Element messageBoxSave;
+			messageBoxSave.textBox = [&game, &renderer, &buttonTextColor]()
+			{
+				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesSave);
+
+				// To do: use the formatting characters in the string for color.
+				// - For now, just delete them.
+				text.erase(1, 2);
+
+				const RichTextString richText(
+					text,
+					FontName::A,
+					buttonTextColor,
+					TextAlignment::Center,
+					game.getFontManager());
+
+				const Int2 center(
+					(Renderer::ORIGINAL_WIDTH / 2) - 1,
+					(Renderer::ORIGINAL_HEIGHT / 2) + 2);
+
+				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+			}();
+
+			messageBoxSave.texture = [&textureManager, &renderer, &messageBoxTitle]()
+			{
+				const int width = messageBoxTitle.texture.getWidth();
+				const int height = messageBoxTitle.texture.getHeight();
+				return Texture(Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer));
+			}();
+
+			messageBoxSave.function = [this, charClass, name, gender, raceID](Game &game)
+			{
+				// Confirming the chosen stats will bring up a text sub-panel, and
+				// the next time the done button is clicked, it starts the game.
+				game.popSubPanel();
+
+				const Color color(199, 199, 199);
+
+				const std::string text = [&game]()
+				{
+					std::string segment = game.getMiscAssets().getAExeStrings().get(
+						ExeStringKey::ChooseAppearance);
+					segment = String::replace(segment, '\r', '\n');
+
+					return segment;
+				}();
+
+				const int lineSpacing = 1;
+
+				const RichTextString richText(
+					text,
+					FontName::Arena,
+					color,
+					TextAlignment::Center,
+					lineSpacing,
+					game.getFontManager());
+
+				Texture texture(Texture::generate(Texture::PatternType::Dark,
+					richText.getDimensions().x + 10, richText.getDimensions().y + 12,
+					game.getTextureManager(), game.getRenderer()));
+
+				const Int2 textureCenter(
+					(Renderer::ORIGINAL_WIDTH / 2) - 1,
+					(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+				// The done button is replaced after the player confirms their stats,
+				// and it then leads to the main quest opening cinematic.
+				auto newDoneFunction = [this, charClass, name, gender, raceID](Game &game)
+				{
+					game.popSubPanel();
+
+					auto gameDataFunction = [this, charClass, name, gender, raceID](Game &game)
+					{
+						// Initialize 3D renderer.
+						auto &renderer = game.getRenderer();
+						const bool fullGameWindow = game.getOptions().getModernInterface();
+						renderer.initializeWorldRendering(
+							game.getOptions().getResolutionScale(), fullGameWindow);
+
+						// Generate the test world data.
+						std::unique_ptr<GameData> gameData = GameData::createDefault(
+							name, gender, raceID, charClass, this->portraitID,
+							game.getTextureManager(), renderer);
+
+						// Set the game data before constructing the game world panel.
+						game.setGameData(std::move(gameData));
+					};
+
+					auto cinematicFunction = [gameDataFunction](Game &game)
+					{
+						gameDataFunction(game);
+
+						// The original game wraps text onto the next screen if the player's name
+						// is too long. For example, it causes "listen to me" to go down one line
+						// and "Imperial Battle" to go onto the next screen, which then pushes the
+						// text for every subsequent screen forward by a little bit.
+
+						// Read cinematic text from TEMPLATE.DAT.
+						std::string cinematicText = game.getMiscAssets().getTemplateDatText("#1400");
+						cinematicText.append("\n");
+
+						// Replace all instances of %pcf with the player's first name.
+						const std::string playerName =
+							game.getGameData().getPlayer().getFirstName();
+						cinematicText = String::replace(cinematicText, "%pcf", playerName);
+
+						// Some more formatting should be done in the future so the text wraps
+						// nicer. That is, replace all new lines with spaces and redistribute new
+						// lines given some max line length value.
+
+						auto gameFunction = [](Game &game)
+						{
+							game.setPanel<GameWorldPanel>(game);
+							game.setMusic(MusicName::SunnyDay);
+						};
+
+						game.setPanel<TextCinematicPanel>(
+							game,
+							TextureFile::fromName(TextureSequenceName::Silmane),
+							cinematicText,
+							0.171,
+							gameFunction);
+						game.setMusic(MusicName::Vision);
+					};
+
+					const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
+					const int width = 21;
+					const int height = 12;
+
+					this->doneButton = Button<Game&>(center, width, height, cinematicFunction);
+					this->canChangePortrait = true;
+				};
+
+				std::unique_ptr<Panel> appearanceSubPanel(new TextSubPanel(
+					game, textureCenter, richText, newDoneFunction,
+					std::move(texture), textureCenter));
+
+				game.pushSubPanel(std::move(appearanceSubPanel));
+			};
+
+			messageBoxSave.textureX = messageBoxTitle.textureX;
+			messageBoxSave.textureY = messageBoxTitle.textureY +
+				messageBoxTitle.texture.getHeight();
+
+			MessageBoxSubPanel::Element messageBoxReroll;
+			messageBoxReroll.textBox = [&game, &renderer, &buttonTextColor]()
+			{
+				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesReroll);
+
+				// To do: use the formatting characters in the string for color.
+				// - For now, just delete them.
+				text.erase(1, 2);
+
+				const RichTextString richText(
+					text,
+					FontName::A,
+					buttonTextColor,
+					TextAlignment::Center,
+					game.getFontManager());
+
+				const Int2 center(
+					(Renderer::ORIGINAL_WIDTH / 2) - 1,
+					(Renderer::ORIGINAL_HEIGHT / 2) + 26);
+
+				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+			}();
+
+			messageBoxReroll.texture = [&textureManager, &renderer, &messageBoxSave]()
+			{
+				const int width = messageBoxSave.texture.getWidth();
+				const int height = messageBoxSave.texture.getHeight();
+				return Texture(Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer));
+			}();
+
+			messageBoxReroll.function = [](Game &game)
+			{
+				// To do: reroll attributes.
+				game.popSubPanel();
+			};
+
+			messageBoxReroll.textureX = messageBoxSave.textureX;
+			messageBoxReroll.textureY = messageBoxSave.textureY +
+				messageBoxSave.texture.getHeight();
+
+			auto cancelFunction = messageBoxReroll.function;
+
+			// Push message box sub panel.
+			std::vector<MessageBoxSubPanel::Element> messageBoxElements;
+			messageBoxElements.push_back(std::move(messageBoxSave));
+			messageBoxElements.push_back(std::move(messageBoxReroll));
+
+			std::unique_ptr<MessageBoxSubPanel> messageBox(new MessageBoxSubPanel(
+				game, std::move(messageBoxTitle), std::move(messageBoxElements),
+				cancelFunction));
+
+			game.pushSubPanel(std::move(messageBox));
 		};
 
-		auto gameFunction = [](Game &game)
-		{
-			game.setPanel<GameWorldPanel>(game);
-			game.setMusic(MusicName::SunnyDay);
-		};
-
-		auto cinematicFunction = [gameDataFunction, gameFunction](Game &game)
-		{
-			gameDataFunction(game);
-
-			// The original game wraps text onto the next screen if the player's name is
-			// too long. For example, it causes "listen to me" to go down one line and 
-			// "Imperial Battle" to go onto the next screen, which then pushes the text
-			// for every subsequent screen forward by a little bit.
-
-			// Read Ria Silmane's text from TEMPLATE.DAT.
-			std::string silmaneText = game.getMiscAssets().getTemplateDatText("#1400");
-			silmaneText.append("\n");
-
-			// Replace all instances of %pcf with the player's first name.
-			const std::string playerName =
-				game.getGameData().getPlayer().getFirstName();
-			silmaneText = String::replace(silmaneText, "%pcf", playerName);
-
-			// Some more formatting should be done in the future so the text wraps nicer.
-			// That is, replace all new lines with spaces and redistribute new lines given
-			// some max line length value.
-
-			game.setPanel<TextCinematicPanel>(
-				game,
-				TextureFile::fromName(TextureSequenceName::Silmane),
-				silmaneText,
-				0.171,
-				gameFunction);
-			game.setMusic(MusicName::Vision);
-		};
-
-		return Button<Game&>(center, width, height, cinematicFunction);
+		return Button<Game&>(center, width, height, function);
 	}();
 
 	this->portraitButton = []()
@@ -198,6 +390,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 	this->raceID = raceID;
 	this->portraitID = 0;
+	this->canChangePortrait = false;
 
 	// Push the initial text pop-up onto the sub-panel stack.
 	std::unique_ptr<Panel> textSubPanel = [&game]()
@@ -283,7 +476,8 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 		{
 			this->doneButton.click(this->getGame());
 		}
-		else if (this->portraitButton.contains(mouseOriginalPoint))
+		else if (this->portraitButton.contains(mouseOriginalPoint) &&
+			this->canChangePortrait)
 		{
 			// Pass 'true' to increment the portrait ID.
 			this->portraitButton.click(*this, true);
@@ -292,7 +486,8 @@ void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
 
 	if (rightClick)
 	{
-		if (this->portraitButton.contains(mouseOriginalPoint))
+		if (this->portraitButton.contains(mouseOriginalPoint) &&
+			this->canChangePortrait)
 		{
 			// Pass 'false' to decrement the portrait ID.
 			this->portraitButton.click(*this, false);

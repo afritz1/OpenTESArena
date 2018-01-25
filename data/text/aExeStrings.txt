@@ -21,6 +21,9 @@ ConfirmedRace2=0x3f56e,18
 ConfirmedRace3=0x35ca2,60
 ConfirmedRace4=0x35ce0,67
 DistributeClassPoints=0x35d25,93
+ChooseAttributesChoice=0x35fa3,23
+ChooseAttributesSave=0x3f66b,12
+ChooseAttributesReroll=0x3f67b,14
 ChooseAppearance=0x35d84,174
 
 # Character class names (ordered by: mages, thieves, warriors).
