@@ -10,11 +10,16 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
-MessageBoxSubPanel::MessageBoxSubPanel(Game &game, std::unique_ptr<TextBox> textBox,
-	Texture &&textBoxTexture, Texture &&buttonTexture,
-	const std::vector<std::function<void(Game&)>> &functions)
-	: Panel(game), textBox(std::move(textBox)), textBoxTexture(std::move(textBoxTexture)),
-	buttonTexture(std::move(buttonTexture)), functions(functions) { }
+MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
+	std::vector<MessageBoxSubPanel::Element> &&elements,
+	const std::function<void(Game&)> &cancelFunction)
+	: Panel(game), title(std::move(title)), elements(std::move(elements)),
+	cancelFunction(cancelFunction) { }
+
+MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
+	std::vector<MessageBoxSubPanel::Element> &&elements)
+	: Panel(game), title(std::move(title)), elements(std::move(elements)),
+	cancelFunction([](Game&) {}) { }
 
 MessageBoxSubPanel::~MessageBoxSubPanel()
 {
@@ -32,41 +37,55 @@ std::pair<SDL_Texture*, CursorAlignment> MessageBoxSubPanel::getCurrentCursor() 
 
 void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 {
+	auto &game = this->getGame();
 	const auto &inputManager = this->getGame().getInputManager();
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
-	if (leftClick)
+	if (escapePressed || rightClick)
+	{
+		this->cancelFunction(game);
+	}
+	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		const Int2 originalPoint = this->getGame().getRenderer()
 			.nativeToOriginal(mousePosition);
 
-		// See if any of the buttons were clicked.
-		const Rect textBoxRect = this->textBox->getRect();
-		for (size_t i = 0; i < this->functions.size(); i++)
+		// See if any buttons were clicked.
+		for (const auto &element : this->elements)
 		{
-			const int yOffset = static_cast<int>(textBoxRect.getHeight() * i);
+			const Rect elementRect(
+				element.textureX,
+				element.textureY,
+				element.texture.getWidth(),
+				element.texture.getHeight());
 
-			const Rect buttonRect(
-				textBoxRect.getLeft(),
-				textBoxRect.getBottom() + yOffset,
-				textBoxRect.getWidth(),
-				textBoxRect.getHeight());
-
-			if (buttonRect.contains(mouseOriginalPoint))
+			if (elementRect.contains(originalPoint))
 			{
-				auto &function = this->functions.at(i);
-				function(this->getGame());
+				element.function(game);
 			}
 		}
 	}
+
+	// To do: custom hotkeys.
 }
 
 void MessageBoxSubPanel::render(Renderer &renderer)
 {
-	// Draw textures.
+	// Draw title.
+	renderer.drawOriginal(this->title.texture.get(),
+		this->title.textureX, this->title.textureY);
+	renderer.drawOriginal(this->title.textBox->getTexture(),
+		this->title.textBox->getX(), this->title.textBox->getY());
 
-	// Draw text.
-
+	// Draw elements.
+	for (const auto &element : this->elements)
+	{
+		renderer.drawOriginal(element.texture.get(),
+			element.textureX, element.textureY);
+		renderer.drawOriginal(element.textBox->getTexture(),
+			element.textBox->getX(), element.textBox->getY());
+	}
 }

@@ -38,6 +38,7 @@ namespace
 		{ ExeStringKey::HealthDice, "HealthDice" },
 		{ ExeStringKey::LockpickingDivisors, "LockpickingDivisors" },
 
+		{ ExeStringKey::CharCreationProvinceNames, "CharCreationProvinceNames" },
 		{ ExeStringKey::ProvinceNames, "ProvinceNames" },
 		{ ExeStringKey::ProvinceIMGFilenames, "ProvinceIMGFilenames" },
 

@@ -43,6 +43,7 @@ enum class ExeStringKey
 	LockpickingDivisors,
 
 	// Province names and backgrounds.
+	CharCreationProvinceNames,
 	ProvinceNames,
 	ProvinceIMGFilenames,
 

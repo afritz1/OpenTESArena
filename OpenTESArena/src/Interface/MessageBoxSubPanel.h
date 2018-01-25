@@ -2,7 +2,6 @@
 #define MESSAGE_BOX_SUB_PANEL_H
 
 #include <functional>
-#include <string>
 #include <vector>
 
 #include "Panel.h"
@@ -13,14 +12,33 @@ class TextBox;
 // A sub-panel intended for displaying text with some buttons.
 class MessageBoxSubPanel : public Panel
 {
-private:
-	std::unique_ptr<TextBox> textBox;
-	Texture textBoxTexture, buttonTexture;
-	std::vector<std::function<void(Game&)>> functions;
 public:
-	MessageBoxSubPanel(Game &game, std::unique_ptr<TextBox> textBox,
-		Texture &&textBoxTexture, Texture &&buttonTexture,
-		const std::vector<std::function<void(Game&)>> &functions);
+	// The title or description of the message box.
+	struct Title
+	{
+		std::unique_ptr<TextBox> textBox;
+		Texture texture;
+		int textureX, textureY;
+	};
+
+	// An element of the message box (i.e., a button with text).
+	struct Element
+	{
+		std::unique_ptr<TextBox> textBox;
+		Texture texture;
+		std::function<void(Game&)> function;
+		int textureX, textureY;
+	};
+private:
+	MessageBoxSubPanel::Title title;
+	std::vector<MessageBoxSubPanel::Element> elements;
+	std::function<void(Game&)> cancelFunction; // Called when cancelling the message box.
+public:
+	MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
+		std::vector<MessageBoxSubPanel::Element> &&elements);
+	MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
+		std::vector<MessageBoxSubPanel::Element> &&elements,
+		const std::function<void(Game&)> &cancelFunction);
 	virtual ~MessageBoxSubPanel();
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

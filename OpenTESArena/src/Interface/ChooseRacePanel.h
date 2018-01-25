@@ -25,6 +25,10 @@ private:
 	GenderName gender;
 	std::string name;
 
+	// Gets the initial parchment pop-up.
+	static std::unique_ptr<Panel> getInitialSubPanel(Game &game,
+		const CharacterClass &charClass, const std::string &name);
+
 	// Gets the mask ID associated with some pixel location, or "no ID" if none found.
 	int getProvinceMaskID(const Int2 &position) const;
 

@@ -35,7 +35,9 @@ HealthDice=0x3e2d1,1;0x3e2d2,1;0x3e2d3,1;0x3e2d4,1;0x3e2d5,1;0x3e2d6,1;0x3e2d7,1
 LockpickingDivisors=0x3e13a,1;0x3e13b,1;0x3e13c,1;0x3e13d,1;0x3e13e,1;0x3e13f,1;0x3e140,1;0x3e141,1;0x3e142,1;0x3e143,1;0x3e144,1;0x3e145,1;0x3e146,1;0x3e147,1;0x3e148,1;0x3e149,1;0x3e14a,1;0x3e14b,1
 
 # Province names, ordered by appearance on the world map reading from left to
-# right, with the center province last.
+# right, with the center province last. The character creation province names
+# have slight changes and leave out the center province.
+CharCreationProvinceNames=0x3e602,-;0x3e60c,-;0x3e617,-;0x3e61e,-;0x3e628,-;0x3e632,-;0x3e63c,-;0x3e644,-
 ProvinceNames=0x392f8,-;0x3935a,-;0x393bc,-;0x3941e,-;0x39480,-;0x394e2,-;0x39544,-;0x395a6,-;0x39608,-
 
 # Province .IMG backgrounds (ordered the same as province names).
