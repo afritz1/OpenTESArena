@@ -234,8 +234,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,
 			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-		// The sub-panel does nothing after it's removed.
-		auto function = [](Game &game) {};
+		auto function = [](Game &game)
+		{
+			game.popSubPanel();
+		};
 
 		return std::unique_ptr<Panel>(new TextSubPanel(
 			game, center, richText, function, std::move(texture), textureCenter));

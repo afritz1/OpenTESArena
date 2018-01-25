@@ -16,7 +16,10 @@ ChooseGenderMale=0x3f652,4
 ChooseGenderFemale=0x3f658,6
 ChooseRace=0x35b8a,37
 ConfirmRace=0x35bff,74
-FinalRaceMessage=0x35ce0,67
+ConfirmedRace1=0x35c4c,84
+ConfirmedRace2=0x3f56e,18
+ConfirmedRace3=0x35ca2,60
+ConfirmedRace4=0x35ce0,67
 DistributeClassPoints=0x35d25,93
 ChooseAppearance=0x35d84,174
 

@@ -268,8 +268,10 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const Int2 textureCenter = center;
 
-			// The sub-panel does nothing after it's removed.
-			auto function = [](Game &game) {};
+			auto function = [](Game &game)
+			{
+				game.popSubPanel();
+			};
 
 			game.pushSubPanel<TextSubPanel>(game, center, richText, function, 
 				std::move(texture), textureCenter);

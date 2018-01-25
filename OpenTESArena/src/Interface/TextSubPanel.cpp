@@ -54,7 +54,7 @@ void TextSubPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || spacePressed || enterPressed || leftClick || rightClick)
 	{
-		this->getGame().popSubPanel();
+		this->endingAction(this->getGame());
 	}
 }
 

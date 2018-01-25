@@ -14,6 +14,7 @@
 #include "../Assets/ExeStrings.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
+#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -133,9 +134,230 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			{
 				game.popSubPanel();
 
-				// To do: push sub-panels with each message for the player.
-				
-				game.setPanel<ChooseAttributesPanel>(game, charClass, name, gender, raceID);
+				const Color textColor(48, 12, 12);
+
+				// Generate all of the parchments leading up to the attributes panel,
+				// and link them together so they appear after each other.
+				auto toAttributes = [&game, &charClass, &name, gender, raceID](Game &game)
+				{
+					game.popSubPanel();
+					game.setPanel<ChooseAttributesPanel>(game, charClass, name, gender, raceID);
+				};
+
+				auto toFourthSubPanel = [&game, textColor, toAttributes](Game &game)
+				{
+					game.popSubPanel();
+
+					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+
+					const std::string text = [&game]()
+					{
+						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace4);
+						segment = String::replace(segment, '\r', '\n');
+
+						return segment;
+					}();
+
+					const int lineSpacing = 1;
+
+					const RichTextString richText(
+						text,
+						FontName::Arena,
+						textColor,
+						TextAlignment::Center,
+						lineSpacing,
+						game.getFontManager());
+
+					const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
+					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+						richText.getDimensions().x + 20, textureHeight,
+						game.getTextureManager(), game.getRenderer()));
+
+					const Int2 textureCenter(
+						(Renderer::ORIGINAL_WIDTH / 2) - 1,
+						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+					std::unique_ptr<Panel> fourthSubPanel(new TextSubPanel(
+						game, center, richText, toAttributes, std::move(texture),
+						textureCenter));
+
+					game.pushSubPanel(std::move(fourthSubPanel));
+				};
+
+				auto toThirdSubPanel = [&game, &charClass, textColor, toFourthSubPanel](Game &game)
+				{
+					game.popSubPanel();
+
+					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+
+					const std::string text = [&game, &charClass]()
+					{
+						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace3);
+						segment = String::replace(segment, '\r', '\n');
+
+						const std::string &desiredAttributes = exeStrings.getList(
+							ExeStringKey::ClassAttributes).at(charClass.getClassIndex());
+
+						// Replace first %s with desired class attributes.
+						size_t index = segment.find("%s");
+						segment.replace(index, 2, desiredAttributes);
+
+						// Replace second %s with class name.
+						index = segment.find("%s");
+						segment.replace(index, 2, charClass.getName());
+
+						return segment;
+					}();
+
+					const int lineSpacing = 1;
+
+					const RichTextString richText(
+						text,
+						FontName::Arena,
+						textColor,
+						TextAlignment::Center,
+						lineSpacing,
+						game.getFontManager());
+
+					const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
+					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+						richText.getDimensions().x + 20, textureHeight,
+						game.getTextureManager(), game.getRenderer()));
+
+					const Int2 textureCenter(
+						(Renderer::ORIGINAL_WIDTH / 2) - 1,
+						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+					std::unique_ptr<Panel> thirdSubPanel(new TextSubPanel(
+						game, center, richText, toFourthSubPanel, std::move(texture),
+						textureCenter));
+
+					game.pushSubPanel(std::move(thirdSubPanel));
+				};
+
+				auto toSecondSubPanel = [&game, raceID, textColor, toThirdSubPanel](Game &game)
+				{
+					game.popSubPanel();
+
+					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+
+					const std::string text = [&game, raceID]()
+					{
+						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace2);
+						segment = String::replace(segment, '\r', '\n');
+
+						// Get race description from TEMPLATE.DAT.
+						const std::array<std::string, 8> raceTemplateNames =
+						{
+							"#1409", "#1410", "#1411", "#1412",
+							"#1413", "#1414", "#1415", "#1416"
+						};
+
+						std::string raceDescription = game.getMiscAssets().getTemplateDatText(
+							raceTemplateNames.at(raceID));
+
+						// Append race description to text segment.
+						segment += "\n" + raceDescription;
+
+						return segment;
+					}();
+
+					const int lineSpacing = 1;
+
+					const RichTextString richText(
+						text,
+						FontName::Arena,
+						textColor,
+						TextAlignment::Center,
+						lineSpacing,
+						game.getFontManager());
+
+					const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
+					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+						richText.getDimensions().x + 20, textureHeight,
+						game.getTextureManager(), game.getRenderer()));
+
+					const Int2 textureCenter(
+						(Renderer::ORIGINAL_WIDTH / 2) - 1,
+						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+					std::unique_ptr<Panel> secondSubPanel(new TextSubPanel(
+						game, center, richText, toThirdSubPanel, std::move(texture),
+						textureCenter));
+
+					game.pushSubPanel(std::move(secondSubPanel));
+				};
+
+				std::unique_ptr<Panel> firstSubPanel = [&game, &charClass,
+					&name, gender, raceID, &textColor, toSecondSubPanel]()
+				{
+					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+
+					const std::string text = [&game, &charClass, &name, gender, raceID]()
+					{
+						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace1);
+						segment = String::replace(segment, '\r', '\n');
+
+						const std::string &provinceName = exeStrings.getList(
+							ExeStringKey::CharCreationProvinceNames).at(raceID);
+						const std::string &pluralRaceName = exeStrings.getList(
+							ExeStringKey::RaceNamesPlural).at(raceID);
+
+						// Replace first %s with player class.
+						size_t index = segment.find("%s");
+						segment.replace(index, 2, charClass.getName());
+
+						// Replace second %s with player name.
+						index = segment.find("%s");
+						segment.replace(index, 2, name);
+
+						// Replace third %s with province name.
+						index = segment.find("%s");
+						segment.replace(index, 2, provinceName);
+
+						// Replace fourth %s with plural race name.
+						index = segment.find("%s");
+						segment.replace(index, 2, pluralRaceName);
+
+						// If player is female, replace "his" with "her".
+						if (gender == GenderName::Female)
+						{
+							index = segment.rfind("his");
+							segment.replace(index, 3, "her");
+						}
+
+						return segment;
+					}();
+
+					const int lineSpacing = 1;
+
+					const RichTextString richText(
+						text,
+						FontName::Arena,
+						textColor,
+						TextAlignment::Center,
+						lineSpacing,
+						game.getFontManager());
+
+					const int textureHeight = std::max(richText.getDimensions().y, 40);
+					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+						richText.getDimensions().x + 20, textureHeight,
+						game.getTextureManager(), game.getRenderer()));
+
+					const Int2 textureCenter(
+						(Renderer::ORIGINAL_WIDTH / 2) - 1,
+						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+					return std::unique_ptr<Panel>(new TextSubPanel(
+						game, center, richText, toSecondSubPanel, std::move(texture),
+						textureCenter));
+				}();
+
+				game.pushSubPanel(std::move(firstSubPanel));
 			};
 
 			messageBoxYes.textureX = messageBoxTitle.textureX;
@@ -253,8 +475,10 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
 		(Renderer::ORIGINAL_WIDTH / 2) - 1,
 		(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-	// The sub-panel does nothing after it's removed.
-	auto function = [](Game &game) {};
+	auto function = [](Game &game)
+	{
+		game.popSubPanel();
+	};
 
 	return std::unique_ptr<Panel>(new TextSubPanel(
 		game, center, richText, function, std::move(texture), textureCenter));

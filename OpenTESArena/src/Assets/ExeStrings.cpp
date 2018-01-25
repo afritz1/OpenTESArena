@@ -24,7 +24,10 @@ namespace
 		{ ExeStringKey::ChooseGenderFemale, "ChooseGenderFemale" },
 		{ ExeStringKey::ChooseRace, "ChooseRace" },
 		{ ExeStringKey::ConfirmRace, "ConfirmRace" },
-		{ ExeStringKey::FinalRaceMessage, "FinalRaceMessage" },
+		{ ExeStringKey::ConfirmedRace1, "ConfirmedRace1" },
+		{ ExeStringKey::ConfirmedRace2, "ConfirmedRace2" },
+		{ ExeStringKey::ConfirmedRace3, "ConfirmedRace3" },
+		{ ExeStringKey::ConfirmedRace4, "ConfirmedRace4" },
 		{ ExeStringKey::DistributeClassPoints, "DistributeClassPoints" },
 
 		{ ExeStringKey::CharacterClassNames, "CharacterClassNames" },

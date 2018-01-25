@@ -25,7 +25,10 @@ enum class ExeStringKey
 	ChooseGenderFemale,
 	ChooseRace,
 	ConfirmRace,
-	FinalRaceMessage,
+	ConfirmedRace1,
+	ConfirmedRace2,
+	ConfirmedRace3,
+	ConfirmedRace4,
 	DistributeClassPoints,
 	ChooseAppearance,
 
