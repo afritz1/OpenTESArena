@@ -436,6 +436,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
 	auto &options = game.getOptions();
+	auto &player = game.getGameData().getPlayer();
 	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
@@ -451,6 +452,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 
 	// Listen for hotkeys.
+	bool drawWeaponHotkeyPressed = inputManager.keyPressed(e, SDLK_f);
 	bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
 	bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
 	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) ||
@@ -459,7 +461,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
 	bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
 
-	if (automapHotkeyPressed)
+	if (drawWeaponHotkeyPressed)
+	{
+		this->drawWeaponButton.click(player);
+	}
+	else if (automapHotkeyPressed)
 	{
 		this->mapButton.click(game, true);
 	}
@@ -494,7 +500,6 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// original game). These coordinates are in Arena's coordinate system.
 		const auto &worldData = game.getGameData().getWorldData();
 		const auto &voxelGrid = worldData.getLevels().at(0).getVoxelGrid();
-		const auto &player = game.getGameData().getPlayer();
 		const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 			Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
 			voxelGrid.getWidth(), voxelGrid.getDepth());
@@ -548,7 +553,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->drawWeaponButton.contains(originalPosition))
 			{
-				this->drawWeaponButton.click(game.getGameData().getPlayer());
+				this->drawWeaponButton.click(player);
 			}
 			else if (this->mapButton.contains(originalPosition))
 			{
@@ -1559,15 +1564,44 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
 		const Int2 &weaponOffset = this->weaponOffsets.at(index);
 
-		// Draw the current weapon image. Add 1 to the height because Arena's renderer has
-		// an off-by-one bug, and a 1 pixel gap appears in my renderer unless a small change
-		// is added.
-		const int weaponX = weaponOffset.x;
-		const int weaponY = weaponOffset.y + (modernInterface ? gameInterface.getHeight() : 0);
-		const int weaponWidth = weaponTexture.getWidth();
-		const int weaponHeight = weaponTexture.getHeight() + 1;
-		renderer.drawOriginal(weaponTexture.get(),
-			weaponX, weaponY, weaponWidth, weaponHeight);
+		// Draw the current weapon image depending on interface mode.
+		if (modernInterface)
+		{
+			// Scale vertically to fit, then scale/translate everything else accordingly.
+			const double weaponScale = static_cast<double>(Renderer::ORIGINAL_HEIGHT) /
+				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
+
+			// Percent of the horizontal weapon offset across the original screen.
+			const double weaponOffsetXPercent = static_cast<double>(weaponOffset.x) /
+				static_cast<double>(Renderer::ORIGINAL_WIDTH);
+
+			// Native left and right screen edges converted to original space.
+			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x - 1;
+			const int newRight = renderer.nativeToOriginal(
+				Int2(renderer.getWindowDimensions().x, 0)).x;
+
+			const int weaponX = newLeft + static_cast<int>(std::round(
+				static_cast<double>(newRight - newLeft) * weaponOffsetXPercent));
+			const int weaponY = static_cast<int>(std::round(
+				static_cast<double>(weaponOffset.y) * weaponScale));
+			const int weaponWidth = static_cast<int>(std::round(
+				static_cast<double>(weaponTexture.getWidth()) * weaponScale));
+			const int weaponHeight = static_cast<int>(std::round(
+				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
+					Renderer::ORIGINAL_HEIGHT - weaponY)) * weaponScale));
+
+			renderer.drawOriginal(weaponTexture.get(),
+				weaponX, weaponY, weaponWidth, weaponHeight);
+		}
+		else
+		{
+			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
+			// gap appears unless a small change is added.
+			const int weaponHeight = std::min(weaponTexture.getHeight() + 1,
+				(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) - weaponOffset.y);
+			renderer.drawOriginal(weaponTexture.get(),
+				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
+		}
 	}
 
 	// Draw the visible portion of the compass slider, and the frame over it.
