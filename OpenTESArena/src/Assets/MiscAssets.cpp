@@ -48,6 +48,9 @@ MiscAssets::MiscAssets()
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
 
+	// Read in wall height tables.
+	this->parseWallHeightTables(this->aExe);
+
 	// Read in the world map mask data from TAMRIEL.MNU.
 	this->parseWorldMapMasks();
 }
@@ -580,6 +583,47 @@ void MiscAssets::parseDungeonTxt()
 	}
 }
 
+void MiscAssets::parseWallHeightTables(const std::string &exeText)
+{
+	// Initialize wall height tables to empty.
+	std::memset(&this->wallHeightTables, 0, sizeof(WallHeightTables));
+
+	// Offset in A.EXE to the start of the wall height table data.
+	const int offset = 0x48206;
+
+	// Box 1 values.
+	const uint8_t *box1Ptr = reinterpret_cast<const uint8_t*>(exeText.data() + offset);
+	for (size_t i = 0; i < 8; i++)
+	{
+		this->wallHeightTables.box1a.at(i) = Bytes::getLE16(box1Ptr + (i * 2));
+		this->wallHeightTables.box1b.at(i) = Bytes::getLE16(box1Ptr + 16 + (i * 2));
+		this->wallHeightTables.box1c.at(i) = Bytes::getLE16(box1Ptr + 32 + (i * 2));
+	}
+
+	// Box 2 values.
+	const uint8_t *box2Ptr = box1Ptr + 48;
+	for (size_t i = 0; i < 16; i++)
+	{
+		this->wallHeightTables.box2a.at(i) = Bytes::getLE16(box2Ptr + (i * 2));
+		this->wallHeightTables.box2b.at(i) = Bytes::getLE16(box2Ptr + 32 + (i * 2));
+	}
+
+	// Box 3 values (skip 56 words to get here).
+	const uint8_t *box3Ptr = box2Ptr + 144;
+	for (size_t i = 0; i < 8; i++)
+	{
+		this->wallHeightTables.box3a.at(i) = Bytes::getLE16(box3Ptr + (i * 2));
+		this->wallHeightTables.box3b.at(i) = Bytes::getLE16(box3Ptr + 16 + (i * 2));
+	}
+
+	// Box 4 values.
+	const uint8_t *box4Ptr = box3Ptr + 32;
+	for (size_t i = 0; i < 16; i++)
+	{
+		this->wallHeightTables.box4.at(i) = Bytes::getLE16(box4Ptr + (i * 2));
+	}
+}
+
 void MiscAssets::parseWorldMapMasks()
 {
 	const std::string filename = "TAMRIEL.MNU";
@@ -672,6 +716,11 @@ const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTx
 const CityDataFile &MiscAssets::getCityDataFile() const
 {
 	return this->cityDataFile;
+}
+
+const MiscAssets::WallHeightTables &MiscAssets::getWallHeightTables() const
+{
+	return this->wallHeightTables;
 }
 
 const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const

@@ -22,6 +22,18 @@ class ExeStrings;
 
 class MiscAssets
 {
+public:
+	// Values for interior and exterior wall heights. In wilderness cells, the values in
+	// box1 and box2 are multiplied by 192/256. In interiors, they are also scaled by the
+	// ceiling2 value (second value in *CEILING lines; default=128?).
+	struct WallHeightTables
+	{
+		std::array<uint16_t, 8> box1a, box1b, box1c;
+		std::array<uint16_t, 16> box2a, box2b;
+		// Ignore "source" array, a copy of previous 56 words.
+		std::array<uint16_t, 8> box3a, box3b;
+		std::array<uint16_t, 16> box4;
+	};
 private:
 	static const std::string AExeKeyValuesMapPath;
 
@@ -33,6 +45,7 @@ private:
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 	CityDataFile cityDataFile;
+	WallHeightTables wallHeightTables;
 	std::array<WorldMapMask, 10> worldMapMasks;
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
@@ -49,6 +62,9 @@ private:
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
+
+	// Reads the wall height data from A.EXE.
+	void parseWallHeightTables(const std::string &exeText);
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
@@ -75,6 +91,9 @@ public:
 
 	// Gets the data object for world map locations.
 	const CityDataFile &getCityDataFile() const;
+
+	// Gets the wall height tables for determining how tall walls are.
+	const WallHeightTables &getWallHeightTables() const;
 
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
