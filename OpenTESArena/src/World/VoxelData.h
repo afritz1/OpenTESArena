@@ -63,6 +63,7 @@ public:
 	struct TransparentWallData
 	{
 		int id;
+		bool collider; // Also affects automap visibility.
 	};
 
 	// Rendered on one edge of a voxel with height equal to ceiling height.
@@ -90,7 +91,7 @@ public:
 	{
 		// Each type of door. Most doors swing open, while others raise up or slide to the 
 		// side. I don't know if any split, but I believe they're supported by the engine.
-		enum class Type { Swinging, Raising, Sliding, Splitting };
+		enum class Type { Swinging, Sliding, Raising, Splitting };
 
 		int id;
 		Type type;
@@ -112,7 +113,6 @@ public:
 
 	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
 	VoxelType type; // Defines what the voxel is.
-	bool trans, transWalkThru, walkThru; // Decorators (collision, automap visibility, etc.).
 
 	VoxelData();
 	~VoxelData();
@@ -123,7 +123,7 @@ public:
 	static VoxelData makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
 		double ySize, double vTop, double vBottom);
 	static VoxelData makeDiagonal(int id, bool type1);
-	static VoxelData makeTransparentWall(int id);
+	static VoxelData makeTransparentWall(int id, bool collider);
 	static VoxelData makeEdge(int id, Facing facing);
 	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
 		ChasmData::Type type);

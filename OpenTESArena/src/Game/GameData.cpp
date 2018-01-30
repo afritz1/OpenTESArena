@@ -353,8 +353,9 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const int nobleDoorID = addWall(39);
 
 	// Hedge.
+	const bool hedgeIsCollider = true;
 	const int hedgeID = voxelGrid.addVoxelData(
-		VoxelData::makeTransparentWall(40));
+		VoxelData::makeTransparentWall(40, hedgeIsCollider));
 
 	// Bridge.
 	const int bridge1ID = voxelGrid.addVoxelData(VoxelData::makeRaised(

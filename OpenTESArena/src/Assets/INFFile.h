@@ -5,7 +5,6 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
@@ -15,9 +14,6 @@
 class INFFile
 {
 public:
-	// To do: this could be defined somewhere else in the code.
-	enum class DoorType { Swing = 0, Slide = 1, Up = 2, Split = 3 };
-
 	struct VoxelTextureData
 	{
 		std::string filename;
@@ -118,11 +114,6 @@ private:
 	// names, etc.).
 	std::array<int, 96> items;
 
-	// Indices for which entries in a @WALLS section have certain decorators (*TRANS,
-	// *TRANSWALKTHRU, *WALKTHRU). These values affect things like collision and whether
-	// a tile appears on the automap.
-	std::unordered_set<int> trans, transWalkThru, walkThru;
-
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
 
@@ -169,9 +160,6 @@ public:
 	const int *getLavaChasmIndex() const;
 	const int *getLevelDownIndex() const;
 	const int *getLevelUpIndex() const;
-	bool hasTransitionIndex(int index) const;
-	bool hasTransWalkThruIndex(int index) const;
-	bool hasWalkThruIndex(int index) const;
 	const int *getWetChasmIndex() const;
 	const CeilingData &getCeiling() const;
 };

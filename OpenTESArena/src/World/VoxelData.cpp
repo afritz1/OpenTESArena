@@ -34,9 +34,6 @@ VoxelData::VoxelData()
 	// Default to empty.
 	this->dataType = VoxelDataType::None;
 	this->type = VoxelType::Empty;
-	this->trans = false;
-	this->transWalkThru = false;
-	this->walkThru = false;
 }
 
 VoxelData::~VoxelData()
@@ -160,7 +157,7 @@ VoxelData VoxelData::makeDiagonal(int id, bool type1)
 	return data;
 }
 
-VoxelData VoxelData::makeTransparentWall(int id)
+VoxelData VoxelData::makeTransparentWall(int id, bool collider)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
@@ -173,6 +170,7 @@ VoxelData VoxelData::makeTransparentWall(int id)
 
 	VoxelData::TransparentWallData &transparentWall = data.transparentWall;
 	transparentWall.id = id % VoxelData::TOTAL_IDS;
+	transparentWall.collider = collider;
 
 	return data;
 }

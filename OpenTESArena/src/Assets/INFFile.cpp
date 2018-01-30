@@ -52,7 +52,8 @@ namespace
 		std::string textureName;
 		WallState::Mode mode;
 		int menuID;
-		bool dryChasm, lavaChasm, wetChasm, trans, transWalkThru, walkThru;
+		bool dryChasm, lavaChasm, wetChasm;
+		// *TRANS, *TRANSWALKTHRU, and *WALKTHRU are unused (set by voxel data instead).
 
 		WallState()
 		{
@@ -61,9 +62,6 @@ namespace
 			this->dryChasm = false;
 			this->lavaChasm = false;
 			this->wetChasm = false;
-			this->trans = false;
-			this->transWalkThru = false;
-			this->walkThru = false;
 		}
 	};
 
@@ -446,9 +444,9 @@ INFFile::INFFile(const std::string &filename)
 			const std::string LEVELDOWN_STR = "LEVELDOWN";
 			const std::string LEVELUP_STR = "LEVELUP";
 			const std::string MENU_STR = "MENU"; // Exterior <-> interior transitions.
-			const std::string TRANS_STR = "TRANS";
-			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU"; // Store signs, hedge archways.
-			const std::string WALKTHRU_STR = "WALKTHRU"; // Probably for hedge archways.
+			const std::string TRANS_STR = "TRANS"; // *TRANS is ignored.
+			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU"; // *TRANSWALKTHRU is ignored.
+			const std::string WALKTHRU_STR = "WALKTHRU"; // *WALKTHRU is ignored.
 			const std::string WETCHASM_STR = "WETCHASM";
 
 			// See what the type in the line is.
@@ -496,18 +494,18 @@ INFFile::INFFile(const std::string &filename)
 			}
 			else if (firstTokenType == TRANS_STR)
 			{
-				wallState->mode = WallState::Mode::Transition;
-				wallState->trans = true;
+				// Ignore *TRANS lines (unused).
+				static_cast<void>(firstTokenType);
 			}
 			else if (firstTokenType == TRANSWALKTHRU_STR)
 			{
-				wallState->mode = WallState::Mode::TransWalkThru;
-				wallState->transWalkThru = true;
+				// Ignore *TRANSWALKTHRU lines (unused).
+				static_cast<void>(firstTokenType);
 			}
 			else if (firstTokenType == WALKTHRU_STR)
 			{
-				wallState->mode = WallState::Mode::WalkThru;
-				wallState->walkThru = true;
+				// Ignore *WALKTHRU lines (unused).
+				static_cast<void>(firstTokenType);
 			}
 			else if (firstTokenType == WETCHASM_STR)
 			{
@@ -604,22 +602,6 @@ INFFile::INFFile(const std::string &filename)
 			else if (wallState->wetChasm)
 			{
 				this->wetChasmIndex = currentIndex;
-			}
-
-			// Add decorators (if any).
-			if (wallState->trans)
-			{
-				this->trans.insert(currentIndex);
-			}
-
-			if (wallState->transWalkThru)
-			{
-				this->transWalkThru.insert(currentIndex);
-			}
-
-			if (wallState->walkThru)
-			{
-				this->walkThru.insert(currentIndex);
 			}
 
 			// Write the texture index based on remaining wall modes.
@@ -1155,24 +1137,6 @@ const int *INFFile::getLevelUpIndex() const
 {
 	const int *ptr = &this->levelUpIndex;
 	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
-}
-
-bool INFFile::hasTransitionIndex(int index) const
-{
-	const auto iter = this->trans.find(index);
-	return iter != this->trans.end();
-}
-
-bool INFFile::hasTransWalkThruIndex(int index) const
-{
-	const auto iter = this->transWalkThru.find(index);
-	return iter != this->transWalkThru.end();
-}
-
-bool INFFile::hasWalkThruIndex(int index) const
-{
-	const auto iter = this->walkThru.find(index);
-	return iter != this->walkThru.end();
 }
 
 const int *INFFile::getWetChasmIndex() const
