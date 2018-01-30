@@ -703,11 +703,31 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					const int dataIndex = getDataIndex([map1Voxel]()
 					{
 						const int textureIndex = (map1Voxel & 0x003F) - 1;
+						const VoxelData::DoorData::Type doorType = [map1Voxel]()
+						{
+							const int type = (map1Voxel & 0x00C0) >> 4;
+							if (type == 0x0)
+							{
+								return VoxelData::DoorData::Type::Swinging;
+							}
+							else if (type == 0x4)
+							{
+								return VoxelData::DoorData::Type::Sliding;
+							}
+							else if (type == 0x8)
+							{
+								return VoxelData::DoorData::Type::Raising;
+							}
+							else
+							{
+								// I don't believe any doors in Arena split (but they are
+								// supported by the engine).
+								throw std::runtime_error("Bad door type \"" +
+									std::to_string(type) + "\".");
+							}
+						}();
 
-						// To do: see if *DOOR values in the .INF should actually be used 
-						// to determine which door type it is.
-						return VoxelData::makeDoor(
-							textureIndex, VoxelData::DoorData::Type::Swinging);
+						return VoxelData::makeDoor(textureIndex, doorType);
 					});
 
 					this->setVoxel(x, 1, z, dataIndex);
