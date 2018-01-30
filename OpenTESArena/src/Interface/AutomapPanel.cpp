@@ -147,12 +147,13 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 			{
 				const VoxelData &floorData = getVoxelData(x, 0, z);
 				const VoxelData &wallData = getVoxelData(x, 1, z);
-				const VoxelType floorType = floorData.type;
-				const VoxelType wallType = wallData.type;
 
 				// Decide which color to use for the automap pixel.
-				const Color &color = [floorType, wallType]() -> const Color&
+				const Color &color = [&floorData, &wallData]() -> const Color&
 				{
+					const VoxelType floorType = floorData.type;
+					const VoxelType wallType = wallData.type;
+
 					if (floorType == VoxelType::WetChasm)
 					{
 						// Water chasms ignore all but raised platforms.
@@ -194,9 +195,11 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 						}
 						else if (wallType == VoxelType::TransparentWall)
 						{
-							// To do: arches are not drawn on the automap, but hedges are.
-							// - Figure out how to differentiate between them.
-							return AutomapWall;
+							// Transparent walls with collision (hedges) are shown, while
+							// ones without collision (archways) are not.
+							const VoxelData::TransparentWallData &transparentWallData =
+								wallData.transparentWall;
+							return transparentWallData.collider ? AutomapWall : AutomapFloor;
 						}
 						else if (wallType == VoxelType::Edge)
 						{
