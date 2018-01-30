@@ -44,8 +44,8 @@ namespace
 	{
 		enum class Mode
 		{
-			None, BoxCap, BoxSide, DryChasm, LavaChasm, LevelDown, LevelUp,
-			Menu, Transition, TransWalkThru, WalkThru, WetChasm
+			None, BoxCap, BoxSide, DryChasm, LavaChasm,
+			LevelDown, LevelUp, Menu, WetChasm
 		};
 
 		std::vector<int> boxCapIDs, boxSideIDs;
