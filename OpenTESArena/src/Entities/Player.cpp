@@ -215,51 +215,59 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
-	auto isBridge = [](const VoxelData &voxel)
+	// - To do: formalize the collision calculation and get rid of this hack.
+	//   We should be able to cover all collision cases in Arena now.
+	auto wouldCollideWithVoxel = [](const VoxelData &voxelData)
 	{
-		if (voxel.dataType == VoxelDataType::Raised)
+		if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
-			const VoxelData::RaisedData &raised = voxel.raised;
-			return (raised.sideID == 42) && (raised.floorID == 43) &&
-				(raised.ceilingID == 43);
+			// Transparent wall collision.
+			const VoxelData::TransparentWallData &transparent = voxelData.transparentWall;
+			return transparent.collider;
 		}
 		else
 		{
-			return false;
+			// General voxel collision.
+			const bool isEmpty = voxelData.dataType == VoxelDataType::None;
+			const bool isDoor = voxelData.dataType == VoxelDataType::Door;
+			const bool isEdge = voxelData.dataType == VoxelDataType::Edge;
+
+			// -- Temporary hack for "on voxel enter" transitions --
+			// - To do: replace with "on would enter voxel" event and near facing check.
+			const bool isLevelUpDown = (voxelData.type == VoxelType::LevelUp) ||
+				(voxelData.type == VoxelType::LevelDown);
+
+			const bool isBridge = [&voxelData]()
+			{
+				if (voxelData.dataType == VoxelDataType::Raised)
+				{
+					// -- Temporary hack for test city --
+					const VoxelData::RaisedData &raised = voxelData.raised;
+					return (raised.sideID == 42) && (raised.floorID == 43) &&
+						(raised.ceilingID == 43);
+				}
+				else
+				{
+					return false;
+				}
+			}();
+
+			return !isEmpty && !isDoor && !isEdge && !isLevelUpDown && !isBridge;
 		}
 	};
 
-	// To do: formalize the collision calculation and get rid of this hack.
-	if ((xVoxel.type != VoxelType::Empty) && 
-		(xVoxel.type != VoxelType::Door) &&
-		(xVoxel.type != VoxelType::Edge) &&
-		(xVoxel.type != VoxelType::TransparentWall) &&
-		!isBridge(xVoxel))
+	if (wouldCollideWithVoxel(xVoxel))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if ((zVoxel.type != VoxelType::Empty) && 
-		(zVoxel.type != VoxelType::Door) &&
-		(zVoxel.type != VoxelType::Edge) &&
-		(zVoxel.type != VoxelType::TransparentWall) &&
-		!isBridge(zVoxel))
+	if (wouldCollideWithVoxel(zVoxel))
 	{
 		this->velocity.z = 0.0;
 	}
 
 	this->velocity.y = 0.0;
 	// -- end hack --
-
-	/*if (!xVoxel.isAir())
-	{
-		this->velocity.x = 0.0;
-	}
-
-	if (!zVoxel.isAir())
-	{
-		this->velocity.z = 0.0;
-	}*/
 
 	// To do: use an axis-aligned bounding box or cylinder instead of a point?
 }
