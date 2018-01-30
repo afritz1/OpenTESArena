@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
@@ -117,8 +118,10 @@ private:
 	// names, etc.).
 	std::array<int, 96> items;
 
-	// Some .INFs have an outlier (*DOOR 90), so this shouldn't be a sequential data structure.
-	//std::unordered_map<int, std::string> doorTextures; // Unused?
+	// Indices for which entries in a @WALLS section have certain decorators (*TRANS,
+	// *TRANSWALKTHRU, *WALKTHRU). These values affect things like collision and whether
+	// a tile appears on the automap.
+	std::unordered_set<int> trans, transWalkThru, walkThru;
 
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
@@ -135,8 +138,7 @@ private:
 	std::string name;
 
 	// References into the textures vector. -1 if unset.
-	int dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex,
-		transitionIndex, transWalkThruIndex, walkThruIndex, wetChasmIndex;
+	int dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
 
 	// Ceiling data (height, box scale(?), etc.).
 	CeilingData ceiling;
@@ -167,9 +169,9 @@ public:
 	const int *getLavaChasmIndex() const;
 	const int *getLevelDownIndex() const;
 	const int *getLevelUpIndex() const;
-	const int *getTransitionIndex() const;
-	const int *getTransWalkThruIndex() const;
-	const int *getWalkThruIndex() const;
+	bool hasTransitionIndex(int index) const;
+	bool hasTransWalkThruIndex(int index) const;
+	bool hasWalkThruIndex(int index) const;
 	const int *getWetChasmIndex() const;
 	const CeilingData &getCeiling() const;
 };

@@ -21,9 +21,6 @@ enum class VoxelType
 	LevelUp,
 	LevelDown,
 	Menu,
-	Transition,
-	TransWalkThru,
-	WalkThru,
 	Unknown, // Type 0xC voxel.
 
 	// Floor types.

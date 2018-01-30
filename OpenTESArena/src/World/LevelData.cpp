@@ -467,6 +467,26 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 		{
 			const uint16_t map1Voxel = getMap1Voxel(x, z);
 
+			// Lambda for setting voxel decorators (if any) for overriding values like collision
+			// and automap visibility.
+			auto setVoxelDecorators = [&inf](VoxelData &voxelData, int textureIndex)
+			{
+				if (inf.hasTransitionIndex(textureIndex))
+				{
+					voxelData.trans = true;
+				}
+
+				if (inf.hasTransWalkThruIndex(textureIndex))
+				{
+					voxelData.transWalkThru = true;
+				}
+
+				if (inf.hasWalkThruIndex(textureIndex))
+				{
+					voxelData.walkThru = true;
+				}
+			};
+
 			// Lambda for obtaining the index of a newly-added VoxelData object, and inserting
 			// it into the data mappings if it hasn't been already. The function parameter
 			// decodes the voxel and returns the created VoxelData.
@@ -500,7 +520,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					if (voxelIsSolid)
 					{
 						// Regular solid wall.
-						const int dataIndex = getDataIndex([&inf, mostSigByte]()
+						const int dataIndex = getDataIndex([&inf, &setVoxelDecorators, mostSigByte]()
 						{
 							const int textureIndex = mostSigByte - 1;
 
@@ -532,18 +552,6 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								{
 									return VoxelType::Menu;
 								}
-								else if (matchesIndex(inf.getTransitionIndex()))
-								{
-									return VoxelType::Transition;
-								}
-								else if (matchesIndex(inf.getTransWalkThruIndex()))
-								{
-									return VoxelType::TransWalkThru;
-								}
-								else if (matchesIndex(inf.getWalkThruIndex()))
-								{
-									return VoxelType::WalkThru;
-								}
 								else
 								{
 									return VoxelType::Solid;
@@ -559,6 +567,9 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								VoxelData::WallData &wallData = voxelData.wall;
 								wallData.menuID = menuIndex;
 							}
+
+							// Set decorators (if any).
+							setVoxelDecorators(voxelData, textureIndex);
 
 							return voxelData;
 						});
@@ -659,10 +670,16 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					// Transparent block with 1-sided texture on all sides, such as wooden 
 					// arches in dungeons. These do not have back-faces (especially when 
 					// standing in the voxel itself).
-					const int dataIndex = getDataIndex([map1Voxel]()
+					const int dataIndex = getDataIndex([map1Voxel, &setVoxelDecorators]()
 					{
 						const int textureIndex = (map1Voxel & 0x00FF) - 1;
-						return VoxelData::makeTransparentWall(textureIndex);
+
+						VoxelData voxelData = VoxelData::makeTransparentWall(textureIndex);
+						
+						// Set decorators (if any).
+						setVoxelDecorators(voxelData, textureIndex);
+
+						return voxelData;
 					});
 
 					this->setVoxel(x, 1, z, dataIndex);
@@ -677,7 +694,8 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					// in the original game (presumably a silent bug).
 					if (textureIndex >= 0)
 					{
-						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()
+						const int dataIndex = getDataIndex([map1Voxel,
+							&setVoxelDecorators, textureIndex]()
 						{
 							const VoxelData::Facing facing = [map1Voxel]()
 							{
@@ -702,7 +720,12 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								}
 							}();
 
-							return VoxelData::makeEdge(textureIndex, facing);
+							VoxelData voxelData = VoxelData::makeEdge(textureIndex, facing);
+
+							// Set decorators (if any).
+							setVoxelDecorators(voxelData, textureIndex);
+
+							return voxelData;
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);

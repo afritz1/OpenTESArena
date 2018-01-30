@@ -112,6 +112,7 @@ public:
 
 	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
 	VoxelType type; // Defines what the voxel is.
+	bool trans, transWalkThru, walkThru; // Decorators (collision, automap visibility, etc.).
 
 	VoxelData();
 	~VoxelData();

@@ -52,7 +52,7 @@ namespace
 		std::string textureName;
 		WallState::Mode mode;
 		int menuID;
-		bool dryChasm, lavaChasm, wetChasm;
+		bool dryChasm, lavaChasm, wetChasm, trans, transWalkThru, walkThru;
 
 		WallState()
 		{
@@ -61,6 +61,9 @@ namespace
 			this->dryChasm = false;
 			this->lavaChasm = false;
 			this->wetChasm = false;
+			this->trans = false;
+			this->transWalkThru = false;
+			this->walkThru = false;
 		}
 	};
 
@@ -205,9 +208,6 @@ INFFile::INFFile(const std::string &filename)
 	this->lavaChasmIndex = INFFile::NO_INDEX;
 	this->levelDownIndex = INFFile::NO_INDEX;
 	this->levelUpIndex = INFFile::NO_INDEX;
-	this->transitionIndex = INFFile::NO_INDEX;
-	this->transWalkThruIndex = INFFile::NO_INDEX;
-	this->walkThruIndex = INFFile::NO_INDEX;
 	this->wetChasmIndex = INFFile::NO_INDEX;
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
@@ -445,9 +445,9 @@ INFFile::INFFile(const std::string &filename)
 			const std::string LAVACHASM_STR = "LAVACHASM";
 			const std::string LEVELDOWN_STR = "LEVELDOWN";
 			const std::string LEVELUP_STR = "LEVELUP";
-			const std::string MENU_STR = "MENU"; // Doors leading to interiors.
+			const std::string MENU_STR = "MENU"; // Exterior <-> interior transitions.
 			const std::string TRANS_STR = "TRANS";
-			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU"; // Store signs, hedge archways. Ignored?
+			const std::string TRANSWALKTHRU_STR = "TRANSWALKTHRU"; // Store signs, hedge archways.
 			const std::string WALKTHRU_STR = "WALKTHRU"; // Probably for hedge archways.
 			const std::string WETCHASM_STR = "WETCHASM";
 
@@ -497,14 +497,17 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == TRANS_STR)
 			{
 				wallState->mode = WallState::Mode::Transition;
+				wallState->trans = true;
 			}
 			else if (firstTokenType == TRANSWALKTHRU_STR)
 			{
 				wallState->mode = WallState::Mode::TransWalkThru;
+				wallState->transWalkThru = true;
 			}
 			else if (firstTokenType == WALKTHRU_STR)
 			{
 				wallState->mode = WallState::Mode::WalkThru;
+				wallState->walkThru = true;
 			}
 			else if (firstTokenType == WETCHASM_STR)
 			{
@@ -603,6 +606,22 @@ INFFile::INFFile(const std::string &filename)
 				this->wetChasmIndex = currentIndex;
 			}
 
+			// Add decorators (if any).
+			if (wallState->trans)
+			{
+				this->trans.insert(currentIndex);
+			}
+
+			if (wallState->transWalkThru)
+			{
+				this->transWalkThru.insert(currentIndex);
+			}
+
+			if (wallState->walkThru)
+			{
+				this->walkThru.insert(currentIndex);
+			}
+
 			// Write the texture index based on remaining wall modes.
 			if (wallState->mode == WallState::Mode::LevelDown)
 			{
@@ -611,18 +630,6 @@ INFFile::INFFile(const std::string &filename)
 			else if (wallState->mode == WallState::Mode::LevelUp)
 			{
 				this->levelUpIndex = currentIndex;
-			}
-			else if (wallState->mode == WallState::Mode::Transition)
-			{
-				this->transitionIndex = currentIndex;
-			}
-			else if (wallState->mode == WallState::Mode::TransWalkThru)
-			{
-				this->transWalkThruIndex = currentIndex;
-			}
-			else if (wallState->mode == WallState::Mode::WalkThru)
-			{
-				this->walkThruIndex = currentIndex;
 			}
 
 			wallState = std::unique_ptr<WallState>(new WallState());
@@ -1150,22 +1157,22 @@ const int *INFFile::getLevelUpIndex() const
 	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
 }
 
-const int *INFFile::getTransitionIndex() const
+bool INFFile::hasTransitionIndex(int index) const
 {
-	const int *ptr = &this->transitionIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	const auto iter = this->trans.find(index);
+	return iter != this->trans.end();
 }
 
-const int *INFFile::getTransWalkThruIndex() const
+bool INFFile::hasTransWalkThruIndex(int index) const
 {
-	const int *ptr = &this->transWalkThruIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	const auto iter = this->transWalkThru.find(index);
+	return iter != this->transWalkThru.end();
 }
 
-const int *INFFile::getWalkThruIndex() const
+bool INFFile::hasWalkThruIndex(int index) const
 {
-	const int *ptr = &this->walkThruIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	const auto iter = this->walkThru.find(index);
+	return iter != this->walkThru.end();
 }
 
 const int *INFFile::getWetChasmIndex() const

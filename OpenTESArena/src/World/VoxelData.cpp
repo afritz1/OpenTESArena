@@ -34,6 +34,9 @@ VoxelData::VoxelData()
 	// Default to empty.
 	this->dataType = VoxelDataType::None;
 	this->type = VoxelType::Empty;
+	this->trans = false;
+	this->transWalkThru = false;
+	this->walkThru = false;
 }
 
 VoxelData::~VoxelData()
