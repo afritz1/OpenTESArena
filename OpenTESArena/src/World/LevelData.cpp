@@ -668,6 +668,10 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 					{
 						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()
 						{
+							const double yOffset =
+								static_cast<double>((map1Voxel & 0x0E00) >> 8) / 7.0;
+							const bool collider = (map1Voxel & 0x0100) != 0;
+
 							const VoxelData::Facing facing = [map1Voxel]()
 							{
 								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
@@ -691,7 +695,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 								}
 							}();
 
-							return VoxelData::makeEdge(textureIndex, facing);
+							return VoxelData::makeEdge(textureIndex, yOffset, collider, facing);
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);

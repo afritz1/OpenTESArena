@@ -71,6 +71,8 @@ public:
 	struct EdgeData
 	{
 		int id;
+		double yOffset;
+		bool collider;
 		Facing facing;
 	};
 
@@ -124,7 +126,7 @@ public:
 		double ySize, double vTop, double vBottom);
 	static VoxelData makeDiagonal(int id, bool type1);
 	static VoxelData makeTransparentWall(int id, bool collider);
-	static VoxelData makeEdge(int id, Facing facing);
+	static VoxelData makeEdge(int id, double yOffset, bool collider, Facing facing);
 	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
 		ChasmData::Type type);
 	static VoxelData makeDoor(int id, DoorData::Type type);

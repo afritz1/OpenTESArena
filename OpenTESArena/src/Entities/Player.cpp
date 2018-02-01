@@ -225,12 +225,18 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			const VoxelData::TransparentWallData &transparent = voxelData.transparentWall;
 			return transparent.collider;
 		}
+		else if (voxelData.dataType == VoxelDataType::Edge)
+		{
+			// Edge collision.
+			// - To do: treat as edge, not solid voxel.
+			const VoxelData::EdgeData &edge = voxelData.edge;
+			return edge.collider;
+		}
 		else
 		{
 			// General voxel collision.
 			const bool isEmpty = voxelData.dataType == VoxelDataType::None;
 			const bool isDoor = voxelData.dataType == VoxelDataType::Door;
-			const bool isEdge = voxelData.dataType == VoxelDataType::Edge;
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - To do: replace with "on would enter voxel" event and near facing check.
@@ -243,8 +249,8 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 				{
 					// -- Temporary hack for test city --
 					const VoxelData::RaisedData &raised = voxelData.raised;
-					return (raised.sideID == 42) && (raised.floorID == 43) &&
-						(raised.ceilingID == 43);
+					return (raised.sideID == 41) && (raised.floorID == 42) &&
+						(raised.ceilingID == 42);
 				}
 				else
 				{
@@ -252,7 +258,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 				}
 			}();
 
-			return !isEmpty && !isDoor && !isEdge && !isLevelUpDown && !isBridge;
+			return !isEmpty && !isDoor && !isLevelUpDown && !isBridge;
 		}
 	};
 

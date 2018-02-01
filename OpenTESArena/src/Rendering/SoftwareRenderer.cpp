@@ -2043,12 +2043,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + voxelHeight,
+					camera.eyeVoxelReal.y + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y,
+					camera.eyeVoxelReal.y + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -2364,12 +2364,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					voxelYReal + voxelHeight,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					voxelYReal,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -2685,12 +2685,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					voxelYReal + voxelHeight,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					voxelYReal,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -2983,12 +2983,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + voxelHeight,
+					camera.eyeVoxelReal.y + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y,
+					camera.eyeVoxelReal.y + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -3370,12 +3370,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					voxelYReal + voxelHeight,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					voxelYReal,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -3758,12 +3758,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					voxelYReal + voxelHeight,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					voxelYReal,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
