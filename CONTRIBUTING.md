@@ -93,7 +93,7 @@ We're using C++11, so we regularly use all of the nice features like:
 
 ### My Development Environment
 - Windows 7 x64
-- Visual Studio 2015 (with VS2013 toolset)
+- Visual Studio 2015
 - CMake GUI
 - GitHub Desktop for Windows
 - DOSBox
