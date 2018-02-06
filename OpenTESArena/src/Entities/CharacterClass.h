@@ -7,7 +7,6 @@
 enum class ArmorMaterialType;
 enum class CharacterClassCategoryName;
 enum class ShieldType;
-enum class WeaponType;
 
 class CharacterClass
 {
@@ -15,7 +14,7 @@ private:
 	std::string name, preferredAttributes;
 	std::vector<ArmorMaterialType> allowedArmors;
 	std::vector<ShieldType> allowedShields;
-	std::vector<WeaponType> allowedWeapons;
+	std::vector<int> allowedWeapons;
 	CharacterClassCategoryName categoryName;
 	double lockpicking; // Lockpick effectiveness percent.
 	int healthDie; // Die used in character generation (d8, d20, ...).
@@ -26,7 +25,7 @@ public:
 	CharacterClass(const std::string &name, const std::string &preferredAttributes,
 		const std::vector<ArmorMaterialType> &allowedArmors,
 		const std::vector<ShieldType> &allowedShields,
-		const std::vector<WeaponType> &allowedWeapons,
+		const std::vector<int> &allowedWeapons,
 		CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
 		int initialExperienceCap, int classIndex, bool mage, bool thief, bool criticalHit);
 	~CharacterClass();
@@ -35,7 +34,7 @@ public:
 	const std::string &getPreferredAttributes() const;
 	const std::vector<ArmorMaterialType> &getAllowedArmors() const;
 	const std::vector<ShieldType> &getAllowedShields() const;
-	const std::vector<WeaponType> &getAllowedWeapons() const;
+	const std::vector<int> &getAllowedWeapons() const;
 	CharacterClassCategoryName getCategoryName() const;
 	double getLockpicking() const;
 	int getHealthDie() const;

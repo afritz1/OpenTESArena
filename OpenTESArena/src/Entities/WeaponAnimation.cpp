@@ -1,36 +1,14 @@
+#include <array>
 #include <cassert>
 #include <map>
 
 #include "WeaponAnimation.h"
-#include "../Items/WeaponType.h"
+#include "../Assets/ExeStrings.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 namespace
 {
-	// Mappings of weapon types to .CIF filenames.
-	const std::map<WeaponType, std::string> WeaponTypeFilenames =
-	{
-		{ WeaponType::BattleAxe, "AXE" },
-		{ WeaponType::Broadsword, "SWORD" },
-		{ WeaponType::Claymore, "SWORD" },
-		{ WeaponType::Dagger, "SWORD" },
-		{ WeaponType::DaiKatana, "SWORD" },
-		{ WeaponType::Fists, "HAND" },
-		{ WeaponType::Flail, "STAR" },
-		{ WeaponType::Katana, "SWORD" },
-		{ WeaponType::LongBow, "" }, // Bows have no animations.
-		{ WeaponType::Longsword, "SWORD" },
-		{ WeaponType::Mace, "MACE" },
-		{ WeaponType::Saber, "SWORD" },
-		{ WeaponType::ShortBow, "" }, // Bows have no animations.
-		{ WeaponType::Shortsword, "SWORD" },
-		{ WeaponType::Staff, "STAFF" },
-		{ WeaponType::Tanto, "SWORD" },
-		{ WeaponType::Wakizashi, "SWORD" },
-		{ WeaponType::WarAxe, "AXE" },
-		{ WeaponType::Warhammer, "HAMMER" }
-	};
-
 	// Mappings of weapon animation states to ranges of frame indices, excluding fists.
 	const std::map<WeaponAnimation::State, std::vector<int>> WeaponAnimationRanges =
 	{
@@ -63,15 +41,52 @@ namespace
 }
 
 const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
+const int WeaponAnimation::FISTS_ID = -1;
 
-WeaponAnimation::WeaponAnimation(WeaponType weaponType)
+WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
 {
-	// Bows are not allowed because they have no animation.
-	DebugAssert((weaponType != WeaponType::LongBow) && (weaponType != WeaponType::ShortBow),
-		"Bows do not have weapon animations.");
+	// Bows are not allowed yet.
+	const bool weaponIsRanged = (weaponID == 16) || (weaponID == 17);
+	DebugAssert(!weaponIsRanged, "Bow animations not implemented.");
 
 	this->state = WeaponAnimation::State::Sheathed;
-	this->weaponType = weaponType;
+	this->weaponID = weaponID;
+	this->animationFilename = [weaponID, &exeStrings]()
+	{
+		// Get the filename associated with the weapon ID. These indices point into the
+		// filenames list.
+		const std::array<int, 18> WeaponFilenameMappings =
+		{
+			0, // Staff
+			1, // Dagger
+			1, // Shortsword
+			1, // Broadsword
+			1, // Saber
+			1, // Longsword
+			1, // Claymore
+			1, // Tanto
+			1, // Wakizashi
+			1, // Katana
+			1, // Dai-katana
+			2, // Mace
+			3, // Flail
+			4, // War hammer
+			5, // War axe
+			5, // Battle axe
+			6, // Short bow
+			6 // Long bow
+		};
+
+		const int fistsFilenameIndex = 7;
+		const int index = (weaponID != WeaponAnimation::FISTS_ID) ?
+			WeaponFilenameMappings.at(weaponID) : fistsFilenameIndex;
+
+		const std::vector<std::string> &animationList =
+			exeStrings.getList(ExeStringKey::WeaponAnimationFilenames);
+		const std::string &filename = animationList.at(index);
+		return String::toUppercase(filename);
+	}();
+
 	this->currentTime = 0.0;
 	this->timePerFrame = WeaponAnimation::DEFAULT_TIME_PER_FRAME;
 	this->rangeIndex = 0;
@@ -84,7 +99,7 @@ WeaponAnimation::~WeaponAnimation()
 
 const std::vector<int> &WeaponAnimation::getCurrentRange() const
 {
-	const std::vector<int> &indices = (this->weaponType == WeaponType::Fists) ?
+	const std::vector<int> &indices = (this->weaponID == WeaponAnimation::FISTS_ID) ?
 		FistsAnimationRanges.at(this->state) : WeaponAnimationRanges.at(this->state);
 	return indices;
 }
@@ -101,8 +116,7 @@ bool WeaponAnimation::isIdle() const
 
 const std::string &WeaponAnimation::getAnimationFilename() const
 {
-	const std::string &filename = WeaponTypeFilenames.at(this->weaponType);
-	return filename;
+	return this->animationFilename;
 }
 
 int WeaponAnimation::getFrameIndex() const

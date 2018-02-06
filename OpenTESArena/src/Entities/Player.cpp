@@ -8,7 +8,6 @@
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
-#include "../Items/WeaponType.h"
 #include "../Math/Constants.h"
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
@@ -26,10 +25,10 @@ const double Player::FRICTION = 4.0;
 Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-	double maxRunSpeed, WeaponType weaponType)
+	double maxRunSpeed, int weaponID, const ExeStrings &exeStrings)
 	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponType)
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeStrings)
 {
 	assert(portraitID >= 0);
 }

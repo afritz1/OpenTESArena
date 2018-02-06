@@ -187,7 +187,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Generate a random player character for the game data.
 			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
-				game.getMiscAssets().getClassDefinitions(), game.getTextureManager(), renderer);
+				game.getMiscAssets().getClassDefinitions(), game.getMiscAssets().getAExeStrings(),
+				game.getTextureManager(), renderer);
 
 			// Overwrite game level with a .MIF file.
 			const MIFFile mif(mifName);

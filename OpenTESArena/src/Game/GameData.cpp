@@ -17,7 +17,6 @@
 #include "../Entities/NonPlayer.h"
 #include "../Entities/Player.h"
 #include "../Interface/TextBox.h"
-#include "../Items/WeaponType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
@@ -168,7 +167,7 @@ void GameData::loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &pl
 
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	GenderName gender, int raceID, const CharacterClass &charClass, int portraitID,
-	TextureManager &textureManager, Renderer &renderer)
+	const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer)
 {
 	// Create some dummy data for the test world.
 
@@ -178,27 +177,21 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const Double3 velocity = Double3::Zero;
 	const double maxWalkSpeed = 2.0;
 	const double maxRunSpeed = 8.0;
-	const WeaponType weaponType = []()
+	const int weaponID = []()
 	{
-		// Pick a random weapon type for testing.
-		const std::vector<WeaponType> types =
+		// Pick a random weapon for testing. Ignore bows for now (16 and 17). Fists are -1.
+		const std::vector<int> weapons =
 		{
-			WeaponType::BattleAxe,
-			WeaponType::Broadsword,
-			WeaponType::Fists,
-			WeaponType::Flail,
-			WeaponType::Mace,
-			WeaponType::Staff,
-			WeaponType::Warhammer
+			-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 		};
 
 		Random random;
-		int index = random.next(static_cast<int>(types.size()));
-		return types.at(index);
+		int index = random.next(static_cast<int>(weapons.size()));
+		return weapons.at(index);
 	}();
 
-	Player player(playerName, gender, raceID, charClass, portraitID,
-		position, direction, velocity, maxWalkSpeed, maxRunSpeed, weaponType);
+	Player player(playerName, gender, raceID, charClass, portraitID, position,
+		direction, velocity, maxWalkSpeed, maxRunSpeed, weaponID, exeStrings);
 
 	// Add some wall textures.
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
@@ -710,7 +703,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 }
 
 std::unique_ptr<GameData> GameData::createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
-	TextureManager &textureManager, Renderer &renderer)
+	const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer)
 {
 	Random random;
 	const std::string playerName = "Player";
@@ -721,7 +714,7 @@ std::unique_ptr<GameData> GameData::createRandomPlayer(const std::vector<Charact
 	const int portraitID = random.next(10);
 
 	return GameData::createDefault(playerName, gender, raceID, charClass,
-		portraitID, textureManager, renderer);
+		portraitID, exeStrings, textureManager, renderer);
 }
 
 std::pair<double, std::unique_ptr<TextBox>> &GameData::getTriggerText()

@@ -7,7 +7,6 @@
 #include "ItemConditionName.h"
 #include "Metal.h"
 #include "ShieldType.h"
-#include "WeaponType.h"
 #include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
 
@@ -26,148 +25,9 @@ const std::map<ItemConditionName, std::string> ItemConditionDisplayNames =
 	{ ItemConditionName::Broken, "Broken" }
 };
 
-// Theoretically, a very poor piece of armor will break in only a couple hundred
-// hits, while a very nice piece of armor will last thousands of hits.
-const std::map<BodyPartName, int> ItemConditionArmorMaxConditions =
-{
-	{ BodyPartName::Head, 300 },
-	{ BodyPartName::RightShoulder, 320 },
-	{ BodyPartName::LeftShoulder, 320 },
-	{ BodyPartName::Chest, 550 },
-	{ BodyPartName::Hands, 300 },
-	{ BodyPartName::Legs, 350 },
-	{ BodyPartName::Feet, 320 }
-};
-
-const std::map<ShieldType, int> ItemConditionShieldMaxConditions =
-{
-	{ ShieldType::Buckler, 400 },
-	{ ShieldType::Round, 600 },
-	{ ShieldType::Kite, 700 },
-	{ ShieldType::Tower, 800 }
-};
-
-// The relative number of strikes a weapon can make before breaking, before
-// any material multipliers.
-const std::map<WeaponType, int> ItemConditionWeaponMaxConditions =
-{
-	{ WeaponType::BattleAxe, 600 },
-	{ WeaponType::Broadsword, 500 },
-	{ WeaponType::Claymore, 550 },
-	{ WeaponType::Dagger, 350 },
-	{ WeaponType::DaiKatana, 550 },
-	{ WeaponType::Fists, 1 },
-	{ WeaponType::Flail, 500 },
-	{ WeaponType::Katana, 500 },
-	{ WeaponType::LongBow, 500 },
-	{ WeaponType::Longsword, 500 },
-	{ WeaponType::Mace, 525 },
-	{ WeaponType::Saber, 500 },
-	{ WeaponType::ShortBow, 450 },
-	{ WeaponType::Shortsword, 450 },
-	{ WeaponType::Staff, 450 },
-	{ WeaponType::Tanto, 350 },
-	{ WeaponType::Wakizashi, 400 },
-	{ WeaponType::WarAxe, 500 },
-	{ WeaponType::Warhammer, 600 }
-};
-
-// Rates for how quick each item receives degradation per "degrade". The majority
-// of these rates will be 1, since that's how the max conditions are designed,
-// though fists cannot degrade at all, so their rate is 0.
-const std::map<BodyPartName, int> ItemConditionArmorDegradeRates =
-{
-	{ BodyPartName::Head, 1 },
-	{ BodyPartName::RightShoulder, 1 },
-	{ BodyPartName::LeftShoulder, 1 },
-	{ BodyPartName::Chest, 1 },
-	{ BodyPartName::Hands, 1 },
-	{ BodyPartName::Legs, 1 },
-	{ BodyPartName::Feet, 1 }
-};
-
-const std::map<ShieldType, int> ItemConditionShieldDegradeRates =
-{
-	{ ShieldType::Buckler, 1 },
-	{ ShieldType::Round, 1 },
-	{ ShieldType::Kite, 1 },
-	{ ShieldType::Tower, 1 }
-};
-
-const std::map<WeaponType, int> ItemConditionWeaponDegradeRates =
-{
-	{ WeaponType::BattleAxe, 1 },
-	{ WeaponType::Broadsword, 1 },
-	{ WeaponType::Claymore, 1 },
-	{ WeaponType::Dagger, 1 },
-	{ WeaponType::DaiKatana, 1 },
-	{ WeaponType::Fists, 0 }, // Fists have zero degrade.
-	{ WeaponType::Flail, 1 },
-	{ WeaponType::Katana, 1 },
-	{ WeaponType::LongBow, 1 },
-	{ WeaponType::Longsword, 1 },
-	{ WeaponType::Mace, 1 },
-	{ WeaponType::Saber, 1 },
-	{ WeaponType::ShortBow, 1 },
-	{ WeaponType::Shortsword, 1 },
-	{ WeaponType::Staff, 1 },
-	{ WeaponType::Tanto, 1 },
-	{ WeaponType::Wakizashi, 1 },
-	{ WeaponType::WarAxe, 1 },
-	{ WeaponType::Warhammer, 1 }
-};
-
-ItemCondition::ItemCondition(BodyPartName partName, const ArmorMaterial &material)
-{
-	const int &maxArmorCondition = ItemConditionArmorMaxConditions.at(partName);
-
-	// I rolled the material multiplier (leather, chain, plate) in with the metal 
-	// multiplier (iron, steel, etc.), so no special type data is needed.
-	int materialMultiplier = material.getConditionMultiplier();
-
-	this->maxCondition = maxArmorCondition * materialMultiplier;
-	this->currentCondition = this->maxCondition;
-	this->degradeRate = ItemConditionArmorDegradeRates.at(partName);
-
-	assert(this->maxCondition > 0);
-	assert(this->degradeRate >= 0);
-}
-
-ItemCondition::ItemCondition(ShieldType shieldType, const Metal &metal)
-{
-	const int &maxShieldCondition = ItemConditionShieldMaxConditions.at(shieldType);
-	int metalMultiplier = metal.getConditionMultiplier();
-
-	this->maxCondition = maxShieldCondition * metalMultiplier;
-	this->currentCondition = this->maxCondition;
-	this->degradeRate = ItemConditionShieldDegradeRates.at(shieldType);
-
-	assert(this->maxCondition > 0);
-	assert(this->degradeRate >= 0);
-}
-
-ItemCondition::ItemCondition(WeaponType weaponType, const Metal &metal)
-{
-	const int &maxWeaponCondition = ItemConditionWeaponMaxConditions.at(weaponType);
-	int metalMultiplier = metal.getConditionMultiplier();
-
-	this->maxCondition = maxWeaponCondition * metalMultiplier;
-	this->currentCondition = this->maxCondition;
-	this->degradeRate = ItemConditionWeaponDegradeRates.at(weaponType);
-
-	assert(this->maxCondition > 0);
-	assert(this->degradeRate >= 0);
-}
-
 ItemCondition::ItemCondition()
 {
-	auto weaponType = WeaponType::Fists;
-	this->maxCondition = ItemConditionWeaponMaxConditions.at(weaponType);
-	this->currentCondition = this->maxCondition;
-	this->degradeRate = ItemConditionWeaponDegradeRates.at(weaponType);
-
-	assert(this->maxCondition > 0);
-	assert(this->degradeRate >= 0);
+	// Initialized by static methods.
 }
 
 ItemCondition::~ItemCondition()
@@ -175,16 +35,69 @@ ItemCondition::~ItemCondition()
 
 }
 
+ItemCondition ItemCondition::makeArmorCondition(BodyPartName partName, const ArmorMaterial &material)
+{
+	// To do: use values from original game.
+	ItemCondition itemCondition;
+
+	const int maxArmorCondition = 1;
+
+	// I rolled the material multiplier (leather, chain, plate) in with the metal 
+	// multiplier (iron, steel, etc.), so no special type data is needed.
+	const int materialMultiplier = material.getConditionMultiplier();
+
+	itemCondition.maxCondition = maxArmorCondition * materialMultiplier;
+	itemCondition.currentCondition = itemCondition.maxCondition;
+	itemCondition.degradeRate = 1;
+	return itemCondition;
+}
+
+ItemCondition ItemCondition::makeShieldCondition(ShieldType shieldType, const Metal &metal)
+{
+	// To do: use values from original game.
+	ItemCondition itemCondition;
+
+	const int maxShieldCondition = 1;
+	const int metalMultiplier = metal.getConditionMultiplier();
+
+	itemCondition.maxCondition = maxShieldCondition * metalMultiplier;
+	itemCondition.currentCondition = itemCondition.maxCondition;
+	itemCondition.degradeRate = 1;
+	return itemCondition;
+}
+
+ItemCondition ItemCondition::makeWeaponCondition(int weaponID, const Metal &metal)
+{
+	// To do: use values from original game.
+	ItemCondition itemCondition;
+
+	const int maxWeaponCondition = 1;
+	const int metalMultiplier = metal.getConditionMultiplier();
+
+	itemCondition.maxCondition = maxWeaponCondition * metalMultiplier;
+	itemCondition.currentCondition = itemCondition.maxCondition;
+	itemCondition.degradeRate = 1;
+	return itemCondition;
+}
+
+ItemCondition ItemCondition::makeFistsCondition()
+{
+	ItemCondition itemCondition;
+	itemCondition.maxCondition = 1;
+	itemCondition.currentCondition = itemCondition.maxCondition;
+	itemCondition.degradeRate = 0;
+	return itemCondition;
+}
+
 ItemConditionName ItemCondition::getCurrentConditionName() const
 {
 	assert(this->maxCondition > 0);
 
-	double percent = static_cast<double>(this->currentCondition) /
+	const double percent = static_cast<double>(this->currentCondition) /
 		static_cast<double>(this->maxCondition);
 
-	// Placeholder condition ranges:
-	// The condition ranges don't need to be uniformly distributed. We can give
-	// the player a bit more leeway when the item condition is critical.
+	// Placeholder condition ranges.
+	// - To do: get actual condition ranges.
 	if (percent > 0.90)
 	{
 		return ItemConditionName::New;

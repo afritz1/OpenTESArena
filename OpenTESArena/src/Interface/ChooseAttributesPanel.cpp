@@ -234,6 +234,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						// Generate the test world data.
 						std::unique_ptr<GameData> gameData = GameData::createDefault(
 							name, gender, raceID, charClass, this->portraitID,
+							game.getMiscAssets().getAExeStrings(),
 							game.getTextureManager(), renderer);
 
 						// Set the game data before constructing the game world panel.

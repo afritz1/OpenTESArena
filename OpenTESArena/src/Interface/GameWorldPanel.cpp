@@ -383,7 +383,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	// player can ever change weapons in-game (i.e., with a hotkey), then this will
 	// need to be moved into update() instead.
 	const auto &weaponAnimation = game.getGameData().getPlayer().getWeaponAnimation();
-	const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
+	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 	const CIFFile cifFile(weaponFilename, Palette());
 	
 	for (int i = 0; i < cifFile.getImageCount(); i++)
@@ -1560,7 +1560,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	if (!weaponAnimation.isSheathed())
 	{
 		const int index = weaponAnimation.getFrameIndex();
-		const std::string weaponFilename = weaponAnimation.getAnimationFilename() + ".CIF";
+		const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
 		const Int2 &weaponOffset = this->weaponOffsets.at(index);
 

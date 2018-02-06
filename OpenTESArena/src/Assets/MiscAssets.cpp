@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cctype>
 #include <cstring>
+#include <numeric>
 #include <sstream>
 
 #include "ExeStrings.h"
@@ -10,7 +11,6 @@
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
-#include "../Items/WeaponType.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
@@ -404,7 +404,7 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			}
 		}();
 
-		const std::vector<WeaponType> allowedWeapons = [&exeText,
+		const std::vector<int> allowedWeapons = [&exeText,
 			dataSegmentOffset, &allowedWeaponsStrs, i]()
 		{
 			// Use the pointer offset at the 'i' index of the weapon pointers to find which
@@ -412,20 +412,20 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			const std::string &offsetStr = allowedWeaponsStrs.at(i);
 			const uint16_t offset = Bytes::getLE16(
 				reinterpret_cast<const uint8_t*>(offsetStr.data()));
+			
+			// Weapon IDs as they are shown in the executable (staff, sword, ..., long bow).
+			const std::vector<int> WeaponIDs = []()
+			{
+				std::vector<int> weapons(18);
+				std::iota(weapons.begin(), weapons.end(), 0);
+				return weapons;
+			}();
 
 			// If the pointer offset is "null", that means all weapons are allowed for this class.
 			// Otherwise, read each byte in the array until a 0xFF byte.
 			if (offset == 0)
 			{
-				return std::vector<WeaponType>
-				{
-					WeaponType::BattleAxe, WeaponType::Broadsword, WeaponType::Claymore,
-					WeaponType::Dagger, WeaponType::DaiKatana, WeaponType::Flail,
-					WeaponType::Katana, WeaponType::LongBow, WeaponType::Longsword,
-					WeaponType::Mace, WeaponType::Saber, WeaponType::ShortBow,
-					WeaponType::Shortsword, WeaponType::Staff, WeaponType::Tanto,
-					WeaponType::Wakizashi, WeaponType::WarAxe, WeaponType::Warhammer
-				};
+				return WeaponIDs;
 			}
 			else
 			{
@@ -434,23 +434,11 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 				const uint8_t endByte = 0xFF;
 
 				int index = 0;
-				std::vector<WeaponType> weapons;
+				std::vector<int> weapons;
 
 				// Read weapon IDs until the end byte.
 				while (true)
 				{
-					// Mappings of weapon IDs to weapon types, ordered as they are shown in 
-					// the executable.
-					const std::array<WeaponType, 18> WeaponIDMappings =
-					{
-						WeaponType::Staff, WeaponType::Dagger, WeaponType::Shortsword,
-						WeaponType::Broadsword, WeaponType::Saber, WeaponType::Longsword,
-						WeaponType::Claymore, WeaponType::Tanto, WeaponType::Wakizashi,
-						WeaponType::Katana, WeaponType::DaiKatana, WeaponType::Mace,
-						WeaponType::Flail, WeaponType::Warhammer, WeaponType::WarAxe,
-						WeaponType::BattleAxe, WeaponType::ShortBow, WeaponType::LongBow
-					};
-
 					const uint8_t weaponID = static_cast<uint8_t>(exeText.at(arrayStart + index));
 
 					if (weaponID == endByte)
@@ -459,7 +447,7 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 					}
 					else
 					{
-						weapons.push_back(WeaponIDMappings.at(weaponID));
+						weapons.push_back(WeaponIDs.at(weaponID));
 					}
 
 					index++;

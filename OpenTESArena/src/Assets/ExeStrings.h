@@ -93,7 +93,9 @@ enum class ExeStringKey
 	// Equipment-related names.
 	ArmorNames,
 	ShieldNames,
-	WeaponNames
+	WeaponNames,
+	MetalNames,
+	WeaponAnimationFilenames
 };
 
 namespace std

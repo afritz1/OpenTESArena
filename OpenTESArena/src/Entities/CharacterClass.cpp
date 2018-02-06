@@ -5,13 +5,12 @@
 #include "CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
-#include "../Items/WeaponType.h"
 
 CharacterClass::CharacterClass(const std::string &name,
 	const std::string &preferredAttributes,
 	const std::vector<ArmorMaterialType> &allowedArmors,
 	const std::vector<ShieldType> &allowedShields,
-	const std::vector<WeaponType> &allowedWeapons,
+	const std::vector<int> &allowedWeapons,
 	CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
 	int initialExperienceCap, int classIndex, bool mage, bool thief, bool criticalHit)
 	: name(name), preferredAttributes(preferredAttributes), allowedArmors(allowedArmors),
@@ -52,7 +51,7 @@ const std::vector<ShieldType> &CharacterClass::getAllowedShields() const
 	return this->allowedShields;
 }
 
-const std::vector<WeaponType> &CharacterClass::getAllowedWeapons() const
+const std::vector<int> &CharacterClass::getAllowedWeapons() const
 {
 	return this->allowedWeapons;
 }

@@ -16,25 +16,27 @@ class Random;
 enum class BodyPartName;
 enum class ItemConditionName;
 enum class ShieldType;
-enum class WeaponType;
 
 class ItemCondition
 {
 private:
 	int currentCondition, maxCondition, degradeRate;
+
+	ItemCondition();
 public:
+	~ItemCondition();
+
 	// Item condition for a piece of armor of the given type.
-	ItemCondition(BodyPartName partName, const ArmorMaterial &material);
-	
+	static ItemCondition makeArmorCondition(BodyPartName partName, const ArmorMaterial &material);
+
 	// Item condition for a shield of the given type.
-	ItemCondition(ShieldType shieldType, const Metal &metal);
+	static ItemCondition makeShieldCondition(ShieldType shieldType, const Metal &metal);
 
 	// Item condition for a weapon of the given type, excluding fists.
-	ItemCondition(WeaponType weaponType, const Metal &metal);
+	static ItemCondition makeWeaponCondition(int weaponID, const Metal &metal);
 
-	// Item condition for fists. Fists do not degrade in condition.
-	ItemCondition();
-	~ItemCondition();
+	// Item condition for fists.
+	static ItemCondition makeFistsCondition();
 	
 	ItemConditionName getCurrentConditionName() const;
 	bool isBroken() const;

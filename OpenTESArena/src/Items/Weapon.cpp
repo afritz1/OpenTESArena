@@ -1,5 +1,5 @@
+#include <array>
 #include <cassert>
-#include <map>
 
 #include "ItemType.h"
 #include "Metal.h"
@@ -7,170 +7,157 @@
 #include "WeaponArtifactData.h"
 #include "WeaponHandCount.h"
 #include "WeaponRangeName.h"
-#include "WeaponType.h"
+#include "../Assets/ExeStrings.h"
+#include "../Utilities/Debug.h"
 
-// The manual mentions chain and plate gauntlets, but I don't think those are really
-// in the game. It says they have weights too, but that doesn't make sense because
-// stats like that depend on the armor pieces themselves. I'll just roll both of them
-// into "fists". Maybe I'll add a damage modifier to gauntlets, but don't count on it.
-const std::map<WeaponType, std::string> WeaponTypeDisplayNames =
-{
-	{ WeaponType::BattleAxe, "Battle Axe" },
-	{ WeaponType::Broadsword, "Broadsword" },
-	{ WeaponType::Claymore, "Claymore" },
-	{ WeaponType::Dagger, "Dagger" },
-	{ WeaponType::DaiKatana, "Dai-Katana" },
-	{ WeaponType::Fists, "Fists" },
-	{ WeaponType::Flail, "Flail" },
-	{ WeaponType::Katana, "Katana" },
-	{ WeaponType::LongBow, "Long Bow" },
-	{ WeaponType::Longsword, "Longsword" },
-	{ WeaponType::Mace, "Mace" },
-	{ WeaponType::Saber, "Saber" },
-	{ WeaponType::ShortBow, "Short Bow" },
-	{ WeaponType::Shortsword, "Shortsword" },
-	{ WeaponType::Staff, "Staff" },
-	{ WeaponType::Tanto, "Tanto" },
-	{ WeaponType::Wakizashi, "Wakizashi" },
-	{ WeaponType::WarAxe, "War Axe" },
-	{ WeaponType::Warhammer, "Warhammer" }
-};
+// To do: most of this class could be in MiscAssets as plain old data, and any instance-related
+// things (condition, artifact state, etc.) would be in this class.
 
-const std::map<WeaponType, WeaponHandCount> WeaponTypeHandCounts =
+namespace
 {
-	{ WeaponType::BattleAxe, WeaponHandCount::Two },
-	{ WeaponType::Broadsword, WeaponHandCount::One },
-	{ WeaponType::Claymore, WeaponHandCount::Two },
-	{ WeaponType::Dagger, WeaponHandCount::One },
-	{ WeaponType::DaiKatana, WeaponHandCount::Two },
-	{ WeaponType::Fists, WeaponHandCount::One },
-	{ WeaponType::Flail, WeaponHandCount::Two },
-	{ WeaponType::Katana, WeaponHandCount::One },
-	{ WeaponType::LongBow, WeaponHandCount::Two },
-	{ WeaponType::Longsword, WeaponHandCount::One },
-	{ WeaponType::Mace, WeaponHandCount::One },
-	{ WeaponType::Saber, WeaponHandCount::One },
-	{ WeaponType::ShortBow, WeaponHandCount::Two },
-	{ WeaponType::Shortsword, WeaponHandCount::One },
-	{ WeaponType::Staff, WeaponHandCount::Two },
-	{ WeaponType::Tanto, WeaponHandCount::One },
-	{ WeaponType::Wakizashi, WeaponHandCount::One },
-	{ WeaponType::WarAxe, WeaponHandCount::Two },
-	{ WeaponType::Warhammer, WeaponHandCount::Two }
-};
+	// To do: obtain from executable data.
+	const std::array<WeaponHandCount, 18> WeaponHandCounts =
+	{
+		WeaponHandCount::Two, // Staff
+		WeaponHandCount::One, // Dagger
+		WeaponHandCount::One, // Shortsword
+		WeaponHandCount::One, // Broadsword
+		WeaponHandCount::One, // Saber
+		WeaponHandCount::One, // Longsword
+		WeaponHandCount::Two, // Claymore
+		WeaponHandCount::One, // Tanto
+		WeaponHandCount::One, // Wakizashi
+		WeaponHandCount::One, // Katana
+		WeaponHandCount::Two, // Dai-katana
+		WeaponHandCount::One, // Mace
+		WeaponHandCount::Two, // Flail
+		WeaponHandCount::Two, // War hammer
+		WeaponHandCount::Two, // War axe
+		WeaponHandCount::Two, // Battle axe
+		WeaponHandCount::Two, // Short bow
+		WeaponHandCount::Two // Long bow
+	};
 
-// From the manual.
-const std::map<WeaponType, std::pair<int, int>> WeaponTypeBaseDamages =
-{
-	{ WeaponType::BattleAxe, std::make_pair(2, 16) },
-	{ WeaponType::Broadsword, std::make_pair(1, 12) },
-	{ WeaponType::Claymore, std::make_pair(2, 18) },
-	{ WeaponType::Dagger, std::make_pair(1, 6) },
-	{ WeaponType::DaiKatana, std::make_pair(3, 21) },
-	{ WeaponType::Fists, std::make_pair(1, 2) },
-	{ WeaponType::Flail, std::make_pair(2, 14) },
-	{ WeaponType::Katana, std::make_pair(3, 16) },
-	{ WeaponType::LongBow, std::make_pair(2, 12) },
-	{ WeaponType::Longsword, std::make_pair(2, 16) },
-	{ WeaponType::Mace, std::make_pair(1, 12) },
-	{ WeaponType::Saber, std::make_pair(3, 12) },
-	{ WeaponType::ShortBow, std::make_pair(2, 8) },
-	{ WeaponType::Shortsword, std::make_pair(1, 8) },
-	{ WeaponType::Staff, std::make_pair(1, 8) },
-	{ WeaponType::Tanto, std::make_pair(1, 8) },
-	{ WeaponType::Wakizashi, std::make_pair(1, 10) },
-	{ WeaponType::WarAxe, std::make_pair(2, 12) },
-	{ WeaponType::Warhammer, std::make_pair(3, 18) }
-};
+	// Base damage values from the manual. Fists are {1, 2}.
+	// - To do: obtain from executable data.
+	const std::array<std::pair<int, int>, 18> WeaponBaseDamages =
+	{
+		std::make_pair(1, 8), // Staff
+		std::make_pair(1, 6), // Dagger
+		std::make_pair(1, 8), // Shortsword
+		std::make_pair(1, 12), // Broadsword
+		std::make_pair(3, 12), // Saber
+		std::make_pair(2, 16), // Longsword
+		std::make_pair(2, 18), // Claymore
+		std::make_pair(1, 8), // Tanto
+		std::make_pair(1, 10), // Wakizashi
+		std::make_pair(3, 16), // Katana
+		std::make_pair(3, 21), // Dai-katana
+		std::make_pair(1, 12), // Mace
+		std::make_pair(2, 14), // Flail
+		std::make_pair(3, 18), // War hammer
+		std::make_pair(2, 12), // War axe
+		std::make_pair(2, 16), // Battle axe
+		std::make_pair(2, 8), // Short bow
+		std::make_pair(2, 12) // Long bow
+	};
 
-// Weights in kilograms. For some odd reason, the manual lists "fists" as having
-// a weight of 1 kilogram. Are they implying the weight of flesh...? Are fists a 
-// hidden inventory item...? Anyway, I decided to make its weight zero since that 
-// makes more sense.
-const std::map<WeaponType, double> WeaponTypeWeights =
-{
-	{ WeaponType::BattleAxe, 12.0 },
-	{ WeaponType::Broadsword, 6.0 },
-	{ WeaponType::Claymore, 14.0 },
-	{ WeaponType::Dagger, 0.5 },
-	{ WeaponType::DaiKatana, 8.0 },
-	{ WeaponType::Fists, 0.0 },
-	{ WeaponType::Flail, 10.0 },
-	{ WeaponType::Katana, 6.0 },
-	{ WeaponType::LongBow, 1.0 },
-	{ WeaponType::Longsword, 8.0 },
-	{ WeaponType::Mace, 8.0 },
-	{ WeaponType::Saber, 7.0 },
-	{ WeaponType::ShortBow, 0.5 },
-	{ WeaponType::Shortsword, 3.0 },
-	{ WeaponType::Staff, 3.0 },
-	{ WeaponType::Tanto, 0.5 },
-	{ WeaponType::Wakizashi, 2.0 },
-	{ WeaponType::WarAxe, 8.0 },
-	{ WeaponType::Warhammer, 16.0 }
-};
+	// Weights in kilograms. For some odd reason, the manual lists fists as having
+	// a weight of 1 kilogram (ignored here).
+	// - To do: obtain from executable data.
+	const std::array<double, 18> WeaponWeights =
+	{
+		3.0, // Staff
+		0.50, // Dagger
+		3.0, // Shortsword
+		6.0, // Broadsword
+		7.0, // Saber
+		8.0, // Longsword
+		14.0, // Claymore
+		0.50, // Tanto
+		2.0, // Wakizashi
+		6.0, // Katana
+		8.0, // Dai-katana
+		8.0, // Mace
+		10.0, // Flail
+		16.0, // War hammer
+		8.0, // War axe
+		12.0, // Battle axe
+		0.50, // Short bow
+		1.0 // Long bow
+	};
 
-// These values are based on iron. They are made up, and should be revised at
-// some point.
-const std::map<WeaponType, int> WeaponTypeGoldValues =
-{
-	{ WeaponType::BattleAxe, 35 },
-	{ WeaponType::Broadsword, 20 },
-	{ WeaponType::Claymore, 30 },
-	{ WeaponType::Dagger, 10 },
-	{ WeaponType::DaiKatana, 30 },
-	{ WeaponType::Fists, 0 },
-	{ WeaponType::Flail, 20 },
-	{ WeaponType::Katana, 25 },
-	{ WeaponType::LongBow, 20 },
-	{ WeaponType::Longsword, 20 },
-	{ WeaponType::Mace, 20 },
-	{ WeaponType::Saber, 20 },
-	{ WeaponType::ShortBow, 15 },
-	{ WeaponType::Shortsword, 15 },
-	{ WeaponType::Staff, 15 },
-	{ WeaponType::Tanto, 10 },
-	{ WeaponType::Wakizashi, 15 },
-	{ WeaponType::WarAxe, 20 },
-	{ WeaponType::Warhammer, 35 }
-};
+	// Gold values.
+	// - To do: obtain from executable data.
+	const std::array<double, 18> WeaponGoldValues =
+	{
+		1, // Staff
+		1, // Dagger
+		1, // Shortsword
+		1, // Broadsword
+		1, // Saber
+		1, // Longsword
+		1, // Claymore
+		1, // Tanto
+		1, // Wakizashi
+		1, // Katana
+		1, // Dai-katana
+		1, // Mace
+		1, // Flail
+		1, // War hammer
+		1, // War axe
+		1, // Battle axe
+		1, // Short bow
+		1 // Long bow
+	};
 
-const std::map<WeaponType, WeaponRangeName> WeaponTypeRangeNames =
-{
-	{ WeaponType::BattleAxe, WeaponRangeName::Melee },
-	{ WeaponType::Broadsword, WeaponRangeName::Melee },
-	{ WeaponType::Claymore, WeaponRangeName::Melee },
-	{ WeaponType::Dagger, WeaponRangeName::Melee },
-	{ WeaponType::DaiKatana, WeaponRangeName::Melee },
-	{ WeaponType::Fists, WeaponRangeName::Melee },
-	{ WeaponType::Flail, WeaponRangeName::Melee },
-	{ WeaponType::Katana, WeaponRangeName::Melee },
-	{ WeaponType::LongBow, WeaponRangeName::Ranged },
-	{ WeaponType::Longsword, WeaponRangeName::Melee },
-	{ WeaponType::Mace, WeaponRangeName::Melee },
-	{ WeaponType::Saber, WeaponRangeName::Melee },
-	{ WeaponType::ShortBow, WeaponRangeName::Ranged },
-	{ WeaponType::Shortsword, WeaponRangeName::Melee },
-	{ WeaponType::Staff, WeaponRangeName::Melee },
-	{ WeaponType::Tanto, WeaponRangeName::Melee },
-	{ WeaponType::Wakizashi, WeaponRangeName::Melee },
-	{ WeaponType::WarAxe, WeaponRangeName::Melee },
-	{ WeaponType::Warhammer, WeaponRangeName::Melee }
-};
-
-Weapon::Weapon(WeaponType weaponType, MetalType metalType,
-	const WeaponArtifactData *artifactData)
-	: Item(artifactData), Metallic(metalType)
-{
-	this->weaponType = weaponType;
+	const std::array<WeaponRangeName, 18> WeaponRangeNames =
+	{
+		WeaponRangeName::Melee, // Staff
+		WeaponRangeName::Melee, // Dagger
+		WeaponRangeName::Melee, // Shortsword
+		WeaponRangeName::Melee, // Broadsword
+		WeaponRangeName::Melee, // Saber
+		WeaponRangeName::Melee, // Longsword
+		WeaponRangeName::Melee, // Claymore
+		WeaponRangeName::Melee, // Tanto
+		WeaponRangeName::Melee, // Wakizashi
+		WeaponRangeName::Melee, // Katana
+		WeaponRangeName::Melee, // Dai-katana
+		WeaponRangeName::Melee, // Mace
+		WeaponRangeName::Melee, // Flail
+		WeaponRangeName::Melee, // War hammer
+		WeaponRangeName::Melee, // War axe
+		WeaponRangeName::Melee, // Battle axe
+		WeaponRangeName::Ranged, // Short bow
+		WeaponRangeName::Ranged // Long bow
+	};
 }
 
-Weapon::Weapon(WeaponType weaponType, MetalType metalType)
-	: Weapon(weaponType, metalType, nullptr) { }
+Weapon::Weapon(int weaponID, const std::string &weaponName, MetalType metalType,
+	const WeaponArtifactData *artifactData)
+	: Item(artifactData), Metallic(metalType), weaponName(weaponName)
+{
+	this->weaponID = weaponID;
+}
 
-Weapon::Weapon(const WeaponArtifactData *artifactData)
-	: Weapon(artifactData->getWeaponType(), artifactData->getMetalType(), 
-		artifactData) { }
+Weapon::Weapon(int weaponID, MetalType metalType,
+	const WeaponArtifactData *artifactData, const ExeStrings &exeStrings)
+	: Item(artifactData), Metallic(metalType)
+{
+	// Fists are not allowed.
+	assert(weaponID != -1);
+
+	this->weaponID = weaponID;
+	this->weaponName = exeStrings.getList(ExeStringKey::WeaponNames).at(weaponID);
+}
+
+Weapon::Weapon(int weaponID, MetalType metalType, const ExeStrings &exeStrings)
+	: Weapon(weaponID, metalType, nullptr, exeStrings) { }
+
+Weapon::Weapon(const WeaponArtifactData *artifactData, const ExeStrings &exeStrings)
+	: Weapon(artifactData->getWeaponID(), artifactData->getMetalType(),
+		artifactData, exeStrings) { }
 
 Weapon::~Weapon()
 {
@@ -180,8 +167,8 @@ Weapon::~Weapon()
 std::unique_ptr<Item> Weapon::clone() const
 {
 	return std::unique_ptr<Item>(new Weapon(
-		this->getWeaponType(), this->getMetal().getMetalType(),
-		dynamic_cast<const WeaponArtifactData*>(this->getArtifactData())));
+		this->weaponID, this->weaponName, this->getMetal().getMetalType(),
+		this->artifactData.get()));
 }
 
 ItemType Weapon::getItemType() const
@@ -191,60 +178,58 @@ ItemType Weapon::getItemType() const
 
 double Weapon::getWeight() const
 {
-	double baseWeight = WeaponTypeWeights.at(this->getWeaponType());
-	double metalMultiplier = this->getMetal().getWeightMultiplier();
-	double weight = baseWeight * metalMultiplier;
-	assert(weight >= 0.0);
+	const double baseWeight = WeaponWeights.at(this->weaponID);
+	const double metalMultiplier = this->getMetal().getWeightMultiplier();
+	const double weight = baseWeight * metalMultiplier;
 	return weight;
 }
 
 int Weapon::getGoldValue() const
 {
-	// Refine this method.
-	int baseValue = WeaponTypeGoldValues.at(this->getWeaponType());
-	int ratingMultiplier = this->getMetal().getRatingModifier();
-	double weightMultiplier = this->getMetal().getWeightMultiplier();
-	int goldValue = static_cast<int>(static_cast<double>(baseValue + ratingMultiplier) * 
-		weightMultiplier);
+	// To do: use values from original game.
+	const int baseValue = WeaponGoldValues.at(this->weaponID);
+	const int ratingMultiplier = this->getMetal().getRatingModifier();
+	const double weightMultiplier = this->getMetal().getWeightMultiplier();
+	const int goldValue = static_cast<int>(
+		static_cast<double>(baseValue + ratingMultiplier) * weightMultiplier);
 	return goldValue;
 }
 
 std::string Weapon::getDisplayName() const
 {
-	return this->getMetal().toString() + " " + this->typeToString();
+	return this->getMetal().toString() + " " + this->weaponName;
 }
 
-WeaponType Weapon::getWeaponType() const
+int Weapon::getWeaponID() const
 {
-	return this->weaponType;
+	return this->weaponID;
+}
+
+const std::string &Weapon::getWeaponName() const
+{
+	return this->weaponName;
 }
 
 WeaponHandCount Weapon::getHandCount() const
 {
-	auto handCount = WeaponTypeHandCounts.at(this->getWeaponType());
+	const WeaponHandCount handCount = WeaponHandCounts.at(this->weaponID);
 	return handCount;
 }
 
 WeaponRangeName Weapon::getWeaponRangeName() const
 {
-	auto rangeName = WeaponTypeRangeNames.at(this->getWeaponType());
+	const WeaponRangeName rangeName = WeaponRangeNames.at(this->weaponID);
 	return rangeName;
 }
 
 int Weapon::getBaseMinDamage() const
 {
-	int minDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).first;
+	const int minDamage = WeaponBaseDamages.at(this->weaponID).first;
 	return minDamage;
 }
 
 int Weapon::getBaseMaxDamage() const
 {
-	int maxDamage = WeaponTypeBaseDamages.at(this->getWeaponType()).second;
+	const int maxDamage = WeaponBaseDamages.at(this->weaponID).second;
 	return maxDamage;
-}
-
-std::string Weapon::typeToString() const
-{
-	auto displayName = WeaponTypeDisplayNames.at(this->getWeaponType());
-	return displayName;
 }

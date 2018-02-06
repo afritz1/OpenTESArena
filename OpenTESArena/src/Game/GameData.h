@@ -86,12 +86,12 @@ public:
 
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
-		GenderName gender, int raceID, const CharacterClass &charClass,
-		int portraitID, TextureManager &textureManager, Renderer &renderer);
+		GenderName gender, int raceID, const CharacterClass &charClass, int portraitID,
+		const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer);
 
 	// Creates a game data object with random player data for testing.
 	static std::unique_ptr<GameData> createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
-		TextureManager &textureManager, Renderer &renderer);
+		const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer);
 
 	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();
 	std::pair<double, std::unique_ptr<TextBox>> &getActionText();

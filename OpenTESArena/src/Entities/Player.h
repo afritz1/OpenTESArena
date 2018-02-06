@@ -5,6 +5,7 @@
 #include "CharacterClass.h"
 #include "WeaponAnimation.h"
 
+class ExeStrings;
 class Game;
 class WorldData;
 
@@ -46,7 +47,7 @@ public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
 		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-		double maxRunSpeed, WeaponType weaponType);
+		double maxRunSpeed, int weaponID, const ExeStrings &exeStrings);
 	~Player();
 
 	const Double3 &getPosition() const;

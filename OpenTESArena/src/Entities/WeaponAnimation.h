@@ -13,7 +13,7 @@
 // The bow should not be used here because there is no bow animation in the Arena files;
 // just a single idle frame that disappears when firing an arrow.
 
-enum class WeaponType;
+class ExeStrings;
 
 class WeaponAnimation
 {
@@ -34,16 +34,18 @@ public:
 private:
 	// Default time spent per animation frame.
 	static const double DEFAULT_TIME_PER_FRAME;
+	static const int FISTS_ID;
 
 	WeaponAnimation::State state;
-	WeaponType weaponType;
+	int weaponID;
+	std::string animationFilename;
 	double currentTime, timePerFrame;
 	size_t rangeIndex;
 
 	// Gets the range of indices associated with the current animation state.
 	const std::vector<int> &getCurrentRange() const;
 public:
-	WeaponAnimation(WeaponType weaponType);
+	WeaponAnimation(int weaponID, const ExeStrings &exeStrings);
 	~WeaponAnimation();
 
 	// Returns whether the weapon is currently sheathed (meaning it is not displayed).

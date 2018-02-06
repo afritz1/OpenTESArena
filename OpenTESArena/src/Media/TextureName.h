@@ -107,19 +107,7 @@ enum class TextureName
 	Form13,
 	Form14,
 	Form15,
-	SpellMakerBackground,
-
-	// Weapon animations.
-	ArrowsAnimation, // Idle bow animation (ARROWFUL.CFA is unused).
-	AxeAnimation,
-	ChainAnimation, // Fists with chainmail (unused).
-	FistsAnimation,
-	FlailAnimation,
-	HammerAnimation,
-	MaceAnimation,
-	PlateAnimation, // Fists with plate mail (unused).
-	StaffAnimation,
-	SwordAnimation,
+	SpellMakerBackground
 };
 
 #endif

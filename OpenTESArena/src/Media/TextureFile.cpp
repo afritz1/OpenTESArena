@@ -128,19 +128,7 @@ namespace
 		{ TextureName::Form13, "FORM13.IMG" },
 		{ TextureName::Form14, "FORM14.IMG" },
 		{ TextureName::Form15, "FORM15.IMG" },
-		{ TextureName::SpellMakerBackground, "SPELLMKR.IMG" },
-
-		// Weapon animations.
-		{ TextureName::ArrowsAnimation, "ARROWHLF.CFA" },
-		{ TextureName::AxeAnimation, "AXE.CIF" },
-		{ TextureName::ChainAnimation, "CHAIN.CIF" },
-		{ TextureName::FistsAnimation, "HAND.CIF" },
-		{ TextureName::FlailAnimation, "STAR.CIF" },
-		{ TextureName::HammerAnimation, "HAMMER.CIF" },
-		{ TextureName::MaceAnimation, "MACE.CIF" },
-		{ TextureName::PlateAnimation, "PLATE.CIF" },
-		{ TextureName::StaffAnimation, "STAFF.CIF" },
-		{ TextureName::SwordAnimation, "SWORD.CIF" }
+		{ TextureName::SpellMakerBackground, "SPELLMKR.IMG" }
 	};
 
 	// The filename of each TextureSequenceName.

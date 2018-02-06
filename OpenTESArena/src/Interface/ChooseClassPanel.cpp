@@ -318,10 +318,21 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
 {
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
+	
+	// Get weapon names from the executable.
+	const auto &exeStrings = this->getGame().getMiscAssets().getAExeStrings();
+	const std::vector<std::string> &weaponStrings =
+		exeStrings.getList(ExeStringKey::WeaponNames);
 
 	// Sort as they are listed in the CharacterClassParser.
-	auto allowedWeapons = characterClass.getAllowedWeapons();
-	std::sort(allowedWeapons.begin(), allowedWeapons.end());
+	std::vector<int> allowedWeapons = characterClass.getAllowedWeapons();
+	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
+		[&weaponStrings](int a, int b)
+	{
+		const std::string &aStr = weaponStrings.at(a);
+		const std::string &bStr = weaponStrings.at(b);
+		return aStr.compare(bStr) < 0;
+	});
 
 	std::string weaponsString;
 
@@ -338,11 +349,10 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 		// Collect all allowed weapon display names for the class.
 		for (int i = 0; i < weaponCount; i++)
 		{
-			const auto weaponType = allowedWeapons.at(i);
-			const auto dummyMetal = MetalType::Iron;
-			auto typeString = Weapon(weaponType, dummyMetal).typeToString();
-			lengthCounter += static_cast<int>(typeString.size());
-			weaponsString.append(typeString);
+			const int weaponID = allowedWeapons.at(i);
+			const std::string &weaponName = weaponStrings.at(weaponID);
+			lengthCounter += static_cast<int>(weaponName.size());
+			weaponsString.append(weaponName);
 
 			// If not the the last element, add a comma.
 			if (i < (weaponCount - 1))

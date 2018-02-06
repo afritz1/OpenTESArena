@@ -3,14 +3,13 @@
 #include "ItemType.h"
 #include "MetalType.h"
 #include "WeaponArtifactData.h"
-#include "WeaponType.h"
 
 WeaponArtifactData::WeaponArtifactData(const std::string &displayName, 
 	const std::string &flavorText, const std::vector<int> &provinceIDs, 
-	WeaponType weaponType, MetalType metalType)
+	int weaponID, MetalType metalType)
 	: ArtifactData(displayName, flavorText, provinceIDs)
 {
-	this->weaponType = weaponType;
+	this->weaponID = weaponID;
 	this->metalType = metalType;
 }
 
@@ -23,12 +22,12 @@ std::unique_ptr<ArtifactData> WeaponArtifactData::clone() const
 {
 	return std::unique_ptr<ArtifactData>(new WeaponArtifactData(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getWeaponType(), this->getMetalType()));
+		this->getWeaponID(), this->getMetalType()));
 }
 
-WeaponType WeaponArtifactData::getWeaponType() const
+int WeaponArtifactData::getWeaponID() const
 {
-	return this->weaponType;
+	return this->weaponID;
 }
 
 MetalType WeaponArtifactData::getMetalType() const

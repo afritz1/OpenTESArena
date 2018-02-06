@@ -7,32 +7,31 @@
 #include "Item.h"
 #include "Metallic.h"
 
-// It seems common place in the original game to have weapons with no material.
-// What is a plain old "dagger", then? Where does its base damage come from? 
-// I'm designing all weapons in the remake to have a metal type in order to 
-// alleviate this issue. That includes bows, because designing a new "wood"
-// abstract material is a bit too far outside the design scope.
-
+class ExeStrings;
 class WeaponArtifactData;
 
 enum class WeaponHandCount;
 enum class WeaponRangeName;
-enum class WeaponType;
 
 class Weapon : public Item, public Metallic
 {
 private:
+	int weaponID;
+	std::string weaponName;
 	std::unique_ptr<WeaponArtifactData> artifactData;
-	WeaponType weaponType;
 
-	Weapon(WeaponType weaponType, MetalType metalType,
+	// Constructor for clone().
+	Weapon(int weaponID, const std::string &weaponName, MetalType metalType,
 		const WeaponArtifactData *artifactData);
+
+	Weapon(int weaponID, MetalType metalType,
+		const WeaponArtifactData *artifactData, const ExeStrings &exeStrings);
 public:
 	// Weapon constructor for a weapon type and metal type.
-	Weapon(WeaponType weaponType, MetalType metalType);
+	Weapon(int weaponID, MetalType metalType, const ExeStrings &exeStrings);
 
 	// Weapon artifact constructor.
-	Weapon(const WeaponArtifactData *artifactData);
+	Weapon(const WeaponArtifactData *artifactData, const ExeStrings &exeStrings);
 	virtual ~Weapon();
 
 	virtual std::unique_ptr<Item> clone() const override;
@@ -42,12 +41,12 @@ public:
 	virtual int getGoldValue() const override;
 	virtual std::string getDisplayName() const override;
 
-	WeaponType getWeaponType() const;
+	int getWeaponID() const;
+	const std::string &getWeaponName() const;
 	WeaponHandCount getHandCount() const;
 	WeaponRangeName getWeaponRangeName() const;
 	int getBaseMinDamage() const;
 	int getBaseMaxDamage() const;
-	std::string typeToString() const;
 };
 
 #endif

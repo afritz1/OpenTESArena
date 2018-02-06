@@ -73,7 +73,9 @@ namespace
 
 		{ ExeStringKey::ArmorNames, "ArmorNames", },
 		{ ExeStringKey::ShieldNames, "ShieldNames", },
-		{ ExeStringKey::WeaponNames, "WeaponNames", }
+		{ ExeStringKey::WeaponNames, "WeaponNames", },
+		{ ExeStringKey::MetalNames, "MetalNames" },
+		{ ExeStringKey::WeaponAnimationFilenames, "WeaponAnimationFilenames" }
 	};
 }
 
