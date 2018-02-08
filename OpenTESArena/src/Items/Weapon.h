@@ -11,7 +11,7 @@ class ExeStrings;
 class WeaponArtifactData;
 
 enum class WeaponHandCount;
-enum class WeaponRangeName;
+enum class WeaponRangeType;
 
 class Weapon : public Item, public Metallic
 {
@@ -44,7 +44,7 @@ public:
 	int getWeaponID() const;
 	const std::string &getWeaponName() const;
 	WeaponHandCount getHandCount() const;
-	WeaponRangeName getWeaponRangeName() const;
+	WeaponRangeType getWeaponRangeType() const;
 	int getBaseMinDamage() const;
 	int getBaseMaxDamage() const;
 };

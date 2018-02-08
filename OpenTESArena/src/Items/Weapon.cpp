@@ -6,7 +6,7 @@
 #include "Weapon.h"
 #include "WeaponArtifactData.h"
 #include "WeaponHandCount.h"
-#include "WeaponRangeName.h"
+#include "WeaponRangeType.h"
 #include "../Assets/ExeStrings.h"
 #include "../Utilities/Debug.h"
 
@@ -89,7 +89,7 @@ namespace
 
 	// Gold values.
 	// - To do: obtain from executable data.
-	const std::array<double, 18> WeaponGoldValues =
+	const std::array<int, 18> WeaponGoldValues =
 	{
 		1, // Staff
 		1, // Dagger
@@ -111,26 +111,26 @@ namespace
 		1 // Long bow
 	};
 
-	const std::array<WeaponRangeName, 18> WeaponRangeNames =
+	const std::array<WeaponRangeType, 18> WeaponRangeTypes =
 	{
-		WeaponRangeName::Melee, // Staff
-		WeaponRangeName::Melee, // Dagger
-		WeaponRangeName::Melee, // Shortsword
-		WeaponRangeName::Melee, // Broadsword
-		WeaponRangeName::Melee, // Saber
-		WeaponRangeName::Melee, // Longsword
-		WeaponRangeName::Melee, // Claymore
-		WeaponRangeName::Melee, // Tanto
-		WeaponRangeName::Melee, // Wakizashi
-		WeaponRangeName::Melee, // Katana
-		WeaponRangeName::Melee, // Dai-katana
-		WeaponRangeName::Melee, // Mace
-		WeaponRangeName::Melee, // Flail
-		WeaponRangeName::Melee, // War hammer
-		WeaponRangeName::Melee, // War axe
-		WeaponRangeName::Melee, // Battle axe
-		WeaponRangeName::Ranged, // Short bow
-		WeaponRangeName::Ranged // Long bow
+		WeaponRangeType::Melee, // Staff
+		WeaponRangeType::Melee, // Dagger
+		WeaponRangeType::Melee, // Shortsword
+		WeaponRangeType::Melee, // Broadsword
+		WeaponRangeType::Melee, // Saber
+		WeaponRangeType::Melee, // Longsword
+		WeaponRangeType::Melee, // Claymore
+		WeaponRangeType::Melee, // Tanto
+		WeaponRangeType::Melee, // Wakizashi
+		WeaponRangeType::Melee, // Katana
+		WeaponRangeType::Melee, // Dai-katana
+		WeaponRangeType::Melee, // Mace
+		WeaponRangeType::Melee, // Flail
+		WeaponRangeType::Melee, // War hammer
+		WeaponRangeType::Melee, // War axe
+		WeaponRangeType::Melee, // Battle axe
+		WeaponRangeType::Ranged, // Short bow
+		WeaponRangeType::Ranged // Long bow
 	};
 }
 
@@ -216,10 +216,10 @@ WeaponHandCount Weapon::getHandCount() const
 	return handCount;
 }
 
-WeaponRangeName Weapon::getWeaponRangeName() const
+WeaponRangeType Weapon::getWeaponRangeType() const
 {
-	const WeaponRangeName rangeName = WeaponRangeNames.at(this->weaponID);
-	return rangeName;
+	const WeaponRangeType rangeType = WeaponRangeTypes.at(this->weaponID);
+	return rangeType;
 }
 
 int Weapon::getBaseMinDamage() const
