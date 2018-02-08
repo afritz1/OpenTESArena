@@ -47,7 +47,7 @@ void Compression::decodeRLEWords(const uint8_t *src, int stopCount,
 	int i = 0;
 	int o = 0;
 
-	while (o < (stopCount - 1))
+	while (o < stopCount)
 	{
 		const int16_t sample = Bytes::getLE16(src + i);
 		i += 2;
@@ -61,9 +61,9 @@ void Compression::decodeRLEWords(const uint8_t *src, int stopCount,
 				const uint16_t value = Bytes::getLE16(src + i);
 				i += 2;
 
-				out.at(o) = value & 0xFF00;
-				out.at(o + 1) = value & 0x00FF;
-				o += 2;
+				out.at(o * 2) = value & 0x00FF;
+				out.at((o * 2) + 1) = (value & 0xFF00) >> 8;
+				o++;
 			}
 		}
 		else
@@ -75,9 +75,9 @@ void Compression::decodeRLEWords(const uint8_t *src, int stopCount,
 
 			for (uint16_t j = 0; j < count; j++)
 			{
-				out.at(o) = value & 0xFF00;
-				out.at(o + 1) = value & 0x00FF;
-				o += 2;
+				out.at(o * 2) = value & 0x00FF;
+				out.at((o * 2) + 1) = (value & 0xFF00) >> 8;
+				o++;
 			}
 		}
 	}
