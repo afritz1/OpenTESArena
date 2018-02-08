@@ -177,16 +177,20 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	const Double3 velocity = Double3::Zero;
 	const double maxWalkSpeed = 2.0;
 	const double maxRunSpeed = 8.0;
-	const int weaponID = []()
+	const int weaponID = [&charClass]()
 	{
-		// Pick a random weapon for testing. Ignore bows for now (16 and 17). Fists are -1.
-		const std::vector<int> weapons =
-		{
-			-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-		};
+		// Pick a random weapon available to the player's class for testing.
+		std::vector<int> weapons = charClass.getAllowedWeapons();
+
+		// Remove bows for now (16 and 17).
+		weapons.erase(std::remove(weapons.begin(), weapons.end(), 16), weapons.end());
+		weapons.erase(std::remove(weapons.begin(), weapons.end(), 17), weapons.end());
+
+		// Add fists.
+		weapons.push_back(-1);
 
 		Random random;
-		int index = random.next(static_cast<int>(weapons.size()));
+		const int index = random.next(static_cast<int>(weapons.size()));
 		return weapons.at(index);
 	}();
 
