@@ -174,7 +174,7 @@ void GameData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, Climat
 	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set arbitrary player starting position (no starting point in WILD.MIF).
-	const Double2 startPoint(1.50, 1.50);
+	const Double2 startPoint(63.50, 63.50);
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
 
 	// Regular sky palette based on weather.
