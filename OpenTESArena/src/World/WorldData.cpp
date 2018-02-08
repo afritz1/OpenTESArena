@@ -8,6 +8,7 @@
 #include "WorldType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Assets/RMDFile.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
@@ -51,6 +52,52 @@ std::string WorldData::generateCityInfName(ClimateType climateType, WeatherType 
 
 	// City/town/village letter. Wilderness is "W".
 	const std::string locationLetter = "C";
+
+	const std::string weatherLetter = [weatherType]()
+	{
+		if ((weatherType == WeatherType::Clear) ||
+			(weatherType == WeatherType::Overcast))
+		{
+			return "N";
+		}
+		else if (weatherType == WeatherType::Rain)
+		{
+			return "R";
+		}
+		else if (weatherType == WeatherType::Snow)
+		{
+			return "S";
+		}
+		else
+		{
+			// Not sure what this letter represents.
+			return "W";
+		}
+	}();
+
+	return climateLetter + locationLetter + weatherLetter + ".INF";
+}
+
+std::string WorldData::generateWildernessInfName(ClimateType climateType, WeatherType weatherType)
+{
+	const std::string climateLetter = [climateType]()
+	{
+		if (climateType == ClimateType::Temperate)
+		{
+			return "T";
+		}
+		else if (climateType == ClimateType::Desert)
+		{
+			return "D";
+		}
+		else
+		{
+			return "M";
+		}
+	}();
+
+	// Wilderness is "W".
+	const std::string locationLetter = "W";
 
 	const std::string weatherLetter = [weatherType]()
 	{
@@ -153,6 +200,24 @@ WorldData WorldData::loadCity(const MIFFile &mif, WeatherType weatherType)
 	worldData.currentLevel = mif.getStartingLevelIndex();
 	worldData.worldType = WorldType::City;
 	worldData.mifName = mif.getName();
+
+	return worldData;
+}
+
+WorldData WorldData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+	ClimateType climateType, WeatherType weatherType)
+{
+	WorldData worldData;
+
+	const std::string infName = WorldData::generateWildernessInfName(climateType, weatherType);
+	const INFFile inf(infName);
+
+	// Load wilderness data (128x128 blank slate with four chunks. No starting points to load).
+	worldData.levels.push_back(LevelData::loadWilderness(rmdTR, rmdTL, rmdBR, rmdBL, inf));
+
+	worldData.currentLevel = 0;
+	worldData.worldType = WorldType::Wilderness;
+	worldData.mifName = "WILD.MIF";
 
 	return worldData;
 }

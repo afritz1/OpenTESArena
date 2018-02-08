@@ -43,10 +43,11 @@
 
 namespace
 {
-	const int MaxTestTypes = 3;
+	const int MaxTestTypes = 4;
 	const int TestType_MainQuest = 0;
 	const int TestType_Interior = 1;
-	const int TestType_Exterior = 2;
+	const int TestType_City = 2;
+	const int TestType_Wilderness = 3;
 
 	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
 
@@ -83,9 +84,14 @@ namespace
 		{ "WCRYPT", { 1, 8 } }
 	};
 
-	const std::vector<std::string> ExteriorLocations =
+	const std::vector<std::string> CityLocations =
 	{
 		"IMPERIAL.MIF"
+	};
+
+	const std::vector<std::string> WildernessLocations =
+	{
+		"WILD.MIF"
 	};
 
 	// Values for testing.
@@ -219,8 +225,21 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			}
 			else if (worldType == WorldType::Wilderness)
 			{
-				// To do: wilderness loading.
-				DebugNotImplemented();
+				// Just pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
+				// - To do: find which one crashes with desert climate.
+				Random random;
+				const int rmdTR = 5 + random.next(66);
+				const int rmdTL = 5 + random.next(66);
+				const int rmdBR = 5 + random.next(66);
+				const int rmdBL = 5 + random.next(66);
+				DebugMention(std::string("Wilderness IDs:\n") +
+					"- Top right: " + std::to_string(rmdTR) + "\n" +
+					"- Top left: " + std::to_string(rmdTL) + "\n" +
+					"- Bottom right: " + std::to_string(rmdBR) + "\n" +
+					"- Bottom left: " + std::to_string(rmdBL));
+
+				GameData::loadWilderness(rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType,
+					playerPosition, gameData->getWorldData(), game.getTextureManager(), renderer);
 			}
 			else
 			{
@@ -401,9 +420,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					return static_cast<int>(InteriorLocations.size());
 				}
+				else if (panel.testType == TestType_City)
+				{
+					return static_cast<int>(CityLocations.size());
+				}
 				else
 				{
-					return static_cast<int>(ExteriorLocations.size());
+					return static_cast<int>(WildernessLocations.size());
 				}
 			}();
 
@@ -437,9 +460,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					return static_cast<int>(InteriorLocations.size());
 				}
+				else if (panel.testType == TestType_City)
+				{
+					return static_cast<int>(CityLocations.size());
+				}
 				else
 				{
-					return static_cast<int>(ExteriorLocations.size());
+					return static_cast<int>(WildernessLocations.size());
 				}
 			}();
 
@@ -503,7 +530,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testTypeUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Exterior);
+			assert((panel.testType == TestType_City) ||
+				(panel.testType == TestType_Wilderness));
 
 			const int count = static_cast<int>(Climates.size());
 			panel.testClimate = (panel.testClimate > 0) ? (panel.testClimate - 1) : (count - 1);
@@ -523,7 +551,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testClimateUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Exterior);
+			assert((panel.testType == TestType_City) ||
+				(panel.testType == TestType_Wilderness));
 
 			const int count = static_cast<int>(Climates.size());
 			panel.testClimate = (panel.testClimate < (count - 1)) ? (panel.testClimate + 1) : 0;
@@ -543,7 +572,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testClimateUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Exterior);
+			assert((panel.testType == TestType_City) ||
+				(panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
 			{
@@ -571,7 +601,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testWeatherUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Exterior);
+			assert((panel.testType == TestType_City) ||
+				(panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
 			{
@@ -617,13 +648,13 @@ std::string MainMenuPanel::getSelectedTestName() const
 		const auto &interior = InteriorLocations.at(this->testIndex);
 		return interior.first + std::to_string(this->testIndex2) + ".MIF";
 	}
-	else if (this->testType == TestType_Exterior)
+	else if (this->testType == TestType_City)
 	{
-		return ExteriorLocations.at(this->testIndex);
+		return CityLocations.at(this->testIndex);
 	}
 	else
 	{
-		throw std::runtime_error("Bad test type.");
+		return WildernessLocations.at(this->testIndex);
 	}
 }
 
@@ -644,13 +675,13 @@ WorldType MainMenuPanel::getSelectedTestWorldType() const
 	{
 		return WorldType::Interior;
 	}
-	else if (this->testType == TestType_Exterior)
+	else if (this->testType == TestType_City)
 	{
 		return WorldType::City;
 	}
 	else
 	{
-		throw std::runtime_error("Bad test type.");
+		return WorldType::Wilderness;
 	}
 }
 
@@ -752,9 +783,29 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 				this->testIndex2DownButton.click(*this);
 			}
 		}
-		else if (this->testType == TestType_Exterior)
+		else if (this->testType == TestType_City)
 		{
-			// These buttons are only available when selecting exterior names.
+			// These buttons are only available when selecting city names.
+			if (this->testClimateUpButton.contains(originalPoint))
+			{
+				this->testClimateUpButton.click(*this);
+			}
+			else if (this->testClimateDownButton.contains(originalPoint))
+			{
+				this->testClimateDownButton.click(*this);
+			}
+			else if (this->testWeatherUpButton.contains(originalPoint))
+			{
+				this->testWeatherUpButton.click(*this);
+			}
+			else if (this->testWeatherDownButton.contains(originalPoint))
+			{
+				this->testWeatherDownButton.click(*this);
+			}
+		}
+		else if (this->testType == TestType_Wilderness)
+		{
+			// These buttons are only available when selecting wilderness names.
 			if (this->testClimateUpButton.contains(originalPoint))
 			{
 				this->testClimateUpButton.click(*this);
@@ -804,7 +855,7 @@ void MainMenuPanel::render(Renderer &renderer)
 		renderer.drawOriginal(arrows.get(), this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
-	else if (this->testType == TestType_Exterior)
+	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
 		renderer.drawOriginal(arrows.get(), this->testClimateUpButton.getX(),
 			this->testClimateUpButton.getY());
@@ -845,13 +896,13 @@ void MainMenuPanel::render(Renderer &renderer)
 		{
 			return "Interior";
 		}
-		else if (this->testType == TestType_Exterior)
+		else if (this->testType == TestType_City)
 		{
-			return "Exterior";
+			return "City";
 		}
 		else
 		{
-			throw std::runtime_error("Bad test type.");
+			return "Wilderness";
 		}
 	}();
 
@@ -885,7 +936,7 @@ void MainMenuPanel::render(Renderer &renderer)
 	renderer.drawOriginal(testNameTextBox.getTexture(),
 		testNameTextBox.getX(), testNameTextBox.getY());
 
-	if (this->testType == TestType_Exterior)
+	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
 		const std::string testClimateName = [this]()
 		{

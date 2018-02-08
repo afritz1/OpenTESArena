@@ -165,6 +165,27 @@ void GameData::loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &pl
 	renderer.setFogDistance(fogDistance);
 }
 
+void GameData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, ClimateType climateType,
+	WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Call wilderness WorldData loader.
+	worldData = WorldData::loadWilderness(rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType);
+	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
+
+	// Set arbitrary player starting position (no starting point in WILD.MIF).
+	const Double2 startPoint(1.50, 1.50);
+	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
+
+	// Regular sky palette based on weather.
+	const std::vector<uint32_t> skyPalette =
+		GameData::makeExteriorSkyPalette(weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+
+	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
+	renderer.setFogDistance(fogDistance);
+}
+
 std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	GenderName gender, int raceID, const CharacterClass &charClass, int portraitID,
 	const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer)

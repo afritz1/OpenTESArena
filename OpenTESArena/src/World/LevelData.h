@@ -70,9 +70,18 @@ private:
 	LevelData(int gridWidth, int gridHeight, int gridDepth);
 
 	void setVoxel(int x, int y, int z, uint8_t id);
-	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf, int width, int depth);
-	void readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf, int width, int depth);
-	void readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf, int width, int depth);
+	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
+		int florWidth, int florDepth, int gridWidth, int gridDepth, int xOffset, int zOffset);
+	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
+		int gridWidth, int gridDepth);
+	void readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
+		int map1Width, int map1Depth, int gridWidth, int gridDepth, int xOffset, int zOffset);
+	void readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
+		int gridWidth, int gridDepth);
+	void readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
+		int map2Width, int map2Depth, int gridWidth, int gridDepth, int xOffset, int zOffset);
+	void readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
+		int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
 	void readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth);
 	void readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers, const INFFile &inf,
@@ -94,6 +103,11 @@ public:
 	// required .MIF chunks.
 	static LevelData loadCity(const MIFFile::Level &level, const INFFile &inf,
 		int gridWidth, int gridDepth);
+
+	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
+	// and fills in the rest by loading the required .RMD chunks.
+	static LevelData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+		const INFFile &inf);
 
 	bool isOutdoorDungeon() const;
 	double getCeilingHeight() const;

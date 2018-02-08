@@ -35,6 +35,9 @@ private:
 
 	// Generates the .INF name for a city given a climate and current weather.
 	static std::string generateCityInfName(ClimateType climateType, WeatherType weatherType);
+
+	// Generates the .INF name for the wilderness given a climate and current weather.
+	static std::string generateWildernessInfName(ClimateType climateType, WeatherType weatherType);
 public:
 	// Used with test city.
 	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager);
@@ -52,6 +55,10 @@ public:
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static WorldData loadCity(const MIFFile &mif, WeatherType weatherType);
+
+	// Loads some wilderness blocks.
+	static WorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+		ClimateType climateType, WeatherType weatherType);
 
 	int getCurrentLevel() const;
 	WorldType getWorldType() const;

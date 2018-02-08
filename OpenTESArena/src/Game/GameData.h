@@ -84,6 +84,11 @@ public:
 	static void loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &playerPosition,
 		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
 
+	// Reads in data from wilderness and writes it to the reference parameters.
+	static void loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, ClimateType climateType,
+		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
+		TextureManager &textureManager, Renderer &renderer);
+
 	// Creates a game data object used for the test world.
 	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
 		GenderName gender, int raceID, const CharacterClass &charClass, int portraitID,

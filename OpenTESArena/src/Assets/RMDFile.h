@@ -17,7 +17,7 @@ public:
 	static const int WIDTH;
 	static const int DEPTH;
 
-	// Get voxel data for each floor. Each should be 4096 bytes.
+	// Get voxel data for each floor. Each should be 8192 bytes.
 	const std::vector<uint8_t> &getFLOR() const;
 	const std::vector<uint8_t> &getMAP1() const;
 	const std::vector<uint8_t> &getMAP2() const;
