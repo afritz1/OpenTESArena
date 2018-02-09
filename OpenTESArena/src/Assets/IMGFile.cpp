@@ -136,8 +136,33 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	// Decide how to use the pixel data.
 	if (isRaw)
 	{
-		// Uncompressed IMG with no header (excluding walls).
-		makeImage(width, height, srcData.data());
+		// Special case: DZTTAV.IMG is a raw image with hardcoded dimensions, but the game
+		// expects it to be a 64x64 texture, so it needs its own case.
+		if (filename == "DZTTAV.IMG")
+		{
+			this->width = 64;
+			this->height = 64;
+			this->pixels = std::unique_ptr<uint32_t[]>(new uint32_t[this->width * this->height]);
+			std::fill(this->pixels.get(), this->pixels.get() + (this->width * this->height),
+				paletteRef.get()[0].toARGB());
+
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					// Offset the destination X by 32 so it matches DZTTEP.IMG.
+					const int srcIndex = x + (y * width);
+					const int dstIndex = (x + 32) + (y * this->width);
+					const uint8_t color = *(srcData.data() + srcIndex);
+					this->pixels[dstIndex] = paletteRef.get()[color].toARGB();
+				}
+			}
+		}
+		else
+		{
+			// Uncompressed IMG with no header (excluding walls).
+			makeImage(width, height, srcData.data());
+		}
 	}
 	else if ((srcData.size() == 4096) && (width == 64) && (height == 64))
 	{
