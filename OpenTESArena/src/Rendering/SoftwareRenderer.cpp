@@ -1382,19 +1382,19 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 			{
 				if (farFacing == VoxelData::Facing::PositiveX)
 				{
-					return farPoint.y - std::floor(farPoint.y);
+					return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 				}
 				else if (farFacing == VoxelData::Facing::NegativeX)
 				{
-					return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					return farPoint.y - std::floor(farPoint.y);
 				}
 				else if (farFacing == VoxelData::Facing::PositiveZ)
 				{
-					return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					return farPoint.x - std::floor(farPoint.x);
 				}
 				else
 				{
-					return farPoint.x - std::floor(farPoint.x);
+					return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 				}
 			}();
 
@@ -1442,19 +1442,19 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 				{
 					if (farFacing == VoxelData::Facing::PositiveX)
 					{
-						return farPoint.y - std::floor(farPoint.y);
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 					}
 					else if (farFacing == VoxelData::Facing::NegativeX)
 					{
-						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+						return farPoint.y - std::floor(farPoint.y);
 					}
 					else if (farFacing == VoxelData::Facing::PositiveZ)
 					{
-						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+						return farPoint.x - std::floor(farPoint.x);
 					}
 					else
 					{
-						return farPoint.x - std::floor(farPoint.x);
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 					}
 				}();
 
