@@ -226,7 +226,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else if (worldType == WorldType::Wilderness)
 			{
 				// Just pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
-				// - To do: find which one crashes with desert climate.
 				Random random;
 				const int rmdTR = 5 + random.next(66);
 				const int rmdTL = 5 + random.next(66);
