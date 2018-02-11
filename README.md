@@ -11,7 +11,7 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 This project is early in development.
 
-All of the main quest dungeons, several interior locations, and one exterior location can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'. City and wilderness generation should be implemented in the not-too-distant future.
+All of the main quest dungeons, several interior locations, one city, and a fixed portion of wilderness can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'. City and wilderness generation should be implemented in the not-too-distant future.
 
 There is partial collision detection, and motion is currently restricted to the horizontal plane. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
@@ -19,11 +19,13 @@ Here are some keys in the game world:
 - WASD - move and turn. Hold LCtrl to strafe with A and D.
 - Esc - pause menu
 - Tab - character sheet
+- F - draw/sheathe weapon
 - L - logbook
 - M - world map (click on provinces for province maps)
 - N - automap
 - V - status
 - F4 - toggle debug text
+- PrintScreen - screenshot
 
 <br/>
 
