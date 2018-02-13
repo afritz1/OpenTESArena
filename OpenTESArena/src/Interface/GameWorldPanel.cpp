@@ -15,6 +15,7 @@
 #include "TextBox.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
+#include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
 #include "../Assets/MiscAssets.h"
@@ -384,11 +385,26 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	// need to be moved into update() instead.
 	const auto &weaponAnimation = game.getGameData().getPlayer().getWeaponAnimation();
 	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-	const CIFFile cifFile(weaponFilename, Palette());
-	
-	for (int i = 0; i < cifFile.getImageCount(); i++)
+
+	if (!weaponAnimation.isRanged())
 	{
-		this->weaponOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
+		// Melee weapon offsets.
+		const CIFFile cifFile(weaponFilename, Palette());
+
+		for (int i = 0; i < cifFile.getImageCount(); i++)
+		{
+			this->weaponOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
+		}
+	}
+	else
+	{
+		// Ranged weapon offsets.
+		const CFAFile cfaFile(weaponFilename, Palette());
+
+		for (int i = 0; i < cfaFile.getImageCount(); i++)
+		{
+			this->weaponOffsets.push_back(Int2(cfaFile.getXOffset(), cfaFile.getYOffset()));
+		}
 	}
 }
 
@@ -982,79 +998,101 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	// cursor much faster for it to count as a swing. The GameWorldPanel would probably 
 	// need to save its own "swing" mouse delta independently of the input manager, or
 	// maybe the game loop could call a "Panel::fixedTick()" method.
-
+	
 	// Only handle attacking if the player's weapon is currently idle.
 	auto &weaponAnimation = this->getGame().getGameData().getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
-		const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
-
-		// Get the smaller of the two dimensions, so the percentage change in mouse position 
-		// is relative to a square instead of a rectangle.
-		const int minDimension = std::min(dimensions.x, dimensions.y);
-
-		// Percentages that the mouse moved across the screen.
-		const double dxx = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
-		const double dyy = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
-
 		const auto &inputManager = this->getGame().getInputManager();
-		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+		auto &audioManager = this->getGame().getAudioManager();
 
-		// If the mouse moves fast enough, it's considered an attack. The distances
-		// are in percentages of screen dimensions.
-		const double requiredDistance = 0.060;
-		const double mouseDistance = std::sqrt((dxx * dxx) + (dyy * dyy));
-		const bool isAttack = rightClick && (mouseDistance >= requiredDistance);
-
-		if (isAttack)
+		if (!weaponAnimation.isRanged())
 		{
-			// Convert the change in mouse coordinates to a vector. Reverse the change in
-			// y so that positive values are up.
-			const Double2 mouseDirection = Double2(dxx, -dyy).normalized();
+			// Handle melee attack.
+			const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
 
-			// Calculate the direction the mouse moved in (let's use cardinal directions
-			// for convenience. Up means north (positive Y), right means east (positive X).
-			// This could be refined in the future).
-			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(
-				Double2(mouseDirection.y, mouseDirection.x));
+			// Get the smaller of the two dimensions, so the percentage change in mouse position 
+			// is relative to a square instead of a rectangle.
+			const int minDimension = std::min(dimensions.x, dimensions.y);
 
-			// Set the weapon animation state.
-			if (cardinalDirection == CardinalDirectionName::North)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Forward);
-			}
-			else if (cardinalDirection == CardinalDirectionName::NorthEast)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Right);
-			}
-			else if (cardinalDirection == CardinalDirectionName::East)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Right);
-			}
-			else if (cardinalDirection == CardinalDirectionName::SouthEast)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::DownRight);
-			}
-			else if (cardinalDirection == CardinalDirectionName::South)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Down);
-			}
-			else if (cardinalDirection == CardinalDirectionName::SouthWest)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::DownLeft);
-			}
-			else if (cardinalDirection == CardinalDirectionName::West)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Left);
-			}
-			else if (cardinalDirection == CardinalDirectionName::NorthWest)
-			{
-				weaponAnimation.setState(WeaponAnimation::State::Left);
-			}
+			// Percentages that the mouse moved across the screen.
+			const double dxx = static_cast<double>(mouseDelta.x) /
+				static_cast<double>(minDimension);
+			const double dyy = static_cast<double>(mouseDelta.y) /
+				static_cast<double>(minDimension);
 
-			// Play the swing sound.
-			auto &audioManager = this->getGame().getAudioManager();
-			audioManager.playSound(SoundFile::fromName(SoundName::Swish));
+			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+
+			// If the mouse moves fast enough, it's considered an attack. The distances
+			// are in percentages of screen dimensions.
+			const double requiredDistance = 0.060;
+			const double mouseDistance = std::sqrt((dxx * dxx) + (dyy * dyy));
+			const bool isAttack = rightClick && (mouseDistance >= requiredDistance);
+
+			if (isAttack)
+			{
+				// Convert the change in mouse coordinates to a vector. Reverse the change in
+				// y so that positive values are up.
+				const Double2 mouseDirection = Double2(dxx, -dyy).normalized();
+
+				// Calculate the direction the mouse moved in (let's use cardinal directions
+				// for convenience. Up means north (positive Y), right means east (positive X).
+				// This could be refined in the future).
+				CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(
+					Double2(mouseDirection.y, mouseDirection.x));
+
+				// Set the weapon animation state.
+				if (cardinalDirection == CardinalDirectionName::North)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Forward);
+				}
+				else if (cardinalDirection == CardinalDirectionName::NorthEast)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Right);
+				}
+				else if (cardinalDirection == CardinalDirectionName::East)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Right);
+				}
+				else if (cardinalDirection == CardinalDirectionName::SouthEast)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::DownRight);
+				}
+				else if (cardinalDirection == CardinalDirectionName::South)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Down);
+				}
+				else if (cardinalDirection == CardinalDirectionName::SouthWest)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::DownLeft);
+				}
+				else if (cardinalDirection == CardinalDirectionName::West)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Left);
+				}
+				else if (cardinalDirection == CardinalDirectionName::NorthWest)
+				{
+					weaponAnimation.setState(WeaponAnimation::State::Left);
+				}
+
+				// Play the swing sound.
+				audioManager.playSound(SoundFile::fromName(SoundName::Swish));
+			}
+		}
+		else
+		{
+			// Handle ranged attack.
+			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+			const bool isAttack = rightClick;
+
+			if (isAttack)
+			{
+				// Set firing state for animation.
+				weaponAnimation.setState(WeaponAnimation::State::Firing);
+
+				// Play the firing sound.
+				audioManager.playSound(SoundFile::fromName(SoundName::ArrowFire));
+			}
 		}
 	}	
 }

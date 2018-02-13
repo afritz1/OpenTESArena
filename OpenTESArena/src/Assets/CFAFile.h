@@ -14,7 +14,7 @@ class CFAFile
 {
 private:
 	std::vector<std::unique_ptr<uint32_t[]>> pixels;
-	int width, height;
+	int width, height, xOffset, yOffset;
 
 	// CFA files have their palette indices compressed into fewer bits depending
 	// on the total number of colors in the file. These demuxing functions
@@ -33,11 +33,17 @@ public:
 	// Gets the number of images in the CFA file.
 	int getImageCount() const;
 
-	// Gets the width of an image in the CFA file.
+	// Gets the width of all images in the CFA file.
 	int getWidth() const;
 
-	// Gets the height of an image in the CFA file.
+	// Gets the height of all images in the CFA file.
 	int getHeight() const;
+
+	// Gets the X offset of all images in the CFA file.
+	int getXOffset() const;
+
+	// Gets the Y offset of all images in the CFA file.
+	int getYOffset() const;
 
 	// Gets a pointer to the pixels for an image in the CFA file.
 	uint32_t *getPixels(int index) const;

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <map>
@@ -9,8 +10,8 @@
 
 namespace
 {
-	// Mappings of weapon animation states to ranges of frame indices, excluding fists.
-	const std::map<WeaponAnimation::State, std::vector<int>> WeaponAnimationRanges =
+	// Mappings of melee weapon animation states to ranges of frame indices.
+	const std::map<WeaponAnimation::State, std::vector<int>> MeleeAnimationRanges =
 	{
 		{ WeaponAnimation::State::Sheathed, { } },
 		{ WeaponAnimation::State::Unsheathing, { 30, 31, 32 } },
@@ -38,6 +39,15 @@ namespace
 		{ WeaponAnimation::State::DownLeft, { 0, 1, 2, 3, 4 } },
 		{ WeaponAnimation::State::Sheathing, { 12, 11, 10 } }
 	};
+
+	// Mappings of bow animation states to ranges of frame indices. Sheathing and unsheathing
+	// are instantaneous, so they are not stored here.
+	const std::map<WeaponAnimation::State, std::vector<int>> BowAnimationRanges =
+	{
+		{ WeaponAnimation::State::Sheathed, { } },
+		{ WeaponAnimation::State::Idle, { 0 } },
+		{ WeaponAnimation::State::Firing,{ 1 } }
+	};
 }
 
 const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
@@ -45,17 +55,13 @@ const int WeaponAnimation::FISTS_ID = -1;
 
 WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
 {
-	// Bows are not allowed yet.
-	const bool weaponIsRanged = (weaponID == 16) || (weaponID == 17);
-	DebugAssert(!weaponIsRanged, "Bow animations not implemented.");
-
 	this->state = WeaponAnimation::State::Sheathed;
 	this->weaponID = weaponID;
 	this->animationFilename = [weaponID, &exeStrings]()
 	{
 		// Get the filename associated with the weapon ID. These indices point into the
 		// filenames list.
-		const std::array<int, 18> WeaponFilenameMappings =
+		const std::array<int, 18> WeaponFilenameIndices =
 		{
 			0, // Staff
 			1, // Dagger
@@ -79,7 +85,7 @@ WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
 
 		const int fistsFilenameIndex = 7;
 		const int index = (weaponID != WeaponAnimation::FISTS_ID) ?
-			WeaponFilenameMappings.at(weaponID) : fistsFilenameIndex;
+			WeaponFilenameIndices.at(weaponID) : fistsFilenameIndex;
 
 		const std::vector<std::string> &animationList =
 			exeStrings.getList(ExeStringKey::WeaponAnimationFilenames);
@@ -88,7 +94,6 @@ WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
 	}();
 
 	this->currentTime = 0.0;
-	this->timePerFrame = WeaponAnimation::DEFAULT_TIME_PER_FRAME;
 	this->rangeIndex = 0;
 }
 
@@ -97,11 +102,46 @@ WeaponAnimation::~WeaponAnimation()
 
 }
 
+double WeaponAnimation::getTimePerFrame() const
+{
+	if (this->isRanged())
+	{
+		// The ranged animation should never be in a sheathing or unsheathing state
+		// because both are instant (technically their times would be 0.0, but it's
+		// implemented differently -- see setState()).
+		assert(this->state != WeaponAnimation::State::Unsheathing);
+		assert(this->state != WeaponAnimation::State::Sheathing);
+
+		return WeaponAnimation::DEFAULT_TIME_PER_FRAME *
+			((this->state == WeaponAnimation::State::Firing) ? 7.0 : 1.0);
+	}
+	else
+	{
+		// Melee weapons and fists.
+		return WeaponAnimation::DEFAULT_TIME_PER_FRAME;
+	}
+}
+
 const std::vector<int> &WeaponAnimation::getCurrentRange() const
 {
-	const std::vector<int> &indices = (this->weaponID == WeaponAnimation::FISTS_ID) ?
-		FistsAnimationRanges.at(this->state) : WeaponAnimationRanges.at(this->state);
-	return indices;
+	// Find the range mapped to the weapon and the current animation state.
+	if (this->weaponID == WeaponAnimation::FISTS_ID)
+	{
+		return FistsAnimationRanges.at(this->state);
+	}
+	else if (this->isRanged())
+	{
+		return BowAnimationRanges.at(this->state);
+	}
+	else
+	{
+		return MeleeAnimationRanges.at(this->state);
+	}
+}
+
+bool WeaponAnimation::isRanged() const
+{
+	return (this->weaponID == 16) || (this->weaponID == 17);
 }
 
 bool WeaponAnimation::isSheathed() const
@@ -130,10 +170,58 @@ int WeaponAnimation::getFrameIndex() const
 
 void WeaponAnimation::setState(WeaponAnimation::State state)
 {
+	// Check that the given state is valid for the weapon animation.
+	if (this->isRanged())
+	{
+		// Ranged weapons use a strict subset of the animation states.
+		const std::array<WeaponAnimation::State, 5> AllowedRangedStates =
+		{
+			WeaponAnimation::State::Sheathed,
+			WeaponAnimation::State::Unsheathing,
+			WeaponAnimation::State::Idle,
+			WeaponAnimation::State::Firing,
+			WeaponAnimation::State::Sheathing
+		};
+
+		assert(std::find(AllowedRangedStates.begin(),
+			AllowedRangedStates.end(), state) != AllowedRangedStates.end());
+	}
+	else
+	{
+		// Melee weapons cannot use the firing state.
+		assert(state != WeaponAnimation::State::Firing);
+	}	
+
 	// Switch to the beginning of the new range of indices. The combination of
 	// the state and range index will return a frame index. Do not retrieve the
 	// frame index when in the sheathed state.
-	this->state = state;
+	this->state = [this, state]()
+	{
+		// If the animation is ranged, skip states that would otherwise be instant.
+		if (this->isRanged())
+		{
+			if (state == WeaponAnimation::State::Unsheathing)
+			{
+				// Skip to idle.
+				return WeaponAnimation::State::Idle;
+			}
+			else if (state == WeaponAnimation::State::Sheathing)
+			{
+				// Skip to sheathed.
+				return WeaponAnimation::State::Sheathed;
+			}
+			else
+			{
+				return state;
+			}
+		}
+		else
+		{
+			// Melee animations do not skip any states.
+			return state;
+		}
+	}();
+
 	this->rangeIndex = 0;
 }
 
@@ -146,9 +234,9 @@ void WeaponAnimation::tick(double dt)
 		this->currentTime += dt;
 
 		// Update the index if current time has passed the time per frame.
-		while (this->currentTime >= this->timePerFrame)
+		while (this->currentTime >= this->getTimePerFrame())
 		{
-			this->currentTime -= this->timePerFrame;
+			this->currentTime -= this->getTimePerFrame();
 			this->rangeIndex++;
 
 			// Get the current range of frame indices.
@@ -168,7 +256,7 @@ void WeaponAnimation::tick(double dt)
 				}
 				else
 				{
-					// Switching from unsheathing to idle, or from swing to idle.
+					// Switching from unsheathing to idle, or from swing/fire to idle.
 					this->state = WeaponAnimation::State::Idle;
 				}
 			}

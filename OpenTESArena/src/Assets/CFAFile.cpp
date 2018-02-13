@@ -23,8 +23,8 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	const uint16_t widthUncompressed = Bytes::getLE16(srcData.data());
 	const uint16_t height = Bytes::getLE16(srcData.data() + 2);
 	const uint16_t widthCompressed = Bytes::getLE16(srcData.data() + 4);
-	//const uint16_t unknown1 = Bytes::getLE16(srcData.data() + 6); // Uncomment these when in use.
-	//const uint16_t unknown2 = Bytes::getLE16(srcData.data() + 8);
+	const uint16_t xOffset = Bytes::getLE16(srcData.data() + 6);
+	const uint16_t yOffset = Bytes::getLE16(srcData.data() + 8);
 	const uint8_t bitsPerPixel = *(srcData.data() + 10); // Determines demuxing routine.
 	const uint8_t frameCount = *(srcData.data() + 11);
 	const uint16_t headerSize = Bytes::getLE16(srcData.data() + 12);
@@ -140,6 +140,8 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 
 	this->width = widthUncompressed;
 	this->height = height;
+	this->xOffset = xOffset;
+	this->yOffset = yOffset;
 
 	// Finally, create 32-bit images using each frame's palette indices.
 	for (const auto &frame : frames)
@@ -175,6 +177,16 @@ int CFAFile::getWidth() const
 int CFAFile::getHeight() const
 {
 	return this->height;
+}
+
+int CFAFile::getXOffset() const
+{
+	return this->xOffset;
+}
+
+int CFAFile::getYOffset() const
+{
+	return this->yOffset;
 }
 
 uint32_t *CFAFile::getPixels(int index) const

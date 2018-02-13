@@ -203,10 +203,6 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 		// Pick a random weapon available to the player's class for testing.
 		std::vector<int> weapons = charClass.getAllowedWeapons();
 
-		// Remove bows for now (16 and 17).
-		weapons.erase(std::remove(weapons.begin(), weapons.end(), 16), weapons.end());
-		weapons.erase(std::remove(weapons.begin(), weapons.end(), 17), weapons.end());
-
 		// Add fists.
 		weapons.push_back(-1);
 

@@ -29,6 +29,7 @@ public:
 		Left,
 		DownRight,
 		DownLeft,
+		Firing, // Reserved for ranged weapons.
 		Sheathing // Reverse of unsheathing animation.
 	};
 private:
@@ -39,14 +40,20 @@ private:
 	WeaponAnimation::State state;
 	int weaponID;
 	std::string animationFilename;
-	double currentTime, timePerFrame;
+	double currentTime;
 	size_t rangeIndex;
+
+	// Gets the time in seconds for each animation frame in the current state.
+	double getTimePerFrame() const;
 
 	// Gets the range of indices associated with the current animation state.
 	const std::vector<int> &getCurrentRange() const;
 public:
 	WeaponAnimation(int weaponID, const ExeStrings &exeStrings);
 	~WeaponAnimation();
+
+	// Returns whether the animation is for a ranged weapon.
+	bool isRanged() const;
 
 	// Returns whether the weapon is currently sheathed (meaning it is not displayed).
 	bool isSheathed() const;
