@@ -1082,8 +1082,36 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 		else
 		{
 			// Handle ranged attack.
-			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-			const bool isAttack = rightClick;
+			const bool isAttack = [this, &inputManager]()
+			{
+				auto &game = this->getGame();
+				const auto &options = game.getOptions();
+				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+
+				if (!options.getModernInterface())
+				{
+					// The cursor must be above the game world interface in order to fire. In
+					// the original game, the cursor has to be in the center "X" region, but
+					// that seems pretty inconvenient, given that the border between cursor
+					// regions is hard to see at a glance, and that might be the difference
+					// between shooting an arrow and not shooting an arrow, so I'm relaxing
+					// the requirements here.
+					auto &textureManager = game.getTextureManager();
+					const auto &renderer = game.getRenderer();
+					const auto &gameWorldInterface = textureManager.getTexture(
+						TextureFile::fromName(TextureName::GameWorldInterface));
+					const int originalCursorY = renderer.nativeToOriginal(
+						inputManager.getMousePosition()).y;
+
+					return rightClick && (originalCursorY <
+						(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()));
+				}
+				else
+				{
+					// Right clicking anywhere in modern mode fires an arrow.
+					return rightClick;
+				}
+			}();
 
 			if (isAttack)
 			{
