@@ -53,6 +53,9 @@ enum class ExeStringKey
 	ProvinceNames,
 	ProvinceIMGFilenames,
 
+	// Locations.
+	CityTemplateFilenames,
+
 	// Race names.
 	RaceNamesSingular,
 	RaceNamesPlural,

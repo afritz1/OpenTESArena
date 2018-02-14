@@ -23,6 +23,15 @@ class ExeStrings;
 class MiscAssets
 {
 public:
+	// Data for city generation. These help decide city layout, blocks, etc..
+	struct CityGeneration
+	{
+		std::array<uint8_t, 58> coastalCityList;
+		std::array<std::string, 6> templateFilenames;
+		std::array<Int2, 22> startingPositions;
+		std::array<std::vector<uint8_t>, 8> reservedBlockLists;
+	};
+
 	// Values for interior and exterior wall heights. In wilderness cells, the values in
 	// box1 and box2 are multiplied by 192/256. In interiors, they are also scaled by the
 	// ceiling2 value (second value in *CEILING lines; default=128?).
@@ -45,6 +54,7 @@ private:
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 	CityDataFile cityDataFile;
+	CityGeneration cityGeneration;
 	WallHeightTables wallHeightTables;
 	std::array<WorldMapMask, 10> worldMapMasks;
 
@@ -62,6 +72,9 @@ private:
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
+
+	// Reads city generation data.
+	void parseCityGeneration(const std::string &exeText, const ExeStrings &exeStrings);
 
 	// Reads the wall height data from A.EXE.
 	void parseWallHeightTables(const std::string &exeText);

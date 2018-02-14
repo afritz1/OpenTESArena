@@ -49,6 +49,8 @@ namespace
 		{ ExeStringKey::ProvinceNames, "ProvinceNames" },
 		{ ExeStringKey::ProvinceIMGFilenames, "ProvinceIMGFilenames" },
 
+		{ ExeStringKey::CityTemplateFilenames, "CityTemplateFilenames" },
+
 		{ ExeStringKey::RaceNamesSingular, "RaceNamesSingular" },
 		{ ExeStringKey::RaceNamesPlural, "RaceNamesPlural" },
 

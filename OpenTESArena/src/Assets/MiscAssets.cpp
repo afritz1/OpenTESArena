@@ -48,6 +48,9 @@ MiscAssets::MiscAssets()
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
 
+	// Read in city generation data.
+	this->parseCityGeneration(this->aExe, *this->aExeStrings.get());
+
 	// Read in wall height tables.
 	this->parseWallHeightTables(this->aExe);
 
@@ -568,6 +571,55 @@ void MiscAssets::parseDungeonTxt()
 				description = description.replace(descriptionCarriageReturn, 1, "\n");
 			}
 		}
+	}
+}
+
+void MiscAssets::parseCityGeneration(const std::string &exeText, const ExeStrings &exeStrings)
+{
+	// Initialize city generation data to empty.
+	std::memset(&this->cityGeneration, 0, sizeof(CityGeneration));
+
+	// Read coastal city list data (58 bytes).
+	const int coastalOffset = 0x3FEA8;
+	const uint8_t *coastalPtr = reinterpret_cast<const uint8_t*>(exeText.data() + coastalOffset);
+	for (int i = 0; i < 58; i++)
+	{
+		this->cityGeneration.coastalCityList.at(i) = *(coastalPtr + i);
+	}
+
+	// Read city template filenames (town%d.mif, ..., cityw%d.mif).
+	// - To do: avoid duplicating strings with ExeStrings.
+	const auto &templateFilenames = exeStrings.getList(ExeStringKey::CityTemplateFilenames);
+	for (size_t i = 0; i < templateFilenames.size(); i++)
+	{
+		this->cityGeneration.templateFilenames.at(i) = templateFilenames.at(i);
+	}
+
+	// Read starting position data (44 bytes).
+	const int startOffset = 0x3FF54;
+	const uint8_t *startPtr = reinterpret_cast<const uint8_t*>(exeText.data() + startOffset);
+	for (int i = 0; i < 22; i++)
+	{
+		const uint8_t x = *(startPtr + (i * 2));
+		const uint8_t y = *(startPtr + ((i * 2) + 1));
+		this->cityGeneration.startingPositions.at(i) = Int2(x, y);
+	}
+
+	// Read reserved block lists (8 lists).
+	const int blockOffset = 0x3FF8E;
+	const uint8_t *blockPtr = reinterpret_cast<const uint8_t*>(exeText.data() + blockOffset);
+	for (int i = 0; i < 8; i++)
+	{
+		std::vector<uint8_t> &blockList = this->cityGeneration.reservedBlockLists.at(i);
+		
+		// Read unsigned bytes until null (0x0).
+		while (*blockPtr != 0)
+		{
+			blockList.push_back(*blockPtr);
+			blockPtr++;
+		}
+
+		blockPtr++;
 	}
 }
 
