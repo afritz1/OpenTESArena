@@ -38,6 +38,8 @@ public:
 		std::vector<MIFFile::Level::Lock> lock;
 		std::vector<MIFFile::Level::Trigger> trig;
 
+		Level();
+
 		// Primary method for decoding .MIF level tag data. This method calls all the lower-
 		// level loading methods for each tag as needed. The return value is the offset from 
 		// the current LEVL tag to where the next LEVL tag would be.

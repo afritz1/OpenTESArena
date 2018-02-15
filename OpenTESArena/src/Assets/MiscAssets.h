@@ -30,6 +30,8 @@ public:
 		std::array<std::string, 6> templateFilenames;
 		std::array<Int2, 22> startingPositions;
 		std::array<std::vector<uint8_t>, 8> reservedBlockLists;
+
+		CityGeneration();
 	};
 
 	// Values for interior and exterior wall heights. In wilderness cells, the values in
@@ -42,6 +44,8 @@ public:
 		// Ignore "source" array, a copy of previous 56 words.
 		std::array<uint16_t, 8> box3a, box3b;
 		std::array<uint16_t, 16> box4;
+
+		WallHeightTables();
 	};
 private:
 	static const std::string AExeKeyValuesMapPath;
@@ -104,6 +108,9 @@ public:
 
 	// Gets the data object for world map locations.
 	const CityDataFile &getCityDataFile() const;
+
+	// Gets the data for city generation.
+	const CityGeneration &getCityGeneration() const;
 
 	// Gets the wall height tables for determining how tall walls are.
 	const WallHeightTables &getWallHeightTables() const;

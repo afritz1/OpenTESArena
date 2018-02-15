@@ -13,9 +13,16 @@ struct CharacterClassGeneration
 	{
 		int id;
 		bool isSpellcaster, hasCriticalHit, isThief;
+
+		ClassData();
 	};
 
-	struct ChoiceData { uint8_t a, b, c; };
+	struct ChoiceData
+	{
+		uint8_t a, b, c;
+
+		ChoiceData();
+	};
 
 	static const int ID_MASK;
 	static const int SPELLCASTER_MASK;

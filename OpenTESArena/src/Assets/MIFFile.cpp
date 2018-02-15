@@ -43,6 +43,11 @@ namespace
 	};
 }
 
+MIFFile::Level::Level()
+{
+	this->numf = 0;
+}
+
 const uint8_t MIFFile::DRY_CHASM = 0xC;
 const uint8_t MIFFile::WET_CHASM = 0xD;
 const uint8_t MIFFile::LAVA_CHASM = 0xE;
@@ -90,7 +95,6 @@ MIFFile::MIFFile(const std::string &filename)
 	while (levelOffset < srcData.size())
 	{
 		MIFFile::Level level;
-		std::memset(&level, 0, sizeof(level));
 
 		// Begin loading the level data at the current LEVL, and get the offset
 		// to the next LEVL.

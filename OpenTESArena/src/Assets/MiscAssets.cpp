@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <cstring>
 #include <numeric>
 #include <sstream>
 
@@ -17,6 +16,23 @@
 #include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
+
+MiscAssets::CityGeneration::CityGeneration()
+{
+	this->coastalCityList.fill(0);
+}
+
+MiscAssets::WallHeightTables::WallHeightTables()
+{
+	this->box1a.fill(0);
+	this->box1b.fill(0);
+	this->box1c.fill(0);
+	this->box2a.fill(0);
+	this->box2b.fill(0);
+	this->box3a.fill(0);
+	this->box3b.fill(0);
+	this->box4.fill(0);
+}
 
 const std::string MiscAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
 
@@ -258,11 +274,9 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 	stream->seekg(0, std::ios::beg);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	// Initialize the class generation data with zeroes.
+	// Character class generation members (to be set).
 	auto &classes = this->classesDat.classes;
 	auto &choices = this->classesDat.choices;
-	std::memset(classes.data(), 0, classes.size() * sizeof(classes.front()));
-	std::memset(choices.data(), 0, choices.size() * sizeof(choices.front()));
 
 	// The class IDs take up the first 18 bytes.
 	for (size_t i = 0; i < classes.size(); i++)
@@ -576,9 +590,6 @@ void MiscAssets::parseDungeonTxt()
 
 void MiscAssets::parseCityGeneration(const std::string &exeText, const ExeStrings &exeStrings)
 {
-	// Initialize city generation data to empty.
-	std::memset(&this->cityGeneration, 0, sizeof(CityGeneration));
-
 	// Read coastal city list data (58 bytes).
 	const int coastalOffset = 0x3FEA8;
 	const uint8_t *coastalPtr = reinterpret_cast<const uint8_t*>(exeText.data() + coastalOffset);
@@ -625,9 +636,6 @@ void MiscAssets::parseCityGeneration(const std::string &exeText, const ExeString
 
 void MiscAssets::parseWallHeightTables(const std::string &exeText)
 {
-	// Initialize wall height tables to empty.
-	std::memset(&this->wallHeightTables, 0, sizeof(WallHeightTables));
-
 	// Offset in A.EXE to the start of the wall height table data.
 	const int offset = 0x48206;
 
@@ -756,6 +764,11 @@ const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTx
 const CityDataFile &MiscAssets::getCityDataFile() const
 {
 	return this->cityDataFile;
+}
+
+const MiscAssets::CityGeneration &MiscAssets::getCityGeneration() const
+{
+	return this->cityGeneration;
 }
 
 const MiscAssets::WallHeightTables &MiscAssets::getWallHeightTables() const

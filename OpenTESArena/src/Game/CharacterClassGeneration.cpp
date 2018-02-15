@@ -3,6 +3,21 @@
 
 #include "CharacterClassGeneration.h"
 
+CharacterClassGeneration::ClassData::ClassData()
+{
+	this->id = 0;
+	this->isSpellcaster = false;
+	this->hasCriticalHit = false;
+	this->isThief = false;
+}
+
+CharacterClassGeneration::ChoiceData::ChoiceData()
+{
+	this->a = 0;
+	this->b = 0;
+	this->c = 0;
+}
+
 const int CharacterClassGeneration::ID_MASK = 0x1F;
 const int CharacterClassGeneration::SPELLCASTER_MASK = 0x20;
 const int CharacterClassGeneration::CRITICAL_HIT_MASK = 0x40;
