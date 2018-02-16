@@ -109,6 +109,9 @@ namespace
 		{ TextureName::TownIcon, "TOWN.IMG" },
 		{ TextureName::VillageIcon, "VILLAGE.IMG" },
 
+		// Map text.
+		{ TextureName::ProvinceNames, "OUTPROV.CIF" },
+
 		// Spellbook and spellmaker.
 		{ TextureName::BuySpellBackground, "BUYSPELL.IMG" },
 		{ TextureName::Form1, "FORM1.IMG" },

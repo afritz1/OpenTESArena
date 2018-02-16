@@ -10,13 +10,13 @@
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
 
 // In very complex scenes with several different kinds of voxels (including chasms, etc.),
-// there are roughly 120-140 unique voxel data definitions, which mandates that the voxel
-// type itself be at least unsigned 8-bit.
+// there are over a few hundred unique voxel data definitions, which mandates that the voxel
+// type itself be at least unsigned 16-bit.
 
 class VoxelGrid
 {
 private:
-	std::vector<uint8_t> voxels;
+	std::vector<uint16_t> voxels;
 	std::vector<VoxelData> voxelData;
 	int width, height, depth;
 public:
@@ -35,15 +35,15 @@ public:
 	int getDepth() const;
 
 	// Gets a pointer to the voxel grid data.
-	uint8_t *getVoxels();
-	const uint8_t *getVoxels() const;
+	uint16_t *getVoxels();
+	const uint16_t *getVoxels() const;
 
 	// Gets the voxel data associated with an ID.
-	VoxelData &getVoxelData(uint8_t id);
-	const VoxelData &getVoxelData(uint8_t id) const;
+	VoxelData &getVoxelData(uint16_t id);
+	const VoxelData &getVoxelData(uint16_t id) const;
 
 	// Adds a voxel data object and returns its assigned ID.
-	uint8_t addVoxelData(const VoxelData &voxelData);
+	uint16_t addVoxelData(const VoxelData &voxelData);
 };
 
 #endif

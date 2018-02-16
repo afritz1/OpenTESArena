@@ -88,6 +88,9 @@ enum class TextureName
 	TownIcon,
 	VillageIcon,
 
+	// Map text.
+	ProvinceNames,
+
 	// Spellbook and spellmaker.
 	BuySpellBackground,
 	Form1,

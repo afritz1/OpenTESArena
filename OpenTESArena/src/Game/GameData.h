@@ -8,6 +8,7 @@
 
 #include "Clock.h"
 #include "Date.h"
+#include "../Assets/MiscAssets.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Math/Vector2.h"
@@ -80,8 +81,9 @@ public:
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the reference
-	// parameters.
-	static void loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &playerPosition,
+	// parameters. The local ID is the 0-31 location index within a province.
+	static void loadCity(int localID, int provinceID, WeatherType weatherType,
+		const MiscAssets &miscAssets, Double3 &playerPosition, Location &location,
 		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the reference parameters.

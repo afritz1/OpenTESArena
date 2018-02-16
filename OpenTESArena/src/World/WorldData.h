@@ -1,6 +1,7 @@
 #ifndef WORLD_DATA_H
 #define WORLD_DATA_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,7 @@ class Renderer;
 class TextureManager;
 
 enum class ClimateType;
+enum class LocationType;
 enum class WeatherType;
 enum class WorldType;
 
@@ -46,6 +48,9 @@ public:
 
 	WorldData &operator=(WorldData &&worldData) = default;
 
+	// Returns whether the given ID is for a city-state, town, or village.
+	static LocationType getLocationTypeFromID(int cityID);
+
 	// Loads all levels of an interior .MIF file.
 	static WorldData loadInterior(const MIFFile &mif);
 
@@ -54,7 +59,9 @@ public:
 		WeatherType weatherType);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
-	static WorldData loadCity(const MIFFile &mif, WeatherType weatherType);
+	static WorldData loadCity(int cityID, const MIFFile &mif, int cityX, int cityY,
+		int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+		LocationType locationType, WeatherType weatherType);
 
 	// Loads some wilderness blocks.
 	static WorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,

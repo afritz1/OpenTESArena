@@ -1,4 +1,4 @@
-#include <array>
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <sstream>
@@ -7,6 +7,7 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Constants.h"
+#include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Bytes.h"
@@ -148,13 +149,10 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 	return levelData;
 }
 
-LevelData LevelData::loadCity(const MIFFile::Level &level, const INFFile &inf,
-	int gridWidth, int gridDepth)
+LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
+	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+	const INFFile &inf, int gridWidth, int gridDepth)
 {
-	// To do: city generation.
-	// - Load city skeleton from level parameter.
-	// - Figure out required .MIF chunks from city ID (pass cityID parameter?).
-
 	// Exterior level (skeleton + random chunks).
 	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
 	levelData.name = level.name;
@@ -165,10 +163,139 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, const INFFile &inf,
 	// Empty voxel data (for air).
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
-	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
+	// Load city skeleton FLOR, MAP1, and MAP2 voxels. No locks or triggers.
 	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
 	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
 	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+
+	// Decide which city blocks to load.
+	enum class BlockType
+	{
+		Empty, Reserved, Equipment, MagesGuild,
+		NobleHouse, Temple, Tavern, Spacer, Houses
+	};
+
+	const int citySize = cityDim * cityDim;
+	std::vector<BlockType> plan(citySize, BlockType::Empty);
+	const uint32_t citySeed = static_cast<uint32_t>(cityX << 16) + cityY;
+	ArenaRandom random(citySeed);
+
+	auto placeBlock = [citySize, &plan, &random](BlockType blockType)
+	{
+		int planIndex;
+
+		do
+		{
+			planIndex = random.next() % citySize;
+		} while (plan.at(planIndex) != BlockType::Empty);
+
+		plan.at(planIndex) = blockType;
+	};
+
+	// Set reserved blocks.
+	for (const uint8_t block : reservedBlocks)
+	{
+		plan.at(block) = BlockType::Reserved;
+	}
+
+	// Initial block placement.
+	placeBlock(BlockType::Equipment);
+	placeBlock(BlockType::MagesGuild);
+	placeBlock(BlockType::NobleHouse);
+	placeBlock(BlockType::Temple);
+	placeBlock(BlockType::Tavern);
+	placeBlock(BlockType::Spacer);
+
+	// Create city plan according to RNG.
+	const int emptyBlocksInPlan = static_cast<int>(
+		std::count(plan.begin(), plan.end(), BlockType::Empty));
+	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
+	{
+		const uint32_t randVal = random.next();
+		const BlockType blockType = [randVal]()
+		{
+			if (randVal <= 0x7333)
+			{
+				return BlockType::Houses;
+			}
+			else if (randVal <= 0xA666)
+			{
+				return BlockType::Tavern;
+			}
+			else if (randVal <= 0xCCCC)
+			{
+				return BlockType::Equipment;
+			}
+			else if (randVal <= 0xE666)
+			{
+				return BlockType::Temple;
+			}
+			else
+			{
+				return BlockType::NobleHouse;
+			}
+		}();
+
+		placeBlock(blockType);
+	}
+
+	// Build the city, loading data for each block. Load blocks right to left, top to bottom.
+	int xDim = 0;
+	int yDim = 0;
+
+	for (const BlockType block : plan)
+	{
+		if (block != BlockType::Reserved)
+		{
+			const std::array<std::string, 7> BlockCodes =
+			{
+				"EQ", "MG", "NB", "TP", "TV", "TS", "BS"
+			};
+
+			const std::array<int, 7> VariationCounts =
+			{
+				13, 11, 10, 12, 15, 11, 20
+			};
+
+			const std::array<std::string, 4> Rotations =
+			{
+				"A", "B", "C", "D"
+			};
+
+			const int blockIndex = static_cast<int>(block) - 2;
+			const std::string &blockCode = BlockCodes.at(blockIndex);
+			const std::string &rotation = Rotations.at(random.next() % Rotations.size());
+			const int variationCount = VariationCounts.at(blockIndex);
+			const int variation = std::max(random.next() % variationCount, 1);
+			const std::string blockMifName = blockCode + "BD" +
+				std::to_string(variation) + rotation + ".MIF";
+
+			// Load the block's .MIF data into the level.
+			const MIFFile blockMif(blockMifName);
+			const auto &blockLevel = blockMif.getLevels().front();
+
+			// Offset of the block in the voxel grid.
+			const Int2 offset = VoxelGrid::getTransformedCoordinate(
+				startPosition + Int2((xDim + 1) * 20, (yDim + 1) * 20), gridWidth, gridDepth);
+
+			levelData.readFLOR(blockLevel.flor, inf, blockMif.getWidth(),
+				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
+			levelData.readMAP1(blockLevel.map1, inf, blockMif.getWidth(),
+				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
+			levelData.readMAP2(blockLevel.map2, inf, blockMif.getWidth(),
+				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
+			// To do: load flats.
+		}
+
+		xDim++;
+
+		// Move to the next row if done with the current one.
+		if (xDim == cityDim)
+		{
+			xDim = 0;
+			yDim++;
+		}
+	}
 
 	return levelData;
 }
@@ -279,31 +406,13 @@ const std::string *LevelData::getSoundTrigger(const Int2 &voxel) const
 	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
 }
 
-void LevelData::setVoxel(int x, int y, int z, uint8_t id)
+void LevelData::setVoxel(int x, int y, int z, uint16_t id)
 {
-	uint8_t *voxels = this->voxelGrid.getVoxels();
+	uint16_t *voxels = this->voxelGrid.getVoxels();
 	const int index = x + (y * this->voxelGrid.getWidth()) +
 		(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight());
 
 	voxels[index] = id;
-}
-
-// Hash specialization for readFLOR() chasm mappings.
-namespace std
-{
-	template <>
-	struct hash<std::pair<uint16_t, std::array<bool, 4>>>
-	{
-		size_t operator()(const std::pair<uint16_t, std::array<bool, 4>> &p) const
-		{
-			// XOR with some arbitrary prime numbers (not sure if this is any good).
-			return static_cast<size_t>(p.first ^
-				(p.second.at(0) ? 41 : 73) ^
-				(p.second.at(1) ? 89 : 113) ^
-				(p.second.at(2) ? 127 : 149) ^
-				(p.second.at(3) ? 157 : 193));
-		}
-	};
 }
 
 void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
@@ -318,17 +427,15 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 		return voxel;
 	};
 
-	// Mappings of floor and chasm IDs to voxel data indices. Chasms are treated
-	// separately since their voxel data index is also a function of the four
-	// adjacent voxels.
-	std::unordered_map<uint16_t, int> floorDataMappings;
-	std::unordered_map<std::pair<uint16_t, std::array<bool, 4>>, int> chasmDataMappings;
-
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < florWidth; x++)
 	{
 		for (int z = 0; z < florDepth; z++)
 		{
+			// Zero out the voxel before writing.
+			// - To do: this needs to be *WETCHASM for cities.
+			this->setVoxel(x + xOffset, 0, z + zOffset, 0);
+
 			auto getFloorTextureID = [](uint16_t voxel)
 			{
 				return (voxel & 0xFF00) >> 8;
@@ -349,10 +456,10 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 			{
 				// Get the voxel data index associated with the floor value, or add it
 				// if it doesn't exist yet.
-				const int dataIndex = [this, &floorDataMappings, florVoxel, floorTextureID]()
+				const int dataIndex = [this, florVoxel, floorTextureID]()
 				{
-					const auto floorIter = floorDataMappings.find(florVoxel);
-					if (floorIter != floorDataMappings.end())
+					const auto floorIter = this->floorDataMappings.find(florVoxel);
+					if (floorIter != this->floorDataMappings.end())
 					{
 						return floorIter->second;
 					}
@@ -360,7 +467,7 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 					{
 						const int index = this->voxelGrid.addVoxelData(
 							VoxelData::makeFloor(floorTextureID));
-						return floorDataMappings.insert(
+						return this->floorDataMappings.insert(
 							std::make_pair(florVoxel, index)).first->second;
 					}
 				}();
@@ -387,19 +494,19 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 				// Lambda for obtaining the index of a newly-added VoxelData object, and
 				// inserting it into the chasm data mappings if it hasn't been already. The
 				// function parameter decodes the voxel and returns the created VoxelData.
-				auto getChasmDataIndex = [this, &inf, &chasmDataMappings, florVoxel,
-					&adjacentFaces](const std::function<VoxelData(void)> &function)
+				auto getChasmDataIndex = [this, &inf, florVoxel, &adjacentFaces](
+					const std::function<VoxelData(void)> &function)
 				{
 					const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-					const auto chasmIter = chasmDataMappings.find(chasmPair);
-					if (chasmIter != chasmDataMappings.end())
+					const auto chasmIter = this->chasmDataMappings.find(chasmPair);
+					if (chasmIter != this->chasmDataMappings.end())
 					{
 						return chasmIter->second;
 					}
 					else
 					{
 						const int index = this->voxelGrid.addVoxelData(function());
-						return chasmDataMappings.insert(
+						return this->chasmDataMappings.insert(
 							std::make_pair(chasmPair, index)).first->second;
 					}
 				};
@@ -521,31 +628,31 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 		return voxel;
 	};
 
-	// Mappings of wall IDs to voxel data indices.
-	std::unordered_map<uint16_t, int> wallDataMappings;
-
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < map1Width; x++)
 	{
 		for (int z = 0; z < map1Depth; z++)
 		{
+			// Zero out the voxel before writing.
+			this->setVoxel(x + xOffset, 1, z + zOffset, 0);
+
 			const uint16_t map1Voxel = getMap1Voxel(x, z);
 
 			// Lambda for obtaining the index of a newly-added VoxelData object, and inserting
 			// it into the data mappings if it hasn't been already. The function parameter
 			// decodes the voxel and returns the created VoxelData.
-			auto getDataIndex = [this, &inf, &wallDataMappings, map1Voxel](
+			auto getDataIndex = [this, &inf, map1Voxel](
 				const std::function<VoxelData(void)> &function)
 			{
-				const auto wallIter = wallDataMappings.find(map1Voxel);
-				if (wallIter != wallDataMappings.end())
+				const auto wallIter = this->wallDataMappings.find(map1Voxel);
+				if (wallIter != this->wallDataMappings.end())
 				{
 					return wallIter->second;
 				}
 				else
 				{
 					const int index = this->voxelGrid.addVoxelData(function());
-					return wallDataMappings.insert(
+					return this->wallDataMappings.insert(
 						std::make_pair(map1Voxel, index)).first->second;
 				}
 			};
@@ -844,14 +951,17 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
 		return voxel;
 	};
 
-	// Mappings of second floor IDs to voxel data indices.
-	std::unordered_map<uint16_t, int> map2DataMappings;
-
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < map2Width; x++)
 	{
 		for (int z = 0; z < map2Depth; z++)
 		{
+			// Zero out the voxel column before writing.
+			for (int y = 2; y < this->getVoxelGrid().getHeight(); y++)
+			{
+				this->setVoxel(x + xOffset, y, z + zOffset, 0);
+			}
+
 			const uint16_t map2Voxel = getMap2Voxel(x, z);
 
 			if (map2Voxel != 0)
@@ -877,10 +987,10 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
 					}
 				}();
 
-				const int dataIndex = [this, &inf, &map2DataMappings, map2Voxel, height]()
+				const int dataIndex = [this, &inf, map2Voxel, height]()
 				{
-					const auto map2Iter = map2DataMappings.find(map2Voxel);
-					if (map2Iter != map2DataMappings.end())
+					const auto map2Iter = this->map2DataMappings.find(map2Voxel);
+					if (map2Iter != this->map2DataMappings.end())
 					{
 						return map2Iter->second;
 					}
@@ -889,7 +999,7 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
 						const int textureIndex = (map2Voxel & 0x007F) - 1;
 						const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
 							textureIndex, textureIndex, textureIndex, VoxelType::Solid));
-						return map2DataMappings.insert(
+						return this->map2DataMappings.insert(
 							std::make_pair(map2Voxel, index)).first->second;
 					}
 				}();

@@ -1816,7 +1816,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&textures, &occlusion, &frame]()
 	{
 		const int voxelY = camera.eyeVoxel.y;
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
@@ -2140,7 +2140,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
@@ -2461,7 +2461,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, 
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
@@ -2790,7 +2790,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&occlusion, &frame]()
 	{
 		const int voxelY = camera.eyeVoxel.y;
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
@@ -3136,7 +3136,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
 		&occlusion, &frame](int voxelY)
 	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
@@ -3523,7 +3523,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
 		&occlusion, &frame](int voxelY)
 	{
-		const char voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
+		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelYReal = static_cast<double>(voxelY);
@@ -4030,7 +4030,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	}
 
 	// Pointer to voxel ID grid data.
-	const uint8_t *voxels = voxelGrid.getVoxels();
+	const uint16_t *voxels = voxelGrid.getVoxels();
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 

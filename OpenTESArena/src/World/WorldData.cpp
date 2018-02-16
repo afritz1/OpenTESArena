@@ -3,6 +3,7 @@
 #include "SDL.h"
 
 #include "ClimateType.h"
+#include "LocationType.h"
 #include "WeatherType.h"
 #include "WorldData.h"
 #include "WorldType.h"
@@ -124,6 +125,29 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	return climateLetter + locationLetter + weatherLetter + ".INF";
 }
 
+LocationType WorldData::getLocationTypeFromID(int cityID)
+{
+	// Local IDs can be between 0 and 31.
+	const int localID = cityID & 0x1F;
+
+	if (localID < 8)
+	{
+		return LocationType::CityState;
+	}
+	else if (localID < 16)
+	{
+		return LocationType::Town;
+	}
+	else if (localID < 32)
+	{
+		return LocationType::Village;
+	}
+	else
+	{
+		throw std::runtime_error("Bad city ID \"" + std::to_string(cityID) + "\".");
+	}
+}
+
 WorldData WorldData::loadInterior(const MIFFile &mif)
 {
 	WorldData worldData;
@@ -175,7 +199,9 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	return worldData;
 }
 
-WorldData WorldData::loadCity(const MIFFile &mif, WeatherType weatherType)
+WorldData WorldData::loadCity(int cityID, const MIFFile &mif, int cityX, int cityY,
+	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+	LocationType locationType, WeatherType weatherType)
 {
 	WorldData worldData;
 
@@ -187,8 +213,8 @@ WorldData WorldData::loadCity(const MIFFile &mif, WeatherType weatherType)
 
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);
-	worldData.levels.push_back(LevelData::loadCity(
-		level, inf, mif.getDepth(), mif.getWidth()));
+	worldData.levels.push_back(LevelData::loadCity(level, cityX, cityY, cityDim,
+		reservedBlocks, startPosition, inf, mif.getDepth(), mif.getWidth()));
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())

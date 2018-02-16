@@ -131,8 +131,8 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
 		{
-			const uint8_t *voxels = voxelGrid.getVoxels();
-			const uint8_t id = voxels[x + (y * voxelGrid.getWidth()) +
+			const uint16_t *voxels = voxelGrid.getVoxels();
+			const uint16_t id = voxels[x + (y * voxelGrid.getWidth()) +
 				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
 			return voxelGrid.getVoxelData(id);
 		};

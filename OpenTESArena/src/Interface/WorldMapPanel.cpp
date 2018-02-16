@@ -7,12 +7,13 @@
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
 #include "WorldMapPanel.h"
+#include "../Assets/CIFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
+#include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
-#include "../Math/Vector2.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -20,6 +21,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../World/Location.h"
 
 WorldMapPanel::WorldMapPanel(Game &game)
 	: Panel(game)
@@ -44,6 +46,13 @@ WorldMapPanel::WorldMapPanel(Game &game)
 		};
 		return Button<Game&, int>(function);
 	}();
+
+	// Load province name offsets.
+	const CIFFile cif("OUTPROV.CIF", Palette());
+	for (int i = 0; i < static_cast<int>(this->provinceNameOffsets.size()); i++)
+	{
+		this->provinceNameOffsets.at(i) = Int2(cif.getXOffset(i), cif.getYOffset(i));
+	}
 }
 
 WorldMapPanel::~WorldMapPanel()
@@ -125,8 +134,15 @@ void WorldMapPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw world map background. This one has "Exit" at the bottom right.
+	const std::string &backgroundFilename = TextureFile::fromName(TextureName::WorldMap);
 	const auto &mapBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::WorldMap), 
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
 	renderer.drawOriginal(mapBackground.get());
+
+	// Draw yellow text over current province name.
+	const int provinceID = this->getGame().getGameData().getLocation().getProvinceID();
+	const auto &provinceText = textureManager.getTextures(
+		TextureFile::fromName(TextureName::ProvinceNames), backgroundFilename).at(provinceID);
+	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
+	renderer.drawOriginal(provinceText.get(), nameOffset.x, nameOffset.y);
 }

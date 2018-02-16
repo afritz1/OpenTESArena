@@ -1,10 +1,12 @@
 #ifndef LEVEL_DATA_H
 #define LEVEL_DATA_H
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "VoxelGrid.h"
 #include "../Assets/MIFFile.h"
@@ -22,6 +24,24 @@
 // ^
 // |
 // Max (mapWidth - 1, mapDepth - 1)
+
+// Hash specialization for readFLOR() chasm mappings.
+namespace std
+{
+	template <>
+	struct hash<std::pair<uint16_t, std::array<bool, 4>>>
+	{
+		size_t operator()(const std::pair<uint16_t, std::array<bool, 4>> &p) const
+		{
+			// XOR with some arbitrary prime numbers (not sure if this is any good).
+			return static_cast<size_t>(p.first ^
+				(p.second.at(0) ? 41 : 73) ^
+				(p.second.at(1) ? 89 : 113) ^
+				(p.second.at(2) ? 127 : 149) ^
+				(p.second.at(3) ? 157 : 193));
+		}
+	};
+}
 
 class INFFile;
 
@@ -60,6 +80,13 @@ private:
 	std::unordered_map<Int2, Lock> locks;
 	std::unordered_map<Int2, TextTrigger> textTriggers;
 	std::unordered_map<Int2, std::string> soundTriggers;
+
+	// Mappings of IDs to voxel data indices. Chasms are treated separately since their voxel
+	// data index is also a function of the four adjacent voxels. These maps are stored here
+	// because they might be shared between multiple calls to read{FLOR,MAP1,MAP2}().
+	std::unordered_map<uint16_t, int> wallDataMappings, floorDataMappings, map2DataMappings;
+	std::unordered_map<std::pair<uint16_t, std::array<bool, 4>>, int> chasmDataMappings;
+
 	std::unique_ptr<uint32_t> interiorSkyColor; // Null for exteriors, non-null for interiors.
 	VoxelGrid voxelGrid;
 	std::string name, infName;
@@ -69,7 +96,7 @@ private:
 	// Private constructor for static LevelData load methods.
 	LevelData(int gridWidth, int gridHeight, int gridDepth);
 
-	void setVoxel(int x, int y, int z, uint8_t id);
+	void setVoxel(int x, int y, int z, uint16_t id);
 	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 		int florWidth, int florDepth, int gridWidth, int gridDepth, int xOffset, int zOffset);
 	void readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
@@ -101,8 +128,9 @@ public:
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
 	// required .MIF chunks.
-	static LevelData loadCity(const MIFFile::Level &level, const INFFile &inf,
-		int gridWidth, int gridDepth);
+	static LevelData loadCity(const MIFFile::Level &level, int cityX, int cityY,
+		int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+		const INFFile &inf, int gridWidth, int gridDepth);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.

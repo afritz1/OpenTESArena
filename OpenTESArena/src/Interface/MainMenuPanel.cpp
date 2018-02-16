@@ -11,6 +11,7 @@
 #include "ImageSequencePanel.h"
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
@@ -84,9 +85,15 @@ namespace
 		{ "WCRYPT", { 1, 8 } }
 	};
 
+	const std::string RandomCity = "Random City";
+	const std::string RandomTown = "Random Town";
+	const std::string RandomVillage = "Random Village";
 	const std::vector<std::string> CityLocations =
 	{
-		"IMPERIAL.MIF"
+		"IMPERIAL.MIF",
+		RandomCity,
+		RandomTown,
+		RandomVillage
 	};
 
 	const std::vector<std::string> WildernessLocations =
@@ -195,31 +202,64 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
 				game.getMiscAssets().getClassDefinitions(), game.getMiscAssets().getAExeStrings(),
 				game.getTextureManager(), renderer);
-
-			// Overwrite game level with a .MIF file.
-			const MIFFile mif(mifName);
-
+			
 			auto &player = gameData->getPlayer();
 			Double3 playerPosition = player.getPosition();
 
-			// Load the selected level based on world type.
+			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
 			{
 				// There is only one "premade" city (used by the center province). All others
 				// are randomly generated.
 				if (mifName == "IMPERIAL.MIF")
 				{
+					const MIFFile mif(mifName);
+					const int provinceID = 8;
+					const auto &provinceData =
+						game.getMiscAssets().getCityDataFile().getProvinceData(provinceID);
+					const auto &locationData = provinceData.cityStates.front();
+					
+					auto &location = gameData->getLocation();
+					location = Location(std::string(locationData.name.data()), provinceID,
+						location.getLocationType(), location.getClimateType());
 					GameData::loadPremadeCity(mif, climateType, weatherType, playerPosition,
 						gameData->getWorldData(), game.getTextureManager(), renderer);
 				}
 				else
 				{
-					GameData::loadCity(mif, weatherType, playerPosition,
-						gameData->getWorldData(), game.getTextureManager(), renderer);
+					// Pick a random location based on the .MIF name, excluding the
+					// center province.
+					Random random;
+					const int localID = [&mifName, &random]()
+					{
+						if (mifName == RandomCity)
+						{
+							return random.next(8);
+						}
+						else if (mifName == RandomTown)
+						{
+							return 8 + random.next(8);
+						}
+						else if (mifName == RandomVillage)
+						{
+							return 16 + random.next(16);
+						}
+						else
+						{
+							throw std::runtime_error("Bad .MIF name \"" + mifName + "\".");
+						}
+					}();
+
+					const int provinceID = random.next(8);
+
+					GameData::loadCity(localID, provinceID, weatherType, game.getMiscAssets(),
+						playerPosition, gameData->getLocation(), gameData->getWorldData(),
+						game.getTextureManager(), renderer);
 				}
 			}
 			else if (worldType == WorldType::Interior)
 			{
+				const MIFFile mif(mifName);
 				GameData::loadInterior(mif, playerPosition, gameData->getWorldData(),
 					game.getTextureManager(), renderer);
 			}

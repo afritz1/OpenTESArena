@@ -145,16 +145,143 @@ void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadCity(const MIFFile &mif, WeatherType weatherType, Double3 &playerPosition,
+void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
+	const MiscAssets &miscAssets, Double3 &playerPosition, Location &location,
 	WorldData &worldData, TextureManager &textureManager, Renderer &renderer)
 {
-	// Call random city WorldData loader.
-	worldData = WorldData::loadCity(mif, weatherType);
+	const int cityID = (provinceID << 5) + localID;
+
+	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
+	// loadPremadeCity() should be called instead for that case.
+	DebugAssert(provinceID != 8, "Use loadPremadeCity() instead for center province.");
+	DebugAssert((cityID >= 0) && (cityID < 256),
+		"Invalid city ID \"" + std::to_string(cityID) + "\".");
+	
+	// Determine city traits from the given city ID.
+	const LocationType locationType = WorldData::getLocationTypeFromID(cityID);
+	const MiscAssets::CityGeneration &cityGen = miscAssets.getCityGeneration();
+	const bool isCity = locationType == LocationType::CityState;
+	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
+		cityGen.coastalCityList.end(), cityID) != cityGen.coastalCityList.end();
+	const int templateCount = isCoastal ? (isCity ? 3 : 2) : 5;
+	const int templateID = cityID % templateCount;
+
+	const MIFFile mif = [locationType, &cityGen, isCoastal, templateID]()
+	{
+		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
+		const int templateNameIndex = [locationType, isCoastal]()
+		{
+			if (locationType == LocationType::CityState)
+			{
+				return isCoastal ? 5 : 4;
+			}
+			else if (locationType == LocationType::Town)
+			{
+				return isCoastal ? 1 : 0;
+			}
+			else if (locationType == LocationType::Village)
+			{
+				return isCoastal ? 3 : 2;
+			}
+			else
+			{
+				throw std::runtime_error("Bad location type \"" +
+					std::to_string(static_cast<int>(locationType)) + "\".");
+			}
+		}();
+
+		// Get the template name associated with the city ID.
+		std::string templateName = cityGen.templateFilenames.at(templateNameIndex);
+		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
+		templateName = String::toUppercase(templateName);
+
+		return MIFFile(templateName);
+	}();
+
+	// Location-related data from the city data file.
+	const auto &provinceData = miscAssets.getCityDataFile().getProvinceData(provinceID);
+	const auto &locationData = [localID, locationType, &provinceData]()
+	{
+		if (locationType == LocationType::CityState)
+		{
+			return provinceData.cityStates.at(localID);
+		}
+		else if (locationType == LocationType::Town)
+		{
+			return provinceData.towns.at(localID - 8);
+		}
+		else if (locationType == LocationType::Village)
+		{
+			return provinceData.villages.at(localID - 16);
+		}
+		else
+		{
+			throw std::runtime_error("Bad location type \"" +
+				std::to_string(static_cast<int>(locationType)) + "\".");
+		}
+	}();
+
+	const int cityX = locationData.x;
+	const int cityY = locationData.y;
+
+	// City block count (6x6, 5x5, 4x4).
+	const int cityDim = [locationType]()
+	{
+		if (locationType == LocationType::CityState)
+		{
+			return 6;
+		}
+		else if (locationType == LocationType::Town)
+		{
+			return 5;
+		}
+		else if (locationType == LocationType::Village)
+		{
+			return 4;
+		}
+		else
+		{
+			throw std::runtime_error("Bad location type \"" +
+				std::to_string(static_cast<int>(locationType)) + "\".");
+		}
+	}();
+
+	const std::vector<uint8_t> &reservedBlocks = cityGen.reservedBlockLists.at(templateID);
+	const Int2 &startPosition = [locationType, &cityGen, templateID]()
+	{
+		// To do: verify index correctness. Some locations have bad start positions.
+		if (locationType == LocationType::CityState)
+		{
+			return cityGen.startingPositions.at(templateID);
+		}
+		else if (locationType == LocationType::Town)
+		{
+			return cityGen.startingPositions.at(8 + templateID);
+		}
+		else if (locationType == LocationType::Village)
+		{
+			return cityGen.startingPositions.at(15 + templateID);
+		}
+		else
+		{
+			throw std::runtime_error("Bad location type \"" +
+				std::to_string(static_cast<int>(locationType)) + "\".");
+		}
+	}();
+
+	// Call city WorldData loader.
+	worldData = WorldData::loadCity(cityID, mif, cityX, cityY, cityDim,
+		reservedBlocks, startPosition, locationType, weatherType);
 	worldData.setLevelActive(worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position.
 	const Double2 &startPoint = worldData.getStartPoints().front();
 	playerPosition = Double3(startPoint.x, playerPosition.y, startPoint.y);
+
+	// Set location data.
+	// - To do: get original climate data (from WorldData?).
+	location = Location(std::string(locationData.name.data()), provinceID,
+		locationType, ClimateType::Temperate);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
@@ -386,7 +513,7 @@ std::unique_ptr<GameData> GameData::createDefault(const std::string &playerName,
 	// Lambda for setting a voxel at some coordinate to some ID.
 	auto setVoxel = [&voxelGrid](int x, int y, int z, int id)
 	{
-		uint8_t *voxels = voxelGrid.getVoxels();
+		uint16_t *voxels = voxelGrid.getVoxels();
 		voxels[x + (y * voxelGrid.getWidth()) +
 			(z * voxelGrid.getWidth() * voxelGrid.getHeight())] = id;
 	};

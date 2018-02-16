@@ -5,7 +5,7 @@
 VoxelGrid::VoxelGrid(int width, int height, int depth)
 {
 	const int voxelCount = width * height * depth;
-	this->voxels = std::vector<uint8_t>(voxelCount);
+	this->voxels = std::vector<uint16_t>(voxelCount);
 	std::fill(this->voxels.begin(), this->voxels.end(), 0);
 
 	this->width = width;
@@ -50,29 +50,29 @@ int VoxelGrid::getDepth() const
 	return this->depth;
 }
 
-uint8_t *VoxelGrid::getVoxels()
+uint16_t *VoxelGrid::getVoxels()
 {
 	return this->voxels.data();
 }
 
-const uint8_t *VoxelGrid::getVoxels() const
+const uint16_t *VoxelGrid::getVoxels() const
 {
 	return this->voxels.data();
 }
 
-VoxelData &VoxelGrid::getVoxelData(uint8_t id)
+VoxelData &VoxelGrid::getVoxelData(uint16_t id)
 {
 	return this->voxelData.at(id);
 }
 
-const VoxelData &VoxelGrid::getVoxelData(uint8_t id) const
+const VoxelData &VoxelGrid::getVoxelData(uint16_t id) const
 {
 	return this->voxelData.at(id);
 }
 
-uint8_t VoxelGrid::addVoxelData(const VoxelData &voxelData)
+uint16_t VoxelGrid::addVoxelData(const VoxelData &voxelData)
 {
 	this->voxelData.push_back(voxelData);
 
-	return static_cast<uint8_t>(this->voxelData.size() - 1);
+	return static_cast<uint16_t>(this->voxelData.size() - 1);
 }

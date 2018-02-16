@@ -1198,7 +1198,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	// Get the voxel data associated with the voxel.
 	const auto &voxelData = [&transitionVoxel, &voxelGrid]()
 	{
-		const uint8_t voxelID = [&transitionVoxel, &voxelGrid]()
+		const uint16_t voxelID = [&transitionVoxel, &voxelGrid]()
 		{
 			const int x = transitionVoxel.x;
 			const int y = 1;
