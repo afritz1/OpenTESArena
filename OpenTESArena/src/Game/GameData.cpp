@@ -246,7 +246,13 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 		}
 	}();
 
-	const std::vector<uint8_t> &reservedBlocks = cityGen.reservedBlockLists.at(templateID);
+	const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
+	{
+		// Get the index into the reserved block list.
+		const int index = isCoastal ? (5 + templateID) : templateID;
+		return cityGen.reservedBlockLists.at(index);
+	}();
+
 	const Int2 &startPosition = [locationType, &cityGen, isCoastal, templateID]()
 	{
 		// Get the index into the starting positions array.
