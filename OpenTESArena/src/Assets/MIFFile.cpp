@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cstring>
 #include <unordered_map>
 
 #include "Compression.h"
@@ -211,7 +210,7 @@ int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Currently unknown.
 	level.flat = std::vector<uint8_t>(size);
-	std::memcpy(level.flat.data(), tagDataStart, level.flat.size());
+	std::copy(tagDataStart, tagDataStart + level.flat.size(), level.flat.begin());
 
 	return size + 6;
 }
@@ -251,7 +250,7 @@ int MIFFile::Level::loadINNS(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Currently unknown.
 	level.inns = std::vector<uint8_t>(size);
-	std::memcpy(level.inns.data(), tagDataStart, level.inns.size());
+	std::copy(tagDataStart, tagDataStart + level.inns.size(), level.inns.begin());
 
 	return size + 6;
 }
@@ -288,7 +287,7 @@ int MIFFile::Level::loadLOOT(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Currently unknown.
 	level.loot = std::vector<uint8_t>(size);
-	std::memcpy(level.loot.data(), tagDataStart, level.loot.size());
+	std::copy(tagDataStart, tagDataStart + level.loot.size(), level.loot.begin());
 
 	return size + 6;
 }
@@ -356,7 +355,7 @@ int MIFFile::Level::loadTARG(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Currently unknown.
 	level.targ = std::vector<uint8_t>(size);
-	std::memcpy(level.targ.data(), tagDataStart, level.targ.size());
+	std::copy(tagDataStart, tagDataStart + level.targ.size(), level.targ.begin());
 
 	return size + 6;
 }

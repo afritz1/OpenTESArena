@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cstring>
 
 #include "CFAFile.h"
 #include "Compression.h"
@@ -73,7 +72,8 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 			uint32_t count = widthUncompressed;
 
 			// Copy the current line to the scratch buffer.
-			std::memcpy(encoded.data(), decomp.data() + offset, widthCompressed);
+			const uint8_t *decompPtr = decomp.data() + offset;
+			std::copy(decompPtr, decompPtr + widthCompressed, encoded.data());
 
 			// Lambda for which demux routine to do, based on bits per pixel.
 			auto runDemux = [&dst, dstOffset, &count, &encoded, &translate, lookUpTable](
