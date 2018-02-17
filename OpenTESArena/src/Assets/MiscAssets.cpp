@@ -607,7 +607,7 @@ void MiscAssets::parseCityGeneration(const std::string &exeText, const ExeString
 	}
 
 	// Read starting position data (44 bytes).
-	const int startOffset = 0x3FF54;
+	const int startOffset = 0x3FF55;
 	const uint8_t *startPtr = reinterpret_cast<const uint8_t*>(exeText.data() + startOffset);
 	for (int i = 0; i < 22; i++)
 	{
