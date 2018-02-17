@@ -284,8 +284,8 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 			const auto &blockLevel = blockMif.getLevels().front();
 
 			// Offset of the block in the voxel grid.
-			const Int2 offset = VoxelGrid::getTransformedCoordinate(
-				startPosition + Int2((xDim + 1) * 20, (yDim + 1) * 20), gridWidth, gridDepth);
+			const Int2 offset = VoxelGrid::getTransformedCoordinate(startPosition - Int2(1, 1) +
+				Int2((xDim + 1) * 20, (yDim + 1) * 20), gridWidth, gridDepth);
 
 			levelData.readFLOR(blockLevel.flor.data(), inf, blockMif.getWidth(),
 				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
