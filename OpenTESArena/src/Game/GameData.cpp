@@ -247,26 +247,31 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 	}();
 
 	const std::vector<uint8_t> &reservedBlocks = cityGen.reservedBlockLists.at(templateID);
-	const Int2 &startPosition = [locationType, &cityGen, templateID]()
+	const Int2 &startPosition = [locationType, &cityGen, isCoastal, templateID]()
 	{
-		// To do: verify index correctness. Some locations have bad start positions.
-		if (locationType == LocationType::CityState)
+		// Get the index into the starting positions array.
+		const int index = [locationType, isCoastal, templateID]()
 		{
-			return cityGen.startingPositions.at(templateID);
-		}
-		else if (locationType == LocationType::Town)
-		{
-			return cityGen.startingPositions.at(8 + templateID);
-		}
-		else if (locationType == LocationType::Village)
-		{
-			return cityGen.startingPositions.at(15 + templateID);
-		}
-		else
-		{
-			throw std::runtime_error("Bad location type \"" +
-				std::to_string(static_cast<int>(locationType)) + "\".");
-		}
+			if (locationType == LocationType::CityState)
+			{
+				return isCoastal ? (19 + templateID) : (14 + templateID);
+			}
+			else if (locationType == LocationType::Town)
+			{
+				return isCoastal ? (5 + templateID) : templateID;
+			}
+			else if (locationType == LocationType::Village)
+			{
+				return isCoastal ? (12 + templateID) : (7 + templateID);
+			}
+			else
+			{
+				throw std::runtime_error("Bad location type \"" +
+					std::to_string(static_cast<int>(locationType)) + "\".");
+			}
+		}();
+
+		return cityGen.startingPositions.at(index);
 	}();
 
 	// Call city WorldData loader.

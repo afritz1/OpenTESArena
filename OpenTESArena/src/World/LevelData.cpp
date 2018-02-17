@@ -195,6 +195,15 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 	// Set reserved blocks.
 	for (const uint8_t block : reservedBlocks)
 	{
+		// To do: some block values are outside the plan range (i.e., 21 in a 20 block plan).
+		// How should they be handled? Skipping them for now.
+		if (block > plan.size())
+		{
+			DebugWarning("Block \"" +
+				std::to_string(static_cast<int>(block)) + "\" outside plan.");
+			continue;
+		}
+
 		plan.at(block) = BlockType::Reserved;
 	}
 
