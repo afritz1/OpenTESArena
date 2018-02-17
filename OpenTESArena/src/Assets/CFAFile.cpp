@@ -73,7 +73,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 
 			// Copy the current line to the scratch buffer.
 			const uint8_t *decompPtr = decomp.data() + offset;
-			std::copy(decompPtr, decompPtr + widthCompressed, encoded.data());
+			std::copy(decompPtr, decompPtr + widthCompressed, encoded.begin());
 
 			// Lambda for which demux routine to do, based on bits per pixel.
 			auto runDemux = [&dst, dstOffset, &count, &encoded, &translate, lookUpTable](

@@ -105,8 +105,8 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR and MAP1 voxels.
-	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
+	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -142,9 +142,9 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
-	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
-	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
 	return levelData;
 }
@@ -164,9 +164,9 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load city skeleton FLOR, MAP1, and MAP2 voxels. No locks or triggers.
-	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
-	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
 	// Decide which city blocks to load.
 	enum class BlockType
@@ -278,11 +278,11 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 			const Int2 offset = VoxelGrid::getTransformedCoordinate(
 				startPosition + Int2((xDim + 1) * 20, (yDim + 1) * 20), gridWidth, gridDepth);
 
-			levelData.readFLOR(blockLevel.flor, inf, blockMif.getWidth(),
+			levelData.readFLOR(blockLevel.flor.data(), inf, blockMif.getWidth(),
 				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
-			levelData.readMAP1(blockLevel.map1, inf, blockMif.getWidth(),
+			levelData.readMAP1(blockLevel.map1.data(), inf, blockMif.getWidth(),
 				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
-			levelData.readMAP2(blockLevel.map2, inf, blockMif.getWidth(),
+			levelData.readMAP2(blockLevel.map2.data(), inf, blockMif.getWidth(),
 				blockMif.getDepth(), gridWidth, gridDepth, offset.x, offset.y);
 			// To do: load flats.
 		}
@@ -319,9 +319,9 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
-	levelData.readFLOR(level.flor, inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1, inf, gridWidth, gridDepth);
-	levelData.readMAP2(level.map2, inf, gridWidth, gridDepth);
+	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 	// To do: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...).
 
 	// Load four .RMD files, each at some X and Z offset in the voxel grid (offsets are in
@@ -336,11 +336,11 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 		}();
 
 		const RMDFile rmd(rmdName);
-		levelData.readFLOR(rmd.getFLOR(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
+		levelData.readFLOR(rmd.getFLOR().data(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
 			gridWidth, gridDepth, xOffset, zOffset);
-		levelData.readMAP1(rmd.getMAP1(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
+		levelData.readMAP1(rmd.getMAP1().data(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
 			gridWidth, gridDepth, xOffset, zOffset);
-		levelData.readMAP2(rmd.getMAP2(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
+		levelData.readMAP2(rmd.getMAP2().data(), inf.getName(), RMDFile::WIDTH, RMDFile::DEPTH,
 			gridWidth, gridDepth, xOffset, zOffset);
 	};
 
@@ -415,15 +415,15 @@ void LevelData::setVoxel(int x, int y, int z, uint16_t id)
 	voxels[index] = id;
 }
 
-void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
-	int florWidth, int florDepth, int gridWidth, int gridDepth, int xOffset, int zOffset)
+void LevelData::readFLOR(const uint8_t *flor, const INFFile &inf, int florWidth, int florDepth,
+	int gridWidth, int gridDepth, int xOffset, int zOffset)
 {
 	// Lambda for obtaining a two-byte FLOR voxel.
-	auto getFlorVoxel = [&flor, florWidth, florDepth](int x, int z)
+	auto getFlorVoxel = [flor, florWidth, florDepth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((florDepth - 1) - z) * 2) + ((((florWidth - 1) - x) * 2) * florDepth);
-		const uint16_t voxel = Bytes::getLE16(flor.data() + index);
+		const uint16_t voxel = Bytes::getLE16(flor + index);
 		return voxel;
 	};
 
@@ -606,8 +606,7 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 	}
 }
 
-void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
-	int gridWidth, int gridDepth)
+void LevelData::readFLOR(const uint8_t *flor, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	const int florWidth = gridWidth;
 	const int florDepth = gridDepth;
@@ -616,15 +615,15 @@ void LevelData::readFLOR(const std::vector<uint8_t> &flor, const INFFile &inf,
 	this->readFLOR(flor, inf, florWidth, florDepth, gridWidth, gridDepth, xOffset, zOffset);
 }
 
-void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
-	int map1Width, int map1Depth, int gridWidth, int gridDepth, int xOffset, int zOffset)
+void LevelData::readMAP1(const uint8_t *map1, const INFFile &inf, int map1Width, int map1Depth,
+	int gridWidth, int gridDepth, int xOffset, int zOffset)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
-	auto getMap1Voxel = [&map1, map1Width, map1Depth](int x, int z)
+	auto getMap1Voxel = [map1, map1Width, map1Depth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((map1Depth - 1) - z) * 2) + ((((map1Width - 1) - x) * 2) * map1Depth);
-		const uint16_t voxel = Bytes::getLE16(map1.data() + index);
+		const uint16_t voxel = Bytes::getLE16(map1 + index);
 		return voxel;
 	};
 
@@ -929,8 +928,7 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 	}
 }
 
-void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
-	int gridWidth, int gridDepth)
+void LevelData::readMAP1(const uint8_t *map1, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	const int map1Width = gridWidth;
 	const int map1Depth = gridDepth;
@@ -939,15 +937,15 @@ void LevelData::readMAP1(const std::vector<uint8_t> &map1, const INFFile &inf,
 	this->readMAP1(map1, inf, map1Width, map1Depth, gridWidth, gridDepth, xOffset, zOffset);
 }
 
-void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
-	int map2Width, int map2Depth, int gridWidth, int gridDepth, int xOffset, int zOffset)
+void LevelData::readMAP2(const uint8_t *map2, const INFFile &inf, int map2Width, int map2Depth,
+	int gridWidth, int gridDepth, int xOffset, int zOffset)
 {
 	// Lambda for obtaining a two-byte MAP2 voxel.
-	auto getMap2Voxel = [&map2, map2Width, map2Depth](int x, int z)
+	auto getMap2Voxel = [map2, map2Width, map2Depth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((map2Depth - 1) - z) * 2) + ((((map2Width - 1) - x) * 2) * map2Depth);
-		const uint16_t voxel = Bytes::getLE16(map2.data() + index);
+		const uint16_t voxel = Bytes::getLE16(map2 + index);
 		return voxel;
 	};
 
@@ -1013,8 +1011,7 @@ void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
 	}
 }
 
-void LevelData::readMAP2(const std::vector<uint8_t> &map2, const INFFile &inf,
-	int gridWidth, int gridDepth)
+void LevelData::readMAP2(const uint8_t *map2, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	const int map2Width = gridWidth;
 	const int map2Depth = gridDepth;

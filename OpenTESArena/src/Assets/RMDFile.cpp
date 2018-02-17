@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <vector>
+
 #include "Compression.h"
 #include "RMDFile.h"
 #include "../Utilities/Bytes.h"
@@ -36,9 +39,9 @@ RMDFile::RMDFile(const std::string &filename)
 		const auto map1End = srcData.begin() + ((2 * srcData.size()) / 3);
 		const auto map2End = srcData.end();
 
-		this->flor = std::vector<uint8_t>(florStart, florEnd);
-		this->map1 = std::vector<uint8_t>(florEnd, map1End);
-		this->map2 = std::vector<uint8_t>(map1End, map2End);
+		std::copy(florStart, florEnd, this->flor.begin());
+		std::copy(florEnd, map1End, this->map1.begin());
+		std::copy(map1End, map2End, this->map2.begin());
 	}
 	else
 	{
@@ -53,9 +56,9 @@ RMDFile::RMDFile(const std::string &filename)
 		const auto map1End = decomp.begin() + ((2 * decomp.size()) / 3);
 		const auto map2End = decomp.end();
 
-		this->flor = std::vector<uint8_t>(florStart, florEnd);
-		this->map1 = std::vector<uint8_t>(florEnd, map1End);
-		this->map2 = std::vector<uint8_t>(map1End, map2End);
+		std::copy(florStart, florEnd, this->flor.begin());
+		std::copy(florEnd, map1End, this->map1.begin());
+		std::copy(map1End, map2End, this->map2.begin());
 	}
 }
 
@@ -64,17 +67,17 @@ RMDFile::~RMDFile()
 
 }
 
-const std::vector<uint8_t> &RMDFile::getFLOR() const
+const RMDFile::ArrayType &RMDFile::getFLOR() const
 {
 	return this->flor;
 }
 
-const std::vector<uint8_t> &RMDFile::getMAP1() const
+const RMDFile::ArrayType &RMDFile::getMAP1() const
 {
 	return this->map1;
 }
 
-const std::vector<uint8_t> &RMDFile::getMAP2() const
+const RMDFile::ArrayType &RMDFile::getMAP2() const
 {
 	return this->map2;
 }

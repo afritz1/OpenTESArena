@@ -1,14 +1,16 @@
 #ifndef RMD_FILE_H
 #define RMD_FILE_H
 
+#include <array>
 #include <cstdint>
 #include <string>
-#include <vector>
 
 class RMDFile
 {
+public:
+	typedef std::array<uint8_t, 8192> ArrayType;
 private:
-	std::vector<uint8_t> flor, map1, map2;
+	RMDFile::ArrayType flor, map1, map2;
 public:
 	RMDFile(const std::string &filename);
 	~RMDFile();
@@ -18,9 +20,9 @@ public:
 	static const int DEPTH;
 
 	// Get voxel data for each floor. Each should be 8192 bytes.
-	const std::vector<uint8_t> &getFLOR() const;
-	const std::vector<uint8_t> &getMAP1() const;
-	const std::vector<uint8_t> &getMAP2() const;
+	const RMDFile::ArrayType &getFLOR() const;
+	const RMDFile::ArrayType &getMAP1() const;
+	const RMDFile::ArrayType &getMAP2() const;
 };
 
 #endif
