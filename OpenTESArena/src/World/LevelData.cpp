@@ -195,16 +195,13 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 	// Set reserved blocks.
 	for (const uint8_t block : reservedBlocks)
 	{
-		// To do: some block values are outside the plan range (i.e., 21 in a 20 block plan).
-		// How should they be handled? Skipping them for now.
-		if (block > plan.size())
+		// The original engine uses a fixed array so all block indices always fall within the
+		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
+		// explicitly.
+		if (block < plan.size())
 		{
-			DebugWarning("Block \"" +
-				std::to_string(static_cast<int>(block)) + "\" outside plan.");
-			continue;
+			plan.at(block) = BlockType::Reserved;
 		}
-
-		plan.at(block) = BlockType::Reserved;
 	}
 
 	// Initial block placement.
