@@ -72,7 +72,8 @@ public:
 	~GameData();
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, TextureManager &textureManager, Renderer &renderer);
+	void loadInterior(const MIFFile &mif, const Location &location, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).

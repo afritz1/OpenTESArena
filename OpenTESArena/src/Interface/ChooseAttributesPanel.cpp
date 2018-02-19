@@ -266,14 +266,17 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 						// Load starting dungeon.
 						const MIFFile mif("START.MIF");
-						gameData->loadInterior(mif, textureManager, renderer);
+						const Location location = [&exeStrings]()
+						{
+							const std::string &locationName =
+								exeStrings.get(ExeStringKey::StartDungeonName);
+							const int provinceID = 8;
+							const LocationType locationType = LocationType::Unique;
+							const ClimateType climateType = ClimateType::Temperate;
+							return Location(locationName, provinceID, locationType, climateType);
+						}();
 
-						// Set some location traits.
-						auto &location = gameData->getLocation();
-						location.name = exeStrings.get(ExeStringKey::StartDungeonName);
-						location.provinceID = 8;
-						location.locationType = LocationType::Unique;
-						location.climateType = ClimateType::Temperate;
+						gameData->loadInterior(mif, location, textureManager, renderer);
 
 						// Set the game data before constructing the game world panel.
 						game.setGameData(std::move(gameData));

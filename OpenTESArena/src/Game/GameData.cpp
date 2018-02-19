@@ -102,7 +102,8 @@ double GameData::getFogDistanceFromWeather(WeatherType weatherType)
 	}
 }
 
-void GameData::loadInterior(const MIFFile &mif, TextureManager &textureManager, Renderer &renderer)
+void GameData::loadInterior(const MIFFile &mif, const Location &location,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Call interior WorldData loader.
 	this->worldData = WorldData::loadInterior(mif);
@@ -111,6 +112,9 @@ void GameData::loadInterior(const MIFFile &mif, TextureManager &textureManager, 
 	// Set player starting position.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+
+	// Set location.
+	this->location = location;
 
 	// Set interior sky palette.
 	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());

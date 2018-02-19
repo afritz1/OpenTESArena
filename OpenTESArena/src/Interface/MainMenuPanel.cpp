@@ -256,24 +256,25 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else if (worldType == WorldType::Interior)
 			{
 				const MIFFile mif(mifName);
-				gameData->loadInterior(mif, game.getTextureManager(), renderer);
 
-				// Load location data depending on whether it's a main quest dungeon.
-				Location &location = gameData->getLocation();
-				if (testType == TestType_MainQuest)
+				// Set some arbitrary interior location data for testing, depending on
+				// whether it's a main quest dungeon.
+				const Location location = [testType, &gameData]()
 				{
-					location.name = "Test Main Quest";
-					location.provinceID = gameData->getPlayer().getRaceID();
-					location.locationType = LocationType::Dungeon;
-					location.climateType = ClimateType::Temperate;
-				}
-				else
-				{
-					location.name = "Test Interior";
-					location.provinceID = gameData->getPlayer().getRaceID();
-					location.locationType = LocationType::CityState;
-					location.climateType = ClimateType::Temperate;
-				}
+					const Player &player = gameData->getPlayer();
+					if (testType == TestType_MainQuest)
+					{
+						return Location("Test Main Quest", player.getRaceID(),
+							LocationType::Dungeon, ClimateType::Temperate);
+					}
+					else
+					{
+						return Location("Test Interior", player.getRaceID(),
+							LocationType::CityState, ClimateType::Temperate);
+					}
+				}();
+
+				gameData->loadInterior(mif, location, game.getTextureManager(), renderer);				
 			}
 			else if (worldType == WorldType::Wilderness)
 			{
