@@ -17,15 +17,9 @@
 
 WorldData::WorldData()
 {
-	// Initialized by load methods.
-}
-
-WorldData::WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager)
-	: entityManager(std::move(entityManager))
-{
-	this->levels.push_back(LevelData(std::move(voxelGrid)));
-	this->currentLevel = 0;
+	// Partially initialized until constructed through one of the static load methods.
 	this->worldType = WorldType::City;
+	this->currentLevel = -1;
 }
 
 WorldData::~WorldData()

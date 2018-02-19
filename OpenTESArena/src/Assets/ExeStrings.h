@@ -54,6 +54,7 @@ enum class ExeStringKey
 	ProvinceIMGFilenames,
 
 	// Locations.
+	StartDungeonName,
 	CityTemplateFilenames,
 
 	// Race names.

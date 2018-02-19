@@ -14,12 +14,14 @@
 #include "TextSubPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeStrings.h"
+#include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
+#include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -35,6 +37,8 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/ClimateType.h"
+#include "../World/LocationType.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	const CharacterClass &charClass, const std::string &name, 
@@ -231,11 +235,45 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						renderer.initializeWorldRendering(
 							game.getOptions().getResolutionScale(), fullGameWindow);
 
-						// Generate the test world data.
-						std::unique_ptr<GameData> gameData = GameData::createDefault(
-							name, gender, raceID, charClass, this->portraitID,
-							game.getMiscAssets().getAExeStrings(),
-							game.getTextureManager(), renderer);
+						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+
+						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
+							&charClass, &exeStrings]()
+						{
+							// Initialize player data (independent of the world).
+							Player player = [this, &name, gender, raceID, &charClass, &exeStrings]()
+							{
+								const Double3 dummyPosition = Double3::Zero;
+								const Double3 direction = Double3::UnitX;
+								const Double3 velocity = Double3::Zero;
+
+								Random random;
+								const auto &allowedWeapons = charClass.getAllowedWeapons();
+								const int weaponID = allowedWeapons.at(
+									random.next(static_cast<int>(allowedWeapons.size())));
+
+								return Player(name, gender, raceID, charClass, this->portraitID,
+									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
+									Player::DEFAULT_RUN_SPEED, weaponID, exeStrings);
+							}();
+
+							return std::unique_ptr<GameData>(new GameData(std::move(player)));
+						}();
+
+						// Set palette (important for texture loading).
+						auto &textureManager = game.getTextureManager();
+						textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
+
+						// Load starting dungeon.
+						const MIFFile mif("START.MIF");
+						gameData->loadInterior(mif, textureManager, renderer);
+
+						// Set some location traits.
+						auto &location = gameData->getLocation();
+						location.name = exeStrings.get(ExeStringKey::StartDungeonName);
+						location.provinceID = 8;
+						location.locationType = LocationType::Unique;
+						location.climateType = ClimateType::Temperate;
 
 						// Set the game data before constructing the game world panel.
 						game.setGameData(std::move(gameData));
@@ -266,7 +304,22 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						auto gameFunction = [](Game &game)
 						{
 							game.setPanel<GameWorldPanel>(game);
-							game.setMusic(MusicName::SunnyDay);
+
+							// Choose random dungeon music.
+							const std::vector<MusicName> DungeonMusics =
+							{
+								MusicName::Dungeon1,
+								MusicName::Dungeon2,
+								MusicName::Dungeon3,
+								MusicName::Dungeon4,
+								MusicName::Dungeon5
+							};
+
+							Random random;
+							const MusicName musicName = DungeonMusics.at(random.next(
+								static_cast<int>(DungeonMusics.size())));
+
+							game.setMusic(musicName);
 						};
 
 						game.setPanel<TextCinematicPanel>(

@@ -140,7 +140,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	renderer.drawOriginal(mapBackground.get());
 
 	// Draw yellow text over current province name.
-	const int provinceID = this->getGame().getGameData().getLocation().getProvinceID();
+	const int provinceID = this->getGame().getGameData().getLocation().provinceID;
 	const auto &provinceText = textureManager.getTextures(
 		TextureFile::fromName(TextureName::ProvinceNames), backgroundFilename).at(provinceID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);

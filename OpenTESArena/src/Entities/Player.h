@@ -14,7 +14,6 @@ enum class GenderName;
 class Player
 {
 private:
-	static const double HEIGHT; // Distance from player's feet to head.
 	static const double STEPPING_HEIGHT; // Allowed change in height for stepping on stairs.
 	static const double JUMP_VELOCITY; // Instantaneous change in Y velocity when jumping.
 	
@@ -50,6 +49,13 @@ public:
 		double maxRunSpeed, int weaponID, const ExeStrings &exeStrings);
 	~Player();
 
+	// Distance from player's feet to head.
+	static const double HEIGHT;
+
+	// Arbitrary values for movement speed.
+	static const double DEFAULT_WALK_SPEED;
+	static const double DEFAULT_RUN_SPEED;
+
 	const Double3 &getPosition() const;
 	const std::string &getDisplayName() const;
 	std::string getFirstName() const;
@@ -57,6 +63,10 @@ public:
 	GenderName getGenderName() const;
 	int getRaceID() const;
 	const CharacterClass &getCharacterClass() const;
+
+	// Generates a random player for testing.
+	static Player makeRandom(const std::vector<CharacterClass> &charClasses,
+		const ExeStrings &exeStrings);
 
 	// Gets the direction the player is facing.
 	const Double3 &getDirection() const;

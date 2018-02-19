@@ -49,6 +49,7 @@ namespace
 		{ ExeStringKey::ProvinceNames, "ProvinceNames" },
 		{ ExeStringKey::ProvinceIMGFilenames, "ProvinceIMGFilenames" },
 
+		{ ExeStringKey::StartDungeonName, "StartDungeonName" },
 		{ ExeStringKey::CityTemplateFilenames, "CityTemplateFilenames" },
 
 		{ ExeStringKey::RaceNamesSingular, "RaceNamesSingular" },

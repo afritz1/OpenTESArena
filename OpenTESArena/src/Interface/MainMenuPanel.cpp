@@ -39,6 +39,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
+#include "../World/LocationType.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
 
@@ -189,8 +190,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 	this->quickStartButton = [&game]()
 	{
-		auto function = [](Game &game, const std::string &mifName, ClimateType climateType,
-			WeatherType weatherType, WorldType worldType)
+		auto function = [](Game &game, int testType, const std::string &mifName,
+			ClimateType climateType, WeatherType weatherType, WorldType worldType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -198,13 +199,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			const bool fullGameWindow = options.getModernInterface();
 			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
 
-			// Generate a random player character for the game data.
-			std::unique_ptr<GameData> gameData = GameData::createRandomPlayer(
-				game.getMiscAssets().getClassDefinitions(), game.getMiscAssets().getAExeStrings(),
-				game.getTextureManager(), renderer);
-			
-			auto &player = gameData->getPlayer();
-			Double3 playerPosition = player.getPosition();
+			// Game data instance, to be initialized further by one of the loading methods below.
+			const auto &miscAssets = game.getMiscAssets();
+			std::unique_ptr<GameData> gameData = [&miscAssets]()
+			{
+				// Create a player with random data for testing.
+				return std::unique_ptr<GameData>(new GameData(Player::makeRandom(
+					miscAssets.getClassDefinitions(), miscAssets.getAExeStrings())));
+			}();
 
 			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
@@ -214,16 +216,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				if (mifName == "IMPERIAL.MIF")
 				{
 					const MIFFile mif(mifName);
-					const int provinceID = 8;
-					const auto &provinceData =
-						game.getMiscAssets().getCityDataFile().getProvinceData(provinceID);
-					const auto &locationData = provinceData.cityStates.front();
-					
-					auto &location = gameData->getLocation();
-					location = Location(std::string(locationData.name.data()), provinceID,
-						location.getLocationType(), location.getClimateType());
-					GameData::loadPremadeCity(mif, climateType, weatherType, playerPosition,
-						gameData->getWorldData(), game.getTextureManager(), renderer);
+
+					// Load city into game data. Location data is loaded, too.
+					gameData->loadPremadeCity(mif, climateType, weatherType, miscAssets,
+						game.getTextureManager(), renderer);
 				}
 				else
 				{
@@ -252,21 +248,41 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					const int provinceID = random.next(8);
 
-					GameData::loadCity(localID, provinceID, weatherType, game.getMiscAssets(),
-						playerPosition, gameData->getLocation(), gameData->getWorldData(),
+					// Load city into game data. Location data is loaded, too.
+					gameData->loadCity(localID, provinceID, weatherType, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 			}
 			else if (worldType == WorldType::Interior)
 			{
 				const MIFFile mif(mifName);
-				GameData::loadInterior(mif, playerPosition, gameData->getWorldData(),
-					game.getTextureManager(), renderer);
+				gameData->loadInterior(mif, game.getTextureManager(), renderer);
+
+				// Load location data depending on whether it's a main quest dungeon.
+				Location &location = gameData->getLocation();
+				if (testType == TestType_MainQuest)
+				{
+					location.name = "Test Main Quest";
+					location.provinceID = gameData->getPlayer().getRaceID();
+					location.locationType = LocationType::Dungeon;
+					location.climateType = ClimateType::Temperate;
+				}
+				else
+				{
+					location.name = "Test Interior";
+					location.provinceID = gameData->getPlayer().getRaceID();
+					location.locationType = LocationType::CityState;
+					location.climateType = ClimateType::Temperate;
+				}
 			}
 			else if (worldType == WorldType::Wilderness)
 			{
-				// Just pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
+				// Pick a random location and province.
 				Random random;
+				const int localID = random.next(32);
+				const int provinceID = random.next(8);
+
+				// Pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
 				const int rmdTR = 5 + random.next(66);
 				const int rmdTL = 5 + random.next(66);
 				const int rmdBR = 5 + random.next(66);
@@ -277,8 +293,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					"- Bottom right: " + std::to_string(rmdBR) + "\n" +
 					"- Bottom left: " + std::to_string(rmdBL));
 
-				GameData::loadWilderness(rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType,
-					playerPosition, gameData->getWorldData(), game.getTextureManager(), renderer);
+				// Load wilderness into game data. Location data is loaded, too.
+				gameData->loadWilderness(localID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
+					climateType, weatherType, miscAssets, game.getTextureManager(), renderer);
 			}
 			else
 			{
@@ -286,8 +303,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					std::to_string(static_cast<int>(worldType)) + "\".");
 			}
 
-			// Update the player's position to the starting point.
-			player.teleport(playerPosition);
+			// Set clock to 5:45am.
+			gameData->getClock() = Clock(5, 45, 0);
 
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
@@ -383,7 +400,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(musicName);
 		};
-		return Button<Game&, const std::string&, ClimateType, WeatherType, WorldType>(function);
+		return Button<Game&, int, const std::string&, ClimateType,
+			WeatherType, WorldType>(function);
 	}();
 
 	this->exitButton = []()
@@ -758,6 +776,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		// Enter the game world immediately (for testing purposes). Use the test traits
 		// selected on the main menu.
 		this->quickStartButton.click(this->getGame(),
+			this->testType,
 			this->getSelectedTestName(),
 			this->getSelectedTestClimateType(),
 			this->getSelectedTestWeatherType(),
@@ -789,6 +808,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 			// Enter the game world immediately (for testing purposes). Use the test traits
 			// selected on the main menu.
 			this->quickStartButton.click(this->getGame(),
+				this->testType,
 				this->getSelectedTestName(),
 				this->getSelectedTestClimateType(),
 				this->getSelectedTestWeatherType(),

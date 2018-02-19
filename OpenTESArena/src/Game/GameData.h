@@ -66,39 +66,28 @@ private:
 
 	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
-	GameData(Player &&player, WorldData &&worldData, const Location &location, 
-		const Date &date, const Clock &clock, double fogDistance);
+	// Creates incomplete game data with no active world, to be further initialized later.
+	GameData(Player &&player);
+	GameData(GameData&&) = default;
 	~GameData();
 
-	// Reads in data from an interior .MIF file and writes it to the reference parameters.
-	static void loadInterior(const MIFFile &mif, Double3 &playerPosition, WorldData &worldData,
+	// Reads in data from an interior .MIF file and writes it to the game data.
+	void loadInterior(const MIFFile &mif, TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
+	// the center province uses this).
+	void loadPremadeCity(const MIFFile &mif, ClimateType climateType, WeatherType weatherType,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from a city after determining its .MIF file, and writes it to the game
+	// data. The local ID is the 0-31 location index within a province.
+	void loadCity(int localID, int provinceID, WeatherType weatherType,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from wilderness and writes it to the game data.
+	void loadWilderness(int localID, int provinceID, int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+		ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
-
-	// Reads in data from a premade exterior .MIF file and writes it to the reference parameters
-	// (only the center province uses this).
-	static void loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
-		TextureManager &textureManager, Renderer &renderer);
-
-	// Reads in data from a city after determining its .MIF file, and writes it to the reference
-	// parameters. The local ID is the 0-31 location index within a province.
-	static void loadCity(int localID, int provinceID, WeatherType weatherType,
-		const MiscAssets &miscAssets, Double3 &playerPosition, Location &location,
-		WorldData &worldData, TextureManager &textureManager, Renderer &renderer);
-
-	// Reads in data from wilderness and writes it to the reference parameters.
-	static void loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, ClimateType climateType,
-		WeatherType weatherType, Double3 &playerPosition, WorldData &worldData,
-		TextureManager &textureManager, Renderer &renderer);
-
-	// Creates a game data object used for the test world.
-	static std::unique_ptr<GameData> createDefault(const std::string &playerName,
-		GenderName gender, int raceID, const CharacterClass &charClass, int portraitID,
-		const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer);
-
-	// Creates a game data object with random player data for testing.
-	static std::unique_ptr<GameData> createRandomPlayer(const std::vector<CharacterClass> &charClasses, 
-		const ExeStrings &exeStrings, TextureManager &textureManager, Renderer &renderer);
 
 	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();
 	std::pair<double, std::unique_ptr<TextBox>> &getActionText();
@@ -107,8 +96,8 @@ public:
 	Player &getPlayer();
 	WorldData &getWorldData();
 	Location &getLocation();
-	const Date &getDate() const;
-	const Clock &getClock() const;
+	Date &getDate();
+	Clock &getClock();
 
 	// Gets a percentage representing how far along the current day is. 0.0 is 
 	// 12:00am and 0.50 is noon.

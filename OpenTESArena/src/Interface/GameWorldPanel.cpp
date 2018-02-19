@@ -242,7 +242,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const std::string yearString = std::to_string(date.getEra()) + "E " +
 					std::to_string(date.getYear());
 
-				return "You are in " + location.getName() + "." + "\n" +
+				return "You are in " + location.name + "." + "\n" +
 					"It is " + timeString + "." + "\n" +
 					"The date is " + weekdayString + ", " + dayString + " of " + monthString + 
 					" in the year " + yearString + "\n" +
@@ -366,7 +366,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const Double3 &position = player.getPosition();
 
 				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), 
-					player.getGroundDirection(), level.getVoxelGrid(), location.getName());
+					player.getGroundDirection(), level.getVoxelGrid(), location.name);
 			}
 			else
 			{

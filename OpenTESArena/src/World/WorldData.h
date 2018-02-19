@@ -25,9 +25,6 @@ enum class WorldType;
 class WorldData
 {	
 private:
-	// Private constructor for static WorldData load methods.
-	WorldData();
-
 	std::vector<LevelData> levels;
 	std::vector<Double2> startPoints;
 	EntityManager entityManager;
@@ -41,8 +38,7 @@ private:
 	// Generates the .INF name for the wilderness given a climate and current weather.
 	static std::string generateWildernessInfName(ClimateType climateType, WeatherType weatherType);
 public:
-	// Used with test city.
-	WorldData(VoxelGrid &&voxelGrid, EntityManager &&entityManager);
+	WorldData();
 	WorldData(WorldData &&worldData) = default;
 	~WorldData();
 

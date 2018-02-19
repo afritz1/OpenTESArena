@@ -30,6 +30,9 @@ Date::Date(int era, int year, int month, int day)
 Date::Date(int month, int day)
 	: Date(Date::INITIAL_ERA, Date::INITIAL_YEAR, month, day) { }
 
+Date::Date()
+	: Date(Date::INITIAL_ERA, Date::INITIAL_YEAR, 0, 0) { }
+
 Date::~Date()
 {
 

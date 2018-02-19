@@ -9,6 +9,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
+#include "../Math/Random.h"
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
@@ -17,6 +18,8 @@
 #include "../World/WorldData.h"
 
 const double Player::HEIGHT = 0.70;
+const double Player::DEFAULT_WALK_SPEED = 2.0;
+const double Player::DEFAULT_RUN_SPEED = 8.0;
 const double Player::STEPPING_HEIGHT = 0.25;
 const double Player::JUMP_VELOCITY = 3.0;
 const double Player::GRAVITY = 9.81;
@@ -28,10 +31,7 @@ Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	double maxRunSpeed, int weaponID, const ExeStrings &exeStrings)
 	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeStrings)
-{
-	assert(portraitID >= 0);
-}
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeStrings) { }
 
 Player::~Player()
 {
@@ -72,6 +72,34 @@ int Player::getRaceID() const
 const CharacterClass &Player::getCharacterClass() const
 {
 	return this->charClass;
+}
+
+Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
+	const ExeStrings &exeStrings)
+{
+	Random random;
+	const std::string name("Player");
+	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
+	const int raceID = random.next(8);
+	const CharacterClass &charClass = charClasses.at(
+		random.next(static_cast<int>(charClasses.size())));
+	const int portraitID = random.next(10);
+	const Double3 position = Double3::Zero;
+	const Double3 direction = Double3::UnitX;
+	const Double3 velocity = Double3::Zero;
+	const int weaponID = [&random, &charClass]()
+	{
+		// Pick a random weapon available to the player's class.
+		std::vector<int> weapons = charClass.getAllowedWeapons();
+
+		// Add fists.
+		weapons.push_back(-1);
+
+		return weapons.at(random.next(static_cast<int>(weapons.size())));
+	}();
+
+	return Player(name, gender, raceID, charClass, portraitID, position, direction, velocity,
+		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeStrings);
 }
 
 const Double3 &Player::getDirection() const
@@ -242,22 +270,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			const bool isLevelUpDown = (voxelData.type == VoxelType::LevelUp) ||
 				(voxelData.type == VoxelType::LevelDown);
 
-			const bool isBridge = [&voxelData]()
-			{
-				if (voxelData.dataType == VoxelDataType::Raised)
-				{
-					// -- Temporary hack for test city --
-					const VoxelData::RaisedData &raised = voxelData.raised;
-					return (raised.sideID == 41) && (raised.floorID == 42) &&
-						(raised.ceilingID == 42);
-				}
-				else
-				{
-					return false;
-				}
-			}();
-
-			return !isEmpty && !isDoor && !isLevelUpDown && !isBridge;
+			return !isEmpty && !isDoor && !isLevelUpDown;
 		}
 	};
 

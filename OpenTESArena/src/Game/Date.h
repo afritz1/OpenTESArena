@@ -20,6 +20,9 @@ public:
 	// Starts in default era and year.
 	Date(int month, int day);
 
+	// Starts on first month and day.
+	Date();
+
 	~Date();
 
 	static const int INITIAL_ERA;
