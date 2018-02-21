@@ -356,7 +356,7 @@ std::pair<int, int> ExeData::getPair(const std::string &key, const KeyValueMap &
 	int offset, length;
 
 	std::stringstream ss;
-	const int streamFlags = ss.flags();
+	const auto streamFlags = ss.flags();
 	ss << std::hex << offsetStr;
 	ss >> offset;
 	ss.clear();
