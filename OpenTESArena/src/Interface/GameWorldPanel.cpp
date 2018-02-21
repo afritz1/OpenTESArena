@@ -17,7 +17,7 @@
 #include "WorldMapPanel.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
@@ -184,9 +184,10 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const std::string text = [&game]()
 			{
+				const auto &exeData = game.getMiscAssets().getExeData();
 				const Location &location = game.getGameData().getLocation();
 
-				const std::string timeString = [&game]()
+				const std::string timeString = [&game, &exeData]()
 				{
 					const Clock &clock = game.getGameData().getClock();
 					const int hours = clock.getHours12();
@@ -227,18 +228,17 @@ GameWorldPanel::GameWorldPanel(Game &game)
 						return 0;
 					}();
 
-					const std::string &timeOfDayString = game.getMiscAssets().getAExeStrings()
-						.getList(ExeStringKey::TimesOfDay).at(timeOfDayIndex);
+					const std::string &timeOfDayString =
+						exeData.calendar.timesOfDay.at(timeOfDayIndex);
 
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
 				const auto &date = game.getGameData().getDate();
-				const std::string &weekdayString = game.getMiscAssets().getAExeStrings().getList(
-					ExeStringKey::WeekdayNames).at(date.getWeekday());
+				const std::string &weekdayString =
+					exeData.calendar.weekdayNames.at(date.getWeekday());
 				const std::string dayString = date.getOrdinalDay();
-				const std::string &monthString = game.getMiscAssets().getAExeStrings().getList(
-					ExeStringKey::MonthNames).at(date.getMonth());
+				const std::string &monthString = exeData.calendar.monthNames.at(date.getMonth());
 				const std::string yearString = std::to_string(date.getEra()) + "E " +
 					std::to_string(date.getYear());
 

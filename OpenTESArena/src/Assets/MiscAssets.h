@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "CityDataFile.h"
+#include "ExeData.h"
 #include "WorldMapMask.h"
 #include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
@@ -18,49 +19,21 @@
 // All relevant text files (TEMPLATE.DAT, QUESTION.TXT, etc.) should be read in 
 // when this object is created.
 
-class ExeStrings;
-
 class MiscAssets
 {
-public:
-	// Data for city generation. These help decide city layout, blocks, etc..
-	struct CityGeneration
-	{
-		std::array<uint8_t, 58> coastalCityList;
-		std::array<std::string, 6> templateFilenames;
-		std::array<Int2, 22> startingPositions;
-		std::array<std::vector<uint8_t>, 8> reservedBlockLists;
-
-		CityGeneration();
-	};
-
-	// Values for interior and exterior wall heights. In wilderness cells, the values in
-	// box1 and box2 are multiplied by 192/256. In interiors, they are also scaled by the
-	// ceiling2 value (second value in *CEILING lines; default=128?).
-	struct WallHeightTables
-	{
-		std::array<uint16_t, 8> box1a, box1b, box1c;
-		std::array<uint16_t, 16> box2a, box2b;
-		// Ignore "source" array, a copy of previous 56 words.
-		std::array<uint16_t, 8> box3a, box3b;
-		std::array<uint16_t, 16> box4;
-
-		WallHeightTables();
-	};
 private:
-	static const std::string AExeKeyValuesMapPath;
-
-	std::string aExe;
-	std::unique_ptr<ExeStrings> aExeStrings;
+	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	std::unordered_map<std::string, std::string> templateDat;
 	std::vector<CharacterQuestion> questionTxt;
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 	CityDataFile cityDataFile;
-	CityGeneration cityGeneration;
-	WallHeightTables wallHeightTables;
 	std::array<WorldMapMask, 10> worldMapMasks;
+
+	// Loads the executable associated with the current Arena data path (either A.EXE
+	// for the floppy version or ACD.EXE for the CD version).
+	void parseExecutableData();
 
 	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
 	void parseTemplateDat();
@@ -68,20 +41,11 @@ private:
 	// Load QUESTION.TXT and separate each question by its number.
 	void parseQuestionTxt();
 
-	// Load CLASSES.DAT and also read class data from A.EXE. The dataSegmentOffset is
-	// the start position of the .data segment in the executable (used with allowed
-	// shields and weapons).
-	void parseClasses(const std::string &exeText, const ExeStrings &exeStrings, 
-		int dataSegmentOffset);
+	// Load CLASSES.DAT and also read class data from the executable.
+	void parseClasses(const ExeData &exeData);
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
-
-	// Reads city generation data.
-	void parseCityGeneration(const std::string &exeText, const ExeStrings &exeStrings);
-
-	// Reads the wall height data from A.EXE.
-	void parseWallHeightTables(const std::string &exeText);
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
@@ -89,8 +53,10 @@ public:
 	MiscAssets();
 	~MiscAssets();
 
-	// Gets the ExeStrings object for obtaining floppy disk executable strings with.
-	const ExeStrings &getAExeStrings() const;
+	// Gets the ExeData object. There may be slight differences between A.EXE and ACD.EXE,
+	// but only one will be available at a time for the lifetime of the program (dependent
+	// on the Arena path in the options).
+	const ExeData &getExeData() const;
 
 	// Finds the text in TEMPLATE.DAT given a key (i.e., "#0000a").
 	const std::string &getTemplateDatText(const std::string &key);
@@ -109,15 +75,11 @@ public:
 	// Gets the data object for world map locations.
 	const CityDataFile &getCityDataFile() const;
 
-	// Gets the data for city generation.
-	const CityGeneration &getCityGeneration() const;
-
-	// Gets the wall height tables for determining how tall walls are.
-	const WallHeightTables &getWallHeightTables() const;
-
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
+
+	void init();
 };
 
 #endif

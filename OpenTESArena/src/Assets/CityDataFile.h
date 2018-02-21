@@ -21,12 +21,12 @@ public:
 	{
 		struct LocationData
 		{
-			std::array<char, 20> name; // Null-terminated.
+			std::array<char, 20> name; // Twenty chars, null-terminated.
 			uint16_t x, y; // Position on screen.
 			uint8_t visibility; // Visibility on map. Only used for dungeons. 0x02 = visible.
 		};
 
-		std::array<char, 20> name; // Null-terminated.
+		std::array<char, 20> name; // Twenty chars, null-terminated.
 		uint16_t globalX, globalY, globalW, globalH; // Province-to-world-map projection.
 		std::array<LocationData, 8> cityStates;
 		std::array<LocationData, 8> towns;
@@ -39,13 +39,12 @@ private:
 	// These are ordered the same as usual (read left to right, and center is last).
 	std::array<ProvinceData, 9> provinces;
 public:
-	CityDataFile(const std::string &filename);
-	~CityDataFile();
-
 	static const int PROVINCE_COUNT;
 
 	// Gets the province data at the given province index.
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
+
+	void init(const std::string &filename);
 };
 
 #endif

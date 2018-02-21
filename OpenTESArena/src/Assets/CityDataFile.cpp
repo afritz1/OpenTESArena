@@ -9,7 +9,13 @@
 
 const int CityDataFile::PROVINCE_COUNT = 9;
 
-CityDataFile::CityDataFile(const std::string &filename)
+const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
+{
+	assert(index < CityDataFile::PROVINCE_COUNT);
+	return this->provinces.at(index);
+}
+
+void CityDataFile::init(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -106,15 +112,4 @@ CityDataFile::CityDataFile(const std::string &filename)
 			locationPtr += locationDataSize;
 		}
 	}
-}
-
-CityDataFile::~CityDataFile()
-{
-
-}
-
-const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
-{
-	assert(index < CityDataFile::PROVINCE_COUNT);
-	return this->provinces.at(index);
 }

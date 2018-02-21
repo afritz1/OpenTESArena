@@ -4,7 +4,7 @@
 #include <map>
 
 #include "WeaponAnimation.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -53,11 +53,11 @@ namespace
 const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
 const int WeaponAnimation::FISTS_ID = -1;
 
-WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
+WeaponAnimation::WeaponAnimation(int weaponID, const ExeData &exeData)
 {
 	this->state = WeaponAnimation::State::Sheathed;
 	this->weaponID = weaponID;
-	this->animationFilename = [weaponID, &exeStrings]()
+	this->animationFilename = [weaponID, &exeData]()
 	{
 		// Get the filename associated with the weapon ID. These indices point into the
 		// filenames list.
@@ -87,8 +87,7 @@ WeaponAnimation::WeaponAnimation(int weaponID, const ExeStrings &exeStrings)
 		const int index = (weaponID != WeaponAnimation::FISTS_ID) ?
 			WeaponFilenameIndices.at(weaponID) : fistsFilenameIndex;
 
-		const std::vector<std::string> &animationList =
-			exeStrings.getList(ExeStringKey::WeaponAnimationFilenames);
+		const auto &animationList = exeData.equipment.weaponAnimationFilenames;
 		const std::string &filename = animationList.at(index);
 		return String::toUppercase(filename);
 	}();

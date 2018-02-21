@@ -13,7 +13,7 @@
 // The bow should not be used here because there is no bow animation in the Arena files;
 // just a single idle frame that disappears when firing an arrow.
 
-class ExeStrings;
+class ExeData;
 
 class WeaponAnimation
 {
@@ -49,7 +49,7 @@ private:
 	// Gets the range of indices associated with the current animation state.
 	const std::vector<int> &getCurrentRange() const;
 public:
-	WeaponAnimation(int weaponID, const ExeStrings &exeStrings);
+	WeaponAnimation(int weaponID, const ExeData &exeData);
 	~WeaponAnimation();
 
 	// Returns whether the animation is for a ranged weapon.

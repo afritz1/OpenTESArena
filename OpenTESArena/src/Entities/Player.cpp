@@ -28,10 +28,10 @@ const double Player::FRICTION = 4.0;
 Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-	double maxRunSpeed, int weaponID, const ExeStrings &exeStrings)
+	double maxRunSpeed, int weaponID, const ExeData &exeData)
 	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
-	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeStrings) { }
+	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
 Player::~Player()
 {
@@ -74,8 +74,7 @@ const CharacterClass &Player::getCharacterClass() const
 	return this->charClass;
 }
 
-Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
-	const ExeStrings &exeStrings)
+Player Player::makeRandom(const std::vector<CharacterClass> &charClasses, const ExeData &exeData)
 {
 	Random random;
 	const std::string name("Player");
@@ -99,7 +98,7 @@ Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
 	}();
 
 	return Player(name, gender, raceID, charClass, portraitID, position, direction, velocity,
-		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeStrings);
+		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 }
 
 const Double3 &Player::getDirection() const

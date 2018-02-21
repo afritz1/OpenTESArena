@@ -11,7 +11,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Entities/GenderName.h"
@@ -60,14 +60,13 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			MessageBoxSubPanel::Title messageBoxTitle;
 			messageBoxTitle.textBox = [&game, raceID, &renderer, &textColor]()
 			{
-				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-				std::string text = exeStrings.get(ExeStringKey::ConfirmRace);
+				const auto &exeData = game.getMiscAssets().getExeData();
+				std::string text = exeData.charCreation.confirmRace;
 				text = String::replace(text, '\r', '\n');
 
-				const std::string &provinceName = exeStrings.getList(
-					ExeStringKey::CharCreationProvinceNames).at(raceID);
-				const std::string &pluralRaceName = exeStrings.getList(
-					ExeStringKey::RaceNamesPlural).at(raceID);
+				const std::string &provinceName =
+					exeData.locations.charCreationProvinceNames.at(raceID);
+				const std::string &pluralRaceName = exeData.races.pluralNames.at(raceID);
 
 				// Replace first %s with province name.
 				size_t index = text.find("%s");
@@ -152,8 +151,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 					const std::string text = [&game]()
 					{
-						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace4);
+						const auto &exeData = game.getMiscAssets().getExeData();
+						std::string segment = exeData.charCreation.confirmedRace4;
 						segment = String::replace(segment, '\r', '\n');
 
 						return segment;
@@ -193,16 +192,16 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 					const std::string text = [&game, &charClass]()
 					{
-						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace3);
+						const auto &exeData = game.getMiscAssets().getExeData();
+						std::string segment = exeData.charCreation.confirmedRace3;
 						segment = String::replace(segment, '\r', '\n');
 
-						const std::string &desiredAttributes = exeStrings.getList(
-							ExeStringKey::ClassAttributes).at(charClass.getClassIndex());
+						const std::string &preferredAttributes =
+							exeData.charClasses.preferredAttributes.at(charClass.getClassIndex());
 
 						// Replace first %s with desired class attributes.
 						size_t index = segment.find("%s");
-						segment.replace(index, 2, desiredAttributes);
+						segment.replace(index, 2, preferredAttributes);
 
 						// Replace second %s with class name.
 						index = segment.find("%s");
@@ -245,8 +244,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 					const std::string text = [&game, raceID]()
 					{
-						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace2);
+						const auto &exeData = game.getMiscAssets().getExeData();
+						std::string segment = exeData.charCreation.confirmedRace2;
 						segment = String::replace(segment, '\r', '\n');
 
 						// Get race description from TEMPLATE.DAT.
@@ -298,14 +297,13 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 					const std::string text = [&game, &charClass, &name, gender, raceID]()
 					{
-						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-						std::string segment = exeStrings.get(ExeStringKey::ConfirmedRace1);
+						const auto &exeData = game.getMiscAssets().getExeData();
+						std::string segment = exeData.charCreation.confirmedRace1;
 						segment = String::replace(segment, '\r', '\n');
 
-						const std::string &provinceName = exeStrings.getList(
-							ExeStringKey::CharCreationProvinceNames).at(raceID);
-						const std::string &pluralRaceName = exeStrings.getList(
-							ExeStringKey::RaceNamesPlural).at(raceID);
+						const std::string &provinceName =
+							exeData.locations.charCreationProvinceNames.at(raceID);
+						const std::string &pluralRaceName = exeData.races.pluralNames.at(raceID);
 
 						// Replace first %s with player class.
 						size_t index = segment.find("%s");
@@ -442,8 +440,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
 
 	const std::string text = [&game, &charClass, &name]()
 	{
-		std::string segment = game.getMiscAssets().getAExeStrings().get(
-			ExeStringKey::ChooseRace);
+		const auto &exeData = game.getMiscAssets().getExeData();
+		std::string segment = exeData.charCreation.chooseRace;
 		segment = String::replace(segment, '\r', '\n');
 
 		// Replace first "%s" with player name.
@@ -559,8 +557,8 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
-	const std::string &raceName = this->getGame().getMiscAssets().getAExeStrings().getList(
-		ExeStringKey::RaceNamesPlural).at(provinceID);
+	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const std::string &raceName = exeData.races.pluralNames.at(provinceID);
 
 	const Texture tooltip(Panel::createTooltip(
 		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer));

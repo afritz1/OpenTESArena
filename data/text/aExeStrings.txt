@@ -1,133 +1,95 @@
-# Offsets and sizes for string data in A.EXE.
+# Key-value pairs for accessing constant data in A.EXE.
 
-# The elements in a pair are separated by a comma, and each pair in a list is
-# separated by a semicolon. A dash for the size indicates a null-terminated string.
+# Each line has a key and value. The value is either an offset into the
+# executable or an offset and length pair for fixed-size strings.
 
-# Character creation.
-ChooseClassCreation=0x35a80,37
-ChooseClassCreationGenerate=0x3f637,8
-ChooseClassCreationSelect=0x3f641,6
-ClassQuestionsIntro=0x35aa7,175
-SuggestedRace=0x35bb1,75
-ChooseClassList=0x3f61a,19
-ChooseName=0x35b58,26
-ChooseGender=0x35b74,20
-ChooseGenderMale=0x3f652,4
-ChooseGenderFemale=0x3f658,6
-ChooseRace=0x35b8a,37
-ConfirmRace=0x35bff,74
-ConfirmedRace1=0x35c4c,84
-ConfirmedRace2=0x3f56e,18
-ConfirmedRace3=0x35ca2,60
-ConfirmedRace4=0x35ce0,67
-DistributeClassPoints=0x35d25,93
-ChooseAttributesChoice=0x35fa3,23
-ChooseAttributesSave=0x3f66b,12
-ChooseAttributesReroll=0x3f67b,14
-ChooseAppearance=0x35d84,174
+# [Calendar]
+MonthNames=0x3E894
+TimesOfDay=0x40529
+WeekdayNames=0x3E92A
 
-# Character class names (ordered by: mages, thieves, warriors).
-CharacterClassNames=0x3e15e,-;0x3e163,-;0x3e16e,-;0x3e179,-;0x3e182,-;0x3e189,-;0x3e194,-;0x3e199,-;0x3e1a1,-;0x3e1a7,-;0x3e1af,-;0x3e1b5,-;0x3e1be,-;0x3e1c3,-;0x3e1ca,-;0x3e1d1,-;0x3e1db,-;0x3e1e3,-
+# [CharacterClasses]
+AllowedArmors=0x36204
+AllowedShields=0x361D1
+AllowedShieldsLists=0x361F6
+AllowedWeapons=0x36185
+AllowedWeaponsLists=0x361A9
+ClassNames=0x3E15E
+ClassNumbersToIDs=0x3E14c
+HealthDice=0x3E2D1
+InitialExperienceCaps=0x36D0E
+LockpickingDivisors=0x3E13A
+PreferredAttributes=0x35E34
 
-# Character class data. The allowed shields and weapons actually store 16-bit
-# offsets from the start of the .data segment into 0xFF-terminated ID arrays.
-AllowedArmors=0x36204,1;0x36205,1;0x36206,1;0x36207,1;0x36208,1;0x36209,1;0x3620a,1;0x3620b,1;0x3620c,1;0x3620d,1;0x3620e,1;0x3620f,1;0x36210,1;0x36211,1;0x36212,1;0x36213,1;0x36214,1;0x36215,1
-AllowedShields=0x361d1,2;0x361d3,2;0x361d5,2;0x361d7,2;0x361d9,2;0x361db,2;0x361dd,2;0x361df,2;0x361e1,2;0x361e3,2;0x361e5,2;0x361e7,2;0x361e9,2;0x361eb,2;0x361ed,2;0x361ef,2;0x361f1,2;0x361f3,2
-AllowedWeapons=0x36185,2;0x36187,2;0x36189,2;0x3618b,2;0x3618d,2;0x3618f,2;0x36191,2;0x36193,2;0x36195,2;0x36197,2;0x36199,2;0x3619b,2;0x3619d,2;0x3619f,2;0x361a1,2;0x361a3,2;0x361a5,2;0x361a7,2
-ClassAttributes=0x35e34,-;0x35e4c,-;0x35e63,-;0x35e79,-;0x35e8f,-;0x35ea7,-;0x35ebd,-;0x35ed8,-;0x35ee8,-;0x35eff,-;0x35f0f,-;0x35f25,-;0x35f36,-;0x35f46,-;0x35f57,-;0x35f6e,-;0x35f7f,-;0x35f90,-
-ClassNumberToClassID=0x3e14c,1;0x3e14d,1;0x3e14e,1;0x3e14f,1;0x3e150,1;0x3e151,1;0x3e152,1;0x3e153,1;0x3e154,1;0x3e155,1;0x3e156,1;0x3e157,1;0x3e158,1;0x3e159,1;0x3e15a,1;0x3e15b,1;0x3e15c,1;0x3e15d,1
-ClassInitialExperienceCap=0x36d0e,2;0x36d10,2;0x36d12,2;0x36d14,2;0x36d16,2;0x36d18,2;0x36d1a,2;0x36d1c,2;0x36d1e,2;0x36d20,2;0x36d22,2;0x36d24,2;0x36d26,2;0x36d28,2;0x36d2a,2;0x36d2c,2;0x36d2e,2;0x36d30,2
-HealthDice=0x3e2d1,1;0x3e2d2,1;0x3e2d3,1;0x3e2d4,1;0x3e2d5,1;0x3e2d6,1;0x3e2d7,1;0x3e2d8,1;0x3e2d9,1;0x3e2da,1;0x3e2db,1;0x3e2dc,1;0x3e2dd,1;0x3e2de,1;0x3e2df,1;0x3e2e0,1;0x3e2e1,1;0x3e2e2,1
-LockpickingDivisors=0x3e13a,1;0x3e13b,1;0x3e13c,1;0x3e13d,1;0x3e13e,1;0x3e13f,1;0x3e140,1;0x3e141,1;0x3e142,1;0x3e143,1;0x3e144,1;0x3e145,1;0x3e146,1;0x3e147,1;0x3e148,1;0x3e149,1;0x3e14a,1;0x3e14b,1
+# [CharacterCreation]
+ChooseClassCreation=0x35A80,37
+ChooseClassCreationGenerate=0x3F637,8
+ChooseClassCreationSelect=0x3F641,6
+ClassQuestionsIntro=0x35AA7,175
+SuggestedClass=0x35BB1,75
+ChooseClassList=0x3F61A,19
+ChooseName=0x35B58,26
+ChooseGender=0x35B74,20
+ChooseGenderMale=0x3F652,4
+ChooseGenderFemale=0x3F658,6
+ChooseRace=0x35B8A,37
+ConfirmRace=0x35BFF,74
+ConfirmedRace1=0x35C4C,84
+ConfirmedRace2=0x3F56E,18
+ConfirmedRace3=0x35CA2,60
+ConfirmedRace4=0x35CE0,67
+DistributeClassPoints=0x35D25,93
+ChooseAttributes=0x35FA3,23
+ChooseAttributesSave=0x3F66B,12
+ChooseAttributesReroll=0x3F67B,14
+ChooseAppearance=0x35D84,174
 
-# Province names, ordered by appearance on the world map reading from left to
-# right, with the center province last. The character creation province names
-# have slight changes and leave out the center province.
-CharCreationProvinceNames=0x3e602,-;0x3e60c,-;0x3e617,-;0x3e61e,-;0x3e628,-;0x3e632,-;0x3e63c,-;0x3e644,-
-ProvinceNames=0x392f8,-;0x3935a,-;0x393bc,-;0x3941e,-;0x39480,-;0x394e2,-;0x39544,-;0x395a6,-;0x39608,-
+# [CityGeneration]
+CoastalCityList=0x3FEA8
+CityTemplateFilenames=0x3FEE2
+StartingPositions=0x3FF55
+ReservedBlockLists=0x3FF8E
 
-# Province .IMG backgrounds (ordered the same as province names).
-ProvinceIMGFilenames=0x3fdfa,-;0x3fe07,-;0x3fe14,-;0x3fe1f,-;0x3fe2c,-;0x3fe39,-;0x3fe46,-;0x3fe52,-;0x3fe5f,-
+# [Entities]
+CreatureNames=0x36BBE
+CreatureAnimationFilenames=0x3E4FB
+MaleCitizenAnimationFilenames=0x4186A
+FemaleCitizenAnimationFilenames=0x41891
+CFAFilenameChunks=0x41FF0
+CFAFilenameTemplates=0x4200C
+CFAHumansWithWeaponAnimations=0x42033
+CFAWeaponAnimations=0x42067
 
-# Locations.
-StartDungeonName=0x402a1,-
-CityTemplateFilenames=0x3fee2,-;0x3feed,-;0x3fef9,-;0x3ff07,-;0x3ff15,-;0x3ff20,-
+# [Equipment]
+BodyPartNames=0x3DB8D
+ArmorNames=0x3DB20
+ShieldNames=0x3DB5F
+WeaponNames=0x3D900
+MetalNames=0x3DD3B
+WeaponAnimationFilenames=0x41DAC
 
-# Race names (ordered the same as provinces).
-RaceNamesSingular=0x3e290,-;0x3e297,-;0x3e2a0,-;0x3e2a5,-;0x3e2ae,-;0x3e2b7,-;0x3e2c0,-;0x3e2c8,-
-RaceNamesPlural=0x3e245,-;0x3e24d,-;0x3e257,-;0x3e25d,-;0x3e268,-;0x3e273,-;0x3e27e,-;0x3e286,-
+# [Locations]
+ProvinceNames=0x392F8
+CharCreationProvinceNames=0x3E602
+ProvinceImgFilenames=0x3FDFA
+StartDungeonName=0x402A1
 
-# Logbook.
-LogbookIsEmpty=0x42f45,-
+# [Logbook]
+LogbookIsEmpty=0x42F45
 
-# Times of day.
-TimesOfDay=0x40529,-;0x40537,-;0x40546,-;0x4054b,-;0x4055c,-;0x4056b,-;0x40574,-
+# [Meta]
+DataSegmentOffset=0x32560
 
-# Weekdays.
-WeekdayNames=0x3e92a,-;0x3e932,-;0x3e939,-;0x3e940,-;0x3e947,-;0x3e94e,-;0x3e956,-
+# [Races]
+RaceSingularNames=0x3E290
+RacePluralNames=0x3E245
 
-# Months.
-MonthNames=0x3e894,-;0x3e8a1,-;0x3e8ac,-;0x3e8b7,-;0x3e8c3,-;0x3e8cf,-;0x3e8d8,-;0x3e8e5,-;0x3e8ef,-;0x3e8fa,-;0x3e904,-;0x3e90f,-
-
-# Creature names ("Rat", "Goblin", etc.). Each creature type could simply use
-# its index in this array as its identifier, much like with provinces.
-CreatureNames=0x36bbe,-;0x36bc2,-;0x36bc9,-;0x36bd4,-;0x36bd9,-;0x36be3,-;0x36be7,-;0x36bf0,-;0x36bf9,-;0x36c00,-;0x36c06,-;0x36c11,-;0x36c17,-;0x36c1e,-;0x36c24,-;0x36c2b,-;0x36c36,-;0x36c40,-;0x36c4c,-;0x36c57,-;0x36c63,-;0x36c6a,-;0x36c72,-
-
-# Creature animations (i.e., their .CFA filenames). These are ordered the same
-# as creature names, and there is an extra entry at the end for the final boss.
-# Replace '@' with a number from 1 to 6 indicating which .CFA file to fetch for
-# angle-relative animations.
-CreatureAnimations=0x3e4fb,-;0x3e504,-;0x3e510,-;0x3e51c,-;0x3e527,-;0x3e533,-;0x3e53c,-;0x3e547,-;0x3e550,-;0x3e55c,-;0x3e567,-;0x3e572,-;0x3e57d,-;0x3e589,-;0x3e594,-;0x3e5a0,-;0x3e5a9,-;0x3e5b2,-;0x3e5bd,-;0x3e5c7,-;0x3e5d3,-;0x3e5df,-;0x3e5ec,-;0x3e5f6,-
-
-# Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.
-# Order: Winter, Desert, Temperate.
-MaleCitizenAnimations=0x4186a,-;0x41877,-;0x41884,-
-
-# Random female citizen .CFA filenames. Replace '@' with a number from 1 to 5.
-# Order: Temperate, Desert, Winter.
-FemaleCitizenAnimations=0x41891,-;0x4189d,-;0x418aa,-
-
-# Filename chunks for sprites with variable weapons, etc., to be combined with
-# the .CFA filenames containing three X's (walk, attack, bow).
-# Order: Plate, Chain, Leather, Unarmored, Mage, Monk, Barbarian.
-CFAFilenameChunks=0x41ff0,-;0x41ff4,-;0x41ff8,-;0x41ffc,-;0x42000,-;0x42004,-;0x42008,-
-
-# Filename templates to be used with the .CFA filename chunks. Replace "0@" with
-# either 0 or 1 for the gender, and 1 to 5 depending on the kind of animation 
-# (i.e., attacks are only forward, so they don't have 2 through 5). Replace 
-# "XXX" with one of the .CFA filename chunks. Not every character has every 
-# combination (i.e., barbarians don't have a bow shoot animation, and there is 
-# no female plate).
-# Order: Walk, Attack, Bow.
-CFAFilenameTemplates=0x4200c,-;0x42019,-;0x42026,-
-
-# A few premade human .CFA animations with some weapons. Some of these can't be 
-# created from pairing a .CFA template with a .CFA chunk because there aren't 
-# the right selection of templates available (I think... because it's kind of 
-# messy).
-# Order: Mage + sword, Mage + staff, Mage spell, Monk kick.
-CFAHumansWithWeaponAnimations=0x42033,-;0x42040,-;0x4204d,-;0x4205a,-
-
-# Human .CFA weapons by themselves, presumably for combining with empty-handed 
-# animations.
-# Order: Sword, Axe, Mace, "P" sword, "P" axe, "P" mace, "B" sword, "B" axe,
-# "B" mace, Shield, "P" shield, "B" shield.
-CFAWeaponAnimations=0x42067,-;0x42073,-;0x4207d,-;0x42088,-;0x42095,-;0x420a0,-;0x420ac,-;0x420b9,-;0x420c4,-;0x420d0,-;0x420dd,-;0x420e9,-
-
-# Body part names (chest, hands, ..., foot).
-BodyPartNames=0x3db8d,-;0x3db94,-;0x3db99,-;0x3db9e,-;0x3dba7,-;0x3dbb0,-;0x3dbb5,-
-
-# Armor names (cuirass, gauntlets, ..., boots).
-ArmorNames=0x3db20,-;0x3db28,-;0x3db32,-;0x3db3a,-;0x3db47,-;0x3db54,-;0x3db59,-
-
-# Shield names (buckler, round, ..., tower shield).
-ShieldNames=0x3db5f,-;0x3db68,-;0x3db74,-;0x3db80,-
-
-# Weapon names (staff, dagger, ..., long bow).
-WeaponNames=0x3d900,-;0x3d906,-;0x3d90d,-;0x3d918,-;0x3d923,-;0x3d929,-;0x3d933,-;0x3d93c,-;0x3d942,-;0x3d94c,-;0x3d953,-;0x3d95e,-;0x3d963,-;0x3d969,-;0x3d974,-;0x3d97c,-;0x3d987,-;0x3d991,-
-
-# Metal names.
-MetalNames=0x3dd3b,-;0x3dd40,-;0x3dd46,-;0x3dd4d,-;0x3dd53,-;0x3dd5b,-;0x3dd63,-;0x3dd6e,-
-
-# Weapon animation filenames (staff.cif, ..., spell.img).
-WeaponAnimationFilenames=0x41dac,-;0x41db6,-;0x41dc0,-;0x41dc9,-;0x41dd2,-;0x41ddd,-;0x41de5,-;0x41df2,-;0x41dfb,-;0x41e04,-;0x41e0d,-
+# [WallHeightTables]
+Box1A=0x48206
+Box1B=0x48216
+Box1C=0x48226
+Box2A=0x48236
+Box2B=0x48256
+Box3A=0x482E6
+Box3B=0x482F6
+Box4=0x48306

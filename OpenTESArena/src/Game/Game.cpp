@@ -13,7 +13,6 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
-#include "../Assets/MiscAssets.h"
 #include "../Interface/Panel.h"
 #include "../Media/FontManager.h"
 #include "../Media/MusicFile.h"
@@ -101,7 +100,7 @@ Game::Game()
 	this->fontManager = std::unique_ptr<FontManager>(new FontManager());
 
 	// Load various miscellaneous assets.
-	this->miscAssets = std::unique_ptr<MiscAssets>(new MiscAssets());
+	this->miscAssets.init();
 
 	// Set window icon (treat black as transparent for 24-bit PPMs).
 	int iconWidth, iconHeight;
@@ -180,9 +179,9 @@ TextureManager &Game::getTextureManager() const
 	return *this->textureManager.get();
 }
 
-MiscAssets &Game::getMiscAssets() const
+MiscAssets &Game::getMiscAssets()
 {
-	return *this->miscAssets.get();
+	return this->miscAssets;
 }
 
 const FPSCounter &Game::getFPSCounter() const

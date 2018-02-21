@@ -10,7 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/CIFFile.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Player.h"
@@ -54,8 +54,8 @@ CharacterPanel::CharacterPanel(Game &game)
 		const int y = 17;
 
 		const auto &player = game.getGameData().getPlayer();
-		const std::string &text = game.getMiscAssets().getAExeStrings().getList(
-			ExeStringKey::RaceNamesSingular).at(player.getRaceID());
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const std::string &text = exeData.races.singularNames.at(player.getRaceID());
 
 		const RichTextString richText(
 			text,

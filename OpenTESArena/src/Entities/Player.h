@@ -5,7 +5,7 @@
 #include "CharacterClass.h"
 #include "WeaponAnimation.h"
 
-class ExeStrings;
+class ExeData;
 class Game;
 class WorldData;
 
@@ -46,7 +46,7 @@ public:
 	Player(const std::string &displayName, GenderName gender, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
 		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-		double maxRunSpeed, int weaponID, const ExeStrings &exeStrings);
+		double maxRunSpeed, int weaponID, const ExeData &exeData);
 	~Player();
 
 	// Distance from player's feet to head.
@@ -66,7 +66,7 @@ public:
 
 	// Generates a random player for testing.
 	static Player makeRandom(const std::vector<CharacterClass> &charClasses,
-		const ExeStrings &exeStrings);
+		const ExeData &exeData);
 
 	// Gets the direction the player is facing.
 	const Double3 &getDirection() const;

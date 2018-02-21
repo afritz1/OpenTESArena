@@ -5,7 +5,7 @@
 #include "SDL.h"
 
 #include "GameData.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Entities/Animation.h"
@@ -178,7 +178,7 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 	
 	// Determine city traits from the given city ID.
 	const LocationType locationType = WorldData::getLocationTypeFromID(cityID);
-	const MiscAssets::CityGeneration &cityGen = miscAssets.getCityGeneration();
+	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 	const bool isCity = locationType == LocationType::CityState;
 	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
 		cityGen.coastalCityList.end(), cityID) != cityGen.coastalCityList.end();
@@ -296,7 +296,8 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 			}
 		}();
 
-		return cityGen.startingPositions.at(index);
+		const std::pair<int, int> &pair = cityGen.startingPositions.at(index);
+		return Int2(pair.first, pair.second);
 	}();
 
 	// Call city WorldData loader.

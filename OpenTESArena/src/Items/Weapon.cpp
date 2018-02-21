@@ -7,7 +7,7 @@
 #include "WeaponArtifactData.h"
 #include "WeaponHandCount.h"
 #include "WeaponRangeType.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Utilities/Debug.h"
 
 // To do: most of this class could be in MiscAssets as plain old data, and any instance-related
@@ -142,22 +142,22 @@ Weapon::Weapon(int weaponID, const std::string &weaponName, MetalType metalType,
 }
 
 Weapon::Weapon(int weaponID, MetalType metalType,
-	const WeaponArtifactData *artifactData, const ExeStrings &exeStrings)
+	const WeaponArtifactData *artifactData, const ExeData &exeData)
 	: Item(artifactData), Metallic(metalType)
 {
 	// Fists are not allowed.
 	assert(weaponID != -1);
 
 	this->weaponID = weaponID;
-	this->weaponName = exeStrings.getList(ExeStringKey::WeaponNames).at(weaponID);
+	this->weaponName = exeData.equipment.weaponNames.at(weaponID);
 }
 
-Weapon::Weapon(int weaponID, MetalType metalType, const ExeStrings &exeStrings)
-	: Weapon(weaponID, metalType, nullptr, exeStrings) { }
+Weapon::Weapon(int weaponID, MetalType metalType, const ExeData &exeData)
+	: Weapon(weaponID, metalType, nullptr, exeData) { }
 
-Weapon::Weapon(const WeaponArtifactData *artifactData, const ExeStrings &exeStrings)
+Weapon::Weapon(const WeaponArtifactData *artifactData, const ExeData &exeData)
 	: Weapon(artifactData->getWeaponID(), artifactData->getMetalType(),
-		artifactData, exeStrings) { }
+		artifactData, exeData) { }
 
 Weapon::~Weapon()
 {

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "InputManager.h"
+#include "../Assets/MiscAssets.h"
 #include "../Interface/FPSCounter.h"
 #include "../Media/AudioManager.h"
 
@@ -21,7 +22,6 @@
 
 class GameData;
 class FontManager;
-class MiscAssets;
 class Options;
 class Panel;
 class Renderer;
@@ -45,7 +45,7 @@ private:
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<TextureManager> textureManager;
-	std::unique_ptr<MiscAssets> miscAssets;
+	MiscAssets miscAssets;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
@@ -105,7 +105,7 @@ public:
 	TextureManager &getTextureManager() const;
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
-	MiscAssets &getMiscAssets() const;
+	MiscAssets &getMiscAssets();
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;

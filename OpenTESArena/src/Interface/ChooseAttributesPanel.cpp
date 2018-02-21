@@ -13,7 +13,7 @@
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
 #include "../Assets/CIFFile.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/Player.h"
@@ -66,8 +66,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 		const int x = 10;
 		const int y = 17;
 
-		const std::string &text = game.getMiscAssets().getAExeStrings().getList(
-			ExeStringKey::RaceNamesSingular).at(raceID);
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const std::string &text = exeData.races.singularNames.at(raceID);
 
 		const RichTextString richText(
 			text,
@@ -120,8 +120,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			MessageBoxSubPanel::Title messageBoxTitle;
 			messageBoxTitle.textBox = [&game, raceID, &renderer]()
 			{
-				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesChoice);
+				const auto &exeData = game.getMiscAssets().getExeData();
+				const std::string &text = exeData.charCreation.chooseAttributes;
 
 				const Color textColor(199, 199, 199);
 
@@ -157,8 +157,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			MessageBoxSubPanel::Element messageBoxSave;
 			messageBoxSave.textBox = [&game, &renderer, &buttonTextColor]()
 			{
-				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesSave);
+				const auto &exeData = game.getMiscAssets().getExeData();
+				std::string text = exeData.charCreation.chooseAttributesSave;
 
 				// To do: use the formatting characters in the string for color.
 				// - For now, just delete them.
@@ -196,8 +196,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 				const std::string text = [&game]()
 				{
-					std::string segment = game.getMiscAssets().getAExeStrings().get(
-						ExeStringKey::ChooseAppearance);
+					const auto &exeData = game.getMiscAssets().getExeData();
+					std::string segment = exeData.charCreation.chooseAppearance;
 					segment = String::replace(segment, '\r', '\n');
 
 					return segment;
@@ -235,13 +235,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						renderer.initializeWorldRendering(
 							game.getOptions().getResolutionScale(), fullGameWindow);
 
-						const auto &exeStrings = game.getMiscAssets().getAExeStrings();
+						const auto &exeData = game.getMiscAssets().getExeData();
 
 						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
-							&charClass, &exeStrings]()
+							&charClass, &exeData]()
 						{
 							// Initialize player data (independent of the world).
-							Player player = [this, &name, gender, raceID, &charClass, &exeStrings]()
+							Player player = [this, &name, gender, raceID, &charClass, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
 								const Double3 direction = Double3::UnitX;
@@ -254,7 +254,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 								return Player(name, gender, raceID, charClass, this->portraitID,
 									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
-									Player::DEFAULT_RUN_SPEED, weaponID, exeStrings);
+									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 							}();
 
 							return std::unique_ptr<GameData>(new GameData(std::move(player)));
@@ -266,10 +266,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 						// Load starting dungeon.
 						const MIFFile mif("START.MIF");
-						const Location location = [&exeStrings]()
+						const Location location = [&exeData]()
 						{
-							const std::string &locationName =
-								exeStrings.get(ExeStringKey::StartDungeonName);
+							const std::string &locationName = exeData.locations.startDungeonName;
 							const int provinceID = 8;
 							const LocationType locationType = LocationType::Unique;
 							const ClimateType climateType = ClimateType::Temperate;
@@ -356,8 +355,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			MessageBoxSubPanel::Element messageBoxReroll;
 			messageBoxReroll.textBox = [&game, &renderer, &buttonTextColor]()
 			{
-				const auto &exeStrings = game.getMiscAssets().getAExeStrings();
-				std::string text = exeStrings.get(ExeStringKey::ChooseAttributesReroll);
+				const auto &exeData = game.getMiscAssets().getExeData();
+				std::string text = exeData.charCreation.chooseAttributesReroll;
 
 				// To do: use the formatting characters in the string for color.
 				// - For now, just delete them.
@@ -459,8 +458,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 		const std::string text = [&game]()
 		{
-			std::string segment = game.getMiscAssets().getAExeStrings().get(
-				ExeStringKey::DistributeClassPoints);
+			const auto &exeData = game.getMiscAssets().getExeData();
+			std::string segment = exeData.charCreation.distributeClassPoints;
 			segment = String::replace(segment, '\r', '\n');
 
 			return segment;

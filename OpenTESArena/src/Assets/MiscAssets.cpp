@@ -4,8 +4,6 @@
 #include <numeric>
 #include <sstream>
 
-#include "ExeStrings.h"
-#include "ExeUnpacker.h"
 #include "MiscAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
@@ -17,35 +15,20 @@
 
 #include "components/vfs/manager.hpp"
 
-MiscAssets::CityGeneration::CityGeneration()
-{
-	this->coastalCityList.fill(0);
-}
-
-MiscAssets::WallHeightTables::WallHeightTables()
-{
-	this->box1a.fill(0);
-	this->box1b.fill(0);
-	this->box1c.fill(0);
-	this->box2a.fill(0);
-	this->box2b.fill(0);
-	this->box3a.fill(0);
-	this->box3b.fill(0);
-	this->box4.fill(0);
-}
-
-const std::string MiscAssets::AExeKeyValuesMapPath = "data/text/aExeStrings.txt";
-
 MiscAssets::MiscAssets()
-	: cityDataFile("CITYDATA.00")
 {
-	// Decompress A.EXE and place it in a string for later use.
-	const ExeUnpacker floppyExe("A.EXE");
-	this->aExe = floppyExe.getText();
+	// Initialized by init().
+}
 
-	// Generate a map of interesting strings from the text of A.EXE.
-	this->aExeStrings = std::unique_ptr<ExeStrings>(new ExeStrings(
-		this->aExe, Platform::getBasePath() + MiscAssets::AExeKeyValuesMapPath));
+MiscAssets::~MiscAssets()
+{
+
+}
+
+void MiscAssets::init()
+{
+	// Load the executable data.
+	this->parseExecutableData();
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
 	this->parseTemplateDat();
@@ -53,30 +36,24 @@ MiscAssets::MiscAssets()
 	// Read in QUESTION.TXT and create character question objects.
 	this->parseQuestionTxt();
 
-	// The start of the .data segment (in A.EXE). Used in determining the positions of
-	// allowed shields and weapons arrays.
-	const int dataSegmentOffset = 0x32560;
-
 	// Read in CLASSES.DAT.
-	assert(this->aExeStrings.get() != nullptr);
-	this->parseClasses(this->aExe, *this->aExeStrings.get(), dataSegmentOffset);
+	this->parseClasses(this->getExeData());
 
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
 
-	// Read in city generation data.
-	this->parseCityGeneration(this->aExe, *this->aExeStrings.get());
-
-	// Read in wall height tables.
-	this->parseWallHeightTables(this->aExe);
+	// Read city data file.
+	this->cityDataFile.init("CITYDATA.00");
 
 	// Read in the world map mask data from TAMRIEL.MNU.
 	this->parseWorldMapMasks();
 }
 
-MiscAssets::~MiscAssets()
+void MiscAssets::parseExecutableData()
 {
-
+	// For now, just read the floppy disk executable.
+	const bool floppyVersion = true;
+	this->exeData.init(floppyVersion);
 }
 
 void MiscAssets::parseTemplateDat()
@@ -261,8 +238,7 @@ void MiscAssets::parseQuestionTxt()
 	addQuestion(description, a, b, c);
 }
 
-void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeStrings,
-	int dataSegmentOffset)
+void MiscAssets::parseClasses(const ExeData &exeData)
 {
 	const std::string filename = "CLASSES.DAT";
 
@@ -307,15 +283,17 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 
 	// Now read in the character class data from A.EXE. Some of it also depends on
 	// data from CLASSES.DAT.
-	const auto &classNameStrs = exeStrings.getList(ExeStringKey::CharacterClassNames);
-	const auto &allowedArmorsStrs = exeStrings.getList(ExeStringKey::AllowedArmors);
-	const auto &allowedShieldsStrs = exeStrings.getList(ExeStringKey::AllowedShields);
-	const auto &allowedWeaponsStrs = exeStrings.getList(ExeStringKey::AllowedWeapons);
-	const auto &preferredAttributesStrs = exeStrings.getList(ExeStringKey::ClassAttributes);
-	const auto &classNumbersToIDsStrs = exeStrings.getList(ExeStringKey::ClassNumberToClassID);
-	const auto &classInitialExpCapStrs = exeStrings.getList(ExeStringKey::ClassInitialExperienceCap);
-	const auto &healthDieStrs = exeStrings.getList(ExeStringKey::HealthDice);
-	const auto &lockpickingDivisorStrs = exeStrings.getList(ExeStringKey::LockpickingDivisors);
+	const auto &classNameStrs = exeData.charClasses.classNames;
+	const auto &allowedArmorsValues = exeData.charClasses.allowedArmors;
+	const auto &allowedShieldsLists = exeData.charClasses.allowedShieldsLists;
+	const auto &allowedShieldsIndices = exeData.charClasses.allowedShieldsIndices;
+	const auto &allowedWeaponsLists = exeData.charClasses.allowedWeaponsLists;
+	const auto &allowedWeaponsIndices = exeData.charClasses.allowedWeaponsIndices;
+	const auto &preferredAttributesStrs = exeData.charClasses.preferredAttributes;
+	const auto &classNumbersToIDsValues = exeData.charClasses.classNumbersToIDs;
+	const auto &initialExpCapValues = exeData.charClasses.initialExperienceCaps;
+	const auto &healthDiceValues = exeData.charClasses.healthDice;
+	const auto &lockpickingDivisorValues = exeData.charClasses.lockpickingDivisors;
 
 	const int classCount = 18;
 	for (int i = 0; i < classCount; i++)
@@ -323,11 +301,10 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 		const std::string &name = classNameStrs.at(i);
 		const std::string &preferredAttributes = preferredAttributesStrs.at(i);
 
-		const std::vector<ArmorMaterialType> allowedArmors = [&allowedArmorsStrs, i]()
+		const std::vector<ArmorMaterialType> allowedArmors = [&allowedArmorsValues, i]()
 		{
 			// Determine which armors are allowed based on a one-digit value.
-			const std::string &valueStr = allowedArmorsStrs.at(i);
-			const uint8_t value = static_cast<uint8_t>(valueStr.at(0));
+			const uint8_t value = allowedArmorsValues.at(i);
 
 			if (value == 0)
 			{
@@ -361,18 +338,15 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			}
 		}();
 
-		const std::vector<ShieldType> allowedShields = [&exeText,
-			dataSegmentOffset, &allowedShieldsStrs, i]()
+		const std::vector<ShieldType> allowedShields = [&allowedShieldsLists,
+			&allowedShieldsIndices, i]()
 		{
-			// Use the pointer offset at the 'i' index of the shield pointers to find which
-			// ID array to use.
-			const std::string &offsetStr = allowedShieldsStrs.at(i);
-			const uint16_t offset = Bytes::getLE16(
-				reinterpret_cast<const uint8_t*>(offsetStr.data()));
+			// Get the pre-calculated shield index.
+			const int shieldIndex = allowedShieldsIndices.at(i);
+			const int NO_INDEX = -1;
 
-			// If the pointer offset is "null", that means all shields are allowed for this class.
-			// Otherwise, read each byte in the array until a 0xFF byte.
-			if (offset == 0)
+			// If the index is "null" (-1), that means all shields are allowed for this class.
+			if (shieldIndex == NO_INDEX)
 			{
 				return std::vector<ShieldType>
 				{
@@ -381,55 +355,37 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			}
 			else
 			{
-				// Start and end of the 0xFF-terminated array in the executable.
-				const int arrayStart = dataSegmentOffset + offset;
-				const uint8_t endByte = 0xFF;
+				// Mappings of shield IDs to shield types. The index in the array is the ID 
+				// minus 7 because shields and armors are treated as the same type in Arena,
+				// so they're in the same array, but we separate them here because that seems 
+				// more object-oriented.
+				const std::array<ShieldType, 4> ShieldIDMappings =
+				{
+					ShieldType::Buckler,
+					ShieldType::Round,
+					ShieldType::Kite,
+					ShieldType::Tower
+				};
 
-				int index = 0;
+				const std::vector<uint8_t> &shieldsList = allowedShieldsLists.at(shieldIndex);
 				std::vector<ShieldType> shields;
 
-				// Read shield IDs until the end byte.
-				while (true)
+				for (const uint8_t shield : shieldsList)
 				{
-					// Mappings of shield IDs to shield types. The index in the array is the ID 
-					// minus 7 because shields and armors are treated as the same type in Arena,
-					// so they're in the same array, but we separate them here because that seems 
-					// more object-oriented.
-					const std::array<ShieldType, 4> ShieldIDMappings =
-					{
-						ShieldType::Buckler,
-						ShieldType::Round,
-						ShieldType::Kite,
-						ShieldType::Tower
-					};
-
-					const uint8_t shieldID = static_cast<uint8_t>(exeText.at(arrayStart + index));
-
-					if (shieldID == endByte)
-					{
-						break;
-					}
-					else
-					{
-						shields.push_back(ShieldIDMappings.at(shieldID - 7));
-					}
-
-					index++;
+					shields.push_back(ShieldIDMappings.at(shield - 7));
 				}
 
 				return shields;
 			}
 		}();
 
-		const std::vector<int> allowedWeapons = [&exeText,
-			dataSegmentOffset, &allowedWeaponsStrs, i]()
+		const std::vector<int> allowedWeapons = [&allowedWeaponsLists,
+			&allowedWeaponsIndices, i]()
 		{
-			// Use the pointer offset at the 'i' index of the weapon pointers to find which
-			// ID array to use.
-			const std::string &offsetStr = allowedWeaponsStrs.at(i);
-			const uint16_t offset = Bytes::getLE16(
-				reinterpret_cast<const uint8_t*>(offsetStr.data()));
-			
+			// Get the pre-calculated weapon index.
+			const int weaponIndex = allowedWeaponsIndices.at(i);
+			const int NO_INDEX = -1;
+
 			// Weapon IDs as they are shown in the executable (staff, sword, ..., long bow).
 			const std::vector<int> WeaponIDs = []()
 			{
@@ -438,36 +394,19 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 				return weapons;
 			}();
 
-			// If the pointer offset is "null", that means all weapons are allowed for this class.
-			// Otherwise, read each byte in the array until a 0xFF byte.
-			if (offset == 0)
+			// If the index is "null" (-1), that means all shields are allowed for this class.
+			if (weaponIndex == NO_INDEX)
 			{
 				return WeaponIDs;
 			}
 			else
 			{
-				// Start and end of the 0xFF-terminated array in the executable.
-				const int arrayStart = dataSegmentOffset + offset;
-				const uint8_t endByte = 0xFF;
-
-				int index = 0;
+				const std::vector<uint8_t> &weaponsList = allowedWeaponsLists.at(weaponIndex);
 				std::vector<int> weapons;
 
-				// Read weapon IDs until the end byte.
-				while (true)
+				for (const uint8_t weapon : weaponsList)
 				{
-					const uint8_t weaponID = static_cast<uint8_t>(exeText.at(arrayStart + index));
-
-					if (weaponID == endByte)
-					{
-						break;
-					}
-					else
-					{
-						weapons.push_back(WeaponIDs.at(weaponID));
-					}
-
-					index++;
+					weapons.push_back(WeaponIDs.at(weapon));
 				}
 
 				return weapons;
@@ -490,30 +429,15 @@ void MiscAssets::parseClasses(const std::string &exeText, const ExeStrings &exeS
 			}
 		}();
 
-		const double lockpicking = [&lockpickingDivisorStrs, i]()
+		const double lockpicking = [&lockpickingDivisorValues, i]()
 		{
-			const std::string &divisorStr = lockpickingDivisorStrs.at(i);
-			const uint8_t divisor = divisorStr.at(0);
+			const uint8_t divisor = lockpickingDivisorValues.at(i);
 			return static_cast<double>(200 / divisor) / 100.0;
 		}();
 
-		const int healthDie = [&healthDieStrs, i]()
-		{
-			const std::string &dieStr = healthDieStrs.at(i);
-			return static_cast<uint8_t>(dieStr.at(0));
-		}();
-
-		const int initialExperienceCap = [&classInitialExpCapStrs, i]()
-		{
-			const std::string &capStr = classInitialExpCapStrs.at(i);
-			return Bytes::getLE16(reinterpret_cast<const uint8_t*>(capStr.data()));
-		}();
-
-		const int classNumberToID = [&classNumbersToIDsStrs, i]()
-		{
-			const std::string &numberStr = classNumbersToIDsStrs.at(i);
-			return static_cast<uint8_t>(numberStr.at(0));
-		}();
+		const int healthDie = healthDiceValues.at(i);
+		const int initialExperienceCap = initialExpCapValues.at(i);
+		const int classNumberToID = classNumbersToIDsValues.at(i);
 
 		const int classIndex = classNumberToID & CharacterClassGeneration::ID_MASK;
 		const bool mage = (classNumberToID & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
@@ -588,90 +512,6 @@ void MiscAssets::parseDungeonTxt()
 	}
 }
 
-void MiscAssets::parseCityGeneration(const std::string &exeText, const ExeStrings &exeStrings)
-{
-	// Read coastal city list data (58 bytes).
-	const int coastalOffset = 0x3FEA8;
-	const uint8_t *coastalPtr = reinterpret_cast<const uint8_t*>(exeText.data() + coastalOffset);
-	for (int i = 0; i < 58; i++)
-	{
-		this->cityGeneration.coastalCityList.at(i) = *(coastalPtr + i);
-	}
-
-	// Read city template filenames (town%d.mif, ..., cityw%d.mif).
-	// - To do: avoid duplicating strings with ExeStrings.
-	const auto &templateFilenames = exeStrings.getList(ExeStringKey::CityTemplateFilenames);
-	for (size_t i = 0; i < templateFilenames.size(); i++)
-	{
-		this->cityGeneration.templateFilenames.at(i) = templateFilenames.at(i);
-	}
-
-	// Read starting position data (44 bytes).
-	const int startOffset = 0x3FF55;
-	const uint8_t *startPtr = reinterpret_cast<const uint8_t*>(exeText.data() + startOffset);
-	for (int i = 0; i < 22; i++)
-	{
-		const uint8_t x = *(startPtr + (i * 2));
-		const uint8_t y = *(startPtr + ((i * 2) + 1));
-		this->cityGeneration.startingPositions.at(i) = Int2(x, y);
-	}
-
-	// Read reserved block lists (8 lists).
-	const int blockOffset = 0x3FF8E;
-	const uint8_t *blockPtr = reinterpret_cast<const uint8_t*>(exeText.data() + blockOffset);
-	for (int i = 0; i < 8; i++)
-	{
-		std::vector<uint8_t> &blockList = this->cityGeneration.reservedBlockLists.at(i);
-		
-		// Read unsigned bytes until null (0x0).
-		while (*blockPtr != 0)
-		{
-			blockList.push_back(*blockPtr);
-			blockPtr++;
-		}
-
-		blockPtr++;
-	}
-}
-
-void MiscAssets::parseWallHeightTables(const std::string &exeText)
-{
-	// Offset in A.EXE to the start of the wall height table data.
-	const int offset = 0x48206;
-
-	// Box 1 values.
-	const uint8_t *box1Ptr = reinterpret_cast<const uint8_t*>(exeText.data() + offset);
-	for (size_t i = 0; i < 8; i++)
-	{
-		this->wallHeightTables.box1a.at(i) = Bytes::getLE16(box1Ptr + (i * 2));
-		this->wallHeightTables.box1b.at(i) = Bytes::getLE16(box1Ptr + 16 + (i * 2));
-		this->wallHeightTables.box1c.at(i) = Bytes::getLE16(box1Ptr + 32 + (i * 2));
-	}
-
-	// Box 2 values.
-	const uint8_t *box2Ptr = box1Ptr + 48;
-	for (size_t i = 0; i < 16; i++)
-	{
-		this->wallHeightTables.box2a.at(i) = Bytes::getLE16(box2Ptr + (i * 2));
-		this->wallHeightTables.box2b.at(i) = Bytes::getLE16(box2Ptr + 32 + (i * 2));
-	}
-
-	// Box 3 values (skip 56 words to get here).
-	const uint8_t *box3Ptr = box2Ptr + 144;
-	for (size_t i = 0; i < 8; i++)
-	{
-		this->wallHeightTables.box3a.at(i) = Bytes::getLE16(box3Ptr + (i * 2));
-		this->wallHeightTables.box3b.at(i) = Bytes::getLE16(box3Ptr + 16 + (i * 2));
-	}
-
-	// Box 4 values.
-	const uint8_t *box4Ptr = box3Ptr + 32;
-	for (size_t i = 0; i < 16; i++)
-	{
-		this->wallHeightTables.box4.at(i) = Bytes::getLE16(box4Ptr + (i * 2));
-	}
-}
-
 void MiscAssets::parseWorldMapMasks()
 {
 	const std::string filename = "TAMRIEL.MNU";
@@ -710,7 +550,7 @@ void MiscAssets::parseWorldMapMasks()
 		const Rect &rect = MaskRects.at(i);
 
 		// The number of bytes in the mask rect.
-		const int byteCount = 
+		const int byteCount =
 			WorldMapMask::getAdjustedWidth(rect.getWidth()) * rect.getHeight();
 
 		// Copy the segment of mask bytes to a new vector.
@@ -726,9 +566,9 @@ void MiscAssets::parseWorldMapMasks()
 	}
 }
 
-const ExeStrings &MiscAssets::getAExeStrings() const
+const ExeData &MiscAssets::getExeData() const
 {
-	return *this->aExeStrings.get();
+	return this->exeData;
 }
 
 const std::string &MiscAssets::getTemplateDatText(const std::string &key)
@@ -764,16 +604,6 @@ const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTx
 const CityDataFile &MiscAssets::getCityDataFile() const
 {
 	return this->cityDataFile;
-}
-
-const MiscAssets::CityGeneration &MiscAssets::getCityGeneration() const
-{
-	return this->cityGeneration;
-}
-
-const MiscAssets::WallHeightTables &MiscAssets::getWallHeightTables() const
-{
-	return this->wallHeightTables;
 }
 
 const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const

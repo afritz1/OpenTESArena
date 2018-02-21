@@ -11,7 +11,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassCategory.h"
 #include "../Entities/CharacterClassCategoryName.h"
@@ -55,8 +55,11 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const int x = 89;
 		const int y = 32;
 
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const std::string &text = exeData.charCreation.chooseClassList;
+
 		const RichTextString richText(
-			game.getMiscAssets().getAExeStrings().get(ExeStringKey::ChooseClassList),
+			text,
 			FontName::C,
 			Color(211, 211, 211),
 			TextAlignment::Left,
@@ -320,9 +323,8 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
 	
 	// Get weapon names from the executable.
-	const auto &exeStrings = this->getGame().getMiscAssets().getAExeStrings();
-	const std::vector<std::string> &weaponStrings =
-		exeStrings.getList(ExeStringKey::WeaponNames);
+	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const auto &weaponStrings = exeData.equipment.weaponNames;
 
 	// Sort as they are listed in the CharacterClassParser.
 	std::vector<int> allowedWeapons = characterClass.getAllowedWeapons();

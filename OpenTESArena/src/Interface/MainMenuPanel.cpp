@@ -205,7 +205,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				// Create a player with random data for testing.
 				return std::unique_ptr<GameData>(new GameData(Player::makeRandom(
-					miscAssets.getClassDefinitions(), miscAssets.getAExeStrings())));
+					miscAssets.getClassDefinitions(), miscAssets.getExeData())));
 			}();
 
 			// Load the selected level based on world type (writing into active game data).

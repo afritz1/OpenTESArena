@@ -7,7 +7,7 @@
 #include "Item.h"
 #include "Metallic.h"
 
-class ExeStrings;
+class ExeData;
 class WeaponArtifactData;
 
 enum class WeaponHandCount;
@@ -25,13 +25,13 @@ private:
 		const WeaponArtifactData *artifactData);
 
 	Weapon(int weaponID, MetalType metalType,
-		const WeaponArtifactData *artifactData, const ExeStrings &exeStrings);
+		const WeaponArtifactData *artifactData, const ExeData &exeData);
 public:
 	// Weapon constructor for a weapon type and metal type.
-	Weapon(int weaponID, MetalType metalType, const ExeStrings &exeStrings);
+	Weapon(int weaponID, MetalType metalType, const ExeData &exeData);
 
 	// Weapon artifact constructor.
-	Weapon(const WeaponArtifactData *artifactData, const ExeStrings &exeStrings);
+	Weapon(const WeaponArtifactData *artifactData, const ExeData &exeData);
 	virtual ~Weapon();
 
 	virtual std::unique_ptr<Item> clone() const override;

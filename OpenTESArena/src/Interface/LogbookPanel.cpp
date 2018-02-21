@@ -8,7 +8,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Assets/ExeStrings.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -33,8 +33,11 @@ LogbookPanel::LogbookPanel(Game &game)
 			Renderer::ORIGINAL_WIDTH / 2,
 			Renderer::ORIGINAL_HEIGHT / 2);
 
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const std::string &text = exeData.logbook.logbookIsEmpty;
+
 		const RichTextString richText(
-			game.getMiscAssets().getAExeStrings().get(ExeStringKey::LogbookIsEmpty),
+			text,
 			FontName::A,
 			Color(255, 207, 12),
 			TextAlignment::Center,
