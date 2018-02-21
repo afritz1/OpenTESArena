@@ -213,19 +213,17 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 						const Clock &presentClock = game.getGameData().getClock();
 
-						// Reverse iterate, checking which range the active one is in.
-						for (auto it = clocksAndIndices.rbegin(); it != clocksAndIndices.rend(); ++it)
+						// Reverse iterate, checking which range the active clock is in.
+						const auto pairIter = std::find_if(
+							clocksAndIndices.rbegin(), clocksAndIndices.rend(),
+							[&presentClock](const std::pair<Clock, int> &pair)
 						{
-							const Clock &clock = it->first;
+							const Clock &clock = pair.first;
+							return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
+						});
 
-							if (presentClock.getTotalSeconds() >= clock.getTotalSeconds())
-							{
-								return it->second;
-							}
-						}
-
-						DebugCrash("No valid time of day.");
-						return 0;
+						DebugAssert(pairIter != clocksAndIndices.rend(), "No valid time of day.");
+						return pairIter->second;
 					}();
 
 					const std::string &timeOfDayString =
