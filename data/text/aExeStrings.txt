@@ -11,7 +11,7 @@ WeekdayNames=0x3E92A
 # [CharacterClasses]
 AllowedArmors=0x36204
 AllowedShields=0x361D1
-AllowedShieldsLists=0x361F6
+AllowedShieldsLists=0x361F5
 AllowedWeapons=0x36185
 AllowedWeaponsLists=0x361A9
 ClassNames=0x3E15E

@@ -82,6 +82,47 @@ namespace
 		}
 	}
 
+	// Convenience method for initializing an index array. This does a search through
+	// the const array for each element to find how many unique values are less than them,
+	// and those counts become the indices.
+	template <typename T, size_t U>
+	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
+	{
+		for (size_t i = 0; i < arr.size(); i++)
+		{
+			const T offset = arr.at(i);
+
+			const int index = [&arr, offset]()
+			{
+				// If the offset is "null", return -1 (indicates no restrictions).
+				if (offset == 0)
+				{
+					return -1;
+				}
+				else
+				{
+					// Find how many non-zero unique offsets are less than the selected offset.
+					std::vector<T> lesserUniques;
+
+					for (const T val : arr)
+					{
+						const bool alreadyCounted = std::find(lesserUniques.begin(),
+							lesserUniques.end(), val) != lesserUniques.end();
+
+						if (!alreadyCounted && (val != 0) && (val < offset))
+						{
+							lesserUniques.push_back(val);
+						}
+					}
+
+					return static_cast<int>(lesserUniques.size());
+				}
+			}();
+
+			indexArr.at(i) = index;
+		}
+	}
+
 	// Convenience method for initializing an array of null-terminated strings.
 	template <size_t T>
 	void initStringArray(std::array<std::string, T> &arr, const char *data)
@@ -133,15 +174,8 @@ void ExeData::CharacterClasses::init(const char *data, const KeyValueMap &keyVal
 	initJaggedInt8Array(this->allowedWeaponsLists, weaponTerminator,
 		data + allowedWeaponsListsOffset);
 
-	//-----
-	// Don't forget allowed shields/weapons convenience arrays.
-	// - To do: get offsets to beginning of each list, then std::find() each for the index.
-	// -1 indicates "no index".
-	this->allowedShieldsIndices.fill(-1);
-	this->allowedWeaponsIndices.fill(-1);
-	DebugWarning("Allowed shields/weapons not implemented!");
-	//-----
-
+	initIndexArray(this->allowedShieldsIndices, this->allowedShields);
+	initIndexArray(this->allowedWeaponsIndices, this->allowedWeapons);
 	initStringArray(this->classNames, data + classNamesOffset);
 	initInt8Array(this->classNumbersToIDs, data + classNumbersToIDsOffset);
 	initInt8Array(this->healthDice, data + healthDiceOffset);

@@ -32,7 +32,7 @@ public:
 		// .data segment into 0xFF-terminated ID arrays.
 		std::array<uint8_t, 18> allowedArmors;
 		std::array<uint16_t, 18> allowedShields;
-		std::array<std::vector<uint8_t>, 4> allowedShieldsLists;
+		std::array<std::vector<uint8_t>, 5> allowedShieldsLists;
 
 		// Added for convenience (evaluated from allowed shields and data segment offset);
 		// points into allowedShieldsLists. -1 if "null".

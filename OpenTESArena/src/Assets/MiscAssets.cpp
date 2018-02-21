@@ -394,7 +394,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 				return weapons;
 			}();
 
-			// If the index is "null" (-1), that means all shields are allowed for this class.
+			// If the index is "null" (-1), that means all weapons are allowed for this class.
 			if (weaponIndex == NO_INDEX)
 			{
 				return WeaponIDs;
