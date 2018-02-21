@@ -82,17 +82,24 @@ namespace
 		}
 	}
 
-	// Convenience method for initializing an index array. This does a search through
-	// the const array for each element to find how many unique values are less than them,
-	// and those counts become the indices.
+	// Convenience method for initializing an index array.
 	template <typename T, size_t U>
 	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
 	{
+		// Construct an array of unique, sorted offsets from the const array.
+		// Remove zeroes because they do not count as offsets (they represent "null").
+		std::array<T, U> uniqueArr;
+		const auto uniqueBegin = uniqueArr.begin();
+		auto uniqueEnd = std::remove_copy(arr.begin(), arr.end(), uniqueBegin, 0);
+		std::sort(uniqueBegin, uniqueEnd);
+		uniqueEnd = std::unique(uniqueBegin, uniqueEnd);
+
+		// For each offset, if it is non-zero, its position in the uniques array is
+		// the index to put into the index array.
 		for (size_t i = 0; i < arr.size(); i++)
 		{
 			const T offset = arr.at(i);
-
-			const int index = [&arr, offset]()
+			const int index = [uniqueBegin, uniqueEnd, offset]()
 			{
 				// If the offset is "null", return -1 (indicates no restrictions).
 				if (offset == 0)
@@ -101,21 +108,9 @@ namespace
 				}
 				else
 				{
-					// Find how many non-zero unique offsets are less than the selected offset.
-					std::vector<T> lesserUniques;
-
-					for (const T val : arr)
-					{
-						const bool alreadyCounted = std::find(lesserUniques.begin(),
-							lesserUniques.end(), val) != lesserUniques.end();
-
-						if (!alreadyCounted && (val != 0) && (val < offset))
-						{
-							lesserUniques.push_back(val);
-						}
-					}
-
-					return static_cast<int>(lesserUniques.size());
+					// Find the position of the offset in the unique offsets array.
+					const auto offsetIter = std::find(uniqueBegin, uniqueEnd, offset);
+					return static_cast<int>(std::distance(uniqueBegin, offsetIter));
 				}
 			}();
 
