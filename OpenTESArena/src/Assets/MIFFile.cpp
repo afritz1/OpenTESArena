@@ -69,7 +69,7 @@ MIFFile::MIFFile(const std::string &filename)
 	const uint8_t entryCount = *(srcData.data() + 7);
 	const uint16_t mapWidth = Bytes::getLE16(srcData.data() + 27);
 	const uint16_t mapDepth = Bytes::getLE16(srcData.data() + 29);
-	
+
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
@@ -221,12 +221,16 @@ int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	level.flor = std::vector<uint8_t>(uncompressedSize);
-	std::fill(level.flor.begin(), level.flor.end(), 0);
+	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
+	std::fill(decomp.begin(), decomp.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, level.flor);
+	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+
+	// Write into 16-bit vector (in little-endian).
+	level.flor.resize(decomp.size() / 2);
+	std::copy(decomp.begin(), decomp.end(), reinterpret_cast<uint8_t*>(level.flor.data()));
 
 	return compressedSize + 6;
 }
@@ -298,12 +302,16 @@ int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	level.map1 = std::vector<uint8_t>(uncompressedSize);
-	std::fill(level.map1.begin(), level.map1.end(), 0);
+	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
+	std::fill(decomp.begin(), decomp.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, level.map1);
+	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+
+	// Write into 16-bit vector (in little-endian).
+	level.map1.resize(decomp.size() / 2);
+	std::copy(decomp.begin(), decomp.end(), reinterpret_cast<uint8_t*>(level.map1.data()));
 
 	return compressedSize + 6;
 }
@@ -314,12 +322,16 @@ int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	level.map2 = std::vector<uint8_t>(uncompressedSize);
-	std::fill(level.map2.begin(), level.map2.end(), 0);
+	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
+	std::fill(decomp.begin(), decomp.end(), 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, level.map2);
+	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+
+	// Write into 16-bit vector (in little-endian).
+	level.map2.resize(decomp.size() / 2);
+	std::copy(decomp.begin(), decomp.end(), reinterpret_cast<uint8_t*>(level.map2.data()));
 
 	return compressedSize + 6;
 }

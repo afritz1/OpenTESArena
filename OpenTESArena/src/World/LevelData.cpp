@@ -155,9 +155,9 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
-	std::vector<uint8_t> tempFlor(level.flor.begin(), level.flor.end());
-	std::vector<uint8_t> tempMap1(level.map1.begin(), level.map1.end());
-	std::vector<uint8_t> tempMap2(level.map2.begin(), level.map2.end());
+	std::vector<uint16_t> tempFlor(level.flor.begin(), level.flor.end());
+	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
+	std::vector<uint16_t> tempMap2(level.map2.begin(), level.map2.end());
 
 	// Decide which city blocks to load.
 	enum class BlockType
@@ -280,14 +280,14 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 			{
 				// Need to double the X and Z offsets because they're pointing to 16-bit data
 				// (masquerading as 8-bit).
-				const int srcIndex = (z * 2) * blockMif.getWidth();
-				const int dstIndex = (xOffset * 2) + (((z + zOffset) * 2) * gridWidth);
+				const int srcIndex = z * blockMif.getWidth();
+				const int dstIndex = xOffset + ((z + zOffset) * gridWidth);
 
 				auto writeRow = [&blockMif, srcIndex, dstIndex](
-					const std::vector<uint8_t> &src, std::vector<uint8_t> &dst)
+					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
 				{
 					const auto srcBegin = src.begin() + srcIndex;
-					const auto srcEnd = srcBegin + (blockMif.getWidth() * 2);
+					const auto srcEnd = srcBegin + blockMif.getWidth();
 					const auto dstBegin = dst.begin() + dstIndex;
 					std::copy(srcBegin, srcEnd, dstBegin);
 				};
@@ -338,7 +338,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 
 	// Copy voxel data into temp buffers. Each floor in the four 64x64 wilderness blocks
 	// is 8192 bytes.
-	std::array<uint8_t, 8192 * 4> tempFlor, tempMap1, tempMap2;
+	std::array<uint16_t, 4096 * 4> tempFlor, tempMap1, tempMap2;
 	std::copy(level.flor.begin(), level.flor.end(), tempFlor.begin());
 	std::copy(level.map1.begin(), level.map1.end(), tempMap1.begin());
 	std::copy(level.map2.begin(), level.map2.end(), tempMap2.begin());
@@ -358,16 +358,14 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 		// Copy .RMD voxel data to temp buffers.
 		for (int z = 0; z < RMDFile::DEPTH; z++)
 		{
-			// Need to double the X and Z offsets because they're pointing to 16-bit data
-			// (masquerading as 8-bit).
-			const int srcIndex = (z * 2) * RMDFile::WIDTH;
-			const int dstIndex = (xOffset * 2) + (((z + zOffset) * 2) * gridWidth);
+			const int srcIndex = z * RMDFile::WIDTH;
+			const int dstIndex = xOffset + ((z + zOffset) * gridWidth);
 
-			auto writeRow = [srcIndex, dstIndex](const std::array<uint8_t, 8192> &src,
-				std::array<uint8_t, 8192 * 4> &dst)
+			auto writeRow = [srcIndex, dstIndex](const RMDFile::ArrayType &src,
+				std::array<uint16_t, 4096 * 4> &dst)
 			{
 				const auto srcBegin = src.begin() + srcIndex;
-				const auto srcEnd = srcBegin + (RMDFile::WIDTH * 2);
+				const auto srcEnd = srcBegin + RMDFile::WIDTH;
 				const auto dstBegin = dst.begin() + dstIndex;
 				std::copy(srcBegin, srcEnd, dstBegin);
 			};
@@ -467,14 +465,14 @@ void LevelData::setVoxel(int x, int y, int z, uint16_t id)
 	voxels[index] = id;
 }
 
-void LevelData::readFLOR(const uint8_t *flor, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	// Lambda for obtaining a two-byte FLOR voxel.
 	auto getFlorVoxel = [flor, gridWidth, gridDepth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(flor + index);
+		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(flor) + index);
 		return voxel;
 	};
 
@@ -653,14 +651,14 @@ void LevelData::readFLOR(const uint8_t *flor, const INFFile &inf, int gridWidth,
 	}
 }
 
-void LevelData::readMAP1(const uint8_t *map1, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [map1, gridWidth, gridDepth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(map1 + index);
+		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map1) + index);
 		return voxel;
 	};
 
@@ -962,14 +960,14 @@ void LevelData::readMAP1(const uint8_t *map1, const INFFile &inf, int gridWidth,
 	}
 }
 
-void LevelData::readMAP2(const uint8_t *map2, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP2 voxel.
 	auto getMap2Voxel = [map2, gridWidth, gridDepth](int x, int z)
 	{
 		// Read voxel data in reverse order.
 		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(map2 + index);
+		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map2) + index);
 		return voxel;
 	};
 

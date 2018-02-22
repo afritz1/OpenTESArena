@@ -97,9 +97,9 @@ private:
 	LevelData(int gridWidth, int gridHeight, int gridDepth);
 
 	void setVoxel(int x, int y, int z, uint16_t id);
-	void readFLOR(const uint8_t *flor, const INFFile &inf, int gridWidth, int gridDepth);
-	void readMAP1(const uint8_t *map1, const INFFile &inf, int gridWidth, int gridDepth);
-	void readMAP2(const uint8_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
+	void readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth);
+	void readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth, int gridDepth);
+	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
 	void readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth);
 	void readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers, const INFFile &inf,

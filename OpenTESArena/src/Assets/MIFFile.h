@@ -34,7 +34,8 @@ public:
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
 		// - To do: maybe store MAP2 data with each voxel's extended height?
-		std::vector<uint8_t> flat, flor, inns, loot, map1, map2, targ;
+		std::vector<uint16_t> flor, map1, map2;
+		std::vector<uint8_t> flat, inns, loot, targ;
 		std::vector<MIFFile::Level::Lock> lock;
 		std::vector<MIFFile::Level::Trigger> trig;
 

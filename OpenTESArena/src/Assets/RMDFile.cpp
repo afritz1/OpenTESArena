@@ -39,9 +39,9 @@ RMDFile::RMDFile(const std::string &filename)
 		const auto map1End = srcData.begin() + ((2 * srcData.size()) / 3);
 		const auto map2End = srcData.end();
 
-		std::copy(florStart, florEnd, this->flor.begin());
-		std::copy(florEnd, map1End, this->map1.begin());
-		std::copy(map1End, map2End, this->map2.begin());
+		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.data()));
+		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.data()));
+		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.data()));
 	}
 	else
 	{
@@ -56,9 +56,9 @@ RMDFile::RMDFile(const std::string &filename)
 		const auto map1End = decomp.begin() + ((2 * decomp.size()) / 3);
 		const auto map2End = decomp.end();
 
-		std::copy(florStart, florEnd, this->flor.begin());
-		std::copy(florEnd, map1End, this->map1.begin());
-		std::copy(map1End, map2End, this->map2.begin());
+		std::copy(florStart, florEnd, reinterpret_cast<uint8_t*>(this->flor.data()));
+		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.data()));
+		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.data()));
 	}
 }
 

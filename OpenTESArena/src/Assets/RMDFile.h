@@ -8,7 +8,7 @@
 class RMDFile
 {
 public:
-	typedef std::array<uint8_t, 8192> ArrayType;
+	typedef std::array<uint16_t, 4096> ArrayType;
 private:
 	RMDFile::ArrayType flor, map1, map2;
 public:
