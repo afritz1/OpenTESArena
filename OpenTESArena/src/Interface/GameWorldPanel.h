@@ -2,6 +2,7 @@
 #define GAME_WORLD_PANEL_H
 
 #include <array>
+#include <functional>
 #include <vector>
 
 #include "Button.h"
@@ -29,6 +30,7 @@ private:
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
+	std::function<void(Game&)> onLevelUpVoxelEnter;
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
 
@@ -68,6 +70,9 @@ public:
 	// initialized.
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
+
+	// Sets a custom function to be called when entering a *LEVELUP voxel.
+	void setOnLevelUpVoxelEnter(std::function<void(Game&)> &&function);
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -121,6 +121,11 @@ public:
 		this->nextPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
 	}
 
+	// Non-templated substitute for setPanel(), for when the panel takes considerable
+	// effort at the callsite to construct (i.e., several parameters, intermediate
+	// calculations, etc.).
+	void setPanel(std::unique_ptr<Panel> nextPanel);
+
 	// Adds a new sub-panel after the current SDL event has been processed (to avoid
 	// adding multiple pop-ups from the same panel or sub-panel). This uses template 
 	// parameters for convenience (to avoid writing a unique_ptr at each callsite).
@@ -130,7 +135,7 @@ public:
 		this->nextSubPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
 	}
 
-	// Non-templated substitute for pushSubPanel(), for when the panel takes considerable
+	// Non-templated substitute for pushSubPanel(), for when the sub-panel takes considerable
 	// effort at the callsite to construct (i.e., several parameters, intermediate
 	// calculations, etc.).
 	void pushSubPanel(std::unique_ptr<Panel> nextSubPanel);

@@ -412,6 +412,11 @@ GameWorldPanel::~GameWorldPanel()
 
 }
 
+void GameWorldPanel::setOnLevelUpVoxelEnter(std::function<void(Game&)> &&function)
+{
+	this->onLevelUpVoxelEnter = std::move(function);
+}
+
 std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
@@ -1270,7 +1275,13 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}
 		else if (voxelData.type == VoxelType::LevelUp)
 		{
-			if (worldData.getCurrentLevel() > 0)
+			// If the custom function has a target, call it and reset it.
+			if (this->onLevelUpVoxelEnter)
+			{
+				this->onLevelUpVoxelEnter(game);
+				this->onLevelUpVoxelEnter = std::function<void(Game&)>();
+			}
+			else if (worldData.getCurrentLevel() > 0)
 			{
 				worldData.setLevelActive(worldData.getCurrentLevel() - 1,
 					game.getTextureManager(), game.getRenderer());
