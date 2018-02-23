@@ -518,10 +518,12 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -588,13 +590,13 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Draw background map.
 	const auto &raceSelectMap = textureManager.getTexture(
 		TextureFile::fromName(TextureName::RaceSelect),
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(raceSelectMap.get());
 
 	// Arena just covers up the "exit" text at the bottom right.
 	const auto &exitCover = textureManager.getTexture(
 		TextureFile::fromName(TextureName::NoExit),
-		TextureFile::fromName(TextureName::RaceSelect));
+		TextureFile::fromName(TextureName::RaceSelect), renderer);
 	renderer.drawOriginal(exitCover.get(),
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());

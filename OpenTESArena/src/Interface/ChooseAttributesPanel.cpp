@@ -502,10 +502,12 @@ ChooseAttributesPanel::~ChooseAttributesPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -577,10 +579,10 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(this->portraitID);
 	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet)).at(this->portraitID);
-	const auto &body = textureManager.getTexture(bodyFilename);
-	const auto &shirt = textureManager.getTexture(shirtFilename);
-	const auto &pants = textureManager.getTexture(pantsFilename);
+		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(this->portraitID);
+	const auto &body = textureManager.getTexture(bodyFilename, renderer);
+	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
+	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
 	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
 	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
 	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
@@ -588,7 +590,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 
 	// Draw attributes texture.
 	const auto &attributesBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats));
+		TextureFile::fromName(TextureName::CharacterStats), renderer);
 	renderer.drawOriginal(attributesBackground.get());
 
 	// Draw text boxes: player name, race, class.

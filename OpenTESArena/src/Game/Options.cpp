@@ -66,21 +66,19 @@ const double Options::MAX_VERTICAL_SENSITIVITY = 50.0;
 const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
 
-Options::Options()
+void Options::load(const std::string &filename, Options::BoolMap &boolMap,
+	Options::IntegerMap &integerMap, Options::DoubleMap &doubleMap,
+	Options::StringMap &stringMap)
 {
-	const std::string defaultPath(Platform::getBasePath() +
-		"options/" + Options::DEFAULT_FILENAME);
-	DebugMention("Reading \"" + defaultPath + "\".");
-
-	// Read the key-value pairs from options-default.txt.
-	const KeyValueMap keyValueMap(defaultPath);
+	// Read the key-value pairs from the given options file.
+	const KeyValueMap keyValueMap(filename);
 
 	for (const auto &pair : keyValueMap.getAll())
 	{
 		const std::string &key = pair.first;
 
 		// See if the key is recognized, and if so, see what type the value should be, 
-		// convert it, and place it in the default map.
+		// convert it, and place it in the changed map.
 		const auto mapIter = OptionMappings.find(key);
 
 		if (mapIter != OptionMappings.end())
@@ -92,31 +90,26 @@ Options::Options()
 			// unnecessary look-up).
 			if (type == OptionType::Bool)
 			{
-				this->defaultBools.insert(std::make_pair(name, keyValueMap.getBoolean(key)));
+				boolMap.insert(std::make_pair(name, keyValueMap.getBoolean(key)));
 			}
 			else if (type == OptionType::Int)
 			{
-				this->defaultInts.insert(std::make_pair(name, keyValueMap.getInteger(key)));
+				integerMap.insert(std::make_pair(name, keyValueMap.getInteger(key)));
 			}
 			else if (type == OptionType::Double)
 			{
-				this->defaultDoubles.insert(std::make_pair(name, keyValueMap.getDouble(key)));
+				doubleMap.insert(std::make_pair(name, keyValueMap.getDouble(key)));
 			}
 			else if (type == OptionType::String)
 			{
-				this->defaultStrings.insert(std::make_pair(name, keyValueMap.getString(key)));
+				stringMap.insert(std::make_pair(name, keyValueMap.getString(key)));
 			}
 		}
 		else
 		{
-			DebugMention("Key \"" + key + "\" not recognized in \"" + defaultPath + "\".");
+			DebugMention("Key \"" + key + "\" not recognized in \"" + filename + "\".");
 		}
 	}
-}
-
-Options::~Options()
-{
-
 }
 
 const std::string &getOptionsNameString(OptionName key)
@@ -316,50 +309,20 @@ void Options::checkSoundChannels(int value) const
 	DebugAssert(value >= 1, "Sound channel count must be positive.");
 }
 
-void Options::load(const std::string &filename)
+void Options::loadDefaults(const std::string &filename)
 {
-	DebugMention("Reading \"" + filename + "\".");
+	DebugMention("Reading defaults \"" + filename + "\".");
 
-	// Read the key-value pairs from the given options file.
-	const KeyValueMap keyValueMap(filename);
+	Options::load(filename, this->defaultBools, this->defaultInts,
+		this->defaultDoubles, this->defaultStrings);
+}
 
-	for (const auto &pair : keyValueMap.getAll())
-	{
-		const std::string &key = pair.first;
+void Options::loadChanges(const std::string &filename)
+{
+	DebugMention("Reading changes \"" + filename + "\".");
 
-		// See if the key is recognized, and if so, see what type the value should be, 
-		// convert it, and place it in the changed map.
-		const auto mapIter = OptionMappings.find(key);
-
-		if (mapIter != OptionMappings.end())
-		{
-			const OptionName name = mapIter->second.first;
-			const OptionType type = mapIter->second.second;
-
-			// (Using KeyValueMap's getter code here for convenience, despite it doing an
-			// unnecessary look-up).
-			if (type == OptionType::Bool)
-			{
-				this->changedBools.insert(std::make_pair(name, keyValueMap.getBoolean(key)));
-			}
-			else if (type == OptionType::Int)
-			{
-				this->changedInts.insert(std::make_pair(name, keyValueMap.getInteger(key)));
-			}
-			else if (type == OptionType::Double)
-			{
-				this->changedDoubles.insert(std::make_pair(name, keyValueMap.getDouble(key)));
-			}
-			else if (type == OptionType::String)
-			{
-				this->changedStrings.insert(std::make_pair(name, keyValueMap.getString(key)));
-			}
-		}
-		else
-		{
-			DebugMention("Key \"" + key + "\" not recognized in \"" + filename + "\".");
-		}
-	}
+	Options::load(filename, this->changedBools, this->changedInts,
+		this->changedDoubles, this->changedStrings);
 }
 
 void Options::saveChanges()

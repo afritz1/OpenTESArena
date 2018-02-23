@@ -37,67 +37,40 @@ Game::Game()
 	this->basePath = Platform::getBasePath();
 
 	// Get the path to the options folder. This is platform-dependent and points inside 
-	// the "preferences directory" so it's always writable. Append "options.txt" to access
-	// the file itself.
+	// the "preferences directory" so it's always writable.
 	this->optionsPath = Platform::getOptionsPath();
 
-	// Parse options-default.txt. Always prefer the "default" file before the "changes" file. 
-	// The changes file is stored in the user's prefs folder.
-	this->options = [this]()
-	{
-		std::unique_ptr<Options> newOptions(new Options());
-
-		const std::string changesOptionsPath(this->optionsPath + Options::CHANGES_FILENAME);
-		const bool changesOptionsExists = File::exists(changesOptionsPath);
-
-		if (!changesOptionsExists)
-		{
-			// If the "changes" options file doesn't exist, make one. Since the new options 
-			// object has no changes, the new file will have no key-value pairs.
-			DebugMention("Creating options file at \"" + changesOptionsPath + "\".");
-			newOptions->saveChanges();
-		}
-		else
-		{
-			// Read in any key-value pairs in the "changes" options file.
-			newOptions->load(changesOptionsPath);
-		}
-
-		return newOptions;
-	}();
+	// Parse options-default.txt and options-changes.txt (if it exists). Always prefer the
+	// default file before the "changes" file.
+	this->initOptions(this->basePath, this->optionsPath);
 
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
 	const bool arenaPathIsRelative = File::pathIsRelative(
-		this->getOptions().getArenaPath());
+		this->options.getArenaPath());
 	const std::string globalBsaPath = [this, arenaPathIsRelative]()
 	{
 		// Include the base path if the ArenaPath is relative.
 		return (arenaPathIsRelative ? this->basePath : "") +
-			this->options->getArenaPath() + "/GLOBAL.BSA";
+			this->options.getArenaPath() + "/GLOBAL.BSA";
 	}();
 
 	DebugAssert(File::exists(globalBsaPath),
-		"\"" + this->options->getArenaPath() + "\" not a valid ARENA path.");
+		"\"" + this->options.getArenaPath() + "\" not a valid ARENA path.");
 
-	// Initialize virtual file system using the Arena path in the options file.	
+	// Initialize virtual file system using the Arena path in the options file.
 	VFS::Manager::get().initialize(std::string(
-		(arenaPathIsRelative ? this->basePath : "") + this->options->getArenaPath()));
+		(arenaPathIsRelative ? this->basePath : "") + this->options.getArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.
-	this->audioManager.init(this->options->getMusicVolume(), this->options->getSoundVolume(),
-		this->options->getSoundChannels(), this->options->getMidiConfig());
+	this->audioManager.init(this->options.getMusicVolume(), this->options.getSoundVolume(),
+		this->options.getSoundChannels(), this->options.getMidiConfig());
 
 	// Initialize the SDL renderer and window with the given settings.
-	this->renderer = std::unique_ptr<Renderer>(new Renderer(
-		this->options->getScreenWidth(), this->options->getScreenHeight(),
-		this->options->getFullscreen(), this->options->getLetterboxAspect()));
+	this->renderer.init(this->options.getScreenWidth(), this->options.getScreenHeight(),
+		this->options.getFullscreen(), this->options.getLetterboxAspect());
 
-	// Initialize the texture manager with the SDL window's pixel format.
-	this->textureManager = std::unique_ptr<TextureManager>(new TextureManager(
-		*this->renderer.get()));
-
-	// Initialize the font manager. Fonts (i.e., FONT_A.DAT) are loaded on demand.
-	this->fontManager = std::unique_ptr<FontManager>(new FontManager());
+	// Initialize the texture manager.
+	this->textureManager.init();
 
 	// Load various miscellaneous assets.
 	this->miscAssets.init();
@@ -110,7 +83,7 @@ Game::Game()
 		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
 		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT));
 	SDL_SetColorKey(icon.get(), SDL_TRUE, SDL_MapRGBA(icon.get()->format, 0, 0, 0, 255));
-	this->renderer->setWindowIcon(icon.get());
+	this->renderer.setWindowIcon(icon.get());
 
 	// Initialize panel and music to default.
 	this->panel = Panel::defaultPanel(*this);
@@ -146,9 +119,9 @@ const InputManager &Game::getInputManager() const
 	return this->inputManager;
 }
 
-FontManager &Game::getFontManager() const
+FontManager &Game::getFontManager()
 {
-	return *this->fontManager.get();
+	return this->fontManager;
 }
 
 bool Game::gameDataIsActive() const
@@ -164,19 +137,19 @@ GameData &Game::getGameData() const
 	return *this->gameData.get();
 }
 
-Options &Game::getOptions() const
+Options &Game::getOptions()
 {
-	return *this->options.get();
+	return this->options;
 }
 
-Renderer &Game::getRenderer() const
+Renderer &Game::getRenderer()
 {
-	return *this->renderer.get();
+	return this->renderer;
 }
 
-TextureManager &Game::getTextureManager() const
+TextureManager &Game::getTextureManager()
 {
-	return *this->textureManager.get();
+	return this->textureManager;
 }
 
 MiscAssets &Game::getMiscAssets()
@@ -218,12 +191,33 @@ void Game::setGameData(std::unique_ptr<GameData> gameData)
 	this->gameData = std::move(gameData);
 }
 
+void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
+{
+	// Load the default options first.
+	const std::string defaultOptionsPath(basePath + "options/" + Options::DEFAULT_FILENAME);
+	this->options.loadDefaults(defaultOptionsPath);
+
+	// Check if the changes options file exists.
+	const std::string changesOptionsPath(optionsPath + Options::CHANGES_FILENAME);
+	if (!File::exists(changesOptionsPath))
+	{
+		// Make one. Since the default options object has no changes, the new file will have
+		// no key-value pairs.
+		DebugMention("Creating options file at \"" + changesOptionsPath + "\".");
+		this->options.saveChanges();
+	}
+	else
+	{
+		// Read in any key-value pairs in the "changes" options file.
+		this->options.loadChanges(changesOptionsPath);
+	}
+}
+
 void Game::resizeWindow(int width, int height)
 {
 	// Resize the window, and the 3D renderer if initialized.
-	auto &options = this->getOptions();
-	const bool fullGameWindow = options.getModernInterface();
-	this->renderer->resize(width, height, options.getResolutionScale(), fullGameWindow);
+	const bool fullGameWindow = this->options.getModernInterface();
+	this->renderer.resize(width, height, this->options.getResolutionScale(), fullGameWindow);
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -365,12 +359,12 @@ void Game::tick(double dt)
 void Game::render()
 {
 	// Draw the panel's main content.
-	this->panel->render(*this->renderer.get());
+	this->panel->render(this->renderer);
 
 	// Draw any sub-panels back to front.
 	for (auto &subPanel : this->subPanels)
 	{
-		subPanel->render(*this->renderer.get());
+		subPanel->render(this->renderer);
 	}
 
 	const bool subPanelsExist = this->subPanels.size() > 0;
@@ -379,11 +373,11 @@ void Game::render()
 	// that are hidden on panels below the active one.
 	if (subPanelsExist)
 	{
-		this->subPanels.back()->renderSecondary(*this->renderer.get());
+		this->subPanels.back()->renderSecondary(this->renderer);
 	}
 	else
 	{
-		this->panel->renderSecondary(*this->renderer.get());
+		this->panel->renderSecondary(this->renderer);
 	}
 
 	// Get the active panel's cursor texture and alignment.
@@ -396,11 +390,11 @@ void Game::render()
 	{
 		// The panel should not be drawing the cursor themselves. It's done here 
 		// just to make sure that the cursor is drawn only once and is always drawn last.
-		this->renderer->drawCursor(cursor.first, cursor.second,
-			this->inputManager.getMousePosition(), this->options->getCursorScale());
+		this->renderer.drawCursor(cursor.first, cursor.second,
+			this->inputManager.getMousePosition(), this->options.getCursorScale());
 	}
 
-	this->renderer->present();
+	this->renderer.present();
 }
 
 void Game::loop()
@@ -419,7 +413,7 @@ void Game::loop()
 
 		// Fastest allowed frame time in microseconds.
 		const std::chrono::duration<int64_t, std::micro> minimumMS(
-			1000000 / this->options->getTargetFPS());
+			1000000 / this->options.getTargetFPS());
 
 		// Delay the current frame if the previous one was too fast.
 		auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);
@@ -455,5 +449,5 @@ void Game::loop()
 
 	// At this point, the program has received an exit signal, and is now 
 	// quitting peacefully.
-	this->options->saveChanges();
+	this->options.saveChanges();
 }

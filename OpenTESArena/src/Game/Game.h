@@ -6,9 +6,13 @@
 #include <vector>
 
 #include "InputManager.h"
+#include "Options.h"
 #include "../Assets/MiscAssets.h"
 #include "../Interface/FPSCounter.h"
 #include "../Media/AudioManager.h"
+#include "../Media/FontManager.h"
+#include "../Media/TextureManager.h"
+#include "../Rendering/Renderer.h"
 
 // This class holds the current game data, manages the primary game loop, and 
 // updates the game state each frame.
@@ -21,12 +25,8 @@
 // Game members should be available through a getter so panels can access them.
 
 class GameData;
-class FontManager;
-class Options;
 class Panel;
-class Renderer;
 class Surface;
-class TextureManager;
 
 enum class MusicName;
 
@@ -39,16 +39,18 @@ private:
 
 	AudioManager audioManager;
 	InputManager inputManager;
-	std::unique_ptr<FontManager> fontManager;
+	FontManager fontManager;
 	std::unique_ptr<GameData> gameData;
-	std::unique_ptr<Options> options;
+	Options options;
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
-	std::unique_ptr<Renderer> renderer;
-	std::unique_ptr<TextureManager> textureManager;
+	Renderer renderer;
+	TextureManager textureManager;
 	MiscAssets miscAssets;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
+
+	void initOptions(const std::string &basePath, const std::string &optionsPath);
 
 	// Resizes the SDL renderer and any other renderer-associated components.
 	void resizeWindow(int width, int height);
@@ -85,7 +87,7 @@ public:
 	const InputManager &getInputManager() const;
 
 	// Gets the font manager object for creating text with.
-	FontManager &getFontManager() const;
+	FontManager &getFontManager();
 
 	// Determines if a game session is currently running. This is true when a player
 	// is loaded into memory.
@@ -96,13 +98,13 @@ public:
 	GameData &getGameData() const;
 
 	// Gets the options object for various settings (resolution, volume, sensitivity).
-	Options &getOptions() const;
+	Options &getOptions();
 
 	// Gets the renderer object for rendering methods.
-	Renderer &getRenderer() const;
+	Renderer &getRenderer();
 
 	// Gets the texture manager object for loading images from file.
-	TextureManager &getTextureManager() const;
+	TextureManager &getTextureManager();
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets();

@@ -137,11 +137,13 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->imageIndex++;
 
-		auto &textureManager = this->getGame().getTextureManager();
+		auto &game = this->getGame();
+		auto &renderer = game.getRenderer();
+		auto &textureManager = game.getTextureManager();
 
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
-		const auto &textures = textureManager.getTextures(this->sequenceName);
+		const auto &textures = textureManager.getTextures(this->sequenceName, renderer);
 		const int textureCount = static_cast<int>(textures.size());
 		if (this->imageIndex == textureCount)
 		{
@@ -160,7 +162,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get a reference to all relevant textures.
-	const auto &textures = textureManager.getTextures(this->sequenceName);
+	const auto &textures = textureManager.getTextures(this->sequenceName, renderer);
 
 	// Draw animation.
 	const auto &texture = textures.at(this->imageIndex);

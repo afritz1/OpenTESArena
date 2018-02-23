@@ -5,7 +5,6 @@
 #include "SDL.h"
 
 #include "Renderer.h"
-#include "SoftwareRenderer.h"
 #include "Surface.h"
 #include "../Interface/CursorAlignment.h"
 #include "../Math/Constants.h"
@@ -20,49 +19,6 @@ const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
 const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
-
-Renderer::Renderer(int width, int height, bool fullscreen, double letterboxAspect)
-{
-	DebugMention("Initializing.");
-
-	assert(width > 0);
-	assert(height > 0);
-
-	this->letterboxAspect = letterboxAspect;
-
-	// Initialize window. The SDL_Surface is obtained from this window.
-	this->window = [width, height, fullscreen]()
-	{
-		const std::string &title = Renderer::DEFAULT_TITLE;
-		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
-		const uint32_t flags = SDL_WINDOW_RESIZABLE |
-			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-		
-		// If fullscreen is true, then width and height are ignored. They are stored
-		// behind the scenes for when the user changes to windowed mode, however.
-		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
-	}();
-
-	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
-
-	// Initialize renderer context.
-	this->renderer = this->createRenderer();
-
-	// Use window dimensions, just in case it's fullscreen and the given width and
-	// height are ignored.
-	Int2 windowDimensions = this->getWindowDimensions();
-
-	// Initialize native frame buffer.
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	DebugAssert(this->nativeTexture != nullptr, 
-		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
-
-	// Don't initialize the game world buffer until the 3D renderer is initialized.
-	this->gameWorldTexture = nullptr;
-	this->softwareRenderer = nullptr;
-	this->fullGameWindow = false;
-}
 
 Renderer::~Renderer()
 {
@@ -296,6 +252,49 @@ SDL_Texture *Renderer::createTexture(uint32_t format, int access, int w, int h)
 SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
 {
 	return SDL_CreateTextureFromSurface(this->renderer, surface);
+}
+
+void Renderer::init(int width, int height, bool fullscreen, double letterboxAspect)
+{
+	DebugMention("Initializing.");
+
+	assert(width > 0);
+	assert(height > 0);
+
+	this->letterboxAspect = letterboxAspect;
+
+	// Initialize window. The SDL_Surface is obtained from this window.
+	this->window = [width, height, fullscreen]()
+	{
+		const std::string &title = Renderer::DEFAULT_TITLE;
+		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
+		const uint32_t flags = SDL_WINDOW_RESIZABLE |
+			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+
+		// If fullscreen is true, then width and height are ignored. They are stored
+		// behind the scenes for when the user changes to windowed mode, however.
+		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
+	}();
+
+	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
+
+	// Initialize renderer context.
+	this->renderer = this->createRenderer();
+
+	// Use window dimensions, just in case it's fullscreen and the given width and
+	// height are ignored.
+	Int2 windowDimensions = this->getWindowDimensions();
+
+	// Initialize native frame buffer.
+	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
+	DebugAssert(this->nativeTexture != nullptr,
+		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
+
+	// Don't initialize the game world buffer until the 3D renderer is initialized.
+	this->gameWorldTexture = nullptr;
+	this->softwareRenderer = nullptr;
+	this->fullGameWindow = false;
 }
 
 void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)

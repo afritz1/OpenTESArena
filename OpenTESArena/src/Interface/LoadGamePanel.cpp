@@ -51,10 +51,12 @@ LoadGamePanel::~LoadGamePanel()
 
 std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -91,6 +93,6 @@ void LoadGamePanel::render(Renderer &renderer)
 
 	// Draw slots background.
 	const auto &slotsBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::LoadSave));
+		TextureFile::fromName(TextureName::LoadSave), renderer);
 	renderer.drawOriginal(slotsBackground.get());
 }

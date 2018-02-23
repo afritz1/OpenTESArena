@@ -19,7 +19,6 @@ struct SDL_Surface;
 class TextureManager
 {
 private:
-	Renderer &renderer;
 	std::unordered_map<std::string, Palette> palettes;
 
 	// The filename and palette name are concatenated when mapping to avoid using two 
@@ -39,7 +38,6 @@ private:
 	// Helper method for loading a palette file into the palettes map.
 	void loadPalette(const std::string &paletteName);
 public:
-	TextureManager(Renderer &renderer);
 	~TextureManager();
 
 	TextureManager &operator=(TextureManager &&textureManager) = delete;
@@ -50,8 +48,9 @@ public:
 	SDL_Surface *getSurface(const std::string &filename);
 
 	// Similar to getSurface(), only now for hardware-accelerated textures.
-	const Texture &getTexture(const std::string &filename, const std::string &paletteName);
-	const Texture &getTexture(const std::string &filename);
+	const Texture &getTexture(const std::string &filename, const std::string &paletteName,
+		Renderer &renderer);
+	const Texture &getTexture(const std::string &filename, Renderer &renderer);
 	
 	// Gets a set of surfaces from a file. Intended only for obtaining pixel data for use 
 	// with renderer buffers. TextureManager::getTextures() should be used instead for 
@@ -64,8 +63,10 @@ public:
 	// where the filename essentially points to several images. When no palette name 
 	// is given, the active one is used.
 	const std::vector<Texture> &getTextures(const std::string &filename,
-		const std::string &paletteName);
-	const std::vector<Texture> &getTextures(const std::string &filename);
+		const std::string &paletteName, Renderer &renderer);
+	const std::vector<Texture> &getTextures(const std::string &filename, Renderer &renderer);
+
+	void init();
 
 	// Sets the palette to use for subsequent images. The source of the palette can be
 	// from a loose .COL file, or can be built into an IMG. If the IMG does not have a 

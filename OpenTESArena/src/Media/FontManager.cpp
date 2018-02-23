@@ -1,16 +1,5 @@
-#include "Font.h"
 #include "FontManager.h"
 #include "FontName.h"
-
-FontManager::FontManager()
-{
-	
-}
-
-FontManager::~FontManager()
-{
-
-}
 
 const Font &FontManager::getFont(FontName fontName)
 {

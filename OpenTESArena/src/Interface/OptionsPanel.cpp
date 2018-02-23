@@ -904,10 +904,12 @@ void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -1030,7 +1032,7 @@ void OptionsPanel::render(Renderer &renderer)
 	// Draw buttons.
 	const auto &arrows = textureManager.getTexture(
 		TextureFile::fromName(TextureName::UpDown),
-		PaletteFile::fromName(PaletteName::CharSheet));
+		PaletteFile::fromName(PaletteName::CharSheet), renderer);
 	renderer.drawOriginal(arrows.get(), this->fpsUpButton.getX(),
 		this->fpsUpButton.getY());
 	renderer.drawOriginal(arrows.get(), this->resolutionScaleUpButton.getX(),

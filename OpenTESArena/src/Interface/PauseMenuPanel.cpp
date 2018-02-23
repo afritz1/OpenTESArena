@@ -294,10 +294,12 @@ void PauseMenuPanel::updateSoundText(double volume)
 
 std::pair<SDL_Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -378,12 +380,12 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	// Draw pause background.
 	const auto &pauseBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PauseBackground));
+		TextureFile::fromName(TextureName::PauseBackground), renderer);
 	renderer.drawOriginal(pauseBackground.get());
 
 	// Draw game world interface below the pause menu.
 	const auto &gameInterface = textureManager.getTexture(
-		TextureFile::fromName(TextureName::GameWorldInterface));
+		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 	renderer.drawOriginal(gameInterface.get(), 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
@@ -391,10 +393,10 @@ void PauseMenuPanel::render(Renderer &renderer)
 	const auto &player = this->getGame().getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceID(), true);
-	const auto &portrait = textureManager.getTextures(headsFilename)
-		.at(player.getPortraitID());
+	const auto &portrait = textureManager.getTextures(
+		headsFilename, renderer).at(player.getPortraitID());
 	const auto &status = textureManager.getTextures(
-		TextureFile::fromName(TextureName::StatusGradients)).at(0);
+		TextureFile::fromName(TextureName::StatusGradients), renderer).at(0);
 	renderer.drawOriginal(status.get(), 14, 166);
 	renderer.drawOriginal(portrait.get(), 14, 166);
 
@@ -402,7 +404,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	if (!player.getCharacterClass().canCastMagic())
 	{
 		const auto &nonMagicIcon = textureManager.getTexture(
-			TextureFile::fromName(TextureName::NoSpell));
+			TextureFile::fromName(TextureName::NoSpell), renderer);
 		renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
 	}
 

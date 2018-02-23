@@ -128,10 +128,12 @@ CharacterPanel::~CharacterPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> CharacterPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -196,10 +198,10 @@ void CharacterPanel::render(Renderer &renderer)
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
 	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet)).at(player.getPortraitID());
-	const auto &body = textureManager.getTexture(bodyFilename);
-	const auto &shirt = textureManager.getTexture(shirtFilename);
-	const auto &pants = textureManager.getTexture(pantsFilename);
+		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(player.getPortraitID());
+	const auto &body = textureManager.getTexture(bodyFilename, renderer);
+	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
+	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
 	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
 	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
 	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
@@ -207,12 +209,12 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Draw character stats background.
 	const auto &statsBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats));
+		TextureFile::fromName(TextureName::CharacterStats), renderer);
 	renderer.drawOriginal(statsBackground.get());
 
 	// Draw "Next Page" texture.
 	const auto &nextPageTexture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::NextPage));
+		TextureFile::fromName(TextureName::NextPage), renderer);
 	renderer.drawOriginal(nextPageTexture.get(), 108, 179);
 
 	// Draw text boxes: player name, race, class.

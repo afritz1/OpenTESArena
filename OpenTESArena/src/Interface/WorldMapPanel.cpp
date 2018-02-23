@@ -62,10 +62,12 @@ WorldMapPanel::~WorldMapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -136,13 +138,14 @@ void WorldMapPanel::render(Renderer &renderer)
 	// Draw world map background. This one has "Exit" at the bottom right.
 	const std::string &backgroundFilename = TextureFile::fromName(TextureName::WorldMap);
 	const auto &mapBackground = textureManager.getTexture(
-		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
+		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(mapBackground.get());
 
 	// Draw yellow text over current province name.
 	const int provinceID = this->getGame().getGameData().getLocation().provinceID;
 	const auto &provinceText = textureManager.getTextures(
-		TextureFile::fromName(TextureName::ProvinceNames), backgroundFilename).at(provinceID);
+		TextureFile::fromName(TextureName::ProvinceNames),
+		backgroundFilename, renderer).at(provinceID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
 	renderer.drawOriginal(provinceText.get(), nameOffset.x, nameOffset.y);
 }

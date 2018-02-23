@@ -164,9 +164,10 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			// The center of the pop-up depends on the interface mode.
 			const Int2 center = [&game, modernInterface]()
 			{
+				auto &renderer = game.getRenderer();
 				auto &textureManager = game.getTextureManager();
 				const auto &gameWorldInterface = textureManager.getTexture(
-					TextureFile::fromName(TextureName::GameWorldInterface));
+					TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
 				if (!modernInterface)
 				{
@@ -414,7 +415,8 @@ GameWorldPanel::~GameWorldPanel()
 std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
-	const auto &game = this->getGame();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 	const bool modernInterface = game.getOptions().getModernInterface();
 	const Int2 mousePosition = game.getInputManager().getMousePosition();
@@ -423,7 +425,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	if (modernInterface)
 	{
 		const auto &texture = textureManager.getTextures(
-			TextureFile::fromName(TextureName::ArrowCursors)).at(4);
+			TextureFile::fromName(TextureName::ArrowCursors), renderer).at(4);
 		return std::make_pair(texture.get(), CursorAlignment::Middle);
 	}
 	else
@@ -434,14 +436,14 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 			if (this->nativeCursorRegions.at(i).contains(mousePosition))
 			{
 				const auto &texture = textureManager.getTextures(
-					TextureFile::fromName(TextureName::ArrowCursors)).at(i);
+					TextureFile::fromName(TextureName::ArrowCursors), renderer).at(i);
 				return std::make_pair(texture.get(), ArrowCursorAlignments.at(i));
 			}
 		}
 
 		// If not in any of the arrow regions, use the default sword cursor.
 		const auto &texture = textureManager.getTexture(
-			TextureFile::fromName(TextureName::SwordCursor));
+			TextureFile::fromName(TextureName::SwordCursor), renderer);
 		return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 	}
 }
@@ -1095,9 +1097,9 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 					// between shooting an arrow and not shooting an arrow, so I'm relaxing
 					// the requirements here.
 					auto &textureManager = game.getTextureManager();
-					const auto &renderer = game.getRenderer();
+					auto &renderer = game.getRenderer();
 					const auto &gameWorldInterface = textureManager.getTexture(
-						TextureFile::fromName(TextureName::GameWorldInterface));
+						TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 					const int originalCursorY = renderer.nativeToOriginal(
 						inputManager.getMousePosition()).y;
 
@@ -1297,7 +1299,7 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 
 	auto &textureManager = this->getGame().getTextureManager();
 	const auto &gameInterface = textureManager.getTexture(
-		TextureFile::fromName(TextureName::GameWorldInterface));
+		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
 	renderer.drawOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT -
 		gameInterface.getHeight() - tooltip.getHeight());
@@ -1308,7 +1310,7 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 {
 	// Draw compass slider based on player direction. +X is north, +Z is east.
 	const auto &compassSlider = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CompassSlider));
+		TextureFile::fromName(TextureName::CompassSlider), renderer);
 
 	// Angle between 0 and 2 pi.
 	const double angle = std::atan2(direction.y, direction.x);
@@ -1335,7 +1337,7 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 
 	// Draw the compass frame over the slider.
 	const auto &compassFrame = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CompassFrame));
+		TextureFile::fromName(TextureName::CompassFrame), renderer);
 	renderer.drawOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 }
@@ -1344,7 +1346,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 {
 	const Int2 windowDims = renderer.getWindowDimensions();
 
-	const auto &game = this->getGame();
+	auto &game = this->getGame();
 	const double resolutionScale = game.getOptions().getResolutionScale();
 
 	auto &gameData = game.getGameData();
@@ -1555,7 +1557,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	const auto &gameInterface = textureManager.getTexture(
-		TextureFile::fromName(TextureName::GameWorldInterface));
+		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -1567,17 +1569,17 @@ void GameWorldPanel::render(Renderer &renderer)
 	{
 		// Draw game world interface.
 		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface));
+			TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 		renderer.drawOriginal(gameInterface.get(), 0,
 			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 		// Draw player portrait.
 		const auto &headsFilename = PortraitFile::getHeads(
 			player.getGenderName(), player.getRaceID(), true);
-		const auto &portrait = textureManager.getTextures(headsFilename)
-			.at(player.getPortraitID());
+		const auto &portrait = textureManager.getTextures(
+			headsFilename, renderer).at(player.getPortraitID());
 		const auto &status = textureManager.getTextures(
-			TextureFile::fromName(TextureName::StatusGradients)).at(0);
+			TextureFile::fromName(TextureName::StatusGradients), renderer).at(0);
 		renderer.drawOriginal(status.get(), 14, 166);
 		renderer.drawOriginal(portrait.get(), 14, 166);
 
@@ -1585,7 +1587,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		if (!player.getCharacterClass().canCastMagic())
 		{
 			const auto &nonMagicIcon = textureManager.getTexture(
-				TextureFile::fromName(TextureName::NoSpell));
+				TextureFile::fromName(TextureName::NoSpell), renderer);
 			renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
 		}
 
@@ -1611,7 +1613,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	const auto &gameInterface = textureManager.getTexture(
-		TextureFile::fromName(TextureName::GameWorldInterface));
+		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
 	auto &gameData = this->getGame().getGameData();
 	auto &player = gameData.getPlayer();
@@ -1625,7 +1627,8 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	{
 		const int index = weaponAnimation.getFrameIndex();
 		const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-		const Texture &weaponTexture = textureManager.getTextures(weaponFilename).at(index);
+		const Texture &weaponTexture = textureManager.getTextures(
+			weaponFilename, renderer).at(index);
 		const Int2 &weaponOffset = this->weaponOffsets.at(index);
 
 		// Draw the current weapon image depending on interface mode.

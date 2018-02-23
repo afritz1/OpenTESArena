@@ -117,10 +117,12 @@ ProvinceMapPanel::~ProvinceMapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -234,7 +236,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
-		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
+		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(mapBackground.get());
 
 	// Draw location icons, and find which place is closest to the mouse cursor.
@@ -287,11 +289,11 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	};
 
 	const auto &cityStateIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
+		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename, renderer);
 	const auto &townIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
+		TextureFile::fromName(TextureName::TownIcon), backgroundFilename, renderer);
 	const auto &villageIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
+		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename, renderer);
 
 	const auto &province = this->getGame().getMiscAssets().getCityDataFile()
 		.getProvinceData(this->provinceID);

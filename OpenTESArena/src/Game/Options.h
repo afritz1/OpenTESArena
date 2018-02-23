@@ -55,14 +55,22 @@ namespace std
 class Options
 {
 private:
-	static const std::string DEFAULT_FILENAME;
+	typedef std::unordered_map<OptionName, bool> BoolMap;
+	typedef std::unordered_map<OptionName, int> IntegerMap;
+	typedef std::unordered_map<OptionName, double> DoubleMap;
+	typedef std::unordered_map<OptionName, std::string> StringMap;
 
-	// "Default" values come from the default options file. "Changed" values come from
+	// Default values come from the default options file. "Changed" values come from
 	// changes at runtime, and those are written to the changed options file.
-	std::unordered_map<OptionName, bool> defaultBools, changedBools;
-	std::unordered_map<OptionName, int> defaultInts, changedInts;
-	std::unordered_map<OptionName, double> defaultDoubles, changedDoubles;
-	std::unordered_map<OptionName, std::string> defaultStrings, changedStrings;
+	Options::BoolMap defaultBools, changedBools;
+	Options::IntegerMap defaultInts, changedInts;
+	Options::DoubleMap defaultDoubles, changedDoubles;
+	Options::StringMap defaultStrings, changedStrings;
+
+	// Opens the given file and reads its key-value pairs into the given maps.
+	static void load(const std::string &filename, Options::BoolMap &boolMap,
+		Options::IntegerMap &integerMap, Options::DoubleMap &doubleMap,
+		Options::StringMap &stringMap);
 
 	bool getBool(OptionName key) const;
 	int getInt(OptionName key) const;
@@ -74,9 +82,8 @@ private:
 	void setDouble(OptionName key, double value);
 	void setString(OptionName key, const std::string &value);
 public:
-	// Constructs with values from the default options file.
-	Options();
-	~Options();
+	// Filename of the default options file.
+	static const std::string DEFAULT_FILENAME;
 
 	// Filename of the "changes" options file, the one that tracks runtime changes.
 	static const std::string CHANGES_FILENAME;
@@ -171,9 +178,12 @@ void set##name(const std::string &value) \
 	OPTION_BOOL(ShowDebug)
 	OPTION_BOOL(ShowCompass)
 
-	// Reads all the key-value pairs from the given absolute path, overwriting any
-	// existing values.
-	void load(const std::string &filename);
+	// Reads all the key-values pairs from the given absolute path into the default members.
+	void loadDefaults(const std::string &filename);
+
+	// Reads all the key-value pairs from the given absolute path into the changes members,
+	// overwriting any existing values.
+	void loadChanges(const std::string &filename);
 
 	// Saves all key-value pairs that differ from the defaults to the changed options file.
 	void saveChanges();

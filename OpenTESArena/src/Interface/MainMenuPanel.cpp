@@ -745,10 +745,12 @@ WorldType MainMenuPanel::getSelectedTestWorldType() const
 
 std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -898,13 +900,13 @@ void MainMenuPanel::render(Renderer &renderer)
 	// Draw main menu.
 	const auto &mainMenu = textureManager.getTexture(
 		TextureFile::fromName(TextureName::MainMenu),
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(mainMenu.get());
 
 	// Draw test buttons.
 	const auto &arrows = textureManager.getTexture(
 		TextureFile::fromName(TextureName::UpDown),
-		PaletteFile::fromName(PaletteName::CharSheet));
+		PaletteFile::fromName(PaletteName::CharSheet), renderer);
 	renderer.drawOriginal(arrows.get(), this->testTypeUpButton.getX(),
 		this->testTypeUpButton.getY());
 	renderer.drawOriginal(arrows.get(), this->testIndexUpButton.getX(),

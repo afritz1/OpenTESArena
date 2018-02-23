@@ -66,6 +66,6 @@ void ImagePanel::render(Renderer &renderer)
 
 	// Draw image.
 	const auto &image = textureManager.getTexture(
-		this->textureName, this->paletteName);
+		this->textureName, this->paletteName, renderer);
 	renderer.drawOriginal(image.get());
 }

@@ -56,15 +56,17 @@ void CinematicPanel::tick(double dt)
 	}
 
 	// Get a reference to all images in the sequence.
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &textures = textureManager.getTextures(
-		this->sequenceName, this->paletteName);
+		this->sequenceName, this->paletteName, renderer);
 
 	// If at the end, then prepare for the next panel.
 	if (this->imageIndex >= textures.size())
 	{
 		this->imageIndex = static_cast<int>(textures.size() - 1);
-		this->skipButton.click(this->getGame());
+		this->skipButton.click(game);
 	}
 }
 
@@ -76,7 +78,7 @@ void CinematicPanel::render(Renderer &renderer)
 	// Get a reference to all images in the sequence.
 	auto &textureManager = this->getGame().getTextureManager();
 	const auto &textures = textureManager.getTextures(
-		this->sequenceName, this->paletteName);
+		this->sequenceName, this->paletteName, renderer);
 
 	// Draw image.
 	const auto &texture = textures.at(this->imageIndex);

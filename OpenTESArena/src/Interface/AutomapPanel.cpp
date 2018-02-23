@@ -285,10 +285,12 @@ AutomapPanel::~AutomapPanel()
 
 std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
-		TextureFile::fromName(TextureName::Automap));
+		TextureFile::fromName(TextureName::Automap), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::BottomLeft);
 }
 
@@ -389,7 +391,7 @@ void AutomapPanel::render(Renderer &renderer)
 	// Draw automap background.
 	const auto &automapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Automap),
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(automapBackground.get());
 
 	// Only draw the part of the automap within the drawing area.

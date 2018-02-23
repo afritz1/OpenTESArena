@@ -99,10 +99,12 @@ ChooseNamePanel::~ChooseNamePanel()
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
 {
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default));
+		PaletteFile::fromName(PaletteName::Default), renderer);
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
@@ -244,7 +246,7 @@ void ChooseNamePanel::render(Renderer &renderer)
 	// Draw background.
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
-		PaletteFile::fromName(PaletteName::BuiltIn));
+		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
 	renderer.drawOriginal(background.get());
 
 	// Draw parchment: title.

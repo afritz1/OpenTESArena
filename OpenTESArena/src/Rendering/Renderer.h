@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "SoftwareRenderer.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
@@ -15,7 +16,6 @@
 
 class Color;
 class Rect;
-class SoftwareRenderer;
 class Surface;
 class VoxelGrid;
 
@@ -46,7 +46,6 @@ private:
 	// For use with window dimensions, etc.. No longer used for rendering.
 	SDL_Surface *getWindowSurface() const;
 public:
-	Renderer(int width, int height, bool fullscreen, double letterboxAspect);
 	~Renderer();
 
 	// Original screen dimensions.
@@ -90,6 +89,8 @@ public:
 	// Wrapper methods for SDL_CreateTexture.
 	SDL_Texture *createTexture(uint32_t format, int access, int w, int h);
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
+
+	void init(int width, int height, bool fullscreen, double letterboxAspect);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);

@@ -22,15 +22,6 @@
 
 #include "components/vfs/manager.hpp"
 
-TextureManager::TextureManager(Renderer &renderer)
-	: renderer(renderer)
-{
-	DebugMention("Initializing.");
-
-	// Load default palette.
-	this->setPalette(PaletteFile::fromName(PaletteName::Default));
-}
-
 TextureManager::~TextureManager()
 {
 	// Release the SDL_Surfaces.
@@ -173,7 +164,7 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename)
 }
 
 const Texture &TextureManager::getTexture(const std::string &filename,
-	const std::string &paletteName)
+	const std::string &paletteName, Renderer &renderer)
 {
 	// Use this name when interfacing with the textures map.
 	const std::string fullName = filename + paletteName;
@@ -217,7 +208,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 		IMGFile img(filename, palette);
 
 		// Create a texture from the IMG.
-		texture = this->renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
 			SDL_TEXTUREACCESS_STATIC, img.getWidth(), img.getHeight());
 
 		uint32_t *pixels = img.getPixels();
@@ -236,9 +227,9 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	return iter->second;
 }
 
-const Texture &TextureManager::getTexture(const std::string &filename)
+const Texture &TextureManager::getTexture(const std::string &filename, Renderer &renderer)
 {
-	return this->getTexture(filename, this->activePalette);
+	return this->getTexture(filename, this->activePalette, renderer);
 }
 
 const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
@@ -406,7 +397,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(const std::string &
 }
 
 const std::vector<Texture> &TextureManager::getTextures(
-	const std::string &filename, const std::string &paletteName)
+	const std::string &filename, const std::string &paletteName, Renderer &renderer)
 {
 	// This method deals with animations and movies, so it will check filenames 
 	// for ".CFA", ".CIF", ".DFA", ".FLC", ".SET", etc..
@@ -457,7 +448,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = cfaFile.getImageCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				cfaFile.getWidth(), cfaFile.getHeight());
 
@@ -477,7 +468,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = cifFile.getImageCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				cifFile.getWidth(i), cifFile.getHeight(i));
 
@@ -497,7 +488,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = dfaFile.getImageCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				dfaFile.getWidth(), dfaFile.getHeight());
 
@@ -517,7 +508,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = flcFile.getFrameCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				flcFile.getWidth(), flcFile.getHeight());
 
@@ -537,7 +528,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = rciFile.getCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT);
 
@@ -557,7 +548,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 		const int imageCount = setFile.getImageCount();
 		for (int i = 0; i < imageCount; i++)
 		{
-			SDL_Texture *texture = this->renderer.createTexture(
+			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
 
@@ -582,9 +573,18 @@ const std::vector<Texture> &TextureManager::getTextures(
 	return textureSet;
 }
 
-const std::vector<Texture> &TextureManager::getTextures(const std::string &filename)
+const std::vector<Texture> &TextureManager::getTextures(const std::string &filename,
+	Renderer &renderer)
 {
-	return this->getTextures(filename, this->activePalette);
+	return this->getTextures(filename, this->activePalette, renderer);
+}
+
+void TextureManager::init()
+{
+	DebugMention("Initializing.");
+
+	// Load default palette.
+	this->setPalette(PaletteFile::fromName(PaletteName::Default));
 }
 
 void TextureManager::setPalette(const std::string &paletteName)
