@@ -278,10 +278,8 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 			// Copy block data to temp buffers.
 			for (int z = 0; z < blockMif.getDepth(); z++)
 			{
-				// Need to double the X and Z offsets because they're pointing to 16-bit data
-				// (masquerading as 8-bit).
 				const int srcIndex = z * blockMif.getWidth();
-				const int dstIndex = xOffset + ((z + zOffset) * gridWidth);
+				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
 
 				auto writeRow = [&blockMif, srcIndex, dstIndex](
 					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
@@ -359,7 +357,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 		for (int z = 0; z < RMDFile::DEPTH; z++)
 		{
 			const int srcIndex = z * RMDFile::WIDTH;
-			const int dstIndex = xOffset + ((z + zOffset) * gridWidth);
+			const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
 
 			auto writeRow = [srcIndex, dstIndex](const RMDFile::ArrayType &src,
 				std::array<uint16_t, 4096 * 4> &dst)
