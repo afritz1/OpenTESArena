@@ -341,7 +341,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 	std::copy(level.map1.begin(), level.map1.end(), tempMap1.begin());
 	std::copy(level.map2.begin(), level.map2.end(), tempMap2.begin());
 
-	auto writeRMD = [gridWidth, &tempFlor, &tempMap1, &tempMap2](
+	auto writeRMD = [gridDepth, &tempFlor, &tempMap1, &tempMap2](
 		int rmdID, int xOffset, int zOffset)
 	{
 		const std::string rmdName = [rmdID]()
