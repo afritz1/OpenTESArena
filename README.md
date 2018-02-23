@@ -11,7 +11,7 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 This project is early in development.
 
-All of the main quest dungeons, several interior locations, one city, and a fixed portion of wilderness can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'. City and wilderness generation should be implemented in the not-too-distant future.
+All of the main quest dungeons, all cities, several interior locations, and a fixed portion of wilderness can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'.
 
 There is partial collision detection, and motion is currently restricted to the horizontal plane. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
@@ -86,7 +86,7 @@ cd ..
 ```
 
 ### Options files
-There are two options files, `options-default.txt` and `options-changes.txt`. The first one comes with releases and stores default settings. The second one is generated in your user prefs folder and stores user-specific settings, and you can either create it yourself or let the program create it. For now, you can change things like `ArenaPath` in `options-default.txt`, but in the future, a wizard will take care of this instead. The prefs folders are:
+`options-default.txt` comes with releases and stores default settings. `options-changes.txt` is generated in your user prefs folder and stores user-specific settings, and you can either create it yourself or let the program create it. For now, you can change things like `ArenaPath` in `options-default.txt`, but in the future, a wizard will take care of this instead. The prefs folders are:
 - Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
 - Linux: `~/.local/share/OpenTESArena/options/`
 - macOS: `~/Library/Application Support/OpenTESArena/options/`
