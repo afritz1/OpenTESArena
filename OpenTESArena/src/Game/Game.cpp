@@ -114,7 +114,7 @@ AudioManager &Game::getAudioManager()
 	return this->audioManager;
 }
 
-const InputManager &Game::getInputManager() const
+InputManager &Game::getInputManager()
 {
 	return this->inputManager;
 }

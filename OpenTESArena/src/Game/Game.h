@@ -84,7 +84,7 @@ public:
 
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
-	const InputManager &getInputManager() const;
+	InputManager &getInputManager();
 
 	// Gets the font manager object for creating text with.
 	FontManager &getFontManager();
