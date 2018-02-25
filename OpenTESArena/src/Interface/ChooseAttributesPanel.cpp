@@ -1,3 +1,4 @@
+#include <array>
 #include <cassert>
 
 #include "SDL.h"
@@ -39,6 +40,7 @@
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
 #include "../World/LocationType.h"
+#include "../World/WeatherType.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	const CharacterClass &charClass, const std::string &name, 
@@ -305,10 +307,88 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 						auto gameFunction = [](Game &game)
 						{
-							game.setPanel<GameWorldPanel>(game);
+							// Create the function that will be called when the player leaves
+							// the starting dungeon.
+							auto onLevelUpVoxelEnter = [](Game &game)
+							{
+								// Teleport the player to a random location based on their race.
+								auto &gameData = game.getGameData();
+								auto &player = gameData.getPlayer();
+								player.setVelocityToZero();
+
+								Random random;
+								const int localID = random.next(32);
+								const int provinceID = gameData.getPlayer().getRaceID();
+
+								// Random weather for now.
+								// - To do: make it depend on the location (no need to prevent
+								//   deserts from having snow since the climates are still hardcoded).
+								const WeatherType weatherType = [&random]()
+								{
+									const std::array<WeatherType, 4> Weathers =
+									{
+										WeatherType::Clear,
+										WeatherType::Overcast,
+										WeatherType::Rain,
+										WeatherType::Snow
+									};
+
+									return Weathers.at(random.next(
+										static_cast<int>(Weathers.size())));
+								}();
+
+								auto &renderer = game.getRenderer();
+								gameData.loadCity(localID, provinceID, weatherType,
+									game.getMiscAssets(), game.getTextureManager(), renderer);
+
+								// Set music based on weather.
+								const MusicName musicName = [weatherType]()
+								{
+									if (weatherType == WeatherType::Clear)
+									{
+										return MusicName::SunnyDay;
+									}
+									else if (weatherType == WeatherType::Overcast)
+									{
+										return MusicName::Overcast;
+									}
+									else if (weatherType == WeatherType::Rain)
+									{
+										return MusicName::Raining;
+									}
+									else if (weatherType == WeatherType::Snow)
+									{
+										return MusicName::Snowing;
+									}
+									else
+									{
+										throw std::runtime_error("Bad weather type \"" +
+											std::to_string(static_cast<int>(weatherType)) + "\".");
+									}
+								}();
+
+								game.setMusic(musicName);
+
+								// Set the state of lights and night light textures.
+								const Clock &clock = gameData.getClock();
+								const double clockTime = clock.getPreciseTotalSeconds();
+								const bool activateNightLights =
+									(clockTime < Clock::LamppostDeactivate.getPreciseTotalSeconds()) ||
+									(clockTime >= Clock::LamppostActivate.getPreciseTotalSeconds());
+								
+								renderer.setNightLightsActive(activateNightLights);
+							};
+
+							// Set the *LEVELUP voxel enter event.
+							auto &gameData = game.getGameData();
+							gameData.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
+
+							// Initialize the game world panel.
+							std::unique_ptr<GameWorldPanel> gameWorldPanel(new GameWorldPanel(game));
+							game.setPanel(std::move(gameWorldPanel));
 
 							// Choose random dungeon music.
-							const std::vector<MusicName> DungeonMusics =
+							const std::array<MusicName, 5> DungeonMusics =
 							{
 								MusicName::Dungeon1,
 								MusicName::Dungeon2,

@@ -412,11 +412,6 @@ GameWorldPanel::~GameWorldPanel()
 
 }
 
-void GameWorldPanel::setOnLevelUpVoxelEnter(std::function<void(Game&)> &&function)
-{
-	this->onLevelUpVoxelEnter = std::move(function);
-}
-
 std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
@@ -1196,6 +1191,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel)
 {
 	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
 	auto &worldData = game.getGameData().getWorldData();
 	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 	const auto &voxelGrid = level.getVoxelGrid();
@@ -1219,7 +1215,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	if (voxelData.dataType == VoxelDataType::Wall)
 	{
 		const VoxelData::WallData &wallData = voxelData.wall;
-		auto &player = game.getGameData().getPlayer();
+		auto &player = gameData.getPlayer();
 
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
@@ -1275,11 +1271,14 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}
 		else if (voxelData.type == VoxelType::LevelUp)
 		{
-			// If the custom function has a target, call it and reset it.
-			if (this->onLevelUpVoxelEnter)
+			// If the custom function has a target, call it and reset it. Otherwise,
+			// decrement the world's level index.
+			auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
+
+			if (onLevelUpVoxelEnter)
 			{
-				this->onLevelUpVoxelEnter(game);
-				this->onLevelUpVoxelEnter = std::function<void(Game&)>();
+				onLevelUpVoxelEnter(game);
+				onLevelUpVoxelEnter = std::function<void(Game&)>();
 			}
 			else if (worldData.getCurrentLevel() > 0)
 			{

@@ -499,6 +499,11 @@ double GameData::getBetterAmbientPercent() const
 	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * Constants::Pi)));
 }
 
+std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
+{
+	return this->onLevelUpVoxelEnter;
+}
+
 void GameData::tickTime(double dt)
 {
 	assert(dt >= 0.0);

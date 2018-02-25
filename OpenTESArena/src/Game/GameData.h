@@ -1,6 +1,7 @@
 #ifndef GAME_DATA_H
 #define GAME_DATA_H
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -59,6 +60,10 @@ private:
 	double fogDistance;
 	WeatherType weatherType;
 
+	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
+	// behavior is to decrement the world's level index.
+	std::function<void(Game&)> onLevelUpVoxelEnter;
+
 	// Creates a sky palette from the given weather. This palette covers the entire day
 	// (including night colors).
 	static std::vector<uint32_t> makeExteriorSkyPalette(WeatherType weatherType,
@@ -113,6 +118,9 @@ public:
 
 	// A more gradual ambient percent function (maybe useful on the side sometime).
 	double getBetterAmbientPercent() const;
+
+	// Gets the custom function for the *LEVELUP voxel enter event.
+	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickTime(double dt);
