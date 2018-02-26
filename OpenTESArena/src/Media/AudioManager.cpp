@@ -12,6 +12,7 @@
 
 #include "al.h"
 #include "alc.h"
+#include "alext.h"
 
 #include "AudioManager.h"
 #include "WildMidi.h"
@@ -37,6 +38,8 @@ class OpenALStream;
 class AudioManagerImpl
 {
 private:
+	ALint mResampler;
+
 	// Returns whether the given sound is currently playing. Intended for limiting certain
 	// sounds to only have one instance at a time.
 	bool soundIsPlaying(const std::string &filename) const;
@@ -307,6 +310,11 @@ public:
 		alSourcef(source, AL_SEC_OFFSET, 0.0f);
 		alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
 		alSourcei(source, AL_LOOPING, AL_FALSE);
+
+		/* Reset resampling (I don't think this does anything for music, though). */
+		const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
+
 		if (alGetError() != AL_NO_ERROR)
 			return false;
 
@@ -406,6 +414,17 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 			std::to_string(alGetError()) + ").");
 	}
 
+	// Set resampler to 4-point sinc if available, and linear if not.
+	// Band-limited sinc muffles the sound too much and doesn't sound good.
+	// - 0: nearest, 1: linear, 2: 4-point sinc, 3: band-limited sinc.	
+	mResampler = []()
+	{
+		const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
+		const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+		const ALint targetResampler = 2;
+		return (resamplerCount >= (targetResampler + 1)) ? targetResampler : defaultResampler;
+	}();
+
 	// Generate the sound sources.
 	for (int i = 0; i < maxChannels; i++)
 	{
@@ -486,9 +505,12 @@ void AudioManagerImpl::playSound(const std::string &filename)
 			vocIter = mSoundBuffers.insert(std::make_pair(filename, bufferID)).first;
 		}
 
-		// Play the sound.
+		// Set up the sound source.
 		const ALuint source = mFreeSources.front();
 		alSourcei(source, AL_BUFFER, vocIter->second);
+		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+
+		// Play the sound.
 		alSourcePlay(source);
 
 		mUsedSources.push_front(std::make_pair(filename, source));
