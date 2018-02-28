@@ -329,6 +329,23 @@ void ExeData::Races::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->pluralNames, data + pluralNamesOffset);
 }
 
+void ExeData::Status::init(const char *data, const KeyValueMap &keyValueMap)
+{
+	const int popUpOffset = ExeData::get("StatusPopUp", keyValueMap);
+	const int dateOffset = ExeData::get("StatusDate", keyValueMap);
+	const int fortifyOffset = ExeData::get("StatusFortify", keyValueMap);
+	const int diseaseOffset = ExeData::get("StatusDisease", keyValueMap);
+	const int effectOffset = ExeData::get("StatusEffect", keyValueMap);
+	const int effectsListOffset = ExeData::get("StatusEffectsList", keyValueMap);
+
+	this->popUp = ExeData::readString(data + popUpOffset);
+	this->date = ExeData::readString(data + dateOffset);
+	this->fortify = ExeData::readString(data + fortifyOffset);
+	this->disease = ExeData::readString(data + diseaseOffset);
+	this->effect = ExeData::readString(data + effectOffset);
+	initStringArray(this->effectsList, data + effectsListOffset);
+}
+
 void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
 {
 	const int box1aOffset = ExeData::get("Box1A", keyValueMap);
@@ -460,6 +477,7 @@ void ExeData::init(bool floppyVersion)
 	this->logbook.init(exeDataPtr, keyValueMap);
 	this->meta.init(exeDataPtr, keyValueMap);
 	this->races.init(exeDataPtr, keyValueMap);
+	this->status.init(exeDataPtr, keyValueMap);
 	this->wallHeightTables.init(exeDataPtr, keyValueMap);
 
 	this->floppyVersion = floppyVersion;

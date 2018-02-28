@@ -3,44 +3,34 @@
 #include "Date.h"
 #include "../Utilities/Debug.h"
 
-const int Date::INITIAL_ERA = 3;
 const int Date::INITIAL_YEAR = 389;
-const int Date::YEARS_PER_ERA = 1000;
 const int Date::MONTHS_PER_YEAR = 12;
 const int Date::DAYS_PER_MONTH = 30;
 const int Date::DAYS_PER_WEEK = 7;
 
-Date::Date(int era, int year, int month, int day)
+Date::Date(int year, int month, int day)
 {
 	// Make sure each value is in a valid range.
-	assert(era >= 0);
 	assert(year >= 1);
-	assert(year <= Date::YEARS_PER_ERA);
 	assert(month >= 0);
 	assert(month < Date::MONTHS_PER_YEAR);
 	assert(day >= 0);
 	assert(day < Date::DAYS_PER_MONTH);
 
-	this->era = era;
 	this->year = year;
 	this->month = month;
 	this->day = day;
 }
 
 Date::Date(int month, int day)
-	: Date(Date::INITIAL_ERA, Date::INITIAL_YEAR, month, day) { }
+	: Date(Date::INITIAL_YEAR, month, day) { }
 
 Date::Date()
-	: Date(Date::INITIAL_ERA, Date::INITIAL_YEAR, 0, 0) { }
+	: Date(Date::INITIAL_YEAR, 0, 0) { }
 
 Date::~Date()
 {
 
-}
-
-int Date::getEra() const
-{
-	return this->era;
 }
 
 int Date::getYear() const
@@ -91,20 +81,9 @@ std::string Date::getOrdinalDay() const
 	return dayString;
 }
 
-void Date::incrementEra()
-{
-	this->era++;
-}
-
 void Date::incrementYear()
 {
 	this->year++;
-
-	if (this->year == (Date::YEARS_PER_ERA + 1))
-	{
-		this->incrementEra();
-		this->year = 1;
-	}
 }
 
 void Date::incrementMonth()

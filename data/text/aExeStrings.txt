@@ -84,6 +84,14 @@ DataSegmentOffset=0x32560
 RaceSingularNames=0x3E290
 RacePluralNames=0x3E245
 
+# [Status]
+StatusPopUp=0x411D7
+StatusDate=0x404F4
+StatusFortify=0x41E86
+StatusDisease=0x41E9D
+StatusEffect=0x41EAB
+StatusEffectsList=0x41EB8
+
 # [WallHeightTables]
 Box1A=0x48206
 Box1B=0x48216

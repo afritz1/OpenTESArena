@@ -233,20 +233,85 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					return clockTimeString + " " + timeOfDayString;
 				}();
 
-				const auto &date = game.getGameData().getDate();
-				const std::string &weekdayString =
-					exeData.calendar.weekdayNames.at(date.getWeekday());
-				const std::string dayString = date.getOrdinalDay();
-				const std::string &monthString = exeData.calendar.monthNames.at(date.getMonth());
-				const std::string yearString = std::to_string(date.getEra()) + "E " +
-					std::to_string(date.getYear());
+				// Get the base status text.
+				std::string baseText = exeData.status.popUp;
 
-				return "You are in " + location.name + "." + "\n" +
-					"It is " + timeString + "." + "\n" +
-					"The date is " + weekdayString + ", " + dayString + " of " + monthString + 
-					" in the year " + yearString + "\n" +
-					"You are currently carrying 0 kg out of 0 kg." + "\n" +
-					"You are healthy.";
+				// Replace carriage returns with newlines.
+				baseText = String::replace(baseText, '\r', '\n');
+
+				// Replace first %s with location name.
+				size_t index = baseText.find("%s");
+				baseText = baseText.replace(index, 2, location.name);
+
+				// Replace second %s with time string.
+				index = baseText.find("%s", index);
+				baseText = baseText.replace(index, 2, timeString);
+
+				// Replace third %s with date string, filled in with each value.
+				const auto &date = game.getGameData().getDate();
+				const std::string dateString = [&exeData, &date]()
+				{
+					std::string text = exeData.status.date;
+
+					// Replace carriage returns with newlines.
+					text = String::replace(text, '\r', '\n');
+
+					// Replace first %s with weekday.
+					const std::string &weekdayString =
+						exeData.calendar.weekdayNames.at(date.getWeekday());
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, weekdayString);
+
+					// Replace %u%s with day and ordinal suffix.
+					const std::string dayString = date.getOrdinalDay();
+					index = text.find("%u%s");
+					text = text.replace(index, 4, dayString);
+
+					// Replace third %s with month.
+					const std::string &monthString =
+						exeData.calendar.monthNames.at(date.getMonth());
+					index = text.find("%s");
+					text = text.replace(index, 2, monthString);
+
+					// Replace %d with year.
+					index = text.find("%d");
+					text = text.replace(index, 2, std::to_string(date.getYear()));
+
+					return text;
+				}();
+
+				index = baseText.find("%s", index);
+				baseText = baseText.replace(index, 2, dateString);
+
+				// Replace %d's with current and total weight.
+				const int currentWeight = 0;
+				index = baseText.find("%d", index);
+				baseText = baseText.replace(index, 2, std::to_string(currentWeight));
+
+				const int weightCapacity = 0;
+				index = baseText.find("%d", index);
+				baseText = baseText.replace(index, 2, std::to_string(weightCapacity));
+
+				// Append the list of effects at the bottom (healthy/diseased...).
+				const std::string effectText = [&exeData]()
+				{
+					std::string text = exeData.status.effect;
+
+					// Replace carriage returns with newlines.
+					text = String::replace(text, '\r', '\n');
+
+					// Replace %s with placeholder.
+					const std::string &effectStr = exeData.status.effectsList.front();
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, effectStr);
+
+					// Remove newline on end.
+					text.pop_back();
+					
+					return text;
+				}();
+
+				return baseText + effectText;
 			}();
 
 			const Color color(251, 239, 77);

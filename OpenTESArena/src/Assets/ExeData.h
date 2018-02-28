@@ -205,6 +205,22 @@ public:
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
+	struct Status
+	{
+		// Status pop-up text (with %s/%d tokens).
+		std::string popUp;
+
+		// Weekday/day/month/year text (with %s tokens), used in pop-up.
+		std::string date;
+
+		std::string fortify; // With %s token.
+		std::string disease; // With %s token.
+		std::string effect; // With %s token.
+		std::array<std::string, 23> effectsList; // Healthy, diseased, etc..
+
+		void init(const char *data, const KeyValueMap &keyValueMap);
+	};
+
 	struct WallHeightTables
 	{
 		// Values for interior and exterior wall heights. In wilderness cells, the values in
@@ -254,6 +270,7 @@ public:
 	Logbook logbook;
 	Meta meta;
 	Races races;
+	Status status;
 	WallHeightTables wallHeightTables;
 
 	bool isFloppyVersion() const;
