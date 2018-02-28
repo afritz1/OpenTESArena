@@ -30,6 +30,7 @@ enum class OptionName
 	SoundVolume,
 	MidiConfig,
 	SoundChannels,
+	SoundResampling,
 
 	ArenaPath,
 	Collision,
@@ -88,7 +89,7 @@ public:
 	// Filename of the "changes" options file, the one that tracks runtime changes.
 	static const std::string CHANGES_FILENAME;
 
-	// Min and max values for the application.
+	// Min/max/allowed values for the application.
 	static const int MIN_FPS;
 	static const double MIN_RESOLUTION_SCALE;
 	static const double MAX_RESOLUTION_SCALE;
@@ -104,6 +105,7 @@ public:
 	static const double MAX_VERTICAL_SENSITIVITY;
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
+	static const int RESAMPLING_OPTION_COUNT;
 
 #define OPTION_BOOL(name) \
 bool get##name() const \
@@ -171,6 +173,7 @@ void set##name(const std::string &value) \
 	OPTION_DOUBLE(SoundVolume)
 	OPTION_STRING(MidiConfig)
 	OPTION_INT(SoundChannels)
+	OPTION_INT(SoundResampling)
 
 	OPTION_STRING(ArenaPath)
 	OPTION_BOOL(Collision)

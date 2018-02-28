@@ -63,7 +63,8 @@ Game::Game()
 
 	// Initialize the OpenAL Soft audio manager.
 	this->audioManager.init(this->options.getMusicVolume(), this->options.getSoundVolume(),
-		this->options.getSoundChannels(), this->options.getMidiConfig());
+		this->options.getSoundChannels(), this->options.getSoundResampling(),
+		this->options.getMidiConfig());
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getScreenWidth(), this->options.getScreenHeight(),

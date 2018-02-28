@@ -12,8 +12,8 @@
 
 #include "al.h"
 #include "alc.h"
-#include "alext.h"
 
+#include "alext.h" // Using local copy (+ "efx.h") to guarantee existence on system.
 #include "AudioManager.h"
 #include "WildMidi.h"
 #include "../Assets/VOCFile.h"
@@ -38,7 +38,14 @@ class OpenALStream;
 class AudioManagerImpl
 {
 private:
+	static const ALint UNSUPPORTED_EXTENSION;
+
 	ALint mResampler;
+
+	// Gets the resampling index to use, given some resampling option. The two values are not
+	// necessarily identical (depending on the resampling implementation). Causes an error
+	// if the resampling extension is unsupported.
+	static ALint getResamplingIndex(int value);
 
 	// Returns whether the given sound is currently playing. Intended for limiting certain
 	// sounds to only have one instance at a time.
@@ -46,6 +53,7 @@ private:
 public:
 	float mMusicVolume;
 	float mSfxVolume;
+	bool mHasResamplerExtension; // Whether AL_SOFT_source_resampler is supported.
 
 	// Currently active song and playback stream.
 	MidiSongPtr mCurrentSong;
@@ -67,7 +75,7 @@ public:
 	~AudioManagerImpl();
 
 	void init(double musicVolume, double soundVolume, int maxChannels,
-		const std::string &midiConfig);
+		int resamplingOption, const std::string &midiConfig);
 
 	void playMusic(const std::string &filename);
 	void playSound(const std::string &filename);
@@ -77,11 +85,16 @@ public:
 
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
+	void setResamplingOption(int value);
 
 	void update();
 };
 
-class OpenALStream {
+const ALint AudioManagerImpl::UNSUPPORTED_EXTENSION = -1;
+
+class OpenALStream
+{
+private:
 	AudioManagerImpl *mManager;
 	MidiSong *mSong;
 
@@ -286,6 +299,15 @@ public:
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
+	void setResampler(ALint resampler)
+	{
+		assert(mSource != 0);
+
+		// This probably doesn't affect music at all, but it's important for the source to have
+		// the setting anyway, in case it eventually gets used for a sound.
+		alSourcei(mSource, AL_SOURCE_RESAMPLER_SOFT, resampler);
+	}
+
 	bool init(ALuint source, float volume)
 	{
 		assert(mSource == 0);
@@ -334,7 +356,7 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
-	: mMusicVolume(1.0f), mSfxVolume(1.0f)
+	: mMusicVolume(1.0f), mSfxVolume(1.0f), mHasResamplerExtension(false)
 {
 
 }
@@ -373,6 +395,38 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
+ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
+{
+	const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
+	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+
+	if (resamplingOption == 0)
+	{
+		// Default.
+		return defaultResampler;
+	}
+	else if (resamplingOption == 1)
+	{
+		// Fastest.
+		return 0;
+	}
+	else if (resamplingOption == 2)
+	{
+		// Medium.
+		return std::min(defaultResampler + 1, resamplerCount - 1);
+	}
+	else if (resamplingOption == 3)
+	{
+		// Best.
+		return resamplerCount - 1;
+	}
+	else
+	{
+		throw std::runtime_error("Bad resampling option \"" +
+			std::to_string(resamplingOption) + "\".");
+	}
+}
+
 bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 {
 	// Check through used sources' filenames.
@@ -386,7 +440,7 @@ bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 }
 
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
-	const std::string &midiConfig)
+	int resamplingOption, const std::string &midiConfig)
 {
 	DebugMention("Initializing.");
 
@@ -414,16 +468,10 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 			std::to_string(alGetError()) + ").");
 	}
 
-	// Set resampler to 4-point sinc if available, and linear if not.
-	// Band-limited sinc muffles the sound too much and doesn't sound good.
-	// - 0: nearest, 1: linear, 2: 4-point sinc, 3: band-limited sinc.	
-	mResampler = []()
-	{
-		const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
-		const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
-		const ALint targetResampler = 2;
-		return (resamplerCount >= (targetResampler + 1)) ? targetResampler : defaultResampler;
-	}();
+	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
+	mResampler = mHasResamplerExtension ? 
+		AudioManagerImpl::getResamplingIndex(resamplingOption) :
+		AudioManagerImpl::UNSUPPORTED_EXTENSION;
 
 	// Generate the sound sources.
 	for (int i = 0; i < maxChannels; i++)
@@ -435,6 +483,12 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 		if (status != AL_NO_ERROR)
 		{
 			DebugWarning("alGenSources() failed (error " + std::to_string(status) + ").");
+		}
+
+		// Set the source resampler if the extension is supported.
+		if (mHasResamplerExtension)
+		{
+			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 		}
 
 		mFreeSources.push_back(source);
@@ -559,7 +613,7 @@ void AudioManagerImpl::setSoundVolume(double percent)
 	mSfxVolume = static_cast<float>(percent);
 
 	// Set volumes of free and used sound channels.
-	for (ALuint source : mFreeSources)
+	for (const ALuint source : mFreeSources)
 	{
 		alSourcef(source, AL_GAIN, mSfxVolume);
 	}
@@ -568,6 +622,34 @@ void AudioManagerImpl::setSoundVolume(double percent)
 	{
 		const ALuint source = pair.second;
 		alSourcef(source, AL_GAIN, mSfxVolume);
+	}
+}
+
+void AudioManagerImpl::setResamplingOption(int resamplingOption)
+{
+	// Do not call if AL_SOFT_source_resampler is unsupported.
+	assert(mHasResamplerExtension);
+
+	// Determine which resampling index to use.
+	mResampler = AudioManagerImpl::getResamplingIndex(resamplingOption);
+
+	// Set resampling options for free and used sources.
+	for (const ALuint source : mFreeSources)
+	{
+		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+	}
+
+	for (const auto &pair : mUsedSources)
+	{
+		const ALuint source = pair.second;
+		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+	}
+
+	if (mSongStream != nullptr)
+	{
+		// Not necessary for music itself, but necessary for keeping all sources in line,
+		// and the music source isn't stored in the used sources.
+		mSongStream->setResampler(mResampler);
 	}
 }
 
@@ -609,9 +691,9 @@ AudioManager::~AudioManager()
 }
 
 void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
-	const std::string &midiConfig)
+	int resamplingOption, const std::string &midiConfig)
 {
-	pImpl->init(musicVolume, soundVolume, maxChannels, midiConfig);
+	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, midiConfig);
 }
 
 double AudioManager::getMusicVolume() const
@@ -622,6 +704,11 @@ double AudioManager::getMusicVolume() const
 double AudioManager::getSoundVolume() const
 {
 	return static_cast<double>(pImpl->mSfxVolume);
+}
+
+bool AudioManager::hasResamplerExtension() const
+{
+	return pImpl->mHasResamplerExtension;
 }
 
 void AudioManager::playMusic(const std::string &filename)
@@ -652,6 +739,11 @@ void AudioManager::setMusicVolume(double percent)
 void AudioManager::setSoundVolume(double percent)
 {
 	pImpl->setSoundVolume(percent);
+}
+
+void AudioManager::setResamplingOption(int resamplingOption)
+{
+	pImpl->setResamplingOption(resamplingOption);
 }
 
 void AudioManager::update()

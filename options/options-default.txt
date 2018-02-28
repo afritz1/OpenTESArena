@@ -46,6 +46,10 @@ MidiConfig=data/eawpats/timidity.cfg
 
 SoundChannels=32
 
+# Sound resampling. Results may vary.
+# 0: default, 1: fastest, 2: medium, 3: best.
+SoundResampling=0
+
 # [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
 # set by a wizard instead.

@@ -15,6 +15,7 @@
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
 #include "../Math/Vector2.h"
+#include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -43,6 +44,7 @@ const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
 const std::string OptionsPanel::COLLISION_TEXT = "Collision: ";
 const std::string OptionsPanel::SKIP_INTRO_TEXT = "Skip Intro: ";
 const std::string OptionsPanel::FULLSCREEN_TEXT = "Fullscreen: ";
+const std::string OptionsPanel::SOUND_RESAMPLING_TEXT = "Sound Resampling: ";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
@@ -273,6 +275,26 @@ OptionsPanel::OptionsPanel(Game &game)
 
 		const std::string text = OptionsPanel::FULLSCREEN_TEXT +
 			(game.getOptions().getFullscreen() ? "On" : "Off");
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			x, y, richText, game.getRenderer()));
+	}();
+
+	this->soundResamplingTextBox = [&game]()
+	{
+		const int x = 175;
+		const int y = 124;
+
+		const int resamplingOption = game.getOptions().getSoundResampling();
+		const std::string text = OptionsPanel::SOUND_RESAMPLING_TEXT +
+			OptionsPanel::getSoundResamplingString(resamplingOption);
 
 		const RichTextString richText(
 			text,
@@ -620,6 +642,30 @@ OptionsPanel::OptionsPanel(Game &game)
 		};
 		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
 	}();
+
+	this->soundResamplingButton = []()
+	{
+		const int x = 296;
+		const int y = 124;
+		const int width = ToggleButtonSize;
+		const int height = ToggleButtonSize;
+		auto function = [](OptionsPanel &panel, Options &options, AudioManager &audioManager)
+		{
+			// Increment the sound resampling option, or loop around.
+			const int newResamplingOption =
+				(options.getSoundResampling() + 1) % Options::RESAMPLING_OPTION_COUNT;
+			options.setSoundResampling(newResamplingOption);
+
+			// If the sound resampling extension is supported, update the audio manager sources.
+			if (audioManager.hasResamplerExtension())
+			{
+				audioManager.setResamplingOption(newResamplingOption);
+			}
+
+			panel.updateSoundResamplingText(newResamplingOption);
+		};
+		return Button<OptionsPanel&, Options&, AudioManager&>(x, y, width, height, function);
+	}();
 }
 
 OptionsPanel::~OptionsPanel()
@@ -630,6 +676,16 @@ OptionsPanel::~OptionsPanel()
 std::string OptionsPanel::getPlayerInterfaceString(bool modernInterface)
 {
 	return modernInterface ? "Modern" : "Classic";
+}
+
+std::string OptionsPanel::getSoundResamplingString(int resamplingOption)
+{
+	const std::array<std::string, 4> SoundResamplingOptions =
+	{
+		"Default", "Fastest", "Medium", "Best"
+	};
+
+	return SoundResamplingOptions.at(resamplingOption);
 }
 
 void OptionsPanel::updateFPSText(int fps)
@@ -884,6 +940,29 @@ void OptionsPanel::updateFullscreenText(bool fullscreen)
 	}();
 }
 
+void OptionsPanel::updateSoundResamplingText(int resamplingOption)
+{
+	assert(this->soundResamplingTextBox.get() != nullptr);
+
+	this->soundResamplingTextBox = [this, resamplingOption]()
+	{
+		const RichTextString &oldRichText = this->soundResamplingTextBox->getRichText();
+		const std::string text = OptionsPanel::SOUND_RESAMPLING_TEXT +
+			OptionsPanel::getSoundResamplingString(resamplingOption);
+
+		const RichTextString richText(
+			text,
+			oldRichText.getFontName(),
+			oldRichText.getColor(),
+			oldRichText.getAlignment(),
+			this->getGame().getFontManager());
+
+		return std::unique_ptr<TextBox>(new TextBox(
+			this->soundResamplingTextBox->getX(), this->soundResamplingTextBox->getY(),
+			richText, this->getGame().getRenderer()));
+	}();
+}
+
 void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip(Panel::createTooltip(
@@ -1010,6 +1089,11 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 			this->fullscreenButton.click(*this, this->getGame().getOptions(),
 				this->getGame().getRenderer());
 		}
+		else if (this->soundResamplingButton.contains(mouseOriginalPoint))
+		{
+			this->soundResamplingButton.click(*this, this->getGame().getOptions(),
+				this->getGame().getAudioManager());
+		}
 		else if (this->backToPauseButton.contains(mouseOriginalPoint))
 		{
 			this->backToPauseButton.click(this->getGame());
@@ -1059,6 +1143,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->skipIntroButton.getY());
 	renderer.drawOriginal(toggleButtonBackground.get(), this->fullscreenButton.getX(),
 		this->fullscreenButton.getY());
+	renderer.drawOriginal(toggleButtonBackground.get(), this->soundResamplingButton.getX(),
+		this->soundResamplingButton.getY());
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseButton.getWidth(), this->backToPauseButton.getHeight(),
@@ -1093,6 +1179,8 @@ void OptionsPanel::render(Renderer &renderer)
 		this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY());
 	renderer.drawOriginal(this->fullscreenTextBox->getTexture(),
 		this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY());
+	renderer.drawOriginal(this->soundResamplingTextBox->getTexture(),
+		this->soundResamplingTextBox->getX(), this->soundResamplingTextBox->getY());
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -1115,6 +1203,6 @@ void OptionsPanel::render(Renderer &renderer)
 	}
 	else if (this->vSensitivityTextBox->getRect().contains(originalPosition))
 	{
-		this->drawTooltip("Only affects vertical camera look\nin modern interface mode.", renderer);
+		this->drawTooltip("Only affects vertical camera look\nin modern mode.", renderer);
 	}
 }

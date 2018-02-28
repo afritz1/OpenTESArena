@@ -18,13 +18,16 @@ public:
 	~AudioManager();
 
     void init(double musicVolume, double soundVolume, int maxChannels, 
-		const std::string &midiConfig);
+		int resamplingOption, const std::string &midiConfig);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
 
 	double getMusicVolume() const;
 	double getSoundVolume() const;
+
+	// Returns whether the implementation supports resampling options.
+	bool hasResamplerExtension() const;
 
 	// Plays a music file. All music should loop until changed.
 	void playMusic(const std::string &filename);
@@ -43,6 +46,11 @@ public:
 
 	// Sets the sound volume. Percent must be between 0.0 and 1.0.
 	void setSoundVolume(double percent);
+
+	// Sets the resampling option used by all sources. Note that the given index does not
+	// necessarily map to a specific index in the resampling list. Causes an error if
+	// resampling options are not supported.
+	void setResamplingOption(int resamplingOption);
 
 	// Updates any state not handled by a background thread, such as resetting 
 	// the sources of finished sounds.

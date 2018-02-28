@@ -34,6 +34,7 @@ namespace
 		{ "SoundVolume", { OptionName::SoundVolume, OptionType::Double } },
 		{ "MidiConfig", { OptionName::MidiConfig, OptionType::String } },
 		{ "SoundChannels", { OptionName::SoundChannels, OptionType::Int } },
+		{ "SoundResampling", { OptionName::SoundResampling, OptionType::Int } },
 
 		{ "ArenaPath", { OptionName::ArenaPath, OptionType::String } },
 		{ "Collision", { OptionName::Collision, OptionType::Bool } },
@@ -65,6 +66,7 @@ const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
 const double Options::MAX_VERTICAL_SENSITIVITY = 50.0;
 const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
+const int Options::RESAMPLING_OPTION_COUNT = 4;
 
 void Options::load(const std::string &filename, Options::BoolMap &boolMap,
 	Options::IntegerMap &integerMap, Options::DoubleMap &doubleMap,
@@ -309,6 +311,14 @@ void Options::checkSoundChannels(int value) const
 	DebugAssert(value >= 1, "Sound channel count must be positive.");
 }
 
+void Options::checkSoundResampling(int value) const
+{
+	DebugAssert(value >= 0, "Sound resampling value cannot be negative.");
+	DebugAssert(value < Options::RESAMPLING_OPTION_COUNT,
+		"Sound resampling value cannot be greater than " +
+		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
+}
+
 void Options::loadDefaults(const std::string &filename)
 {
 	DebugMention("Reading defaults \"" + filename + "\".");
@@ -340,6 +350,7 @@ void Options::saveChanges()
 
 		// Save each option to the "changes" options file.
 		// - To do: order these by their appearance in options-default.txt.
+		//   Iterate over OptionMappings? Switch on type?
 		for (const auto &pair : this->changedBools)
 		{
 			const std::string &nameString = getOptionsNameString(pair.first);

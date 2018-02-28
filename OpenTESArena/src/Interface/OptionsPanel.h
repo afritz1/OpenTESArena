@@ -6,6 +6,7 @@
 
 // Arena doesn't have an options menu, so I made one up!
 
+class AudioManager;
 class Options;
 class Player;
 class Renderer;
@@ -27,11 +28,12 @@ private:
 	static const std::string COLLISION_TEXT;
 	static const std::string SKIP_INTRO_TEXT;
 	static const std::string FULLSCREEN_TEXT;
+	static const std::string SOUND_RESAMPLING_TEXT;
 
 	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox,
 		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox,
 		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox,
-		collisionTextBox, skipIntroTextBox, fullscreenTextBox;
+		collisionTextBox, skipIntroTextBox, fullscreenTextBox, soundResamplingTextBox;
 	Button<Game&> backToPauseButton;
 	Button<OptionsPanel&, Options&> fpsUpButton, fpsDownButton,
 		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
@@ -40,9 +42,11 @@ private:
 	Button<OptionsPanel&, Options&, Renderer&> resolutionScaleUpButton,
 		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton,
 		fullscreenButton;
+	Button<OptionsPanel&, Options&, AudioManager&> soundResamplingButton;
 	Button<OptionsPanel&, Options&, Player&, Renderer&> playerInterfaceButton;
 
 	static std::string getPlayerInterfaceString(bool modernInterface);
+	static std::string getSoundResamplingString(int resamplingOption);
 
 	void updateFPSText(int fps);
 	void updateResolutionScaleText(double resolutionScale);
@@ -55,6 +59,7 @@ private:
 	void updateCollisionText(bool collision);
 	void updateSkipIntroText(bool skip);
 	void updateFullscreenText(bool fullscreen);
+	void updateSoundResamplingText(int resamplingOption);
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
