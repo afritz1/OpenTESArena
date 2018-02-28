@@ -1,9 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <cstdint>
 #include <memory>
-#include <vector>
 
 #include "ExeUnpacker.h"
 #include "../Utilities/Bytes.h"
@@ -256,8 +254,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 	}();
 
 	// Buffer for the decompressed data (also little endian).
-	std::vector<uint8_t> decomp(decompLen);
-	std::fill(decomp.begin(), decomp.end(), 0);
+	this->exeData = std::vector<uint8_t>(decompLen);
+	std::fill(this->exeData.begin(), this->exeData.end(), 0);
 
 	// Current position for inserting decompressed data.
 	size_t decompIndex = 0;
@@ -408,7 +406,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			const size_t duplicateEnd = duplicateBegin + copyCount;
 			for (size_t i = duplicateBegin; i < duplicateEnd; i++, decompIndex++)
 			{
-				decomp.at(decompIndex) = decomp.at(i);
+				this->exeData.at(decompIndex) = this->exeData.at(i);
 			}
 		}
 		else
@@ -431,14 +429,10 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			const uint8_t decryptedByte = decrypt(encryptedByte, bitsRead);
 
 			// Append the decrypted byte onto the decompressed data.
-			decomp.at(decompIndex) = decryptedByte;
+			this->exeData.at(decompIndex) = decryptedByte;
 			decompIndex++;
 		}
 	}
-
-	// Convert the vector to a string.
-	this->text.resize(decomp.size());
-	std::copy(decomp.begin(), decomp.end(), this->text.begin());
 }
 
 ExeUnpacker::~ExeUnpacker()
@@ -446,7 +440,7 @@ ExeUnpacker::~ExeUnpacker()
 
 }
 
-const std::string &ExeUnpacker::getText() const
+const std::vector<uint8_t> &ExeUnpacker::getData() const
 {
-	return this->text;
+	return this->exeData;
 }
