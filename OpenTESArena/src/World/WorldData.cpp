@@ -7,6 +7,7 @@
 #include "WeatherType.h"
 #include "WorldData.h"
 #include "WorldType.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
@@ -122,7 +123,8 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 LocationType WorldData::getLocationTypeFromID(int cityID)
 {
 	// Local IDs can be between 0 and 31.
-	const int localID = cityID & 0x1F;
+	const auto &idPair = CityDataFile::getLocalAndProvinceID(cityID);
+	const int localID = idPair.first;
 
 	if (localID < 8)
 	{

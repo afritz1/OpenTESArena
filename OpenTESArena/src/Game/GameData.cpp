@@ -5,6 +5,7 @@
 #include "SDL.h"
 
 #include "GameData.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -168,7 +169,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	const int cityID = (provinceID << 5) + localID;
+	const int cityID = CityDataFile::getCityID(localID, provinceID);
 
 	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
 	// loadPremadeCity() should be called instead for that case.

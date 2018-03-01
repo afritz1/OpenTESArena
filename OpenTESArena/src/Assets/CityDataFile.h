@@ -41,8 +41,25 @@ private:
 public:
 	static const int PROVINCE_COUNT;
 
+	// Converts a local ID + province ID pair to a (global) city ID.
+	static int getCityID(int localID, int provinceID);
+
+	// Converts a city ID to a local ID + province ID pair.
+	static std::pair<int, int> getLocalAndProvinceID(int cityID);
+
+	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
+	static std::string getMainQuestDungeonMifName(uint32_t seed);
+
 	// Gets the province data at the given province index.
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
+
+	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
+	// the dungeon ID is between 0 and 15.
+	uint32_t getDungeonSeed(int dungeonID, int provinceID) const;
+
+	// Gets the 32-bit seed for a wilderness dungeon, given a province ID and X and Y
+	// wilderness block coordinates.
+	uint32_t getWildernessDungeonSeed(int provinceID, int wildBlockX, int wildBlockY) const;
 
 	void init(const std::string &filename);
 };

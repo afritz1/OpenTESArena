@@ -9,10 +9,60 @@
 
 const int CityDataFile::PROVINCE_COUNT = 9;
 
+int CityDataFile::getCityID(int localID, int provinceID)
+{
+	return (provinceID << 5) + localID;
+}
+
+std::pair<int, int> CityDataFile::getLocalAndProvinceID(int cityID)
+{
+	return std::make_pair(cityID & 0x1F, cityID >> 5);
+}
+
+std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
+{
+	const std::string seedString = std::to_string(seed);
+	const std::string mifName = seedString.substr(0, 8) + ".MIF";
+	return mifName;
+}
+
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
 	assert(index < CityDataFile::PROVINCE_COUNT);
 	return this->provinces.at(index);
+}
+
+uint32_t CityDataFile::getDungeonSeed(int dungeonID, int provinceID) const
+{
+	const auto &province = this->provinces.at(provinceID);
+	const auto &dungeon = [dungeonID, &province]()
+	{
+		if (dungeonID == 0)
+		{
+			// Second main quest dungeon.
+			return province.secondDungeon;
+		}
+		else if (dungeonID == 1)
+		{
+			// First main quest dungeon.
+			return province.firstDungeon;
+		}
+		else
+		{
+			return province.randomDungeons.at(dungeonID - 2);
+		}
+	}();
+
+	const uint32_t seed = (dungeon.y << 16) + dungeon.x + provinceID;
+	return (~Bytes::rol32(seed, 5)) & 0xFFFFFFFF;
+}
+
+uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
+	int wildBlockX, int wildBlockY) const
+{
+	const auto &province = this->provinces.at(provinceID);
+	const uint32_t baseSeed = ((province.globalX << 16) + province.globalY) * provinceID;
+	return (baseSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
 void CityDataFile::init(const std::string &filename)
