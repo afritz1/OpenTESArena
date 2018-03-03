@@ -87,6 +87,9 @@ enum class TextureName
 	DungeonIcon,
 	TownIcon,
 	VillageIcon,
+	StaffDungeonIcons,
+	MapIconOutlines,
+	MapIconOutlinesBlinking,
 
 	// Map text.
 	ProvinceNames,

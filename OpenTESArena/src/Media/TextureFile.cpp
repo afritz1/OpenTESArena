@@ -108,6 +108,9 @@ namespace
 		{ TextureName::DungeonIcon, "DUNGEON.IMG" },
 		{ TextureName::TownIcon, "TOWN.IMG" },
 		{ TextureName::VillageIcon, "VILLAGE.IMG" },
+		{ TextureName::StaffDungeonIcons, "STAFDUNG.CIF" },
+		{ TextureName::MapIconOutlines, "MAPOUT.CIF" },
+		{ TextureName::MapIconOutlinesBlinking, "MAPBLINK.CIF" },
 
 		// Map text.
 		{ TextureName::ProvinceNames, "OUTPROV.CIF" },

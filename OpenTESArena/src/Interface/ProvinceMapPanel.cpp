@@ -294,7 +294,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::TownIcon), backgroundFilename, renderer);
 	const auto &villageIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename, renderer);
-
+	const auto &dungeonIcon = textureManager.getTexture(
+		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename, renderer);
+	
 	const auto &province = this->getGame().getMiscAssets().getCityDataFile()
 		.getProvinceData(this->provinceID);
 
@@ -314,6 +316,23 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	for (const auto &village : province.villages)
 	{
 		drawIcon(village, villageIcon);
+	}
+
+	// Draw dungeon icons.
+	drawIcon(province.firstDungeon, dungeonIcon);
+
+	if (this->provinceID != 8)
+	{
+		// Only draw staff dungeon if not the center province.
+		const auto &staffDungeonIcon = textureManager.getTextures(
+			TextureFile::fromName(TextureName::StaffDungeonIcons),
+			backgroundFilename, renderer).at(this->provinceID);
+		drawIcon(province.secondDungeon, staffDungeonIcon);
+	}
+
+	for (const auto &dungeon : province.randomDungeons)
+	{
+		drawIcon(dungeon, dungeonIcon);
 	}
 
 	// Draw the name of the location closest to the mouse cursor.
