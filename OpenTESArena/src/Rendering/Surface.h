@@ -2,6 +2,7 @@
 #define SURFACE_H
 
 #include <cstdint>
+#include <string>
 
 // Acts as an SDL_Surface wrapper.
 
@@ -24,6 +25,9 @@ public:
 
 	Surface &operator=(const Surface&) = delete;
 	Surface &operator=(Surface &&surface);
+
+	// Wrapper function for SDL_LoadBMP(). Also converts to the given pixel format.
+	static SDL_Surface *loadBMP(const std::string &filename, uint32_t format);
 
 	// Wrapper function for SDL_CreateRGBSurfaceWithFormat() in SDL 2.0.5.
 	static SDL_Surface *createSurfaceWithFormat(int width, int height,

@@ -3,6 +3,7 @@
 #include "SDL.h"
 
 #include "Surface.h"
+#include "../Utilities/Debug.h"
 
 Surface::Surface()
 {
@@ -34,6 +35,18 @@ Surface &Surface::operator=(Surface &&surface)
 	this->surface = surface.surface;
 	surface.surface = nullptr;
 	return *this;
+}
+
+SDL_Surface *Surface::loadBMP(const std::string &filename, uint32_t format)
+{
+	SDL_Surface *surface = SDL_LoadBMP(filename.c_str());
+	DebugAssert(surface != nullptr, "Could not find \"" + filename + "\".");
+
+	// Convert to the given pixel format.
+	SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, format, 0);
+	SDL_FreeSurface(surface);
+
+	return optimizedSurface;
 }
 
 SDL_Surface *Surface::createSurfaceWithFormat(int width, int height,

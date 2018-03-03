@@ -17,7 +17,6 @@
 #include "../Media/FontManager.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
-#include "../Media/PPMFile.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
@@ -79,14 +78,19 @@ Game::Game()
 	// Load various miscellaneous assets.
 	this->miscAssets.init();
 
-	// Set window icon (treat black as transparent for 24-bit PPMs).
-	int iconWidth, iconHeight;
-	std::unique_ptr<uint32_t[]> iconPixels = PPMFile::read(
-		this->basePath + "data/icon.ppm", iconWidth, iconHeight);
-	Surface icon(Surface::createSurfaceWithFormatFrom(iconPixels.get(),
-		iconWidth, iconHeight, Renderer::DEFAULT_BPP,
-		iconWidth * sizeof(*iconPixels.get()), Renderer::DEFAULT_PIXELFORMAT));
-	SDL_SetColorKey(icon.get(), SDL_TRUE, SDL_MapRGBA(icon.get()->format, 0, 0, 0, 255));
+	// Load and set window icon.
+	const Surface icon = [this]()
+	{
+		const std::string iconPath = this->basePath + "data/icon.bmp";
+		SDL_Surface *surface = Surface::loadBMP(iconPath, Renderer::DEFAULT_PIXELFORMAT);
+
+		// Treat black as transparent.
+		const uint32_t black = SDL_MapRGBA(surface->format, 0, 0, 0, 255);
+		SDL_SetColorKey(surface, SDL_TRUE, black);
+
+		return Surface(surface);
+	}();
+
 	this->renderer.setWindowIcon(icon.get());
 
 	// Initialize panel and music to default.
