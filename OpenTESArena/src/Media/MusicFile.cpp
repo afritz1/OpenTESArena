@@ -3,20 +3,6 @@
 #include "MusicFile.h"
 #include "MusicName.h"
 
-namespace std
-{
-	// Hash specialization, since GCC doesn't support enum classes used as keys
-	// in unordered_maps.
-	template <>
-	struct hash<MusicName>
-	{
-		size_t operator()(const MusicName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	// Each MusicName has a corresponding filename. Interestingly, it seems Arena

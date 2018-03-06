@@ -39,20 +39,6 @@ enum class OptionName
 	ShowCompass
 };
 
-namespace std
-{
-	// Hash specialization, since GCC doesn't support enum classes used as keys
-	// in unordered_maps.
-	template <>
-	struct hash<OptionName>
-	{
-		size_t operator()(const OptionName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 class Options
 {
 private:

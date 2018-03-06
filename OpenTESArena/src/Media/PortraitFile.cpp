@@ -8,17 +8,7 @@
 
 namespace std
 {
-	// Hash specializations, since GCC doesn't support enum classes used as keys
-	// in unordered_maps.
-	template <>
-	struct hash<GenderName>
-	{
-		size_t operator()(const GenderName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-
+	// Hash specializations for std::pair.
 	template <>
 	struct hash<std::pair<GenderName, int>>
 	{

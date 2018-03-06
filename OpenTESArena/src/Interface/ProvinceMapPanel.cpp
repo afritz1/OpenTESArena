@@ -31,20 +31,6 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
-namespace std
-{
-	// Hash specializations, since GCC doesn't support enum classes used as keys
-	// in unordered_maps before C++14.
-	template <>
-	struct hash<ProvinceButtonName>
-	{
-		size_t operator()(const ProvinceButtonName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
