@@ -63,9 +63,9 @@ namespace
 }
 
 
-WildMidiDevice::WildMidiDevice(const std::string &soundfont)
+WildMidiDevice::WildMidiDevice(const std::string &midiConfig)
 {
-	sInitState = WildMidi_Init(soundfont.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
+	sInitState = WildMidi_Init(midiConfig.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
 	if (sInitState < 0)
 		DebugMention("Failed to init WildMidi.");
 	else
@@ -78,9 +78,9 @@ WildMidiDevice::~WildMidiDevice()
 		WildMidi_Shutdown();
 }
 
-void WildMidiDevice::init(const std::string &soundfont)
+void WildMidiDevice::init(const std::string &midiConfig)
 {
-	sInstance = std::make_unique<WildMidiDevice>(soundfont);
+	sInstance = std::make_unique<WildMidiDevice>(midiConfig);
 }
 
 MidiSongPtr WildMidiDevice::open(const std::string &name)
