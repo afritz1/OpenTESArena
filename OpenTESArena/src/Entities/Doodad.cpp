@@ -12,8 +12,7 @@ Doodad::~Doodad()
 
 std::unique_ptr<Entity> Doodad::clone(EntityManager &entityManager) const
 {
-	return std::unique_ptr<Doodad>(new Doodad(
-		this->animation, this->position, entityManager));
+	return std::make_unique<Doodad>(this->animation, this->position, entityManager);
 }
 
 EntityType Doodad::getEntityType() const

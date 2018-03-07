@@ -88,7 +88,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	// If the intro skip option is set, then jump to the main menu.
 	if (game.getOptions().getSkipIntro())
 	{
-		return std::unique_ptr<Panel>(new MainMenuPanel(game));
+		return std::make_unique<MainMenuPanel>(game);
 	}
 
 	// All of these lambdas are linked together like a stack by each panel's last
@@ -145,12 +145,12 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	auto makeIntroTitlePanel = [changeToQuote, &game]()
 	{
 		const double secondsToDisplay = 5.0;
-		return std::unique_ptr<Panel>(new ImagePanel(
+		return std::make_unique<ImagePanel>(
 			game,
 			PaletteFile::fromName(PaletteName::BuiltIn),
 			TextureFile::fromName(TextureName::IntroTitle),
 			secondsToDisplay,
-			changeToQuote));
+			changeToQuote);
 	};
 
 	// Uncomment this for the CD version.
@@ -161,12 +161,12 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 
 	auto makeIntroBookPanel = [changeToTitle, game]()
 	{
-		std::unique_ptr<Panel> introBook(new CinematicPanel(
+		auto introBook = std::make_unique<CinematicPanel>(
 			game,
 			PaletteFile::fromName(PaletteName::Default),
 			TextureFile::fromName(TextureSequenceName::IntroBook),
-			0.142, // Roughly 7 fps.
-			changeToTitle));
+			1.0 / 7.0, // 7 fps.
+			changeToTitle);
 		return std::move(introBook);
 	};*/
 

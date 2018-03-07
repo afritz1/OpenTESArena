@@ -52,8 +52,8 @@ MiscellaneousItem::~MiscellaneousItem()
 
 std::unique_ptr<Item> MiscellaneousItem::clone() const
 {
-	return std::unique_ptr<Item>(new MiscellaneousItem(this->miscItemType,
-		dynamic_cast<const MiscellaneousArtifactData*>(this->getArtifactData())));
+	return std::make_unique<MiscellaneousItem>(this->miscItemType,
+		dynamic_cast<const MiscellaneousArtifactData*>(this->getArtifactData()));
 }
 
 ItemType MiscellaneousItem::getItemType() const

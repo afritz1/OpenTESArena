@@ -98,8 +98,8 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 	levelData.outdoorDungeon = inf.getCeiling().outdoorDungeon;
 
 	// Interior sky color (usually black, but also gray for "outdoor" dungeons).
-	levelData.interiorSkyColor = std::unique_ptr<uint32_t>(new uint32_t(
-		levelData.isOutdoorDungeon() ? Color::Gray.toARGB() : Color::Black.toARGB()));
+	levelData.interiorSkyColor = std::make_unique<uint32_t>(
+		levelData.isOutdoorDungeon() ? Color::Gray.toARGB() : Color::Black.toARGB());
 
 	// Empty voxel data (for air).
 	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());

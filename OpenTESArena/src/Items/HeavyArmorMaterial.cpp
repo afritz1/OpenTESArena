@@ -17,8 +17,8 @@ HeavyArmorMaterial::~HeavyArmorMaterial()
 
 std::unique_ptr<ArmorMaterial> HeavyArmorMaterial::clone() const
 {
-	return std::unique_ptr<ArmorMaterial>(new HeavyArmorMaterial(
-		this->getMetal().getMetalType()));
+	return std::make_unique<HeavyArmorMaterial>(
+		this->getMetal().getMetalType());
 }
 
 ArmorMaterialType HeavyArmorMaterial::getMaterialType() const

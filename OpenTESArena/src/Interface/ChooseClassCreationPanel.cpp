@@ -52,8 +52,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			lineSpacing,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->generateTextBox = [&game]()
@@ -70,8 +69,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->selectTextBox = [&game]()
@@ -88,8 +86,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->backToMainMenuButton = []()

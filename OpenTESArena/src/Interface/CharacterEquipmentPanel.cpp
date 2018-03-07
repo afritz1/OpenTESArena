@@ -42,8 +42,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->playerRaceTextBox = [&game]()
@@ -62,8 +61,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->playerClassTextBox = [&game]()
@@ -78,8 +76,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->backToStatsButton = []()

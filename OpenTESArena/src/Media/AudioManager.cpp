@@ -512,7 +512,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 			return;
 		}
 
-		mSongStream.reset(new OpenALStream(this, mCurrentSong.get()));
+		mSongStream = std::make_unique<OpenALStream>(this, mCurrentSong.get());
 		if (mSongStream->init(mFreeSources.front(), mMusicVolume))
 		{
 			mFreeSources.pop_front();
@@ -680,7 +680,7 @@ const double AudioManager::MIN_VOLUME = 0.0;
 const double AudioManager::MAX_VOLUME = 1.0;
 
 AudioManager::AudioManager()
-	: pImpl(new AudioManagerImpl())
+	: pImpl(std::make_unique<AudioManagerImpl>())
 {
 
 }

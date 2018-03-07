@@ -17,10 +17,11 @@ class Accessory : public Item, public Metallic
 {
 private:
 	AccessoryType accessoryType;
-
+public:
+	// Full constructor (intended for clone()).
 	Accessory(AccessoryType accessoryType, MetalType metalType,
 		const AccessoryArtifactData *artifactData);
-public:
+
 	// Accessory constructor for an accessory type and metal type.
 	Accessory(AccessoryType accessoryType, MetalType metalType);
 

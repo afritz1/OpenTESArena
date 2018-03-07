@@ -18,9 +18,9 @@ NonPlayer::~NonPlayer()
 
 std::unique_ptr<Entity> NonPlayer::clone(EntityManager &entityManager) const
 {
-	return std::unique_ptr<NonPlayer>(new NonPlayer(
-		this->camera.position, this->camera.direction, this->idleAnimations, 
-		this->moveAnimations, this->attackAnimation, this->deathAnimation, entityManager));
+	return std::make_unique<NonPlayer>(this->camera.position, this->camera.direction,
+		this->idleAnimations, this->moveAnimations, this->attackAnimation,
+		this->deathAnimation, entityManager);
 }
 
 NonPlayer::AnimationType NonPlayer::getAnimationType() const

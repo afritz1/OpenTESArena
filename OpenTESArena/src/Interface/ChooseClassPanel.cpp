@@ -65,8 +65,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->classesListBox = [this, &game]()
@@ -83,7 +82,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			elements.push_back(charClass.getName());
 		}
 
-		return std::unique_ptr<ListBox>(new ListBox(
+		return std::make_unique<ListBox>(
 			x,
 			y,
 			Color(85, 44, 20),
@@ -91,7 +90,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			FontName::A,
 			maxDisplayed,
 			game.getFontManager(),
-			game.getRenderer()));
+			game.getRenderer());
 	}();
 
 	this->backToClassCreationButton = []()

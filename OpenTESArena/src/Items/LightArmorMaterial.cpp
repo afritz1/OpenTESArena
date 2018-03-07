@@ -15,7 +15,7 @@ LightArmorMaterial::~LightArmorMaterial()
 
 std::unique_ptr<ArmorMaterial> LightArmorMaterial::clone() const
 {
-	return std::unique_ptr<ArmorMaterial>(new LightArmorMaterial());
+	return std::make_unique<LightArmorMaterial>();
 }
 
 ArmorMaterialType LightArmorMaterial::getMaterialType() const

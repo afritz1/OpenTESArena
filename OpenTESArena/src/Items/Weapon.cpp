@@ -166,9 +166,8 @@ Weapon::~Weapon()
 
 std::unique_ptr<Item> Weapon::clone() const
 {
-	return std::unique_ptr<Item>(new Weapon(
-		this->weaponID, this->weaponName, this->getMetal().getMetalType(),
-		this->artifactData.get()));
+	return std::make_unique<Weapon>(this->weaponID, this->weaponName,
+		this->getMetal().getMetalType(), this->artifactData.get());
 }
 
 ItemType Weapon::getItemType() const

@@ -20,8 +20,7 @@ TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	: Panel(game), endingAction(endingAction), texture(std::move(texture)),
 	textureCenter(textureCenter)
 {
-	this->textBox = std::unique_ptr<TextBox>(new TextBox(
-		textCenter, richText, game.getRenderer()));
+	this->textBox = std::make_unique<TextBox>(textCenter, richText, game.getRenderer());
 }
 
 TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,

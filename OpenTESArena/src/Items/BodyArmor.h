@@ -22,10 +22,11 @@ class BodyArmor : public Armor
 private:
 	std::unique_ptr<ArmorMaterial> armorMaterial;
 	BodyPartName partName;
-
+public:
+	// Full constructor (intended for clone()).
 	BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial,
 		const BodyArmorArtifactData *artifactData);
-public:
+
 	// Body armor constructor.
 	BodyArmor(BodyPartName partName, const ArmorMaterial *armorMaterial);
 

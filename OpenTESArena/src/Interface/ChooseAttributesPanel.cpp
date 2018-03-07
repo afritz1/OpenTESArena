@@ -59,8 +59,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->raceTextBox = [&game, raceID]()
@@ -78,8 +77,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->classTextBox = [&game, &charClass]()
@@ -94,8 +92,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->backToRaceButton = [&charClass, &name, gender]()
@@ -138,7 +135,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					(Renderer::ORIGINAL_WIDTH / 2),
 					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -177,7 +174,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 2);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxSave.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -259,7 +256,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 							}();
 
-							return std::unique_ptr<GameData>(new GameData(std::move(player)));
+							return std::make_unique<GameData>(std::move(player));
 						}();
 
 						// Set palette (important for texture loading).
@@ -384,7 +381,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							gameData.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
 
 							// Initialize the game world panel.
-							std::unique_ptr<GameWorldPanel> gameWorldPanel(new GameWorldPanel(game));
+							auto gameWorldPanel = std::make_unique<GameWorldPanel>(game);
 							game.setPanel(std::move(gameWorldPanel));
 
 							// Choose random dungeon music.
@@ -421,9 +418,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					this->canChangePortrait = true;
 				};
 
-				std::unique_ptr<Panel> appearanceSubPanel(new TextSubPanel(
+				auto appearanceSubPanel = std::make_unique<TextSubPanel>(
 					game, textureCenter, richText, newDoneFunction,
-					std::move(texture), textureCenter));
+					std::move(texture), textureCenter);
 
 				game.pushSubPanel(std::move(appearanceSubPanel));
 			};
@@ -453,7 +450,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 26);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxReroll.texture = [&textureManager, &renderer, &messageBoxSave]()
@@ -481,9 +478,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			messageBoxElements.push_back(std::move(messageBoxSave));
 			messageBoxElements.push_back(std::move(messageBoxReroll));
 
-			std::unique_ptr<MessageBoxSubPanel> messageBox(new MessageBoxSubPanel(
+			auto messageBox = std::make_unique<MessageBoxSubPanel>(
 				game, std::move(messageBoxTitle), std::move(messageBoxElements),
-				cancelFunction));
+				cancelFunction);
 
 			game.pushSubPanel(std::move(messageBox));
 		};
@@ -568,8 +565,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			game.popSubPanel();
 		};
 
-		return std::unique_ptr<Panel>(new TextSubPanel(
-			game, center, richText, function, std::move(texture), textureCenter));
+		return std::make_unique<TextSubPanel>(game, center, richText, function,
+			std::move(texture), textureCenter);
 	}();
 
 	game.pushSubPanel(std::move(textSubPanel));

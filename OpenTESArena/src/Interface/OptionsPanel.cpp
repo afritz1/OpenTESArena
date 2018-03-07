@@ -60,8 +60,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->backToPauseTextBox = [&game]()
@@ -77,8 +76,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->fpsTextBox = [&game]()
@@ -93,8 +91,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->resolutionScaleTextBox = [&game]()
@@ -112,8 +109,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->playerInterfaceTextBox = [&game]()
@@ -131,8 +127,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->verticalFOVTextBox = [&game]()
@@ -150,8 +145,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->cursorScaleTextBox = [&game]()
@@ -169,8 +163,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->letterboxAspectTextBox = [&game]()
@@ -188,8 +181,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->hSensitivityTextBox = [&game]()
@@ -207,8 +199,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->vSensitivityTextBox = [&game]()
@@ -226,8 +217,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->collisionTextBox = [&game]()
@@ -245,8 +235,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->skipIntroTextBox = [&game]()
@@ -264,8 +253,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->fullscreenTextBox = [&game]()
@@ -283,8 +271,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->soundResamplingTextBox = [&game]()
@@ -303,8 +290,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->backToPauseButton = []()
@@ -703,9 +689,9 @@ void OptionsPanel::updateFPSText(int fps)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->fpsTextBox->getX(), this->fpsTextBox->getY(), richText,
-			this->getGame().getRenderer()));
+			this->getGame().getRenderer());
 	}();
 }
 
@@ -724,9 +710,9 @@ void OptionsPanel::updateResolutionScaleText(double resolutionScale)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -748,9 +734,9 @@ void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -772,9 +758,9 @@ void OptionsPanel::updateVerticalFOVText(double verticalFOV)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -796,9 +782,9 @@ void OptionsPanel::updateCursorScaleText(double cursorScale)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -820,9 +806,9 @@ void OptionsPanel::updateLetterboxAspectText(double letterboxAspect)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -844,9 +830,9 @@ void OptionsPanel::updateHorizontalSensitivityText(double hSensitivity)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -868,9 +854,9 @@ void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -890,9 +876,9 @@ void OptionsPanel::updateCollisionText(bool collision)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->collisionTextBox->getX(), this->collisionTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -912,9 +898,9 @@ void OptionsPanel::updateSkipIntroText(bool skip)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -934,9 +920,9 @@ void OptionsPanel::updateFullscreenText(bool fullscreen)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -957,9 +943,9 @@ void OptionsPanel::updateSoundResamplingText(int resamplingOption)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
+		return std::make_unique<TextBox>(
 			this->soundResamplingTextBox->getX(), this->soundResamplingTextBox->getY(),
-			richText, this->getGame().getRenderer()));
+			richText, this->getGame().getRenderer());
 	}();
 }
 

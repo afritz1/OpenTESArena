@@ -52,8 +52,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->nameTextBox = [&game]()
@@ -68,8 +67,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->backToClassButton = []()
@@ -228,8 +226,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 				oldRichText.getAlignment(),
 				game.getFontManager());
 
-			return std::unique_ptr<TextBox>(new TextBox(
-				x, y, richText, game.getRenderer()));
+			return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 		}();
 	}
 }

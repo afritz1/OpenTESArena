@@ -47,9 +47,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 			fontManager);
 
 		// Store the text box for later.
-		std::unique_ptr<TextBox> textBox(new TextBox(
-			x, y, richText, renderer));
-
+		auto textBox = std::make_unique<TextBox>(x, y, richText, renderer);
 		this->textBoxes.push_back(std::move(textBox));
 	}
 

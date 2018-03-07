@@ -89,7 +89,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					(Renderer::ORIGINAL_WIDTH / 2),
 					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -119,7 +119,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 28);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -177,9 +177,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
 						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-					std::unique_ptr<Panel> fourthSubPanel(new TextSubPanel(
+					auto fourthSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toAttributes, std::move(texture),
-						textureCenter));
+						textureCenter);
 
 					game.pushSubPanel(std::move(fourthSubPanel));
 				};
@@ -229,9 +229,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
 						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-					std::unique_ptr<Panel> thirdSubPanel(new TextSubPanel(
+					auto thirdSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toFourthSubPanel, std::move(texture),
-						textureCenter));
+						textureCenter);
 
 					game.pushSubPanel(std::move(thirdSubPanel));
 				};
@@ -283,9 +283,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
 						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-					std::unique_ptr<Panel> secondSubPanel(new TextSubPanel(
+					auto secondSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toThirdSubPanel, std::move(texture),
-						textureCenter));
+						textureCenter);
 
 					game.pushSubPanel(std::move(secondSubPanel));
 				};
@@ -350,9 +350,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
 						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
 
-					return std::unique_ptr<Panel>(new TextSubPanel(
-						game, center, richText, toSecondSubPanel, std::move(texture),
-						textureCenter));
+					return std::make_unique<TextSubPanel>(game, center, richText,
+						toSecondSubPanel, std::move(texture), textureCenter);
 				}();
 
 				game.pushSubPanel(std::move(firstSubPanel));
@@ -376,7 +375,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 68);
 
-				return std::unique_ptr<TextBox>(new TextBox(center, richText, renderer));
+				return std::make_unique<TextBox>(center, richText, renderer);
 			}();
 
 			messageBoxNo.texture = [&textureManager, &renderer, &messageBoxYes]()
@@ -407,9 +406,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			messageBoxElements.push_back(std::move(messageBoxYes));
 			messageBoxElements.push_back(std::move(messageBoxNo));
 
-			std::unique_ptr<MessageBoxSubPanel> messageBox(new MessageBoxSubPanel(
+			auto messageBox = std::make_unique<MessageBoxSubPanel>(
 				game, std::move(messageBoxTitle), std::move(messageBoxElements),
-				cancelFunction));
+				cancelFunction);
 
 			game.pushSubPanel(std::move(messageBox));
 		};
@@ -478,8 +477,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
 		game.popSubPanel();
 	};
 
-	return std::unique_ptr<Panel>(new TextSubPanel(
-		game, center, richText, function, std::move(texture), textureCenter));
+	return std::make_unique<TextSubPanel>(game, center, richText, function,
+		std::move(texture), textureCenter);
 }
 
 int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const

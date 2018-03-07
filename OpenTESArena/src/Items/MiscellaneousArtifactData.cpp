@@ -19,9 +19,9 @@ MiscellaneousArtifactData::~MiscellaneousArtifactData()
 
 std::unique_ptr<ArtifactData> MiscellaneousArtifactData::clone() const
 {
-	return std::unique_ptr<ArtifactData>(new MiscellaneousArtifactData(
+	return std::make_unique<MiscellaneousArtifactData>(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getMiscellaneousItemType()));
+		this->getMiscellaneousItemType());
 }
 
 MiscellaneousItemType MiscellaneousArtifactData::getMiscellaneousItemType() const

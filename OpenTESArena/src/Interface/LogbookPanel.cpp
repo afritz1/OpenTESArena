@@ -43,8 +43,7 @@ LogbookPanel::LogbookPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->backButton = []()

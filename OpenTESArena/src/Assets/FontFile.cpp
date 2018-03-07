@@ -98,8 +98,8 @@ FontFile::FontFile(const std::string &filename)
 		FontElement &element = symbols.at(i);
 
 		auto &pair = this->characters.at(i);
-		pair = std::make_pair(element.width, std::unique_ptr<uint32_t[]>(
-			new uint32_t[element.width * element.height]));
+		pair = std::make_pair(element.width,
+			std::make_unique<uint32_t[]>(element.width * element.height));
 
 		uint32_t *pixels = pair.second.get();
 		for (uint32_t cy = 0; cy < element.height; cy++)

@@ -48,8 +48,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		this->width = 1;
 		this->height = 1;
-		this->pixels = std::unique_ptr<uint32_t[]>(
-			new uint32_t[this->width * this->height]);
+		this->pixels = std::make_unique<uint32_t[]>(this->width * this->height);
 		this->pixels[0] = Color::Black.toARGB();
 		return;
 	}
@@ -124,7 +123,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		this->width = width;
 		this->height = height;
-		this->pixels = std::unique_ptr<uint32_t[]>(new uint32_t[width * height]);
+		this->pixels = std::make_unique<uint32_t[]>(width * height);
 
 		std::transform(data, data + (width * height), this->pixels.get(),
 			[&paletteRef](uint8_t col) -> uint32_t
@@ -142,7 +141,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		{
 			this->width = 64;
 			this->height = 64;
-			this->pixels = std::unique_ptr<uint32_t[]>(new uint32_t[this->width * this->height]);
+			this->pixels = std::make_unique<uint32_t[]>(this->width * this->height);
 			std::fill(this->pixels.get(), this->pixels.get() + (this->width * this->height),
 				paletteRef.get()[0].toARGB());
 

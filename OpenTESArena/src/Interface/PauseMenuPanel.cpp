@@ -48,8 +48,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->musicTextBox = [&game]()
@@ -66,8 +65,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->soundTextBox = [&game]()
@@ -84,8 +82,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->optionsTextBox = [&game]()
@@ -101,8 +98,8 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 
 		const TextBox::ShadowData shadowData(Color(101, 77, 24), Int2(-1, 1));
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, &shadowData, game.getRenderer()));
+		return std::make_unique<TextBox>(
+			center, richText, &shadowData, game.getRenderer());
 	}();
 
 	this->loadButton = []()
@@ -150,7 +147,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Game &game)
 		{
 			// SaveGamePanel...
-			//std::unique_ptr<Panel> optionsPanel(new OptionsPanel(game));
+			//auto optionsPanel = std::make_unique<OptionsPanel>(game);
 			//game.setPanel(std::move(optionsPanel));
 		};
 		return Button<Game&>(x, y, 64, 29, function);
@@ -265,8 +262,8 @@ void PauseMenuPanel::updateMusicText(double volume)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, this->getGame().getRenderer()));
+		return std::make_unique<TextBox>(
+			center, richText, this->getGame().getRenderer());
 	}();
 }
 
@@ -287,8 +284,8 @@ void PauseMenuPanel::updateSoundText(double volume)
 			oldRichText.getAlignment(),
 			this->getGame().getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, this->getGame().getRenderer()));
+		return std::make_unique<TextBox>(
+			center, richText, this->getGame().getRenderer());
 	}();
 }
 

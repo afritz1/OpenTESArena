@@ -113,8 +113,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			TextAlignment::Left,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			x, y, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
 	this->characterSheetButton = []()
@@ -599,11 +598,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 		// Create the text box for display (set position to zero; the renderer will decide
 		// where to draw it).
-		std::unique_ptr<TextBox> textBox(new TextBox(
+		auto textBox = std::make_unique<TextBox>(
 			Int2(0, 0),
 			richText,
 			&shadowData,
-			game.getRenderer()));
+			game.getRenderer());
 
 		// Assign the text box and its duration to the action text.
 		auto &gameData = game.getGameData();
@@ -1224,11 +1223,11 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 
 			// Create the text box for display (set position to zero; the renderer will decide
 			// where to draw it).
-			std::unique_ptr<TextBox> textBox(new TextBox(
+			auto textBox = std::make_unique<TextBox>(
 				Int2(0, 0), 
 				richText, 
 				&shadowData,
-				game.getRenderer()));
+				game.getRenderer());
 
 			// Assign the text box and its duration to the triggered text member. It will 
 			// be displayed in the render method until the duration is no longer positive.

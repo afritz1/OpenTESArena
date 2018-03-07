@@ -15,7 +15,7 @@ MediumArmorMaterial::~MediumArmorMaterial()
 
 std::unique_ptr<ArmorMaterial> MediumArmorMaterial::clone() const
 {
-	return std::unique_ptr<ArmorMaterial>(new MediumArmorMaterial());
+	return std::make_unique<MediumArmorMaterial>();
 }
 
 ArmorMaterialType MediumArmorMaterial::getMaterialType() const

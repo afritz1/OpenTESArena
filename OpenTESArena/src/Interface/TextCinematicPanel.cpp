@@ -72,8 +72,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 				lineSpacing,
 				game.getFontManager());
 
-			std::unique_ptr<TextBox> textBox(new TextBox(
-				center, richText, game.getRenderer()));
+			auto textBox = std::make_unique<TextBox>(center, richText, game.getRenderer());
 			textBoxes.push_back(std::move(textBox));
 		}
 

@@ -7,13 +7,14 @@
 
 /* Implementation for opening supported MIDI-like files through WildMidi. */
 class WildMidiDevice : public MidiDevice {
-    WildMidiDevice(const std::string &soundfont);
 public:
-    virtual ~WildMidiDevice();
+	// Constructor (public for std::make_unique).
+	WildMidiDevice(const std::string &soundfont);
+	virtual ~WildMidiDevice();
 
-    virtual MidiSongPtr open(const std::string &name) override;
+	static void init(const std::string &soundfont);
 
-    static void init(const std::string &soundfont);
+	virtual MidiSongPtr open(const std::string &name) override;
 };
 
 #endif /* HAVE_WILDMIDI */

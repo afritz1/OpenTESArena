@@ -290,7 +290,7 @@ INFFile::INFFile(const std::string &filename)
 			// Initialize floor state if it is null.
 			if (floorState.get() == nullptr)
 			{
-				floorState = std::unique_ptr<FloorState>(new FloorState());
+				floorState = std::make_unique<FloorState>();
 			}
 
 			const std::string BOXCAP_STR = "BOXCAP";
@@ -311,7 +311,7 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == CEILING_STR)
 			{
 				// Initialize ceiling data.
-				floorState->ceilingData = std::unique_ptr<CeilingData>(new CeilingData());
+				floorState->ceilingData = std::make_unique<CeilingData>();
 				floorState->mode = FloorState::Mode::Ceiling;
 
 				// Check up to three numbers on the right: ceiling height, box scale,
@@ -417,7 +417,7 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Reset the floor state for any future floor data.
-			floorState = std::unique_ptr<FloorState>(new FloorState());
+			floorState = std::make_unique<FloorState>();
 		}
 	};
 
@@ -432,7 +432,7 @@ INFFile::INFFile(const std::string &filename)
 			// Initialize wall state if it is null.
 			if (wallState.get() == nullptr)
 			{
-				wallState = std::unique_ptr<WallState>(new WallState());
+				wallState = std::make_unique<WallState>();
 			}
 
 			// All the different possible '*' sections for walls.
@@ -614,7 +614,7 @@ INFFile::INFFile(const std::string &filename)
 				this->levelUpIndex = currentIndex;
 			}
 
-			wallState = std::unique_ptr<WallState>(new WallState());
+			wallState = std::make_unique<WallState>();
 		}
 	};
 
@@ -629,7 +629,7 @@ INFFile::INFFile(const std::string &filename)
 			// Initialize flat state if it is null.
 			if (flatState.get() == nullptr)
 			{
-				flatState = std::unique_ptr<FlatState>(new FlatState());
+				flatState = std::make_unique<FlatState>();
 			}
 
 			const std::string ITEM_STR = "ITEM";
@@ -755,7 +755,7 @@ INFFile::INFFile(const std::string &filename)
 					else if (modifierType == LIGHT_MODIFIER)
 					{
 						// Light range (in units of voxels).
-						flat.lightIntensity = std::unique_ptr<int>(new int(modifierValue));
+						flat.lightIntensity = std::make_unique<int>(modifierValue);
 					}
 					else if (modifierType == Y_OFFSET_MODIFIER)
 					{
@@ -771,7 +771,7 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Reset flat state for the next loop.
-			flatState = std::unique_ptr<FlatState>(new FlatState());
+			flatState = std::make_unique<FlatState>();
 		}
 	};
 
@@ -809,7 +809,7 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Reset the text state to default with the new *TEXT ID.
-			textState = std::unique_ptr<TextState>(new TextState(textID));
+			textState = std::make_unique<TextState>(textID);
 		}
 		else if (line.front() == KEY_INDEX_CHAR)
 		{
@@ -818,7 +818,7 @@ INFFile::INFFile(const std::string &filename)
 			const int keyNumber = std::stoi(keyStr);
 
 			textState->mode = TextState::Mode::Key;
-			textState->keyData = std::unique_ptr<KeyData>(new KeyData(keyNumber));
+			textState->keyData = std::make_unique<KeyData>(keyNumber);
 		}
 		else if (line.front() == RIDDLE_CHAR)
 		{
@@ -829,15 +829,15 @@ INFFile::INFFile(const std::string &filename)
 			const int secondNumber = std::stoi(tokens.at(1));
 
 			textState->mode = TextState::Mode::Riddle;
-			textState->riddleState = std::unique_ptr<TextState::RiddleState>(
-				new TextState::RiddleState(firstNumber, secondNumber));
+			textState->riddleState = std::make_unique<TextState::RiddleState>(
+				firstNumber, secondNumber);
 		}
 		else if (line.front() == DISPLAYED_ONCE_CHAR)
 		{
 			textState->mode = TextState::Mode::Text;
 
 			const bool displayedOnce = true;
-			textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
+			textState->textData = std::make_unique<TextData>(displayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState->textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -907,7 +907,7 @@ INFFile::INFFile(const std::string &filename)
 				textState->mode = TextState::Mode::Text;
 
 				const bool displayedOnce = false;
-				textState->textData = std::unique_ptr<TextData>(new TextData(displayedOnce));
+				textState->textData = std::make_unique<TextData>(displayedOnce);
 			}
 
 			// Read the line into the text data.

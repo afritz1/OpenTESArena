@@ -20,9 +20,9 @@ WeaponArtifactData::~WeaponArtifactData()
 
 std::unique_ptr<ArtifactData> WeaponArtifactData::clone() const
 {
-	return std::unique_ptr<ArtifactData>(new WeaponArtifactData(
+	return std::make_unique<WeaponArtifactData>(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getWeaponID(), this->getMetalType()));
+		this->getWeaponID(), this->getMetalType());
 }
 
 int WeaponArtifactData::getWeaponID() const

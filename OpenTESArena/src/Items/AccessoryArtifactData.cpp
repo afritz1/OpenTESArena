@@ -21,9 +21,9 @@ AccessoryArtifactData::~AccessoryArtifactData()
 
 std::unique_ptr<ArtifactData> AccessoryArtifactData::clone() const
 {
-	return std::unique_ptr<ArtifactData>(new AccessoryArtifactData(
+	return std::make_unique<AccessoryArtifactData>(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getAccessoryType(), this->getMetalType()));
+		this->getAccessoryType(), this->getMetalType());
 }
 
 AccessoryType AccessoryArtifactData::getAccessoryType() const

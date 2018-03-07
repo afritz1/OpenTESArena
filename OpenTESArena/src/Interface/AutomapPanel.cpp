@@ -87,9 +87,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 			game.getFontManager());
 
 		const TextBox::ShadowData shadowData(Color(150, 101, 52), Int2(2, 2));
-
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, &shadowData, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, &shadowData, game.getRenderer());
 	}();
 
 	this->backToGameButton = []()

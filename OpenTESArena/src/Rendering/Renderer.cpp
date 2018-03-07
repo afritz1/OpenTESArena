@@ -401,8 +401,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering program.
-	this->softwareRenderer = std::unique_ptr<SoftwareRenderer>(new SoftwareRenderer(
-		renderWidth, renderHeight));
+	this->softwareRenderer = std::make_unique<SoftwareRenderer>(renderWidth, renderHeight);
 }
 
 void Renderer::addFlat(int id, const Double3 &position, double width, 

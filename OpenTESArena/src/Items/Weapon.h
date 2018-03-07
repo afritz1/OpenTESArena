@@ -20,13 +20,13 @@ private:
 	std::string weaponName;
 	std::unique_ptr<WeaponArtifactData> artifactData;
 
-	// Constructor for clone().
-	Weapon(int weaponID, const std::string &weaponName, MetalType metalType,
-		const WeaponArtifactData *artifactData);
-
 	Weapon(int weaponID, MetalType metalType,
 		const WeaponArtifactData *artifactData, const ExeData &exeData);
 public:
+	// Full constructor (intended for clone()).
+	Weapon(int weaponID, const std::string &weaponName, MetalType metalType,
+		const WeaponArtifactData *artifactData);
+
 	// Weapon constructor for a weapon type and metal type.
 	Weapon(int weaponID, MetalType metalType, const ExeData &exeData);
 

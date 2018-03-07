@@ -34,8 +34,7 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 	// Create an image for each uncompressed chunk using the given palette.
 	for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
 	{
-		this->chunks.push_back(std::unique_ptr<uint32_t[]>(
-			new uint32_t[SETFile::CHUNK_SIZE]));
+		this->chunks.push_back(std::make_unique<uint32_t[]>(SETFile::CHUNK_SIZE));
 
 		const int byteOffset = SETFile::CHUNK_SIZE * chunkIndex;
 		const auto chunkStart = srcData.begin() + byteOffset;

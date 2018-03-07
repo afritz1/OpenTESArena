@@ -48,8 +48,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->maleTextBox = [&game]()
@@ -66,8 +65,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->femaleTextBox = [&game]()
@@ -84,8 +82,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::unique_ptr<TextBox>(new TextBox(
-			center, richText, game.getRenderer()));
+		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
 	this->backToNameButton = []()

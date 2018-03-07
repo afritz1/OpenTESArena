@@ -118,7 +118,7 @@ public:
 	template <class T, typename... Args>
 	void setPanel(Args&&... args)
 	{
-		this->nextPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
+		this->nextPanel = std::make_unique<T>(std::forward<Args>(args)...);
 	}
 
 	// Non-templated substitute for setPanel(), for when the panel takes considerable
@@ -132,7 +132,7 @@ public:
 	template <class T, typename... Args>
 	void pushSubPanel(Args&&... args)
 	{
-		this->nextSubPanel = std::unique_ptr<Panel>(new T(std::forward<Args>(args)...));
+		this->nextSubPanel = std::make_unique<T>(std::forward<Args>(args)...);
 	}
 
 	// Non-templated substitute for pushSubPanel(), for when the sub-panel takes considerable

@@ -21,9 +21,9 @@ ShieldArtifactData::~ShieldArtifactData()
 
 std::unique_ptr<ArtifactData> ShieldArtifactData::clone() const
 {
-	return std::unique_ptr<ArtifactData>(new ShieldArtifactData(
+	return std::make_unique<ShieldArtifactData>(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getShieldType(), this->getMetalType()));
+		this->getShieldType(), this->getMetalType());
 }
 
 ShieldType ShieldArtifactData::getShieldType() const

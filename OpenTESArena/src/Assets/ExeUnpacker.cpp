@@ -61,7 +61,7 @@ namespace
 					if (node->right.get() == nullptr)
 					{
 						// Make a new node.
-						node->right = std::unique_ptr<BitTree::Node>(new BitTree::Node());
+						node->right = std::make_unique<BitTree::Node>();
 					}
 
 					node = node->right.get();
@@ -72,7 +72,7 @@ namespace
 					if (node->left.get() == nullptr)
 					{
 						// Make a new node.
-						node->left = std::unique_ptr<BitTree::Node>(new BitTree::Node());
+						node->left = std::make_unique<BitTree::Node>();
 					}
 
 					node = node->left.get();
@@ -81,7 +81,7 @@ namespace
 				// Set the node's value if it's the desired leaf.
 				if (i == (bits.size() - 1))
 				{
-					node->value = std::unique_ptr<int>(new int(value));
+					node->value = std::make_unique<int>(value);
 				}
 			}
 		}

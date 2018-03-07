@@ -14,10 +14,11 @@ class MiscellaneousItem : public Item
 {
 private:
 	MiscellaneousItemType miscItemType;
-
+public:
+	// Full constructor (intended for clone()).
 	MiscellaneousItem(MiscellaneousItemType miscItemType,
 		const MiscellaneousArtifactData *artifactData);
-public:
+
 	// Miscellaneous item constructor for a miscellaneous type.
 	MiscellaneousItem(MiscellaneousItemType miscItemType);
 

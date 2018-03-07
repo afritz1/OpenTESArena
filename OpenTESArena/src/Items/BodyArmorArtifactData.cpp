@@ -22,9 +22,9 @@ BodyArmorArtifactData::~BodyArmorArtifactData()
 
 std::unique_ptr<ArtifactData> BodyArmorArtifactData::clone() const
 {
-	return std::unique_ptr<ArtifactData>(new BodyArmorArtifactData(
+	return std::make_unique<BodyArmorArtifactData>(
 		this->getDisplayName(), this->getFlavorText(), this->getProvinceIDs(),
-		this->getArmorMaterial(), this->getBodyPartName()));
+		this->getArmorMaterial(), this->getBodyPartName());
 }
 
 BodyPartName BodyArmorArtifactData::getBodyPartName() const

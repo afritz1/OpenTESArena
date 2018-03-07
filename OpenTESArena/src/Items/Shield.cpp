@@ -62,8 +62,7 @@ Shield::Shield(ShieldType shieldType, MetalType metalType,
 	const ShieldArtifactData *artifactData)
 	: Armor(artifactData)
 {
-	this->armorMaterial = std::unique_ptr<HeavyArmorMaterial>(
-		new HeavyArmorMaterial(metalType));
+	this->armorMaterial = std::make_unique<HeavyArmorMaterial>(metalType);
 	this->shieldType = shieldType;
 }
 
@@ -81,9 +80,9 @@ Shield::~Shield()
 
 std::unique_ptr<Item> Shield::clone() const
 {
-	return std::unique_ptr<Item>(new Shield(this->getShieldType(),
+	return std::make_unique<Shield>(this->getShieldType(),
 		this->armorMaterial->getMetal().getMetalType(),
-		dynamic_cast<const ShieldArtifactData*>(this->getArtifactData())));
+		dynamic_cast<const ShieldArtifactData*>(this->getArtifactData()));
 }
 
 double Shield::getWeight() const

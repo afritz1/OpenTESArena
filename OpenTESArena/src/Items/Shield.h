@@ -29,10 +29,11 @@ class Shield : public Armor // Metallic goes through HeavyArmorMaterial.
 private:
 	std::unique_ptr<HeavyArmorMaterial> armorMaterial;
 	ShieldType shieldType;
-
+public:
+	// Full constructor (intended for clone()).
 	Shield(ShieldType shieldType, MetalType metalType,
 		const ShieldArtifactData *artifactData);
-public:
+
 	// Shield constructor for a shield type and metal type.
 	Shield(ShieldType shieldType, MetalType metalType);
 

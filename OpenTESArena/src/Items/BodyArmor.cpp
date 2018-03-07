@@ -69,9 +69,9 @@ BodyArmor::~BodyArmor()
 
 std::unique_ptr<Item> BodyArmor::clone() const
 {
-	return std::unique_ptr<Item>(new BodyArmor(
+	return std::make_unique<BodyArmor>(
 		this->getPartName(), this->getArmorMaterial(),
-		dynamic_cast<const BodyArmorArtifactData*>(this->getArtifactData())));
+		dynamic_cast<const BodyArmorArtifactData*>(this->getArtifactData()));
 }
 
 double BodyArmor::getWeight() const
