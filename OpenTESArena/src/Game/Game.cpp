@@ -29,7 +29,7 @@
 
 Game::Game()
 {
-	DebugMention("Initializing (Platform: " + std::string(SDL_GetPlatform()) + ").");
+	DebugMention("Initializing (Platform: " + Platform::getPlatform() + ").");
 
 	// Get the current working directory. This is most relevant for platforms
 	// like macOS, where the base path might be in the app's own "Resources" folder.
