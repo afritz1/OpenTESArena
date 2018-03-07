@@ -1,31 +1,31 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ItemType.h"
 #include "Trinket.h"
 #include "TrinketType.h"
 
-const std::map<TrinketType, std::string> TrinketDisplayNames =
+const std::unordered_map<TrinketType, std::string> TrinketDisplayNames =
 {
 	{ TrinketType::Crystal, "Crystal" },
 	{ TrinketType::Mark, "Mark" }
 };
 
 // These values are made up and should be revised sometime.
-const std::map<TrinketType, double> TrinketWeights =
+const std::unordered_map<TrinketType, double> TrinketWeights =
 {
 	{ TrinketType::Crystal, 0.25 },
 	{ TrinketType::Mark, 0.20 }
 };
 
 // These values are made up and should be revised sometime.
-const std::map<TrinketType, int> TrinketGoldValues =
+const std::unordered_map<TrinketType, int> TrinketGoldValues =
 {
 	{ TrinketType::Crystal, 100 },
 	{ TrinketType::Mark, 80 }
 };
 
-const std::map<TrinketType, int> TrinketMaxEquipCounts =
+const std::unordered_map<TrinketType, int> TrinketMaxEquipCounts =
 {
 	{ TrinketType::Crystal, 1 },
 	{ TrinketType::Mark, 1 }

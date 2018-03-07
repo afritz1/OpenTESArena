@@ -1,9 +1,9 @@
-#include <map>
+#include <unordered_map>
 
 #include "CharacterClassCategory.h"
 #include "CharacterClassCategoryName.h"
 
-const std::map<CharacterClassCategoryName, std::string> CharacterClassCategoryDisplayNames =
+const std::unordered_map<CharacterClassCategoryName, std::string> CharacterClassCategoryDisplayNames =
 {
 	{ CharacterClassCategoryName::Mage, "Mage" },
 	{ CharacterClassCategoryName::Thief, "Thief" },

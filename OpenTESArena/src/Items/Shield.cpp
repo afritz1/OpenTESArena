@@ -1,5 +1,5 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ArmorMaterial.h"
 #include "ArmorType.h"
@@ -11,7 +11,7 @@
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
 
-const std::map<ShieldType, std::string> ShieldTypeDisplayNames =
+const std::unordered_map<ShieldType, std::string> ShieldTypeDisplayNames =
 {
 	{ ShieldType::Buckler, "Buckler" },
 	{ ShieldType::Round, "Round Shield" },
@@ -20,7 +20,7 @@ const std::map<ShieldType, std::string> ShieldTypeDisplayNames =
 };
 
 // Using positive armor ratings here. Negate them for 2nd edition rules.
-const std::map<ShieldType, int> ShieldRatings =
+const std::unordered_map<ShieldType, int> ShieldRatings =
 {
 	{ ShieldType::Buckler, 1 },
 	{ ShieldType::Round, 2 },
@@ -30,7 +30,7 @@ const std::map<ShieldType, int> ShieldRatings =
 
 // These numbers are based on iron. They are made up and will probably be revised 
 // at some point.
-const std::map<ShieldType, double> ShieldWeights =
+const std::unordered_map<ShieldType, double> ShieldWeights =
 {
 	{ ShieldType::Buckler, 5.0 },
 	{ ShieldType::Round, 6.0 },
@@ -40,7 +40,7 @@ const std::map<ShieldType, double> ShieldWeights =
 
 // These numbers are based on iron. They are made up and will probably be revised 
 // at some point.
-const std::map<ShieldType, int> ShieldGoldValues =
+const std::unordered_map<ShieldType, int> ShieldGoldValues =
 {
 	{ ShieldType::Buckler, 20 },
 	{ ShieldType::Round, 30 },
@@ -49,7 +49,7 @@ const std::map<ShieldType, int> ShieldGoldValues =
 };
 
 // Shields protect multiple body parts, unlike regular body armor pieces.
-const std::map<ShieldType, std::vector<BodyPartName>> ShieldProtectedBodyParts =
+const std::unordered_map<ShieldType, std::vector<BodyPartName>> ShieldProtectedBodyParts =
 {
 	{ ShieldType::Buckler, { BodyPartName::Hands, BodyPartName::LeftShoulder } },
 	{ ShieldType::Round, { BodyPartName::Hands, BodyPartName::LeftShoulder } },

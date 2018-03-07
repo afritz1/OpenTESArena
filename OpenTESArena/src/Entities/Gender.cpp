@@ -1,9 +1,9 @@
-#include <map>
+#include <unordered_map>
 
 #include "Gender.h"
 #include "GenderName.h"
 
-const std::map<GenderName, std::string> GenderDisplayNames =
+const std::unordered_map<GenderName, std::string> GenderDisplayNames =
 {
 	{ GenderName::Female, "Female" },
 	{ GenderName::Male, "Male" }

@@ -1,7 +1,7 @@
 #ifndef FONT_MANAGER_H
 #define FONT_MANAGER_H
 
-#include <map>
+#include <unordered_map>
 
 #include "Font.h"
 
@@ -13,7 +13,7 @@ enum class FontName;
 class FontManager
 {
 private:
-	std::map<FontName, Font> fonts;
+	std::unordered_map<FontName, Font> fonts;
 public:
 	// Gets a font object using one of the Arena font assets.
 	const Font &getFont(FontName fontName);

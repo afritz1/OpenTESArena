@@ -1,12 +1,12 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ItemType.h"
 #include "MiscellaneousItem.h"
 #include "MiscellaneousItemType.h"
 #include "MiscellaneousArtifactData.h"
 
-const std::map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames =
+const std::unordered_map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames =
 {
 	{ MiscellaneousItemType::Book, "Book" },
 	{ MiscellaneousItemType::Key, "Key" },
@@ -15,7 +15,7 @@ const std::map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames
 };
 
 // These values are made up.
-const std::map<MiscellaneousItemType, double> MiscellaneousItemWeights =
+const std::unordered_map<MiscellaneousItemType, double> MiscellaneousItemWeights =
 {
 	{ MiscellaneousItemType::Book, 0.50 },
 	{ MiscellaneousItemType::Key, 0.10 },
@@ -24,7 +24,7 @@ const std::map<MiscellaneousItemType, double> MiscellaneousItemWeights =
 };
 
 // These values are made up.
-const std::map<MiscellaneousItemType, int> MiscellaneousItemGoldValues =
+const std::unordered_map<MiscellaneousItemType, int> MiscellaneousItemGoldValues =
 {
 	{ MiscellaneousItemType::Book, 0 },
 	{ MiscellaneousItemType::Key, 0 },

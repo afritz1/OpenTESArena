@@ -1,7 +1,7 @@
 #ifndef CHARACTER_EQUIPMENT_H
 #define CHARACTER_EQUIPMENT_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 // A character equipment object is designed for humanoids with a head, chest, two
@@ -37,7 +37,7 @@ class CharacterEquipment
 {
 private:
 	std::vector<Accessory*> accessories;
-	std::map<BodyPartName, BodyArmor*> bodyArmors;
+	std::unordered_map<BodyPartName, BodyArmor*> bodyArmors;
 	Shield *shield;
 	std::vector<Trinket*> trinkets;
 	Weapon *weapon;

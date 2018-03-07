@@ -1,6 +1,6 @@
 #include <fstream>
 #include <iostream>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "SDL_messagebox.h"
@@ -10,7 +10,7 @@
 
 namespace
 {
-	const std::map<Debug::MessageType, std::string> DebugMessageTypeNames =
+	const std::unordered_map<Debug::MessageType, std::string> DebugMessageTypeNames =
 	{
 		{ Debug::MessageType::Info, "" },
 		{ Debug::MessageType::Warning, "Warning: " },

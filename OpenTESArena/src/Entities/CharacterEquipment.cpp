@@ -11,7 +11,7 @@ CharacterEquipment::CharacterEquipment()
 {
 	// Initialize everything to empty.
 	this->accessories = std::vector<Accessory*>();
-	this->bodyArmors = std::map<BodyPartName, BodyArmor*>();
+	this->bodyArmors = std::unordered_map<BodyPartName, BodyArmor*>();
 	this->shield = nullptr;
 	this->trinkets = std::vector<Trinket*>();
 	this->weapon = nullptr;

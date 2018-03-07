@@ -1,5 +1,5 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ArmorType.h"
 #include "ArmorMaterial.h"
@@ -10,7 +10,7 @@
 
 // This uses a body part name as the mapping instead of an armor type because the
 // "Shield" entry would never be used, since it's overridden by the Shield class.
-const std::map<BodyPartName, std::string> BodyArmorDisplayNames =
+const std::unordered_map<BodyPartName, std::string> BodyArmorDisplayNames =
 {
 	{ BodyPartName::Head, "Helm" },
 	{ BodyPartName::LeftShoulder, "Left Pauldron" },
@@ -23,7 +23,7 @@ const std::map<BodyPartName, std::string> BodyArmorDisplayNames =
 
 // These weights are based on iron. They are made up and will need to be revised 
 // to fit the game better.
-const std::map<BodyPartName, double> BodyArmorWeights =
+const std::unordered_map<BodyPartName, double> BodyArmorWeights =
 {
 	{ BodyPartName::Head, 5.0 },
 	{ BodyPartName::LeftShoulder, 6.0 },
@@ -36,7 +36,7 @@ const std::map<BodyPartName, double> BodyArmorWeights =
 
 // These values are based on iron. They are made up and will need to be revised 
 // to fit the game better.
-const std::map<BodyPartName, int> BodyArmorGoldValues =
+const std::unordered_map<BodyPartName, int> BodyArmorGoldValues =
 {
 	{ BodyPartName::Head, 25 },
 	{ BodyPartName::LeftShoulder, 20 },

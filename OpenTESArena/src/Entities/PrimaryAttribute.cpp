@@ -1,11 +1,11 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "AttributeModifierName.h"
 #include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
 
-const std::map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
+const std::unordered_map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
 {
 	{ PrimaryAttributeName::Strength, "Strength" },
 	{ PrimaryAttributeName::Intelligence, "Intelligence" },
@@ -17,7 +17,7 @@ const std::map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
 	{ PrimaryAttributeName::Luck, "Luck" }
 };
 
-const std::map<PrimaryAttributeName, std::vector<AttributeModifierName>> PrimaryAttributeModifierNames =
+const std::unordered_map<PrimaryAttributeName, std::vector<AttributeModifierName>> PrimaryAttributeModifierNames =
 {
 	{ PrimaryAttributeName::Strength, { AttributeModifierName::MeleeDamage } },
 	{ PrimaryAttributeName::Intelligence, { } },

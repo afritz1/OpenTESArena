@@ -1,5 +1,5 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "Accessory.h"
 #include "AccessoryArtifactData.h"
@@ -8,7 +8,7 @@
 #include "Metal.h"
 #include "MetalType.h"
 
-const std::map<AccessoryType, std::string> AccessoryDisplayNames =
+const std::unordered_map<AccessoryType, std::string> AccessoryDisplayNames =
 {
 	{ AccessoryType::Amulet, "Amulet" },
 	{ AccessoryType::Belt, "Belt" },
@@ -21,7 +21,7 @@ const std::map<AccessoryType, std::string> AccessoryDisplayNames =
 // These values are made up. I don't know if accessories have a weight. For a moment,
 // I was confused as to why bracers are an accessory. I guess they aren't an armor
 // because they don't have a particular body part (arms?). Just let it be "anonymous".
-const std::map<AccessoryType, double> AccessoryWeights =
+const std::unordered_map<AccessoryType, double> AccessoryWeights =
 {
 	{ AccessoryType::Amulet, 0.20 },
 	{ AccessoryType::Belt, 0.50 },
@@ -32,7 +32,7 @@ const std::map<AccessoryType, double> AccessoryWeights =
 };
 
 // These values are made up, and are based on iron.
-const std::map<AccessoryType, int> AccessoryGoldValues =
+const std::unordered_map<AccessoryType, int> AccessoryGoldValues =
 {
 	{ AccessoryType::Amulet, 150 },
 	{ AccessoryType::Belt, 30 },
@@ -45,7 +45,7 @@ const std::map<AccessoryType, int> AccessoryGoldValues =
 // Max allowed number of accessories per slot. The original game says only one
 // bracelet and one ring, but I think it would make sense to have a bracelet
 // "on each arm", and at least two rings realistically.
-const std::map<AccessoryType, int> AccessoryMaxEquipCounts =
+const std::unordered_map<AccessoryType, int> AccessoryMaxEquipCounts =
 {
 	{ AccessoryType::Amulet, 1 },
 	{ AccessoryType::Belt, 1 },

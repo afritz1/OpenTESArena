@@ -1,6 +1,6 @@
 #include <cassert>
 #include <cmath>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "SDL.h"
@@ -58,7 +58,7 @@ namespace
 	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
 	// These are offsets from the top-left corner of the 3x3 map pixel that the player 
 	// is in.
-	const std::map<CardinalDirectionName, std::vector<Int2>> AutomapPlayerArrowPatterns =
+	const std::unordered_map<CardinalDirectionName, std::vector<Int2>> AutomapPlayerArrowPatterns =
 	{
 		{ CardinalDirectionName::North, { Int2(1, 0), Int2(0, 1), Int2(2, 1) } },
 		{ CardinalDirectionName::NorthEast, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(2, 1), Int2(2, 2) } },

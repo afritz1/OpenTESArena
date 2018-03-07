@@ -1,10 +1,10 @@
-#include <map>
+#include <unordered_map>
 
 #include "BodyPart.h"
 #include "BodyPartName.h"
 #include "../Items/ArmorType.h"
 
-const std::map<BodyPartName, std::string> BodyPartDisplayNames =
+const std::unordered_map<BodyPartName, std::string> BodyPartDisplayNames =
 {
 	{ BodyPartName::Head, "Head" },
 	{ BodyPartName::LeftShoulder, "Left Shoulder" },
@@ -15,7 +15,7 @@ const std::map<BodyPartName, std::string> BodyPartDisplayNames =
 	{ BodyPartName::Feet, "Feet" }
 };
 
-const std::map<BodyPartName, ArmorType> BodyPartArmors =
+const std::unordered_map<BodyPartName, ArmorType> BodyPartArmors =
 {
 	{ BodyPartName::Head, ArmorType::Helm },
 	{ BodyPartName::LeftShoulder, ArmorType::LeftPauldron },

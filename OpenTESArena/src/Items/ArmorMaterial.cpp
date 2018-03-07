@@ -1,10 +1,10 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ArmorMaterial.h"
 #include "ArmorMaterialType.h"
 
-const std::map<ArmorMaterialType, std::string> ArmorMaterialDisplayNames =
+const std::unordered_map<ArmorMaterialType, std::string> ArmorMaterialDisplayNames =
 {
 	{ ArmorMaterialType::Chain, "Chain" },
 	{ ArmorMaterialType::Leather, "Leather" },

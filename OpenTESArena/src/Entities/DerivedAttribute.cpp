@@ -1,11 +1,11 @@
 #include <algorithm>
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "DerivedAttribute.h"
 #include "DerivedAttributeName.h"
 
-const std::map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
+const std::unordered_map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 {
 	{ DerivedAttributeName::Health, "Health" },
 	{ DerivedAttributeName::SpellPoints, "Spell Points" },

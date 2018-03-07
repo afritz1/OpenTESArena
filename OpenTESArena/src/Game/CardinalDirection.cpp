@@ -1,13 +1,13 @@
 #include <cassert>
 #include <exception>
-#include <map>
+#include <unordered_map>
 
 #include "CardinalDirection.h"
 #include "CardinalDirectionName.h"
 
 // Wikipedia says the intermediate directions don't have a space, so that's the
 // convention I'll use here.
-const std::map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames =
+const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames =
 {
 	{ CardinalDirectionName::North, "North" },
 	{ CardinalDirectionName::NorthEast, "Northeast" },

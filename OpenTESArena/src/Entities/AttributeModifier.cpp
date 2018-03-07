@@ -1,9 +1,9 @@
-#include <map>
+#include <unordered_map>
 
 #include "AttributeModifier.h"
 #include "AttributeModifierName.h"
 
-const std::map<AttributeModifierName, std::string> AttributeModifierDisplayNames =
+const std::unordered_map<AttributeModifierName, std::string> AttributeModifierDisplayNames =
 {
 	{ AttributeModifierName::MeleeDamage, "Melee Damage" },
 	{ AttributeModifierName::MagicDefense, "Magic Defense" },

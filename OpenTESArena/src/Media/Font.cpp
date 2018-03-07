@@ -1,5 +1,5 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "SDL.h"
 
@@ -12,7 +12,7 @@
 
 namespace
 {
-	const std::map<FontName, std::string> FontFilenames =
+	const std::unordered_map<FontName, std::string> FontFilenames =
 	{
 		{ FontName::A, "FONT_A.DAT" },
 		{ FontName::Arena, "ARENAFNT.DAT" },

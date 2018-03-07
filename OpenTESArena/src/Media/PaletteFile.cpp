@@ -1,11 +1,11 @@
-#include <map>
+#include <unordered_map>
 
 #include "PaletteFile.h"
 #include "PaletteName.h"
 
 namespace
 {
-	const std::map<PaletteName, std::string> PaletteFilenames
+	const std::unordered_map<PaletteName, std::string> PaletteFilenames =
 	{
 		{ PaletteName::BuiltIn, "BuiltIn" },
 		{ PaletteName::CharSheet, "CHARSHT.COL" },

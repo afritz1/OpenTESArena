@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "WeaponAnimation.h"
 #include "../Assets/ExeData.h"
@@ -11,7 +11,7 @@
 namespace
 {
 	// Mappings of melee weapon animation states to ranges of frame indices.
-	const std::map<WeaponAnimation::State, std::vector<int>> MeleeAnimationRanges =
+	const std::unordered_map<WeaponAnimation::State, std::vector<int>> MeleeAnimationRanges =
 	{
 		{ WeaponAnimation::State::Sheathed, { } },
 		{ WeaponAnimation::State::Unsheathing, { 30, 31, 32 } },
@@ -26,7 +26,7 @@ namespace
 	};
 
 	// Mappings of fists animation states to ranges of frame indices.
-	const std::map<WeaponAnimation::State, std::vector<int>> FistsAnimationRanges =
+	const std::unordered_map<WeaponAnimation::State, std::vector<int>> FistsAnimationRanges =
 	{
 		{ WeaponAnimation::State::Sheathed, { } },
 		{ WeaponAnimation::State::Unsheathing, { 10, 11, 12 } },
@@ -42,7 +42,7 @@ namespace
 
 	// Mappings of bow animation states to ranges of frame indices. Sheathing and unsheathing
 	// are instantaneous, so they are not stored here.
-	const std::map<WeaponAnimation::State, std::vector<int>> BowAnimationRanges =
+	const std::unordered_map<WeaponAnimation::State, std::vector<int>> BowAnimationRanges =
 	{
 		{ WeaponAnimation::State::Sheathed, { } },
 		{ WeaponAnimation::State::Idle, { 0 } },

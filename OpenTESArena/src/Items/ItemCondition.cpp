@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "ArmorMaterial.h"
 #include "ItemCondition.h"
@@ -14,7 +14,7 @@
 // the manual for instance, so I'm remaking them anew with reasonable values.
 // They are of course placeholders.
 
-const std::map<ItemConditionName, std::string> ItemConditionDisplayNames =
+const std::unordered_map<ItemConditionName, std::string> ItemConditionDisplayNames =
 {
 	{ ItemConditionName::New, "New" },
 	{ ItemConditionName::AlmostNew, "Almost New" },

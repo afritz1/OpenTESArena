@@ -1,10 +1,10 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 
 #include "Metal.h"
 #include "MetalType.h"
 
-const std::map<MetalType, std::string> MetalTypeDisplayNames =
+const std::unordered_map<MetalType, std::string> MetalTypeDisplayNames =
 {
 	{ MetalType::Iron, "Iron" },
 	{ MetalType::Steel, "Steel" },
@@ -17,7 +17,7 @@ const std::map<MetalType, std::string> MetalTypeDisplayNames =
 };
 
 // Negate the modifiers for armor rating if the 2nd edition D&D rules are being used.
-const std::map<MetalType, int> MetalRatingModifiers =
+const std::unordered_map<MetalType, int> MetalRatingModifiers =
 {
 	{ MetalType::Iron, -1 },
 	{ MetalType::Steel, 0 },
@@ -31,7 +31,7 @@ const std::map<MetalType, int> MetalRatingModifiers =
 
 // Multiplier for extra metal strength. From this table, an ebony item lasts
 // three times longer than its equivalent iron, steel, or silver item.
-const std::map<MetalType, int> MetalConditionMultipliers =
+const std::unordered_map<MetalType, int> MetalConditionMultipliers =
 {
 	{ MetalType::Iron, 1 },
 	{ MetalType::Steel, 1 },
@@ -45,7 +45,7 @@ const std::map<MetalType, int> MetalConditionMultipliers =
 
 // Multipliers for changing weight based on the type of metal. These values are
 // made up and are subject to change.
-const std::map<MetalType, double> MetalWeightMultipliers =
+const std::unordered_map<MetalType, double> MetalWeightMultipliers =
 {
 	{ MetalType::Iron, 1.15 },
 	{ MetalType::Steel, 1.0 },

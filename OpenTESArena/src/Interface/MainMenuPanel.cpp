@@ -1,5 +1,5 @@
 #include <cassert>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "SDL.h"
@@ -323,7 +323,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					(worldType == WorldType::Wilderness))
 				{
 					// Get weather-associated music.
-					const std::map<WeatherType, MusicName> WeatherMusics =
+					const std::unordered_map<WeatherType, MusicName> WeatherMusics =
 					{
 						{ WeatherType::Clear, MusicName::SunnyDay },
 						{ WeatherType::Overcast, MusicName::Overcast },
