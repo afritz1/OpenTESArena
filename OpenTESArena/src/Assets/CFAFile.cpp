@@ -64,7 +64,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 		frames.push_back(std::vector<uint8_t>(widthUncompressed * height));
 
 		// Destination buffer for the frame's decompressed palette indices.
-		std::vector<uint8_t> &dst = frames.at(frames.size() - 1);
+		std::vector<uint8_t> &dst = frames.back();
 		uint32_t dstOffset = 0;
 
 		for (uint32_t y = 0; y < height; y++)
@@ -147,8 +147,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	for (const auto &frame : frames)
 	{
 		this->pixels.push_back(std::make_unique<uint32_t[]>(this->width * this->height));
-
-		uint32_t *pixels = this->pixels.at(this->pixels.size() - 1).get();
+		uint32_t *pixels = this->pixels.back().get();
 
 		std::transform(frame.begin(), frame.begin() + frame.size(), pixels,
 			[&palette](uint8_t col) -> uint32_t

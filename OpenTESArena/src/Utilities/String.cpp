@@ -20,7 +20,7 @@ std::vector<std::string> String::split(const std::string &str, char separator)
 		else
 		{
 			// Put the character on the end of the current string.
-			strings.at(strings.size() - 1).push_back(c);
+			strings.back().push_back(c);
 		}
 	}
 

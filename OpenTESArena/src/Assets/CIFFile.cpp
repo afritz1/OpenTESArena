@@ -86,7 +86,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = decomp.data();
-			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+			uint32_t *dstPixels = this->pixels.back().get();
 
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
@@ -120,7 +120,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = decomp.data();
-			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+			uint32_t *dstPixels = this->pixels.back().get();
 
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
@@ -157,7 +157,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = decomp.data();
-			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+			uint32_t *dstPixels = this->pixels.back().get();
 
 			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
 				[&palette](uint8_t col) -> uint32_t
@@ -180,7 +180,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = srcData.data() + (len * i);
-			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+			uint32_t *dstPixels = this->pixels.back().get();
 
 			std::transform(imagePixels, imagePixels + len, dstPixels,
 				[&palette](uint8_t col) -> uint32_t
@@ -210,7 +210,7 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			this->dimensions.push_back(Int2(width, height));
 
 			const uint8_t *imagePixels = header + headerSize;
-			uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+			uint32_t *dstPixels = this->pixels.back().get();
 
 			std::transform(imagePixels, imagePixels + len, dstPixels,
 				[&palette](uint8_t col) -> uint32_t

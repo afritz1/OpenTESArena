@@ -30,12 +30,12 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 
 	// Uncompress the initial frame.
 	frames.push_back(std::vector<uint8_t>(width * height));
-	Compression::decodeRLE(srcData.data() + 12, width * height, frames.at(0));
+	Compression::decodeRLE(srcData.data() + 12, width * height, frames.front());
 
 	// Make copies of the original frame for each update chunk.
 	for (int i = 1; i < imageCount; i++)
 	{
-		frames.push_back(frames.at(0));
+		frames.push_back(frames.front());
 	}
 
 	// Offset to the beginning of the chunk data; advances as the chunk data is read.
@@ -81,8 +81,7 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	for (const auto &frame : frames)
 	{
 		this->pixels.push_back(std::make_unique<uint32_t[]>(this->width * this->height));
-
-		uint32_t *dstPixels = this->pixels.at(this->pixels.size() - 1).get();
+		uint32_t *dstPixels = this->pixels.back().get();
 
 		std::transform(frame.begin(), frame.begin() + frame.size(), dstPixels,
 			[&palette](uint8_t col) -> uint32_t

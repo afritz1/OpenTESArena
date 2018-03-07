@@ -87,13 +87,13 @@ void MiscAssets::parseTemplateDat()
 				// Clean up the text first so the caller has to do less.
 				value = String::replace(value, '\r', '\n');
 
-				while ((value.size() > 0) && (value.at(value.size() - 1) == '\n'))
+				while ((value.size() > 0) && (value.back() == '\n'))
 				{
 					value.pop_back();
 				}
 
 				// Remove the annoying ampersand at the end of most texts.
-				if ((value.size() > 0) && (value.at(value.size() - 1) == '&'))
+				if ((value.size() > 0) && (value.back() == '&'))
 				{
 					value.pop_back();
 				}
@@ -474,7 +474,7 @@ void MiscAssets::parseDungeonTxt()
 		if (line.at(0) == poundSign)
 		{
 			// Remove the newline from the end of the description.
-			if (description.at(description.size() - 1) == '\n')
+			if (description.back() == '\n')
 			{
 				description.pop_back();
 			}
