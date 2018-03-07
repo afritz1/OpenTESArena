@@ -2,6 +2,7 @@
 
 #ifdef HAVE_WILDMIDI
 
+#include <array>
 #include <cassert>
 
 #include "../Utilities/Debug.h"
@@ -89,26 +90,27 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 		return MidiSongPtr(nullptr);
 
 	VFS::IStreamPtr fstream = VFS::Manager::get().open(name.c_str());
-	if (!fstream)
+	if (fstream == nullptr)
 	{
-		std::cerr << "Failed to open resource " << name << std::endl;
+		DebugWarning("Failed to open \"" + name + "\".");
 		return MidiSongPtr(nullptr);
 	}
 
 	/* Read the file into a buffer through the VFS, as it may be in an archive
 	 * that WildMidi can't read from.
 	 */
-	std::vector<char> midibuf;
+	std::vector<char> midiBuffer;
 	while (fstream->good())
 	{
-		char readbuf[1024];
-		fstream->read(readbuf, sizeof(readbuf));
-		midibuf.insert(midibuf.end(), readbuf, readbuf + fstream->gcount());
+		std::array<char, 1024> readBuffer;
+		fstream->read(readBuffer.data(), readBuffer.size());
+		midiBuffer.insert(midiBuffer.end(), readBuffer.begin(),
+			readBuffer.begin() + fstream->gcount());
 	}
 
 	midi *song = WildMidi_OpenBuffer(
-		reinterpret_cast<unsigned char*>(midibuf.data()), 
-		static_cast<unsigned long>(midibuf.size()));
+		reinterpret_cast<unsigned char*>(midiBuffer.data()),
+		static_cast<unsigned long>(midiBuffer.size()));
 
 	return (song != nullptr) ? std::make_unique<WildMidiSong>(song) : nullptr;
 }
