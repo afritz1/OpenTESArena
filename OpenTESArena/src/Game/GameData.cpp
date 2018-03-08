@@ -9,6 +9,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Assets/RMDFile.h"
 #include "../Entities/Animation.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Doodad.h"
@@ -173,6 +174,12 @@ void GameData::loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDu
 void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
 	const CityDataFile &cityData, TextureManager &textureManager, Renderer &renderer)
 {
+	// Verify that the wilderness block coordinates are valid (0..63).
+	DebugAssert((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
+		"Wild block X \"" + std::to_string(wildBlockX) + "\" out of range.");
+	DebugAssert((wildBlockY >= 0) && (wildBlockY < RMDFile::DEPTH),
+		"Wild block Y \"" + std::to_string(wildBlockY) + "\" out of range.");
+
 	// Generate wilderness dungeon seed.
 	const uint32_t wildDungeonSeed = cityData.getWildernessDungeonSeed(
 		provinceID, wildBlockX, wildBlockY);

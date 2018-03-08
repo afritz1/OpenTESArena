@@ -15,6 +15,7 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
+#include "../Assets/RMDFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
@@ -302,8 +303,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 					else if (mifName == RandomWildDungeon)
 					{
-						const int wildBlockX = random.next(4096);
-						const int wildBlockY = random.next(4096);
+						const int wildBlockX = random.next(RMDFile::WIDTH);
+						const int wildBlockY = random.next(RMDFile::DEPTH);
 						gameData->loadWildernessDungeon(provinceID, wildBlockX, wildBlockY,
 							miscAssets.getCityDataFile(), game.getTextureManager(), renderer);
 					}
