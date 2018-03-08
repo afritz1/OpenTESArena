@@ -74,8 +74,9 @@ ExampleClass::~ExampleClass()
 We're using C++14, so we regularly use all of the nice features like:
 - `std::array`, `std::string`, `std::unique_ptr`, `std::unordered_map`, `std::vector`
 - `nullptr`
-- Enum classes
+- `enum class`
 - Lambdas
+- Standard library functions (`std::count()`, `std::find()`, `std::sort()`, etc.)
 - Bounds-checking (i.e., `std::vector::at()`)
 - `auto` (only for really long names. It's usually better to just write the type anyway)
 - Range-based for loops (i.e., `for (const auto &obj : someVector)`)
@@ -84,10 +85,10 @@ We're using C++14, so we regularly use all of the nice features like:
 #### Other Notes
 - Prefer pure functions and immutable data.
 - Avoid mutable globals and static variables.
-- `new` and `delete` should never be necessary. `std::make_unique<T>()` takes care of that for us.
+- `new` and `delete` should never be necessary. `std::make_unique` takes care of that for us.
 - Use post-increment (`i++`) everywhere except with iterators, in which case use pre-increment (`++iter`) to avoid unnecessary copies.
-- Code should work in both 32-bit and 64-bit, and on Windows and Linux (fortunately, SDL2 and the C++14 standard library take care of a lot of this for us).
-- Alphabetize each group of header includes. This makes it much easier to find the one you're looking for (via binary search!).
+- Code should work in both 32-bit and 64-bit, and on Windows, Linux, and macOS (fortunately, SDL2 and the C++14 standard library take care of a lot of this for us).
+- Alphabetize each group of header includes. This makes it much easier to find the one you're looking for (via binary search!). Code is read much more often than it is written.
 - Personally, I use `this` for accessing class members. It is very convenient to use with Visual Studio's auto-complete, it keeps local variables unambiguous, and I've never needed to mangle the names of class members with sigils.
 - Follow the formatting of nearby code (i.e., if it uses tabs instead of spaces, then use tabs).
 
