@@ -71,7 +71,7 @@ ExampleClass::~ExampleClass()
 ```
 
 ### Coding Style
-We're using C++11, so we regularly use all of the nice features like:
+We're using C++14, so we regularly use all of the nice features like:
 - `std::array`, `std::string`, `std::unique_ptr`, `std::unordered_map`, `std::vector`
 - `nullptr`
 - Enum classes
@@ -79,21 +79,21 @@ We're using C++11, so we regularly use all of the nice features like:
 - Bounds-checking (i.e., `std::vector::at()`)
 - `auto` (only for really long names. It's usually better to just write the type anyway)
 - Range-based for loops (i.e., `for (const auto &obj : someVector)`)
-- Move semantics via `std::move()` (usually just for `std::unique_ptr`)
+- Move semantics via `std::move()`
 
 #### Other Notes
 - Prefer pure functions and immutable data.
 - Avoid mutable globals and static variables.
-- Don't use `new` without `std::unique_ptr`. `delete` should never be necessary.
+- `new` and `delete` should never be necessary. `std::make_unique<T>()` takes care of that for us.
 - Use post-increment (`i++`) everywhere except with iterators, in which case use pre-increment (`++iter`) to avoid unnecessary copies.
-- Code should work in both 32-bit and 64-bit, and on Windows and Linux (fortunately, SDL2 and the C++11 standard library take care of a lot of this for us).
+- Code should work in both 32-bit and 64-bit, and on Windows and Linux (fortunately, SDL2 and the C++14 standard library take care of a lot of this for us).
 - Alphabetize each group of header includes. This makes it much easier to find the one you're looking for (via binary search!).
 - Personally, I use `this` for accessing class members. It is very convenient to use with Visual Studio's auto-complete, it keeps local variables unambiguous, and I've never needed to mangle the names of class members with sigils.
 - Follow the formatting of nearby code (i.e., if it uses tabs instead of spaces, then use tabs).
 
 ### My Development Environment
 - Windows 7 x64
-- Visual Studio 2015
+- Visual Studio 2017
 - CMake GUI
 - GitHub Desktop for Windows
 - DOSBox
