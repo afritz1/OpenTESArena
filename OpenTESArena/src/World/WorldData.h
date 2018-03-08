@@ -50,6 +50,10 @@ public:
 	// Loads all levels of an interior .MIF file.
 	static WorldData loadInterior(const MIFFile &mif);
 
+	// Loads a set of levels randomly selected from RANDOM1.MIF based on the given seed.
+	static WorldData loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
+		bool isArtifactDungeon);
+
 	// Loads a premade exterior city (only used by center province).
 	static WorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 		WeatherType weatherType);

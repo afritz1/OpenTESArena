@@ -42,6 +42,7 @@ public:
 
 	static const int MAX;
 
+	uint32_t getSeed() const;
 	int next();
 	void srand(uint32_t seed);
 };

@@ -45,11 +45,12 @@
 
 namespace
 {
-	const int MaxTestTypes = 4;
+	const int MaxTestTypes = 5;
 	const int TestType_MainQuest = 0;
 	const int TestType_Interior = 1;
 	const int TestType_City = 2;
 	const int TestType_Wilderness = 3;
+	const int TestType_Dungeon = 4;
 
 	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
 
@@ -100,6 +101,14 @@ namespace
 	const std::vector<std::string> WildernessLocations =
 	{
 		"WILD.MIF"
+	};
+
+	const std::string RandomNamedDungeon = "Random Named";
+	const std::string RandomWildDungeon = "Random Wild";
+	const std::vector<std::string> DungeonLocations =
+	{
+		RandomNamedDungeon,
+		RandomWildDungeon
 	};
 
 	// Values for testing.
@@ -255,26 +264,54 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			}
 			else if (worldType == WorldType::Interior)
 			{
-				const MIFFile mif(mifName);
-
-				// Set some arbitrary interior location data for testing, depending on
-				// whether it's a main quest dungeon.
-				const Location location = [testType, &gameData]()
+				if (testType != TestType_Dungeon)
 				{
-					const Player &player = gameData->getPlayer();
-					if (testType == TestType_MainQuest)
+					const MIFFile mif(mifName);
+
+					// Set some arbitrary interior location data for testing, depending on
+					// whether it's a main quest dungeon.
+					const Location location = [testType, &gameData]()
 					{
-						return Location("Test Main Quest", player.getRaceID(),
-							LocationType::Dungeon, ClimateType::Temperate);
+						const Player &player = gameData->getPlayer();
+						if (testType == TestType_MainQuest)
+						{
+							return Location("Test Main Quest", player.getRaceID(),
+								LocationType::Dungeon, ClimateType::Temperate);
+						}
+						else
+						{
+							return Location("Test Interior", player.getRaceID(),
+								LocationType::CityState, ClimateType::Temperate);
+						}
+					}();
+
+					gameData->loadInterior(mif, location, game.getTextureManager(), renderer);
+				}
+				else
+				{
+					// Pick a random dungeon based on the dungeon type.
+					Random random;
+					const int provinceID = random.next(8);
+					const bool isArtifactDungeon = false;
+
+					if (mifName == RandomNamedDungeon)
+					{
+						const int dungeonID = 2 + random.next(14);
+						gameData->loadNamedDungeon(dungeonID, provinceID, isArtifactDungeon,
+							miscAssets, game.getTextureManager(), renderer);
+					}
+					else if (mifName == RandomWildDungeon)
+					{
+						const int wildBlockX = random.next(4096);
+						const int wildBlockY = random.next(4096);
+						gameData->loadWildernessDungeon(provinceID, wildBlockX, wildBlockY,
+							miscAssets.getCityDataFile(), game.getTextureManager(), renderer);
 					}
 					else
 					{
-						return Location("Test Interior", player.getRaceID(),
-							LocationType::CityState, ClimateType::Temperate);
+						DebugCrash("Unrecognized dungeon type \"" + mifName + "\".");
 					}
-				}();
-
-				gameData->loadInterior(mif, location, game.getTextureManager(), renderer);				
+				}
 			}
 			else if (worldType == WorldType::Wilderness)
 			{
@@ -482,9 +519,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					return static_cast<int>(CityLocations.size());
 				}
-				else
+				else if (panel.testType == TestType_Wilderness)
 				{
 					return static_cast<int>(WildernessLocations.size());
+				}
+				else
+				{
+					return static_cast<int>(DungeonLocations.size());
 				}
 			}();
 
@@ -522,9 +563,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					return static_cast<int>(CityLocations.size());
 				}
-				else
+				else if (panel.testType == TestType_Wilderness)
 				{
 					return static_cast<int>(WildernessLocations.size());
+				}
+				else
+				{
+					return static_cast<int>(DungeonLocations.size());
 				}
 			}();
 
@@ -710,9 +755,13 @@ std::string MainMenuPanel::getSelectedTestName() const
 	{
 		return CityLocations.at(this->testIndex);
 	}
-	else
+	else if (this->testType == TestType_Wilderness)
 	{
 		return WildernessLocations.at(this->testIndex);
+	}
+	else
+	{
+		return DungeonLocations.at(this->testIndex);
 	}
 }
 
@@ -729,7 +778,8 @@ WeatherType MainMenuPanel::getSelectedTestWeatherType() const
 WorldType MainMenuPanel::getSelectedTestWorldType() const
 {
 	if ((this->testType == TestType_MainQuest) ||
-		(this->testType == TestType_Interior))
+		(this->testType == TestType_Interior) ||
+		(this->testType == TestType_Dungeon))
 	{
 		return WorldType::Interior;
 	}
@@ -962,9 +1012,13 @@ void MainMenuPanel::render(Renderer &renderer)
 		{
 			return "City";
 		}
-		else
+		else if (this->testType == TestType_Wilderness)
 		{
 			return "Wilderness";
+		}
+		else
+		{
+			return "Dungeon";
 		}
 	}();
 

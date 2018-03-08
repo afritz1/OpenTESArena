@@ -53,6 +53,11 @@ ArenaRandom::~ArenaRandom()
 
 }
 
+uint32_t ArenaRandom::getSeed() const
+{
+	return this->value;
+}
+
 int ArenaRandom::next()
 {
 	this->value *= 7143469;

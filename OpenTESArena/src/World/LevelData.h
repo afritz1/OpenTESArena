@@ -43,6 +43,7 @@ namespace std
 	};
 }
 
+class ArenaRandom;
 class INFFile;
 
 class LevelData
@@ -111,6 +112,12 @@ public:
 
 	// Interior level. The .INF is obtained from the level's info member.
 	static LevelData loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth);
+
+	// Dungeon level. Each chunk is determined by an "inner seed" which depends on the
+	// dungeon level count being calculated beforehand.
+	static LevelData loadDungeon(ArenaRandom &random, const std::vector<MIFFile::Level> &levels,
+		int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
+		const INFFile &inf, int gridWidth, int gridDepth);
 
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
 	static LevelData loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,

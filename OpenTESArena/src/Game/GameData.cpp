@@ -37,6 +37,8 @@
 // The value used in Arena is one real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;
 
+const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
+
 GameData::GameData(Player &&player)	
 	: player(std::move(player)), triggerText(0.0, nullptr), actionText(0.0, nullptr),
 	effectText(0.0, nullptr)
@@ -123,7 +125,82 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	renderer.setSkyPalette(&skyColor, 1);
 
 	// Arbitrary interior weather and fog.
-	const double fogDistance = 25.0;
+	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	this->weatherType = WeatherType::Clear;
+	this->fogDistance = fogDistance;
+	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDungeon,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+{
+	// Dungeon ID must be for a named dungeon, not main quest dungeon.
+	DebugAssert(dungeonID >= 2, "Dungeon ID \"" + std::to_string(dungeonID) +
+		"\" must not be for main quest dungeon.");
+
+	// Generate dungeon seed.
+	const auto &cityData = miscAssets.getCityDataFile();
+	const uint32_t dungeonSeed = cityData.getDungeonSeed(dungeonID, provinceID);
+
+	// Call dungeon WorldData loader with parameters specific to named dungeons.
+	const int widthChunks = 2;
+	const int depthChunks = 1;
+	this->worldData = WorldData::loadDungeon(
+		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+
+	// Set player starting position.
+	const Double2 &startPoint = this->worldData.getStartPoints().front();
+	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+
+	// Set location.
+	this->location.locationType = LocationType::Dungeon;
+	this->location.provinceID = provinceID;
+	this->location.name = "Test Named Dungeon";
+
+	// Set interior sky palette.
+	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const uint32_t skyColor = level.getInteriorSkyColor();
+	renderer.setSkyPalette(&skyColor, 1);
+
+	// Arbitrary interior weather and fog.
+	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	this->weatherType = WeatherType::Clear;
+	this->fogDistance = fogDistance;
+	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
+	const CityDataFile &cityData, TextureManager &textureManager, Renderer &renderer)
+{
+	// Generate wilderness dungeon seed.
+	const uint32_t wildDungeonSeed = cityData.getWildernessDungeonSeed(
+		provinceID, wildBlockX, wildBlockY);
+
+	// Call dungeon WorldData loader with parameters specific to wilderness dungeons.
+	const int widthChunks = 2;
+	const int depthChunks = 2;
+	const bool isArtifactDungeon = false;
+	this->worldData = WorldData::loadDungeon(
+		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+
+	// Set player starting position.
+	const Double2 &startPoint = this->worldData.getStartPoints().front();
+	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+
+	// Set location.
+	this->location.locationType = LocationType::Dungeon;
+	this->location.provinceID = provinceID;
+	this->location.name = "Test Wild Dungeon";
+
+	// Set interior sky palette.
+	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const uint32_t skyColor = level.getInteriorSkyColor();
+	renderer.setSkyPalette(&skyColor, 1);
+
+	// Arbitrary interior weather and fog.
+	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);

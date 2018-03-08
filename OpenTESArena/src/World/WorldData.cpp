@@ -11,6 +11,7 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
+#include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
@@ -163,6 +164,86 @@ WorldData WorldData::loadInterior(const MIFFile &mif)
 	}
 
 	worldData.currentLevel = mif.getStartingLevelIndex();
+	worldData.worldType = WorldType::Interior;
+	worldData.mifName = mif.getName();
+
+	return worldData;
+}
+
+WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
+	bool isArtifactDungeon)
+{
+	// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
+	const MIFFile mif("RANDOM1.MIF");
+
+	ArenaRandom random(seed);
+
+	// Number of levels in the dungeon.
+	const int levelCount = [isArtifactDungeon, &random]()
+	{
+		if (isArtifactDungeon)
+		{
+			return 4;
+		}
+		else
+		{
+			return 1 + (random.next() % 2);
+		}
+	}();
+
+	// Store the seed for later, to be used with block selection.
+	const uint32_t seed2 = random.getSeed();
+
+	// Determine transition blocks (*LEVELUP, *LEVELDOWN).
+	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
+	{
+		const int tY = random.next() % depthChunks;
+		const int tX = random.next() % widthChunks;
+		return (10 * tY) + tX;
+	};
+
+	// Handle initial case where transitions list is empty (for i == 0).
+	std::vector<int> transitions;
+	transitions.push_back(getNextTransBlock());
+
+	for (int i = 1; i < levelCount; i++)
+	{
+		int transBlock = getNextTransBlock();
+		while (transBlock == transitions.back())
+		{
+			transBlock = getNextTransBlock();
+		}
+
+		transitions.push_back(transBlock);
+	}
+
+	// .INF file for each level is the same (RD1.INF).
+	const std::string infName = String::toUppercase(mif.getLevels().front().info);
+	const INFFile inf(infName);
+
+	WorldData worldData;
+
+	// Generate each level, deciding which dungeon blocks to use.
+	for (int i = 0; i < levelCount; i++)
+	{
+		random.srand(seed2 + i);
+		const int levelUpBlock = transitions.at(i);
+
+		// No *LEVELDOWN block on the lowest level.
+		const int *levelDownBlock = (i < (levelCount - 1)) ?
+			(&transitions.at(i + 1)) : nullptr;
+
+		worldData.levels.push_back(LevelData::loadDungeon(
+			random, mif.getLevels(), levelUpBlock, levelDownBlock, widthChunks,
+			depthChunks, inf, mif.getDepth() * depthChunks, mif.getWidth() * widthChunks));
+	}
+
+	// Convert the start point from the old coordinate system to the new one.
+	const Double2 &startPoint = mif.getStartPoints().front();
+	worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
+		startPoint, mif.getDepth(), mif.getWidth()));
+
+	worldData.currentLevel = 0;
 	worldData.worldType = WorldType::Interior;
 	worldData.mifName = mif.getName();
 

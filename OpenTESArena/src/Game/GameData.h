@@ -43,6 +43,9 @@ private:
 	// scale is 5.0, then each real-time second is five game seconds, etc..
 	static const double TIME_SCALE;
 
+	// Arbitrary value for interior fog distance (mostly for testing purposes).
+	static const double DEFAULT_INTERIOR_FOG_DIST;
+
 	std::unordered_map<Int2, std::string> textTriggers, soundTriggers;
 
 	// Game world interface display texts with their associated time remaining. These values 
@@ -79,6 +82,16 @@ public:
 	// Reads in data from an interior .MIF file and writes it to the game data.
 	void loadInterior(const MIFFile &mif, const Location &location, TextureManager &textureManager,
 		Renderer &renderer);
+
+	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
+	// to the game data. This modifies the current map location.
+	void loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDungeon,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+
+	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
+	// game data. This does not modify the current map location.
+	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
+		const CityDataFile &cityData, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).

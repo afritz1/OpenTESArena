@@ -128,6 +128,86 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 	return levelData;
 }
 
+LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile::Level> &levels,
+	int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
+	const INFFile &inf, int gridWidth, int gridDepth)
+{
+	// Create temp buffers for dungeon voxel data.
+	std::vector<uint16_t> tempFlor(gridWidth * gridDepth, 0);
+	std::vector<uint16_t> tempMap1(gridWidth * gridDepth, 0);
+
+	const int chunkDim = 32;
+	const int tileSet = random.next() % 4;
+
+	for (int row = 0; row < depthChunks; row++)
+	{
+		const int dZ = row * chunkDim;
+		for (int column = 0; column < widthChunks; column++)
+		{
+			const int dX = column * chunkDim;
+
+			// Get the selected level from the .MIF file.
+			const int blockIndex = (tileSet * 8) + (random.next() % 8);
+			const auto &blockLevel = levels.at(blockIndex);
+
+			// Copy block data to temp buffers.
+			for (int z = 0; z < chunkDim; z++)
+			{
+				const int srcIndex = z * chunkDim;
+				const int dstIndex = dX + ((z + dZ) * gridDepth);
+
+				auto writeRow = [chunkDim, srcIndex, dstIndex](
+					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+				{
+					const auto srcBegin = src.begin() + srcIndex;
+					const auto srcEnd = srcBegin + chunkDim;
+					const auto dstBegin = dst.begin() + dstIndex;
+					std::copy(srcBegin, srcEnd, dstBegin);
+				};
+
+				writeRow(blockLevel.flor, tempFlor);
+				writeRow(blockLevel.map1, tempMap1);
+			}
+
+			// To do: Assign locks?
+
+			// To do: Assign text/sound triggers.
+		}
+	}
+
+	// Draw perimeter blocks. First top and bottom, then right and left.
+	const uint16_t perimeterVoxel = 0x7800;
+	std::fill(tempMap1.begin(), tempMap1.begin() + gridDepth, perimeterVoxel);
+	std::fill(tempMap1.rbegin(), tempMap1.rbegin() + gridDepth, perimeterVoxel);
+
+	for (int z = 1; z < (gridWidth - 1); z++)
+	{
+		tempMap1.at(z * gridDepth) = perimeterVoxel;
+		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
+	}
+
+	// To do: Put transition blocks, unless null.
+
+	// Dungeon (either named or in wilderness).
+	LevelData levelData(gridWidth, 3, gridDepth);
+	levelData.infName = inf.getName();
+	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+	levelData.outdoorDungeon = false;
+
+	// Interior sky color (always black for dungeons).
+	levelData.interiorSkyColor = std::make_unique<uint32_t>(Color::Black.toARGB());
+	
+	// Empty voxel data (for air).
+	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+
+	// Load FLOR, MAP1, and ceiling into the voxel grid.
+	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, gridWidth, gridDepth);
+	levelData.readCeiling(inf, gridWidth, gridDepth);
+
+	return levelData;
+}
+
 LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
 	int gridWidth, int gridDepth)
 {
