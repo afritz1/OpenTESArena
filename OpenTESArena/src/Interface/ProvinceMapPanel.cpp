@@ -31,6 +31,19 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<ProvinceButtonName>
+	{
+		size_t operator()(const ProvinceButtonName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =

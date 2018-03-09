@@ -39,6 +39,19 @@ enum class OptionName
 	ShowCompass
 };
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<OptionName>
+	{
+		size_t operator()(const OptionName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 class Options
 {
 private:

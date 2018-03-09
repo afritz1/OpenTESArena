@@ -8,6 +8,19 @@
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<BodyPartName>
+	{
+		size_t operator()(const BodyPartName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 // This uses a body part name as the mapping instead of an armor type because the
 // "Shield" entry would never be used, since it's overridden by the Shield class.
 const std::unordered_map<BodyPartName, std::string> BodyArmorDisplayNames =

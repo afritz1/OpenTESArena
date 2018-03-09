@@ -3,6 +3,19 @@
 #include "MusicFile.h"
 #include "MusicName.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<MusicName>
+	{
+		size_t operator()(const MusicName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	// Each MusicName has a corresponding filename. Interestingly, it seems Arena

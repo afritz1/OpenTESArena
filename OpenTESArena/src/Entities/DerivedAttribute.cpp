@@ -5,6 +5,19 @@
 #include "DerivedAttribute.h"
 #include "DerivedAttributeName.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<DerivedAttributeName>
+	{
+		size_t operator()(const DerivedAttributeName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 const std::unordered_map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 {
 	{ DerivedAttributeName::Health, "Health" },

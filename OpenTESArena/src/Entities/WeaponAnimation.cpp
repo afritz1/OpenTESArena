@@ -8,6 +8,19 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<WeaponAnimation::State>
+	{
+		size_t operator()(const WeaponAnimation::State &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	// Mappings of melee weapon animation states to ranges of frame indices.

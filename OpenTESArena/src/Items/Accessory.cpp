@@ -8,6 +8,19 @@
 #include "Metal.h"
 #include "MetalType.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<AccessoryType>
+	{
+		size_t operator()(const AccessoryType &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 const std::unordered_map<AccessoryType, std::string> AccessoryDisplayNames =
 {
 	{ AccessoryType::Amulet, "Amulet" },

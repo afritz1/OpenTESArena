@@ -5,6 +5,19 @@
 #include "Trinket.h"
 #include "TrinketType.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<TrinketType>
+	{
+		size_t operator()(const TrinketType &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 const std::unordered_map<TrinketType, std::string> TrinketDisplayNames =
 {
 	{ TrinketType::Crystal, "Crystal" },

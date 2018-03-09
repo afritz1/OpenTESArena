@@ -4,6 +4,19 @@
 #include "BodyPartName.h"
 #include "../Items/ArmorType.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<BodyPartName>
+	{
+		size_t operator()(const BodyPartName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 const std::unordered_map<BodyPartName, std::string> BodyPartDisplayNames =
 {
 	{ BodyPartName::Head, "Head" },

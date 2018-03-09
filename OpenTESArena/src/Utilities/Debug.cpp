@@ -8,6 +8,19 @@
 #include "Debug.h"
 #include "String.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<Debug::MessageType>
+	{
+		size_t operator()(const Debug::MessageType &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	const std::unordered_map<Debug::MessageType, std::string> DebugMessageTypeNames =

@@ -33,6 +33,19 @@ enum class ArmorType;
 enum class BodyPartName;
 enum class TrinketType;
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<BodyPartName>
+	{
+		size_t operator()(const BodyPartName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 class CharacterEquipment
 {
 private:

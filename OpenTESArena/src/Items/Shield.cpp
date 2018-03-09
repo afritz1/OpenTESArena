@@ -11,6 +11,19 @@
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<ShieldType>
+	{
+		size_t operator()(const ShieldType &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 const std::unordered_map<ShieldType, std::string> ShieldTypeDisplayNames =
 {
 	{ ShieldType::Buckler, "Buckler" },

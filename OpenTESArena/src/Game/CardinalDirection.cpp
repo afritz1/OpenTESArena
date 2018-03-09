@@ -5,6 +5,19 @@
 #include "CardinalDirection.h"
 #include "CardinalDirectionName.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<CardinalDirectionName>
+	{
+		size_t operator()(const CardinalDirectionName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 // Wikipedia says the intermediate directions don't have a space, so that's the
 // convention I'll use here.
 const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDisplayNames =

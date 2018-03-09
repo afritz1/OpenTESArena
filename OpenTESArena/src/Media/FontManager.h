@@ -10,6 +10,19 @@
 
 enum class FontName;
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<FontName>
+	{
+		size_t operator()(const FontName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 class FontManager
 {
 private:

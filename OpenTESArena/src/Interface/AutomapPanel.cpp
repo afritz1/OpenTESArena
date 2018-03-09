@@ -31,6 +31,19 @@
 #include "../World/VoxelGrid.h"
 #include "../World/VoxelType.h"
 
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<CardinalDirectionName>
+	{
+		size_t operator()(const CardinalDirectionName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
 namespace
 {
 	// Click areas for compass directions.
