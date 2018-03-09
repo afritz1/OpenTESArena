@@ -8,12 +8,193 @@
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
+#include "../Math/Random.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 
 #include "components/vfs/manager.hpp"
+
+namespace
+{
+	// Discriminated union for name composition rules used with NAMECHNK.DAT.
+	// Each rule is either:
+	// - Index
+	// - Pre-defined string
+	// - Index with chance
+	// - Index and string with chance
+	struct NameRule
+	{
+		enum class Type
+		{
+			Index, // Points into chunk lists.
+			String, // Pre-defined string.
+			IndexChance, // Points into chunk lists, with a chance to not be used.
+			IndexStringChance, // Points into chunk lists, w/ string and chance.
+		};
+
+		struct IndexChance
+		{
+			int index, chance;
+		};
+
+		struct IndexStringChance
+		{
+			int index;
+			std::array<char, 4> str;
+			int chance;
+		};
+
+		NameRule::Type type;
+
+		union
+		{
+			int index;
+			std::array<char, 4> str;
+			IndexChance indexChance;
+			IndexStringChance indexStringChance;
+		};
+
+		NameRule(int index)
+		{
+			this->index = index;
+			this->type = Type::Index;
+		}
+
+		NameRule(const std::string &str)
+		{
+			this->str.fill('\0');
+			const size_t charCount = std::min(str.size(), this->str.size());
+			std::copy(str.begin(), str.begin() + charCount, this->str.begin());
+
+			this->type = Type::String;
+		}
+
+		NameRule(int index, int chance)
+		{
+			this->indexChance.index = index;
+			this->indexChance.chance = chance;
+			this->type = Type::IndexChance;
+		}
+
+		NameRule(int index, const std::string &str, int chance)
+		{
+			this->indexStringChance.index = index;
+
+			this->indexStringChance.str.fill('\0');
+			const size_t charCount = std::min(str.size(), this->indexStringChance.str.size());
+			std::copy(str.begin(), str.begin() + charCount, this->indexStringChance.str.begin());
+
+			this->indexStringChance.chance = chance;
+
+			this->type = Type::IndexStringChance;
+		}
+	};
+
+	// Rules for how to access NAMECHNK.DAT lists for name creation (with associated
+	// chances, if any).
+	const std::array<std::vector<NameRule>, 48> NameRules =
+	{
+		{
+			// Race 0.
+			{ { 0 }, { 1 }, { " " }, { 4 }, { 5 } },
+			{ { 2 }, { 3 }, { " " }, { 4 }, { 5 } },
+
+			// Race 1.
+			{ { 6 }, { 7 }, { 8 }, { 9, 75 } },
+			{ { 6 }, { 7 }, { 8 }, { 9, 75 }, { 10 } },
+
+			// Race 2.
+			{ { 11 }, { 12 }, { " " }, { 15 }, { 16 }, { "sen" } },
+			{ { 13 }, { 14 }, { " " }, { 15 }, { 16 }, { "sen" } },
+
+			// Race 3.
+			{ { 17 }, { 18 }, { " " }, { 21 }, { 22 } },
+			{ { 19 }, { 20 }, { " " }, { 21 }, { 22 } },
+
+			// Race 4.
+			{ { 23 }, { 24 }, { " " }, { 27 }, { 28 } },
+			{ { 25 }, { 26 }, { " " }, { 27 }, { 28 } },
+
+			// Race 5.
+			{ { 29 }, { 30 }, { " " }, { 33 }, { 34 } },
+			{ { 31 }, { 32 }, { " " }, { 33 }, { 34 } },
+
+			// Race 6.
+			{ { 35 }, { 36 }, { " " }, { 39 }, { 40 } },
+			{ { 37 }, { 38 }, { " " }, { 39 }, { 40 } },
+
+			// Race 7.
+			{ { 41 }, { 42 }, { " " }, { 45 }, { 46 } },
+			{ { 43 }, { 44 }, { " " }, { 45 }, { 46 } },
+
+			// Race 8.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 9.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 10.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 11.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 12.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 13.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 14.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 15.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 16.
+			{ { 47 }, { 48, 75 }, { 49 } },
+			{ { 47 }, { 48, 75 }, { 49 } },
+
+			// Race 17.
+			{ { 50 }, { 51, 75 }, { 52 } },
+			{ { 50 }, { 51, 75 }, { 52 } },
+
+			// Race 18.
+			{ { 50 }, { 51, 75 }, { 52 } },
+			{ { 50 }, { 51, 75 }, { 52 } },
+
+			// Race 19.
+			{ { 50 }, { 51, 75 }, { 52 } },
+			{ { 50 }, { 51, 75 }, { 52 } },
+
+			// Race 20.
+			{ { 50 }, { 51, 75 }, { 52 } },
+			{ { 50 }, { 51, 75 }, { 52 } },
+
+			// Race 21.
+			{ { 50 }, { 52 }, { 53 } },
+			{ { 50 }, { 52 }, { 53 } },
+
+			// Race 22.
+			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
+			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
+
+			// Race 23.
+			{ { 55 }, { 56 }, { 57 } },
+			{ { 55 }, { 56 }, { 57 } }
+		}
+	};
+}
 
 MiscAssets::MiscAssets()
 {
@@ -637,6 +818,51 @@ const std::vector<CharacterClass> &MiscAssets::getClassDefinitions() const
 const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTxtDungeons() const
 {
 	return this->dungeonTxt;
+}
+
+std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
+{
+	// Get the rules associated with the race and gender.
+	const auto &chunkRules = NameRules.at((raceID * 2) + (isMale ? 0 : 1));
+
+	// Construct the name from each part of the rule.
+	std::string name;
+	for (const auto &rule : chunkRules)
+	{
+		if (rule.type == NameRule::Type::Index)
+		{
+			const auto &chunkList = this->nameChunks.at(rule.index);
+			name += chunkList.at(random.next() % static_cast<int>(chunkList.size()));
+		}
+		else if (rule.type == NameRule::Type::String)
+		{
+			name += std::string(rule.str.data());
+		}
+		else if (rule.type == NameRule::Type::IndexChance)
+		{
+			const auto &chunkList = this->nameChunks.at(rule.indexChance.index);
+			if ((random.next() % 100) <= rule.indexChance.chance)
+			{
+				name += chunkList.at(random.next() % static_cast<int>(chunkList.size()));
+			}
+		}
+		else if (rule.type == NameRule::Type::IndexStringChance)
+		{
+			const auto &chunkList = this->nameChunks.at(rule.indexStringChance.index);
+			if ((random.next() % 100) <= rule.indexStringChance.chance)
+			{
+				name += chunkList.at(random.next() % static_cast<int>(chunkList.size())) +
+					std::string(rule.indexStringChance.str.data());
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Bad rule type \"" +
+				std::to_string(static_cast<int>(rule.type)) + "\".");
+		}
+	}
+
+	return name;
 }
 
 const CityDataFile &MiscAssets::getCityDataFile() const

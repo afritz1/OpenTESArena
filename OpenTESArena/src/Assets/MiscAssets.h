@@ -19,6 +19,8 @@
 // All relevant text files (TEMPLATE.DAT, QUESTION.TXT, etc.) should be read in 
 // when this object is created.
 
+class ArenaRandom;
+
 class MiscAssets
 {
 private:
@@ -75,6 +77,9 @@ public:
 	// These are just the dungeons with a unique icon on the world map, not the 
 	// lesser dungeons.
 	const std::vector<std::pair<std::string, std::string>> &getDungeonTxtDungeons() const;
+
+	// Creates a random NPC name from the given parameters.
+	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;
 
 	// Gets the data object for world map locations.
 	const CityDataFile &getCityDataFile() const;
