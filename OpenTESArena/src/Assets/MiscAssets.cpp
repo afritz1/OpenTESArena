@@ -42,6 +42,9 @@ void MiscAssets::init()
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
 
+	// Read in NAMECHNK.DAT.
+	this->parseNameChunks();
+
 	// Read city data file.
 	this->cityDataFile.init("CITYDATA.00");
 
@@ -509,6 +512,41 @@ void MiscAssets::parseDungeonTxt()
 				description = description.replace(descriptionCarriageReturn, 1, "\n");
 			}
 		}
+	}
+}
+
+void MiscAssets::parseNameChunks()
+{
+	const std::string filename("NAMECHNK.DAT");
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	std::vector<uint8_t> srcData(stream->tellg());
+	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+	size_t offset = 0;
+	while (offset < srcData.size())
+	{
+		// Get information for the current chunk.
+		const uint8_t *chunkPtr = srcData.data() + offset;
+		const uint16_t chunkLength = Bytes::getLE16(chunkPtr);
+		const uint8_t stringCount = *(chunkPtr + 2);
+
+		// Read "stringCount" null-terminated strings.
+		size_t stringOffset = 3;
+		std::vector<std::string> strings;
+		for (int i = 0; i < stringCount; i++)
+		{
+			const char *stringPtr = reinterpret_cast<const char*>(chunkPtr) + stringOffset;
+			strings.push_back(std::string(stringPtr));
+			stringOffset += strings.back().size() + 1;
+		}
+
+		this->nameChunks.push_back(std::move(strings));
+		offset += chunkLength;
 	}
 }
 

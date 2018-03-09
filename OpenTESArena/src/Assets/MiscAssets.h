@@ -28,6 +28,7 @@ private:
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
+	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
 	std::array<WorldMapMask, 10> worldMapMasks;
 
@@ -46,6 +47,9 @@ private:
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
+
+	// Loads NAMECHNK.DAT into a jagged list of name chunks.
+	void parseNameChunks();
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
