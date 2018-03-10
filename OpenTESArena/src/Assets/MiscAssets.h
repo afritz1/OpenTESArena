@@ -52,6 +52,21 @@ public:
 		typedef std::array<PersonalityArray, 5> FunctionArray;
 		FunctionArray equipment, magesGuild, selling, tavern;
 	};
+
+	// Each spell entry in SPELLSG.65.
+	struct SpellData
+	{
+		std::array<std::array<uint16_t, 3>, 6> params;
+		uint8_t targetType, unknown, element;
+		uint16_t flags;
+
+		// Effects (i.e., "Fortify"; 0xFF = nothing), sub-effects (i.e., "Attribute"),
+		// and affected attributes (i.e., "Strength").
+		std::array<uint8_t, 3> effects, subEffects, affectedAttributes;
+
+		uint16_t cost;
+		std::array<char, 33> name;
+	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	std::unordered_map<std::string, std::string> templateDat;
@@ -63,6 +78,7 @@ private:
 	TradeText tradeText;
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
+	std::array<SpellData, 128> standardSpells; // From SPELLSG.65.
 	std::array<WorldMapMask, 10> worldMapMasks;
 
 	// Loads the executable associated with the current Arena data path (either A.EXE
@@ -89,6 +105,9 @@ private:
 
 	// Loads NAMECHNK.DAT into a jagged list of name chunks.
 	void parseNameChunks();
+
+	// Loads SPELLSG.65.
+	void parseStandardSpells();
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
@@ -127,6 +146,9 @@ public:
 
 	// Gets the data object for world map locations.
 	const CityDataFile &getCityDataFile() const;
+
+	// Gets the spells list for spell and effect definitions.
+	const std::array<SpellData, 128> &getStandardSpells() const;
 
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
