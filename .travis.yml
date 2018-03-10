@@ -26,6 +26,10 @@ matrix:
     - os: osx
       osx_image: xcode8
       env:
+        - MATRIX_EVAL="export CC=gcc && export CXX=g++"
+    - os: osx
+      osx_image: xcode8
+      env:
         - MATRIX_EVAL="export CC=clang && export CXX=clang++"
 
 before_install:
