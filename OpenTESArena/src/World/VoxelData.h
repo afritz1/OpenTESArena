@@ -99,6 +99,9 @@ public:
 		Type type;
 	};
 
+	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
+	VoxelType type; // Defines what the voxel is.
+
 	// Only one voxel data type can be active at a time, given by "dataType".
 	union
 	{
@@ -112,9 +115,6 @@ public:
 		ChasmData chasm;
 		DoorData door;
 	};
-
-	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
-	VoxelType type; // Defines what the voxel is.
 
 	VoxelData();
 	~VoxelData();
