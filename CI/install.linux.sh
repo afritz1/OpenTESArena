@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 wget https://github.com/Mindwerks/wildmidi/archive/wildmidi-0.4.0.tar.gz
 tar -xzvf wildmidi-0.4.0.tar.gz

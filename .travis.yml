@@ -1,17 +1,38 @@
 language: cpp
 sudo: required
-dist: trusty
-os:
-  - linux
-  - osx
-compiler:
-  - clang
-  - gcc
 group: stable
 
-before_install: ./CI/before_install.${TRAVIS_OS_NAME}.sh
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+        - MATRIX_EVAL="export CC=gcc-5 && export CXX=g++-5"
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env:
+        - MATRIX_EVAL="export CC=clang-3.6 && export CXX=clang++-3.6"
+    - os: osx
+      osx_image: xcode8
+      env:
+        - MATRIX_EVAL="export CC=clang && export CXX=clang++"
 
-install: ./CI/before_install.${TRAVIS_OS_NAME}.sh
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - ./CI/before_install.${TRAVIS_OS_NAME}.sh
+
+install: ./CI/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - mkdir build
