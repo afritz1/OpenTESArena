@@ -23,6 +23,35 @@ class ArenaRandom;
 
 class MiscAssets
 {
+public:
+	// Each artifact text file (ARTFACT1.DAT, ARTFACT2.DAT) contains conversation strings
+	// about artifacts. Supposedly ARTFACT2.DAT is used when the player declines and
+	// returns to the individual later.
+	// - The format is like: [[3][3][3][3][1]] ... [[3][3][3][3][1]]
+	// - The first artifact is split between the front and back of the file.
+	struct ArtifactText
+	{
+		struct Chunk
+		{
+			std::array<std::string, 3> playerTooGreedy, npcQuits, npcCountersOffers, npcGreets;
+			std::string accept;
+		};
+
+		std::array<ArtifactText::Chunk, 16> chunks;
+	};
+
+	// Each trade text file (EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, TAVERN.DAT) is an array
+	// of 75 null-terminated strings. Each function array wraps conversation behaviors
+	// (introduction, price agreement, etc.). Each personality array wraps personalities.
+	// Each random array contains three strings for each personality.
+	// - The format is like: [[3][3][3][3][3]] ... [[3][3][3][3][3]]
+	struct TradeText
+	{
+		typedef std::array<std::string, 3> RandomArray;
+		typedef std::array<RandomArray, 5> PersonalityArray;
+		typedef std::array<PersonalityArray, 5> FunctionArray;
+		FunctionArray equipment, magesGuild, selling, tavern;
+	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	std::unordered_map<std::string, std::string> templateDat;
@@ -30,6 +59,8 @@ private:
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
+	ArtifactText artifactText1, artifactText2;
+	TradeText tradeText;
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
 	std::array<WorldMapMask, 10> worldMapMasks;
@@ -49,6 +80,12 @@ private:
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
 	void parseDungeonTxt();
+
+	// Loads ARTFACT1.DAT and ARTFACT2.DAT.
+	void parseArtifactText();
+
+	// Loads EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, and TAVERN.DAT.
+	void parseTradeText();
 
 	// Loads NAMECHNK.DAT into a jagged list of name chunks.
 	void parseNameChunks();
@@ -77,6 +114,13 @@ public:
 	// These are just the dungeons with a unique icon on the world map, not the 
 	// lesser dungeons.
 	const std::vector<std::pair<std::string, std::string>> &getDungeonTxtDungeons() const;
+
+	// Gets the artifact text used in tavern conversations.
+	const MiscAssets::ArtifactText &getArtifactText1() const;
+	const MiscAssets::ArtifactText &getArtifactText2() const;
+
+	// Gets the trade text object for trade conversations.
+	const MiscAssets::TradeText &getTradeText() const;
 
 	// Creates a random NPC name from the given parameters.
 	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;

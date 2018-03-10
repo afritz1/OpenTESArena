@@ -223,6 +223,12 @@ void MiscAssets::init()
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
 	this->parseDungeonTxt();
 
+	// Read in ARTFACT1.DAT and ARTFACT2.DAT.
+	this->parseArtifactText();
+
+	// Read in EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, and TAVERN.DAT.
+	this->parseTradeText();
+
 	// Read in NAMECHNK.DAT.
 	this->parseNameChunks();
 
@@ -696,6 +702,135 @@ void MiscAssets::parseDungeonTxt()
 	}
 }
 
+void MiscAssets::parseArtifactText()
+{
+	auto loadArtifactText = [](const std::string &filename, MiscAssets::ArtifactText &artifactText)
+	{
+		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+		DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+		stream->seekg(0, std::ios::end);
+		std::vector<uint8_t> srcData(stream->tellg());
+		stream->seekg(0, std::ios::beg);
+		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+		const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
+		const size_t separatorLength = 4;
+
+		// Have to search for the separator string this way because storing it
+		// in a string causes it to only see the first exclamation mark.
+		auto atSeparator = [&text](size_t index)
+		{
+			return (text.at(index) == '!') &&
+				(text.at(index + 1) == '\0') &&
+				(text.at(index + 2) == '!') &&
+				(text.at(index + 3) == '\0');
+		};
+
+		// Searches forwards for "!\0!\0" from the offset.
+		auto nextSeparator = [&text, &atSeparator](size_t offset)
+		{
+			size_t index = text.find('!', offset);
+			while (!atSeparator(index))
+			{
+				index = text.find('!', index + 1);
+			}
+
+			return index;
+		};
+
+		// General case: read 15 artifacts, starting after the first separator.
+		const char *stringPtr = text.data() + nextSeparator(0) + separatorLength;
+
+		auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
+		{
+			for (std::string &str : arr)
+			{
+				str = std::string(stringPtr);
+				stringPtr += str.size() + 1;
+			}
+		};
+
+		for (size_t i = 1; i < artifactText.chunks.size(); i++)
+		{
+			auto &chunk = artifactText.chunks.at(i);
+
+			initStringArray(chunk.playerTooGreedy);
+			initStringArray(chunk.npcQuits);
+			initStringArray(chunk.npcCountersOffers);
+			initStringArray(chunk.npcGreets);
+
+			chunk.accept = std::string(stringPtr);
+			stringPtr += chunk.accept.size() + 1;
+			
+			// Move pointer to the next chunk.
+			stringPtr = text.data() + nextSeparator(stringPtr - text.data()) + separatorLength;
+		}
+
+		// Searches backwards for "!\0!\0" from the offset.
+		auto prevSeparator = [&text, &atSeparator](size_t offset)
+		{
+			size_t index = text.rfind('!', offset);
+			while (!atSeparator(index))
+			{
+				index = text.rfind('!', index - 1);
+			}
+
+			return index;
+		};
+
+		// Special case: read the first artifact, split between the front and back of
+		// the file.
+		auto &firstChunk = artifactText.chunks.front();
+
+		stringPtr = text.data();
+		initStringArray(firstChunk.npcGreets);
+		firstChunk.accept = std::string(stringPtr);
+
+		stringPtr = text.data() + prevSeparator(text.size() - 1) + separatorLength;
+		initStringArray(firstChunk.playerTooGreedy);
+		initStringArray(firstChunk.npcQuits);
+		initStringArray(firstChunk.npcCountersOffers);
+	};
+
+	loadArtifactText("ARTFACT1.DAT", this->artifactText1);
+	loadArtifactText("ARTFACT2.DAT", this->artifactText2);
+}
+
+void MiscAssets::parseTradeText()
+{
+	auto loadTradeText = [](const std::string &filename,
+		MiscAssets::TradeText::FunctionArray &functionArr)
+	{
+		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+		DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+		stream->seekg(0, std::ios::end);
+		std::vector<uint8_t> srcData(stream->tellg());
+		stream->seekg(0, std::ios::beg);
+		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+		// Write the null-terminated strings to the output array.
+		const char *stringPtr = reinterpret_cast<const char*>(srcData.data());
+		for (MiscAssets::TradeText::PersonalityArray &personalityArr : functionArr)
+		{
+			for (MiscAssets::TradeText::RandomArray &randomArr : personalityArr)
+			{
+				for (std::string &str : randomArr)
+				{
+					str = std::string(stringPtr);
+					stringPtr += str.size() + 1;
+				}
+			}
+		}
+	};
+
+	loadTradeText("EQUIP.DAT", this->tradeText.equipment);
+	loadTradeText("MUGUILD.DAT", this->tradeText.magesGuild);
+	loadTradeText("SELLING.DAT", this->tradeText.selling);
+	loadTradeText("TAVERN.DAT", this->tradeText.tavern);
+}
+
 void MiscAssets::parseNameChunks()
 {
 	const std::string filename("NAMECHNK.DAT");
@@ -818,6 +953,21 @@ const std::vector<CharacterClass> &MiscAssets::getClassDefinitions() const
 const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTxtDungeons() const
 {
 	return this->dungeonTxt;
+}
+
+const MiscAssets::ArtifactText &MiscAssets::getArtifactText1() const
+{
+	return this->artifactText1;
+}
+
+const MiscAssets::ArtifactText &MiscAssets::getArtifactText2() const
+{
+	return this->artifactText2;
+}
+
+const MiscAssets::TradeText &MiscAssets::getTradeText() const
+{
+	return this->tradeText;
 }
 
 std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
