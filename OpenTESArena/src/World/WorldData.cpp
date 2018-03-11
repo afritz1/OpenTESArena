@@ -222,6 +222,8 @@ WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks
 	const INFFile inf(infName);
 
 	WorldData worldData;
+	const int gridWidth = mif.getDepth() * depthChunks;
+	const int gridDepth = mif.getWidth() * widthChunks;
 
 	// Generate each level, deciding which dungeon blocks to use.
 	for (int i = 0; i < levelCount; i++)
@@ -235,13 +237,19 @@ WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks
 
 		worldData.levels.push_back(LevelData::loadDungeon(
 			random, mif.getLevels(), levelUpBlock, levelDownBlock, widthChunks,
-			depthChunks, inf, mif.getDepth() * depthChunks, mif.getWidth() * widthChunks));
+			depthChunks, inf, gridWidth, gridDepth));
 	}
 
-	// Convert the start point from the old coordinate system to the new one.
-	const Double2 &startPoint = mif.getStartPoints().front();
+	// The start point depends on where the level up voxel is on the first level.
+	// Convert it from the old coordinate system to the new one.
+	const double chunkDimReal = 32.0;
+	const double firstTransitionChunkX = static_cast<double>(transitions.front() % 10);
+	const double firstTransitionChunkZ = static_cast<double>(transitions.front() / 10);
+	const Double2 startPoint(
+		10.50 + (firstTransitionChunkX * chunkDimReal),
+		10.50 + (firstTransitionChunkZ * chunkDimReal));
 	worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
-		startPoint, mif.getDepth(), mif.getWidth()));
+		startPoint, gridWidth, gridDepth));
 
 	worldData.currentLevel = 0;
 	worldData.worldType = WorldType::Interior;

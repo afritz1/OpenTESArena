@@ -186,7 +186,21 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
 	}
 
-	// To do: Put transition blocks, unless null.
+	// Put transition blocks, unless null. Unpack the level up/down block indices
+	// into X and Z chunk offsets.
+	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
+	const int levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
+	const int levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
+	tempMap1.at(levelUpX + (levelUpZ * gridDepth)) = (levelUpVoxelByte << 8) | levelUpVoxelByte;
+
+	if (levelDownBlock != nullptr)
+	{
+		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
+		const int levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
+		const int levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
+		tempMap1.at(levelDownX + (levelDownZ * gridDepth)) =
+			(levelDownVoxelByte << 8) | levelDownVoxelByte;
+	}
 
 	// Dungeon (either named or in wilderness).
 	LevelData levelData(gridWidth, 3, gridDepth);

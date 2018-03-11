@@ -152,7 +152,7 @@ void GameData::loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDu
 
 	// Set player starting position.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
 	this->location.locationType = LocationType::Dungeon;
@@ -194,7 +194,7 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 
 	// Set player starting position.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
 	this->location.locationType = LocationType::Dungeon;
