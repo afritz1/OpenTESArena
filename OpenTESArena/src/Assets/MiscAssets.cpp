@@ -721,12 +721,10 @@ void MiscAssets::parseArtifactText()
 		stream->seekg(0, std::ios::beg);
 		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-		const char *srcPtr = reinterpret_cast<const char*>(srcData.data());
-
-		size_t offset = 0;
+		// Write the null-terminated strings to the output array.
+		const char *stringPtr = reinterpret_cast<const char*>(srcData.data());
 		for (auto &block : artifactTavernText)
 		{
-			const char *stringPtr = srcPtr + offset;
 			auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
 			{
 				for (std::string &str : arr)
@@ -741,8 +739,6 @@ void MiscAssets::parseArtifactText()
 			initStringArray(block.offerRefusedStrs);
 			initStringArray(block.barterFailureStrs);
 			initStringArray(block.counterOfferStrs);
-
-			offset += std::distance(srcPtr + offset, stringPtr);
 		}
 	};
 
