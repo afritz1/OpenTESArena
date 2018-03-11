@@ -235,6 +235,9 @@ void MiscAssets::init()
 	// Read in SPELLSG.65.
 	this->parseStandardSpells();
 
+	// Read in SPELLMKR.TXT.
+	this->parseSpellMakerDescriptions();
+
 	// Read city data file.
 	this->cityDataFile.init("CITYDATA.00");
 
@@ -920,6 +923,72 @@ void MiscAssets::parseStandardSpells()
 	}
 }
 
+void MiscAssets::parseSpellMakerDescriptions()
+{
+	const std::string filename = "SPELLMKR.TXT";
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+	stream->seekg(0, std::ios::end);
+	std::vector<uint8_t> srcData(stream->tellg());
+	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+
+	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
+	
+	struct State
+	{
+		int index;
+		std::string str;
+
+		State(int index)
+		{
+			this->index = index;
+		}
+	};
+
+	std::unique_ptr<State> state;
+	std::stringstream ss(text);
+	std::string line;
+
+	while (std::getline(ss, line))
+	{
+		if (line.size() > 0)
+		{
+			const char firstChar = line.front();
+			const char INDEX_CHAR = '#';
+
+			if (firstChar == INDEX_CHAR)
+			{
+				// Flush any existing state.
+				if (state.get() != nullptr)
+				{
+					this->spellMakerDescriptions.at(state->index) = std::move(state->str);
+					state = nullptr;
+				}
+
+				// If there's an index in the line, it's valid. Otherwise, break.
+				const bool containsIndex = line.size() >= 3;
+				if (containsIndex)
+				{
+					const int index = std::stoi(line.substr(1, 2));
+					state = std::make_unique<State>(index);
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				// Read text into the existing state.
+				state->str += line;
+			}
+		}
+	}
+}
+
 void MiscAssets::parseWorldMapMasks()
 {
 	const std::string filename = "TAMRIEL.MNU";
@@ -1077,6 +1146,11 @@ const CityDataFile &MiscAssets::getCityDataFile() const
 const std::array<MiscAssets::SpellData, 128> &MiscAssets::getStandardSpells() const
 {
 	return this->standardSpells;
+}
+
+const std::array<std::string, 43> &MiscAssets::getSpellMakerDescriptions() const
+{
+	return this->spellMakerDescriptions;
 }
 
 const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const

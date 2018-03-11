@@ -79,6 +79,7 @@ private:
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
 	std::array<SpellData, 128> standardSpells; // From SPELLSG.65.
+	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
 	std::array<WorldMapMask, 10> worldMapMasks;
 
 	// Loads the executable associated with the current Arena data path (either A.EXE
@@ -108,6 +109,9 @@ private:
 
 	// Loads SPELLSG.65.
 	void parseStandardSpells();
+
+	// Loads SPELLMKR.TXT.
+	void parseSpellMakerDescriptions();
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
@@ -149,6 +153,9 @@ public:
 
 	// Gets the spells list for spell and effect definitions.
 	const std::array<SpellData, 128> &getStandardSpells() const;
+
+	// Gets the list of spell maker description strings.
+	const std::array<std::string, 43> &getSpellMakerDescriptions() const;
 
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
