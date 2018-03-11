@@ -710,7 +710,8 @@ void MiscAssets::parseDungeonTxt()
 
 void MiscAssets::parseArtifactText()
 {
-	auto loadArtifactText = [](const std::string &filename, MiscAssets::ArtifactText &artifactText)
+	auto loadArtifactText = [](const std::string &filename,
+		std::array<MiscAssets::ArtifactTavernText, 16> &artifactTavernText)
 	{
 		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 		DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -720,87 +721,33 @@ void MiscAssets::parseArtifactText()
 		stream->seekg(0, std::ios::beg);
 		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-		const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
-		const size_t separatorLength = 4;
+		const char *srcPtr = reinterpret_cast<const char*>(srcData.data());
 
-		// Have to search for the separator string this way because storing it
-		// in a string causes it to only see the first exclamation mark.
-		auto atSeparator = [&text](size_t index)
+		size_t offset = 0;
+		for (auto &block : artifactTavernText)
 		{
-			return (text.at(index) == '!') &&
-				(text.at(index + 1) == '\0') &&
-				(text.at(index + 2) == '!') &&
-				(text.at(index + 3) == '\0');
-		};
-
-		// Searches forwards for "!\0!\0" from the offset.
-		auto nextSeparator = [&text, &atSeparator](size_t offset)
-		{
-			size_t index = text.find('!', offset);
-			while (!atSeparator(index))
+			const char *stringPtr = srcPtr + offset;
+			auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
 			{
-				index = text.find('!', index + 1);
-			}
+				for (std::string &str : arr)
+				{
+					str = std::string(stringPtr);
+					stringPtr += str.size() + 1;
+				}
+			};
 
-			return index;
-		};
+			initStringArray(block.greetingStrs);
+			initStringArray(block.barterSuccessStrs);
+			initStringArray(block.offerRefusedStrs);
+			initStringArray(block.barterFailureStrs);
+			initStringArray(block.counterOfferStrs);
 
-		// General case: read 15 artifacts, starting after the first separator.
-		const char *stringPtr = text.data() + nextSeparator(0) + separatorLength;
-
-		auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
-		{
-			for (std::string &str : arr)
-			{
-				str = std::string(stringPtr);
-				stringPtr += str.size() + 1;
-			}
-		};
-
-		for (size_t i = 1; i < artifactText.chunks.size(); i++)
-		{
-			auto &chunk = artifactText.chunks.at(i);
-
-			initStringArray(chunk.playerTooGreedy);
-			initStringArray(chunk.npcQuits);
-			initStringArray(chunk.npcCountersOffers);
-			initStringArray(chunk.npcGreets);
-
-			chunk.accept = std::string(stringPtr);
-			stringPtr += chunk.accept.size() + 1;
-			
-			// Move pointer to the next chunk.
-			stringPtr = text.data() + nextSeparator(stringPtr - text.data()) + separatorLength;
+			offset += std::distance(srcPtr + offset, stringPtr);
 		}
-
-		// Searches backwards for "!\0!\0" from the offset.
-		auto prevSeparator = [&text, &atSeparator](size_t offset)
-		{
-			size_t index = text.rfind('!', offset);
-			while (!atSeparator(index))
-			{
-				index = text.rfind('!', index - 1);
-			}
-
-			return index;
-		};
-
-		// Special case: read the first artifact, split between the front and back of
-		// the file.
-		auto &firstChunk = artifactText.chunks.front();
-
-		stringPtr = text.data();
-		initStringArray(firstChunk.npcGreets);
-		firstChunk.accept = std::string(stringPtr);
-
-		stringPtr = text.data() + prevSeparator(text.size() - 1) + separatorLength;
-		initStringArray(firstChunk.playerTooGreedy);
-		initStringArray(firstChunk.npcQuits);
-		initStringArray(firstChunk.npcCountersOffers);
 	};
 
-	loadArtifactText("ARTFACT1.DAT", this->artifactText1);
-	loadArtifactText("ARTFACT2.DAT", this->artifactText2);
+	loadArtifactText("ARTFACT1.DAT", this->artifactTavernText1);
+	loadArtifactText("ARTFACT2.DAT", this->artifactTavernText2);
 }
 
 void MiscAssets::parseTradeText()
@@ -1078,14 +1025,14 @@ const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTx
 	return this->dungeonTxt;
 }
 
-const MiscAssets::ArtifactText &MiscAssets::getArtifactText1() const
+const std::array<MiscAssets::ArtifactTavernText, 16> &MiscAssets::getArtifactTavernText1() const
 {
-	return this->artifactText1;
+	return this->artifactTavernText1;
 }
 
-const MiscAssets::ArtifactText &MiscAssets::getArtifactText2() const
+const std::array<MiscAssets::ArtifactTavernText, 16> &MiscAssets::getArtifactTavernText2() const
 {
-	return this->artifactText2;
+	return this->artifactTavernText2;
 }
 
 const MiscAssets::TradeText &MiscAssets::getTradeText() const

@@ -27,17 +27,12 @@ public:
 	// Each artifact text file (ARTFACT1.DAT, ARTFACT2.DAT) contains conversation strings
 	// about artifacts. Supposedly ARTFACT2.DAT is used when the player declines and
 	// returns to the individual later.
-	// - The format is like: [[3][3][3][3][1]] ... [[3][3][3][3][1]]
-	// - The first artifact is split between the front and back of the file.
-	struct ArtifactText
+	// - The format is like: [[3][3][3][3][3]] ... [[3][3][3][3][3]]
+	// - Only the first string of barter success is used.
+	struct ArtifactTavernText
 	{
-		struct Chunk
-		{
-			std::array<std::string, 3> playerTooGreedy, npcQuits, npcCountersOffers, npcGreets;
-			std::string accept;
-		};
-
-		std::array<ArtifactText::Chunk, 16> chunks;
+		std::array<std::string, 3> greetingStrs, barterSuccessStrs,
+			offerRefusedStrs, barterFailureStrs, counterOfferStrs;
 	};
 
 	// Each trade text file (EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, TAVERN.DAT) is an array
@@ -74,7 +69,7 @@ private:
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
-	ArtifactText artifactText1, artifactText2;
+	std::array<ArtifactTavernText, 16> artifactTavernText1, artifactTavernText2;
 	TradeText tradeText;
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
@@ -139,8 +134,8 @@ public:
 	const std::vector<std::pair<std::string, std::string>> &getDungeonTxtDungeons() const;
 
 	// Gets the artifact text used in tavern conversations.
-	const MiscAssets::ArtifactText &getArtifactText1() const;
-	const MiscAssets::ArtifactText &getArtifactText2() const;
+	const std::array<ArtifactTavernText, 16> &getArtifactTavernText1() const;
+	const std::array<ArtifactTavernText, 16> &getArtifactTavernText2() const;
 
 	// Gets the trade text object for trade conversations.
 	const MiscAssets::TradeText &getTradeText() const;
