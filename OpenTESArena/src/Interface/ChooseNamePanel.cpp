@@ -74,6 +74,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	{
 		auto function = [](Game &game)
 		{
+			SDL_StopTextInput();
 			game.setPanel<ChooseClassPanel>(game);
 		};
 		return Button<Game&>(function);
@@ -84,10 +85,14 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
+			SDL_StopTextInput();
 			game.setPanel<ChooseGenderPanel>(game, charClass, name);
 		};
 		return Button<Game&, const CharacterClass&, const std::string&>(function);
 	}();
+
+	// Activate SDL text input (handled in handleEvent()).
+	SDL_StartTextInput();
 }
 
 ChooseNamePanel::~ChooseNamePanel()
@@ -109,125 +114,83 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() con
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
 		inputManager.keyPressed(e, SDLK_KP_ENTER);
+	const bool backspacePressed = inputManager.keyPressed(e, SDLK_BACKSPACE) ||
+		inputManager.keyPressed(e, SDLK_KP_BACKSPACE);
 
 	if (escapePressed)
 	{
 		this->backToClassButton.click(this->getGame());
 	}
-
-	// Only accept the name if it has a positive size.
-	if (enterPressed && (this->name.size() > 0))
+	else if (enterPressed && (this->name.size() > 0))
 	{
+		// Accept the given name.
 		this->acceptButton.click(this->getGame(), this->charClass, this->name);
 	}
-
-	// --------------
-	// To do: either use the input manager with the code below, or use SDL text input.
-	// --------------
-
-	// Upper and lower case English characters.
-	const std::unordered_map<SDL_Keycode, std::pair<char, char>> letters =
+	else
 	{
-		{ SDLK_a, { 'A', 'a' } },
-		{ SDLK_b, { 'B', 'b' } },
-		{ SDLK_c, { 'C', 'c' } },
-		{ SDLK_d, { 'D', 'd' } },
-		{ SDLK_e, { 'E', 'e' } },
-		{ SDLK_f, { 'F', 'f' } },
-		{ SDLK_g, { 'G', 'g' } },
-		{ SDLK_h, { 'H', 'h' } },
-		{ SDLK_i, { 'I', 'i' } },
-		{ SDLK_j, { 'J', 'j' } },
-		{ SDLK_k, { 'K', 'k' } },
-		{ SDLK_l, { 'L', 'l' } },
-		{ SDLK_m, { 'M', 'm' } },
-		{ SDLK_n, { 'N', 'n' } },
-		{ SDLK_o, { 'O', 'o' } },
-		{ SDLK_p, { 'P', 'p' } },
-		{ SDLK_q, { 'Q', 'q' } },
-		{ SDLK_r, { 'R', 'r' } },
-		{ SDLK_s, { 'S', 's' } },
-		{ SDLK_t, { 'T', 't' } },
-		{ SDLK_u, { 'U', 'u' } },
-		{ SDLK_v, { 'V', 'v' } },
-		{ SDLK_w, { 'W', 'w' } },
-		{ SDLK_x, { 'X', 'x' } },
-		{ SDLK_y, { 'Y', 'y' } },
-		{ SDLK_z, { 'Z', 'z' } }
-	};
-
-	// Punctuation (some duplicates exist to keep the shift behavior for quotes).
-	const std::unordered_map<SDL_Keycode, std::pair<char, char>> punctuation =
-	{
-		{ SDLK_COMMA, { ',', ',' } },
-		{ SDLK_MINUS, { '-', '-' } },
-		{ SDLK_PERIOD, { '.', '.' } },
-		{ SDLK_QUOTE, { '"', '\'' } }
-	};
-
-	if (e.type == SDL_KEYDOWN)
-	{
-		const uint8_t *keys = SDL_GetKeyboardState(nullptr);
-		const SDL_Keycode keyCode = e.key.keysym.sym;
-		bool shiftPressed = keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT];
-
-		// See if the pressed key is a recognized letter.
-		if (letters.find(keyCode) != letters.end())
+		// Listen for SDL text input and changes in text.
+		const bool textChanged = [this, &e, backspacePressed]()
 		{
-			// Add the letter to the name if there is room.
-			if (this->name.size() < ChooseNamePanel::MAX_NAME_LENGTH)
+			if (backspacePressed)
 			{
-				const auto &pair = letters.at(keyCode);
-				this->name.push_back(shiftPressed ? pair.first : pair.second);
+				// Erase one letter if able.
+				if (this->name.size() > 0)
+				{
+					this->name.pop_back();
+					return true;
+				}
 			}
-		}
-		else if (punctuation.find(keyCode) != punctuation.end())
-		{
-			// The pressed key is recognized punctuation. Add it.
-			if (this->name.size() < ChooseNamePanel::MAX_NAME_LENGTH)
+
+			const bool letterReceived = e.type == SDL_TEXTINPUT;
+
+			// Only process the input if a letter was received and the player's name has
+			// space remaining.
+			if (letterReceived && (this->name.size() < ChooseNamePanel::MAX_NAME_LENGTH))
 			{
-				const auto &pair = punctuation.at(keyCode);
-				this->name.push_back(shiftPressed ? pair.first : pair.second);
+				const char letter = e.text.text[0];
+
+				// Only letters and spaces are allowed.
+				auto charIsAllowed = [](char c)
+				{
+					return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
+				};
+
+				if (charIsAllowed(letter))
+				{
+					// Append to the name string.
+					this->name.push_back(letter);
+					return true;
+				}
 			}
-		}
-		else if (keyCode == SDLK_SPACE)
-		{
-			// The pressed key is space. Add a space.
-			if (this->name.size() < ChooseNamePanel::MAX_NAME_LENGTH)
-			{
-				this->name.push_back(' ');
-			}
-		}
-		else if (keyCode == SDLK_BACKSPACE)
-		{
-			// The pressed key is backspace. Erase one letter if able.
-			if (this->name.size() > 0)
-			{
-				this->name.pop_back();
-			}
-		}
-
-		// Update the displayed name.
-		this->nameTextBox = [this]
-		{
-			const int x = 61;
-			const int y = 101;
-
-			auto &game = this->getGame();
-			const RichTextString &oldRichText = this->nameTextBox->getRichText();
-
-			const RichTextString richText(
-				this->name,
-				oldRichText.getFontName(),
-				oldRichText.getColor(),
-				oldRichText.getAlignment(),
-				game.getFontManager());
-
-			return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+			
+			// No change in the displayed text.
+			return false;
 		}();
+
+		if (textChanged)
+		{
+			// Update the displayed name.
+			this->nameTextBox = [this]()
+			{
+				const int x = 61;
+				const int y = 101;
+
+				auto &game = this->getGame();
+				const RichTextString &oldRichText = this->nameTextBox->getRichText();
+
+				const RichTextString richText(
+					this->name,
+					oldRichText.getFontName(),
+					oldRichText.getColor(),
+					oldRichText.getAlignment(),
+					game.getFontManager());
+
+				return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+			}();
+		}
 	}
 }
 
