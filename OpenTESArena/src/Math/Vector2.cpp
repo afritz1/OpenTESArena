@@ -1,5 +1,3 @@
-#include <cmath>
-
 #include "Constants.h"
 #include "Random.h"
 #include "Vector2.h"

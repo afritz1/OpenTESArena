@@ -1,10 +1,12 @@
 #ifndef VECTOR2_H
 #define VECTOR2_H
 
+#include <cmath>
 #include <cstddef>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 class Random;
 
@@ -19,6 +21,51 @@ public:
 	Vector2i(T x, T y);
 	Vector2i();
 	~Vector2i();
+
+	// Generates a list of points along a Bresenham line. Only signed integers can be
+	// used in a Bresenham's line (due to the error calculation).
+	template <class C = T>
+	static typename std::enable_if<std::is_signed<C>::value, std::vector<Vector2i<T>>>::type
+		bresenhamLine(const Vector2i<T> &p1, const Vector2i<T> &p2)
+	{
+		const T dx = std::abs(static_cast<int>(p2.x - p1.x));
+		const T dy = std::abs(static_cast<int>(p2.y - p1.y));
+		const T dirX = (p1.x < p2.x) ? 1 : -1;
+		const T dirY = (p1.y < p2.y) ? 1 : -1;
+
+		T pointX = p1.x;
+		T pointY = p1.y;
+		T error = ((dx > dy) ? dx : -dy) / 2;
+		const T endX = p2.x;
+		const T endY = p2.y;
+		std::vector<Vector2i<T>> points;
+
+		while (true)
+		{
+			points.push_back(Vector2i<T>(pointX, pointY));
+
+			if ((pointX == endX) && (pointY == endY))
+			{
+				break;
+			}
+
+			const T innerError = error;
+
+			if (innerError > -dx)
+			{
+				error -= dy;
+				pointX += dirX;
+			}
+
+			if (innerError < dy)
+			{
+				error += dx;
+				pointY += dirY;
+			}
+		}
+
+		return points;
+	}
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;

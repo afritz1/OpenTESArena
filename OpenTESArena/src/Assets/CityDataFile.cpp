@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 #include "CityDataFile.h"
 #include "../Utilities/Bytes.h"
@@ -19,6 +20,27 @@ std::pair<int, int> CityDataFile::getLocalCityAndProvinceID(int globalCityID)
 	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
+int CityDataFile::getDistance(const Int2 &p1, const Int2 &p2)
+{
+	const int dx = std::abs(p1.x - p2.x);
+	const int dy = std::abs(p1.y - p2.y);
+	return std::max(dx, dy) + (std::min(dx, dy) / 4);
+}
+
+Int2 CityDataFile::localPointToGlobal(const Int2 &localPoint, const Rect &rect)
+{
+	const int globalX = ((localPoint.x * ((rect.getWidth() * 100) / 320)) / 100) + rect.getLeft();
+	const int globalY = ((localPoint.y * ((rect.getHeight() * 100) / 200)) / 100) + rect.getTop();
+	return Int2(globalX, globalY);
+}
+
+Int2 CityDataFile::globalPointToLocal(const Int2 &globalPoint, const Rect &rect)
+{
+	const int localX = ((globalPoint.x - rect.getLeft()) * 100) / ((rect.getWidth() * 100) / 320);
+	const int localY = ((globalPoint.y - rect.getTop()) * 100) / ((rect.getHeight() * 100) / 200);
+	return Int2(localX, localY);
+}
+
 std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
 {
 	const std::string seedString = std::to_string(seed);
@@ -30,6 +52,49 @@ const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
 	assert(index < CityDataFile::PROVINCE_COUNT);
 	return this->provinces.at(index);
+}
+
+int CityDataFile::getGlobalQuarter(const Int2 &globalPoint)
+{
+	Rect provinceRect;
+
+	// Find the province that contains the global point.
+	const auto iter = std::find_if(this->provinces.begin(), this->provinces.end(),
+		[&globalPoint, &provinceRect](const CityDataFile::ProvinceData &province)
+	{
+		provinceRect = Rect(province.globalX, province.globalY,
+			province.globalW, province.globalH);
+		return provinceRect.contains(globalPoint);
+	});
+
+	DebugAssert(iter != this->provinces.end(), "No matching province for global point (" +
+		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
+
+	const Int2 localPoint = CityDataFile::globalPointToLocal(globalPoint, provinceRect);
+	const int provinceID = static_cast<int>(std::distance(this->provinces.begin(), iter));
+
+	// Get the global quarter index.
+	const int globalQuarter = [&localPoint, provinceID]()
+	{
+		int index = provinceID * 4;
+		const bool inRightHalf = localPoint.x >= 160;
+		const bool inBottomHalf = localPoint.y >= 100;
+
+		// Add to the index depending on which quadrant the local point is in.
+		if (inRightHalf)
+		{
+			index++;
+		}
+
+		if (inBottomHalf)
+		{
+			index += 2;
+		}
+
+		return index;
+	}();
+
+	return globalQuarter;
 }
 
 uint32_t CityDataFile::getDungeonSeed(int dungeonID, int provinceID) const

@@ -5,6 +5,9 @@
 #include <cstdint>
 #include <string>
 
+#include "../Math/Rect.h"
+#include "../Math/Vector2.h"
+
 // CITYDATA.00 contains basic data for locations in each province on the world map.
 // It has the names of each place and their XY coordinates on the screen.
 
@@ -47,11 +50,25 @@ public:
 	// Converts a global city ID to a local city ID + province ID pair.
 	static std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
+	// Gets the approximation of the linear distance between two points.
+	static int getDistance(const Int2 &p1, const Int2 &p2);
+
+	// Converts a local XY coordinate to global coordinates. The rectangle comes from
+	// the province header.
+	static Int2 localPointToGlobal(const Int2 &localPoint, const Rect &rect);
+
+	// Converts a global XY coordinate to local coordinates. The rectangle comes from
+	// the province header.
+	static Int2 globalPointToLocal(const Int2 &globalPoint, const Rect &rect);
+
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);
 
 	// Gets the province data at the given province index.
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
+
+	// Gets the quarter within a province (to determine weather).
+	int getGlobalQuarter(const Int2 &globalPoint);
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
 	// the dungeon ID is between 0 and 15.
