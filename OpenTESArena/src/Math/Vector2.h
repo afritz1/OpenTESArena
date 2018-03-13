@@ -1,8 +1,8 @@
 #ifndef VECTOR2_H
 #define VECTOR2_H
 
-#include <cmath>
 #include <cstddef>
+#include <cstdlib> // std::abs.
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -28,8 +28,8 @@ public:
 	static typename std::enable_if<std::is_signed<C>::value, std::vector<Vector2i<T>>>::type
 		bresenhamLine(const Vector2i<T> &p1, const Vector2i<T> &p2)
 	{
-		const T dx = std::abs(static_cast<int>(p2.x - p1.x));
-		const T dy = std::abs(static_cast<int>(p2.y - p1.y));
+		const T dx = std::abs(p2.x - p1.x);
+		const T dy = std::abs(p2.y - p1.y);
 		const T dirX = (p1.x < p2.x) ? 1 : -1;
 		const T dirY = (p1.y < p2.y) ? 1 : -1;
 
