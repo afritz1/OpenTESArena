@@ -41,11 +41,11 @@ private:
 public:
 	static const int PROVINCE_COUNT;
 
-	// Converts a local ID + province ID pair to a (global) city ID.
-	static int getCityID(int localID, int provinceID);
+	// Converts a local city ID + province ID pair to a global city ID.
+	static int getGlobalCityID(int localCityID, int provinceID);
 
-	// Converts a city ID to a local ID + province ID pair.
-	static std::pair<int, int> getLocalAndProvinceID(int cityID);
+	// Converts a global city ID to a local city ID + province ID pair.
+	static std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);

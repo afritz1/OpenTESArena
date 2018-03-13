@@ -250,25 +250,25 @@ void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
+void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	const int cityID = CityDataFile::getCityID(localID, provinceID);
+	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
 
 	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
 	// loadPremadeCity() should be called instead for that case.
 	DebugAssert(provinceID != 8, "Use loadPremadeCity() instead for center province.");
-	DebugAssert((cityID >= 0) && (cityID < 256),
-		"Invalid city ID \"" + std::to_string(cityID) + "\".");
+	DebugAssert((globalCityID >= 0) && (globalCityID < 256),
+		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
 	
 	// Determine city traits from the given city ID.
-	const LocationType locationType = WorldData::getLocationTypeFromID(cityID);
+	const LocationType locationType = WorldData::getCityLocationType(globalCityID);
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 	const bool isCity = locationType == LocationType::CityState;
 	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
-		cityGen.coastalCityList.end(), cityID) != cityGen.coastalCityList.end();
+		cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
 	const int templateCount = isCoastal ? (isCity ? 3 : 2) : 5;
-	const int templateID = cityID % templateCount;
+	const int templateID = globalCityID % templateCount;
 
 	const MIFFile mif = [locationType, &cityGen, isCoastal, templateID]()
 	{
@@ -304,19 +304,19 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 
 	// Location-related data from the city data file.
 	const auto &provinceData = miscAssets.getCityDataFile().getProvinceData(provinceID);
-	const auto &locationData = [localID, locationType, &provinceData]()
+	const auto &locationData = [localCityID, locationType, &provinceData]()
 	{
 		if (locationType == LocationType::CityState)
 		{
-			return provinceData.cityStates.at(localID);
+			return provinceData.cityStates.at(localCityID);
 		}
 		else if (locationType == LocationType::Town)
 		{
-			return provinceData.towns.at(localID - 8);
+			return provinceData.towns.at(localCityID - 8);
 		}
 		else if (locationType == LocationType::Village)
 		{
-			return provinceData.villages.at(localID - 16);
+			return provinceData.villages.at(localCityID - 16);
 		}
 		else
 		{
@@ -386,7 +386,7 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 	}();
 
 	// Call city WorldData loader.
-	this->worldData = WorldData::loadCity(cityID, mif, cityX, cityY, cityDim,
+	this->worldData = WorldData::loadCity(globalCityID, mif, cityX, cityY, cityDim,
 		reservedBlocks, startPosition, locationType, weatherType);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
@@ -411,7 +411,7 @@ void GameData::loadCity(int localID, int provinceID, WeatherType weatherType,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadWilderness(int localID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
+void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
 	int rmdBL, ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -426,21 +426,21 @@ void GameData::loadWilderness(int localID, int provinceID, int rmdTR, int rmdTL,
 
 	// Set location.
 	const auto &cityData = miscAssets.getCityDataFile();
-	const LocationType locationType = WorldData::getLocationTypeFromID(localID);
-	const auto &locationData = [localID, provinceID, &cityData, locationType]()
+	const LocationType locationType = WorldData::getCityLocationType(localCityID);
+	const auto &locationData = [localCityID, provinceID, &cityData, locationType]()
 	{
 		const auto &provinceData = cityData.getProvinceData(provinceID);
 		if (locationType == LocationType::CityState)
 		{
-			return provinceData.cityStates.at(localID);
+			return provinceData.cityStates.at(localCityID);
 		}
 		else if (locationType == LocationType::Town)
 		{
-			return provinceData.towns.at(localID - 8);
+			return provinceData.towns.at(localCityID - 8);
 		}
 		else if (locationType == LocationType::Village)
 		{
-			return provinceData.villages.at(localID - 16);
+			return provinceData.villages.at(localCityID - 16);
 		}
 		else
 		{

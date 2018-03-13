@@ -100,12 +100,12 @@ public:
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game
 	// data. The local ID is the 0-31 location index within a province.
-	void loadCity(int localID, int provinceID, WeatherType weatherType,
+	void loadCity(int localCityID, int provinceID, WeatherType weatherType,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
-	void loadWilderness(int localID, int provinceID, int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
+	void loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
+		int rmdBL, ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();

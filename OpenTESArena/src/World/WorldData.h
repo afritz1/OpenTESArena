@@ -45,7 +45,7 @@ public:
 	WorldData &operator=(WorldData &&worldData) = default;
 
 	// Returns whether the given ID is for a city-state, town, or village.
-	static LocationType getLocationTypeFromID(int cityID);
+	static LocationType getCityLocationType(int globalCityID);
 
 	// Loads all levels of an interior .MIF file.
 	static WorldData loadInterior(const MIFFile &mif);
@@ -59,7 +59,7 @@ public:
 		WeatherType weatherType);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
-	static WorldData loadCity(int cityID, const MIFFile &mif, int cityX, int cityY,
+	static WorldData loadCity(int globalCityID, const MIFFile &mif, int cityX, int cityY,
 		int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
 		LocationType locationType, WeatherType weatherType);
 

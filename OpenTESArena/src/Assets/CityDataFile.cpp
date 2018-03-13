@@ -9,14 +9,14 @@
 
 const int CityDataFile::PROVINCE_COUNT = 9;
 
-int CityDataFile::getCityID(int localID, int provinceID)
+int CityDataFile::getGlobalCityID(int localCityID, int provinceID)
 {
-	return (provinceID << 5) + localID;
+	return (provinceID << 5) + localCityID;
 }
 
-std::pair<int, int> CityDataFile::getLocalAndProvinceID(int cityID)
+std::pair<int, int> CityDataFile::getLocalCityAndProvinceID(int globalCityID)
 {
-	return std::make_pair(cityID & 0x1F, cityID >> 5);
+	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
 std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)

@@ -249,7 +249,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// Pick a random location based on the .MIF name, excluding the
 					// center province.
 					Random random;
-					const int localID = [&mifName, &random]()
+					const int localCityID = [&mifName, &random]()
 					{
 						if (mifName == RandomCity)
 						{
@@ -272,7 +272,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const int provinceID = random.next(8);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadCity(localID, provinceID, weatherType, miscAssets,
+					gameData->loadCity(localCityID, provinceID, weatherType, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 			}
@@ -331,7 +331,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				// Pick a random location and province.
 				Random random;
-				const int localID = random.next(32);
+				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
 
 				// Pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
@@ -346,7 +346,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					"- Bottom left: " + std::to_string(rmdBL));
 
 				// Load wilderness into game data. Location data is loaded, too.
-				gameData->loadWilderness(localID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
+				gameData->loadWilderness(localCityID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
 					climateType, weatherType, miscAssets, game.getTextureManager(), renderer);
 			}
 			else

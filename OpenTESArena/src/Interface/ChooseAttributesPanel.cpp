@@ -314,7 +314,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								player.setVelocityToZero();
 
 								Random random;
-								const int localID = random.next(32);
+								const int localCityID = random.next(32);
 								const int provinceID = gameData.getPlayer().getRaceID();
 
 								// Random weather for now.
@@ -335,7 +335,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								}();
 
 								auto &renderer = game.getRenderer();
-								gameData.loadCity(localID, provinceID, weatherType,
+								gameData.loadCity(localCityID, provinceID, weatherType,
 									game.getMiscAssets(), game.getTextureManager(), renderer);
 
 								// Set music based on weather.

@@ -121,27 +121,28 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	return climateLetter + locationLetter + weatherLetter + ".INF";
 }
 
-LocationType WorldData::getLocationTypeFromID(int cityID)
+LocationType WorldData::getCityLocationType(int globalCityID)
 {
 	// Local IDs can be between 0 and 31.
-	const auto &idPair = CityDataFile::getLocalAndProvinceID(cityID);
-	const int localID = idPair.first;
+	const auto &idPair = CityDataFile::getLocalCityAndProvinceID(globalCityID);
+	const int localCityID = idPair.first;
 
-	if (localID < 8)
+	if (localCityID < 8)
 	{
 		return LocationType::CityState;
 	}
-	else if (localID < 16)
+	else if (localCityID < 16)
 	{
 		return LocationType::Town;
 	}
-	else if (localID < 32)
+	else if (localCityID < 32)
 	{
 		return LocationType::Village;
 	}
 	else
 	{
-		throw std::runtime_error("Bad city ID \"" + std::to_string(cityID) + "\".");
+		throw std::runtime_error("Bad global city ID \"" +
+			std::to_string(globalCityID) + "\".");
 	}
 }
 
@@ -284,7 +285,7 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	return worldData;
 }
 
-WorldData WorldData::loadCity(int cityID, const MIFFile &mif, int cityX, int cityY,
+WorldData WorldData::loadCity(int globalCityID, const MIFFile &mif, int cityX, int cityY,
 	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
 	LocationType locationType, WeatherType weatherType)
 {
