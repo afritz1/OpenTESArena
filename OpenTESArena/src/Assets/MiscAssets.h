@@ -62,6 +62,23 @@ public:
 		uint16_t cost;
 		std::array<char, 33> name;
 	};
+
+	struct WorldMapTerrain
+	{
+		static const int WIDTH = 320;
+		static const int HEIGHT = 200;
+
+		static const uint8_t TEMPERATE1 = 254;
+		static const uint8_t TEMPERATE2 = 251;
+		static const uint8_t MOUNTAIN1 = 249;
+		static const uint8_t MOUNTAIN2 = 250;
+		static const uint8_t DESERT1 = 253;
+		static const uint8_t DESERT2 = 252;
+		static const uint8_t SEA = 248;
+
+		// 320x200 palette indices.
+		std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
+	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	std::unordered_map<std::string, std::string> templateDat;
@@ -76,6 +93,7 @@ private:
 	std::array<SpellData, 128> standardSpells; // From SPELLSG.65.
 	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
 	std::array<WorldMapMask, 10> worldMapMasks;
+	WorldMapTerrain worldMapTerrain;
 
 	// Loads the executable associated with the current Arena data path (either A.EXE
 	// for the floppy version or ACD.EXE for the CD version).
@@ -110,6 +128,9 @@ private:
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
+
+	// Reads terrain data from TERRAIN.IMG.
+	void parseWorldMapTerrain();
 public:
 	MiscAssets();
 	~MiscAssets();
@@ -155,6 +176,10 @@ public:
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
+
+	// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel error).
+	// - To do: does the return value need to have WorldMapTerrain::SEA subtracted?
+	uint8_t getWorldMapTerrain(int x, int y) const;
 
 	void init();
 };
