@@ -1585,11 +1585,23 @@ void GameWorldPanel::tick(double dt)
 		const Int2 oldPlayerVoxelXZ(oldPlayerVoxel.x, oldPlayerVoxel.z);
 		const Int2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
 
-		this->handleTriggers(newPlayerVoxelXZ);
+		// Don't handle triggers and level transitions if outside the voxel grid.
+		const bool inVoxelGrid = [&worldData, &newPlayerVoxelXZ]()
+		{
+			const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+			const auto &voxelGrid = level.getVoxelGrid();
+			return (newPlayerVoxelXZ.x >= 0) && (newPlayerVoxelXZ.x < voxelGrid.getWidth()) &&
+				(newPlayerVoxelXZ.y >= 0) && (newPlayerVoxelXZ.y < voxelGrid.getDepth());
+		}();
 
-		// To do: determine if the player would collide with the voxel instead
-		// of checking that they're in the voxel.
-		this->handleLevelTransition(oldPlayerVoxelXZ, newPlayerVoxelXZ);
+		if (inVoxelGrid)
+		{
+			this->handleTriggers(newPlayerVoxelXZ);
+
+			// To do: determine if the player would collide with the voxel instead
+			// of checking that they're in the voxel.
+			this->handleLevelTransition(oldPlayerVoxelXZ, newPlayerVoxelXZ);
+		}
 	}
 }
 
