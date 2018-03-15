@@ -205,8 +205,6 @@ namespace
 
 ExeUnpacker::ExeUnpacker(const std::string &filename)
 {
-	DebugMention("Unpacking \"" + filename + "\".");
-
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 

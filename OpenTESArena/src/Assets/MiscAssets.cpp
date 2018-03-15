@@ -208,6 +208,8 @@ MiscAssets::~MiscAssets()
 
 void MiscAssets::init()
 {
+	DebugMention("Initializing.");
+
 	// Load the executable data.
 	this->parseExecutableData();
 
