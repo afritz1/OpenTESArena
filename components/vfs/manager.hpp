@@ -47,6 +47,15 @@ public:
     IStreamPtr open(const std::string &name) { return open(name.c_str()); }
     IStreamPtr open(std::string &&name) { return open(name.c_str()); }
 
+	// Special open method intended for Unix systems since the Arena floppy and CD versions don't
+	// have consistent casing for some files (like SPELLSG.65). This method is specific to Arena's
+	// files and is not a general solution for case-insensitive file loading.
+	// - For some reason, certain files are still found on Unix (like Arrows.cif) even when the
+	//   program requests different casing (like ARROWS.CIF), so this may be an issue of Unix
+	//   checking the filename without its extension when (supposedly) resolving ambiguities.
+	// - To do: replace with something using std::filesystem::equivalent() (C++17)?
+	IStreamPtr openCaseInsensitive(const std::string &name);
+
     bool exists(const char *name);
     std::vector<std::string> list(const char *pattern=nullptr) const;
 

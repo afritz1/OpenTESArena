@@ -11,6 +11,7 @@
 #endif
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -70,6 +71,40 @@ IStreamPtr Manager::open(const char *name)
     }
 
     return gGlobalBsa.open(name);
+}
+
+IStreamPtr Manager::openCaseInsensitive(const std::string &name)
+{
+	// Since the given filename is assumed to be unique in its directory, we only need to
+	// worry about filenames just like it but with different casing.
+	std::string newName = name;
+
+	// Case 1: All uppercase.
+	for (char &c : newName)
+	{
+		c = std::toupper(c);
+	}
+
+	IStreamPtr stream = this->open(newName);
+
+	if (stream != nullptr)
+	{
+		return stream;
+	}
+	else
+	{
+		// Case 2: Normal case (upper first character, lower rest).
+		newName.front() = std::toupper(newName.front());
+		for (auto iter = newName.begin() + 1; iter != newName.end(); ++iter)
+		{
+			*iter = std::tolower(*iter);
+		}
+
+		stream = this->open(newName);
+
+		// The caller does error checking to see if this is null.
+		return stream;
+	}
 }
 
 bool Manager::exists(const char *name)

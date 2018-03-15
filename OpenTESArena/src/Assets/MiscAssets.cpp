@@ -820,9 +820,11 @@ void MiscAssets::parseNameChunks()
 
 void MiscAssets::parseStandardSpells()
 {
+	// The filename has different casing between the floppy and CD version, so use a
+	// case-insensitive open method so it works on case-sensitive systems (i.e., Unix).
 	const std::string filename = "SPELLSG.65";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
