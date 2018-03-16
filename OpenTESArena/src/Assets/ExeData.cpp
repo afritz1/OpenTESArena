@@ -11,7 +11,7 @@
 
 namespace
 {
-	// Convenience method for initializing an array of signed/unsigned 8-bit integers.
+	// Convenience method for initializing an array of 8-bit integers.
 	template <typename T, size_t U>
 	void initInt8Array(std::array<T, U> &arr, const char *data)
 	{
@@ -23,7 +23,7 @@ namespace
 		}
 	}
 
-	// Convenience method for initializing an array of signed/unsigned 8-bit integer pairs.
+	// Convenience method for initializing an array of 8-bit integer pairs.
 	template <typename T, size_t U>
 	void initInt8PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
 	{
@@ -37,15 +37,15 @@ namespace
 		}
 	}
 
-	// Convenience method for initializing a jagged array of signed/unsigned 8-bit integers.
+	// Convenience method for initializing a jagged array of 8-bit integers.
 	template <typename T, size_t U>
 	void initJaggedInt8Array(std::array<std::vector<T>, U> &arr, T terminator, const char *data)
 	{
 		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
 
-		for (size_t i = 0, offset = 0; i < arr.size(); i++)
+		size_t offset = 0;
+		for (std::vector<T> &vec : arr)
 		{
-			std::vector<T> &vec = arr.at(i);
 			const char *innerData = data + offset;
 			size_t innerOffset = 0;
 
@@ -69,7 +69,7 @@ namespace
 		}
 	}
 
-	// Convenience method for initializing an array of signed/unsigned 16-bit integers.
+	// Convenience method for initializing an array of 16-bit integers.
 	template <typename T, size_t U>
 	void initInt16Array(std::array<T, U> &arr, const char *data)
 	{
@@ -86,7 +86,7 @@ namespace
 	template <typename T, size_t U>
 	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
 	{
-		// Construct an array of unique, sorted offsets from the const array.
+		// Construct an array of unique, sorted offsets based on the const array.
 		// Remove zeroes because they do not count as offsets (they represent "null").
 		std::array<T, U> uniqueArr;
 		const auto uniqueBegin = uniqueArr.begin();
