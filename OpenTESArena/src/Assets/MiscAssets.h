@@ -63,8 +63,9 @@ public:
 		std::array<char, 33> name;
 	};
 
-	struct WorldMapTerrain
+	class WorldMapTerrain
 	{
+	private:
 		static const int WIDTH = 320;
 		static const int HEIGHT = 200;
 
@@ -78,6 +79,15 @@ public:
 
 		// 320x200 palette indices.
 		std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
+	public:
+		// Gets the terrain at the given XY coordinate without any correction.
+		uint8_t getAt(int x, int y) const;
+
+		// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel
+		// error and does a fail-safe search for sea pixels).
+		uint8_t getFailSafeAt(int x, int y) const;
+
+		void init();
 	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
@@ -128,9 +138,6 @@ private:
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
-
-	// Reads terrain data from TERRAIN.IMG.
-	void parseWorldMapTerrain();
 public:
 	MiscAssets();
 	~MiscAssets();
@@ -177,8 +184,8 @@ public:
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
 
-	// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel error).
-	uint8_t getWorldMapTerrain(int x, int y) const;
+	
+	const WorldMapTerrain &getWorldMapTerrain() const;
 
 	void init();
 };

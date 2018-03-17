@@ -17,6 +17,8 @@
 class ArenaRandom;
 class MiscAssets;
 
+enum class WeatherType;
+
 class CityDataFile
 {
 public:
@@ -79,7 +81,8 @@ public:
 
 	// Gets the number of days required to travel from one location to another.
 	int getTravelDays(int startLocalLocationID, int startProvinceID, int endLocalLocationID,
-		int endProvinceID, int month, ArenaRandom &random, const MiscAssets &miscAssets) const;
+		int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
+		ArenaRandom &random, const MiscAssets &miscAssets) const;
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
 	// the dungeon ID is between 0 and 15.

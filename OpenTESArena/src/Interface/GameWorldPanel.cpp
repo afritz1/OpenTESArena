@@ -1499,10 +1499,11 @@ void GameWorldPanel::updateCursorRegions(int width, int height)
 
 void GameWorldPanel::tick(double dt)
 {
-	assert(this->getGame().gameDataIsActive());
+	auto &game = this->getGame();
+	assert(game.gameDataIsActive());
 
 	// Get the relative mouse state (can only be called once per frame).	
-	const auto &inputManager = this->getGame().getInputManager();
+	const auto &inputManager = game.getInputManager();
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 
 	// Handle input for player motion.
@@ -1510,10 +1511,9 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerMovement(dt);
 
 	// Tick the game world clock time.
-	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 	const Clock oldClock = gameData.getClock();
-	gameData.tickTime(dt);
+	gameData.tickTime(dt, game);
 	const Clock newClock = gameData.getClock();
 
 	auto &renderer = game.getRenderer();

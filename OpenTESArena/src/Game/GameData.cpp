@@ -4,6 +4,7 @@
 
 #include "SDL.h"
 
+#include "Game.h"
 #include "GameData.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
@@ -47,6 +48,8 @@ GameData::GameData(Player &&player)
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
 	DebugMention("Initializing.");
+
+	this->weathers.fill(WeatherType::Clear);
 }
 
 GameData::~GameData()
@@ -589,7 +592,47 @@ std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
 	return this->onLevelUpVoxelEnter;
 }
 
-void GameData::tickTime(double dt)
+void GameData::updateWeather(ArenaRandom &random, const ExeData &exeData)
+{
+	const int seasonIndex = this->date.getSeason();
+
+	for (size_t i = 0; i < this->weathers.size(); i++)
+	{
+		const int climateIndex = exeData.locations.climates.at(i);
+		const int variantIndex = [&random]()
+		{
+			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
+			const int val = random.next() % 100;
+
+			if (val >= 60)
+			{
+				return 2;
+			}
+			else if (val >= 40)
+			{
+				return 1;
+			}
+			else if (val >= 20)
+			{
+				return 3;
+			}
+			else if (val >= 10)
+			{
+				return 0;
+			}
+			else
+			{
+				return 4;
+			}
+		}();
+
+		const int weatherTableIndex = (climateIndex * 20) + (seasonIndex * 5) + variantIndex;
+		this->weathers.at(i) = static_cast<WeatherType>(
+			exeData.locations.weatherTable.at(weatherTableIndex));
+	}
+}
+
+void GameData::tickTime(double dt, Game &game)
 {
 	assert(dt >= 0.0);
 
@@ -597,6 +640,17 @@ void GameData::tickTime(double dt)
 	const int oldHour = this->clock.getHours24();
 	this->clock.tick(dt * GameData::TIME_SCALE);
 	const int newHour = this->clock.getHours24();
+
+	// Check if the hour changed.
+	if (newHour != oldHour)
+	{
+		// Update the weather.
+		const auto &exeData = game.getMiscAssets().getExeData();
+
+		// To do: see if this should be stored somewhere else (like in GameData).
+		ArenaRandom random;
+		this->updateWeather(random, exeData);
+	}
 
 	// Check if the clock hour looped back around.
 	if (newHour < oldHour)

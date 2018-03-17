@@ -81,6 +81,11 @@ std::string Date::getOrdinalDay() const
 	return dayString;
 }
 
+int Date::getSeason() const
+{
+	return ((this->month + 10) % Date::MONTHS_PER_YEAR) / 3;
+}
+
 void Date::incrementYear()
 {
 	this->year++;

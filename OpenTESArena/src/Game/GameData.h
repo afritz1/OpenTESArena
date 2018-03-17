@@ -24,6 +24,7 @@
 // the character resources). Whichever entry points into the "game" there are, they
 // need to load data into the game data object.
 
+class ArenaRandom;
 class CharacterClass;
 class INFFile;
 class MIFFile;
@@ -54,6 +55,9 @@ private:
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
 	std::pair<double, std::unique_ptr<TextBox>> triggerText, actionText, effectText;
+
+	// One weather for each of the 36 province quadrants (updated hourly).
+	std::array<WeatherType, 36> weathers;
 
 	Player player;
 	WorldData worldData;
@@ -135,8 +139,11 @@ public:
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
+	// Recalculates the weather for each global quarter (done hourly).
+	void updateWeather(ArenaRandom &random, const ExeData &exeData);
+
 	// Ticks the game clock (for the current time of day and date).
-	void tickTime(double dt);
+	void tickTime(double dt, Game &game);
 };
 
 #endif

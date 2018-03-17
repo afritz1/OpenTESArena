@@ -181,7 +181,14 @@ public:
 		// Province .IMG backgrounds (ordered the same as province names).
 		std::array<std::string, 9> provinceImgFilenames;
 
+		// Display name of the initial dungeon.
 		std::string startDungeonName;
+
+		// Climates for each global quarter. Used with weather calculation.
+		std::array<uint8_t, 36> climates;
+
+		// Weathers for each global quarter climate + season + variant tuple.
+		std::array<uint8_t, 140> weatherTable;
 
 		// Travel speed modifiers for each climate.
 		std::array<std::array<uint8_t, 12>, 7> climateSpeedTables;

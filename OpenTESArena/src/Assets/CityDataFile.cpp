@@ -144,7 +144,8 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 }
 
 int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
-	int endLocalLocationID, int endProvinceID, int month, ArenaRandom &random,
+	int endLocalLocationID, int endProvinceID, int month,
+	const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
 	const MiscAssets &miscAssets) const
 {
 	auto getGlobalPoint = [this](int localLocationID, int provinceID)
@@ -173,17 +174,18 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 	for (const Int2 &point : points)
 	{
 		const int monthIndex = (month + (totalTime / 3000)) % 12;
-		const int weatherIndex = [this, &point]()
+		const int weatherIndex = [this, &weathers, &point]()
 		{
 			// Find which province quarter the global point is in.
 			const int quarterIndex = this->getGlobalQuarter(point);
 
-			// To do: find out where Weather[quarter] comes from.
-			return 0;
+			// Convert the weather type to its equivalent index.
+			return static_cast<int>(weathers.at(quarterIndex));
 		}();
 
 		// The type of terrain at the world map point.
-		const uint8_t terrainIndex = miscAssets.getWorldMapTerrain(point.x, point.y);
+		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
+		const uint8_t terrainIndex = worldMapTerrain.getAt(point.x, point.y);
 
 		// Calculate the travel speed based on climate and weather.
 		const auto &exeData = miscAssets.getExeData();

@@ -8,7 +8,11 @@ enum class WeatherType
 	Clear,
 	Overcast,
 	Rain,
-	Snow
+	Snow,
+	Unknown0, // Snow overcast?
+	Unknown1, // To do.
+	Unknown2, // To do (same as overcast?).
+	Unknown3 // To do.
 };
 
 #endif

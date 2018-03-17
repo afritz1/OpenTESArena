@@ -34,6 +34,7 @@ public:
 	int getWeekday() const; // Zero-based for name indexing.
 	int getDay() const; // Zero-based.
 	std::string getOrdinalDay() const;
+	int getSeason() const; // March is 0 (spring).
 
 	void incrementYear();
 	void incrementMonth();
