@@ -52,6 +52,10 @@ ReservedBlockLists=0x3FF8E
 
 # [Entities]
 CreatureNames=0x36BBE
+MaleMainRaceAttributes=0x35FC3
+FemaleMainRaceAttributes=0x35FCB
+GuardAttributes=0x35FD3
+CreatureAttributes=0x35FDC
 CreatureAnimationFilenames=0x3E4FB
 MaleCitizenAnimationFilenames=0x4186A
 FemaleCitizenAnimationFilenames=0x41891

@@ -108,6 +108,12 @@ public:
 		// its index in this array as its identifier, much like with provinces.
 		std::array<std::string, 23> names;
 
+		// Attribute arrays for male/female races, guards, and creatures. 255 is displayed
+		// as 100.
+		std::array<std::array<uint8_t, 8>, 8> maleMainRaceAttributes, femaleMainRaceAttributes;
+		std::array<std::array<uint8_t, 8>, 9> guardAttributes;
+		std::array<std::array<uint8_t, 8>, 24> creatureAttributes;
+
 		// Creature animations (i.e., their .CFA filenames). These are ordered the same
 		// as creature names, and there is an extra entry at the end for the final boss.
 		// Replace '@' with a number from 1 to 6 indicating which .CFA file to fetch for

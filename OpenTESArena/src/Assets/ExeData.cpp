@@ -69,6 +69,18 @@ namespace
 		}
 	}
 
+	// Convenience method for initializing a 2D array of 8-bit integers.
+	template <typename T, size_t U, size_t V>
+	void init2DInt8Array(std::array<std::array<T, U>, V> &arrs, const char *data)
+	{
+		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
+
+		for (size_t i = 0; i < arrs.size(); i++)
+		{
+			initInt8Array(arrs.at(i), data + (i * U));
+		}
+	}
+
 	// Convenience method for initializing an array of 16-bit integers.
 	template <typename T, size_t U>
 	void initInt16Array(std::array<T, U> &arr, const char *data)
@@ -250,6 +262,10 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 {
 	const int creatureNamesOffset = ExeData::get("CreatureNames", keyValueMap);
+	const int maleMainRaceAttrsOffset = ExeData::get("MaleMainRaceAttributes", keyValueMap);
+	const int femaleMainRaceAttrsOffset = ExeData::get("FemaleMainRaceAttributes", keyValueMap);
+	const int guardAttributesOffset = ExeData::get("GuardAttributes", keyValueMap);
+	const int creatureAttributesOffset = ExeData::get("CreatureAttributes", keyValueMap);
 	const int animationFilenamesOffset = ExeData::get("CreatureAnimationFilenames", keyValueMap);
 	const int maleCitizenAnimFilenamesOffset =
 		ExeData::get("MaleCitizenAnimationFilenames", keyValueMap);
@@ -262,6 +278,10 @@ void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 	const int cfaWeaponAnimationsOffset = ExeData::get("CFAWeaponAnimations", keyValueMap);
 
 	initStringArray(this->names, data + creatureNamesOffset);
+	init2DInt8Array(this->maleMainRaceAttributes, data + maleMainRaceAttrsOffset);
+	init2DInt8Array(this->femaleMainRaceAttributes, data + femaleMainRaceAttrsOffset);
+	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
+	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
 	initStringArray(this->animationFilenames, data + animationFilenamesOffset);
 	initStringArray(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
 	initStringArray(this->femaleCitizenAnimationFilenames,
