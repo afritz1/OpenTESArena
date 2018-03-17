@@ -178,7 +178,6 @@ public:
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
 
 	// Gets the terrain at the given XY coordinate (also accounts for the 12 pixel error).
-	// - To do: does the return value need to have WorldMapTerrain::SEA subtracted?
 	uint8_t getWorldMapTerrain(int x, int y) const;
 
 	void init();

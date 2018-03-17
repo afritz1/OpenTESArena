@@ -14,6 +14,9 @@
 // *.64 files are for swapping, *.65 files are templates for new characters, and
 // *.0x files contain save-specific modifications (i.e., to save random dungeon names).
 
+class ArenaRandom;
+class MiscAssets;
+
 class CityDataFile
 {
 public:
@@ -67,8 +70,16 @@ public:
 	// Gets the province data at the given province index.
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
 
+	// Gets the location associated with the given local location ID and province ID.
+	const CityDataFile::ProvinceData::LocationData &getLocationData(
+		int localLocationID, int provinceID) const;
+
 	// Gets the quarter within a province (to determine weather).
-	int getGlobalQuarter(const Int2 &globalPoint);
+	int getGlobalQuarter(const Int2 &globalPoint) const;
+
+	// Gets the number of days required to travel from one location to another.
+	int getTravelDays(int startLocalLocationID, int startProvinceID, int endLocalLocationID,
+		int endProvinceID, int month, ArenaRandom &random, const MiscAssets &miscAssets) const;
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
 	// the dungeon ID is between 0 and 15.

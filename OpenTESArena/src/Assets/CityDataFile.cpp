@@ -3,6 +3,9 @@
 #include <cmath>
 
 #include "CityDataFile.h"
+#include "ExeData.h"
+#include "MiscAssets.h"
+#include "../Math/Random.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 
@@ -54,7 +57,50 @@ const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 	return this->provinces.at(index);
 }
 
-int CityDataFile::getGlobalQuarter(const Int2 &globalPoint)
+const CityDataFile::ProvinceData::LocationData &CityDataFile::getLocationData(
+	int localLocationID, int provinceID) const
+{
+	const auto &province = this->provinces.at(provinceID);
+
+	if (localLocationID < 8)
+	{
+		// City.
+		return province.cityStates.at(localLocationID);
+	}
+	else if (localLocationID < 16)
+	{
+		// Town.
+		return province.towns.at(localLocationID - 8);
+	}
+	else if (localLocationID < 32)
+	{
+		// Village.
+		return province.villages.at(localLocationID - 16);
+	}
+	else if (localLocationID == 32)
+	{
+		// Staff dungeon.
+		return province.secondDungeon;
+	}
+	else if (localLocationID == 33)
+	{
+		// Staff map dungeon.
+		return province.firstDungeon;
+	}
+	else if (localLocationID < 48)
+	{
+		// Named dungeon.
+		return province.randomDungeons.at(localLocationID - 32);
+	}
+	else
+	{
+		throw std::runtime_error("Bad local location ID \"" +
+			std::to_string(localLocationID) + "\" for province ID \"" +
+			std::to_string(provinceID) + "\".");
+	}
+}
+
+int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 {
 	Rect provinceRect;
 
@@ -95,6 +141,78 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint)
 	}();
 
 	return globalQuarter;
+}
+
+int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
+	int endLocalLocationID, int endProvinceID, int month, ArenaRandom &random,
+	const MiscAssets &miscAssets) const
+{
+	auto getGlobalPoint = [this](int localLocationID, int provinceID)
+	{
+		auto getProvinceRect = [this](int provinceID)
+		{
+			const auto &province = this->getProvinceData(provinceID);
+			return Rect(province.globalX, province.globalY,
+				province.globalW, province.globalH);
+		};
+
+		const Rect provinceRect = getProvinceRect(provinceID);
+		const auto &location = this->getLocationData(localLocationID, provinceID);
+		return CityDataFile::localPointToGlobal(
+			Int2(location.x, location.y), provinceRect);
+	};
+	
+	// The two world map points to calculate between.
+	const Int2 startGlobalPoint = getGlobalPoint(startLocalLocationID, startProvinceID);
+	const Int2 endGlobalPoint = getGlobalPoint(endLocalLocationID, endProvinceID);
+
+	// Get all the points along the line between the two points.
+	const std::vector<Int2> points = Int2::bresenhamLine(startGlobalPoint, endGlobalPoint);
+
+	int totalTime = 0;
+	for (const Int2 &point : points)
+	{
+		const int monthIndex = (month + (totalTime / 3000)) % 12;
+		const int weatherIndex = [this, &point]()
+		{
+			// Find which province quarter the global point is in.
+			const int quarterIndex = this->getGlobalQuarter(point);
+
+			// To do: find out where Weather[quarter] comes from.
+			return 0;
+		}();
+
+		// The type of terrain at the world map point.
+		const uint8_t terrainIndex = miscAssets.getWorldMapTerrain(point.x, point.y);
+
+		// Calculate the travel speed based on climate and weather.
+		const auto &exeData = miscAssets.getExeData();
+		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
+		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
+		const int travelSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex) *
+			weatherSpeedTables.at(weatherIndex).at(monthIndex);
+
+		// Add the pixel's travel time onto the total time.
+		const int pixelTravelTime = 2000 / travelSpeed;
+		totalTime += pixelTravelTime;
+	}
+
+	// Calculate the actual travel days based on the total time.
+	const int travelDays = [&random, totalTime]()
+	{
+		const int minDays = 1;
+		const int maxDays = 2000;
+		int days = std::min(std::max(totalTime / 10, minDays), maxDays);
+		
+		if (days > 20)
+		{
+			days += (random.next() % 10) - 5;
+		}
+
+		return days;
+	}();
+
+	return travelDays;
 }
 
 uint32_t CityDataFile::getDungeonSeed(int dungeonID, int provinceID) const

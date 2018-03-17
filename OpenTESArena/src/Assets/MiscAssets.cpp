@@ -1124,63 +1124,69 @@ const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const
 
 uint8_t MiscAssets::getWorldMapTerrain(int x, int y) const
 {
-	// Lambda for obtaining a terrain pixel at some XY coordinate.
-	auto getTerrainAt = [this](int x, int y)
+	const uint8_t terrainValue = [this, x, y]()
 	{
-		const int index = [x, y]()
+		// Lambda for obtaining a terrain pixel at some XY coordinate.
+		auto getTerrainAt = [this](int x, int y)
 		{
-			const int pixelCount = WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT;
-
-			// Move the index 12 pixels left (wrapping around if necessary).
-			int i = x + (y * WorldMapTerrain::WIDTH);
-			i -= 12;
-
-			if (i < 0)
+			const int index = [x, y]()
 			{
-				i += pixelCount;
-			}
-			else if (i >= pixelCount)
-			{
-				i -= pixelCount;
-			}
+				const int pixelCount = WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT;
 
-			return i;
-		}();
+				// Move the index 12 pixels left (wrapping around if necessary).
+				int i = x + (y * WorldMapTerrain::WIDTH);
+				i -= 12;
 
-		return this->worldMapTerrain.indices.at(index);
-	};
+				if (i < 0)
+				{
+					i += pixelCount;
+				}
+				else if (i >= pixelCount)
+				{
+					i -= pixelCount;
+				}
 
-	// Try to get the terrain at the requested pixel.
-	const uint8_t terrainPixel = getTerrainAt(x, y);
+				return i;
+			}();
 
-	if (terrainPixel != WorldMapTerrain::SEA)
-	{
-		// The pixel is a usable terrain.
-		return terrainPixel;
-	}
-	else
-	{
-		// Fail-safe: check around the requested pixel in a '+' pattern for non-sea pixels.
-		for (int dist = 1; dist < 200; dist++)
+			return this->worldMapTerrain.indices.at(index);
+		};
+
+		// Try to get the terrain at the requested pixel.
+		const uint8_t terrainPixel = getTerrainAt(x, y);
+
+		if (terrainPixel != WorldMapTerrain::SEA)
 		{
-			const std::array<uint8_t, 4> failSafePixels =
-			{
-				getTerrainAt(x, y + dist), // Below.
-				getTerrainAt(x, y - dist), // Above.
-				getTerrainAt(x + dist, y), // Right.
-				getTerrainAt(x - dist, y) // Left.
-			};
-
-			const auto iter = std::find_if(failSafePixels.begin(), failSafePixels.end(),
-				[](uint8_t pixel) { return pixel != WorldMapTerrain::SEA; });
-
-			if (iter != failSafePixels.end())
-			{
-				return *iter;
-			}
+			// The pixel is a usable terrain.
+			return terrainPixel;
 		}
+		else
+		{
+			// Fail-safe: check around the requested pixel in a '+' pattern for non-sea pixels.
+			for (int dist = 1; dist < 200; dist++)
+			{
+				const std::array<uint8_t, 4> failSafePixels =
+				{
+					getTerrainAt(x, y + dist), // Below.
+					getTerrainAt(x, y - dist), // Above.
+					getTerrainAt(x + dist, y), // Right.
+					getTerrainAt(x - dist, y) // Left.
+				};
 
-		// Give up, returning default temperate terrain.
-		return WorldMapTerrain::TEMPERATE1;
-	}
+				const auto iter = std::find_if(failSafePixels.begin(), failSafePixels.end(),
+					[](uint8_t pixel) { return pixel != WorldMapTerrain::SEA; });
+
+				if (iter != failSafePixels.end())
+				{
+					return *iter;
+				}
+			}
+
+			// Give up, returning default temperate terrain.
+			return WorldMapTerrain::TEMPERATE1;
+		}
+	}();
+
+	// Normalize the indices so the lowest index (sea) is index 0.
+	return terrainValue - WorldMapTerrain::SEA;
 }
