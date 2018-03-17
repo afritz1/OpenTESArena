@@ -90,7 +90,7 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::getLocationData(
 	else if (localLocationID < 48)
 	{
 		// Named dungeon.
-		return province.randomDungeons.at(localLocationID - 32);
+		return province.randomDungeons.at(localLocationID - 34);
 	}
 	else
 	{
