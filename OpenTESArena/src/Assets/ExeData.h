@@ -183,6 +183,12 @@ public:
 
 		std::string startDungeonName;
 
+		// Travel speed modifiers for each climate.
+		std::array<std::array<uint8_t, 12>, 7> climateSpeedTables;
+
+		// Travel speed modifiers for each weather. 0 represents 100.
+		std::array<std::array<uint8_t, 12>, 5> weatherSpeedTables;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

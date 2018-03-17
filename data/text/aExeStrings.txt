@@ -77,6 +77,8 @@ ProvinceNames=0x392F8
 CharCreationProvinceNames=0x3E602
 ProvinceImgFilenames=0x3FDFA
 StartDungeonName=0x402A1
+ClimateSpeedTables=0x3EB96
+WeatherSpeedTables=0x3EBEA
 
 # [Logbook]
 LogbookIsEmpty=0x42F45

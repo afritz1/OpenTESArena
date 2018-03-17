@@ -316,6 +316,8 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 		ExeData::get("CharCreationProvinceNames", keyValueMap);
 	const int provinceImgFilenamesOffset = ExeData::get("ProvinceImgFilenames", keyValueMap);
 	const int startDungeonNameOffset = ExeData::get("StartDungeonName", keyValueMap);
+	const int climateSpeedTablesOffset = ExeData::get("ClimateSpeedTables", keyValueMap);
+	const int weatherSpeedTablesOffset = ExeData::get("WeatherSpeedTables", keyValueMap);
 
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < this->provinceNames.size(); i++)
@@ -326,6 +328,8 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->charCreationProvinceNames, data + charCreationProvinceNamesOffset);
 	initStringArray(this->provinceImgFilenames, data + provinceImgFilenamesOffset);
 	this->startDungeonName = ExeData::readString(data + startDungeonNameOffset);
+	init2DInt8Array(this->climateSpeedTables, data + climateSpeedTablesOffset);
+	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
 }
 
 void ExeData::Logbook::init(const char *data, const KeyValueMap &keyValueMap)
