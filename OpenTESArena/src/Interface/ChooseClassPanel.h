@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Button.h"
+#include "ListBox.h"
 #include "Panel.h"
 #include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
@@ -13,7 +14,6 @@
 // list that says nothing about the classes (thus requiring the manual for 
 // information). I think it's better to have tooltips.
 
-class ListBox;
 class Renderer;
 class Surface;
 class TextBox;

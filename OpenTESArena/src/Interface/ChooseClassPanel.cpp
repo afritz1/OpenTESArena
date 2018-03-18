@@ -7,7 +7,6 @@
 #include "ChooseClassPanel.h"
 #include "ChooseNamePanel.h"
 #include "CursorAlignment.h"
-#include "ListBox.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
