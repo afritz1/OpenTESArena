@@ -12,7 +12,6 @@
 // added here that represents a percentage of "fade".
 
 enum class VoxelDataType;
-enum class VoxelType;
 
 class VoxelData
 {
@@ -28,8 +27,10 @@ public:
 	// Y offset is 0, and Y size can be inferred by the renderer on the main floor.
 	struct WallData
 	{
-		static const int NO_MENU;
+		enum class Type { Solid, LevelUp, LevelDown, Menu };
+
 		int sideID, floorID, ceilingID, menuID;
+		Type type;
 	};
 
 	// Floors only have their top rendered.
@@ -91,16 +92,15 @@ public:
 
 	struct DoorData
 	{
-		// Each type of door. Most doors swing open, while others raise up or slide to the 
-		// side. I don't know if any split, but I believe they're supported by the engine.
-		enum class Type { Swinging, Sliding, Raising, Splitting };
+		// Each type of door. Most doors swing open, while others raise up or slide to the side.
+		// Splitting doors are unused.
+		enum class Type { Swinging, Sliding, Raising };
 
 		int id;
 		Type type;
 	};
 
 	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
-	VoxelType type; // Defines what the voxel is.
 
 	// Only one voxel data type can be active at a time, given by "dataType".
 	union
@@ -119,7 +119,8 @@ public:
 	VoxelData();
 	~VoxelData();
 
-	static VoxelData makeWall(int sideID, int floorID, int ceilingID, VoxelType type);
+	static VoxelData makeWall(int sideID, int floorID, int ceilingID, const int *menuID,
+		WallData::Type type);
 	static VoxelData makeFloor(int id);
 	static VoxelData makeCeiling(int id);
 	static VoxelData makeRaised(int sideID, int floorID, int ceilingID, double yOffset,

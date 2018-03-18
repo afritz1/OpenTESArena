@@ -14,7 +14,6 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 #include "../World/WorldData.h"
 
 const double Player::HEIGHT = 0.70;
@@ -265,9 +264,20 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			const bool isDoor = voxelData.dataType == VoxelDataType::Door;
 
 			// -- Temporary hack for "on voxel enter" transitions --
-			// - To do: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelUpDown = (voxelData.type == VoxelType::LevelUp) ||
-				(voxelData.type == VoxelType::LevelDown);
+			// - To do: replace with "on would enter voxel" event and near facing check.			
+			const bool isLevelUpDown = [&voxelData]()
+			{
+				if (voxelData.dataType == VoxelDataType::Wall)
+				{
+					const VoxelData::WallData::Type wallType = voxelData.wall.type;
+					return (wallType == VoxelData::WallData::Type::LevelUp) ||
+						(wallType == VoxelData::WallData::Type::LevelDown);
+				}
+				else
+				{
+					return false;
+				}
+			}();
 
 			return !isEmpty && !isDoor && !isLevelUpDown;
 		}

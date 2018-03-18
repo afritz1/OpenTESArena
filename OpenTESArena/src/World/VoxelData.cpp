@@ -1,11 +1,9 @@
+#include <cassert>
 #include <stdexcept>
 
 #include "VoxelData.h"
 #include "VoxelDataType.h"
-#include "VoxelType.h"
 #include "../Utilities/Debug.h"
-
-const int VoxelData::WallData::NO_MENU = -1;
 
 bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
 {
@@ -33,7 +31,6 @@ VoxelData::VoxelData()
 {
 	// Default to empty.
 	this->dataType = VoxelDataType::None;
-	this->type = VoxelType::Empty;
 }
 
 VoxelData::~VoxelData()
@@ -41,7 +38,8 @@ VoxelData::~VoxelData()
 
 }
 
-VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID, VoxelType type)
+VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID,
+	const int *menuID, WallData::Type type)
 {
 	if (sideID >= VoxelData::TOTAL_IDS)
 	{
@@ -60,13 +58,25 @@ VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID, VoxelType 
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Wall;
-	data.type = type;
 
 	VoxelData::WallData &wall = data.wall;
 	wall.sideID = sideID % VoxelData::TOTAL_IDS;
 	wall.floorID = floorID % VoxelData::TOTAL_IDS;
 	wall.ceilingID = ceilingID % VoxelData::TOTAL_IDS;
-	wall.menuID = VoxelData::WallData::NO_MENU; // Assigned outside this method.
+
+	// If the menu ID parameter is given, use it.
+	if (menuID != nullptr)
+	{
+		assert(type == WallData::Type::Menu);
+		wall.menuID = *menuID;
+	}
+	else
+	{
+		assert(type != WallData::Type::Menu);
+		wall.menuID = -1; // Unused.
+	}
+
+	wall.type = type;
 
 	return data;
 }
@@ -80,7 +90,6 @@ VoxelData VoxelData::makeFloor(int id)
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Floor;
-	data.type = VoxelType::Solid;
 
 	VoxelData::FloorData &floor = data.floor;
 	floor.id = id % VoxelData::TOTAL_IDS;
@@ -97,7 +106,6 @@ VoxelData VoxelData::makeCeiling(int id)
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Ceiling;
-	data.type = VoxelType::Solid;
 
 	VoxelData::CeilingData &ceiling = data.ceiling;
 	ceiling.id = id % VoxelData::TOTAL_IDS;
@@ -125,7 +133,6 @@ VoxelData VoxelData::makeRaised(int sideID, int floorID, int ceilingID, double y
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Raised;
-	data.type = VoxelType::Raised;
 
 	VoxelData::RaisedData &raised = data.raised;
 	raised.sideID = sideID % VoxelData::TOTAL_IDS;
@@ -148,7 +155,6 @@ VoxelData VoxelData::makeDiagonal(int id, bool type1)
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Diagonal;
-	data.type = VoxelType::Diagonal;
 
 	VoxelData::DiagonalData &diagonal = data.diagonal;
 	diagonal.id = id % VoxelData::TOTAL_IDS;
@@ -166,7 +172,6 @@ VoxelData VoxelData::makeTransparentWall(int id, bool collider)
 
 	VoxelData data;
 	data.dataType = VoxelDataType::TransparentWall;
-	data.type = VoxelType::TransparentWall;
 
 	VoxelData::TransparentWallData &transparentWall = data.transparentWall;
 	transparentWall.id = id % VoxelData::TOTAL_IDS;
@@ -184,7 +189,6 @@ VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, Facing faci
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Edge;
-	data.type = VoxelType::Edge;
 
 	VoxelData::EdgeData &edge = data.edge;
 	edge.id = id % VoxelData::TOTAL_IDS;
@@ -205,25 +209,6 @@ VoxelData VoxelData::makeChasm(int id, bool north, bool east, bool south, bool w
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Chasm;
-	data.type = [type]()
-	{
-		if (type == ChasmData::Type::Dry)
-		{
-			return VoxelType::DryChasm;
-		}
-		else if (type == ChasmData::Type::Wet)
-		{
-			return VoxelType::WetChasm;
-		}
-		else if (type == ChasmData::Type::Lava)
-		{
-			return VoxelType::LavaChasm;
-		}
-		else
-		{
-			throw std::runtime_error("Bad chasm type.");
-		}
-	}();
 
 	VoxelData::ChasmData &chasm = data.chasm;
 	chasm.id = id % VoxelData::TOTAL_IDS;
@@ -245,7 +230,6 @@ VoxelData VoxelData::makeDoor(int id, DoorData::Type type)
 
 	VoxelData data;
 	data.dataType = VoxelDataType::Door;
-	data.type = VoxelType::Door;
 
 	VoxelData::DoorData &door = data.door;
 	door.id = id % VoxelData::TOTAL_IDS;

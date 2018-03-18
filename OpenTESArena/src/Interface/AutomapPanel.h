@@ -8,8 +8,10 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/Texture.h"
 
+class Color;
 class Renderer;
 class TextBox;
+class VoxelData;
 class VoxelGrid;
 
 class AutomapPanel : public Panel
@@ -19,6 +21,10 @@ private:
 	Button<Game&> backToGameButton;
 	Texture mapTexture;
 	Double2 automapOffset; // Displayed XZ coordinate offset from (0, 0).
+
+	// Gets the display color for a pixel on the automap, given its associated floor
+	// and wall voxel data definitions.
+	static const Color &getPixelColor(const VoxelData &floorData, const VoxelData &wallData);
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);

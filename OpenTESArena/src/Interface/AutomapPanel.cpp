@@ -17,6 +17,7 @@
 #include "../Interface/TextAlignment.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
+#include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
@@ -28,8 +29,8 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../World/VoxelData.h"
+#include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 
 namespace std
 {
@@ -127,7 +128,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 		// Fill with transparent color first (used by floor voxels).
 		SDL_FillRect(surface, nullptr, AutomapFloor.toARGB());
-		
+
 		// Lambda for filling in a square in the map surface.
 		auto drawSquare = [surface](int x, int z, const Color &color)
 		{
@@ -160,88 +161,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 				const VoxelData &wallData = getVoxelData(x, 1, z);
 
 				// Decide which color to use for the automap pixel.
-				const Color &color = [&floorData, &wallData]() -> const Color&
-				{
-					const VoxelType floorType = floorData.type;
-					const VoxelType wallType = wallData.type;
-
-					if (floorType == VoxelType::WetChasm)
-					{
-						// Water chasms ignore all but raised platforms.
-						return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
-					}
-					else if (floorType == VoxelType::LavaChasm)
-					{
-						// Lava chasms ignore all but raised platforms.
-						return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
-					}
-					else if (floorType == VoxelType::DryChasm)
-					{
-						// Dry chasms are a different color if a wall is over them.
-						return (wallType == VoxelType::Solid) ? AutomapRaised : AutomapDryChasm;
-					}
-					else if (floorType == VoxelType::Solid)
-					{
-						// If nothing is over the floor, return transparent. Otherwise, choose
-						// from a number of cases.
-						if (wallType == VoxelType::Empty)
-						{
-							return AutomapFloor;
-						}
-						else if (wallType == VoxelType::Solid)
-						{
-							return AutomapWall;
-						}
-						else if (wallType == VoxelType::Raised)
-						{
-							return AutomapRaised;
-						}
-						else if (wallType == VoxelType::Diagonal)
-						{
-							return AutomapFloor;
-						}
-						else if (wallType == VoxelType::Door)
-						{
-							return AutomapDoor;
-						}
-						else if (wallType == VoxelType::TransparentWall)
-						{
-							// Transparent walls with collision (hedges) are shown, while
-							// ones without collision (archways) are not.
-							const VoxelData::TransparentWallData &transparentWallData =
-								wallData.transparentWall;
-							return transparentWallData.collider ? AutomapWall : AutomapFloor;
-						}
-						else if (wallType == VoxelType::Edge)
-						{
-							return AutomapWall;
-						}
-						else if (wallType == VoxelType::LevelUp)
-						{
-							return AutomapLevelUp;
-						}
-						else if (wallType == VoxelType::LevelDown)
-						{
-							return AutomapLevelDown;
-						}
-						else if (wallType == VoxelType::Menu)
-						{
-							return AutomapDoor;
-						}
-						else
-						{
-							DebugMention("Unrecognized wall type \"" +
-								std::to_string(static_cast<int>(wallType)) + "\".");
-							return AutomapNotImplemented;
-						}
-					}
-					else
-					{
-						DebugMention("Unrecognized floor type \"" +
-							std::to_string(static_cast<int>(floorType)) + "\".");
-						return AutomapNotImplemented;
-					}
-				}();
+				const Color &color = AutomapPanel::getPixelColor(floorData, wallData);
 
 				// Draw the automap pixel.
 				drawSquare(x, z, color);
@@ -292,6 +212,111 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 AutomapPanel::~AutomapPanel()
 {
 
+}
+
+const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const VoxelData &wallData)
+{
+	const VoxelDataType floorDataType = floorData.dataType;
+	const VoxelDataType wallDataType = wallData.dataType;
+
+	if (floorDataType == VoxelDataType::Chasm)
+	{
+		const VoxelData::ChasmData::Type chasmType = floorData.chasm.type;
+
+		if (chasmType == VoxelData::ChasmData::Type::Dry)
+		{
+			// Dry chasms are a different color if a wall is over them.
+			return (wallDataType == VoxelDataType::Wall) ? AutomapRaised : AutomapDryChasm;
+		}
+		else if (chasmType == VoxelData::ChasmData::Type::Lava)
+		{
+			// Lava chasms ignore all but raised platforms.
+			return (wallDataType == VoxelDataType::Raised) ? AutomapRaised : AutomapLavaChasm;
+		}
+		else if (chasmType == VoxelData::ChasmData::Type::Wet)
+		{
+			// Water chasms ignore all but raised platforms.
+			return (wallDataType == VoxelDataType::Raised) ? AutomapRaised : AutomapWetChasm;
+		}
+		else
+		{
+			DebugWarning("Unrecognized chasm type \"" +
+				std::to_string(static_cast<int>(chasmType)) + "\".");
+			return AutomapNotImplemented;
+		}
+	}
+	else if (floorDataType == VoxelDataType::Floor)
+	{
+		// If nothing is over the floor, return transparent. Otherwise, choose from
+		// a number of cases.
+		if (wallDataType == VoxelDataType::None)
+		{
+			return AutomapFloor;
+		}
+		else if (wallDataType == VoxelDataType::Wall)
+		{
+			const VoxelData::WallData::Type wallType = wallData.wall.type;
+
+			if (wallType == VoxelData::WallData::Type::Solid)
+			{
+				return AutomapWall;
+			}
+			else if (wallType == VoxelData::WallData::Type::LevelUp)
+			{
+				return AutomapLevelUp;
+			}
+			else if (wallType == VoxelData::WallData::Type::LevelDown)
+			{
+				return AutomapLevelDown;
+			}
+			else if (wallType == VoxelData::WallData::Type::Menu)
+			{
+				// Menu blocks are the same color as doors.
+				return AutomapDoor;
+			}
+			else
+			{
+				DebugWarning("Unrecognized wall type \"" +
+					std::to_string(static_cast<int>(wallType)) + "\".");
+				return AutomapNotImplemented;
+			}
+		}
+		else if (wallDataType == VoxelDataType::Raised)
+		{
+			return AutomapRaised;
+		}
+		else if (wallDataType == VoxelDataType::Diagonal)
+		{
+			return AutomapFloor;
+		}
+		else if (wallDataType == VoxelDataType::Door)
+		{
+			return AutomapDoor;
+		}
+		else if (wallDataType == VoxelDataType::TransparentWall)
+		{
+			// Transparent walls with collision (hedges) are shown, while
+			// ones without collision (archways) are not.
+			const VoxelData::TransparentWallData &transparentWallData = wallData.transparentWall;
+			return transparentWallData.collider ? AutomapWall : AutomapFloor;
+		}
+		else if (wallDataType == VoxelDataType::Edge)
+		{
+			return AutomapWall;
+		}
+		else
+		{
+			DebugWarning("Unrecognized wall data type \"" +
+				std::to_string(static_cast<int>(wallDataType)) + "\".");
+			return AutomapNotImplemented;
+		}
+	}
+	else
+	{
+		DebugWarning("Unrecognized floor data type \"" +
+			std::to_string(static_cast<int>(floorDataType)) + "\".");
+		return AutomapNotImplemented;
+	}
 }
 
 std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
@@ -414,7 +439,7 @@ void AutomapPanel::render(Renderer &renderer)
 	const int offsetX = static_cast<int>(std::floor(this->automapOffset.y * 3.0));
 	const int offsetY = static_cast<int>(std::floor(this->automapOffset.x * 3.0));
 	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
-	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY - 
+	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY -
 		this->mapTexture.getHeight();
 	renderer.drawOriginal(this->mapTexture.get(), mapX, mapY);
 

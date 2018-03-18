@@ -4,6 +4,8 @@
 #include <sstream>
 
 #include "LevelData.h"
+#include "VoxelData.h"
+#include "VoxelDataType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Constants.h"
@@ -13,7 +15,6 @@
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
-#include "../World/VoxelType.h"
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	: position(position)
@@ -803,9 +804,9 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 							const int menuIndex = inf.getMenuIndex(textureIndex);
 							const bool isMenu = menuIndex != -1;
 
-							// Determine what the type of the voxel is (level up/down, menu,
-							// transition, etc.).
-							const VoxelType type = [&inf, textureIndex, isMenu]()
+							// Determine what the type of the wall is (level up/down, menu, 
+							// or just plain solid).
+							const VoxelData::WallData::Type type = [&inf, textureIndex, isMenu]()
 							{
 								// Returns whether the given index pointer is non-null and
 								// matches the current texture index.
@@ -816,24 +817,25 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 
 								if (matchesIndex(inf.getLevelUpIndex()))
 								{
-									return VoxelType::LevelUp;
+									return VoxelData::WallData::Type::LevelUp;
 								}
 								else if (matchesIndex(inf.getLevelDownIndex()))
 								{
-									return VoxelType::LevelDown;
+									return VoxelData::WallData::Type::LevelDown;
 								}
 								else if (isMenu)
 								{
-									return VoxelType::Menu;
+									return VoxelData::WallData::Type::Menu;
 								}
 								else
 								{
-									return VoxelType::Solid;
+									return VoxelData::WallData::Type::Solid;
 								}
 							}();
 
 							VoxelData voxelData = VoxelData::makeWall(
-								textureIndex, textureIndex, textureIndex, type);
+								textureIndex, textureIndex, textureIndex,
+								(isMenu ? &menuIndex : nullptr), type);
 
 							// Set the *MENU index if it's a menu voxel.
 							if (isMenu)
@@ -1103,8 +1105,10 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 					else
 					{
 						const int textureIndex = (map2Voxel & 0x007F) - 1;
+						const int *menuID = nullptr;
 						const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
-							textureIndex, textureIndex, textureIndex, VoxelType::Solid));
+							textureIndex, textureIndex, textureIndex, menuID,
+							VoxelData::WallData::Type::Solid));
 						return this->map2DataMappings.insert(
 							std::make_pair(map2Voxel, index)).first->second;
 					}

@@ -31,7 +31,6 @@
 #include "../World/ClimateType.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
 

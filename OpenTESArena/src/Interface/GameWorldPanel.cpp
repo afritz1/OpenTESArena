@@ -51,7 +51,6 @@
 #include "../Utilities/String.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
-#include "../World/VoxelType.h"
 #include "../World/WorldType.h"
 
 namespace
@@ -1328,12 +1327,11 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Check the voxel type to determine what it is exactly.
-		if ((voxelData.type == VoxelType::Menu) &&
-			(wallData.menuID != VoxelData::WallData::NO_MENU))
+		if (wallData.type == VoxelData::WallData::Type::Menu)
 		{
 			DebugMention("Entered *MENU " + std::to_string(wallData.menuID) + ".");
 		}
-		else if (voxelData.type == VoxelType::LevelUp)
+		else if (wallData.type == VoxelData::WallData::Type::LevelUp)
 		{
 			// If the custom function has a target, call it and reset it. Otherwise,
 			// decrement the world's level index.
@@ -1353,8 +1351,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
 			}
+
+			// To do: add else statement for opening world map.
 		}
-		else if (voxelData.type == VoxelType::LevelDown)
+		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
 		{
 			worldData.setLevelActive(worldData.getCurrentLevel() + 1,
 				game.getTextureManager(), game.getRenderer());
