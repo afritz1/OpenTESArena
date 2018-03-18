@@ -18,7 +18,7 @@ public:
 	ShieldArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<int> &provinceIDs, 
 		ShieldType shieldType, MetalType metalType);
-	virtual ~ShieldArtifactData();
+	virtual ~ShieldArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 

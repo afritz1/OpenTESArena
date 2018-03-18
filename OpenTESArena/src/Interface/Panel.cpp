@@ -31,11 +31,6 @@
 Panel::Panel(Game &game)
 	: game(game) { }
 
-Panel::~Panel()
-{
-	// Game is owned by the Game object.
-}
-
 SDL_Texture *Panel::createTooltip(const std::string &text,
 	FontName fontName, FontManager &fontManager, Renderer &renderer)
 {

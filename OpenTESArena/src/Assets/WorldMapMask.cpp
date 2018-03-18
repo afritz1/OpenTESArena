@@ -5,16 +5,6 @@
 WorldMapMask::WorldMapMask(std::vector<uint8_t> &&mask, const Rect &rect)
 	: mask(std::move(mask)), rect(rect) { }
 
-WorldMapMask::WorldMapMask()
-{
-	// This exists so MiscAssets can store a std::array of them.
-}
-
-WorldMapMask::~WorldMapMask()
-{
-
-}
-
 int WorldMapMask::getAdjustedWidth(int width)
 {
 	return static_cast<int>(std::ceil(static_cast<double>(width) / 8.0));

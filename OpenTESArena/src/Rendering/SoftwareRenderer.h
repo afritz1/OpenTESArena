@@ -301,7 +301,6 @@ private:
 	void updateVisibleFlats(const Camera &camera);
 public:
 	SoftwareRenderer(int width, int height);
-	~SoftwareRenderer();
 
 	// Adds a flat. Causes an error if the ID exists.
 	void addFlat(int id, const Double3 &position, double width, double height, int textureID);

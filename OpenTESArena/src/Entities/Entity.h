@@ -26,7 +26,7 @@ protected:
 public:
 	Entity(EntityManager &entityManager);
 	Entity(const Entity&) = delete;
-	virtual ~Entity();
+	virtual ~Entity() = default;
 
 	Entity &operator=(const Entity&) = delete;
 

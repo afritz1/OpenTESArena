@@ -120,11 +120,6 @@ FontFile::FontFile(const std::string &filename)
 	}
 }
 
-FontFile::~FontFile()
-{
-
-}
-
 int FontFile::getWidth(char c) const
 {
 	// If an invalid character is requested, print a warning and return

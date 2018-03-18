@@ -48,11 +48,6 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 	}
 }
 
-SETFile::~SETFile()
-{
-
-}
-
 int SETFile::getImageCount() const
 {
 	return static_cast<int>(this->chunks.size());

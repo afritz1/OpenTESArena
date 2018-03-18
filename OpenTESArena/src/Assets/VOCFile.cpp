@@ -153,11 +153,6 @@ VOCFile::VOCFile(const std::string &filename)
 	}
 }
 
-VOCFile::~VOCFile()
-{
-
-}
-
 int VOCFile::getSampleRate() const
 {
 	return this->sampleRate;

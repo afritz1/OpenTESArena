@@ -56,7 +56,6 @@ public:
 		int lockLevel;
 	public:
 		Lock(const Int2 &position, int lockLevel);
-		~Lock();
 
 		const Int2 &getPosition() const;
 		int getLockLevel() const;
@@ -70,7 +69,6 @@ public:
 		bool displayedOnce, previouslyDisplayed;
 	public:
 		TextTrigger(const std::string &text, bool displayedOnce);
-		~TextTrigger();
 
 		const std::string &getText() const;
 		bool isSingleDisplay() const;
@@ -106,9 +104,7 @@ private:
 	void readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers, const INFFile &inf,
 		int width, int depth);
 public:
-	LevelData(VoxelGrid &&voxelGrid); // Used with test city.
 	LevelData(LevelData &&levelData) = default;
-	~LevelData();
 
 	// Interior level. The .INF is obtained from the level's info member.
 	static LevelData loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth);

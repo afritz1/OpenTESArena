@@ -21,7 +21,6 @@ private:
 	std::vector<Int2> dimensions;
 public:
 	CIFFile(const std::string &filename, const Palette &palette);
-	~CIFFile();
 
 	// Gets the number of images in the CIF file.
 	int getImageCount() const;

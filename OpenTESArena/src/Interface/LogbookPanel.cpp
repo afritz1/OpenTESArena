@@ -60,11 +60,6 @@ LogbookPanel::LogbookPanel(Game &game)
 	}();
 }
 
-LogbookPanel::~LogbookPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> LogbookPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

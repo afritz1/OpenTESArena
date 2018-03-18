@@ -32,11 +32,6 @@ Player::Player(const std::string &displayName, GenderName gender, int raceID,
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
-Player::~Player()
-{
-
-}
-
 const Double3 &Player::getPosition() const
 {
 	return this->camera.position;

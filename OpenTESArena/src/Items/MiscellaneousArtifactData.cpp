@@ -12,11 +12,6 @@ MiscellaneousArtifactData::MiscellaneousArtifactData(const std::string &displayN
 	this->miscItemType = miscItemType;
 }
 
-MiscellaneousArtifactData::~MiscellaneousArtifactData()
-{
-
-}
-
 std::unique_ptr<ArtifactData> MiscellaneousArtifactData::clone() const
 {
 	return std::make_unique<MiscellaneousArtifactData>(

@@ -15,7 +15,7 @@ private:
 	std::unique_ptr<AudioManagerImpl> pImpl;
 public:
 	AudioManager();
-	~AudioManager();
+	~AudioManager(); // Required for pImpl to stay in .cpp file.
 
     void init(double musicVolume, double soundVolume, int maxChannels, 
 		int resamplingOption, const std::string &midiConfig);

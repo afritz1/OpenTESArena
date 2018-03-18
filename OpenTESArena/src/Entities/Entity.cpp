@@ -11,11 +11,6 @@ Entity::Entity(EntityManager &entityManager)
 	this->flipped = false;
 }
 
-Entity::~Entity()
-{
-
-}
-
 int Entity::getID() const
 {
 	return this->id;

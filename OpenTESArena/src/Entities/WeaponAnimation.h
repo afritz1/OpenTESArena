@@ -50,7 +50,6 @@ private:
 	const std::vector<int> &getCurrentRange() const;
 public:
 	WeaponAnimation(int weaponID, const ExeData &exeData);
-	~WeaponAnimation();
 
 	// Returns whether the animation is for a ranged weapon.
 	bool isRanged() const;

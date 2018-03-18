@@ -10,8 +10,8 @@
 class LightArmorMaterial : public ArmorMaterial
 {
 public:
-	LightArmorMaterial();
-	virtual ~LightArmorMaterial();
+	LightArmorMaterial() = default;
+	virtual ~LightArmorMaterial() = default;
 
 	virtual std::unique_ptr<ArmorMaterial> clone() const override;
 

@@ -9,11 +9,6 @@ Animation::Animation(const std::vector<int> &ids, double timePerFrame, bool loop
 	this->loop = loop;
 }
 
-Animation::~Animation()
-{
-
-}
-
 int Animation::getCurrentID() const
 {
 	return this->ids.at(!this->isFinished() ? this->index : (this->ids.size() - 1));

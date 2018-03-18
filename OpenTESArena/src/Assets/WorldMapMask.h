@@ -16,8 +16,9 @@ private:
 	Rect rect;
 public:
 	WorldMapMask(std::vector<uint8_t> &&mask, const Rect &rect);
-	WorldMapMask();
-	~WorldMapMask();
+
+	// This exists so MiscAssets can store a std::array of them.
+	WorldMapMask() = default;
 
 	// Gets the adjusted width for some rectangle width. This is used in calculating
 	// the bitmask byte count and the index in the bitmask.

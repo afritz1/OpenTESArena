@@ -46,11 +46,6 @@ Clock::Clock(int hours, int minutes, int seconds)
 Clock::Clock()
 	: Clock(0, 0, 0, 0.0) { }
 
-Clock::~Clock()
-{
-
-}
-
 int Clock::getHours24() const
 {
 	return this->hours;

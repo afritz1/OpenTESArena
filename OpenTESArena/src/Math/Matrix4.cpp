@@ -9,15 +9,6 @@ Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T
 	: x(x), y(y), z(z), w(w) { }
 
 template <typename T>
-Matrix4<T>::Matrix4() { }
-
-template <typename T>
-Matrix4<T>::~Matrix4()
-{
-
-}
-
-template <typename T>
 Matrix4<T> Matrix4<T>::identity()
 {
 	Matrix4<T> m;

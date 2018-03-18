@@ -4,11 +4,11 @@
 #include <memory>
 #include <string>
 
+#include "ArtifactData.h"
+
 // I wanted to try and avoid using an abstract Item class, but in any case, this
 // class should be used to try and bring together several elements, like the weight 
 // or value of an item.
-
-class ArtifactData;
 
 enum class ItemType;
 
@@ -19,7 +19,7 @@ private:
 public:
 	// Item constructor. Give null for artifact data if the item is not an artifact.
 	Item(const ArtifactData *artifactData);
-	virtual ~Item();
+	virtual ~Item() = default;
 
 	virtual std::unique_ptr<Item> clone() const = 0;
 

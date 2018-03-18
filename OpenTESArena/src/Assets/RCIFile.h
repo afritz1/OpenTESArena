@@ -21,7 +21,6 @@ private:
 	static const int FRAME_SIZE;
 public:
 	RCIFile(const std::string &filename, const Palette &palette);
-	~RCIFile();
 
 	// All individual frames of an RCI are 320x100.
 	static const int FRAME_WIDTH;

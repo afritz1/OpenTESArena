@@ -24,7 +24,7 @@ public:
 
 	// Miscellaneous item artifact constructor.
 	MiscellaneousItem(const MiscellaneousArtifactData *artifactData);
-	virtual ~MiscellaneousItem();
+	virtual ~MiscellaneousItem() = default;
 
 	virtual std::unique_ptr<Item> clone() const override;
 

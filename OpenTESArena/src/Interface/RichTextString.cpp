@@ -95,11 +95,6 @@ RichTextString::RichTextString(const std::string &text, FontName fontName,
 	const Color &color, TextAlignment alignment, FontManager &fontManager)
 	: RichTextString(text, fontName, color, alignment, 0, fontManager) { }
 
-RichTextString::~RichTextString()
-{
-
-}
-
 const std::vector<std::vector<const SDL_Surface*>> &RichTextString::getSurfaceLists() const
 {
 	return this->surfaceLists;

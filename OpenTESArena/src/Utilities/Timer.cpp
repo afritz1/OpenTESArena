@@ -8,11 +8,6 @@ Timer::Timer(double targetSeconds)
 	this->targetSeconds = targetSeconds;
 }
 
-Timer::~Timer()
-{
-
-}
-
 double Timer::getCurrentSeconds() const
 {
 	return this->currentSeconds;

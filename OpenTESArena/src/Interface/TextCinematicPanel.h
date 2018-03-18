@@ -36,7 +36,7 @@ public:
 	TextCinematicPanel(Game &game, const std::string &sequenceName,
 		const std::string &text, double secondsPerImage,
 		const std::function<void(Game&)> &endingAction);
-	virtual ~TextCinematicPanel();
+	virtual ~TextCinematicPanel() = default;
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

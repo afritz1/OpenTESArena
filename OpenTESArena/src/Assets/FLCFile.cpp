@@ -200,11 +200,6 @@ FLCFile::FLCFile(const std::string &filename)
 	this->pixels.pop_back();
 }
 
-FLCFile::~FLCFile()
-{
-
-}
-
 void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
 {
 	// The number of elements (i.e., "groups" of pixels) should be one.

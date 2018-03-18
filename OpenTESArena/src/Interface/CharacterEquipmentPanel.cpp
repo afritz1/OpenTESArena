@@ -156,11 +156,6 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	}
 }
 
-CharacterEquipmentPanel::~CharacterEquipmentPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

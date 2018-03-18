@@ -26,11 +26,6 @@ ImagePanel::ImagePanel(Game &game, const std::string &paletteName,
 	this->currentSeconds = 0.0;
 }
 
-ImagePanel::~ImagePanel()
-{
-
-}
-
 void ImagePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();

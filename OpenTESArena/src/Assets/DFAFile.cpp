@@ -91,11 +91,6 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	}
 }
 
-DFAFile::~DFAFile()
-{
-
-}
-
 int DFAFile::getImageCount() const
 {
 	return static_cast<int>(this->pixels.size());

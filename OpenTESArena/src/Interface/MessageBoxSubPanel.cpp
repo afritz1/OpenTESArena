@@ -21,11 +21,6 @@ MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&t
 	: Panel(game), title(std::move(title)), elements(std::move(elements)),
 	cancelFunction([](Game&) {}) { }
 
-MessageBoxSubPanel::~MessageBoxSubPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> MessageBoxSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

@@ -47,7 +47,6 @@ private:
 		const Palette &palette, std::vector<uint8_t> &initialFrame);
 public:
 	FLCFile(const std::string &filename);
-	~FLCFile();
 
 	// Gets the number of frames in the FLC file.
 	int getFrameCount() const;

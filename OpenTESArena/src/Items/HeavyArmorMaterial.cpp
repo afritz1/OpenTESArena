@@ -5,15 +5,7 @@
 #include "Metal.h"
 
 HeavyArmorMaterial::HeavyArmorMaterial(MetalType metalType)
-	: Metallic(metalType)
-{
-	
-}
-
-HeavyArmorMaterial::~HeavyArmorMaterial()
-{
-
-}
+	: Metallic(metalType) { }
 
 std::unique_ptr<ArmorMaterial> HeavyArmorMaterial::clone() const
 {

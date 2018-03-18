@@ -37,7 +37,7 @@ private:
 public:
 	ChooseAttributesPanel(Game &game, const CharacterClass &charClass, 
 		const std::string &name, GenderName gender, int raceID);
-	virtual ~ChooseAttributesPanel();
+	virtual ~ChooseAttributesPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

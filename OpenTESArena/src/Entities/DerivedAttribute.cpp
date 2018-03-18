@@ -34,11 +34,6 @@ DerivedAttribute::DerivedAttribute(DerivedAttributeName attributeName, int baseM
 	this->current = this->maximum;
 }
 
-DerivedAttribute::~DerivedAttribute()
-{
-
-}
-
 int DerivedAttribute::getCurrent() const
 {
 	return std::min(this->current, this->getMaximum());

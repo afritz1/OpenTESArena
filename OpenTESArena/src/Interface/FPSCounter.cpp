@@ -9,11 +9,6 @@ FPSCounter::FPSCounter()
 	this->frameTimes.fill(0.0);
 }
 
-FPSCounter::~FPSCounter()
-{
-
-}
-
 double FPSCounter::getAverageFrameTime() const
 {
 	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.end(), 0.0);

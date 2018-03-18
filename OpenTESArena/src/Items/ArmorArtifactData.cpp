@@ -5,15 +5,7 @@
 
 ArmorArtifactData::ArmorArtifactData(const std::string &displayName,
 	const std::string &flavorText, const std::vector<int> &provinceIDs)
-	: ArtifactData(displayName, flavorText, provinceIDs)
-{ 
-
-}
-
-ArmorArtifactData::~ArmorArtifactData()
-{
-
-}
+	: ArtifactData(displayName, flavorText, provinceIDs) { }
 
 ItemType ArmorArtifactData::getItemType() const
 {

@@ -41,9 +41,6 @@ namespace
 
 		BitTree::Node root;
 	public:
-		BitTree() { }
-		~BitTree() { }
-
 		// Inserts a node into the tree, overwriting any existing entry.
 		void insert(const std::vector<bool> &bits, int value)
 		{
@@ -431,11 +428,6 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			decompIndex++;
 		}
 	}
-}
-
-ExeUnpacker::~ExeUnpacker()
-{
-
 }
 
 const std::vector<uint8_t> &ExeUnpacker::getData() const

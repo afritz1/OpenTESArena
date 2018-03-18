@@ -15,11 +15,6 @@ Random::Random(int seed)
 Random::Random()
 	: Random(static_cast<int>(time(nullptr))) { }
 
-Random::~Random()
-{
-
-}
-
 int Random::next()
 {
 	return this->integerDistribution(this->generator);
@@ -47,11 +42,6 @@ ArenaRandom::ArenaRandom(uint32_t seed)
 
 ArenaRandom::ArenaRandom()
 	: ArenaRandom(ArenaRandom::DEFAULT_SEED) { }
-
-ArenaRandom::~ArenaRandom()
-{
-
-}
 
 uint32_t ArenaRandom::getSeed() const
 {

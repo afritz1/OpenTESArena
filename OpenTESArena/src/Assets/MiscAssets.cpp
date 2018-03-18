@@ -290,11 +290,6 @@ MiscAssets::MiscAssets()
 	// Initialized by init().
 }
 
-MiscAssets::~MiscAssets()
-{
-
-}
-
 void MiscAssets::init()
 {
 	DebugMention("Initializing.");

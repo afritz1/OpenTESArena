@@ -209,11 +209,6 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 	}();
 }
 
-AutomapPanel::~AutomapPanel()
-{
-
-}
-
 const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const VoxelData &wallData)
 {
 	const VoxelDataType floorDataType = floorData.dataType;

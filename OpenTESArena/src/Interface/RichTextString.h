@@ -33,7 +33,6 @@ public:
 		TextAlignment alignment, int lineSpacing, FontManager &fontManager);
 	RichTextString(const std::string &text, FontName fontName, const Color &color,
 		TextAlignment alignment, FontManager &fontManager);
-	~RichTextString();
 
 	const std::vector<std::vector<const SDL_Surface*>> &getSurfaceLists() const;
 	const std::vector<int> &getLineWidths() const;

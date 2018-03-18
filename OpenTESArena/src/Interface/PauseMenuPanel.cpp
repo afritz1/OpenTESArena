@@ -240,11 +240,6 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 	}();
 }
 
-PauseMenuPanel::~PauseMenuPanel()
-{
-
-}
-
 void PauseMenuPanel::updateMusicText(double volume)
 {
 	// Update the displayed music volume.

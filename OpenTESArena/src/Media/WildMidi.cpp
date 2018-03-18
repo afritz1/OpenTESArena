@@ -29,9 +29,7 @@ namespace
 	};
 
 	WildMidiSong::WildMidiSong(midi *song)
-		: mSong(song)
-	{
-	}
+		: mSong(song) { }
 
 	WildMidiSong::~WildMidiSong()
 	{

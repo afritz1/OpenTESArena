@@ -12,7 +12,6 @@ private:
 	double getAverageFrameTime() const;
 public:
 	FPSCounter();
-	~FPSCounter();
 
 	// Gets the average frames per second based on recent data.
 	double getFPS() const;

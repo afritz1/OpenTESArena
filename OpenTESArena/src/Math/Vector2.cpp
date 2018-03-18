@@ -21,12 +21,6 @@ Vector2i<T>::Vector2i()
 }
 
 template <class T>
-Vector2i<T>::~Vector2i()
-{
-
-}
-
-template <class T>
 T &Vector2i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -108,12 +102,6 @@ Vector2f<T>::Vector2f()
 {
 	this->x = static_cast<T>(0.0);
 	this->y = static_cast<T>(0.0);
-}
-
-template <class T>
-Vector2f<T>::~Vector2f()
-{
-
 }
 
 template <class T>

@@ -14,7 +14,6 @@ private:
 public:
 	// Reads in a compressed EXE file and decompresses it.
 	ExeUnpacker(const std::string &filename);
-	~ExeUnpacker();
 
 	// Gets the decompressed executable data.
 	const std::vector<uint8_t> &getData() const;

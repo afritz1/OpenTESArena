@@ -231,11 +231,6 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	this->fogDistance = 0.0;
 }
 
-SoftwareRenderer::~SoftwareRenderer()
-{
-
-}
-
 void SoftwareRenderer::addFlat(int id, const Double3 &position, double width, 
 	double height, int textureID)
 {

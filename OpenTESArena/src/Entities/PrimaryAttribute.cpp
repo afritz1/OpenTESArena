@@ -55,11 +55,6 @@ PrimaryAttribute::PrimaryAttribute(PrimaryAttributeName attributeName, int baseV
 	this->baseValue = baseValue;
 }
 
-PrimaryAttribute::~PrimaryAttribute()
-{
-
-}
-
 int PrimaryAttribute::get() const
 {
 	assert(this->baseValue >= PrimaryAttribute::MIN_VALUE);

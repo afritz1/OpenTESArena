@@ -29,7 +29,7 @@ private:
 	WorldType getSelectedTestWorldType() const;
 public:
 	MainMenuPanel(Game &game);
-	virtual ~MainMenuPanel();
+	virtual ~MainMenuPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

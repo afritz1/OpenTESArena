@@ -23,12 +23,6 @@ Vector4i<T>::Vector4i()
 }
 
 template <class T>
-Vector4i<T>::~Vector4i()
-{
-
-}
-
-template <class T>
 T &Vector4i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -130,12 +124,6 @@ Vector4f<T>::Vector4f()
 	this->y = static_cast<T>(0.0);
 	this->z = static_cast<T>(0.0);
 	this->w = static_cast<T>(0.0);
-}
-
-template <class T>
-Vector4f<T>::~Vector4f()
-{
-
 }
 
 template <class T>

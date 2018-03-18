@@ -16,7 +16,6 @@ private:
 	bool loop;
 public:
 	Animation(const std::vector<int> &ids, double timePerFrame, bool loop);
-	~Animation();
 
 	// Gets the current texture ID. If the animation doesn't loop and is finished, it
 	// returns the last ID.

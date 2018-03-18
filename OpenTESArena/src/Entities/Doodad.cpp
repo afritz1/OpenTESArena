@@ -5,11 +5,6 @@ Doodad::Doodad(const Animation &animation, const Double3 &position,
 	EntityManager &entityManager)
 	: Entity(entityManager), animation(animation), position(position) { }
 
-Doodad::~Doodad()
-{
-
-}
-
 std::unique_ptr<Entity> Doodad::clone(EntityManager &entityManager) const
 {
 	return std::make_unique<Doodad>(this->animation, this->position, entityManager);

@@ -23,12 +23,6 @@ Vector3i<T>::Vector3i()
 }
 
 template <class T>
-Vector3i<T>::~Vector3i()
-{
-
-}
-
-template <class T>
 T &Vector3i<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
@@ -113,12 +107,6 @@ Vector3f<T>::Vector3f()
 	this->x = static_cast<T>(0.0);
 	this->y = static_cast<T>(0.0);
 	this->z = static_cast<T>(0.0);
-}
-
-template <class T>
-Vector3f<T>::~Vector3f()
-{
-
 }
 
 template <class T>

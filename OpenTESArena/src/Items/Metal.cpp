@@ -75,11 +75,6 @@ Metal::Metal(MetalType metalType)
 	this->metalType = metalType;
 }
 
-Metal::~Metal()
-{
-
-}
-
 MetalType Metal::getMetalType() const
 {
 	return this->metalType;

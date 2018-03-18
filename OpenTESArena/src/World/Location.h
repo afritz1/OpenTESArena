@@ -21,7 +21,6 @@ struct Location
 	Location(const std::string &name, int provinceID,
 		LocationType locationType, ClimateType climateType);
 	Location();
-	~Location();
 };
 
 #endif

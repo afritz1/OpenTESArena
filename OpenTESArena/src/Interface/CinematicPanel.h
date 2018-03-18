@@ -25,7 +25,7 @@ public:
 	CinematicPanel(Game &game, const std::string &paletteName,
 		const std::string &sequenceName, double secondsPerImage,
 		const std::function<void(Game&)> &endingAction);
-	virtual ~CinematicPanel();
+	virtual ~CinematicPanel() = default;
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

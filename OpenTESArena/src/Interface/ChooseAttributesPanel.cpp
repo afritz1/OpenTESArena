@@ -572,11 +572,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-ChooseAttributesPanel::~ChooseAttributesPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

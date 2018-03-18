@@ -15,7 +15,7 @@ private:
 	// up/down arrow buttons, saved game buttons...
 public:
 	LoadGamePanel(Game &game);
-	virtual ~LoadGamePanel();
+	virtual ~LoadGamePanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

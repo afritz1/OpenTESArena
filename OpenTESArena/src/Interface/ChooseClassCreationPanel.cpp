@@ -120,11 +120,6 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 }
 
-ChooseClassCreationPanel::~ChooseClassCreationPanel()
-{
-	
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

@@ -32,7 +32,7 @@ public:
 
 	// Weapon artifact constructor.
 	Weapon(const WeaponArtifactData *artifactData, const ExeData &exeData);
-	virtual ~Weapon();
+	virtual ~Weapon() = default;
 
 	virtual std::unique_ptr<Item> clone() const override;
 

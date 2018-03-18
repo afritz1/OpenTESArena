@@ -22,7 +22,6 @@ private:
 public:
 	// Convert key-value pairs in a file to string->string mappings.
 	KeyValueMap(const std::string &filename);
-	~KeyValueMap();
 
 	// Typed getter methods for convenience.
 	bool getBoolean(const std::string &key) const;

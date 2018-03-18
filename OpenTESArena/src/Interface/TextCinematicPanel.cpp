@@ -91,11 +91,6 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 	this->textIndex = 0;
 }
 
-TextCinematicPanel::~TextCinematicPanel()
-{
-
-}
-
 void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();

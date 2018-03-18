@@ -23,7 +23,7 @@ private:
 public:
 	ArtifactData(const std::string &displayName, const std::string &flavorText,
 		const std::vector<int> &provinceIDs);
-	virtual ~ArtifactData();
+	virtual ~ArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const = 0;
 

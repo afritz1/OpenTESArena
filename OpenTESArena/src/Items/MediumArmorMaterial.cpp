@@ -3,16 +3,6 @@
 #include "ArmorMaterialType.h"
 #include "MediumArmorMaterial.h"
 
-MediumArmorMaterial::MediumArmorMaterial()
-{
-
-}
-
-MediumArmorMaterial::~MediumArmorMaterial()
-{
-
-}
-
 std::unique_ptr<ArmorMaterial> MediumArmorMaterial::clone() const
 {
 	return std::make_unique<MediumArmorMaterial>();

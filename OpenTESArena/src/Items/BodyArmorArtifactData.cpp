@@ -15,11 +15,6 @@ BodyArmorArtifactData::BodyArmorArtifactData(const std::string &displayName,
 	this->partName = partName;
 }
 
-BodyArmorArtifactData::~BodyArmorArtifactData()
-{
-
-}
-
 std::unique_ptr<ArtifactData> BodyArmorArtifactData::clone() const
 {
 	return std::make_unique<BodyArmorArtifactData>(

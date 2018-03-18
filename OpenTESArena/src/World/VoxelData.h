@@ -117,7 +117,6 @@ public:
 	};
 
 	VoxelData();
-	~VoxelData();
 
 	static VoxelData makeWall(int sideID, int floorID, int ceilingID, const int *menuID,
 		WallData::Type type);

@@ -654,11 +654,6 @@ OptionsPanel::OptionsPanel(Game &game)
 	}();
 }
 
-OptionsPanel::~OptionsPanel()
-{
-
-}
-
 std::string OptionsPanel::getPlayerInterfaceString(bool modernInterface)
 {
 	return modernInterface ? "Modern" : "Classic";

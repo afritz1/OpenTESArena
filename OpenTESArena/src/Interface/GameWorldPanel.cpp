@@ -470,11 +470,6 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	}
 }
 
-GameWorldPanel::~GameWorldPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.

@@ -10,8 +10,8 @@
 class MediumArmorMaterial : public ArmorMaterial
 {
 public:
-	MediumArmorMaterial();
-	virtual ~MediumArmorMaterial();
+	MediumArmorMaterial() = default;
+	virtual ~MediumArmorMaterial() = default;
 
 	virtual std::unique_ptr<ArmorMaterial> clone() const override;
 

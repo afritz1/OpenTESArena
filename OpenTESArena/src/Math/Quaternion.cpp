@@ -20,11 +20,6 @@ Quaternion::Quaternion(const Double4 &v)
 Quaternion::Quaternion()
 	: Quaternion(0.0, 0.0, 0.0, 0.0) { }
 
-Quaternion::~Quaternion()
-{
-
-}
-
 Quaternion Quaternion::identity()
 {
 	return Quaternion(0.0, 0.0, 0.0, 1.0);

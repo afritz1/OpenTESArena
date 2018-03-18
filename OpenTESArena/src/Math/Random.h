@@ -16,7 +16,6 @@ public:
 
 	// Initialized with the current time.
 	Random();
-	~Random();
 
 	// Includes 0 to ~2.14 billion.
 	int next();
@@ -38,7 +37,6 @@ private:
 public:
 	ArenaRandom(uint32_t seed);
 	ArenaRandom();
-	~ArenaRandom();
 
 	static const int MAX;
 

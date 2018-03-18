@@ -119,11 +119,6 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 	}();
 }
 
-ChooseGenderPanel::~ChooseGenderPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

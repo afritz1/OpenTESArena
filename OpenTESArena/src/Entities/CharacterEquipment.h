@@ -49,6 +49,7 @@ namespace std
 class CharacterEquipment
 {
 private:
+	// All pointers are freed elsewhere, so a destructor is not required.
 	std::vector<Accessory*> accessories;
 	std::unordered_map<BodyPartName, BodyArmor*> bodyArmors;
 	Shield *shield;
@@ -57,7 +58,6 @@ private:
 public:
 	// Initial "paper doll" with nothing.
 	CharacterEquipment();
-	~CharacterEquipment();
 
 	std::vector<Accessory*> getAccessories(AccessoryType accessoryType) const;
 	BodyArmor *getBodyArmor(BodyPartName partName) const;

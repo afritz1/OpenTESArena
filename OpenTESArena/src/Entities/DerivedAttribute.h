@@ -21,7 +21,6 @@ private:
 	int current, maximum;
 public:
 	DerivedAttribute(DerivedAttributeName attributeName, int baseMaximum);
-	~DerivedAttribute();
 
 	int getCurrent() const;
 	int getMaximum() const; // Might be a calculated value instead of a member in the future.

@@ -39,7 +39,7 @@ public:
 	MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
 		std::vector<MessageBoxSubPanel::Element> &&elements,
 		const std::function<void(Game&)> &cancelFunction);
-	virtual ~MessageBoxSubPanel();
+	virtual ~MessageBoxSubPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -17,12 +17,6 @@ CharacterEquipment::CharacterEquipment()
 	this->weapon = nullptr;
 }
 
-CharacterEquipment::~CharacterEquipment()
-{
-	// All pointer members are owned by a separate inventory object, so they don't
-	// need to be freed here.
-}
-
 std::vector<Accessory*> CharacterEquipment::getAccessories(AccessoryType accessoryType) const
 {
 	std::vector<Accessory*> accessories;

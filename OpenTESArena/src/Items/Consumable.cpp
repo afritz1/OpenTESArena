@@ -9,11 +9,6 @@ Consumable::Consumable()
 	
 }
 
-Consumable::~Consumable()
-{
-
-}
-
 ItemType Consumable::getItemType() const
 {
 	return ItemType::Consumable;

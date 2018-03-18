@@ -39,11 +39,6 @@ RCIFile::RCIFile(const std::string &filename, const Palette &palette)
 	}
 }
 
-RCIFile::~RCIFile()
-{
-
-}
-
 int RCIFile::getCount() const
 {
 	return static_cast<int>(this->frames.size());

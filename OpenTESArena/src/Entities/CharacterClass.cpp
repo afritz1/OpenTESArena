@@ -26,11 +26,6 @@ CharacterClass::CharacterClass(const std::string &name,
 	this->criticalHit = criticalHit;
 }
 
-CharacterClass::~CharacterClass()
-{
-
-}
-
 const std::string &CharacterClass::getName() const
 {
 	return this->name;

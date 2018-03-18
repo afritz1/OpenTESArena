@@ -62,11 +62,6 @@ RMDFile::RMDFile(const std::string &filename)
 	}
 }
 
-RMDFile::~RMDFile()
-{
-
-}
-
 const RMDFile::ArrayType &RMDFile::getFLOR() const
 {
 	return this->flor;

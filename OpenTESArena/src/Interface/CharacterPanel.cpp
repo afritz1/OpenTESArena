@@ -118,11 +118,6 @@ CharacterPanel::CharacterPanel(Game &game)
 	}
 }
 
-CharacterPanel::~CharacterPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> CharacterPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

@@ -3,11 +3,6 @@
 InputManager::InputManager()
 	: mouseDelta(0, 0) { }
 
-InputManager::~InputManager()
-{
-
-}
-
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
 {
 	return (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == keycode);

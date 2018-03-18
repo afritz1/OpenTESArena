@@ -18,7 +18,6 @@ private:
 	Int2 mouseDelta;
 public:
 	InputManager();
-	~InputManager();
 
 	bool keyPressed(const SDL_Event &e, SDL_Keycode keycode) const;
 	bool keyReleased(const SDL_Event &e, SDL_Keycode keycode) const;

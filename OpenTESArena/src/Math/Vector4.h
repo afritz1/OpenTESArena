@@ -18,7 +18,6 @@ public:
 
 	Vector4i(T x, T y, T z, T w);
 	Vector4i();
-	~Vector4i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -59,7 +58,6 @@ public:
 	Vector4f(T x, T y, T z, T w);
 	Vector4f(const Vector3f<T> &xyz, T w);
 	Vector4f();
-	~Vector4f();
 
 	static Vector4f<T> fromARGB(uint32_t argb);
 	static Vector4f<T> fromRGBA(uint32_t rgba);

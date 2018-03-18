@@ -3,16 +3,6 @@
 #include "ArmorMaterialType.h"
 #include "LightArmorMaterial.h"
 
-LightArmorMaterial::LightArmorMaterial()
-{
-
-}
-
-LightArmorMaterial::~LightArmorMaterial()
-{
-
-}
-
 std::unique_ptr<ArmorMaterial> LightArmorMaterial::clone() const
 {
 	return std::make_unique<LightArmorMaterial>();

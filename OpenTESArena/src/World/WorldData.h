@@ -40,7 +40,6 @@ private:
 public:
 	WorldData();
 	WorldData(WorldData &&worldData) = default;
-	~WorldData();
 
 	WorldData &operator=(WorldData &&worldData) = default;
 

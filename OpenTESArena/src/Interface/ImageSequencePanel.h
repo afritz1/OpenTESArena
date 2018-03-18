@@ -28,7 +28,7 @@ public:
 		const std::vector<std::string> &textureNames,
 		const std::vector<double> &imageDurations,
 		const std::function<void(Game&)> &endingAction);
-	virtual ~ImageSequencePanel();
+	virtual ~ImageSequencePanel() = default;
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

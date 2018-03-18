@@ -23,7 +23,6 @@ public:
 	// Loads an IMG from file. Uses the given palette unless it is null, then it 
 	// refers to the IMG's built-in palette instead if it has one.
 	IMGFile(const std::string &filename, const Palette *palette);
-	~IMGFile();
 
 	// Extracts the palette from an IMG file and writes it into the given palette
 	// reference. Causes an error if the IMG file doesn't have a palette.

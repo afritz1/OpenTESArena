@@ -22,8 +22,6 @@ public:
 	// Starts on first month and day.
 	Date();
 
-	~Date();
-
 	static const int INITIAL_YEAR;
 	static const int MONTHS_PER_YEAR;
 	static const int DAYS_PER_MONTH;

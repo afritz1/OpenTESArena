@@ -13,11 +13,6 @@ VoxelGrid::VoxelGrid(int width, int height, int depth)
 	this->depth = depth;
 }
 
-VoxelGrid::~VoxelGrid()
-{
-
-}
-
 Int2 VoxelGrid::getTransformedCoordinate(const Int2 &voxel, int gridWidth, int gridDepth)
 {
 	// These have a -1 whereas the Double2 version does not since all .MIF start points

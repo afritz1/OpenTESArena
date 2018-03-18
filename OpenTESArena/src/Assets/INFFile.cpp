@@ -997,11 +997,6 @@ INFFile::INFFile(const std::string &filename)
 	flushAllStates();
 }
 
-INFFile::~INFFile()
-{
-
-}
-
 const std::vector<INFFile::VoxelTextureData> &INFFile::getVoxelTextures() const
 {
 	return this->voxelTextures;

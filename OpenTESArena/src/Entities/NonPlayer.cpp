@@ -11,11 +11,6 @@ NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
 	attackAnimation(attackAnimation), deathAnimation(deathAnimation),
 	camera(position, direction), velocity(0.0, 0.0) { }
 
-NonPlayer::~NonPlayer()
-{
-
-}
-
 std::unique_ptr<Entity> NonPlayer::clone(EntityManager &entityManager) const
 {
 	return std::make_unique<NonPlayer>(this->camera.position, this->camera.direction,

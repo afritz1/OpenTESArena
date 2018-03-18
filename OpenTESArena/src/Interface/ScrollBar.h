@@ -14,7 +14,6 @@ private:
 	int getNextLowerIndex(int y) const; // The index for some truncated Y coordinate.
 public:
 	ScrollBar(const Rect &rect, int totalElements, int visibleElements);
-	~ScrollBar();
 
 	// The Y pixel coordinate at the top of the scroll bar.
 	int getBarY() const;

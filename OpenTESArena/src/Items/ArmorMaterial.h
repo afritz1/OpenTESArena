@@ -15,8 +15,8 @@ enum class ArmorMaterialType;
 class ArmorMaterial
 {
 public:
-	ArmorMaterial();
-	virtual ~ArmorMaterial();
+	ArmorMaterial() = default;
+	virtual ~ArmorMaterial() = default;
 
 	// I'm not sure how else to get a mapping from ArmorMaterialType to string
 	// because there isn't one for "Plate" when all heavy armors have their own

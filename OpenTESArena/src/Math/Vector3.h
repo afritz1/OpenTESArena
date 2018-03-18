@@ -19,7 +19,6 @@ public:
 
 	Vector3i(T x, T y, T z);
 	Vector3i();
-	~Vector3i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -58,7 +57,6 @@ public:
 
 	Vector3f(T x, T y, T z);
 	Vector3f();
-	~Vector3f();
 
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);

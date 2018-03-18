@@ -23,11 +23,6 @@ Rect::Rect()
 Rect::Rect(const Rect &rectangle)
 	: Rect(rectangle.rect.x, rectangle.rect.y, rectangle.rect.w, rectangle.rect.h) { }
 
-Rect::~Rect()
-{
-
-}
-
 int Rect::getWidth() const
 {
 	return this->rect.w;

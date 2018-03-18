@@ -11,7 +11,6 @@ private:
 	MetalType metalType;
 public:
 	Metal(MetalType metalType);
-	~Metal();
 
 	MetalType getMetalType() const;
 

@@ -9,11 +9,6 @@ EntityManager::EntityManager()
 
 }
 
-EntityManager::~EntityManager()
-{
-
-}
-
 Entity *EntityManager::at(int id) const
 {
 	const auto entityIter = this->entities.find(id);

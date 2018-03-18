@@ -27,8 +27,6 @@ public:
 	// Starts at midnight.
 	Clock();
 
-	~Clock();
-
 	static const int SECONDS_IN_A_DAY;
 
 	// Clock times for when each time range begins.

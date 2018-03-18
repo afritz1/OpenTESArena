@@ -14,7 +14,7 @@ private:
 	Button<Game&> backButton;
 public:
 	LogbookPanel(Game &game);
-	virtual ~LogbookPanel();
+	virtual ~LogbookPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

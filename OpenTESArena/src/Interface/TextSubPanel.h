@@ -26,7 +26,7 @@ public:
 		const Int2 &textureCenter);
 	TextSubPanel(Game &game, const Int2 &textCenter, const RichTextString &richText,
 		const std::function<void(Game&)> &endingAction);
-	virtual ~TextSubPanel();
+	virtual ~TextSubPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

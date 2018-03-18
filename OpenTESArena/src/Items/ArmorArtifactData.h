@@ -13,7 +13,7 @@ class ArmorArtifactData : public ArtifactData
 public:
 	ArmorArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<int> &provinceIDs);
-	virtual ~ArmorArtifactData();
+	virtual ~ArmorArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override = 0;
 

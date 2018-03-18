@@ -135,7 +135,6 @@ private:
 	CeilingData ceiling;
 public:
 	INFFile(const std::string &filename);
-	~INFFile();
 
 	// Arbitrary index used for unset indices.
 	static const int NO_INDEX;

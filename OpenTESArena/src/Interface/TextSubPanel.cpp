@@ -27,11 +27,6 @@ TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	const RichTextString &richText, const std::function<void(Game&)> &endingAction)
 	: TextSubPanel(game, textCenter, richText, endingAction, std::move(Texture()), Int2()) { }
 
-TextSubPanel::~TextSubPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> TextSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

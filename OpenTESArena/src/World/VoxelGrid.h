@@ -21,7 +21,6 @@ private:
 	int width, height, depth;
 public:
 	VoxelGrid(int width, int height, int depth);
-	~VoxelGrid();
 
 	// Transformation methods for converting voxel coordinates between Arena's format
 	// (+X west, +Z south) and the new format (+X north, +Z east). This is a bi-directional

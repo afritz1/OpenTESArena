@@ -9,7 +9,6 @@
 #include "SDL.h"
 
 #include "Game.h"
-#include "GameData.h"
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
@@ -110,11 +109,6 @@ Game::Game()
 	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
 	// The pop is delayed until the beginning of the next frame.
 	this->requestedSubPanelPop = false;
-}
-
-Game::~Game()
-{
-
 }
 
 AudioManager &Game::getAudioManager()

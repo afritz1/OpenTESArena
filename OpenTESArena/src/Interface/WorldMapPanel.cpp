@@ -55,11 +55,6 @@ WorldMapPanel::WorldMapPanel(Game &game)
 	}
 }
 
-WorldMapPanel::~WorldMapPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

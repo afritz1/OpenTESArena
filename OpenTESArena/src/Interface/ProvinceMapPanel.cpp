@@ -110,11 +110,6 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	this->provinceID = provinceID;
 }
 
-ProvinceMapPanel::~ProvinceMapPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

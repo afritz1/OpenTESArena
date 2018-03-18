@@ -38,7 +38,7 @@ public:
 		const std::vector<Animation> &moveAnimations,
 		const Animation &attackAnimation, const Animation &deathAnimation,
 		EntityManager &entityManager);
-	virtual ~NonPlayer();
+	virtual ~NonPlayer() = default;
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const override;
 

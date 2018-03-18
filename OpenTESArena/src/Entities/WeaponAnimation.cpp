@@ -109,11 +109,6 @@ WeaponAnimation::WeaponAnimation(int weaponID, const ExeData &exeData)
 	this->rangeIndex = 0;
 }
 
-WeaponAnimation::~WeaponAnimation()
-{
-
-}
-
 double WeaponAnimation::getTimePerFrame() const
 {
 	if (this->isRanged())

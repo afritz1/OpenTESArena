@@ -24,16 +24,6 @@ const std::unordered_map<ArmorMaterialType, std::string> ArmorMaterialDisplayNam
 	{ ArmorMaterialType::Plate, "Plate" }
 };
 
-ArmorMaterial::ArmorMaterial()
-{
-
-}
-
-ArmorMaterial::~ArmorMaterial()
-{
-
-}
-
 std::string ArmorMaterial::typeToString(ArmorMaterialType materialType)
 {
 	auto displayName = ArmorMaterialDisplayNames.at(materialType);

@@ -23,7 +23,6 @@ private:
 	int baseValue; // Based on allocated points.
 public:
 	PrimaryAttribute(PrimaryAttributeName attributeName, int baseValue);
-	~PrimaryAttribute();
 
 	int get() const;
 	PrimaryAttributeName getAttributeName() const;

@@ -9,11 +9,6 @@ ScrollBar::ScrollBar(const Rect &rect, int totalElements, int visibleElements)
 	this->stepIndex = 0;
 }
 
-ScrollBar::~ScrollBar()
-{
-
-}
-
 int ScrollBar::getTotalSteps() const
 {
 	DebugNotImplemented();

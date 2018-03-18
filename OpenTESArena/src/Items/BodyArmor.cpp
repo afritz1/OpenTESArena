@@ -75,11 +75,6 @@ BodyArmor::BodyArmor(const BodyArmorArtifactData *artifactData)
 	: BodyArmor(artifactData->getBodyPartName(), artifactData->getArmorMaterial(),
 		artifactData) { }
 
-BodyArmor::~BodyArmor()
-{
-
-}
-
 std::unique_ptr<Item> BodyArmor::clone() const
 {
 	return std::make_unique<BodyArmor>(

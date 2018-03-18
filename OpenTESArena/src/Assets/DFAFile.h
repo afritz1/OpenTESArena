@@ -18,7 +18,6 @@ private:
 	int width, height;
 public:
 	DFAFile(const std::string &filename, const Palette &palette);
-	~DFAFile();
 
 	// Gets the number of images in the DFA file.
 	int getImageCount() const;

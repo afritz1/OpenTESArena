@@ -23,11 +23,6 @@ CinematicPanel::CinematicPanel(Game &game,
 	this->imageIndex = 0;
 }
 
-CinematicPanel::~CinematicPanel()
-{
-
-}
-
 void CinematicPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();

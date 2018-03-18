@@ -17,7 +17,7 @@ public:
 	WeaponArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<int> &provinceIDs, 
 		int weaponID, MetalType metalType);
-	virtual ~WeaponArtifactData();
+	virtual ~WeaponArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 

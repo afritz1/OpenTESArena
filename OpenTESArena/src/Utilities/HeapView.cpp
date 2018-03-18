@@ -10,11 +10,6 @@ HeapView::HeapView()
 	this->blocks.push_back(block);
 }
 
-HeapView::~HeapView()
-{
-
-}
-
 size_t HeapView::allocate(size_t size)
 {
 	// Allocation request must be at least 1 byte.

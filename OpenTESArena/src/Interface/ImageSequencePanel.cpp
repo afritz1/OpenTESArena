@@ -33,11 +33,6 @@ ImageSequencePanel::ImageSequencePanel(Game &game,
 	this->imageIndex = 0;
 }
 
-ImageSequencePanel::~ImageSequencePanel()
-{
-
-}
-
 void ImageSequencePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();

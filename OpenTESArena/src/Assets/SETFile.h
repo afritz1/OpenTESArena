@@ -21,7 +21,6 @@ private:
 	static const int CHUNK_SIZE;
 public:
 	SETFile(const std::string &filename, const Palette &palette);
-	~SETFile();
 
 	// All individual images (chunks) of a SET are 64x64.
 	static const int CHUNK_WIDTH;

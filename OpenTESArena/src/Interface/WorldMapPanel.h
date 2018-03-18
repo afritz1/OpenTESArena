@@ -17,7 +17,7 @@ private:
 	std::array<Int2, 9> provinceNameOffsets; // Yellow province name positions.
 public:
 	WorldMapPanel(Game &game);
-	virtual ~WorldMapPanel();
+	virtual ~WorldMapPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

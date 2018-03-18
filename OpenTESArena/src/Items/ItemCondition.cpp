@@ -38,16 +38,6 @@ const std::unordered_map<ItemConditionName, std::string> ItemConditionDisplayNam
 	{ ItemConditionName::Broken, "Broken" }
 };
 
-ItemCondition::ItemCondition()
-{
-	// Initialized by static methods.
-}
-
-ItemCondition::~ItemCondition()
-{
-
-}
-
 ItemCondition ItemCondition::makeArmorCondition(BodyPartName partName, const ArmorMaterial &material)
 {
 	// To do: use values from original game.

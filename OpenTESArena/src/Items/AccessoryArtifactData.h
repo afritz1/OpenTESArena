@@ -15,7 +15,7 @@ public:
 	AccessoryArtifactData(const std::string &displayName, 
 		const std::string &flavorText, const std::vector<int> &provinceIDs,
 		AccessoryType accessoryType, MetalType metalType);
-	virtual ~AccessoryArtifactData();
+	virtual ~AccessoryArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 		

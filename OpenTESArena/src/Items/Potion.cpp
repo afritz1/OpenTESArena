@@ -3,16 +3,6 @@
 #include "ConsumableType.h"
 #include "Potion.h"
 
-Potion::Potion()
-{
-
-}
-
-Potion::~Potion()
-{
-
-}
-
 double Potion::getWeight() const
 {
 	double weight = 0.5;

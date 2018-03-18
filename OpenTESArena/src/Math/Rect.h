@@ -14,7 +14,6 @@ public:
 	Rect(int width, int height);
 	Rect();
 	Rect(const Rect &rectangle);
-	~Rect();
 
 	int getWidth() const;
 	int getHeight() const;

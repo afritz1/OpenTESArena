@@ -75,7 +75,6 @@ private:
 	// VoxelGrid? Array of VoxelData?
 public:
 	MIFFile(const std::string &filename);
-	~MIFFile();
 
 	// Identifiers for various chasms in Arena's voxel data.
 	static const uint8_t DRY_CHASM;

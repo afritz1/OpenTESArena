@@ -16,7 +16,7 @@ public:
 	MiscellaneousArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<int> &provinceIDs, 
 		MiscellaneousItemType miscItemType);
-	virtual ~MiscellaneousArtifactData();
+	virtual ~MiscellaneousArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 

@@ -109,11 +109,6 @@ MIFFile::MIFFile(const std::string &filename)
 	this->name = filename;
 }
 
-MIFFile::~MIFFile()
-{
-
-}
-
 std::string MIFFile::mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID)
 {
 	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;

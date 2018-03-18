@@ -15,11 +15,6 @@ CharacterQuestion::CharacterQuestion(const std::string &description,
 	assert(b.second != c.second);
 }
 
-CharacterQuestion::~CharacterQuestion()
-{
-
-}
-
 const std::string &CharacterQuestion::getDescription() const
 {
 	return this->description;

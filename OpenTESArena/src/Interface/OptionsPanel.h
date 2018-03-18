@@ -64,7 +64,7 @@ private:
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	OptionsPanel(Game &game);
-	virtual ~OptionsPanel();
+	virtual ~OptionsPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

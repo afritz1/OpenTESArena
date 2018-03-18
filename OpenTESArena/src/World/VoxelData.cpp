@@ -33,11 +33,6 @@ VoxelData::VoxelData()
 	this->dataType = VoxelDataType::None;
 }
 
-VoxelData::~VoxelData()
-{
-
-}
-
 VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID,
 	const int *menuID, WallData::Type type)
 {

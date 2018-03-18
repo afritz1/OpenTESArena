@@ -22,11 +22,6 @@ LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	this->lockLevel = lockLevel;
 }
 
-LevelData::Lock::~Lock()
-{
-
-}
-
 const Int2 &LevelData::Lock::getPosition() const
 {
 	return this->position;
@@ -42,11 +37,6 @@ LevelData::TextTrigger::TextTrigger(const std::string &text, bool displayedOnce)
 {
 	this->displayedOnce = displayedOnce;
 	this->previouslyDisplayed = false;
-}
-
-LevelData::TextTrigger::~TextTrigger()
-{
-
 }
 
 const std::string &LevelData::TextTrigger::getText() const
@@ -73,17 +63,6 @@ LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth)
 	: voxelGrid(gridWidth, gridHeight, gridDepth)
 {
 	// Just for initializing grid dimensions. The rest is initialized by load methods.
-}
-
-LevelData::LevelData(VoxelGrid &&voxelGrid)
-	: voxelGrid(std::move(voxelGrid))
-{
-	this->ceilingHeight = 1.0;
-}
-
-LevelData::~LevelData()
-{
-
 }
 
 LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth)

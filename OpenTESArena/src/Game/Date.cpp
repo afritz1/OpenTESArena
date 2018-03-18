@@ -28,11 +28,6 @@ Date::Date(int month, int day)
 Date::Date()
 	: Date(Date::INITIAL_YEAR, 0, 0) { }
 
-Date::~Date()
-{
-
-}
-
 int Date::getYear() const
 {
 	return this->year;

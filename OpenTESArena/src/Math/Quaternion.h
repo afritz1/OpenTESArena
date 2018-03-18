@@ -15,7 +15,6 @@ public:
 	Quaternion(const Double3 &v, double w);
 	Quaternion(const Double4 &v);
 	Quaternion();
-	~Quaternion();
 
 	static Quaternion identity();
 	static Quaternion fromAxisAngle(const Double3 &v, double w);

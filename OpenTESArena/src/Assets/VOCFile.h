@@ -16,7 +16,6 @@ private:
 	int sampleRate;
 public:
 	VOCFile(const std::string &filename);
-	~VOCFile();
 
 	// Gets the sample rate of the .VOC file (usually between 4000 and 11111).
 	int getSampleRate() const;

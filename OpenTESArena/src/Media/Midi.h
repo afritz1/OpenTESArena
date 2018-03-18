@@ -7,7 +7,7 @@
 /* Pure virtual interface for reading PCM samples from a MIDI-style song. */
 class MidiSong {
 public:
-    virtual ~MidiSong() { }
+	virtual ~MidiSong() = default;
 
     /* TODO: give back channel configuration and sample type (should not just
      * be channel count and bit depth; different channel configurations can
@@ -22,6 +22,7 @@ public:
     /* Offset is in sample frames. */
     virtual bool seek(size_t offset) = 0;
 };
+
 typedef std::unique_ptr<MidiSong> MidiSongPtr;
 
 /* Pure virtual interface for opening MIDI-style songs. Should be implemented
@@ -32,7 +33,7 @@ protected:
     static std::unique_ptr<MidiDevice> sInstance;
 
 public:
-    virtual ~MidiDevice() { }
+	virtual ~MidiDevice() = default;
 
     virtual MidiSongPtr open(const std::string &name) = 0;
 

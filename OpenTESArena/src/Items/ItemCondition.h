@@ -22,10 +22,9 @@ class ItemCondition
 private:
 	int currentCondition, maxCondition, degradeRate;
 
-	ItemCondition();
+	// Initialized by static methods.
+	ItemCondition() = default;
 public:
-	~ItemCondition();
-
 	// Item condition for a piece of armor of the given type.
 	static ItemCondition makeArmorCondition(BodyPartName partName, const ArmorMaterial &material);
 

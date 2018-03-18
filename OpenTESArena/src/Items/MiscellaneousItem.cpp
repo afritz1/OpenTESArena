@@ -58,11 +58,6 @@ MiscellaneousItem::MiscellaneousItem(MiscellaneousItemType miscItemType)
 MiscellaneousItem::MiscellaneousItem(const MiscellaneousArtifactData *artifactData)
 	: MiscellaneousItem(artifactData->getMiscellaneousItemType(), artifactData) { }
 
-MiscellaneousItem::~MiscellaneousItem()
-{
-
-}
-
 std::unique_ptr<Item> MiscellaneousItem::clone() const
 {
 	return std::make_unique<MiscellaneousItem>(this->miscItemType,

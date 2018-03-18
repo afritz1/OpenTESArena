@@ -39,7 +39,7 @@ protected:
 	Game &getGame() const;
 public:
 	Panel(Game &game);
-	virtual ~Panel();
+	virtual ~Panel() = default;
 
 	static std::unique_ptr<Panel> defaultPanel(Game &game);
 

@@ -67,7 +67,7 @@ public:
 	// Constructs the game world panel. The GameData object in Game must be
 	// initialized.
 	GameWorldPanel(Game &game);
-	virtual ~GameWorldPanel();
+	virtual ~GameWorldPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

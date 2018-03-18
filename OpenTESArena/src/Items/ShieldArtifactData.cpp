@@ -14,11 +14,6 @@ ShieldArtifactData::ShieldArtifactData(const std::string &displayName,
 	this->metalType = metalType;
 }
 
-ShieldArtifactData::~ShieldArtifactData()
-{
-
-}
-
 std::unique_ptr<ArtifactData> ShieldArtifactData::clone() const
 {
 	return std::make_unique<ShieldArtifactData>(

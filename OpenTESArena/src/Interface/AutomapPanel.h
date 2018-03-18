@@ -33,7 +33,7 @@ private:
 public:
 	AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
 		const VoxelGrid &voxelGrid, const std::string &locationName);
-	virtual ~AutomapPanel();
+	virtual ~AutomapPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

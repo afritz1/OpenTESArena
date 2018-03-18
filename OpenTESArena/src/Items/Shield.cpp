@@ -3,7 +3,6 @@
 
 #include "ArmorMaterial.h"
 #include "ArmorType.h"
-#include "HeavyArmorMaterial.h"
 #include "Metal.h"
 #include "Shield.h"
 #include "ShieldArtifactData.h"
@@ -85,11 +84,6 @@ Shield::Shield(ShieldType shieldType, MetalType metalType)
 Shield::Shield(const ShieldArtifactData *artifactData)
 	: Shield(artifactData->getShieldType(), artifactData->getMetalType(),
 		artifactData) { }
-
-Shield::~Shield()
-{
-
-}
 
 std::unique_ptr<Item> Shield::clone() const
 {

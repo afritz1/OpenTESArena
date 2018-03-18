@@ -13,8 +13,3 @@ Location::Location(const std::string &name, int provinceID,
 
 Location::Location()
 	: Location(std::string(), -1, LocationType::CityState, ClimateType::Temperate) { }
-
-Location::~Location()
-{
-
-}

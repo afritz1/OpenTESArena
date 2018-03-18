@@ -47,7 +47,6 @@ public:
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
 		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
 		double maxRunSpeed, int weaponID, const ExeData &exeData);
-	~Player();
 
 	// Distance from player's feet to head.
 	static const double HEIGHT;

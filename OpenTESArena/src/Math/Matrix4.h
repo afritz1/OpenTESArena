@@ -21,8 +21,7 @@ public:
 
 	Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
 		const Vector4f<T> &w);
-	Matrix4();
-	~Matrix4();
+	Matrix4() = default;
 
 	static Matrix4<T> identity();
 	static Matrix4<T> translation(T x, T y, T z);

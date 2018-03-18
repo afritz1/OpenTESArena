@@ -18,7 +18,7 @@ class Armor : public Item
 {
 public:
 	Armor(const ArtifactData *artifactData);
-	virtual ~Armor();
+	virtual ~Armor() = default;
 
 	virtual std::unique_ptr<Item> clone() const override = 0;
 

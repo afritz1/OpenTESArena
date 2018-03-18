@@ -13,7 +13,6 @@ private:
 	RMDFile::ArrayType flor, map1, map2;
 public:
 	RMDFile(const std::string &filename);
-	~RMDFile();
 
 	// Constant .RMD dimensions, always 64x64.
 	static const int WIDTH;

@@ -50,11 +50,6 @@ Trinket::Trinket(TrinketType trinketType)
 	this->trinketType = trinketType;
 }
 
-Trinket::~Trinket()
-{
-
-}
-
 ItemType Trinket::getItemType() const
 {
 	return ItemType::Trinket;

@@ -25,7 +25,7 @@ private:
 	void updateSoundText(double volume);
 public:
 	PauseMenuPanel(Game &game);
-	virtual ~PauseMenuPanel();
+	virtual ~PauseMenuPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

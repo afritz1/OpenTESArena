@@ -32,7 +32,7 @@ public:
 
 	// Body armor artifact constructor.
 	BodyArmor(const BodyArmorArtifactData *artifactData);
-	virtual ~BodyArmor();
+	virtual ~BodyArmor() = default;
 
 	virtual std::unique_ptr<Item> clone() const override;
 

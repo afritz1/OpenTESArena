@@ -16,7 +16,6 @@ private:
 public:
 	EntityManager();
 	EntityManager(EntityManager &&entityManager) = default;
-	~EntityManager();
 
 	EntityManager &operator=(EntityManager &&entityManager) = default;
 

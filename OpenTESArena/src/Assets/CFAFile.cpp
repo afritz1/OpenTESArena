@@ -157,11 +157,6 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	}
 }
 
-CFAFile::~CFAFile()
-{
-
-}
-
 int CFAFile::getImageCount() const
 {
 	return static_cast<int>(this->pixels.size());

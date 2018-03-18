@@ -177,11 +177,6 @@ TextBox::TextBox(int x, int y, const RichTextString &richText, Renderer &rendere
 TextBox::TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer)
 	: TextBox(center, richText, nullptr, renderer) { }
 
-TextBox::~TextBox()
-{
-
-}
-
 int TextBox::getX() const
 {
 	return this->x;

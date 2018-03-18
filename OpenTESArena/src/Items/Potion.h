@@ -12,11 +12,9 @@
 
 class Potion : public Consumable
 {
-private:
-
 public:
-	Potion();
-	virtual ~Potion();
+	Potion() = default;
+	virtual ~Potion() = default;
 
 	// All potions are the same weight.
 	virtual double getWeight() const override;

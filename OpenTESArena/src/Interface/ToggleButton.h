@@ -27,7 +27,6 @@ public:
 	ToggleButton(const Int2 &center, int width, int height, bool on,
 		const std::function<void(Game&)> &onFunction,
 		const std::function<void(Game&)> &offFunction);
-	virtual ~ToggleButton();
 
 	// Returns whether the button is toggled on.
 	bool isOn() const;

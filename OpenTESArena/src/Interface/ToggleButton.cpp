@@ -19,11 +19,6 @@ ToggleButton::ToggleButton(const Int2 &center, int width, int height, bool on,
 	: ToggleButton(center.x - (width / 2), center.y - (height / 2),
 		width, height, on, onFunction, offFunction) { }
 
-ToggleButton::~ToggleButton()
-{
-
-}
-
 bool ToggleButton::isOn() const
 {
 	return this->on;

@@ -13,7 +13,6 @@ private:
 	Metal metal;
 public:
 	Metallic(MetalType metalType);
-	~Metallic();
 
 	const Metal &getMetal() const;
 };

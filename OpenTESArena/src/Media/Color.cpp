@@ -26,11 +26,6 @@ Color::Color(uint8_t r, uint8_t g, uint8_t b)
 Color::Color()
 	: Color(0, 0, 0) { }
 
-Color::~Color()
-{
-
-}
-
 Color Color::randomRGBA(Random &random)
 {
 	uint8_t r = static_cast<uint8_t>(random.next(256));

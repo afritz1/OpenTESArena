@@ -28,7 +28,6 @@ public:
 		const std::vector<int> &allowedWeapons,
 		CharacterClassCategoryName categoryName, double lockpicking, int healthDie,
 		int initialExperienceCap, int classIndex, bool mage, bool thief, bool criticalHit);
-	~CharacterClass();
 
 	const std::string &getName() const;
 	const std::string &getPreferredAttributes() const;

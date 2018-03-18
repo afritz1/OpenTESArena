@@ -23,7 +23,7 @@ private:
 public:
 	ChooseGenderPanel(Game &game, const CharacterClass &charClass,
 		const std::string &name);
-	virtual ~ChooseGenderPanel();
+	virtual ~ChooseGenderPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

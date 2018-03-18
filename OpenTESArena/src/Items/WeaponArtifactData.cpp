@@ -13,11 +13,6 @@ WeaponArtifactData::WeaponArtifactData(const std::string &displayName,
 	this->metalType = metalType;
 }
 
-WeaponArtifactData::~WeaponArtifactData()
-{
-
-}
-
 std::unique_ptr<ArtifactData> WeaponArtifactData::clone() const
 {
 	return std::make_unique<WeaponArtifactData>(

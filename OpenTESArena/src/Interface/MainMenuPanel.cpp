@@ -749,11 +749,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	assert(!game.gameDataIsActive());
 }
 
-MainMenuPanel::~MainMenuPanel()
-{
-
-}
-
 std::string MainMenuPanel::getSelectedTestName() const
 {
 	if (this->testType == TestType_MainQuest)

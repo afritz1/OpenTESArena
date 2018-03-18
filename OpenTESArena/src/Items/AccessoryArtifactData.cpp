@@ -14,11 +14,6 @@ AccessoryArtifactData::AccessoryArtifactData(const std::string &displayName,
 	this->metalType = metalType;
 }
 
-AccessoryArtifactData::~AccessoryArtifactData()
-{
-
-}
-
 std::unique_ptr<ArtifactData> AccessoryArtifactData::clone() const
 {
 	return std::make_unique<AccessoryArtifactData>(

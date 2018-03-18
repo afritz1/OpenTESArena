@@ -20,7 +20,6 @@ public:
 
 	Vector2i(T x, T y);
 	Vector2i();
-	~Vector2i();
 
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line (due to the error calculation).
@@ -103,7 +102,6 @@ public:
 
 	Vector2f(T x, T y);
 	Vector2f();
-	~Vector2f();
 
 	static Vector2f<T> randomDirection(Random &random);
 	static Vector2f<T> randomPointInCircle(const Vector2f<T> &center, T radius, Random &random);

@@ -35,8 +35,6 @@ public:
 
 	Button(Button&&) = default;
 
-	~Button() { }
-
 	Button &operator=(Button&&) = default;
 
 	int getX() const

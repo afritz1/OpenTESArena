@@ -7,7 +7,6 @@ private:
 	double currentSeconds, targetSeconds;
 public:
 	Timer(double targetSeconds);
-	~Timer();
 
 	double getCurrentSeconds() const;
 	double getTargetSeconds() const;

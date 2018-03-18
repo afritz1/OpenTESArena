@@ -12,7 +12,7 @@ class Consumable : public Item
 public:
 	// There are no consumable artifacts yet, so this constructor remains simple.
 	Consumable();
-	virtual ~Consumable();
+	virtual ~Consumable() = default;
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const override = 0;

@@ -42,7 +42,6 @@ public:
 		Renderer &renderer);
 	TextBox(int x, int y, const RichTextString &richText, Renderer &renderer);
 	TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer);
-	virtual ~TextBox();
 
 	int getX() const;
 	int getY() const;

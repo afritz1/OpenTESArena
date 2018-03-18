@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Armor.h"
+#include "HeavyArmorMaterial.h"
 
 // Shields are distinct from BodyArmor because their only ArmorMaterialType is plate, 
 // since they are only designed to be metallic.
@@ -17,7 +18,6 @@
 // and also shields with no material (i.e., just "Round Shield"), which doesn't make 
 // much sense. That's why I'm giving all shields a metal type in the remake.
 
-class HeavyArmorMaterial;
 class ShieldArtifactData;
 
 enum class BodyPartName;
@@ -39,7 +39,7 @@ public:
 
 	// Shield artifact constructor.
 	Shield(const ShieldArtifactData *artifactData);
-	virtual ~Shield();
+	virtual ~Shield() = default;
 
 	virtual std::unique_ptr<Item> clone() const override;
 

@@ -27,7 +27,7 @@ public:
 
 	// Accessory constructor for a unique accessory.
 	Accessory(const AccessoryArtifactData *artifactData);
-	~Accessory();
+	virtual ~Accessory() = default;
 
 	virtual std::unique_ptr<Item> clone() const override;
 

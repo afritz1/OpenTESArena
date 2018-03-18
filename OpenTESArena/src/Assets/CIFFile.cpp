@@ -228,11 +228,6 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 	}
 }
 
-CIFFile::~CIFFile()
-{
-
-}
-
 int CIFFile::getImageCount() const
 {
 	return static_cast<int>(this->pixels.size());

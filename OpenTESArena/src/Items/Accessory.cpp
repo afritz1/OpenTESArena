@@ -82,11 +82,6 @@ Accessory::Accessory(const AccessoryArtifactData *artifactData)
 	: Accessory(artifactData->getAccessoryType(), artifactData->getMetalType(),
 		artifactData) { }
 
-Accessory::~Accessory()
-{
-
-}
-
 std::unique_ptr<Item> Accessory::clone() const
 {
 	return std::make_unique<Accessory>(

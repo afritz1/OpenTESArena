@@ -44,11 +44,6 @@ LoadGamePanel::LoadGamePanel(Game &game)
 	}();
 }
 
-LoadGamePanel::~LoadGamePanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

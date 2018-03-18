@@ -28,7 +28,6 @@ private:
 	static void demux7(const uint8_t *src, uint8_t *dst);
 public:
 	CFAFile(const std::string &filename, const Palette &palette);
-	~CFAFile();
 
 	// Gets the number of images in the CFA file.
 	int getImageCount() const;

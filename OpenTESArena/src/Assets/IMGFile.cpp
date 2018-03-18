@@ -204,11 +204,6 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	}
 }
 
-IMGFile::~IMGFile()
-{
-
-}
-
 void IMGFile::readPalette(const uint8_t *paletteData, Palette &dstPalette)
 {
 	// The palette data is 768 bytes, starting after the pixel data ends.

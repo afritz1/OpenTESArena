@@ -2,7 +2,6 @@
 #define MISC_ASSETS_H
 
 #include <array>
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -140,7 +139,6 @@ private:
 	void parseWorldMapMasks();
 public:
 	MiscAssets();
-	~MiscAssets();
 
 	// Gets the ExeData object. There may be slight differences between A.EXE and ACD.EXE,
 	// but only one will be available at a time for the lifetime of the program (dependent

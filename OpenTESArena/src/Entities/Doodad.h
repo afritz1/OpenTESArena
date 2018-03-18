@@ -17,7 +17,7 @@ private:
 public:
 	Doodad(const Animation &animation, const Double3 &position,
 		EntityManager &entityManager);
-	virtual ~Doodad();
+	virtual ~Doodad() = default;
 
 	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const override;
 

@@ -54,11 +54,6 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 	}
 }
 
-KeyValueMap::~KeyValueMap()
-{
-
-}
-
 const std::string &KeyValueMap::getValue(const std::string &key) const
 {
 	const auto pairIter = this->pairs.find(key);

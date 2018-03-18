@@ -16,7 +16,7 @@ private:
 public:
 	// There are no artifact trinkets for now, so this constructor remains simple.
 	Trinket(TrinketType trinketType);
-	~Trinket();
+	~Trinket() = default;
 
 	virtual ItemType getItemType() const override;
 	virtual double getWeight() const override;

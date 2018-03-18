@@ -151,11 +151,6 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	assert(this->tooltipTextures.size() == 0);
 }
 
-ChooseClassPanel::~ChooseClassPanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

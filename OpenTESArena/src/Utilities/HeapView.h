@@ -35,7 +35,6 @@ private:
 	std::unordered_map<size_t, size_t> sizes;
 public:
 	HeapView();
-	~HeapView();
 
 	// Returns the byte offset for where an allocation of the requested size should 
 	// occur. If the returned value points to an offset that would overflow the

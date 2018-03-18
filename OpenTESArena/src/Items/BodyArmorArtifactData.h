@@ -20,7 +20,7 @@ public:
 	BodyArmorArtifactData(const std::string &displayName,
 		const std::string &flavorText, const std::vector<int> &provinceIDs,
 		const ArmorMaterial *armorMaterial, BodyPartName partName);
-	virtual ~BodyArmorArtifactData();
+	virtual ~BodyArmorArtifactData() = default;
 
 	virtual std::unique_ptr<ArtifactData> clone() const override;
 

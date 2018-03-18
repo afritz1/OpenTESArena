@@ -19,7 +19,6 @@ public:
 		const std::pair<std::string, CharacterClassCategoryName> &a,
 		const std::pair<std::string, CharacterClassCategoryName> &b,
 		const std::pair<std::string, CharacterClassCategoryName> &c);
-	~CharacterQuestion();
 
 	// Gets the description for the character question.
 	const std::string &getDescription() const;

@@ -24,7 +24,7 @@ private:
 	std::vector<Int2> headOffsets;
 public:
 	CharacterPanel(Game &game);
-	virtual ~CharacterPanel();
+	virtual ~CharacterPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

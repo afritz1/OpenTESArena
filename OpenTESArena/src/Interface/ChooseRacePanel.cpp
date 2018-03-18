@@ -426,11 +426,6 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-ChooseRacePanel::~ChooseRacePanel()
-{
-
-}
-
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
 	const CharacterClass &charClass, const std::string &name)
 {

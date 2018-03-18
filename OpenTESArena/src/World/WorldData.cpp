@@ -24,11 +24,6 @@ WorldData::WorldData()
 	this->currentLevel = -1;
 }
 
-WorldData::~WorldData()
-{
-
-}
-
 std::string WorldData::generateCityInfName(ClimateType climateType, WeatherType weatherType)
 {
 	const std::string climateLetter = [climateType]()

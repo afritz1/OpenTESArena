@@ -10,11 +10,6 @@ Palette::Palette()
 	this->colors.fill(Color::Black);
 }
 
-Palette::~Palette()
-{
-
-}
-
 bool Palette::isBuiltIn(const std::string &filename)
 {
 	const std::string &builtInName = PaletteFile::fromName(PaletteName::BuiltIn);

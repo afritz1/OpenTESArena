@@ -95,11 +95,6 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	SDL_StartTextInput();
 }
 
-ChooseNamePanel::~ChooseNamePanel()
-{
-
-}
-
 std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();

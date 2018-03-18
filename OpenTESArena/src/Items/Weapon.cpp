@@ -159,11 +159,6 @@ Weapon::Weapon(const WeaponArtifactData *artifactData, const ExeData &exeData)
 	: Weapon(artifactData->getWeaponID(), artifactData->getMetalType(),
 		artifactData, exeData) { }
 
-Weapon::~Weapon()
-{
-
-}
-
 std::unique_ptr<Item> Weapon::clone() const
 {
 	return std::make_unique<Weapon>(this->weaponID, this->weaponName,

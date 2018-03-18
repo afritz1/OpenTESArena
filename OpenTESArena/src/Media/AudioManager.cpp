@@ -680,10 +680,7 @@ const double AudioManager::MIN_VOLUME = 0.0;
 const double AudioManager::MAX_VOLUME = 1.0;
 
 AudioManager::AudioManager()
-	: pImpl(std::make_unique<AudioManagerImpl>())
-{
-
-}
+	: pImpl(std::make_unique<AudioManagerImpl>()) { }
 
 AudioManager::~AudioManager()
 {

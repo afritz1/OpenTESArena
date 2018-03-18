@@ -6,11 +6,6 @@ ArtifactData::ArtifactData(const std::string &displayName, const std::string &fl
 	const std::vector<int> &provinceIDs)
 	: displayName(displayName), flavorText(flavorText), provinceIDs(provinceIDs) { }
 
-ArtifactData::~ArtifactData()
-{
-
-}
-
 const std::string &ArtifactData::getDisplayName() const
 {
 	return this->displayName;

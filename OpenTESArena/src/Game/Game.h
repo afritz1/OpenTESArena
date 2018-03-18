@@ -5,10 +5,12 @@
 #include <string>
 #include <vector>
 
+#include "GameData.h"
 #include "InputManager.h"
 #include "Options.h"
 #include "../Assets/MiscAssets.h"
 #include "../Interface/FPSCounter.h"
+#include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
 #include "../Media/TextureManager.h"
@@ -24,8 +26,6 @@
 
 // Game members should be available through a getter so panels can access them.
 
-class GameData;
-class Panel;
 class Surface;
 
 enum class MusicName;
@@ -74,7 +74,6 @@ public:
 	Game();
 	Game(const Game&) = delete;
 	Game(Game&&) = delete;
-	~Game();
 
 	Game &operator=(const Game&) = delete;
 	Game &operator=(Game&&) = delete;

@@ -20,7 +20,6 @@ private:
 	int characterHeight;
 public:
 	FontFile(const std::string &filename);
-	~FontFile();
 
 	int getWidth(char c) const;
 	int getHeight() const;

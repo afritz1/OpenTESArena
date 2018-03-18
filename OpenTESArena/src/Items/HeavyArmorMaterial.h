@@ -12,7 +12,7 @@ class HeavyArmorMaterial : public ArmorMaterial, public Metallic
 {
 public:
 	HeavyArmorMaterial(MetalType metalType);
-	virtual ~HeavyArmorMaterial();
+	virtual ~HeavyArmorMaterial() = default;
 
 	virtual std::unique_ptr<ArmorMaterial> clone() const override;
 
