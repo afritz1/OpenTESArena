@@ -184,7 +184,7 @@ public:
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;
 
-	
+	// Gets the world map terrain used with climate and travel calculations.
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
 	void init();
