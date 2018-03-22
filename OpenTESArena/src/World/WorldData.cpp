@@ -266,20 +266,8 @@ WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mi
 	const auto &level = mif.getLevels().front();
 
 	// Obtain climate from city data.
-	const ClimateType climateType = [localCityID, provinceID, &miscAssets]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		const auto &province = cityData.getProvinceData(provinceID);
-		const int locationID = Location::cityToLocationID(localCityID);
-		const auto &location = cityData.getLocationData(locationID, provinceID);
-		const Int2 localPoint(location.x, location.y);
-		const Rect provinceRect(province.globalX, province.globalY,
-			province.globalW, province.globalH);
-		const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
-		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
-		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
-		return MiscAssets::WorldMapTerrain::toClimateType(terrain);
-	}();
+	const ClimateType climateType = Location::getCityClimateType(
+		localCityID, provinceID, miscAssets);
 
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);

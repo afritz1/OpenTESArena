@@ -218,20 +218,8 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 	// Climate for center province.
 	const int localCityID = 0;
 	const int provinceID = 8;
-	const ClimateType climateType = [&miscAssets, localCityID, provinceID]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		const auto &province = cityData.getProvinceData(provinceID);
-		const int locationID = Location::cityToLocationID(localCityID);
-		const auto &location = cityData.getLocationData(locationID, provinceID);
-		const Int2 localPoint(location.x, location.y);
-		const Rect provinceRect(province.globalX, province.globalY,
-			province.globalW, province.globalH);
-		const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
-		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
-		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
-		return MiscAssets::WorldMapTerrain::toClimateType(terrain);
-	}();
+	const ClimateType climateType = Location::getCityClimateType(
+		localCityID, provinceID, miscAssets);
 
 	// Call premade WorldData loader.
 	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType);

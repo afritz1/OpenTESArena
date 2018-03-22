@@ -1,3 +1,4 @@
+#include "ClimateType.h"
 #include "Location.h"
 #include "LocationDataType.h"
 #include "LocationType.h"
@@ -61,6 +62,35 @@ LocationType Location::getDungeonType(int localDungeonID)
 	{
 		return LocationType::NamedDungeon;
 	}
+}
+
+ClimateType Location::getClimateType(int locationID, int provinceID,
+	const MiscAssets &miscAssets)
+{
+	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &province = cityData.getProvinceData(provinceID);
+	const auto &location = cityData.getLocationData(locationID, provinceID);
+	const Int2 localPoint(location.x, location.y);
+	const Rect provinceRect(province.globalX, province.globalY,
+		province.globalW, province.globalH);
+	const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
+	const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
+	const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
+	return MiscAssets::WorldMapTerrain::toClimateType(terrain);
+}
+
+ClimateType Location::getCityClimateType(int localCityID, int provinceID,
+	const MiscAssets &miscAssets)
+{
+	const int locationID = Location::cityToLocationID(localCityID);
+	return Location::getClimateType(locationID, provinceID, miscAssets);
+}
+
+ClimateType Location::getDungeonClimateType(int localDungeonID, int provinceID,
+	const MiscAssets &miscAssets)
+{
+	const int locationID = Location::dungeonToLocationID(localDungeonID);
+	return Location::getClimateType(locationID, provinceID, miscAssets);
 }
 
 int Location::cityToLocationID(int localCityID)
