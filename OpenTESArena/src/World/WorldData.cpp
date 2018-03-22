@@ -46,7 +46,7 @@ std::string WorldData::generateCityInfName(ClimateType climateType, WeatherType 
 	// City/town/village letter. Wilderness is "W".
 	const std::string locationLetter = "C";
 
-	const std::string weatherLetter = [weatherType]()
+	const std::string weatherLetter = [climateType, weatherType]()
 	{
 		if ((weatherType == WeatherType::Clear) ||
 			(weatherType == WeatherType::Overcast))
@@ -59,7 +59,16 @@ std::string WorldData::generateCityInfName(ClimateType climateType, WeatherType 
 		}
 		else if (weatherType == WeatherType::Snow)
 		{
-			return "S";
+			// Deserts can't have snow.
+			if (climateType != ClimateType::Desert)
+			{
+				return "S";
+			}
+			else
+			{
+				DebugWarning("Deserts do not have snow templates.");
+				return "N";
+			}
 		}
 		else
 		{
@@ -92,7 +101,7 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	// Wilderness is "W".
 	const std::string locationLetter = "W";
 
-	const std::string weatherLetter = [weatherType]()
+	const std::string weatherLetter = [climateType, weatherType]()
 	{
 		if ((weatherType == WeatherType::Clear) ||
 			(weatherType == WeatherType::Overcast))
@@ -105,7 +114,16 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 		}
 		else if (weatherType == WeatherType::Snow)
 		{
-			return "S";
+			// Deserts can't have snow.
+			if (climateType != ClimateType::Desert)
+			{
+				return "S";
+			}
+			else
+			{
+				DebugWarning("Deserts do not have snow templates.");
+				return "N";
+			}
 		}
 		else
 		{

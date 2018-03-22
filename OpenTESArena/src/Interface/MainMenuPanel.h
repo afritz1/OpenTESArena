@@ -8,7 +8,6 @@
 
 class Renderer;
 
-enum class ClimateType;
 enum class WeatherType;
 enum class WorldType;
 
@@ -16,15 +15,14 @@ class MainMenuPanel : public Panel
 {
 private:
 	Button<Game&> loadButton, newButton;
-	Button<Game&, int, int, const std::string&, ClimateType, WeatherType, WorldType> quickStartButton;
+	Button<Game&, int, int, const std::string&, WeatherType, WorldType> quickStartButton;
 	Button<> exitButton;
 	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
-		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testClimateUpButton,
-		testClimateDownButton, testWeatherUpButton, testWeatherDownButton;
-	int testType, testIndex, testIndex2, testClimate, testWeather; // Test values for quickstart.
+		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testWeatherUpButton,
+		testWeatherDownButton;
+	int testType, testIndex, testIndex2, testWeather; // Test values for quickstart.
 
 	std::string getSelectedTestName() const;
-	ClimateType getSelectedTestClimateType() const;
 	WeatherType getSelectedTestWeatherType() const;
 	WorldType getSelectedTestWorldType() const;
 public:

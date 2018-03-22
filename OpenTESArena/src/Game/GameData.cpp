@@ -404,9 +404,13 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 }
 
 void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-	int rmdBL, ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
+	int rmdBL, WeatherType weatherType, const MiscAssets &miscAssets,
 	TextureManager &textureManager, Renderer &renderer)
 {
+	// Get the location's climate type.
+	const ClimateType climateType = Location::getCityClimateType(
+		localCityID, provinceID, miscAssets);
+
 	// Call wilderness WorldData loader.
 	this->worldData = WorldData::loadWilderness(
 		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType);

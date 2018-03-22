@@ -39,7 +39,6 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
-#include "../World/ClimateType.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/WeatherType.h"
@@ -145,13 +144,6 @@ namespace
 	};
 
 	// Values for testing.
-	const std::vector<ClimateType> Climates =
-	{
-		ClimateType::Temperate,
-		ClimateType::Desert,
-		ClimateType::Mountain
-	};
-
 	const std::vector<WeatherType> Weathers =
 	{
 		WeatherType::Clear,
@@ -233,7 +225,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->quickStartButton = [&game]()
 	{
 		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
-			ClimateType climateType, WeatherType weatherType, WorldType worldType)
+			WeatherType weatherType, WorldType worldType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -367,7 +359,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 				// Load wilderness into game data. Location data is loaded, too.
 				gameData->loadWilderness(localCityID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
-					climateType, weatherType, miscAssets, game.getTextureManager(), renderer);
+					weatherType, miscAssets, game.getTextureManager(), renderer);
 			}
 			else
 			{
@@ -472,8 +464,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(musicName);
 		};
-		return Button<Game&, int, int, const std::string&, ClimateType,
-			WeatherType, WorldType>(function);
+		return Button<Game&, int, int, const std::string&, WeatherType, WorldType>(function);
 	}();
 
 	this->exitButton = []()
@@ -504,7 +495,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Reset the other indices.
 			panel.testIndex = 0;
 			panel.testIndex2 = 1;
-			panel.testClimate = 0;
 			panel.testWeather = 0;
 		};
 		return Button<MainMenuPanel&>(x, y, width, height, function);
@@ -523,7 +513,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Reset the other indices.
 			panel.testIndex = 0;
 			panel.testIndex2 = 1;
-			panel.testClimate = 0;
 			panel.testWeather = 0;
 		};
 		return Button<MainMenuPanel&>(x, y, width, height, function);
@@ -658,55 +647,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		return Button<MainMenuPanel&>(x, y, width, height, function);
 	}();
 
-	this->testClimateUpButton = [this]()
-	{
-		const int x = this->testTypeUpButton.getX();
-		const int y = this->testTypeUpButton.getY() - 4 -
-			(4 * this->testTypeUpButton.getHeight());
-		const int width = this->testTypeUpButton.getWidth();
-		const int height = this->testTypeUpButton.getHeight();
-		auto function = [](MainMenuPanel &panel)
-		{
-			assert((panel.testType == TestType_City) ||
-				(panel.testType == TestType_Wilderness));
-
-			const int count = static_cast<int>(Climates.size());
-			panel.testClimate = (panel.testClimate > 0) ? (panel.testClimate - 1) : (count - 1);
-
-			// Reset weather index.
-			panel.testWeather = 0;
-
-		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
-	}();
-
-	this->testClimateDownButton = [this]()
-	{
-		const int x = this->testClimateUpButton.getX();
-		const int y = this->testClimateUpButton.getY() + this->testClimateUpButton.getHeight();
-		const int width = this->testClimateUpButton.getWidth();
-		const int height = this->testClimateUpButton.getHeight();
-		auto function = [](MainMenuPanel &panel)
-		{
-			assert((panel.testType == TestType_City) ||
-				(panel.testType == TestType_Wilderness));
-
-			const int count = static_cast<int>(Climates.size());
-			panel.testClimate = (panel.testClimate < (count - 1)) ? (panel.testClimate + 1) : 0;
-
-			// Reset weather index.
-			panel.testWeather = 0;
-		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
-	}();
-
 	this->testWeatherUpButton = [this]()
 	{
-		const int x = this->testClimateUpButton.getX();
-		const int y = this->testClimateUpButton.getY() + 2 +
-			(2 * this->testClimateUpButton.getHeight());
-		const int width = this->testClimateUpButton.getWidth();
-		const int height = this->testClimateUpButton.getHeight();
+		const int x = this->testTypeUpButton.getX();
+		const int y = this->testTypeUpButton.getY() - 2 -
+			(2 * this->testTypeUpButton.getHeight());
+		const int width = this->testTypeUpButton.getWidth();
+		const int height = this->testTypeUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			assert((panel.testType == TestType_City) ||
@@ -715,16 +662,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			panel.testWeather = [&panel]()
 			{
 				const int count = static_cast<int>(Weathers.size());
-
-				if (panel.getSelectedTestClimateType() != ClimateType::Desert)
-				{
-					return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 1);
-				}
-				else
-				{
-					// Deserts can't have snow.
-					return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 2);
-				}
+				return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 1);
 			}();
 		};
 		return Button<MainMenuPanel&>(x, y, width, height, function);
@@ -744,16 +682,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			panel.testWeather = [&panel]()
 			{
 				const int count = static_cast<int>(Weathers.size());
-
-				if (panel.getSelectedTestClimateType() != ClimateType::Desert)
-				{
-					return (panel.testWeather < (count - 1)) ? (panel.testWeather + 1) : 0;
-				}
-				else
-				{
-					// Deserts can't have snow.
-					return (panel.testWeather < (count - 2)) ? (panel.testWeather + 1) : 0;
-				}
+				return (panel.testWeather < (count - 1)) ? (panel.testWeather + 1) : 0;
 			}();
 		};
 		return Button<MainMenuPanel&>(x, y, width, height, function);
@@ -762,7 +691,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->testType = 0;
 	this->testIndex = 0;
 	this->testIndex2 = 1;
-	this->testClimate = 0;
 	this->testWeather = 0;
 
 	// The game data should not be active on the main menu.
@@ -812,11 +740,6 @@ std::string MainMenuPanel::getSelectedTestName() const
 	{
 		return DungeonLocations.at(this->testIndex);
 	}
-}
-
-ClimateType MainMenuPanel::getSelectedTestClimateType() const
-{
-	return Climates.at(this->testClimate);
 }
 
 WeatherType MainMenuPanel::getSelectedTestWeatherType() const
@@ -881,7 +804,6 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 			this->testType,
 			this->testIndex,
 			this->getSelectedTestName(),
-			this->getSelectedTestClimateType(),
 			this->getSelectedTestWeatherType(),
 			this->getSelectedTestWorldType());
 	}
@@ -914,7 +836,6 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 				this->testType,
 				this->testIndex,
 				this->getSelectedTestName(),
-				this->getSelectedTestClimateType(),
 				this->getSelectedTestWeatherType(),
 				this->getSelectedTestWorldType());
 		}
@@ -961,15 +882,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		else if (this->testType == TestType_Wilderness)
 		{
 			// These buttons are only available when selecting wilderness names.
-			if (this->testClimateUpButton.contains(originalPoint))
-			{
-				this->testClimateUpButton.click(*this);
-			}
-			else if (this->testClimateDownButton.contains(originalPoint))
-			{
-				this->testClimateDownButton.click(*this);
-			}
-			else if (this->testWeatherUpButton.contains(originalPoint))
+			if (this->testWeatherUpButton.contains(originalPoint))
 			{
 				this->testWeatherUpButton.click(*this);
 			}
@@ -1010,15 +923,8 @@ void MainMenuPanel::render(Renderer &renderer)
 		renderer.drawOriginal(arrows.get(), this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
-	else if (this->testType == TestType_City)
+	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		renderer.drawOriginal(arrows.get(), this->testWeatherUpButton.getX(),
-			this->testWeatherUpButton.getY());
-	}
-	else if (this->testType == TestType_Wilderness)
-	{
-		renderer.drawOriginal(arrows.get(), this->testClimateUpButton.getX(),
-			this->testClimateUpButton.getY());
 		renderer.drawOriginal(arrows.get(), this->testWeatherUpButton.getX(),
 			this->testWeatherUpButton.getY());
 	}
@@ -1099,49 +1005,6 @@ void MainMenuPanel::render(Renderer &renderer)
 	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY, testNameText, renderer);
 	renderer.drawOriginal(testNameTextBox.getTexture(),
 		testNameTextBox.getX(), testNameTextBox.getY());
-
-	// Draw climate text if applicable.
-	if (this->testType == TestType_Wilderness)
-	{
-		const std::string testClimateName = [this]()
-		{
-			const ClimateType climateType = this->getSelectedTestClimateType();
-
-			if (climateType == ClimateType::Temperate)
-			{
-				return "Temperate";
-			}
-			else if (climateType == ClimateType::Desert)
-			{
-				return "Desert";
-			}
-			else if (climateType == ClimateType::Mountain)
-			{
-				return "Mountain";
-			}
-			else
-			{
-				throw std::runtime_error("Bad climate type.");
-			}
-		}();
-
-		const RichTextString testClimateText(
-			"Test climate: " + testClimateName,
-			testTypeText.getFontName(),
-			testTypeText.getColor(),
-			testTypeText.getAlignment(),
-			this->getGame().getFontManager());
-
-		const int testClimateTextBoxX = this->testClimateUpButton.getX() -
-			testClimateText.getDimensions().x - 2;
-		const int testClimateTextBoxY = this->testClimateUpButton.getY() +
-			(testClimateText.getDimensions().y / 2);
-		const TextBox testClimateTextBox(
-			testClimateTextBoxX, testClimateTextBoxY, testClimateText, renderer);
-
-		renderer.drawOriginal(testClimateTextBox.getTexture(),
-			testClimateTextBox.getX(), testClimateTextBox.getY());
-	}
 
 	// Draw weather text if applicable.
 	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))

@@ -33,7 +33,6 @@ class TextBox;
 class TextureManager;
 
 enum class GenderName;
-enum class ClimateType;
 enum class WeatherType;
 enum class WorldType;
 
@@ -109,7 +108,7 @@ public:
 
 	// Reads in data from wilderness and writes it to the game data.
 	void loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-		int rmdBL, ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets,
+		int rmdBL, WeatherType weatherType, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();
