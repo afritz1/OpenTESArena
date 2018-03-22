@@ -84,12 +84,12 @@ public:
 	~GameData();
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, const Location &location, TextureManager &textureManager,
-		Renderer &renderer);
+	void loadInterior(const MIFFile &mif, const Location &location,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
-	void loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDungeon,
+	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
@@ -99,8 +99,8 @@ public:
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).
-	void loadPremadeCity(const MIFFile &mif, ClimateType climateType, WeatherType weatherType,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+	void loadPremadeCity(const MIFFile &mif, WeatherType weatherType, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game
 	// data. The local ID is the 0-31 location index within a province.

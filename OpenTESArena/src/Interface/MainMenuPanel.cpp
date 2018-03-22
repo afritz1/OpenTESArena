@@ -40,6 +40,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
+#include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
@@ -68,20 +69,37 @@ namespace
 
 	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
 
-	// .MIF filenames for each main quest dungeon, ordered by their appearance in the 
+	// Location IDs for each main quest dungeon, ordered by their appearance in the 
 	// game (in pairs, except for the first and last ones).
-	const std::vector<std::string> MainQuestLocations =
+	const std::vector<Location> MainQuestLocations =
 	{
-		"START.MIF",
-		"39699021.MIF", "42068779.MIF",
-		"42110737.MIF", "41418704.MIF",
-		"40642738.MIF", "40852494.MIF",
-		"40370128.MIF", "39300577.MIF",
-		"41229981.MIF", "42488253.MIF",
-		"40181409.MIF", "41649375.MIF",
-		"42194658.MIF", "40516921.MIF",
-		"39950681.MIF", "42026882.MIF",
-		"IMPPAL.MIF"
+		Location::makeSpecialCase(Location::SpecialCaseType::StartDungeon, 8),
+
+		Location::makeDungeon(1, 1),
+		Location::makeDungeon(0, 1),
+
+		Location::makeDungeon(1, 2),
+		Location::makeDungeon(0, 2),
+
+		Location::makeDungeon(1, 5),
+		Location::makeDungeon(0, 5),
+
+		Location::makeDungeon(1, 6),
+		Location::makeDungeon(0, 6),
+
+		Location::makeDungeon(1, 4),
+		Location::makeDungeon(0, 4),
+
+		Location::makeDungeon(1, 0),
+		Location::makeDungeon(0, 0),
+
+		Location::makeDungeon(1, 7),
+		Location::makeDungeon(0, 7),
+
+		Location::makeDungeon(1, 3),
+		Location::makeDungeon(0, 3),
+
+		Location::makeCity(0, 8)
 	};
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
@@ -101,12 +119,13 @@ namespace
 		{ "WCRYPT", { 1, 8 } }
 	};
 
+	const std::string ImperialMIF = "IMPERIAL.MIF";
 	const std::string RandomCity = "Random City";
 	const std::string RandomTown = "Random Town";
 	const std::string RandomVillage = "Random Village";
 	const std::vector<std::string> CityLocations =
 	{
-		"IMPERIAL.MIF",
+		ImperialMIF,
 		RandomCity,
 		RandomTown,
 		RandomVillage
@@ -223,25 +242,22 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
 
 			// Game data instance, to be initialized further by one of the loading methods below.
+			// Create a player with random data for testing.
 			const auto &miscAssets = game.getMiscAssets();
-			std::unique_ptr<GameData> gameData = [&miscAssets]()
-			{
-				// Create a player with random data for testing.
-				return std::make_unique<GameData>(Player::makeRandom(
-					miscAssets.getClassDefinitions(), miscAssets.getExeData()));
-			}();
+			auto gameData = std::make_unique<GameData>(Player::makeRandom(
+				miscAssets.getClassDefinitions(), miscAssets.getExeData()));
 
 			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
 			{
 				// There is only one "premade" city (used by the center province). All others
 				// are randomly generated.
-				if (mifName == "IMPERIAL.MIF")
+				if (mifName == ImperialMIF)
 				{
 					const MIFFile mif(mifName);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadPremadeCity(mif, climateType, weatherType, miscAssets,
+					gameData->loadPremadeCity(mif, weatherType, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 				else
@@ -280,25 +296,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				if (testType != TestType_Dungeon)
 				{
+					// To do: use localDungeonID + province ID pair for main quest locations,
+					// not their hardcoded dungeon seed .MIF name. The pair should also be
+					// used to decide location details below.
 					const MIFFile mif(mifName);
+					const Player &player = gameData->getPlayer();
 
 					// Set some arbitrary interior location data for testing, depending on
 					// whether it's a main quest dungeon.
-					const Location location = [testType, &gameData]()
-					{
-						const Player &player = gameData->getPlayer();
-						if (testType == TestType_MainQuest)
-						{
-							return Location("Test Main Quest", player.getRaceID(),
-								LocationType::Dungeon, ClimateType::Temperate);
-						}
-						else
-						{
-							return Location("Test Interior", player.getRaceID(),
-								LocationType::CityState, ClimateType::Temperate);
-						}
-					}();
-
+					const Location location = (testType == TestType_MainQuest) ?
+						Location::makeDungeon(0, player.getRaceID()) :
+						Location::makeCity(0, player.getRaceID());
 					gameData->loadInterior(mif, location, game.getTextureManager(), renderer);
 				}
 				else
@@ -310,8 +318,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					if (mifName == RandomNamedDungeon)
 					{
-						const int dungeonID = 2 + random.next(14);
-						gameData->loadNamedDungeon(dungeonID, provinceID, isArtifactDungeon,
+						const int localDungeonID = 2 + random.next(14);
+						gameData->loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
 							miscAssets, game.getTextureManager(), renderer);
 					}
 					else if (mifName == RandomWildDungeon)
@@ -753,7 +761,27 @@ std::string MainMenuPanel::getSelectedTestName() const
 {
 	if (this->testType == TestType_MainQuest)
 	{
-		return MainQuestLocations.at(this->testIndex);
+		// Decide how to get the main quest dungeon name.
+		if (this->testIndex == 0)
+		{
+			// Start dungeon.
+			return "START.MIF";
+		}
+		else if (this->testIndex == (static_cast<int>(MainQuestLocations.size()) - 1))
+		{
+			// Final dungeon.
+			return "IMPPAL.MIF";
+		}
+		else
+		{
+			// Calculate the .MIF name from the dungeon seed.
+			const Location &location = MainQuestLocations.at(this->testIndex);
+			const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+			const uint32_t dungeonSeed = cityData.getDungeonSeed(
+				location.localDungeonID, location.provinceID);
+			const std::string mifName = cityData.getMainQuestDungeonMifName(dungeonSeed);
+			return mifName;
+		}
 	}
 	else if (this->testType == TestType_Interior)
 	{
@@ -907,15 +935,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		else if (this->testType == TestType_City)
 		{
 			// These buttons are only available when selecting city names.
-			if (this->testClimateUpButton.contains(originalPoint))
-			{
-				this->testClimateUpButton.click(*this);
-			}
-			else if (this->testClimateDownButton.contains(originalPoint))
-			{
-				this->testClimateDownButton.click(*this);
-			}
-			else if (this->testWeatherUpButton.contains(originalPoint))
+			if (this->testWeatherUpButton.contains(originalPoint))
 			{
 				this->testWeatherUpButton.click(*this);
 			}
@@ -976,7 +996,12 @@ void MainMenuPanel::render(Renderer &renderer)
 		renderer.drawOriginal(arrows.get(), this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
-	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
+	else if (this->testType == TestType_City)
+	{
+		renderer.drawOriginal(arrows.get(), this->testWeatherUpButton.getX(),
+			this->testWeatherUpButton.getY());
+	}
+	else if (this->testType == TestType_Wilderness)
 	{
 		renderer.drawOriginal(arrows.get(), this->testClimateUpButton.getX(),
 			this->testClimateUpButton.getY());
@@ -1061,7 +1086,8 @@ void MainMenuPanel::render(Renderer &renderer)
 	renderer.drawOriginal(testNameTextBox.getTexture(),
 		testNameTextBox.getX(), testNameTextBox.getY());
 
-	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
+	// Draw climate text if applicable.
+	if (this->testType == TestType_Wilderness)
 	{
 		const std::string testClimateName = [this]()
 		{
@@ -1101,7 +1127,11 @@ void MainMenuPanel::render(Renderer &renderer)
 
 		renderer.drawOriginal(testClimateTextBox.getTexture(),
 			testClimateTextBox.getX(), testClimateTextBox.getY());
+	}
 
+	// Draw weather text if applicable.
+	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
+	{
 		const std::string weatherName = [this]()
 		{
 			const WeatherType weatherType = this->getSelectedTestWeatherType();

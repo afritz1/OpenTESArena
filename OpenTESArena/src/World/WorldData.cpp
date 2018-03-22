@@ -3,12 +3,13 @@
 #include "SDL.h"
 
 #include "ClimateType.h"
-#include "LocationType.h"
+#include "Location.h"
 #include "WeatherType.h"
 #include "WorldData.h"
 #include "WorldType.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
+#include "../Assets/MiscAssets.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
@@ -114,31 +115,6 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	}();
 
 	return climateLetter + locationLetter + weatherLetter + ".INF";
-}
-
-LocationType WorldData::getCityLocationType(int globalCityID)
-{
-	// Local IDs can be between 0 and 31.
-	const auto &idPair = CityDataFile::getLocalCityAndProvinceID(globalCityID);
-	const int localCityID = idPair.first;
-
-	if (localCityID < 8)
-	{
-		return LocationType::CityState;
-	}
-	else if (localCityID < 16)
-	{
-		return LocationType::Town;
-	}
-	else if (localCityID < 32)
-	{
-		return LocationType::Village;
-	}
-	else
-	{
-		throw std::runtime_error("Bad global city ID \"" +
-			std::to_string(globalCityID) + "\".");
-	}
 }
 
 WorldData WorldData::loadInterior(const MIFFile &mif)
@@ -280,17 +256,30 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	return worldData;
 }
 
-WorldData WorldData::loadCity(int globalCityID, const MIFFile &mif, int cityX, int cityY,
-	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	LocationType locationType, WeatherType weatherType)
+WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityX,
+	int cityY, int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+	WeatherType weatherType, const MiscAssets &miscAssets)
 {
 	WorldData worldData;
 
 	// Generate level.
 	const auto &level = mif.getLevels().front();
 
-	// To do: obtain climate from city data.
-	const ClimateType climateType = ClimateType::Temperate;
+	// Obtain climate from city data.
+	const ClimateType climateType = [localCityID, provinceID, &miscAssets]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		const int locationID = Location::cityToLocationID(localCityID);
+		const auto &location = cityData.getLocationData(locationID, provinceID);
+		const Int2 localPoint(location.x, location.y);
+		const Rect provinceRect(province.globalX, province.globalY,
+			province.globalW, province.globalH);
+		const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
+		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
+		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
+		return MiscAssets::WorldMapTerrain::toClimateType(terrain);
+	}();
 
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);

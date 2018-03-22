@@ -134,16 +134,16 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDungeon,
+void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
-	DebugAssert(dungeonID >= 2, "Dungeon ID \"" + std::to_string(dungeonID) +
+	DebugAssert(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
 		"\" must not be for main quest dungeon.");
 
 	// Generate dungeon seed.
 	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t dungeonSeed = cityData.getDungeonSeed(dungeonID, provinceID);
+	const uint32_t dungeonSeed = cityData.getDungeonSeed(localDungeonID, provinceID);
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const int widthChunks = 2;
@@ -157,9 +157,7 @@ void GameData::loadNamedDungeon(int dungeonID, int provinceID, bool isArtifactDu
 	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
-	this->location.locationType = LocationType::Dungeon;
-	this->location.provinceID = provinceID;
-	this->location.name = "Test Named Dungeon";
+	this->location = Location::makeDungeon(localDungeonID, provinceID);
 
 	// Set interior sky palette.
 	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
@@ -198,10 +196,9 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
 
-	// Set location.
-	this->location.locationType = LocationType::Dungeon;
-	this->location.provinceID = provinceID;
-	this->location.name = "Test Wild Dungeon";
+	// Set location (since wilderness dungeons aren't their own location, use a placeholder
+	// value for testing).
+	this->location = Location::makeSpecialCase(Location::SpecialCaseType::WildDungeon, provinceID);
 
 	// Set interior sky palette.
 	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
@@ -215,10 +212,27 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-	WeatherType weatherType, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
+	// Climate for center province.
+	const int localCityID = 0;
+	const int provinceID = 8;
+	const ClimateType climateType = [&miscAssets, localCityID, provinceID]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		const int locationID = Location::cityToLocationID(localCityID);
+		const auto &location = cityData.getLocationData(locationID, provinceID);
+		const Int2 localPoint(location.x, location.y);
+		const Rect provinceRect(province.globalX, province.globalY,
+			province.globalW, province.globalH);
+		const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
+		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
+		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
+		return MiscAssets::WorldMapTerrain::toClimateType(terrain);
+	}();
+
 	// Call premade WorldData loader.
 	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
@@ -228,17 +242,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
-	const int provinceID = 8;
-	const std::string locationName = [&miscAssets, provinceID]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		const auto &provinceData = cityData.getProvinceData(provinceID);
-		const auto &locationData = provinceData.cityStates.front();
-		return std::string(locationData.name.data());
-	}();
-
-	const LocationType locationType = LocationType::CityState;
-	this->location = Location(locationName, provinceID, locationType, climateType);
+	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
@@ -264,12 +268,12 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
 	
 	// Determine city traits from the given city ID.
-	const LocationType locationType = WorldData::getCityLocationType(globalCityID);
+	const LocationType locationType = Location::getCityType(localCityID);
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
-	const bool isCity = locationType == LocationType::CityState;
+	const bool isCityState = locationType == LocationType::CityState;
 	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
 		cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
-	const int templateCount = isCoastal ? (isCity ? 3 : 2) : 5;
+	const int templateCount = isCoastal ? (isCityState ? 3 : 2) : 5;
 	const int templateID = globalCityID % templateCount;
 
 	const MIFFile mif = [locationType, &cityGen, isCoastal, templateID]()
@@ -388,8 +392,8 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	}();
 
 	// Call city WorldData loader.
-	this->worldData = WorldData::loadCity(globalCityID, mif, cityX, cityY, cityDim,
-		reservedBlocks, startPosition, locationType, weatherType);
+	this->worldData = WorldData::loadCity(localCityID, provinceID, mif, cityX, cityY,
+		cityDim, reservedBlocks, startPosition, weatherType, miscAssets);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position.
@@ -397,9 +401,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
-	// - To do: get original climate data (from WorldData?).
-	this->location = Location(std::string(locationData.name.data()), provinceID,
-		locationType, ClimateType::Temperate);
+	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
@@ -428,7 +430,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 
 	// Set location.
 	const auto &cityData = miscAssets.getCityDataFile();
-	const LocationType locationType = WorldData::getCityLocationType(localCityID);
+	const LocationType locationType = Location::getCityType(localCityID);
 	const auto &locationData = [localCityID, provinceID, &cityData, locationType]()
 	{
 		const auto &provinceData = cityData.getProvinceData(provinceID);
@@ -451,8 +453,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 		}
 	}();
 
-	this->location = Location(std::string(locationData.name.data()), provinceID,
-		locationType, climateType);
+	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =

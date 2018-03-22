@@ -185,7 +185,8 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 
 		// The type of terrain at the world map point.
 		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
-		const uint8_t terrainIndex = worldMapTerrain.getAt(point.x, point.y);
+		const uint8_t terrainIndex = MiscAssets::WorldMapTerrain::getNormalizedIndex(
+			worldMapTerrain.getAt(point.x, point.y));
 
 		// Calculate the travel speed based on climate and weather.
 		const auto &exeData = miscAssets.getExeData();
@@ -217,24 +218,24 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 	return travelDays;
 }
 
-uint32_t CityDataFile::getDungeonSeed(int dungeonID, int provinceID) const
+uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
 {
 	const auto &province = this->provinces.at(provinceID);
-	const auto &dungeon = [dungeonID, &province]()
+	const auto &dungeon = [localDungeonID, &province]()
 	{
-		if (dungeonID == 0)
+		if (localDungeonID == 0)
 		{
 			// Second main quest dungeon.
 			return province.secondDungeon;
 		}
-		else if (dungeonID == 1)
+		else if (localDungeonID == 1)
 		{
 			// First main quest dungeon.
 			return province.firstDungeon;
 		}
 		else
 		{
-			return province.randomDungeons.at(dungeonID - 2);
+			return province.randomDungeons.at(localDungeonID - 2);
 		}
 	}();
 

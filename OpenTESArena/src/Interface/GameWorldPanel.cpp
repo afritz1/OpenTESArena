@@ -49,6 +49,9 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/Location.h"
+#include "../World/LocationDataType.h"
+#include "../World/LocationType.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/WorldType.h"
@@ -183,7 +186,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const std::string text = [&game]()
 			{
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &miscAssets = game.getMiscAssets();
+				const auto &exeData = miscAssets.getExeData();
 				const Location &location = game.getGameData().getLocation();
 
 				const std::string timeString = [&game, &exeData]()
@@ -239,7 +243,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 				// Replace first %s with location name.
 				size_t index = baseText.find("%s");
-				baseText = baseText.replace(index, 2, location.name);
+				baseText = baseText.replace(index, 2, location.getName(miscAssets));
 
 				// Replace second %s with time string.
 				index = baseText.find("%s", index);
@@ -421,14 +425,41 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			if (goToAutomap)
 			{
 				auto &gameData = game.getGameData();
+				const auto &miscAssets = game.getMiscAssets();
 				const auto &worldData = gameData.getWorldData();
 				const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 				const auto &player = gameData.getPlayer();
 				const Location &location = gameData.getLocation();
 				const Double3 &position = player.getPosition();
 
+				// Some places (like named/wild dungeons) do not display a name on the automap.
+				const std::string automapLocationName = [&miscAssets, &location]()
+				{
+					const bool isCity = location.dataType == LocationDataType::City;
+					const bool isMainQuestDungeon = [&location]()
+					{
+						if (location.dataType == LocationDataType::Dungeon)
+						{
+							return (location.localDungeonID == 0) ||
+								(location.localDungeonID == 1);
+						}
+						else if (location.dataType == LocationDataType::SpecialCase)
+						{
+							return location.specialCaseType ==
+								Location::SpecialCaseType::StartDungeon;
+						}
+						else
+						{
+							return false;
+						}
+					}();
+
+					return (isCity || isMainQuestDungeon) ?
+						location.getName(miscAssets) : std::string();
+				}();
+
 				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), 
-					player.getGroundDirection(), level.getVoxelGrid(), location.name);
+					player.getGroundDirection(), level.getVoxelGrid(), automapLocationName);
 			}
 			else
 			{

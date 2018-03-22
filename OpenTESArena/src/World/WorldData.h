@@ -14,6 +14,7 @@
 
 class INFFile;
 class MIFFile;
+class MiscAssets;
 class Renderer;
 class TextureManager;
 
@@ -43,9 +44,6 @@ public:
 
 	WorldData &operator=(WorldData &&worldData) = default;
 
-	// Returns whether the given ID is for a city-state, town, or village.
-	static LocationType getCityLocationType(int globalCityID);
-
 	// Loads all levels of an interior .MIF file.
 	static WorldData loadInterior(const MIFFile &mif);
 
@@ -58,9 +56,9 @@ public:
 		WeatherType weatherType);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
-	static WorldData loadCity(int globalCityID, const MIFFile &mif, int cityX, int cityY,
-		int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-		LocationType locationType, WeatherType weatherType);
+	static WorldData loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityX,
+		int cityY, int cityDim, const std::vector<uint8_t> &reservedBlocks,
+		const Int2 &startPosition, WeatherType weatherType, const MiscAssets &miscAssets);
 
 	// Loads some wilderness blocks.
 	static WorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
