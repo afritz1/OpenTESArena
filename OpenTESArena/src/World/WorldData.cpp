@@ -274,9 +274,9 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	return worldData;
 }
 
-WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityX,
-	int cityY, int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	WeatherType weatherType, const MiscAssets &miscAssets)
+WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityDim,
+	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, WeatherType weatherType,
+	const MiscAssets &miscAssets)
 {
 	WorldData worldData;
 
@@ -287,10 +287,14 @@ WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mi
 	const ClimateType climateType = Location::getCityClimateType(
 		localCityID, provinceID, miscAssets);
 
+	// Get the city seed.
+	const auto &cityData = miscAssets.getCityDataFile();
+	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);
-	worldData.levels.push_back(LevelData::loadCity(level, cityX, cityY, cityDim,
-		reservedBlocks, startPosition, inf, mif.getDepth(), mif.getWidth()));
+	worldData.levels.push_back(LevelData::loadCity(level, citySeed, cityDim, reservedBlocks,
+		startPosition, inf, mif.getDepth(), mif.getWidth()));
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())

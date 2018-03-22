@@ -56,9 +56,9 @@ public:
 		WeatherType weatherType);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
-	static WorldData loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityX,
-		int cityY, int cityDim, const std::vector<uint8_t> &reservedBlocks,
-		const Int2 &startPosition, WeatherType weatherType, const MiscAssets &miscAssets);
+	static WorldData loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityDim,
+		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+		WeatherType weatherType, const MiscAssets &miscAssets);
 
 	// Loads some wilderness blocks.
 	static WorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,

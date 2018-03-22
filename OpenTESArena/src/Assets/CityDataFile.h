@@ -17,6 +17,7 @@
 class ArenaRandom;
 class MiscAssets;
 
+enum class LocationType;
 enum class WeatherType;
 
 class CityDataFile
@@ -69,12 +70,29 @@ public:
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);
 
+	// Gets the side length of a city in city blocks.
+	static int getCityDimensions(LocationType locationType);
+
+	// Gets the number of .MIF templates to choose from for a city.
+	static int getCityTemplateCount(bool isCoastal, bool isCityState);
+
+	// Gets an index into the template name array (town%d.mif, ..., cityw%d.mif).
+	static int getCityTemplateNameIndex(LocationType locationType, bool isCoastal);
+
+	// Gets an index into the city starting positions list. This determines how city blocks
+	// are offset within the city skeleton.
+	static int getCityStartingPositionIndex(LocationType locationType,
+		bool isCoastal, int templateID);
+
+	// Gets an index into the city reserved block list.
+	static int getCityReservedBlockListIndex(bool isCoastal, int templateID);
+
 	// Gets the province data at the given province index.
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
 
-	// Gets the location associated with the given local location ID and province ID.
+	// Gets the location associated with the given location ID and province ID.
 	const CityDataFile::ProvinceData::LocationData &getLocationData(
-		int localLocationID, int provinceID) const;
+		int locationID, int provinceID) const;
 
 	// Gets the quarter within a province (to determine weather).
 	int getGlobalQuarter(const Int2 &globalPoint) const;
@@ -83,6 +101,9 @@ public:
 	int getTravelDays(int startLocalLocationID, int startProvinceID, int endLocalLocationID,
 		int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
 		ArenaRandom &random, const MiscAssets &miscAssets) const;
+
+	// Gets the 32-bit seed for a city.
+	uint32_t getCitySeed(int localCityID, int provinceID) const;
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
 	// the dungeon ID is between 0 and 15.

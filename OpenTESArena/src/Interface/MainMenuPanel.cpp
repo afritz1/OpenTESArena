@@ -288,14 +288,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				if (testType != TestType_Dungeon)
 				{
-					// To do: use localDungeonID + province ID pair for main quest locations,
-					// not their hardcoded dungeon seed .MIF name. The pair should also be
-					// used to decide location details below.
 					const MIFFile mif(mifName);
 					const Player &player = gameData->getPlayer();
 
-					// Set some arbitrary interior location data for testing, depending on
-					// whether it's a main quest dungeon.
+					// Set some interior location data for testing, depending on whether
+					// it's a main quest dungeon.
 					const Location location = [&player, testType, testIndex]()
 					{
 						if (testType == TestType_MainQuest)

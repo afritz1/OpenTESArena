@@ -223,8 +223,8 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 	return levelData;
 }
 
-LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
-	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, int cityDim,
+	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
 	const INFFile &inf, int gridWidth, int gridDepth)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
@@ -242,7 +242,6 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, int cityX, int cityY,
 
 	const int citySize = cityDim * cityDim;
 	std::vector<BlockType> plan(citySize, BlockType::Empty);
-	const uint32_t citySeed = static_cast<uint32_t>(cityX << 16) + cityY;
 	ArenaRandom random(citySeed);
 
 	auto placeBlock = [citySize, &plan, &random](BlockType blockType)

@@ -261,127 +261,45 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	const bool isCityState = locationType == LocationType::CityState;
 	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
 		cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
-	const int templateCount = isCoastal ? (isCityState ? 3 : 2) : 5;
+	const int templateCount = CityDataFile::getCityTemplateCount(isCoastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
 	const MIFFile mif = [locationType, &cityGen, isCoastal, templateID]()
 	{
 		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-		const int templateNameIndex = [locationType, isCoastal]()
-		{
-			if (locationType == LocationType::CityState)
-			{
-				return isCoastal ? 5 : 4;
-			}
-			else if (locationType == LocationType::Town)
-			{
-				return isCoastal ? 1 : 0;
-			}
-			else if (locationType == LocationType::Village)
-			{
-				return isCoastal ? 3 : 2;
-			}
-			else
-			{
-				throw std::runtime_error("Bad location type \"" +
-					std::to_string(static_cast<int>(locationType)) + "\".");
-			}
-		}();
+		const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
 
 		// Get the template name associated with the city ID.
-		std::string templateName = cityGen.templateFilenames.at(templateNameIndex);
+		std::string templateName = cityGen.templateFilenames.at(nameIndex);
 		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
 		templateName = String::toUppercase(templateName);
 
 		return MIFFile(templateName);
 	}();
 
-	// Location-related data from the city data file.
-	const auto &provinceData = miscAssets.getCityDataFile().getProvinceData(provinceID);
-	const auto &locationData = [localCityID, locationType, &provinceData]()
-	{
-		if (locationType == LocationType::CityState)
-		{
-			return provinceData.cityStates.at(localCityID);
-		}
-		else if (locationType == LocationType::Town)
-		{
-			return provinceData.towns.at(localCityID - 8);
-		}
-		else if (locationType == LocationType::Village)
-		{
-			return provinceData.villages.at(localCityID - 16);
-		}
-		else
-		{
-			throw std::runtime_error("Bad location type \"" +
-				std::to_string(static_cast<int>(locationType)) + "\".");
-		}
-	}();
-
-	const int cityX = locationData.x;
-	const int cityY = locationData.y;
-
 	// City block count (6x6, 5x5, 4x4).
-	const int cityDim = [locationType]()
-	{
-		if (locationType == LocationType::CityState)
-		{
-			return 6;
-		}
-		else if (locationType == LocationType::Town)
-		{
-			return 5;
-		}
-		else if (locationType == LocationType::Village)
-		{
-			return 4;
-		}
-		else
-		{
-			throw std::runtime_error("Bad location type \"" +
-				std::to_string(static_cast<int>(locationType)) + "\".");
-		}
-	}();
+	const int cityDim = CityDataFile::getCityDimensions(locationType);
 
+	// Get the reserved block list for the given city.
 	const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
 	{
-		// Get the index into the reserved block list.
-		const int index = isCoastal ? (5 + templateID) : templateID;
+		const int index = CityDataFile::getCityReservedBlockListIndex(isCoastal, templateID);
 		return cityGen.reservedBlockLists.at(index);
 	}();
 
-	const Int2 &startPosition = [locationType, &cityGen, isCoastal, templateID]()
+	// Get the starting position of city blocks within the city skeleton.
+	const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
 	{
-		// Get the index into the starting positions array.
-		const int index = [locationType, isCoastal, templateID]()
-		{
-			if (locationType == LocationType::CityState)
-			{
-				return isCoastal ? (19 + templateID) : (14 + templateID);
-			}
-			else if (locationType == LocationType::Town)
-			{
-				return isCoastal ? (5 + templateID) : templateID;
-			}
-			else if (locationType == LocationType::Village)
-			{
-				return isCoastal ? (12 + templateID) : (7 + templateID);
-			}
-			else
-			{
-				throw std::runtime_error("Bad location type \"" +
-					std::to_string(static_cast<int>(locationType)) + "\".");
-			}
-		}();
+		const int index = CityDataFile::getCityStartingPositionIndex(
+			locationType, isCoastal, templateID);
 
-		const std::pair<int, int> &pair = cityGen.startingPositions.at(index);
+		const auto &pair = cityGen.startingPositions.at(index);
 		return Int2(pair.first, pair.second);
 	}();
 
 	// Call city WorldData loader.
-	this->worldData = WorldData::loadCity(localCityID, provinceID, mif, cityX, cityY,
-		cityDim, reservedBlocks, startPosition, weatherType, miscAssets);
+	this->worldData = WorldData::loadCity(localCityID, provinceID, mif, cityDim,
+		reservedBlocks, startPosition, weatherType, miscAssets);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position.
@@ -421,30 +339,6 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
 
 	// Set location.
-	const auto &cityData = miscAssets.getCityDataFile();
-	const LocationType locationType = Location::getCityType(localCityID);
-	const auto &locationData = [localCityID, provinceID, &cityData, locationType]()
-	{
-		const auto &provinceData = cityData.getProvinceData(provinceID);
-		if (locationType == LocationType::CityState)
-		{
-			return provinceData.cityStates.at(localCityID);
-		}
-		else if (locationType == LocationType::Town)
-		{
-			return provinceData.towns.at(localCityID - 8);
-		}
-		else if (locationType == LocationType::Village)
-		{
-			return provinceData.villages.at(localCityID - 16);
-		}
-		else
-		{
-			throw std::runtime_error("Bad location type \"" +
-				std::to_string(static_cast<int>(locationType)) + "\".");
-		}
-	}();
-
 	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.

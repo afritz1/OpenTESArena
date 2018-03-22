@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include "CityDataFile.h"
@@ -8,6 +7,8 @@
 #include "../Math/Random.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
+#include "../World/Location.h"
+#include "../World/LocationType.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -51,51 +52,124 @@ std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
 	return mifName;
 }
 
+int CityDataFile::getCityDimensions(LocationType locationType)
+{
+	if (locationType == LocationType::CityState)
+	{
+		return 6;
+	}
+	else if (locationType == LocationType::Town)
+	{
+		return 5;
+	}
+	else if (locationType == LocationType::Village)
+	{
+		return 4;
+	}
+	else
+	{
+		throw std::runtime_error("Bad location type \"" +
+			std::to_string(static_cast<int>(locationType)) + "\".");
+	}
+}
+
+int CityDataFile::getCityTemplateCount(bool isCoastal, bool isCityState)
+{
+	return isCoastal ? (isCityState ? 3 : 2) : 5;
+}
+
+int CityDataFile::getCityTemplateNameIndex(LocationType locationType, bool isCoastal)
+{
+	if (locationType == LocationType::CityState)
+	{
+		return isCoastal ? 5 : 4;
+	}
+	else if (locationType == LocationType::Town)
+	{
+		return isCoastal ? 1 : 0;
+	}
+	else if (locationType == LocationType::Village)
+	{
+		return isCoastal ? 3 : 2;
+	}
+	else
+	{
+		throw std::runtime_error("Bad location type \"" +
+			std::to_string(static_cast<int>(locationType)) + "\".");
+	}
+}
+
+int CityDataFile::getCityStartingPositionIndex(LocationType locationType,
+	bool isCoastal, int templateID)
+{
+	if (locationType == LocationType::CityState)
+	{
+		return isCoastal ? (19 + templateID) : (14 + templateID);
+	}
+	else if (locationType == LocationType::Town)
+	{
+		return isCoastal ? (5 + templateID) : templateID;
+	}
+	else if (locationType == LocationType::Village)
+	{
+		return isCoastal ? (12 + templateID) : (7 + templateID);
+	}
+	else
+	{
+		throw std::runtime_error("Bad location type \"" +
+			std::to_string(static_cast<int>(locationType)) + "\".");
+	}
+}
+
+int CityDataFile::getCityReservedBlockListIndex(bool isCoastal, int templateID)
+{
+	return isCoastal ? (5 + templateID) : templateID;
+}
+
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
-	assert(index < CityDataFile::PROVINCE_COUNT);
 	return this->provinces.at(index);
 }
 
 const CityDataFile::ProvinceData::LocationData &CityDataFile::getLocationData(
-	int localLocationID, int provinceID) const
+	int locationID, int provinceID) const
 {
 	const auto &province = this->provinces.at(provinceID);
 
-	if (localLocationID < 8)
+	if (locationID < 8)
 	{
 		// City.
-		return province.cityStates.at(localLocationID);
+		return province.cityStates.at(locationID);
 	}
-	else if (localLocationID < 16)
+	else if (locationID < 16)
 	{
 		// Town.
-		return province.towns.at(localLocationID - 8);
+		return province.towns.at(locationID - 8);
 	}
-	else if (localLocationID < 32)
+	else if (locationID < 32)
 	{
 		// Village.
-		return province.villages.at(localLocationID - 16);
+		return province.villages.at(locationID - 16);
 	}
-	else if (localLocationID == 32)
+	else if (locationID == 32)
 	{
 		// Staff dungeon.
 		return province.secondDungeon;
 	}
-	else if (localLocationID == 33)
+	else if (locationID == 33)
 	{
 		// Staff map dungeon.
 		return province.firstDungeon;
 	}
-	else if (localLocationID < 48)
+	else if (locationID < 48)
 	{
 		// Named dungeon.
-		return province.randomDungeons.at(localLocationID - 34);
+		return province.randomDungeons.at(locationID - 34);
 	}
 	else
 	{
-		throw std::runtime_error("Bad local location ID \"" +
-			std::to_string(localLocationID) + "\" for province ID \"" +
+		throw std::runtime_error("Bad location ID \"" +
+			std::to_string(locationID) + "\" for province ID \"" +
 			std::to_string(provinceID) + "\".");
 	}
 }
@@ -162,7 +236,7 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 		return CityDataFile::localPointToGlobal(
 			Int2(location.x, location.y), provinceRect);
 	};
-	
+
 	// The two world map points to calculate between.
 	const Int2 startGlobalPoint = getGlobalPoint(startLocalLocationID, startProvinceID);
 	const Int2 endGlobalPoint = getGlobalPoint(endLocalLocationID, endProvinceID);
@@ -206,7 +280,7 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 		const int minDays = 1;
 		const int maxDays = 2000;
 		int days = std::min(std::max(totalTime / 10, minDays), maxDays);
-		
+
 		if (days > 20)
 		{
 			days += (random.next() % 10) - 5;
@@ -216,6 +290,13 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 	}();
 
 	return travelDays;
+}
+
+uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
+{
+	const int locationID = Location::cityToLocationID(localCityID);
+	const auto &location = this->getLocationData(locationID, provinceID);
+	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
 
 uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
