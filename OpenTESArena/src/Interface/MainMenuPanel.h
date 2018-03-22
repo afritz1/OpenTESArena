@@ -16,7 +16,7 @@ class MainMenuPanel : public Panel
 {
 private:
 	Button<Game&> loadButton, newButton;
-	Button<Game&, int, const std::string&, ClimateType, WeatherType, WorldType> quickStartButton;
+	Button<Game&, int, int, const std::string&, ClimateType, WeatherType, WorldType> quickStartButton;
 	Button<> exitButton;
 	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
 		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testClimateUpButton,

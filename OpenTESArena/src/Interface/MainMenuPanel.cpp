@@ -232,7 +232,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 	this->quickStartButton = [&game]()
 	{
-		auto function = [](Game &game, int testType, const std::string &mifName,
+		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
 			ClimateType climateType, WeatherType weatherType, WorldType worldType)
 		{
 			// Initialize 3D renderer.
@@ -304,9 +304,21 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Set some arbitrary interior location data for testing, depending on
 					// whether it's a main quest dungeon.
-					const Location location = (testType == TestType_MainQuest) ?
-						Location::makeDungeon(0, player.getRaceID()) :
-						Location::makeCity(0, player.getRaceID());
+					const Location location = [&player, testType, testIndex]()
+					{
+						if (testType == TestType_MainQuest)
+						{
+							return MainQuestLocations.at(testIndex);
+						}
+						else
+						{
+							Random random;
+							const int localCityID = random.next(32);
+							const int provinceID = random.next(8);
+							return Location::makeCity(localCityID, provinceID);
+						}
+					}();
+
 					gameData->loadInterior(mif, location, game.getTextureManager(), renderer);
 				}
 				else
@@ -460,7 +472,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(musicName);
 		};
-		return Button<Game&, int, const std::string&, ClimateType,
+		return Button<Game&, int, int, const std::string&, ClimateType,
 			WeatherType, WorldType>(function);
 	}();
 
@@ -867,6 +879,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		// selected on the main menu.
 		this->quickStartButton.click(this->getGame(),
 			this->testType,
+			this->testIndex,
 			this->getSelectedTestName(),
 			this->getSelectedTestClimateType(),
 			this->getSelectedTestWeatherType(),
@@ -899,6 +912,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 			// selected on the main menu.
 			this->quickStartButton.click(this->getGame(),
 				this->testType,
+				this->testIndex,
 				this->getSelectedTestName(),
 				this->getSelectedTestClimateType(),
 				this->getSelectedTestWeatherType(),
