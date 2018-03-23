@@ -31,6 +31,8 @@
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
+#include "../World/Location.h"
+#include "../World/LocationDataType.h"
 
 namespace std
 {
@@ -203,7 +205,7 @@ void ProvinceMapPanel::drawLocationName(const std::string &name, const Int2 &cen
 		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
 	const int y = std::max(std::min(textBox.getY(),
 		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2), 2);
-	
+
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
 
@@ -219,10 +221,12 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Get the filename of the province map.
+	auto &gameData = this->getGame().getGameData();
 	const std::string backgroundFilename = [this]()
 	{
 		const auto &exeData = this->getGame().getMiscAssets().getExeData();
-		const std::string &filename = exeData.locations.provinceImgFilenames.at(this->provinceID);
+		const std::string &filename =
+			exeData.locations.provinceImgFilenames.at(this->provinceID);
 
 		// Set all characters to uppercase because the texture manager expects 
 		// extensions to be uppercase, and most filenames in A.EXE are lowercase.
@@ -270,7 +274,6 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		if (location.name.front() != '\0')
 		{
 			const Int2 point(location.x, location.y);
-
 			renderer.drawOriginal(icon.get(),
 				point.x - (icon.getWidth() / 2),
 				point.y - (icon.getHeight() / 2));
@@ -291,9 +294,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename, renderer);
 	const auto &dungeonIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename, renderer);
-	
-	const auto &province = this->getGame().getMiscAssets().getCityDataFile()
-		.getProvinceData(this->provinceID);
+
+	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+	const auto &province = cityData.getProvinceData(this->provinceID);
 
 	// Draw city-state icons.
 	for (const auto &cityState : province.cityStates)
@@ -328,6 +331,147 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	for (const auto &dungeon : province.randomDungeons)
 	{
 		drawIcon(dungeon, dungeonIcon);
+	}
+
+	// If the player is in the current province, highlight their current location.
+	const auto &location = gameData.getLocation();
+	if (this->provinceID == location.provinceID)
+	{
+		auto drawHighlight = [&renderer](
+			const CityDataFile::ProvinceData::LocationData &location, const Texture &highlight)
+		{
+			const Int2 point(location.x, location.y);
+			renderer.drawOriginal(highlight.get(),
+				point.x - (highlight.getWidth() / 2),
+				point.y - (highlight.getHeight() / 2));
+		};
+
+		// Generic highlights (city, town, village, and dungeon).
+		const auto &highlights = textureManager.getTextures(
+			TextureFile::fromName(TextureName::MapIconOutlines), backgroundFilename, renderer);
+
+		auto handleCityHighlight = [&renderer, &province, &location,
+			&drawHighlight, &highlights]()
+		{
+			const int localCityID = location.localCityID;
+
+			if (localCityID < 8)
+			{
+				// City.
+				const auto &highlight = highlights.front();
+				const auto &locationData = province.cityStates.at(localCityID);
+				drawHighlight(locationData, highlight);
+			}
+			else if (localCityID < 16)
+			{
+				// Town.
+				const auto &highlight = highlights.at(1);
+				const auto &locationData = province.towns.at(localCityID - 8);
+				drawHighlight(locationData, highlight);
+			}
+			else
+			{
+				// Village.
+				const auto &highlight = highlights.at(2);
+				const auto &locationData = province.villages.at(localCityID - 16);
+				drawHighlight(locationData, highlight);
+			}
+		};
+
+		auto handleDungeonHighlight = [this, &renderer, &textureManager, &backgroundFilename,
+			&province, &location, &drawHighlight, &highlights]()
+		{
+			const int localDungeonID = location.localDungeonID;
+
+			if (localDungeonID == 0)
+			{
+				// Staff dungeon. Supposedly it changes a value in the palette to give the icon's
+				// background its yellow color (there are no highlight icons for staff dungeons).
+				const auto &locationData = province.secondDungeon;
+				const Texture highlight = [this, &renderer, &textureManager, &backgroundFilename]()
+				{
+					const SDL_Surface *icon = textureManager.getSurfaces(
+						TextureFile::fromName(TextureName::StaffDungeonIcons),
+						backgroundFilename).at(this->provinceID);
+
+					// Make a copy of the staff dungeon icon.
+					SDL_Surface *surface = Surface::createSurfaceWithFormat(
+						icon->w, icon->h, icon->format->BitsPerPixel, icon->format->format);
+					SDL_memcpy(surface->pixels, icon->pixels, icon->h * icon->pitch);
+
+					// Change all background pixels to highlight pixels.
+					// - To do: figure out how Arena does it, since this isn't correct for all
+					//   cases. It's not exactly pixels adjacent to transparent pixels, because
+					//   some inner pixels are affected.
+					const uint32_t backgroundColor = SDL_MapRGBA(surface->format, 8, 32, 36, 255);
+					const uint32_t highlightColor = SDL_MapRGBA(surface->format, 243, 190, 4, 255);
+
+					uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+					const int pixelCount = surface->w * surface->h;
+					for (int i = 0; i < pixelCount; i++)
+					{
+						uint32_t &pixel = pixels[i];
+						if (pixel == backgroundColor)
+						{
+							pixel = highlightColor;
+						}
+					}
+
+					Texture texture(renderer.createTextureFromSurface(surface));
+					SDL_FreeSurface(surface);
+					return texture;
+				}();
+
+				drawHighlight(locationData, highlight);
+			}
+			else if (localDungeonID == 1)
+			{
+				// Staff map dungeon.
+				const auto &highlight = highlights.at(3);
+				const auto &locationData = province.firstDungeon;
+				drawHighlight(locationData, highlight);
+			}
+			else
+			{
+				// Named dungeon.
+				const auto &highlight = highlights.at(3);
+				const auto &locationData = province.randomDungeons.at(localDungeonID - 2);
+				drawHighlight(locationData, highlight);
+			}
+		};
+
+		// Decide how to highlight the location.
+		if (location.dataType == LocationDataType::City)
+		{
+			handleCityHighlight();
+		}
+		else if (location.dataType == LocationDataType::Dungeon)
+		{
+			handleDungeonHighlight();
+		}
+		else if (location.dataType == LocationDataType::SpecialCase)
+		{
+			if (location.specialCaseType == Location::SpecialCaseType::StartDungeon)
+			{
+				// The starting dungeon is not technically on the world map (and the original
+				// game doesn't allow the world map to open then, either).
+			}
+			else if (location.specialCaseType == Location::SpecialCaseType::WildDungeon)
+			{
+				// Draw the highlight for the city the wild dungeon is in.
+				handleCityHighlight();
+			}
+			else
+			{
+				throw std::runtime_error("Bad special location type \"" +
+					std::to_string(static_cast<int>(location.specialCaseType)) + "\".");
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Bad location data type \"" +
+				std::to_string(static_cast<int>(location.dataType)) + "\".");
+		}
 	}
 
 	// Draw the name of the location closest to the mouse cursor.
