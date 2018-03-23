@@ -1,12 +1,18 @@
 #ifndef PROVINCE_MAP_PANEL_H
 #define PROVINCE_MAP_PANEL_H
 
+#include <string>
+
 #include "Button.h"
 #include "Panel.h"
 #include "../Assets/CIFFile.h"
+#include "../Math/Vector2.h"
 #include "../Media/Palette.h"
 
+class Location;
 class Renderer;
+class Texture;
+class TextureManager;
 
 enum class ProvinceButtonName;
 
@@ -22,12 +28,27 @@ private:
 	// Gets the .IMG filename of the background image.
 	std::string getBackgroundFilename() const;
 
-	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
+	// Gets the location ID of the location closest to the mouse in 320x200 space.
+	int getClosestLocationID(const Int2 &originalPosition) const;
 
-	// Draws the name of a location in the province. Intended for the location
+	// Draws an icon (i.e., location or highlight) centered at the given point.
+	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);
+
+	// Draws the icons of all visible locations in the province.
+	void drawVisibleLocations(const std::string &backgroundFilename,
+		TextureManager &textureManager, Renderer &renderer);
+
+	// Draws a highlight icon over the player's current location. This method should
+	// only be called if the player's current location is in the current province.
+	void drawCurrentLocationHighlight(const Location &location,
+		const std::string &backgroundFilename, TextureManager &textureManager, Renderer &renderer);
+
+	// Draws the name of a location in the current province. Intended for the location
 	// closest to the mouse cursor.
-	void drawLocationName(const std::string &name, const Int2 &center,
-		Renderer &renderer);
+	void drawLocationName(int locationID, Renderer &renderer);
+
+	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
+	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 public:
 	ProvinceMapPanel(Game &game, int provinceID);
 	virtual ~ProvinceMapPanel() = default;
