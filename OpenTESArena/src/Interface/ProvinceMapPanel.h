@@ -3,6 +3,8 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Assets/CIFFile.h"
+#include "../Media/Palette.h"
 
 class Renderer;
 
@@ -13,7 +15,12 @@ class ProvinceMapPanel : public Panel
 private:
 	Button<> searchButton, travelButton;
 	Button<Game&> backToWorldMapButton;
+	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
+	Palette provinceMapPalette;
 	int provinceID;
+
+	// Gets the .IMG filename of the background image.
+	std::string getBackgroundFilename() const;
 
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 

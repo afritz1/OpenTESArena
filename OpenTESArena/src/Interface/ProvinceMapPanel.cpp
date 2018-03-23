@@ -15,6 +15,7 @@
 #include "WorldMapPanel.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/IMGFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -49,6 +50,11 @@ namespace std
 
 namespace
 {
+	// .CIF palette indices for staff dungeon outlines.
+	const uint8_t BackgroundPaletteIndex = 220;
+	const uint8_t YellowPaletteIndex = 194;
+	const uint8_t RedPaletteIndex = 223;
+
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
 	{
 		{ ProvinceButtonName::Search, "Search (not implemented)" },
@@ -110,6 +116,17 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	}();
 
 	this->provinceID = provinceID;
+
+	// Get the palette for the background image.
+	IMGFile::extractPalette(this->getBackgroundFilename(), this->provinceMapPalette);
+
+	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
+	// raw palette indices (for yellow and red color swapping).
+	if (provinceID != 8)
+	{
+		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
+		this->staffDungeonCif = std::make_unique<CIFFile>(cifName, this->provinceMapPalette);
+	}
 }
 
 std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
@@ -167,6 +184,17 @@ void ProvinceMapPanel::tick(double dt)
 	static_cast<void>(dt);
 }
 
+std::string ProvinceMapPanel::getBackgroundFilename() const
+{
+	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const std::string &filename =
+		exeData.locations.provinceImgFilenames.at(this->provinceID);
+
+	// Set all characters to uppercase because the texture manager expects 
+	// extensions to be uppercase, and most filenames in A.EXE are lowercase.
+	return String::toUppercase(filename);
+}
+
 void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer)
 {
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
@@ -222,16 +250,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// Get the filename of the province map.
 	auto &gameData = this->getGame().getGameData();
-	const std::string backgroundFilename = [this]()
-	{
-		const auto &exeData = this->getGame().getMiscAssets().getExeData();
-		const std::string &filename =
-			exeData.locations.provinceImgFilenames.at(this->provinceID);
-
-		// Set all characters to uppercase because the texture manager expects 
-		// extensions to be uppercase, and most filenames in A.EXE are lowercase.
-		return String::toUppercase(filename);
-	}();
+	const std::string backgroundFilename = this->getBackgroundFilename();
 
 	// Draw province map background.
 	const auto &mapBackground = textureManager.getTexture(
@@ -385,37 +404,40 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 			if (localDungeonID == 0)
 			{
-				// Staff dungeon. Supposedly it changes a value in the palette to give the icon's
-				// background its yellow color (there are no highlight icons for staff dungeons).
+				// Staff dungeon. It changes a value in the palette to give the icon's background
+				// its yellow color (since there are no highlight icons for staff dungeons).
 				const auto &locationData = province.secondDungeon;
-				const Texture highlight = [this, &renderer, &textureManager, &backgroundFilename]()
+				const Texture highlight = [this, &renderer]()
 				{
-					const SDL_Surface *icon = textureManager.getSurfaces(
-						TextureFile::fromName(TextureName::StaffDungeonIcons),
-						backgroundFilename).at(this->provinceID);
+					// Get the palette indices associated with the staff dungeon icon.
+					const CIFFile &iconCif = *this->staffDungeonCif.get();
+					const int cifWidth = iconCif.getWidth(this->provinceID);
+					const int cifHeight = iconCif.getHeight(this->provinceID);
 
-					// Make a copy of the staff dungeon icon.
+					// Make a copy of the staff dungeon icon with changes based on which
+					// pixels should be highlighted.
 					SDL_Surface *surface = Surface::createSurfaceWithFormat(
-						icon->w, icon->h, icon->format->BitsPerPixel, icon->format->format);
-					SDL_memcpy(surface->pixels, icon->pixels, icon->h * icon->pitch);
+						cifWidth, cifHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-					// Change all background pixels to highlight pixels.
-					// - To do: figure out how Arena does it, since this isn't correct for all
-					//   cases. It's not exactly pixels adjacent to transparent pixels, because
-					//   some inner pixels are affected.
-					const uint32_t backgroundColor = SDL_MapRGBA(surface->format, 8, 32, 36, 255);
-					const uint32_t highlightColor = SDL_MapRGBA(surface->format, 243, 190, 4, 255);
-
-					uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-					const int pixelCount = surface->w * surface->h;
-					for (int i = 0; i < pixelCount; i++)
+					auto getColorFromIndex = [this, surface](int paletteIndex)
 					{
-						uint32_t &pixel = pixels[i];
-						if (pixel == backgroundColor)
-						{
-							pixel = highlightColor;
-						}
-					}
+						const Color &color = this->provinceMapPalette.get().at(paletteIndex);
+						return SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a);
+					};
+
+					const uint32_t highlightColor = getColorFromIndex(YellowPaletteIndex);
+
+					// Convert each palette index to its equivalent 32-bit color, changing 
+					// background indices to highlight indices as they are found.
+					const uint8_t *srcPixels = iconCif.getRawPixels(this->provinceID);
+					uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
+					const int pixelCount = surface->w * surface->h;
+					std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
+						[&getColorFromIndex, highlightColor](const uint8_t &srcPixel)
+					{
+						return (srcPixel == BackgroundPaletteIndex) ?
+							highlightColor : getColorFromIndex(srcPixel);
+					});
 
 					Texture texture(renderer.createTextureFromSurface(surface));
 					SDL_FreeSurface(surface);

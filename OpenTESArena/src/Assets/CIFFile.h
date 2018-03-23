@@ -16,6 +16,7 @@
 class CIFFile
 {
 private:
+	std::vector<std::unique_ptr<uint8_t[]>> rawPixels;
 	std::vector<std::unique_ptr<uint32_t[]>> pixels;
 	std::vector<Int2> offsets;
 	std::vector<Int2> dimensions;
@@ -36,6 +37,9 @@ public:
 
 	// Gets the height of an image in the CIF file.
 	int getHeight(int index) const;
+
+	// Gets a pointer to the raw (unconverted) pixels for an image in the CIF file.
+	uint8_t *getRawPixels(int index) const;
 
 	// Gets a pointer to the pixels for an image in the CIF file.
 	uint32_t *getPixels(int index) const;
