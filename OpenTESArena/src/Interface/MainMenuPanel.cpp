@@ -75,7 +75,7 @@ namespace
 		Location::SpecialCaseType::StartDungeon, 8);
 	const Location FinalDungeonLocation = Location::makeCity(0, 8);
 
-	Location getMainQuestLocationFromIndex(Game &game, int testIndex)
+	Location getMainQuestLocationFromIndex(const ExeData &exeData, int testIndex)
 	{
 		if (testIndex == 0)
 		{
@@ -88,8 +88,6 @@ namespace
 		else
 		{
 			// Generate the location from the executable data.
-			const auto &miscAssets = game.getMiscAssets();
-			const auto &exeData = miscAssets.getExeData();
 			const auto &staffProvinces = exeData.locations.staffProvinces;
 			const int localDungeonID = testIndex % 2;
 			const int provinceID = staffProvinces.at((testIndex - 1) / 2);
@@ -294,7 +292,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						if (testType == TestType_MainQuest)
 						{
 							// Fetch from a global function.
-							return getMainQuestLocationFromIndex(game, testIndex);
+							const auto &exeData = game.getMiscAssets().getExeData();
+							return getMainQuestLocationFromIndex(exeData, testIndex);
 						}
 						else
 						{
@@ -711,10 +710,11 @@ std::string MainMenuPanel::getSelectedTestName() const
 			// Generate the location from the executable data, fetching data from a
 			// global function.
 			auto &game = this->getGame();
-			const Location location = getMainQuestLocationFromIndex(game, testIndex);
+			const auto &miscAssets = game.getMiscAssets();
+			const auto &exeData = miscAssets.getExeData();
+			const Location location = getMainQuestLocationFromIndex(exeData, this->testIndex);
 
 			// Calculate the .MIF name from the dungeon seed.
-			const auto &miscAssets = game.getMiscAssets();
 			const auto &cityData = miscAssets.getCityDataFile();
 			const uint32_t dungeonSeed = cityData.getDungeonSeed(
 				location.localDungeonID, location.provinceID);
