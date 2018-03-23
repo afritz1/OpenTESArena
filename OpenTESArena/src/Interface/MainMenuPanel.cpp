@@ -68,38 +68,34 @@ namespace
 
 	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
 
-	// Location IDs for each main quest dungeon, ordered by their appearance in the 
-	// game (in pairs, except for the first and last ones).
-	const std::vector<Location> MainQuestLocations =
+	// Main quest locations. There are eight map dungeons and eight staff dungeons.
+	// The special cases are the start dungeon and the final dungeon.
+	const int MainQuestLocationCount = 18;
+	const Location StartDungeonLocation = Location::makeSpecialCase(
+		Location::SpecialCaseType::StartDungeon, 8);
+	const Location FinalDungeonLocation = Location::makeCity(0, 8);
+
+	Location getMainQuestLocationFromIndex(Game &game, int testIndex)
 	{
-		Location::makeSpecialCase(Location::SpecialCaseType::StartDungeon, 8),
-
-		Location::makeDungeon(1, 1),
-		Location::makeDungeon(0, 1),
-
-		Location::makeDungeon(1, 2),
-		Location::makeDungeon(0, 2),
-
-		Location::makeDungeon(1, 5),
-		Location::makeDungeon(0, 5),
-
-		Location::makeDungeon(1, 6),
-		Location::makeDungeon(0, 6),
-
-		Location::makeDungeon(1, 4),
-		Location::makeDungeon(0, 4),
-
-		Location::makeDungeon(1, 0),
-		Location::makeDungeon(0, 0),
-
-		Location::makeDungeon(1, 7),
-		Location::makeDungeon(0, 7),
-
-		Location::makeDungeon(1, 3),
-		Location::makeDungeon(0, 3),
-
-		Location::makeCity(0, 8)
-	};
+		if (testIndex == 0)
+		{
+			return StartDungeonLocation;
+		}
+		else if (testIndex == (MainQuestLocationCount - 1))
+		{
+			return FinalDungeonLocation;
+		}
+		else
+		{
+			// Generate the location from the executable data.
+			const auto &miscAssets = game.getMiscAssets();
+			const auto &exeData = miscAssets.getExeData();
+			const auto &staffProvinces = exeData.locations.staffProvinces;
+			const int localDungeonID = testIndex % 2;
+			const int provinceID = staffProvinces.at((testIndex - 1) / 2);
+			return Location::makeDungeon(localDungeonID, provinceID);
+		}
+	}
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
 	// These also need ".MIF" appended at the end.
@@ -293,11 +289,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Set some interior location data for testing, depending on whether
 					// it's a main quest dungeon.
-					const Location location = [&player, testType, testIndex]()
+					const Location location = [&game, &player, testType, testIndex]()
 					{
 						if (testType == TestType_MainQuest)
 						{
-							return MainQuestLocations.at(testIndex);
+							// Fetch from a global function.
+							return getMainQuestLocationFromIndex(game, testIndex);
 						}
 						else
 						{
@@ -529,7 +526,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// Check test type to determine the max.
 				if (panel.testType == TestType_MainQuest)
 				{
-					return static_cast<int>(MainQuestLocations.size());
+					return MainQuestLocationCount;
 				}
 				else if (panel.testType == TestType_Interior)
 				{
@@ -573,7 +570,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// Check test type to determine the max.
 				if (panel.testType == TestType_MainQuest)
 				{
-					return static_cast<int>(MainQuestLocations.size());
+					return MainQuestLocationCount;
 				}
 				else if (panel.testType == TestType_Interior)
 				{
@@ -704,16 +701,21 @@ std::string MainMenuPanel::getSelectedTestName() const
 			// Start dungeon.
 			return "START.MIF";
 		}
-		else if (this->testIndex == (static_cast<int>(MainQuestLocations.size()) - 1))
+		else if (this->testIndex == (MainQuestLocationCount - 1))
 		{
 			// Final dungeon.
 			return "IMPPAL.MIF";
 		}
 		else
 		{
+			// Generate the location from the executable data, fetching data from a
+			// global function.
+			auto &game = this->getGame();
+			const Location location = getMainQuestLocationFromIndex(game, testIndex);
+
 			// Calculate the .MIF name from the dungeon seed.
-			const Location &location = MainQuestLocations.at(this->testIndex);
-			const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+			const auto &miscAssets = game.getMiscAssets();
+			const auto &cityData = miscAssets.getCityDataFile();
 			const uint32_t dungeonSeed = cityData.getDungeonSeed(
 				location.localDungeonID, location.provinceID);
 			const std::string mifName = cityData.getMainQuestDungeonMifName(dungeonSeed);

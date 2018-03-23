@@ -184,6 +184,9 @@ public:
 		// Display name of the initial dungeon.
 		std::string startDungeonName;
 
+		// Indices for each province that has a staff piece, ordered as they are found in-game.
+		std::array<uint8_t, 8> staffProvinces;
+
 		// Climates for each global quarter. Used with weather calculation.
 		std::array<uint8_t, 36> climates;
 
