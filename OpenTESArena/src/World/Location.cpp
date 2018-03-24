@@ -32,6 +32,22 @@ Location Location::makeSpecialCase(Location::SpecialCaseType specialCaseType, in
 	return location;
 }
 
+Location Location::makeFromLocationID(int locationID, int provinceID)
+{
+	if (locationID < 32)
+	{
+		return Location::makeCity(locationID, provinceID);
+	}
+	else if (locationID < 48)
+	{
+		return Location::makeDungeon(locationID - 32, provinceID);
+	}
+	else
+	{
+		throw std::runtime_error("Bad location ID \"" + std::to_string(locationID) + "\".");
+	}
+}
+
 LocationType Location::getCityType(int localCityID)
 {
 	if (localCityID < 8)

@@ -19,10 +19,18 @@ enum class ProvinceButtonName;
 class ProvinceMapPanel : public Panel
 {
 private:
+	// Current is where the player is. Selected is which location (if any) has been selected.
+	enum class LocationHighlightType { Current, Selected };
+
+	static const double BLINK_PERIOD; // Duration of blink period in seconds.
+	static const double BLINK_PERIOD_PERCENT_ON; // Percentage of each period spent "on".
+
 	Button<> searchButton, travelButton;
 	Button<Game&> backToWorldMapButton;
 	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
+	std::unique_ptr<int> selectedLocationID;
 	Palette provinceMapPalette;
+	double blinkTimer;
 	int provinceID;
 
 	// Gets the .IMG filename of the background image.
@@ -38,9 +46,9 @@ private:
 	void drawVisibleLocations(const std::string &backgroundFilename,
 		TextureManager &textureManager, Renderer &renderer);
 
-	// Draws a highlight icon over the player's current location. This method should
-	// only be called if the player's current location is in the current province.
-	void drawCurrentLocationHighlight(const Location &location,
+	// Draws a highlight icon over the given location. Useful for either the player's
+	// current location or the currently selected location for fast travel.
+	void drawLocationHighlight(const Location &location, LocationHighlightType highlightType,
 		const std::string &backgroundFilename, TextureManager &textureManager, Renderer &renderer);
 
 	// Draws the name of a location in the current province. Intended for the location

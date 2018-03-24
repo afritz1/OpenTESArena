@@ -69,6 +69,9 @@ namespace
 	};
 }
 
+const double ProvinceMapPanel::BLINK_PERIOD = 2.0 / 3.0;
+const double ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON = 0.40;
+
 ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	: Panel(game)
 {
@@ -95,7 +98,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int height = clickArea.getHeight();
 		auto function = []()
 		{
-			// Nothing yet.
+			DebugMention("Travel.");
 		};
 		return Button<>(x, y, width, height, function);
 	}();
@@ -115,6 +118,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	}();
 
 	this->provinceID = provinceID;
+	this->blinkTimer = 0.0;
 
 	// Get the palette for the background image.
 	IMGFile::extractPalette(this->getBackgroundFilename(), this->provinceMapPalette);
@@ -143,44 +147,94 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 {
 	// Input will eventually depend on if the location pop-up is displayed, or
 	// if a location is selected.
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	if (escapePressed || rightClick)
 	{
-		this->backToWorldMapButton.click(this->getGame());
+		this->backToWorldMapButton.click(game);
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		const Int2 originalPosition = game.getRenderer()
 			.nativeToOriginal(mousePosition);
 
-		if (this->searchButton.contains(mouseOriginalPoint))
+		if (this->searchButton.contains(originalPosition))
 		{
 			this->searchButton.click();
 		}
-		else if (this->travelButton.contains(mouseOriginalPoint))
+		else if (this->travelButton.contains(originalPosition))
 		{
 			this->travelButton.click();
 		}
-		else if (this->backToWorldMapButton.contains(mouseOriginalPoint))
+		else if (this->backToWorldMapButton.contains(originalPosition))
 		{
-			this->backToWorldMapButton.click(this->getGame());
+			this->backToWorldMapButton.click(game);
 		}
+		else
+		{
+			// Check locations for clicks. Get the current location to compare with.
+			auto &gameData = game.getGameData();
+			const auto &location = gameData.getLocation();
+			const int locationID = [&location]()
+			{
+				if (location.dataType == LocationDataType::City)
+				{
+					return Location::cityToLocationID(location.localCityID);
+				}
+				else if (location.dataType == LocationDataType::Dungeon)
+				{
+					return Location::dungeonToLocationID(location.localDungeonID);
+				}
+				else if (location.dataType == LocationDataType::SpecialCase)
+				{
+					const Location::SpecialCaseType specialCaseType = location.specialCaseType;
 
-		// Check locations for clicks...
+					if (specialCaseType == Location::SpecialCaseType::StartDungeon)
+					{
+						// Technically this shouldn't be allowed, so just use a placeholder.
+						return Location::dungeonToLocationID(0);
+					}
+					else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
+					{
+						return Location::cityToLocationID(location.localCityID);
+					}
+					else
+					{
+						throw std::runtime_error("Bad special location type \"" +
+							std::to_string(static_cast<int>(specialCaseType)) + "\".");
+					}
+				}
+				else
+				{
+					throw std::runtime_error("Bad location data type \"" +
+						std::to_string(static_cast<int>(location.dataType)) + "\".");
+				}
+			}();
+
+			const int closestLocationID = this->getClosestLocationID(originalPosition);
+
+			// Only continue if the selected one is not the player's current location.
+			const bool matchesPlayerLocation =
+				(this->provinceID == location.provinceID) &&
+				(locationID == closestLocationID);
+
+			if (!matchesPlayerLocation)
+			{
+				// Set the selected location ID and reset the blink timer.
+				this->selectedLocationID = std::make_unique<int>(closestLocationID);
+				this->blinkTimer = 0.0;
+
+				// To do: pop-up travel dialog.
+			}
+		}
 	}
-}
-
-void ProvinceMapPanel::tick(double dt)
-{
-	// Eventually blink the selected location.
-	static_cast<void>(dt);
 }
 
 std::string ProvinceMapPanel::getBackgroundFilename() const
@@ -233,6 +287,13 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 
 	DebugAssert(closestID >= 0, "No closest location ID found.");
 	return closestID;
+}
+
+void ProvinceMapPanel::tick(double dt)
+{
+	// Update the blink timer. Depending on which interval it's in, this will make the
+	// currently selected location (if any) have a red highlight.
+	this->blinkTimer += dt;
 }
 
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
@@ -307,8 +368,9 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	}
 }
 
-void ProvinceMapPanel::drawCurrentLocationHighlight(const Location &location,
-	const std::string &backgroundFilename, TextureManager &textureManager, Renderer &renderer)
+void ProvinceMapPanel::drawLocationHighlight(const Location &location,
+	LocationHighlightType highlightType, const std::string &backgroundFilename,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	auto drawHighlight = [this, &renderer](
 		const CityDataFile::ProvinceData::LocationData &location, const Texture &highlight)
@@ -318,11 +380,14 @@ void ProvinceMapPanel::drawCurrentLocationHighlight(const Location &location,
 	};
 
 	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
-	const auto &province = cityData.getProvinceData(this->provinceID);
+	const auto &province = cityData.getProvinceData(location.provinceID);
 
 	// Generic highlights (city, town, village, and dungeon).
+	const std::string &outlinesFilename = TextureFile::fromName(
+		(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
+		TextureName::MapIconOutlines : TextureName::MapIconOutlinesBlinking);
 	const auto &highlights = textureManager.getTextures(
-		TextureFile::fromName(TextureName::MapIconOutlines), backgroundFilename, renderer);
+		outlinesFilename, backgroundFilename, renderer);
 
 	auto handleCityHighlight = [&renderer, &province, &location,
 		&drawHighlight, &highlights]()
@@ -353,7 +418,7 @@ void ProvinceMapPanel::drawCurrentLocationHighlight(const Location &location,
 	};
 
 	auto handleDungeonHighlight = [this, &renderer, &textureManager, &backgroundFilename,
-		&province, &location, &drawHighlight, &highlights]()
+		highlightType, &province, &location, &drawHighlight, &highlights]()
 	{
 		const int localDungeonID = location.localDungeonID;
 
@@ -362,7 +427,7 @@ void ProvinceMapPanel::drawCurrentLocationHighlight(const Location &location,
 			// Staff dungeon. It changes a value in the palette to give the icon's background
 			// its yellow color (since there are no highlight icons for staff dungeons).
 			const auto &locationData = province.secondDungeon;
-			const Texture highlight = [this, &renderer]()
+			const Texture highlight = [this, highlightType, &renderer]()
 			{
 				// Get the palette indices associated with the staff dungeon icon.
 				const CIFFile &iconCif = *this->staffDungeonCif.get();
@@ -374,13 +439,15 @@ void ProvinceMapPanel::drawCurrentLocationHighlight(const Location &location,
 				SDL_Surface *surface = Surface::createSurfaceWithFormat(
 					cifWidth, cifHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-				auto getColorFromIndex = [this, surface](int paletteIndex)
+				auto getColorFromIndex = [this, highlightType, surface](int paletteIndex)
 				{
 					const Color &color = this->provinceMapPalette.get().at(paletteIndex);
 					return SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a);
 				};
 
-				const uint32_t highlightColor = getColorFromIndex(YellowPaletteIndex);
+				const uint32_t highlightColor = getColorFromIndex(
+					(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
+					YellowPaletteIndex : RedPaletteIndex);
 
 				// Convert each palette index to its equivalent 32-bit color, changing 
 				// background indices to highlight indices as they are found.
@@ -523,12 +590,30 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const auto &location = gameData.getLocation();
 	if (this->provinceID == location.provinceID)
 	{
-		this->drawCurrentLocationHighlight(location, backgroundFilename,
+		const auto highlightType = ProvinceMapPanel::LocationHighlightType::Current;
+		this->drawLocationHighlight(location, highlightType, backgroundFilename,
 			textureManager, renderer);
 	}
 
-	// To do: if there is a currently selected location, draw its blinking highlight.
-	// - if (selectedLocationID != nullptr) then if (blinkTimer in blink interval) then draw.
+	// If there is a currently selected location, draw its blinking highlight if within
+	// the "blink on" interval.
+	if (this->selectedLocationID.get() != nullptr)
+	{
+		const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapPanel::BLINK_PERIOD);
+		const double blinkPeriodPercent = blinkInterval / ProvinceMapPanel::BLINK_PERIOD;
+
+		// See if the blink period percent lies within the "on" percent. Use less-than
+		// to compare them so the on-state appears before the off-state.
+		if (blinkPeriodPercent < ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON)
+		{
+			const Location selectedLocation = Location::makeFromLocationID(
+				*this->selectedLocationID.get(), this->provinceID);
+
+			const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
+			this->drawLocationHighlight(selectedLocation, highlightType,
+				backgroundFilename, textureManager, renderer);
+		}
+	}
 
 	// Draw the name of the location closest to the mouse cursor.
 	const auto &inputManager = this->getGame().getInputManager();
