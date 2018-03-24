@@ -1,6 +1,5 @@
 language: cpp
 sudo: required
-group: stable
 
 matrix:
   include:
@@ -24,11 +23,9 @@ matrix:
       env:
         - MATRIX_EVAL="export CC=clang-3.6 && export CXX=clang++-3.6"
     - os: osx
-      osx_image: xcode8
       env:
         - MATRIX_EVAL="export CC=gcc && export CXX=g++"
     - os: osx
-      osx_image: xcode8
       env:
         - MATRIX_EVAL="export CC=clang && export CXX=clang++"
 
