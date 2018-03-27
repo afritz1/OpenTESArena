@@ -199,6 +199,11 @@ public:
 		// Travel speed modifiers for each weather. 0 represents 100.
 		std::array<std::array<uint8_t, 12>, 5> weatherSpeedTables;
 
+		// Wilderness .RMD index lists for each type of block (normal, village, dungeon,
+		// inn, and temple). Each list starts with the number of elements.
+		std::vector<uint8_t> wildernessNormalBlocks, wildernessVillageBlocks,
+			wildernessDungeonBlocks, wildernessInnBlocks, wildernessTempleBlocks;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

@@ -321,6 +321,11 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int weatherTableOffset = ExeData::get("WeatherTable", keyValueMap);
 	const int climateSpeedTablesOffset = ExeData::get("ClimateSpeedTables", keyValueMap);
 	const int weatherSpeedTablesOffset = ExeData::get("WeatherSpeedTables", keyValueMap);
+	const int wildernessNormalBlocksOffset = ExeData::get("WildernessNormalBlocks", keyValueMap);
+	const int wildernessVillageBlocksOffset = ExeData::get("WildernessVillageBlocks", keyValueMap);
+	const int wildernessDungeonBlocksOffset = ExeData::get("WildernessDungeonBlocks", keyValueMap);
+	const int wildernessInnBlocksOffset = ExeData::get("WildernessInnBlocks", keyValueMap);
+	const int wildernessTempleBlocksOffset = ExeData::get("WildernessTempleBlocks", keyValueMap);
 
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < this->provinceNames.size(); i++)
@@ -336,6 +341,22 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->weatherTable, data + weatherTableOffset);
 	init2DInt8Array(this->climateSpeedTables, data + climateSpeedTablesOffset);
 	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
+
+	auto initWildBlockList = [](std::vector<uint8_t> &vec, const char *data)
+	{
+		// Each wilderness block list starts with the list size.
+		vec.resize(static_cast<uint8_t>(*data));
+
+		const uint8_t *listStart = reinterpret_cast<const uint8_t*>(data + 1);
+		const uint8_t *listEnd = listStart + vec.size();
+		std::copy(listStart, listEnd, vec.data());
+	};
+
+	initWildBlockList(this->wildernessNormalBlocks, data + wildernessNormalBlocksOffset);
+	initWildBlockList(this->wildernessVillageBlocks, data + wildernessVillageBlocksOffset);
+	initWildBlockList(this->wildernessDungeonBlocks, data + wildernessDungeonBlocksOffset);
+	initWildBlockList(this->wildernessInnBlocks, data + wildernessInnBlocksOffset);
+	initWildBlockList(this->wildernessTempleBlocks, data + wildernessTempleBlocksOffset);
 }
 
 void ExeData::Logbook::init(const char *data, const KeyValueMap &keyValueMap)
