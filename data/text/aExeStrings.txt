@@ -82,6 +82,11 @@ Climates=0x3EC2E
 WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
+WildernessNormalBlocks=0x3F02C
+WildernessVillageBlocks=0x3F045
+WildernessDungeonBlocks=0x3F052
+WildernessInnBlocks=0x3F05F
+WildernessTempleBlocks=0x3F06A
 
 # [Logbook]
 LogbookIsEmpty=0x42F45
