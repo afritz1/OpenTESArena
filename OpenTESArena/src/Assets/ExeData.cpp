@@ -315,6 +315,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int charCreationProvinceNamesOffset =
 		ExeData::get("CharCreationProvinceNames", keyValueMap);
 	const int provinceImgFilenamesOffset = ExeData::get("ProvinceImgFilenames", keyValueMap);
+	const int locationTypesOffset = ExeData::get("LocationTypes", keyValueMap);
 	const int startDungeonNameOffset = ExeData::get("StartDungeonName", keyValueMap);
 	const int staffProvincesOffset = ExeData::get("StaffProvinces", keyValueMap);
 	const int climatesOffset = ExeData::get("Climates", keyValueMap);
@@ -335,6 +336,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 
 	initStringArray(this->charCreationProvinceNames, data + charCreationProvinceNamesOffset);
 	initStringArray(this->provinceImgFilenames, data + provinceImgFilenamesOffset);
+	initStringArray(this->locationTypes, data + locationTypesOffset);
 	this->startDungeonName = ExeData::readString(data + startDungeonNameOffset);
 	initInt8Array(this->staffProvinces, data + staffProvincesOffset);
 	initInt8Array(this->climates, data + climatesOffset);
@@ -395,6 +397,29 @@ void ExeData::Status::init(const char *data, const KeyValueMap &keyValueMap)
 	this->disease = ExeData::readString(data + diseaseOffset);
 	this->effect = ExeData::readString(data + effectOffset);
 	initStringArray(this->effectsList, data + effectsListOffset);
+}
+
+void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
+{
+	const int locationFormatTextsOffset = ExeData::get("LocationFormatTexts", keyValueMap);
+	const int dayPredictionOffset = ExeData::get("DayPrediction", keyValueMap);
+	const int distancePredictionOffset = ExeData::get("DistancePrediction", keyValueMap);
+	const int arrivalDatePredictionOffset = ExeData::get("ArrivalDatePrediction", keyValueMap);
+	const int alreadyAtDestinationOffset = ExeData::get("AlreadyAtDestination", keyValueMap);
+	const int noDestinationOffset = ExeData::get("NoDestination", keyValueMap);
+	const int arrivalPopUpLocationOffset = ExeData::get("ArrivalPopUpLocation", keyValueMap);
+	const int arrivalPopUpDateOffset = ExeData::get("ArrivalPopUpDate", keyValueMap);
+	const int arrivalPopUpDaysOffset = ExeData::get("ArrivalPopUpDays", keyValueMap);
+
+	initStringArray(this->locationFormatTexts, data + locationFormatTextsOffset);
+	initStringArray(this->dayPrediction, data + dayPredictionOffset);
+	this->distancePrediction = ExeData::readString(data + distancePredictionOffset);
+	this->arrivalDatePrediction = ExeData::readString(data + arrivalDatePredictionOffset);
+	this->alreadyAtDestination = ExeData::readString(data + alreadyAtDestinationOffset);
+	this->noDestination = ExeData::readString(data + noDestinationOffset);
+	this->arrivalPopUpLocation = ExeData::readString(data + arrivalPopUpLocationOffset);
+	this->arrivalPopUpDate = ExeData::readString(data + arrivalPopUpDateOffset);
+	this->arrivalPopUpDays = ExeData::readString(data + arrivalPopUpDaysOffset);
 }
 
 void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
@@ -529,6 +554,7 @@ void ExeData::init(bool floppyVersion)
 	this->meta.init(exeDataPtr, keyValueMap);
 	this->races.init(exeDataPtr, keyValueMap);
 	this->status.init(exeDataPtr, keyValueMap);
+	this->travel.init(exeDataPtr, keyValueMap);
 	this->wallHeightTables.init(exeDataPtr, keyValueMap);
 
 	this->floppyVersion = floppyVersion;

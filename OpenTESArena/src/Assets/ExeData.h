@@ -25,7 +25,7 @@ public:
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
-	
+
 	struct CharacterClasses
 	{
 		// The allowed shields and weapons store 16-bit offsets from the start of the
@@ -181,6 +181,9 @@ public:
 		// Province .IMG backgrounds (ordered the same as province names).
 		std::array<std::string, 9> provinceImgFilenames;
 
+		// City-state, town, village (stored twice), dungeon.
+		std::array<std::string, 5> locationTypes;
+
 		// Display name of the initial dungeon.
 		std::string startDungeonName;
 
@@ -248,6 +251,37 @@ public:
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
+	struct Travel
+	{
+		// Location format texts when clicking on a location on a province map.
+		// Each one is phrased a little differently:
+		// - <dungeon> in <province> Province
+		// - The <center province city> in the <center province>
+		// - The <city type> of <city name> in <province> Province
+		std::array<std::string, 3> locationFormatTexts;
+
+		// Description for how many days traveling will take based on the current weather,
+		// split into two strings for some reason.
+		std::array<std::string, 2> dayPrediction;
+
+		// Description for how many kilometers the journey will take.
+		std::string distancePrediction;
+
+		// Description for when the player should arrive at their destination.
+		std::string arrivalDatePrediction;
+
+		// Pop-up when the player tries to travel to their current location.
+		std::string alreadyAtDestination;
+
+		// Pop-up when no destination is selected.
+		std::string noDestination;
+
+		// Location/date/days text when the player arrives at their destination.
+		std::string arrivalPopUpLocation, arrivalPopUpDate, arrivalPopUpDays;
+
+		void init(const char *data, const KeyValueMap &keyValueMap);
+	};
+
 	struct WallHeightTables
 	{
 		// Values for interior and exterior wall heights. In wilderness cells, the values in
@@ -298,6 +332,7 @@ public:
 	Meta meta;
 	Races races;
 	Status status;
+	Travel travel;
 	WallHeightTables wallHeightTables;
 
 	bool isFloppyVersion() const;
