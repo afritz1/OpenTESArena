@@ -120,6 +120,22 @@ bool Rect::contains(const Rect &rectangle) const
 		(rectangle.getBottom() < this->getBottom());
 }
 
+bool Rect::containsInclusive(const Int2 &point) const
+{
+	return (point.x >= this->getLeft()) &&
+		(point.y >= this->getTop()) &&
+		(point.x <= this->getRight()) &&
+		(point.y <= this->getBottom());
+}
+
+bool Rect::containsInclusive(const Rect &rectangle) const
+{
+	return (rectangle.getLeft() >= this->getLeft()) &&
+		(rectangle.getTop() >= this->getTop()) &&
+		(rectangle.getRight() <= this->getRight()) &&
+		(rectangle.getBottom() <= this->getBottom());
+}
+
 bool Rect::intersects(const Rect &rectangle) const
 {
 	return !((rectangle.getLeft() <= this->getRight()) &&

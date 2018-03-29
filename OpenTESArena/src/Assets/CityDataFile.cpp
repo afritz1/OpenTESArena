@@ -185,7 +185,7 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 		[&globalPoint, &provinceRect](const CityDataFile::ProvinceData &province)
 	{
 		provinceRect = province.getGlobalRect();
-		return provinceRect.contains(globalPoint);
+		return provinceRect.containsInclusive(globalPoint);
 	});
 
 	DebugAssert(iter != this->provinces.end(), "No matching province for global point (" +

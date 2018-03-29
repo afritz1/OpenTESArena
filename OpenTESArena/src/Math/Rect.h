@@ -35,6 +35,8 @@ public:
 
 	bool contains(const Int2 &point) const;
 	bool contains(const Rect &rectangle) const;
+	bool containsInclusive(const Int2 &point) const;
+	bool containsInclusive(const Rect &rectangle) const;
 	bool intersects(const Rect &rectangle) const;
 };
 
