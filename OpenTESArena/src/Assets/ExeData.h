@@ -193,11 +193,11 @@ public:
 		// Weathers for each global quarter climate + season + variant tuple.
 		std::array<uint8_t, 140> weatherTable;
 
-		// Travel speed modifiers for each climate.
+		// Twelve month-wise travel speed modifiers for each climate.
 		std::array<std::array<uint8_t, 12>, 7> climateSpeedTables;
 
-		// Travel speed modifiers for each weather. 0 represents 100.
-		std::array<std::array<uint8_t, 12>, 5> weatherSpeedTables;
+		// Eight weather-wise travel speed modifiers for each climate. 0 represents 100.
+		std::array<std::array<uint8_t, 8>, 7> weatherSpeedTables;
 
 		// Wilderness .RMD index lists for each type of block (normal, village, dungeon,
 		// inn, and temple). Each list starts with the number of elements.

@@ -266,7 +266,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
 		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
 		const int climateSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex);
-		const int weatherSpeed = weatherSpeedTables.at(weatherIndex).at(monthIndex);
+		const int weatherSpeed = weatherSpeedTables.at(terrainIndex).at(weatherIndex);
 		const int travelSpeed = climateSpeed * ((weatherSpeed == 0) ? 100 : weatherSpeed);
 
 		// Add the pixel's travel time onto the total time.
