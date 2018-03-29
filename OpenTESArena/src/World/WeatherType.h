@@ -3,16 +3,19 @@
 
 // A unique identifier for each kind of weather. These can have an effect on the sky
 // palette, fog distance, music, etc..
+
+// If in terrain type 3, snow and snow overcast are replaced by rain.
+
 enum class WeatherType
 {
 	Clear,
-	Overcast,
+	Overcast, // With fog.
 	Rain,
 	Snow,
-	Unknown0, // Snow overcast?
-	Unknown1, // To do.
-	Unknown2, // To do (same as overcast?).
-	Unknown3 // To do.
+	SnowOvercast, // With fog.
+	Rain2,
+	Overcast2,
+	SnowOvercast2 // If rnd() < 16000 then with fog.
 };
 
 #endif
