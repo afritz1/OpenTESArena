@@ -43,12 +43,21 @@ public:
 		LocationData secondDungeon;
 		LocationData firstDungeon;
 		std::array<LocationData, 14> randomDungeons; // Random names, fixed locations.
+
+		// Creates a rectangle from the province's global {X,Y,W,H} values.
+		Rect getGlobalRect() const;
+
+		// Gets the location associated with the given location ID.
+		const CityDataFile::ProvinceData::LocationData &getLocationData(int locationID) const;
 	};
 private:
 	// These are ordered the same as usual (read left to right, and center is last).
 	std::array<ProvinceData, 9> provinces;
 public:
 	static const int PROVINCE_COUNT;
+
+	// Gets the province data at the given province index.
+	const CityDataFile::ProvinceData &getProvinceData(int index) const;
 
 	// Converts a local city ID + province ID pair to a global city ID.
 	static int getGlobalCityID(int localCityID, int provinceID);
@@ -86,13 +95,6 @@ public:
 
 	// Gets an index into the city reserved block list.
 	static int getCityReservedBlockListIndex(bool isCoastal, int templateID);
-
-	// Gets the province data at the given province index.
-	const CityDataFile::ProvinceData &getProvinceData(int index) const;
-
-	// Gets the location associated with the given location ID and province ID.
-	const CityDataFile::ProvinceData::LocationData &getLocationData(
-		int locationID, int provinceID) const;
 
 	// Gets the quarter within a province (to determine weather).
 	int getGlobalQuarter(const Int2 &globalPoint) const;

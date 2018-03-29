@@ -85,11 +85,9 @@ ClimateType Location::getClimateType(int locationID, int provinceID,
 {
 	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &province = cityData.getProvinceData(provinceID);
-	const auto &location = cityData.getLocationData(locationID, provinceID);
+	const auto &location = province.getLocationData(locationID);
 	const Int2 localPoint(location.x, location.y);
-	const Rect provinceRect(province.globalX, province.globalY,
-		province.globalW, province.globalH);
-	const Int2 globalPoint = cityData.localPointToGlobal(localPoint, provinceRect);
+	const Int2 globalPoint = cityData.localPointToGlobal(localPoint, province.getGlobalRect());
 	const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
 	const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
 	return MiscAssets::WorldMapTerrain::toClimateType(terrain);
@@ -122,17 +120,18 @@ int Location::dungeonToLocationID(int localDungeonID)
 std::string Location::getName(const MiscAssets &miscAssets) const
 {
 	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &province = cityData.getProvinceData(this->provinceID);
 
 	if (this->dataType == LocationDataType::City)
 	{
 		const int locationID = Location::cityToLocationID(this->localCityID);
-		const auto &locationData = cityData.getLocationData(locationID, this->provinceID);
+		const auto &locationData = province.getLocationData(locationID);
 		return std::string(locationData.name.data());
 	}
 	else if (this->dataType == LocationDataType::Dungeon)
 	{
 		const int locationID = Location::dungeonToLocationID(this->localDungeonID);
-		const auto &locationData = cityData.getLocationData(locationID, this->provinceID);
+		const auto &locationData = province.getLocationData(locationID);
 		return std::string(locationData.name.data());
 	}
 	else if (this->dataType == LocationDataType::SpecialCase)
@@ -146,7 +145,7 @@ std::string Location::getName(const MiscAssets &miscAssets) const
 		{
 			// Return the name of the city the wild dungeon is near.
 			const int locationID = Location::cityToLocationID(this->localCityID);
-			const auto &locationData = cityData.getLocationData(locationID, this->provinceID);
+			const auto &locationData = province.getLocationData(locationID);
 			return std::string(locationData.name.data());
 		}
 		else

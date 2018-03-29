@@ -12,7 +12,57 @@
 
 #include "components/vfs/manager.hpp"
 
+Rect CityDataFile::ProvinceData::getGlobalRect() const
+{
+	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
+}
+
+const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getLocationData(
+	int locationID) const
+{
+	if (locationID < 8)
+	{
+		// City.
+		return this->cityStates.at(locationID);
+	}
+	else if (locationID < 16)
+	{
+		// Town.
+		return this->towns.at(locationID - 8);
+	}
+	else if (locationID < 32)
+	{
+		// Village.
+		return this->villages.at(locationID - 16);
+	}
+	else if (locationID == 32)
+	{
+		// Staff dungeon.
+		return this->secondDungeon;
+	}
+	else if (locationID == 33)
+	{
+		// Staff map dungeon.
+		return this->firstDungeon;
+	}
+	else if (locationID < 48)
+	{
+		// Named dungeon.
+		return this->randomDungeons.at(locationID - 34);
+	}
+	else
+	{
+		throw std::runtime_error("Bad location ID \"" +
+			std::to_string(locationID) + "\".");
+	}
+}
+
 const int CityDataFile::PROVINCE_COUNT = 9;
+
+const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
+{
+	return this->provinces.at(index);
+}
 
 int CityDataFile::getGlobalCityID(int localCityID, int provinceID)
 {
@@ -126,54 +176,6 @@ int CityDataFile::getCityReservedBlockListIndex(bool isCoastal, int templateID)
 	return isCoastal ? (5 + templateID) : templateID;
 }
 
-const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
-{
-	return this->provinces.at(index);
-}
-
-const CityDataFile::ProvinceData::LocationData &CityDataFile::getLocationData(
-	int locationID, int provinceID) const
-{
-	const auto &province = this->provinces.at(provinceID);
-
-	if (locationID < 8)
-	{
-		// City.
-		return province.cityStates.at(locationID);
-	}
-	else if (locationID < 16)
-	{
-		// Town.
-		return province.towns.at(locationID - 8);
-	}
-	else if (locationID < 32)
-	{
-		// Village.
-		return province.villages.at(locationID - 16);
-	}
-	else if (locationID == 32)
-	{
-		// Staff dungeon.
-		return province.secondDungeon;
-	}
-	else if (locationID == 33)
-	{
-		// Staff map dungeon.
-		return province.firstDungeon;
-	}
-	else if (locationID < 48)
-	{
-		// Named dungeon.
-		return province.randomDungeons.at(locationID - 34);
-	}
-	else
-	{
-		throw std::runtime_error("Bad location ID \"" +
-			std::to_string(locationID) + "\" for province ID \"" +
-			std::to_string(provinceID) + "\".");
-	}
-}
-
 int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 {
 	Rect provinceRect;
@@ -182,8 +184,7 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 	const auto iter = std::find_if(this->provinces.begin(), this->provinces.end(),
 		[&globalPoint, &provinceRect](const CityDataFile::ProvinceData &province)
 	{
-		provinceRect = Rect(province.globalX, province.globalY,
-			province.globalW, province.globalH);
+		provinceRect = province.getGlobalRect();
 		return provinceRect.contains(globalPoint);
 	});
 
@@ -223,17 +224,10 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 {
 	auto getGlobalPoint = [this](int locationID, int provinceID)
 	{
-		auto getProvinceRect = [this](int provinceID)
-		{
-			const auto &province = this->getProvinceData(provinceID);
-			return Rect(province.globalX, province.globalY,
-				province.globalW, province.globalH);
-		};
-
-		const Rect provinceRect = getProvinceRect(provinceID);
-		const auto &location = this->getLocationData(locationID, provinceID);
+		const auto &province = this->getProvinceData(provinceID);
+		const auto &location = province.getLocationData(locationID);
 		return CityDataFile::localPointToGlobal(
-			Int2(location.x, location.y), provinceRect);
+			Int2(location.x, location.y), province.getGlobalRect());
 	};
 
 	// The two world map points to calculate between.
@@ -294,8 +288,9 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 
 uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 {
+	const auto &province = this->getProvinceData(provinceID);
 	const int locationID = Location::cityToLocationID(localCityID);
-	const auto &location = this->getLocationData(locationID, provinceID);
+	const auto &location = province.getLocationData(locationID);
 	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
 
