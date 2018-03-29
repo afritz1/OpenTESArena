@@ -74,10 +74,10 @@ std::pair<int, int> CityDataFile::getLocalCityAndProvinceID(int globalCityID)
 	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
-int CityDataFile::getDistance(const Int2 &p1, const Int2 &p2)
+int CityDataFile::getDistance(const Int2 &globalSrc, const Int2 &globalDst)
 {
-	const int dx = std::abs(p1.x - p2.x);
-	const int dy = std::abs(p1.y - p2.y);
+	const int dx = std::abs(globalSrc.x - globalDst.x);
+	const int dy = std::abs(globalSrc.y - globalDst.y);
 	return std::max(dx, dy) + (std::min(dx, dy) / 4);
 }
 

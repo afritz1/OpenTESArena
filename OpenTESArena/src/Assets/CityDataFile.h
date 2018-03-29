@@ -65,8 +65,8 @@ public:
 	// Converts a global city ID to a local city ID + province ID pair.
 	static std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
-	// Gets the approximation of the linear distance between two points.
-	static int getDistance(const Int2 &p1, const Int2 &p2);
+	// Gets the approximation of the linear distance between two global points.
+	static int getDistance(const Int2 &globalSrc, const Int2 &globalDst);
 
 	// Converts a local XY coordinate to global coordinates. The rectangle comes from
 	// the province header.
