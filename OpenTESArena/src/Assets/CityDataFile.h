@@ -98,7 +98,7 @@ public:
 	int getGlobalQuarter(const Int2 &globalPoint) const;
 
 	// Gets the number of days required to travel from one location to another.
-	int getTravelDays(int startLocalLocationID, int startProvinceID, int endLocalLocationID,
+	int getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
 		int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
 		ArenaRandom &random, const MiscAssets &miscAssets) const;
 

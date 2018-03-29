@@ -217,12 +217,11 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 	return globalQuarter;
 }
 
-int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
-	int endLocalLocationID, int endProvinceID, int month,
-	const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
-	const MiscAssets &miscAssets) const
+int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
+	int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
+	ArenaRandom &random, const MiscAssets &miscAssets) const
 {
-	auto getGlobalPoint = [this](int localLocationID, int provinceID)
+	auto getGlobalPoint = [this](int locationID, int provinceID)
 	{
 		auto getProvinceRect = [this](int provinceID)
 		{
@@ -232,14 +231,14 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 		};
 
 		const Rect provinceRect = getProvinceRect(provinceID);
-		const auto &location = this->getLocationData(localLocationID, provinceID);
+		const auto &location = this->getLocationData(locationID, provinceID);
 		return CityDataFile::localPointToGlobal(
 			Int2(location.x, location.y), provinceRect);
 	};
 
 	// The two world map points to calculate between.
-	const Int2 startGlobalPoint = getGlobalPoint(startLocalLocationID, startProvinceID);
-	const Int2 endGlobalPoint = getGlobalPoint(endLocalLocationID, endProvinceID);
+	const Int2 startGlobalPoint = getGlobalPoint(startLocationID, startProvinceID);
+	const Int2 endGlobalPoint = getGlobalPoint(endLocationID, endProvinceID);
 
 	// Get all the points along the line between the two points.
 	const std::vector<Int2> points = Int2::bresenhamLine(startGlobalPoint, endGlobalPoint);
@@ -266,8 +265,9 @@ int CityDataFile::getTravelDays(int startLocalLocationID, int startProvinceID,
 		const auto &exeData = miscAssets.getExeData();
 		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
 		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
-		const int travelSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex) *
-			weatherSpeedTables.at(weatherIndex).at(monthIndex);
+		const int climateSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex);
+		const int weatherSpeed = weatherSpeedTables.at(weatherIndex).at(monthIndex);
+		const int travelSpeed = climateSpeed * ((weatherSpeed == 0) ? 100 : weatherSpeed);
 
 		// Add the pixel's travel time onto the total time.
 		const int pixelTravelTime = 2000 / travelSpeed;
