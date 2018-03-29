@@ -115,6 +115,8 @@ public:
 	std::pair<double, std::unique_ptr<TextBox>> &getActionText();
 	std::pair<double, std::unique_ptr<TextBox>> &getEffectText();
 
+	const std::array<WeatherType, 36> &getWeathersArray() const;
+
 	Player &getPlayer();
 	WorldData &getWorldData();
 	Location &getLocation();

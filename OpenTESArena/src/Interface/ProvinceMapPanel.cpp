@@ -11,6 +11,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
@@ -18,6 +19,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Math/Random.h"
 #include "../Math/Rect.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
@@ -181,20 +183,21 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		{
 			// Check locations for clicks. Get the current location to compare with.
 			auto &gameData = game.getGameData();
-			const auto &location = gameData.getLocation();
-			const int locationID = [&location]()
+			const auto &currentLocation = gameData.getLocation();
+			const int currentLocationID = [&currentLocation]()
 			{
-				if (location.dataType == LocationDataType::City)
+				if (currentLocation.dataType == LocationDataType::City)
 				{
-					return Location::cityToLocationID(location.localCityID);
+					return Location::cityToLocationID(currentLocation.localCityID);
 				}
-				else if (location.dataType == LocationDataType::Dungeon)
+				else if (currentLocation.dataType == LocationDataType::Dungeon)
 				{
-					return Location::dungeonToLocationID(location.localDungeonID);
+					return Location::dungeonToLocationID(currentLocation.localDungeonID);
 				}
-				else if (location.dataType == LocationDataType::SpecialCase)
+				else if (currentLocation.dataType == LocationDataType::SpecialCase)
 				{
-					const Location::SpecialCaseType specialCaseType = location.specialCaseType;
+					const Location::SpecialCaseType specialCaseType =
+						currentLocation.specialCaseType;
 
 					if (specialCaseType == Location::SpecialCaseType::StartDungeon)
 					{
@@ -203,7 +206,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 					}
 					else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
 					{
-						return Location::cityToLocationID(location.localCityID);
+						return Location::cityToLocationID(currentLocation.localCityID);
 					}
 					else
 					{
@@ -214,7 +217,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 				else
 				{
 					throw std::runtime_error("Bad location data type \"" +
-						std::to_string(static_cast<int>(location.dataType)) + "\".");
+						std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
 				}
 			}();
 
@@ -222,8 +225,8 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 			// Only continue if the selected one is not the player's current location.
 			const bool matchesPlayerLocation =
-				(this->provinceID == location.provinceID) &&
-				(locationID == closestLocationID);
+				(this->provinceID == currentLocation.provinceID) &&
+				(currentLocationID == closestLocationID);
 
 			if (!matchesPlayerLocation)
 			{
@@ -231,7 +234,11 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 				this->selectedLocationID = std::make_unique<int>(closestLocationID);
 				this->blinkTimer = 0.0;
 
-				// To do: pop-up travel dialog.
+				// Create pop-up travel dialog.
+				std::unique_ptr<Panel> travelPopUp = this->makeTravelPopUp(
+					currentLocationID, currentLocation, closestLocationID);
+
+				game.pushSubPanel(std::move(travelPopUp));
 			}
 		}
 	}
@@ -268,9 +275,10 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	// Look through all visible locations to find the one closest to the mouse.
 	int closestID = -1;
 	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+	const auto &provinceData = cityData.getProvinceData(this->provinceID);
 	for (int i = 0; i < 48; i++)
 	{
-		const auto &locationData = cityData.getLocationData(i, this->provinceID);
+		const auto &locationData = provinceData.getLocationData(i);
 
 		// To do: use 0x2 bit of location for visibility.
 		if (locationData.name.front() != '\0')
@@ -287,6 +295,270 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 
 	DebugAssert(closestID >= 0, "No closest location ID found.");
 	return closestID;
+}
+
+std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
+	const Location &currentLocation, int closestLocationID)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+
+	const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 98);
+	const Color color(52, 24, 8);
+
+	const std::string text = [this, &game, &gameData, &currentLocation,
+		currentLocationID, closestLocationID]()
+	{
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &exeData = miscAssets.getExeData();
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
+		const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
+		const Date &currentDate = gameData.getDate();
+
+		// To do: see where this RNG should be stored.
+		ArenaRandom random;
+		gameData.updateWeather(random, exeData); // Temp (this should be done by the game loop).
+
+		const int travelDays = cityData.getTravelDays(
+			currentLocationID, currentLocation.provinceID,
+			closestLocationID, this->provinceID, currentDate.getMonth(),
+			gameData.getWeathersArray(), random, miscAssets);
+
+		const Date destinationDate = [&currentDate, travelDays]()
+		{
+			Date newDate = currentDate;
+			for (int i = 0; i < travelDays; i++)
+			{
+				newDate.incrementDay();
+			}
+
+			return newDate;
+		}();
+
+		const std::string locationFormatText = [this, &exeData, &closestProvinceData,
+			closestLocationID, &closestLocationData]()
+		{
+			std::string formatText = [this, &exeData, &closestProvinceData,
+				closestLocationID, &closestLocationData]()
+			{
+				// Decide the format based on whether it's the center province.
+				if (this->provinceID != 8)
+				{
+					// Determine whether to use the city format or dungeon format.
+					if (closestLocationID < 32)
+					{
+						// City format.
+						std::string text = exeData.travel.locationFormatTexts.at(2);
+
+						// Replace first %s with location type.
+						const std::string &locationTypeName = [&exeData, closestLocationID]()
+						{
+							if (closestLocationID < 8)
+							{
+								// City.
+								return exeData.locations.locationTypes.front();
+							}
+							else if (closestLocationID < 16)
+							{
+								// Town.
+								return exeData.locations.locationTypes.at(1);
+							}
+							else
+							{
+								// Village.
+								return exeData.locations.locationTypes.at(2);
+							}
+						}();
+
+						size_t index = text.find("%s");
+						text = text.replace(index, 2, locationTypeName);
+
+						// Replace second %s with location name.
+						const std::string locationName(closestLocationData.name.data());
+						index = text.find("%s", index);
+						text = text.replace(index, 2, locationName);
+
+						// Replace third %s with province name.
+						const std::string provinceName(closestProvinceData.name.data());
+						index = text.find("%s", index);
+						text = text.replace(index, 2, provinceName);
+
+						return text;
+					}
+					else
+					{
+						// Dungeon format.
+						std::string text = exeData.travel.locationFormatTexts.at(0);
+
+						// Replace first %s with dungeon name.
+						const std::string locationName(closestLocationData.name.data());
+						size_t index = text.find("%s");
+						text = text.replace(index, 2, locationName);
+
+						// Replace second %s with province name.
+						const std::string provinceName(closestProvinceData.name.data());
+						index = text.find("%s", index);
+						text = text.replace(index, 2, provinceName);
+
+						return text;
+					}
+				}
+				else
+				{
+					// Center province format (always the center city).
+					std::string text = exeData.travel.locationFormatTexts.at(1);
+
+					// Replace first %s with center province city name.
+					const std::string locationName(closestLocationData.name.data());
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, locationName);
+
+					// Replace second %s with center province name.
+					const std::string provinceName(closestProvinceData.name.data());
+					index = text.find("%s", index);
+					text = text.replace(index, 2, provinceName);
+
+					return text;
+				}
+			}();
+
+			// Replace carriage returns with newlines.
+			formatText = String::replace(formatText, '\r', '\n');
+			return formatText;
+		}();
+
+		// Lambda for getting the date string for a given date.
+		auto getDateString = [&exeData](const Date &date)
+		{
+			std::string text = exeData.status.date;
+
+			// Replace carriage returns with newlines.
+			text = String::replace(text, '\r', '\n');
+
+			// Remove newline at end.
+			text.pop_back();
+
+			// Replace first %s with weekday.
+			const std::string &weekdayString =
+				exeData.calendar.weekdayNames.at(date.getWeekday());
+			size_t index = text.find("%s");
+			text = text.replace(index, 2, weekdayString);
+
+			// Replace %u%s with day and ordinal suffix.
+			const std::string dayString = date.getOrdinalDay();
+			index = text.find("%u%s");
+			text = text.replace(index, 4, dayString);
+
+			// Replace third %s with month.
+			const std::string &monthString =
+				exeData.calendar.monthNames.at(date.getMonth());
+			index = text.find("%s");
+			text = text.replace(index, 2, monthString);
+
+			// Replace %d with year.
+			index = text.find("%d");
+			text = text.replace(index, 2, std::to_string(date.getYear()));
+
+			return text;
+		};
+
+		const std::string startDateString = [&exeData, &getDateString, &currentDate]()
+		{
+			// The date prefix is shared between the province map pop-up and the arrival pop-up.
+			const std::string datePrefix = exeData.travel.arrivalPopUpDate;
+			
+			// Replace carriage returns with newlines.
+			return String::replace(datePrefix + getDateString(currentDate), '\r', '\n');
+		}();
+
+		const std::string dayString = [&exeData, travelDays]()
+		{
+			const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
+			const std::string dayStringBody = [&exeData, travelDays]()
+			{
+				std::string text = exeData.travel.dayPrediction.back();
+
+				// Replace %d with travel days.
+				const size_t index = text.find("%d");
+				text = text.replace(index, 2, std::to_string(travelDays));
+
+				return text;
+			}();
+
+			// Replace carriage returns with newlines.
+			return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
+		}();
+
+		const int travelDistance = [this, &cityData, &currentLocation,
+			currentLocationID, &closestProvinceData, &closestLocationData]()
+		{
+			const auto &currentProvinceData =
+				cityData.getProvinceData(currentLocation.provinceID);
+			const auto &currentLocationData =
+				currentProvinceData.getLocationData(currentLocationID);
+			const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
+			const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
+			const Int2 currentLocationGlobalPoint = cityData.localPointToGlobal(
+				Int2(currentLocationData.x, currentLocationData.y),
+				currentProvinceRect);
+			const Int2 closestLocationGlobalPoint = cityData.localPointToGlobal(
+				Int2(closestLocationData.x, closestLocationData.y),
+				closestProvinceRect);
+
+			return cityData.getDistance(
+				currentLocationGlobalPoint, closestLocationGlobalPoint);
+		}();
+
+		const std::string distanceString = [&exeData, travelDistance]()
+		{
+			std::string text = exeData.travel.distancePrediction;
+
+			// Replace %d with travel distance.
+			const size_t index = text.find("%d");
+			text = text.replace(index, 2, std::to_string(travelDistance * 20));
+
+			// Replace carriage returns with newlines.
+			return String::replace(text, '\r', '\n');
+		}();
+
+		const std::string arrivalDateString = [&exeData, &getDateString, &destinationDate]()
+		{
+			const std::string text = exeData.travel.arrivalDatePrediction;
+
+			// Replace carriage returns with newlines.
+			return String::replace(text + getDateString(destinationDate), '\r', '\n');
+		}();
+
+		return locationFormatText + startDateString + "\n\n" + dayString +
+			distanceString + arrivalDateString;
+	}();
+
+	const int lineSpacing = 1;
+
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		color,
+		TextAlignment::Center,
+		lineSpacing,
+		game.getFontManager());
+
+	Texture texture(Texture::generate(Texture::PatternType::Parchment,
+		richText.getDimensions().x + 20, richText.getDimensions().y + 16,
+		game.getTextureManager(), game.getRenderer()));
+
+	const Int2 textureCenter(
+		(Renderer::ORIGINAL_WIDTH / 2) - 1,
+		(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+
+	auto function = [](Game &game)
+	{
+		game.popSubPanel();
+	};
+
+	return std::make_unique<TextSubPanel>(game, center, richText, function,
+		std::move(texture), textureCenter);
 }
 
 void ProvinceMapPanel::tick(double dt)
@@ -522,7 +794,8 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
 	const auto &miscAssets = this->getGame().getMiscAssets();
 	const auto &cityData = miscAssets.getCityDataFile();
-	const auto &location = cityData.getLocationData(locationID, this->provinceID);
+	const auto &province = cityData.getProvinceData(this->provinceID);
+	const auto &location = province.getLocationData(locationID);
 	const std::string name(location.name.data());
 	const Int2 center(location.x, location.y);
 
@@ -614,7 +887,10 @@ void ProvinceMapPanel::render(Renderer &renderer)
 				backgroundFilename, textureManager, renderer);
 		}
 	}
+}
 
+void ProvinceMapPanel::renderSecondary(Renderer &renderer)
+{
 	// Draw the name of the location closest to the mouse cursor.
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -622,14 +898,6 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		.nativeToOriginal(mousePosition);
 	const int closestLocationID = this->getClosestLocationID(originalPosition);
 	this->drawLocationName(closestLocationID, renderer);
-}
-
-void ProvinceMapPanel::renderSecondary(Renderer &renderer)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
 
 	// Draw a tooltip if the mouse is over a button.
 	const auto tooltipIter = std::find_if(

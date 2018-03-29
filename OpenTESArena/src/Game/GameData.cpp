@@ -368,6 +368,11 @@ std::pair<double, std::unique_ptr<TextBox>> &GameData::getEffectText()
 	return this->effectText;
 }
 
+const std::array<WeatherType, 36> &GameData::getWeathersArray() const
+{
+	return this->weathers;
+}
+
 Player &GameData::getPlayer()
 {
 	return this->player;
