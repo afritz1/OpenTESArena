@@ -71,8 +71,8 @@ namespace
 	};
 }
 
-const double ProvinceMapPanel::BLINK_PERIOD = 2.0 / 3.0;
-const double ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON = 0.40;
+const double ProvinceMapPanel::BLINK_PERIOD = 1.0 / 5.0;
+const double ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON = 0.75;
 
 ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	: Panel(game)
