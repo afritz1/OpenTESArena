@@ -260,8 +260,15 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
 		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
 		const int climateSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex);
-		const int weatherSpeed = weatherSpeedTables.at(terrainIndex).at(weatherIndex);
-		const int travelSpeed = climateSpeed * ((weatherSpeed == 0) ? 100 : weatherSpeed);
+		const int weatherMod = [terrainIndex, weatherIndex, &weatherSpeedTables]()
+		{
+			const int weatherSpeed = weatherSpeedTables.at(terrainIndex).at(weatherIndex);
+
+			// Special case: 0 equals 100.
+			return (weatherSpeed == 0) ? 100 : weatherSpeed;
+		}();
+
+		const int travelSpeed = (climateSpeed * weatherMod) / 100;
 
 		// Add the pixel's travel time onto the total time.
 		const int pixelTravelTime = 2000 / travelSpeed;
@@ -273,7 +280,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 	{
 		const int minDays = 1;
 		const int maxDays = 2000;
-		int days = std::min(std::max(totalTime / 10, minDays), maxDays);
+		int days = std::min(std::max(totalTime / 100, minDays), maxDays);
 
 		if (days > 20)
 		{
