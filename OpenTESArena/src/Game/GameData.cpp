@@ -50,6 +50,38 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	// that can be assigned to.
 	this->cityData = miscAssets.getCityDataFile();
 
+	// Set default location visibilities.
+	for (int i = 0; i < 8; i++)
+	{
+		auto &provinceData = this->cityData.getProvinceData(i);
+		for (auto &cityState : provinceData.cityStates)
+		{
+			cityState.setVisible(true);
+		}
+
+		for (auto &town : provinceData.towns)
+		{
+			town.setVisible(true);
+		}
+
+		for (auto &village : provinceData.villages)
+		{
+			village.setVisible(true);
+		}
+
+		// Make main quest dungeons visible for testing.
+		provinceData.firstDungeon.setVisible(true);
+		provinceData.secondDungeon.setVisible(true);
+
+		for (auto &dungeon : provinceData.randomDungeons)
+		{
+			dungeon.setVisible(false);
+		}
+	}
+
+	auto &centerProvinceData = this->cityData.getProvinceData(8);
+	centerProvinceData.cityStates.front().setVisible(true);
+
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeather(miscAssets.getExeData());
 }
@@ -138,15 +170,14 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
 	DebugAssert(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
 		"\" must not be for main quest dungeon.");
 
 	// Generate dungeon seed.
-	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t dungeonSeed = cityData.getDungeonSeed(localDungeonID, provinceID);
+	const uint32_t dungeonSeed = this->cityData.getDungeonSeed(localDungeonID, provinceID);
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const int widthChunks = 2;

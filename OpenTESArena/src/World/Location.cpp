@@ -2,6 +2,7 @@
 #include "Location.h"
 #include "LocationDataType.h"
 #include "LocationType.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 
@@ -87,7 +88,8 @@ ClimateType Location::getClimateType(int locationID, int provinceID,
 	const auto &province = cityData.getProvinceData(provinceID);
 	const auto &location = province.getLocationData(locationID);
 	const Int2 localPoint(location.x, location.y);
-	const Int2 globalPoint = cityData.localPointToGlobal(localPoint, province.getGlobalRect());
+	const Int2 globalPoint = CityDataFile::localPointToGlobal(
+		localPoint, province.getGlobalRect());
 	const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
 	const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
 	return MiscAssets::WorldMapTerrain::toClimateType(terrain);
@@ -117,9 +119,8 @@ int Location::dungeonToLocationID(int localDungeonID)
 	return localDungeonID + 32;
 }
 
-std::string Location::getName(const MiscAssets &miscAssets) const
+std::string Location::getName(const CityDataFile &cityData, const ExeData &exeData) const
 {
-	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &province = cityData.getProvinceData(this->provinceID);
 
 	if (this->dataType == LocationDataType::City)
@@ -138,7 +139,6 @@ std::string Location::getName(const MiscAssets &miscAssets) const
 	{
 		if (this->specialCaseType == Location::SpecialCaseType::StartDungeon)
 		{
-			const auto &exeData = miscAssets.getExeData();
 			return exeData.locations.startDungeonName;
 		}
 		else if (this->specialCaseType == Location::SpecialCaseType::WildDungeon)

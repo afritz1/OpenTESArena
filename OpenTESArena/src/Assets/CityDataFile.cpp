@@ -14,7 +14,7 @@
 
 bool CityDataFile::ProvinceData::LocationData::isVisible() const
 {
-	return (this->visibility & 0x2) == 1;
+	return (this->visibility & 0x2) != 0;
 }
 
 void CityDataFile::ProvinceData::LocationData::setVisible(bool visible)
@@ -68,6 +68,11 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 }
 
 const int CityDataFile::PROVINCE_COUNT = 9;
+
+CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
+{
+	return this->provinces.at(index);
+}
 
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {

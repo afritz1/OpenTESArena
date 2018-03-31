@@ -274,14 +274,13 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 
 	// Look through all visible locations to find the one closest to the mouse.
 	int closestID = -1;
-	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+	const auto &cityData = this->getGame().getGameData().getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(this->provinceID);
 	for (int i = 0; i < 48; i++)
 	{
 		const auto &locationData = provinceData.getLocationData(i);
 
-		// To do: use 0x2 bit of location for visibility.
-		if (locationData.name.front() != '\0')
+		if (locationData.isVisible())
 		{
 			const Int2 point(locationData.x, locationData.y);
 
@@ -311,7 +310,7 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
 	{
 		const auto &miscAssets = game.getMiscAssets();
 		const auto &exeData = miscAssets.getExeData();
-		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &cityData = gameData.getCityDataFile();
 		const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
 		const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
 		const Date &currentDate = gameData.getDate();
@@ -578,9 +577,8 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	auto drawIconIfVisible = [this, &renderer](
 		const CityDataFile::ProvinceData::LocationData &location, const Texture &icon)
 	{
-		// Only draw locations with names.
-		// - To do: check 0x2 bit of location for visibility.
-		if (location.name.front() != '\0')
+		// Only draw visible locations.
+		if (location.isVisible())
 		{
 			const Int2 point(location.x, location.y);
 			this->drawCenteredIcon(icon, point, renderer);
@@ -596,7 +594,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	const auto &dungeonIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename, renderer);
 
-	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+	const auto &cityData = this->getGame().getGameData().getCityDataFile();
 	const auto &province = cityData.getProvinceData(this->provinceID);
 
 	// Draw city-state icons.
@@ -646,7 +644,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 		this->drawCenteredIcon(highlight, point, renderer);
 	};
 
-	const auto &cityData = this->getGame().getMiscAssets().getCityDataFile();
+	const auto &cityData = this->getGame().getGameData().getCityDataFile();
 	const auto &province = cityData.getProvinceData(location.provinceID);
 
 	// Generic highlights (city, town, village, and dungeon).
@@ -787,8 +785,8 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
-	const auto &miscAssets = this->getGame().getMiscAssets();
-	const auto &cityData = miscAssets.getCityDataFile();
+	auto &gameData = this->getGame().getGameData();
+	const auto &cityData = gameData.getCityDataFile();
 	const auto &province = cityData.getProvinceData(this->provinceID);
 	const auto &location = province.getLocationData(locationID);
 	const std::string name(location.name.data());

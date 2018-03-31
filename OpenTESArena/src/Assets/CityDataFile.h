@@ -60,6 +60,7 @@ public:
 	static const int PROVINCE_COUNT;
 
 	// Gets the province data at the given province index.
+	CityDataFile::ProvinceData &getProvinceData(int index);
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
 
 	// Converts a local city ID + province ID pair to a global city ID.

@@ -186,19 +186,20 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const std::string text = [&game]()
 			{
+				auto &gameData = game.getGameData();
 				const auto &miscAssets = game.getMiscAssets();
 				const auto &exeData = miscAssets.getExeData();
 				const Location &location = game.getGameData().getLocation();
 
-				const std::string timeString = [&game, &exeData]()
+				const std::string timeString = [&game, &gameData, &exeData]()
 				{
-					const Clock &clock = game.getGameData().getClock();
+					const Clock &clock = gameData.getClock();
 					const int hours = clock.getHours12();
 					const int minutes = clock.getMinutes();
 					const std::string clockTimeString = std::to_string(hours) + ":" +
 						((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
-					const int timeOfDayIndex = [&game]()
+					const int timeOfDayIndex = [&gameData]()
 					{
 						// Arena has eight time ranges for each time of day. They aren't 
 						// uniformly distributed -- midnight and noon are only one minute.
@@ -214,7 +215,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 							std::make_pair(Clock::Night2, 5)
 						};
 
-						const Clock &presentClock = game.getGameData().getClock();
+						const Clock &presentClock = gameData.getClock();
 
 						// Reverse iterate, checking which range the active clock is in.
 						const auto pairIter = std::find_if(
@@ -243,14 +244,15 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 				// Replace first %s with location name.
 				size_t index = baseText.find("%s");
-				baseText = baseText.replace(index, 2, location.getName(miscAssets));
+				baseText = baseText.replace(index, 2,
+					location.getName(gameData.getCityDataFile(), exeData));
 
 				// Replace second %s with time string.
 				index = baseText.find("%s", index);
 				baseText = baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				const auto &date = game.getGameData().getDate();
+				const auto &date = gameData.getDate();
 				const std::string dateString = [&exeData, &date]()
 				{
 					std::string text = exeData.status.date;
@@ -425,7 +427,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			if (goToAutomap)
 			{
 				auto &gameData = game.getGameData();
-				const auto &miscAssets = game.getMiscAssets();
+				const auto &exeData = game.getMiscAssets().getExeData();
 				const auto &worldData = gameData.getWorldData();
 				const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 				const auto &player = gameData.getPlayer();
@@ -433,7 +435,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const Double3 &position = player.getPosition();
 
 				// Some places (like named/wild dungeons) do not display a name on the automap.
-				const std::string automapLocationName = [&miscAssets, &location]()
+				const std::string automapLocationName = [&gameData, &exeData, &location]()
 				{
 					const bool isCity = location.dataType == LocationDataType::City;
 					const bool isMainQuestDungeon = [&location]()
@@ -455,7 +457,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					}();
 
 					return (isCity || isMainQuestDungeon) ?
-						location.getName(miscAssets) : std::string();
+						location.getName(gameData.getCityDataFile(), exeData) : std::string();
 				}();
 
 				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), 

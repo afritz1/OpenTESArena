@@ -317,7 +317,19 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					{
 						const int localDungeonID = 2 + random.next(14);
 						gameData->loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
-							miscAssets, game.getTextureManager(), renderer);
+							game.getTextureManager(), renderer);
+
+						// Set random named dungeon name and visibility for testing.
+						auto &cityData = gameData->getCityDataFile();
+						auto &provinceData = cityData.getProvinceData(provinceID);
+						auto &locationData = provinceData.randomDungeons.at(localDungeonID - 2);
+
+						const std::string name("Test Dungeon");
+						const auto nameEnd = name.begin() +
+							std::min(name.size(), locationData.name.size());
+						std::copy(name.begin(), nameEnd, locationData.name.begin());
+
+						locationData.setVisible(true);
 					}
 					else if (mifName == RandomWildDungeon)
 					{
