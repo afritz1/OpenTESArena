@@ -315,15 +315,10 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
 		const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
 		const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
 		const Date &currentDate = gameData.getDate();
-
-		// To do: see where this RNG should be stored.
-		ArenaRandom random;
-		gameData.updateWeather(random, exeData); // Temp (this should be done by the game loop).
-
 		const int travelDays = cityData.getTravelDays(
 			currentLocationID, currentLocation.provinceID,
 			closestLocationID, this->provinceID, currentDate.getMonth(),
-			gameData.getWeathersArray(), random, miscAssets);
+			gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
 
 		const Date destinationDate = [&currentDate, travelDays]()
 		{

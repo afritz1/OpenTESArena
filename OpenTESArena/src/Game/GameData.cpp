@@ -6,7 +6,6 @@
 
 #include "Game.h"
 #include "GameData.h"
-#include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -21,7 +20,6 @@
 #include "../Entities/Player.h"
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
-#include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
@@ -40,7 +38,7 @@ const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY)
 
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
 
-GameData::GameData(Player &&player)	
+GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	: player(std::move(player)), triggerText(0.0, nullptr), actionText(0.0, nullptr),
 	effectText(0.0, nullptr)
 {
@@ -48,7 +46,12 @@ GameData::GameData(Player &&player)
 	// the world state, etc..
 	DebugMention("Initializing.");
 
-	this->weathers.fill(WeatherType::Clear);
+	// Make a copy of the global constant city data. This is the "instance" city data
+	// that can be assigned to.
+	this->cityData = miscAssets.getCityDataFile();
+
+	// Do initial weather update (to set each value to a valid state).
+	this->updateWeather(miscAssets.getExeData());
 }
 
 GameData::~GameData()
@@ -388,6 +391,11 @@ Location &GameData::getLocation()
 	return this->location;
 }
 
+CityDataFile &GameData::getCityDataFile()
+{
+	return this->cityData;
+}
+
 Date &GameData::getDate()
 {
 	return this->date;
@@ -396,6 +404,11 @@ Date &GameData::getDate()
 Clock &GameData::getClock()
 {
 	return this->clock;
+}
+
+ArenaRandom &GameData::getRandom()
+{
+	return this->arenaRandom;
 }
 
 double GameData::getDaytimePercent() const
@@ -483,17 +496,17 @@ std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
 	return this->onLevelUpVoxelEnter;
 }
 
-void GameData::updateWeather(ArenaRandom &random, const ExeData &exeData)
+void GameData::updateWeather(const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
 
 	for (size_t i = 0; i < this->weathers.size(); i++)
 	{
 		const int climateIndex = exeData.locations.climates.at(i);
-		const int variantIndex = [&random]()
+		const int variantIndex = [this]()
 		{
 			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
-			const int val = random.next() % 100;
+			const int val = this->arenaRandom.next() % 100;
 
 			if (val >= 60)
 			{
@@ -537,10 +550,7 @@ void GameData::tickTime(double dt, Game &game)
 	{
 		// Update the weather.
 		const auto &exeData = game.getMiscAssets().getExeData();
-
-		// To do: see if this should be stored somewhere else (like in GameData).
-		ArenaRandom random;
-		this->updateWeather(random, exeData);
+		this->updateWeather(exeData);
 	}
 
 	// Check if the clock hour looped back around.

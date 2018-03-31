@@ -230,15 +230,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					{
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
+						const auto &miscAssets = game.getMiscAssets();
 						const bool fullGameWindow = game.getOptions().getModernInterface();
 						renderer.initializeWorldRendering(
 							game.getOptions().getResolutionScale(), fullGameWindow);
 
-						const auto &exeData = game.getMiscAssets().getExeData();
-
 						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
-							&charClass, &exeData]()
+							&charClass, &miscAssets]()
 						{
+							const auto &exeData = miscAssets.getExeData();
+
 							// Initialize player data (independent of the world).
 							Player player = [this, &name, gender, raceID, &charClass, &exeData]()
 							{
@@ -256,7 +257,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 							}();
 
-							return std::make_unique<GameData>(std::move(player));
+							return std::make_unique<GameData>(std::move(player), miscAssets);
 						}();
 
 						// Set palette (important for texture loading).

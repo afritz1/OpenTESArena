@@ -9,9 +9,11 @@
 
 #include "Clock.h"
 #include "Date.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../World/Location.h"
 #include "../World/WorldData.h"
@@ -24,7 +26,6 @@
 // the character resources). Whichever entry points into the "game" there are, they
 // need to load data into the game data object.
 
-class ArenaRandom;
 class CharacterClass;
 class INFFile;
 class MIFFile;
@@ -61,8 +62,10 @@ private:
 	Player player;
 	WorldData worldData;
 	Location location;
+	CityDataFile cityData;
 	Date date;
 	Clock clock;
+	ArenaRandom arenaRandom;
 	double fogDistance;
 	WeatherType weatherType;
 
@@ -78,7 +81,7 @@ private:
 	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
 	// Creates incomplete game data with no active world, to be further initialized later.
-	GameData(Player &&player);
+	GameData(Player &&player, const MiscAssets &miscAssets);
 	GameData(GameData&&) = default;
 	~GameData();
 
@@ -120,8 +123,10 @@ public:
 	Player &getPlayer();
 	WorldData &getWorldData();
 	Location &getLocation();
+	CityDataFile &getCityDataFile();
 	Date &getDate();
 	Clock &getClock();
+	ArenaRandom &getRandom();
 
 	// Gets a percentage representing how far along the current day is. 0.0 is 
 	// 12:00am and 0.50 is noon.
@@ -141,7 +146,7 @@ public:
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
 	// Recalculates the weather for each global quarter (done hourly).
-	void updateWeather(ArenaRandom &random, const ExeData &exeData);
+	void updateWeather(const ExeData &exeData);
 
 	// Ticks the game clock (for the current time of day and date).
 	void tickTime(double dt, Game &game);

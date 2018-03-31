@@ -231,7 +231,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Create a player with random data for testing.
 			const auto &miscAssets = game.getMiscAssets();
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
-				miscAssets.getClassDefinitions(), miscAssets.getExeData()));
+				miscAssets.getClassDefinitions(), miscAssets.getExeData()), miscAssets);
 
 			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
