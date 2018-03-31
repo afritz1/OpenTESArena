@@ -63,7 +63,7 @@ public:
 	// Gets the display name of a location. This is the name shown in places like province maps
 	// and the status pop-up. Some locations (like named/wild dungeons) do not show their name
 	// on the automap.
-	std::string getName(const CityDataFile &cityData, const ExeData &exeData) const;
+	const std::string &getName(const CityDataFile &cityData, const ExeData &exeData) const;
 };
 
 #endif

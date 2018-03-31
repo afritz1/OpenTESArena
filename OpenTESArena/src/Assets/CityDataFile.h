@@ -30,7 +30,7 @@ public:
 	{
 		struct LocationData
 		{
-			std::array<char, 20> name; // Twenty chars, null-terminated.
+			std::string name; // Up to twenty chars, null-terminated.
 			uint16_t x, y; // Position on screen.
 			uint8_t visibility; // Visibility on map. Only used for dungeons. 0x02 = visible.
 
@@ -38,13 +38,13 @@ public:
 			void setVisible(bool visible);
 		};
 
-		std::array<char, 20> name; // Twenty chars, null-terminated.
+		std::string name; // Up to twenty chars, null-terminated.
 		uint16_t globalX, globalY, globalW, globalH; // Province-to-world-map projection.
 		std::array<LocationData, 8> cityStates;
 		std::array<LocationData, 8> towns;
 		std::array<LocationData, 16> villages;
-		LocationData secondDungeon;
-		LocationData firstDungeon;
+		LocationData secondDungeon; // Staff dungeon.
+		LocationData firstDungeon; // Staff map dungeon.
 		std::array<LocationData, 14> randomDungeons; // Random names, fixed locations.
 
 		// Creates a rectangle from the province's global {X,Y,W,H} values.

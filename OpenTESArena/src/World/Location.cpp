@@ -119,7 +119,7 @@ int Location::dungeonToLocationID(int localDungeonID)
 	return localDungeonID + 32;
 }
 
-std::string Location::getName(const CityDataFile &cityData, const ExeData &exeData) const
+const std::string &Location::getName(const CityDataFile &cityData, const ExeData &exeData) const
 {
 	const auto &province = cityData.getProvinceData(this->provinceID);
 
@@ -127,13 +127,13 @@ std::string Location::getName(const CityDataFile &cityData, const ExeData &exeDa
 	{
 		const int locationID = Location::cityToLocationID(this->localCityID);
 		const auto &locationData = province.getLocationData(locationID);
-		return std::string(locationData.name.data());
+		return locationData.name;
 	}
 	else if (this->dataType == LocationDataType::Dungeon)
 	{
 		const int locationID = Location::dungeonToLocationID(this->localDungeonID);
 		const auto &locationData = province.getLocationData(locationID);
-		return std::string(locationData.name.data());
+		return locationData.name;
 	}
 	else if (this->dataType == LocationDataType::SpecialCase)
 	{
@@ -146,7 +146,7 @@ std::string Location::getName(const CityDataFile &cityData, const ExeData &exeDa
 			// Return the name of the city the wild dungeon is near.
 			const int locationID = Location::cityToLocationID(this->localCityID);
 			const auto &locationData = province.getLocationData(locationID);
-			return std::string(locationData.name.data());
+			return locationData.name;
 		}
 		else
 		{

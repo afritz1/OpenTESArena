@@ -369,14 +369,12 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
 						text = text.replace(index, 2, locationTypeName);
 
 						// Replace second %s with location name.
-						const std::string locationName(closestLocationData.name.data());
 						index = text.find("%s", index);
-						text = text.replace(index, 2, locationName);
+						text = text.replace(index, 2, closestLocationData.name);
 
 						// Replace third %s with province name.
-						const std::string provinceName(closestProvinceData.name.data());
 						index = text.find("%s", index);
-						text = text.replace(index, 2, provinceName);
+						text = text.replace(index, 2, closestProvinceData.name);
 
 						return text;
 					}
@@ -386,14 +384,12 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
 						std::string text = exeData.travel.locationFormatTexts.at(0);
 
 						// Replace first %s with dungeon name.
-						const std::string locationName(closestLocationData.name.data());
 						size_t index = text.find("%s");
-						text = text.replace(index, 2, locationName);
+						text = text.replace(index, 2, closestLocationData.name);
 
 						// Replace second %s with province name.
-						const std::string provinceName(closestProvinceData.name.data());
 						index = text.find("%s", index);
-						text = text.replace(index, 2, provinceName);
+						text = text.replace(index, 2, closestProvinceData.name);
 
 						return text;
 					}
@@ -404,14 +400,12 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
 					std::string text = exeData.travel.locationFormatTexts.at(1);
 
 					// Replace first %s with center province city name.
-					const std::string locationName(closestLocationData.name.data());
 					size_t index = text.find("%s");
-					text = text.replace(index, 2, locationName);
+					text = text.replace(index, 2, closestLocationData.name);
 
 					// Replace second %s with center province name.
-					const std::string provinceName(closestProvinceData.name.data());
 					index = text.find("%s", index);
-					text = text.replace(index, 2, provinceName);
+					text = text.replace(index, 2, closestProvinceData.name);
 
 					return text;
 				}
@@ -789,11 +783,10 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const auto &cityData = gameData.getCityDataFile();
 	const auto &province = cityData.getProvinceData(this->provinceID);
 	const auto &location = province.getLocationData(locationID);
-	const std::string name(location.name.data());
 	const Int2 center(location.x, location.y);
 
 	const RichTextString richText(
-		name,
+		location.name,
 		FontName::Arena,
 		Color(158, 0, 0),
 		TextAlignment::Center,

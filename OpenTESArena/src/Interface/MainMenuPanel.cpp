@@ -323,12 +323,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						auto &cityData = gameData->getCityDataFile();
 						auto &provinceData = cityData.getProvinceData(provinceID);
 						auto &locationData = provinceData.randomDungeons.at(localDungeonID - 2);
-
-						const std::string name("Test Dungeon");
-						const auto nameEnd = name.begin() +
-							std::min(name.size(), locationData.name.size());
-						std::copy(name.begin(), nameEnd, locationData.name.begin());
-
+						locationData.name = "Test Dungeon";
 						locationData.setVisible(true);
 					}
 					else if (mifName == RandomWildDungeon)
