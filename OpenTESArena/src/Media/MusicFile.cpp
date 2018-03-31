@@ -2,14 +2,24 @@
 
 #include "MusicFile.h"
 #include "MusicName.h"
+#include "../World/WeatherType.h"
 
 namespace std
 {
-	// Hash specialization, required until GCC 6.1.
+	// Hash specializations, required until GCC 6.1.
 	template <>
 	struct hash<MusicName>
 	{
 		size_t operator()(const MusicName &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+
+	template <>
+	struct hash<WeatherType>
+	{
+		size_t operator()(const WeatherType &x) const
 		{
 			return static_cast<size_t>(x);
 		}
@@ -60,10 +70,29 @@ namespace
 		{ MusicName::Vision, "VISION.XMI" },
 		{ MusicName::WinGame, "WINGAME.XMI" }
 	};
+
+	// Mappings of weather types to music names.
+	const std::unordered_map<WeatherType, MusicName> WeatherMusicNames =
+	{
+		{ WeatherType::Clear, MusicName::SunnyDay },
+		{ WeatherType::Overcast, MusicName::Overcast },
+		{ WeatherType::Rain, MusicName::Raining },
+		{ WeatherType::Snow, MusicName::Snowing },
+		{ WeatherType::SnowOvercast, MusicName::Snowing },
+		{ WeatherType::Rain2, MusicName::Raining },
+		{ WeatherType::Overcast2, MusicName::Overcast },
+		{ WeatherType::SnowOvercast2, MusicName::Snowing }
+	};
 }
 
 const std::string &MusicFile::fromName(MusicName musicName)
 {
 	const std::string &filename = MusicFilenames.at(musicName);
 	return filename;
+}
+
+MusicName MusicFile::fromWeather(WeatherType weatherType)
+{
+	const MusicName musicName = WeatherMusicNames.at(weatherType);
+	return musicName;
 }

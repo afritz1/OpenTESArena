@@ -27,6 +27,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
+#include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -370,13 +371,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Set clock to 5:45am.
 			gameData->getClock() = Clock(5, 45, 0);
 
+			// To do: day/night event is only done twice a day, so this needs to be
+			// coupled with world/clock creation instead (as part of "construction").
+			renderer.setNightLightsActive(gameData->getClock().nightLightsAreActive());
+
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
-
-			// -- temp, set night lights on while the hardcoded start time is early morning. --
-			// - To do: day/night event is only done twice a day, so this needs to be
-			//   coupled with world/clock creation instead (as part of "construction").
-			renderer.setNightLightsActive(true);
 
 			// To do: organize this code somewhere (GameData perhaps).
 			// - Maybe GameWorldPanel::tick() can check newMusicName vs. old each frame.
@@ -386,15 +386,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					(worldType == WorldType::Wilderness))
 				{
 					// Get weather-associated music.
-					const std::unordered_map<WeatherType, MusicName> WeatherMusics =
-					{
-						{ WeatherType::Clear, MusicName::SunnyDay },
-						{ WeatherType::Overcast, MusicName::Overcast },
-						{ WeatherType::Rain, MusicName::Raining },
-						{ WeatherType::Snow, MusicName::Snowing }
-					};
-
-					return WeatherMusics.at(weatherType);
+					return MusicFile::fromWeather(weatherType);
 				}
 				else
 				{

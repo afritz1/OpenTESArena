@@ -26,6 +26,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
+#include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -334,41 +335,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 									game.getMiscAssets(), game.getTextureManager(), renderer);
 
 								// Set music based on weather.
-								const MusicName musicName = [weatherType]()
-								{
-									if (weatherType == WeatherType::Clear)
-									{
-										return MusicName::SunnyDay;
-									}
-									else if (weatherType == WeatherType::Overcast)
-									{
-										return MusicName::Overcast;
-									}
-									else if (weatherType == WeatherType::Rain)
-									{
-										return MusicName::Raining;
-									}
-									else if (weatherType == WeatherType::Snow)
-									{
-										return MusicName::Snowing;
-									}
-									else
-									{
-										throw std::runtime_error("Bad weather type \"" +
-											std::to_string(static_cast<int>(weatherType)) + "\".");
-									}
-								}();
-
+								const MusicName musicName = MusicFile::fromWeather(weatherType);
 								game.setMusic(musicName);
 
 								// Set the state of lights and night light textures.
-								const Clock &clock = gameData.getClock();
-								const double clockTime = clock.getPreciseTotalSeconds();
-								const bool activateNightLights =
-									(clockTime < Clock::LamppostDeactivate.getPreciseTotalSeconds()) ||
-									(clockTime >= Clock::LamppostActivate.getPreciseTotalSeconds());
-								
-								renderer.setNightLightsActive(activateNightLights);
+								const Clock &clock = gameData.getClock();								
+								renderer.setNightLightsActive(clock.nightLightsAreActive());
 							};
 
 							// Set the *LEVELUP voxel enter event.
