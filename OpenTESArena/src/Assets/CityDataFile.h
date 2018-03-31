@@ -33,6 +33,9 @@ public:
 			std::array<char, 20> name; // Twenty chars, null-terminated.
 			uint16_t x, y; // Position on screen.
 			uint8_t visibility; // Visibility on map. Only used for dungeons. 0x02 = visible.
+
+			bool isVisible() const;
+			void setVisible(bool visible);
 		};
 
 		std::array<char, 20> name; // Twenty chars, null-terminated.

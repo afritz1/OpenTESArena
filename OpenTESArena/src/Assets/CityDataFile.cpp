@@ -12,6 +12,16 @@
 
 #include "components/vfs/manager.hpp"
 
+bool CityDataFile::ProvinceData::LocationData::isVisible() const
+{
+	return (this->visibility & 0x2) == 1;
+}
+
+void CityDataFile::ProvinceData::LocationData::setVisible(bool visible)
+{
+	this->visibility = visible ? 0x2 : 0;
+}
+
 Rect CityDataFile::ProvinceData::getGlobalRect() const
 {
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
