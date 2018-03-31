@@ -98,11 +98,34 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = []()
+		auto function = [](Game &game, ProvinceMapPanel &panel)
 		{
-			DebugMention("Travel.");
+			// If a location is selected, fast travel there. Otherwise, display an error message.
+			if (panel.selectedLocationID.get() != nullptr)
+			{
+				DebugMention("Travel.");
+			}
+			else
+			{
+				const auto &exeData = game.getMiscAssets().getExeData();
+				const std::string errorText = [&exeData]()
+				{
+					std::string text = exeData.travel.noDestination;
+
+					// Remove carriage return at end.
+					text.pop_back();
+
+					// Replace carriage returns with newlines.
+					text = String::replace(text, '\r', '\n');
+
+					return text;
+				}();
+
+				std::unique_ptr<Panel> textPopUp = panel.makeTextPopUp(errorText);
+				game.pushSubPanel(std::move(textPopUp));
+			}
 		};
-		return Button<>(x, y, width, height, function);
+		return Button<Game&, ProvinceMapPanel&>(x, y, width, height, function);
 	}();
 
 	this->backToWorldMapButton = []()
@@ -173,7 +196,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->travelButton.contains(originalPosition))
 		{
-			this->travelButton.click();
+			this->travelButton.click(game, *this);
 		}
 		else if (this->backToWorldMapButton.contains(originalPosition))
 		{
@@ -235,10 +258,35 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 				this->blinkTimer = 0.0;
 
 				// Create pop-up travel dialog.
-				std::unique_ptr<Panel> travelPopUp = this->makeTravelPopUp(
+				const std::string travelText = this->makeTravelText(
 					currentLocationID, currentLocation, closestLocationID);
+				std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
+				game.pushSubPanel(std::move(textPopUp));
+			}
+			else
+			{
+				// Cannot travel to the player's current location. Create an error pop-up.
+				const std::string errorText = [&game, &gameData, &currentLocation]()
+				{
+					const auto &cityData = gameData.getCityDataFile();
+					const auto &exeData = game.getMiscAssets().getExeData();
+					std::string text = exeData.travel.alreadyAtDestination;
 
-				game.pushSubPanel(std::move(travelPopUp));
+					// Remove carriage return at end.
+					text.pop_back();
+
+					// Replace carriage returns with newlines.
+					text = String::replace(text, '\r', '\n');
+
+					// Replace %s with location name.
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, currentLocation.getName(cityData, exeData));
+
+					return text;
+				}();
+
+				std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(errorText);
+				game.pushSubPanel(std::move(textPopUp));
 			}
 		}
 	}
@@ -296,232 +344,232 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	return closestID;
 }
 
-std::unique_ptr<Panel> ProvinceMapPanel::makeTravelPopUp(int currentLocationID,
-	const Location &currentLocation, int closestLocationID)
+std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
+	const Location &currentLocation, int closestLocationID) const
+{
+	auto &game = this->getGame();
+	auto &gameData = this->getGame().getGameData();
+	const auto &miscAssets = game.getMiscAssets();
+	const auto &exeData = miscAssets.getExeData();
+	const auto &cityData = gameData.getCityDataFile();
+	const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
+	const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
+	const Date &currentDate = gameData.getDate();
+	const int travelDays = cityData.getTravelDays(
+		currentLocationID, currentLocation.provinceID,
+		closestLocationID, this->provinceID, currentDate.getMonth(),
+		gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
+
+	const Date destinationDate = [&currentDate, travelDays]()
+	{
+		Date newDate = currentDate;
+		for (int i = 0; i < travelDays; i++)
+		{
+			newDate.incrementDay();
+		}
+
+		return newDate;
+	}();
+
+	const std::string locationFormatText = [this, &exeData, &closestProvinceData,
+		closestLocationID, &closestLocationData]()
+	{
+		std::string formatText = [this, &exeData, &closestProvinceData,
+			closestLocationID, &closestLocationData]()
+		{
+			// Decide the format based on whether it's the center province.
+			if (this->provinceID != 8)
+			{
+				// Determine whether to use the city format or dungeon format.
+				if (closestLocationID < 32)
+				{
+					// City format.
+					std::string text = exeData.travel.locationFormatTexts.at(2);
+
+					// Replace first %s with location type.
+					const std::string &locationTypeName = [&exeData, closestLocationID]()
+					{
+						if (closestLocationID < 8)
+						{
+							// City.
+							return exeData.locations.locationTypes.front();
+						}
+						else if (closestLocationID < 16)
+						{
+							// Town.
+							return exeData.locations.locationTypes.at(1);
+						}
+						else
+						{
+							// Village.
+							return exeData.locations.locationTypes.at(2);
+						}
+					}();
+
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, locationTypeName);
+
+					// Replace second %s with location name.
+					index = text.find("%s", index);
+					text = text.replace(index, 2, closestLocationData.name);
+
+					// Replace third %s with province name.
+					index = text.find("%s", index);
+					text = text.replace(index, 2, closestProvinceData.name);
+
+					return text;
+				}
+				else
+				{
+					// Dungeon format.
+					std::string text = exeData.travel.locationFormatTexts.at(0);
+
+					// Replace first %s with dungeon name.
+					size_t index = text.find("%s");
+					text = text.replace(index, 2, closestLocationData.name);
+
+					// Replace second %s with province name.
+					index = text.find("%s", index);
+					text = text.replace(index, 2, closestProvinceData.name);
+
+					return text;
+				}
+			}
+			else
+			{
+				// Center province format (always the center city).
+				std::string text = exeData.travel.locationFormatTexts.at(1);
+
+				// Replace first %s with center province city name.
+				size_t index = text.find("%s");
+				text = text.replace(index, 2, closestLocationData.name);
+
+				// Replace second %s with center province name.
+				index = text.find("%s", index);
+				text = text.replace(index, 2, closestProvinceData.name);
+
+				return text;
+			}
+		}();
+
+		// Replace carriage returns with newlines.
+		formatText = String::replace(formatText, '\r', '\n');
+		return formatText;
+	}();
+
+	// Lambda for getting the date string for a given date.
+	auto getDateString = [&exeData](const Date &date)
+	{
+		std::string text = exeData.status.date;
+
+		// Replace carriage returns with newlines.
+		text = String::replace(text, '\r', '\n');
+
+		// Remove newline at end.
+		text.pop_back();
+
+		// Replace first %s with weekday.
+		const std::string &weekdayString =
+			exeData.calendar.weekdayNames.at(date.getWeekday());
+		size_t index = text.find("%s");
+		text = text.replace(index, 2, weekdayString);
+
+		// Replace %u%s with day and ordinal suffix.
+		const std::string dayString = date.getOrdinalDay();
+		index = text.find("%u%s");
+		text = text.replace(index, 4, dayString);
+
+		// Replace third %s with month.
+		const std::string &monthString =
+			exeData.calendar.monthNames.at(date.getMonth());
+		index = text.find("%s");
+		text = text.replace(index, 2, monthString);
+
+		// Replace %d with year.
+		index = text.find("%d");
+		text = text.replace(index, 2, std::to_string(date.getYear()));
+
+		return text;
+	};
+
+	const std::string startDateString = [&exeData, &getDateString, &currentDate]()
+	{
+		// The date prefix is shared between the province map pop-up and the arrival pop-up.
+		const std::string datePrefix = exeData.travel.arrivalPopUpDate;
+
+		// Replace carriage returns with newlines.
+		return String::replace(datePrefix + getDateString(currentDate), '\r', '\n');
+	}();
+
+	const std::string dayString = [&exeData, travelDays]()
+	{
+		const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
+		const std::string dayStringBody = [&exeData, travelDays]()
+		{
+			std::string text = exeData.travel.dayPrediction.back();
+
+			// Replace %d with travel days.
+			const size_t index = text.find("%d");
+			text = text.replace(index, 2, std::to_string(travelDays));
+
+			return text;
+		}();
+
+		// Replace carriage returns with newlines.
+		return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
+	}();
+
+	const int travelDistance = [this, &cityData, &currentLocation,
+		currentLocationID, &closestProvinceData, &closestLocationData]()
+	{
+		const auto &currentProvinceData =
+			cityData.getProvinceData(currentLocation.provinceID);
+		const auto &currentLocationData =
+			currentProvinceData.getLocationData(currentLocationID);
+		const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
+		const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
+		const Int2 currentLocationGlobalPoint = cityData.localPointToGlobal(
+			Int2(currentLocationData.x, currentLocationData.y),
+			currentProvinceRect);
+		const Int2 closestLocationGlobalPoint = cityData.localPointToGlobal(
+			Int2(closestLocationData.x, closestLocationData.y),
+			closestProvinceRect);
+
+		return cityData.getDistance(
+			currentLocationGlobalPoint, closestLocationGlobalPoint);
+	}();
+
+	const std::string distanceString = [&exeData, travelDistance]()
+	{
+		std::string text = exeData.travel.distancePrediction;
+
+		// Replace %d with travel distance.
+		const size_t index = text.find("%d");
+		text = text.replace(index, 2, std::to_string(travelDistance * 20));
+
+		// Replace carriage returns with newlines.
+		return String::replace(text, '\r', '\n');
+	}();
+
+	const std::string arrivalDateString = [&exeData, &getDateString, &destinationDate]()
+	{
+		const std::string text = exeData.travel.arrivalDatePrediction;
+
+		// Replace carriage returns with newlines.
+		return String::replace(text + getDateString(destinationDate), '\r', '\n');
+	}();
+
+	return locationFormatText + startDateString + "\n\n" + dayString +
+		distanceString + arrivalDateString;
+}
+
+std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) const
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 
 	const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 98);
 	const Color color(52, 24, 8);
-
-	const std::string text = [this, &game, &gameData, &currentLocation,
-		currentLocationID, closestLocationID]()
-	{
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &exeData = miscAssets.getExeData();
-		const auto &cityData = gameData.getCityDataFile();
-		const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
-		const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
-		const Date &currentDate = gameData.getDate();
-		const int travelDays = cityData.getTravelDays(
-			currentLocationID, currentLocation.provinceID,
-			closestLocationID, this->provinceID, currentDate.getMonth(),
-			gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
-
-		const Date destinationDate = [&currentDate, travelDays]()
-		{
-			Date newDate = currentDate;
-			for (int i = 0; i < travelDays; i++)
-			{
-				newDate.incrementDay();
-			}
-
-			return newDate;
-		}();
-
-		const std::string locationFormatText = [this, &exeData, &closestProvinceData,
-			closestLocationID, &closestLocationData]()
-		{
-			std::string formatText = [this, &exeData, &closestProvinceData,
-				closestLocationID, &closestLocationData]()
-			{
-				// Decide the format based on whether it's the center province.
-				if (this->provinceID != 8)
-				{
-					// Determine whether to use the city format or dungeon format.
-					if (closestLocationID < 32)
-					{
-						// City format.
-						std::string text = exeData.travel.locationFormatTexts.at(2);
-
-						// Replace first %s with location type.
-						const std::string &locationTypeName = [&exeData, closestLocationID]()
-						{
-							if (closestLocationID < 8)
-							{
-								// City.
-								return exeData.locations.locationTypes.front();
-							}
-							else if (closestLocationID < 16)
-							{
-								// Town.
-								return exeData.locations.locationTypes.at(1);
-							}
-							else
-							{
-								// Village.
-								return exeData.locations.locationTypes.at(2);
-							}
-						}();
-
-						size_t index = text.find("%s");
-						text = text.replace(index, 2, locationTypeName);
-
-						// Replace second %s with location name.
-						index = text.find("%s", index);
-						text = text.replace(index, 2, closestLocationData.name);
-
-						// Replace third %s with province name.
-						index = text.find("%s", index);
-						text = text.replace(index, 2, closestProvinceData.name);
-
-						return text;
-					}
-					else
-					{
-						// Dungeon format.
-						std::string text = exeData.travel.locationFormatTexts.at(0);
-
-						// Replace first %s with dungeon name.
-						size_t index = text.find("%s");
-						text = text.replace(index, 2, closestLocationData.name);
-
-						// Replace second %s with province name.
-						index = text.find("%s", index);
-						text = text.replace(index, 2, closestProvinceData.name);
-
-						return text;
-					}
-				}
-				else
-				{
-					// Center province format (always the center city).
-					std::string text = exeData.travel.locationFormatTexts.at(1);
-
-					// Replace first %s with center province city name.
-					size_t index = text.find("%s");
-					text = text.replace(index, 2, closestLocationData.name);
-
-					// Replace second %s with center province name.
-					index = text.find("%s", index);
-					text = text.replace(index, 2, closestProvinceData.name);
-
-					return text;
-				}
-			}();
-
-			// Replace carriage returns with newlines.
-			formatText = String::replace(formatText, '\r', '\n');
-			return formatText;
-		}();
-
-		// Lambda for getting the date string for a given date.
-		auto getDateString = [&exeData](const Date &date)
-		{
-			std::string text = exeData.status.date;
-
-			// Replace carriage returns with newlines.
-			text = String::replace(text, '\r', '\n');
-
-			// Remove newline at end.
-			text.pop_back();
-
-			// Replace first %s with weekday.
-			const std::string &weekdayString =
-				exeData.calendar.weekdayNames.at(date.getWeekday());
-			size_t index = text.find("%s");
-			text = text.replace(index, 2, weekdayString);
-
-			// Replace %u%s with day and ordinal suffix.
-			const std::string dayString = date.getOrdinalDay();
-			index = text.find("%u%s");
-			text = text.replace(index, 4, dayString);
-
-			// Replace third %s with month.
-			const std::string &monthString =
-				exeData.calendar.monthNames.at(date.getMonth());
-			index = text.find("%s");
-			text = text.replace(index, 2, monthString);
-
-			// Replace %d with year.
-			index = text.find("%d");
-			text = text.replace(index, 2, std::to_string(date.getYear()));
-
-			return text;
-		};
-
-		const std::string startDateString = [&exeData, &getDateString, &currentDate]()
-		{
-			// The date prefix is shared between the province map pop-up and the arrival pop-up.
-			const std::string datePrefix = exeData.travel.arrivalPopUpDate;
-			
-			// Replace carriage returns with newlines.
-			return String::replace(datePrefix + getDateString(currentDate), '\r', '\n');
-		}();
-
-		const std::string dayString = [&exeData, travelDays]()
-		{
-			const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
-			const std::string dayStringBody = [&exeData, travelDays]()
-			{
-				std::string text = exeData.travel.dayPrediction.back();
-
-				// Replace %d with travel days.
-				const size_t index = text.find("%d");
-				text = text.replace(index, 2, std::to_string(travelDays));
-
-				return text;
-			}();
-
-			// Replace carriage returns with newlines.
-			return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
-		}();
-
-		const int travelDistance = [this, &cityData, &currentLocation,
-			currentLocationID, &closestProvinceData, &closestLocationData]()
-		{
-			const auto &currentProvinceData =
-				cityData.getProvinceData(currentLocation.provinceID);
-			const auto &currentLocationData =
-				currentProvinceData.getLocationData(currentLocationID);
-			const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
-			const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
-			const Int2 currentLocationGlobalPoint = cityData.localPointToGlobal(
-				Int2(currentLocationData.x, currentLocationData.y),
-				currentProvinceRect);
-			const Int2 closestLocationGlobalPoint = cityData.localPointToGlobal(
-				Int2(closestLocationData.x, closestLocationData.y),
-				closestProvinceRect);
-
-			return cityData.getDistance(
-				currentLocationGlobalPoint, closestLocationGlobalPoint);
-		}();
-
-		const std::string distanceString = [&exeData, travelDistance]()
-		{
-			std::string text = exeData.travel.distancePrediction;
-
-			// Replace %d with travel distance.
-			const size_t index = text.find("%d");
-			text = text.replace(index, 2, std::to_string(travelDistance * 20));
-
-			// Replace carriage returns with newlines.
-			return String::replace(text, '\r', '\n');
-		}();
-
-		const std::string arrivalDateString = [&exeData, &getDateString, &destinationDate]()
-		{
-			const std::string text = exeData.travel.arrivalDatePrediction;
-
-			// Replace carriage returns with newlines.
-			return String::replace(text + getDateString(destinationDate), '\r', '\n');
-		}();
-
-		return locationFormatText + startDateString + "\n\n" + dayString +
-			distanceString + arrivalDateString;
-	}();
-
 	const int lineSpacing = 1;
 
 	const RichTextString richText(

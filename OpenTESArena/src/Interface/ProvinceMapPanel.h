@@ -25,7 +25,8 @@ private:
 	static const double BLINK_PERIOD; // Duration of blink period in seconds.
 	static const double BLINK_PERIOD_PERCENT_ON; // Percentage of each period spent "on".
 
-	Button<> searchButton, travelButton;
+	Button<> searchButton;
+	Button<Game&, ProvinceMapPanel&> travelButton;
 	Button<Game&> backToWorldMapButton;
 	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
 	std::unique_ptr<int> selectedLocationID;
@@ -39,9 +40,15 @@ private:
 	// Gets the location ID of the location closest to the mouse in 320x200 space.
 	int getClosestLocationID(const Int2 &originalPosition) const;
 
-	// Generates a text sub-panel describing the selected location and its travel details.
-	std::unique_ptr<Panel> makeTravelPopUp(int currentLocationID,
-		const Location &currentLocation, int closestLocationID);
+	// Generates the pop-up text for traveling to a given destination.
+	std::string makeTravelText(int currentLocationID,
+		const Location &currentLocation, int closestLocationID) const;
+
+	// Generates a text sub-panel with a parchment message.
+	std::unique_ptr<Panel> makeTextPopUp(const std::string &text) const;
+
+	// To do: makeDiseasedWarningPopUp().
+	// - Display when the player is diseased.
 
 	// Draws an icon (i.e., location or highlight) centered at the given point.
 	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);
