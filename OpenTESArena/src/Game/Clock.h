@@ -78,6 +78,9 @@ public:
 	// Returns whether the current hour is before noon.
 	bool isAM() const;
 
+	// Returns whether night lights (i.e., lampposts) should currently be active.
+	bool nightLightsAreActive() const;
+
 	// Increments the hour by 1.
 	void incrementHour();
 

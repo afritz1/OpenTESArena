@@ -87,6 +87,16 @@ bool Clock::isAM() const
 	return this->hours < 12;
 }
 
+bool Clock::nightLightsAreActive() const
+{
+	const double preciseTotalSeconds = this->getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate =
+		preciseTotalSeconds < Clock::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate =
+		preciseTotalSeconds >= Clock::LamppostActivate.getPreciseTotalSeconds();
+	return beforeLamppostDeactivate || afterLamppostActivate;
+}
+
 void Clock::incrementHour()
 {
 	this->hours++;
