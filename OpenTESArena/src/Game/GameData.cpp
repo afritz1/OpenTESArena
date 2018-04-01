@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 
@@ -20,6 +21,8 @@
 #include "../Entities/Player.h"
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
+#include "../Media/MusicFile.h"
+#include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
@@ -31,6 +34,35 @@
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
+
+namespace std
+{
+	// Hash specialization, required until GCC 6.1.
+	template <>
+	struct hash<WeatherType>
+	{
+		size_t operator()(const WeatherType &x) const
+		{
+			return static_cast<size_t>(x);
+		}
+	};
+}
+
+namespace
+{
+	// Arbitrary fog distances for each weather; the distance at which fog is maximum.
+	const std::unordered_map<WeatherType, double> WeatherFogDistances =
+	{
+		{ WeatherType::Clear, 100.0 },
+		{ WeatherType::Overcast, 30.0 },
+		{ WeatherType::Rain, 50.0 },
+		{ WeatherType::Snow, 25.0 },
+		{ WeatherType::SnowOvercast, 20.0 },
+		{ WeatherType::Rain2, 50.0 },
+		{ WeatherType::Overcast2, 30.0 },
+		{ WeatherType::SnowOvercast2, 20.0 }
+	};
+}
 
 // Arbitrary value for testing. One real second = six game minutes.
 // The value used in Arena is one real second = twenty game seconds.
@@ -119,27 +151,75 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 
 double GameData::getFogDistanceFromWeather(WeatherType weatherType)
 {
-	// Arbitrary values, the distance at which fog is maximum.
-	if (weatherType == WeatherType::Clear)
+	return WeatherFogDistances.at(weatherType);
+}
+
+MusicName GameData::getExteriorMusicName(WeatherType weatherType)
+{
+	return MusicFile::fromWeather(weatherType);
+}
+
+MusicName GameData::getDungeonMusicName(Random &random)
+{
+	const std::array<MusicName, 5> DungeonMusics =
 	{
-		return 75.0;
+		MusicName::Dungeon1,
+		MusicName::Dungeon2,
+		MusicName::Dungeon3,
+		MusicName::Dungeon4,
+		MusicName::Dungeon5
+	};
+
+	return DungeonMusics.at(random.next(static_cast<int>(DungeonMusics.size())));
+}
+
+MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &random)
+{
+	// Check against all of the non-dungeon interiors first.
+	const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
+	const bool isHouse = (mifName.find("BS") != std::string::npos) ||
+		(mifName.find("NOBLE") != std::string::npos);
+	const bool isMagesGuild = mifName.find("MAGE") != std::string::npos;
+	const bool isPalace = (mifName.find("PALACE") != std::string::npos) ||
+		(mifName.find("TOWNPAL") != std::string::npos) ||
+		(mifName.find("VILPAL") != std::string::npos);
+	const bool isTavern = mifName.find("TAVERN") != std::string::npos;
+	const bool isTemple = mifName.find("TEMPLE") != std::string::npos;
+
+	if (isEquipmentStore)
+	{
+		return MusicName::Equipment;
 	}
-	else if (weatherType == WeatherType::Overcast)
+	else if (isHouse)
 	{
-		return 25.0;
+		return MusicName::Sneaking;
 	}
-	else if (weatherType == WeatherType::Rain)
+	else if (isMagesGuild)
 	{
-		return 35.0;
+		return MusicName::Magic;
 	}
-	else if (weatherType == WeatherType::Snow)
+	else if (isPalace)
 	{
-		return 15.0;
+		return MusicName::Palace;
+	}
+	else if (isTavern)
+	{
+		const std::array<MusicName, 2> TavernMusics =
+		{
+			MusicName::Square,
+			MusicName::Tavern
+		};
+
+		return TavernMusics.at(random.next(static_cast<int>(TavernMusics.size())));
+	}
+	else if (isTemple)
+	{
+		return MusicName::Temple;
 	}
 	else
 	{
-		throw std::runtime_error("Bad weather type \"" +
-			std::to_string(static_cast<int>(weatherType)) + "\".");
+		// Dungeon.
+		return GameData::getDungeonMusicName(random);
 	}
 }
 
@@ -150,9 +230,10 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	this->worldData = WorldData::loadInterior(mif);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set player starting position.
+	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = location;
@@ -186,9 +267,10 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set player starting position.
+	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = Location::makeDungeon(localDungeonID, provinceID);
@@ -226,9 +308,10 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set player starting position.
+	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location (since wilderness dungeons aren't their own location, use a placeholder
 	// value for testing).
@@ -259,9 +342,10 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set player starting position.
+	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = Location::makeCity(localCityID, provinceID);
@@ -271,11 +355,12 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 	
-	// Set weather and fog.
+	// Set weather, fog, and night lights.
 	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
 void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType,
@@ -336,9 +421,10 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		reservedBlocks, startPosition, weatherType, miscAssets);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set player starting position.
+	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = Location::makeCity(localCityID, provinceID);
@@ -348,11 +434,12 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 
-	// Set weather and fog.
+	// Set weather, fog, and night lights.
 	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
 void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
@@ -368,9 +455,10 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
-	// Set arbitrary player starting position (no starting point in WILD.MIF).
+	// Set arbitrary player starting position and velocity (no starting point in WILD.MIF).
 	const Double2 startPoint(63.50, 63.50);
 	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = Location::makeCity(localCityID, provinceID);
@@ -380,11 +468,12 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
 
-	// Set weather and fog.
+	// Set weather, fog, and night lights.
 	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
 std::pair<double, std::unique_ptr<TextBox>> &GameData::getTriggerText()
@@ -451,6 +540,11 @@ double GameData::getDaytimePercent() const
 double GameData::getFogDistance() const
 {
 	return this->fogDistance;
+}
+
+WeatherType GameData::getWeatherType() const
+{
+	return this->weatherType;
 }
 
 double GameData::getAmbientPercent() const

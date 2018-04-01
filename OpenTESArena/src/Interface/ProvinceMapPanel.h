@@ -19,6 +19,13 @@ enum class ProvinceButtonName;
 class ProvinceMapPanel : public Panel
 {
 private:
+	struct TravelData
+	{
+		int locationID, travelDays;
+
+		TravelData(int locationID, int travelDays);
+	};
+
 	// Current is where the player is. Selected is which location (if any) has been selected.
 	enum class LocationHighlightType { Current, Selected };
 
@@ -29,7 +36,7 @@ private:
 	Button<Game&, ProvinceMapPanel&> travelButton;
 	Button<Game&> backToWorldMapButton;
 	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
-	std::unique_ptr<int> selectedLocationID;
+	std::unique_ptr<TravelData> travelData;
 	Palette provinceMapPalette;
 	double blinkTimer;
 	int provinceID;
@@ -41,14 +48,18 @@ private:
 	int getClosestLocationID(const Int2 &originalPosition) const;
 
 	// Generates the pop-up text for traveling to a given destination.
-	std::string makeTravelText(int currentLocationID,
-		const Location &currentLocation, int closestLocationID) const;
+	std::string makeTravelText(int currentLocationID, const Location &currentLocation,
+		int closestLocationID, const ProvinceMapPanel::TravelData &travelData) const;
 
 	// Generates a text sub-panel with a parchment message.
 	std::unique_ptr<Panel> makeTextPopUp(const std::string &text) const;
 
 	// To do: makeDiseasedWarningPopUp().
 	// - Display when the player is diseased.
+
+	// Handles loading the target destination into the current game session
+	// and changing to the game world panel.
+	void handleFastTravel(const ProvinceMapPanel::TravelData &travelData) const;
 
 	// Draws an icon (i.e., location or highlight) centered at the given point.
 	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);

@@ -318,12 +318,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								//   deserts from having snow since the climates are still hardcoded).
 								const WeatherType weatherType = [&random]()
 								{
-									const std::array<WeatherType, 4> Weathers =
+									const std::array<WeatherType, 8> Weathers =
 									{
 										WeatherType::Clear,
 										WeatherType::Overcast,
 										WeatherType::Rain,
-										WeatherType::Snow
+										WeatherType::Snow,
+										WeatherType::SnowOvercast,
+										WeatherType::Rain2,
+										WeatherType::Overcast2,
+										WeatherType::SnowOvercast2
 									};
 
 									return Weathers.at(random.next(
@@ -334,13 +338,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								gameData.loadCity(localCityID, provinceID, weatherType,
 									game.getMiscAssets(), game.getTextureManager(), renderer);
 
-								// Set music based on weather.
-								const MusicName musicName = MusicFile::fromWeather(weatherType);
+								// Set music based on weather and time.
+								const auto &clock = gameData.getClock();
+								const MusicName musicName = clock.nightMusicIsActive() ?
+									MusicName::Night : MusicFile::fromWeather(weatherType);
 								game.setMusic(musicName);
-
-								// Set the state of lights and night light textures.
-								const Clock &clock = gameData.getClock();								
-								renderer.setNightLightsActive(clock.nightLightsAreActive());
 							};
 
 							// Set the *LEVELUP voxel enter event.
@@ -352,19 +354,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							game.setPanel(std::move(gameWorldPanel));
 
 							// Choose random dungeon music.
-							const std::array<MusicName, 5> DungeonMusics =
-							{
-								MusicName::Dungeon1,
-								MusicName::Dungeon2,
-								MusicName::Dungeon3,
-								MusicName::Dungeon4,
-								MusicName::Dungeon5
-							};
-
 							Random random;
-							const MusicName musicName = DungeonMusics.at(random.next(
-								static_cast<int>(DungeonMusics.size())));
-
+							const MusicName musicName = GameData::getDungeonMusicName(random);
 							game.setMusic(musicName);
 						};
 

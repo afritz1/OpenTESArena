@@ -144,7 +144,23 @@ namespace
 		WeatherType::Clear,
 		WeatherType::Overcast,
 		WeatherType::Rain,
-		WeatherType::Snow
+		WeatherType::Snow,
+		WeatherType::SnowOvercast,
+		WeatherType::Rain2,
+		WeatherType::Overcast2,
+		WeatherType::SnowOvercast2
+	};
+
+	const std::unordered_map<WeatherType, std::string> WeatherTypeNames =
+	{
+		{ WeatherType::Clear, "Clear" },
+		{ WeatherType::Overcast, "Overcast" },
+		{ WeatherType::Rain, "Rain" },
+		{ WeatherType::Snow, "Snow" },
+		{ WeatherType::SnowOvercast, "Snow Overcast" },
+		{ WeatherType::Rain2, "Rain 2" },
+		{ WeatherType::Overcast2, "Overcast 2" },
+		{ WeatherType::SnowOvercast2, "Snow Overcast 2" }
 	};
 }
 
@@ -234,6 +250,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
 				miscAssets.getClassDefinitions(), miscAssets.getExeData()), miscAssets);
 
+			Random random;
+
 			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
 			{
@@ -251,7 +269,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Pick a random location based on the .MIF name, excluding the
 					// center province.
-					Random random;
 					const int localCityID = [&mifName, &random]()
 					{
 						if (mifName == RandomCity)
@@ -288,7 +305,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Set some interior location data for testing, depending on whether
 					// it's a main quest dungeon.
-					const Location location = [&game, &player, testType, testIndex]()
+					const Location location = [&game, &player, testType, testIndex, &random]()
 					{
 						if (testType == TestType_MainQuest)
 						{
@@ -298,7 +315,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 						else
 						{
-							Random random;
 							const int localCityID = random.next(32);
 							const int provinceID = random.next(8);
 							return Location::makeCity(localCityID, provinceID);
@@ -310,7 +326,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				else
 				{
 					// Pick a random dungeon based on the dungeon type.
-					Random random;
 					const int provinceID = random.next(8);
 					const bool isArtifactDungeon = false;
 
@@ -343,7 +358,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else if (worldType == WorldType::Wilderness)
 			{
 				// Pick a random location and province.
-				Random random;
 				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
 
@@ -369,88 +383,30 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			}
 
 			// Set clock to 5:45am.
-			gameData->getClock() = Clock(5, 45, 0);
+			auto &clock = gameData->getClock();
+			clock = Clock(5, 45, 0);
 
-			// To do: day/night event is only done twice a day, so this needs to be
-			// coupled with world/clock creation instead (as part of "construction").
-			renderer.setNightLightsActive(gameData->getClock().nightLightsAreActive());
-
-			// Set the game data before constructing the game world panel.
-			game.setGameData(std::move(gameData));
-
-			// To do: organize this code somewhere (GameData perhaps).
-			// - Maybe GameWorldPanel::tick() can check newMusicName vs. old each frame.
-			const MusicName musicName = [&mifName, worldType, weatherType]()
+			// Get the music that should be active on start.
+			const MusicName musicName = [&mifName, worldType, weatherType, &random, &clock]()
 			{
-				if ((worldType == WorldType::City) ||
-					(worldType == WorldType::Wilderness))
+				const bool isExterior = (worldType == WorldType::City) ||
+					(worldType == WorldType::Wilderness);
+
+				// Exteriors depend on the time of day for which music to use. Interiors depend
+				// on the current location's .MIF name (if any).
+				if (isExterior)
 				{
-					// Get weather-associated music.
-					return MusicFile::fromWeather(weatherType);
+					return clock.nightMusicIsActive() ?
+						MusicName::Night : GameData::getExteriorMusicName(weatherType);
 				}
 				else
 				{
-					// Interior. See if it's a town interior or a dungeon.
-					const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
-					const bool isHouse = (mifName.find("BS") != std::string::npos) ||
-						(mifName.find("NOBLE") != std::string::npos);
-					const bool isMagesGuild = mifName.find("MAGE") != std::string::npos;
-					const bool isPalace = (mifName.find("PALACE") != std::string::npos) ||
-						(mifName.find("TOWNPAL") != std::string::npos) ||
-						(mifName.find("VILPAL") != std::string::npos);
-					const bool isTavern = mifName.find("TAVERN") != std::string::npos;
-					const bool isTemple = mifName.find("TEMPLE") != std::string::npos;
-
-					if (isEquipmentStore)
-					{
-						return MusicName::Equipment;
-					}
-					else if (isHouse)
-					{
-						return MusicName::Sneaking;
-					}
-					else if (isMagesGuild)
-					{
-						return MusicName::Magic;
-					}
-					else if (isPalace)
-					{
-						return MusicName::Palace;
-					}
-					else if (isTavern)
-					{
-						const std::vector<MusicName> TavernMusics =
-						{
-							MusicName::Square,
-							MusicName::Tavern
-						};
-
-						Random random;
-						return TavernMusics.at(random.next(
-							static_cast<int>(TavernMusics.size())));
-					}
-					else if (isTemple)
-					{
-						return MusicName::Temple;
-					}
-					else
-					{
-						// Dungeon.
-						const std::vector<MusicName> DungeonMusics =
-						{
-							MusicName::Dungeon1,
-							MusicName::Dungeon2,
-							MusicName::Dungeon3,
-							MusicName::Dungeon4,
-							MusicName::Dungeon5
-						};
-
-						Random random;
-						return DungeonMusics.at(random.next(
-							static_cast<int>(DungeonMusics.size())));
-					}
+					return GameData::getInteriorMusicName(mifName, random);
 				}
 			}();
+
+			// Set the game data before constructing the game world panel.
+			game.setGameData(std::move(gameData));
 
 			// Initialize game world panel.
 			game.setPanel<GameWorldPanel>(game);
@@ -1007,31 +963,8 @@ void MainMenuPanel::render(Renderer &renderer)
 	// Draw weather text if applicable.
 	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		const std::string weatherName = [this]()
-		{
-			const WeatherType weatherType = this->getSelectedTestWeatherType();
-
-			if (weatherType == WeatherType::Clear)
-			{
-				return "Clear";
-			}
-			else if (weatherType == WeatherType::Overcast)
-			{
-				return "Overcast";
-			}
-			else if (weatherType == WeatherType::Rain)
-			{
-				return "Rain";
-			}
-			else if (weatherType == WeatherType::Snow)
-			{
-				return "Snow";
-			}
-			else
-			{
-				throw std::runtime_error("Bad weather type.");
-			}
-		}();
+		const WeatherType weatherType = this->getSelectedTestWeatherType();
+		const std::string &weatherName = WeatherTypeNames.at(weatherType);
 
 		const RichTextString testWeatherText(
 			"Test weather: " + weatherName,

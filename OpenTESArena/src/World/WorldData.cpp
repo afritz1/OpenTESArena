@@ -49,15 +49,19 @@ std::string WorldData::generateCityInfName(ClimateType climateType, WeatherType 
 	const std::string weatherLetter = [climateType, weatherType]()
 	{
 		if ((weatherType == WeatherType::Clear) ||
-			(weatherType == WeatherType::Overcast))
+			(weatherType == WeatherType::Overcast) ||
+			(weatherType == WeatherType::Overcast2))
 		{
 			return "N";
 		}
-		else if (weatherType == WeatherType::Rain)
+		else if ((weatherType == WeatherType::Rain) ||
+			(weatherType == WeatherType::Rain2))
 		{
 			return "R";
 		}
-		else if (weatherType == WeatherType::Snow)
+		else if ((weatherType == WeatherType::Snow) ||
+			(weatherType == WeatherType::SnowOvercast) ||
+			(weatherType == WeatherType::SnowOvercast2))
 		{
 			// Deserts can't have snow.
 			if (climateType != ClimateType::Desert)
@@ -104,15 +108,19 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	const std::string weatherLetter = [climateType, weatherType]()
 	{
 		if ((weatherType == WeatherType::Clear) ||
-			(weatherType == WeatherType::Overcast))
+			(weatherType == WeatherType::Overcast) ||
+			(weatherType == WeatherType::Overcast2))
 		{
 			return "N";
 		}
-		else if (weatherType == WeatherType::Rain)
+		else if ((weatherType == WeatherType::Rain) ||
+			(weatherType == WeatherType::Rain2))
 		{
 			return "R";
 		}
-		else if (weatherType == WeatherType::Snow)
+		else if ((weatherType == WeatherType::Snow) ||
+			(weatherType == WeatherType::SnowOvercast) ||
+			(weatherType == WeatherType::SnowOvercast2))
 		{
 			// Deserts can't have snow.
 			if (climateType != ClimateType::Desert)
@@ -252,7 +260,7 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	WeatherType weatherType)
 {
 	WorldData worldData;
-	
+
 	// Generate level.
 	const auto &level = mif.getLevels().front();
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);

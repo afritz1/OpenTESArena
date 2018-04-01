@@ -331,7 +331,9 @@ public:
 	// Overwrites the selected flat texture's data with the given set of texels and dimensions.
 	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
 
-	// Sets whether night lights and night textures are active.
+	// Sets whether night lights and night textures are active. This only needs to be set for
+	// exterior locations (i.e., cities and wilderness) because those are the only places
+	// with time-dependent light sources and textures.
 	void setNightLightsActive(bool active);
 
 	// Removes a flat. Causes an error if no ID matches.

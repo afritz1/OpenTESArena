@@ -1547,12 +1547,16 @@ void GameWorldPanel::tick(double dt)
 	auto &renderer = game.getRenderer();
 
 	// See if the clock passed the boundary between night and day, and vice versa.
+	const double oldClockTime = oldClock.getPreciseTotalSeconds();
+	const double newClockTime = newClock.getPreciseTotalSeconds();
+	const double lamppostActivateTime = Clock::LamppostActivate.getPreciseTotalSeconds();
+	const double lamppostDeactivateTime = Clock::LamppostDeactivate.getPreciseTotalSeconds();
 	const bool activateNightLights = 
-		(oldClock.getPreciseTotalSeconds() < Clock::LamppostActivate.getPreciseTotalSeconds()) &&
-		(newClock.getPreciseTotalSeconds() >= Clock::LamppostActivate.getPreciseTotalSeconds());
+		(oldClockTime < lamppostActivateTime) &&
+		(newClockTime >= lamppostActivateTime);
 	const bool deactivateNightLights = 
-		(oldClock.getPreciseTotalSeconds() < Clock::LamppostDeactivate.getPreciseTotalSeconds()) &&
-		(newClock.getPreciseTotalSeconds() >= Clock::LamppostDeactivate.getPreciseTotalSeconds());
+		(oldClockTime < lamppostDeactivateTime) &&
+		(newClockTime >= lamppostDeactivateTime);
 
 	if (activateNightLights)
 	{
@@ -1561,6 +1565,32 @@ void GameWorldPanel::tick(double dt)
 	else if (deactivateNightLights)
 	{
 		renderer.setNightLightsActive(false);
+	}
+
+	auto &worldData = gameData.getWorldData();
+	const WorldType worldType = worldData.getWorldType();
+
+	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
+	{
+		// Check for changes in exterior music depending on the time.
+		const double dayMusicStartTime = Clock::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = Clock::MusicSwitchToNight.getPreciseTotalSeconds();
+		const bool changeToDayMusic =
+			(oldClockTime < dayMusicStartTime) &&
+			(newClockTime >= dayMusicStartTime);
+		const bool changeToNightMusic =
+			(oldClockTime < nightMusicStartTime) &&
+			(newClockTime >= nightMusicStartTime);
+
+		if (changeToDayMusic)
+		{
+			const MusicName musicName = GameData::getExteriorMusicName(gameData.getWeatherType());
+			game.setMusic(musicName);
+		}
+		else if (changeToNightMusic)
+		{
+			game.setMusic(MusicName::Night);
+		}
 	}
 
 	// Tick text timers if their remaining duration is positive.
@@ -1587,8 +1617,6 @@ void GameWorldPanel::tick(double dt)
 
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);
-
-	auto &worldData = gameData.getWorldData();
 
 	// Update entities and their state in the renderer.
 	auto &entityManager = worldData.getEntityManager();

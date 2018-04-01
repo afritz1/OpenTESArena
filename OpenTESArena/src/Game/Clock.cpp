@@ -87,13 +87,23 @@ bool Clock::isAM() const
 	return this->hours < 12;
 }
 
+bool Clock::nightMusicIsActive() const
+{
+	const double clockTime = this->getPreciseTotalSeconds();
+	const bool beforeDayMusicChange =
+		clockTime < Clock::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange =
+		clockTime >= Clock::MusicSwitchToNight.getPreciseTotalSeconds();
+	return beforeDayMusicChange || afterNightMusicChange;
+}
+
 bool Clock::nightLightsAreActive() const
 {
-	const double preciseTotalSeconds = this->getPreciseTotalSeconds();
+	const double clockTime = this->getPreciseTotalSeconds();
 	const bool beforeLamppostDeactivate =
-		preciseTotalSeconds < Clock::LamppostDeactivate.getPreciseTotalSeconds();
+		clockTime < Clock::LamppostDeactivate.getPreciseTotalSeconds();
 	const bool afterLamppostActivate =
-		preciseTotalSeconds >= Clock::LamppostActivate.getPreciseTotalSeconds();
+		clockTime >= Clock::LamppostActivate.getPreciseTotalSeconds();
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 

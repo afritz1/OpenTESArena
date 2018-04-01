@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <unordered_map>
@@ -6,6 +7,7 @@
 #include "SDL.h"
 
 #include "CursorAlignment.h"
+#include "GameWorldPanel.h"
 #include "ProvinceButtonName.h"
 #include "ProvinceMapPanel.h"
 #include "RichTextString.h"
@@ -16,6 +18,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
+#include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -23,6 +26,7 @@
 #include "../Math/Rect.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
+#include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -35,6 +39,7 @@
 #include "../Utilities/String.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
+#include "../World/WeatherType.h"
 
 namespace std
 {
@@ -59,7 +64,7 @@ namespace
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
 	{
 		{ ProvinceButtonName::Search, "Search (not implemented)" },
-		{ ProvinceButtonName::Travel, "Travel (not implemented)" },
+		{ ProvinceButtonName::Travel, "Travel" },
 		{ ProvinceButtonName::BackToWorldMap, "Back to World Map" }
 	};
 
@@ -69,6 +74,12 @@ namespace
 		{ ProvinceButtonName::Travel, Rect(53, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
 		{ ProvinceButtonName::BackToWorldMap, Rect(72, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) }
 	};
+}
+
+ProvinceMapPanel::TravelData::TravelData(int locationID, int travelDays)
+{
+	this->locationID = locationID;
+	this->travelDays = travelDays;
 }
 
 const double ProvinceMapPanel::BLINK_PERIOD = 1.0 / 5.0;
@@ -100,13 +111,14 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int height = clickArea.getHeight();
 		auto function = [](Game &game, ProvinceMapPanel &panel)
 		{
-			// If a location is selected, fast travel there. Otherwise, display an error message.
-			if (panel.selectedLocationID.get() != nullptr)
+			if (panel.travelData.get() != nullptr)
 			{
-				DebugMention("Travel.");
+				// Fast travel to the selected destination.
+				panel.handleFastTravel(*panel.travelData.get());
 			}
 			else
 			{
+				// Display error message about no selected destination.
 				const auto &exeData = game.getMiscAssets().getExeData();
 				const std::string errorText = [&exeData]()
 				{
@@ -253,13 +265,20 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 			if (!matchesPlayerLocation)
 			{
-				// Set the selected location ID and reset the blink timer.
-				this->selectedLocationID = std::make_unique<int>(closestLocationID);
+				// Set the travel data for the selected location and reset the blink timer.
+				const auto &miscAssets = game.getMiscAssets();
+				const auto &cityData = gameData.getCityDataFile();
+				const Date &currentDate = gameData.getDate();
+				const int travelDays = cityData.getTravelDays(
+					currentLocationID, currentLocation.provinceID,
+					closestLocationID, this->provinceID, currentDate.getMonth(),
+					gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
+				this->travelData = std::make_unique<TravelData>(closestLocationID, travelDays);
 				this->blinkTimer = 0.0;
 
 				// Create pop-up travel dialog.
-				const std::string travelText = this->makeTravelText(
-					currentLocationID, currentLocation, closestLocationID);
+				const std::string travelText = this->makeTravelText(currentLocationID,
+					currentLocation, closestLocationID, *this->travelData.get());
 				std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
 				game.pushSubPanel(std::move(textPopUp));
 			}
@@ -345,7 +364,8 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 }
 
 std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
-	const Location &currentLocation, int closestLocationID) const
+	const Location &currentLocation, int closestLocationID,
+	const ProvinceMapPanel::TravelData &travelData) const
 {
 	auto &game = this->getGame();
 	auto &gameData = this->getGame().getGameData();
@@ -355,15 +375,10 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 	const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
 	const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
 	const Date &currentDate = gameData.getDate();
-	const int travelDays = cityData.getTravelDays(
-		currentLocationID, currentLocation.provinceID,
-		closestLocationID, this->provinceID, currentDate.getMonth(),
-		gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
-
-	const Date destinationDate = [&currentDate, travelDays]()
+	const Date destinationDate = [&currentDate, &travelData]()
 	{
 		Date newDate = currentDate;
-		for (int i = 0; i < travelDays; i++)
+		for (int i = 0; i < travelData.travelDays; i++)
 		{
 			newDate.incrementDay();
 		}
@@ -501,16 +516,16 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		return String::replace(datePrefix + getDateString(currentDate), '\r', '\n');
 	}();
 
-	const std::string dayString = [&exeData, travelDays]()
+	const std::string dayString = [&exeData, &travelData]()
 	{
 		const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
-		const std::string dayStringBody = [&exeData, travelDays]()
+		const std::string dayStringBody = [&exeData, &travelData]()
 		{
 			std::string text = exeData.travel.dayPrediction.back();
 
 			// Replace %d with travel days.
 			const size_t index = text.find("%d");
-			text = text.replace(index, 2, std::to_string(travelDays));
+			text = text.replace(index, 2, std::to_string(travelData.travelDays));
 
 			return text;
 		}();
@@ -580,8 +595,11 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 		lineSpacing,
 		game.getFontManager());
 
+	// Parchment minimum height is 40 pixels.
+	const int parchmentHeight = std::max(richText.getDimensions().y + 16, 40);
+
 	Texture texture(Texture::generate(Texture::PatternType::Parchment,
-		richText.getDimensions().x + 20, richText.getDimensions().y + 16,
+		richText.getDimensions().x + 20, parchmentHeight,
 		game.getTextureManager(), game.getRenderer()));
 
 	const Int2 textureCenter(
@@ -602,6 +620,78 @@ void ProvinceMapPanel::tick(double dt)
 	// Update the blink timer. Depending on which interval it's in, this will make the
 	// currently selected location (if any) have a red highlight.
 	this->blinkTimer += dt;
+}
+
+void ProvinceMapPanel::handleFastTravel(const ProvinceMapPanel::TravelData &travelData) const
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const int provinceID = this->provinceID;
+	Random random;
+
+	// Tick the game date by the number of travel days.
+	auto &date = gameData.getDate();
+	for (int i = 0; i < travelData.travelDays; i++)
+	{
+		date.incrementDay();
+	}
+
+	// Randomize the clock (since the arrival time is more or less indeterminate).
+	auto &clock = gameData.getClock();
+	clock = Clock(random.next(24), random.next(60), random.next(60));
+
+	// Decide how to load the location.
+	const int locationID = travelData.locationID;
+	if (locationID < 32)
+	{
+		// To do: get weather type from MiscAssets + global quarter + season + variant.
+		const WeatherType weatherType = static_cast<WeatherType>(random.next(8));
+
+		// Load the destination city. For the center province, use the specialized method.
+		if (provinceID != 8)
+		{
+			gameData.loadCity(locationID, provinceID, weatherType,
+				game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
+		}
+		else
+		{
+			const MIFFile mif("IMPERIAL.MIF");
+			gameData.loadPremadeCity(mif, weatherType, game.getMiscAssets(),
+				game.getTextureManager(), game.getRenderer());
+		}
+
+		const MusicName musicName = clock.nightMusicIsActive() ?
+			MusicName::Night : GameData::getExteriorMusicName(weatherType);
+		game.setMusic(musicName);
+	}
+	else
+	{
+		const int localDungeonID = locationID - 32;
+
+		if ((localDungeonID == 0) || (localDungeonID == 1))
+		{
+			// Main quest dungeon.
+			const auto &cityData = gameData.getCityDataFile();
+			const uint32_t dungeonSeed = cityData.getDungeonSeed(localDungeonID, provinceID);
+			const std::string mifName = CityDataFile::getMainQuestDungeonMifName(dungeonSeed);
+			const MIFFile mif(mifName);
+			const Location location = Location::makeDungeon(localDungeonID, provinceID);
+			gameData.loadInterior(mif, location,
+				game.getTextureManager(), game.getRenderer());
+		}
+		else
+		{
+			// Random named dungeon.
+			const bool isArtifactDungeon = false;
+			gameData.loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
+				game.getTextureManager(), game.getRenderer());
+		}
+
+		const MusicName musicName = GameData::getDungeonMusicName(random);
+		game.setMusic(musicName);
+	}
+
+	game.setPanel<GameWorldPanel>(game);
 }
 
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
@@ -904,7 +994,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// If there is a currently selected location, draw its blinking highlight if within
 	// the "blink on" interval.
-	if (this->selectedLocationID.get() != nullptr)
+	if (this->travelData.get() != nullptr)
 	{
 		const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapPanel::BLINK_PERIOD);
 		const double blinkPeriodPercent = blinkInterval / ProvinceMapPanel::BLINK_PERIOD;
@@ -914,7 +1004,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		if (blinkPeriodPercent < ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON)
 		{
 			const Location selectedLocation = Location::makeFromLocationID(
-				*this->selectedLocationID.get(), this->provinceID);
+				this->travelData->locationID, this->provinceID);
 
 			const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
 			this->drawLocationHighlight(selectedLocation, highlightType,
