@@ -1354,6 +1354,16 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			player.getPosition().y,
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
+		auto switchToLevel = [&game, &worldData, &player, &destinationPoint,
+			&dirToNewVoxel](int level)
+		{
+			worldData.setLevelActive(level, game.getTextureManager(), game.getRenderer());
+
+			player.teleport(destinationPoint);
+			player.lookAt(player.getPosition() + dirToNewVoxel);
+			player.setVelocityToZero();
+		};
+
 		// Check the voxel type to determine what it is exactly.
 		if (wallData.type == VoxelData::WallData::Type::Menu)
 		{
@@ -1372,24 +1382,19 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			}
 			else if (worldData.getCurrentLevel() > 0)
 			{
-				worldData.setLevelActive(worldData.getCurrentLevel() - 1,
-					game.getTextureManager(), game.getRenderer());
-
-				player.teleport(destinationPoint);
-				player.lookAt(player.getPosition() + dirToNewVoxel);
-				player.setVelocityToZero();
+				switchToLevel(worldData.getCurrentLevel() - 1);
 			}
 
 			// To do: add else statement for opening world map.
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
 		{
-			worldData.setLevelActive(worldData.getCurrentLevel() + 1,
-				game.getTextureManager(), game.getRenderer());
+			if (worldData.getCurrentLevel() < (worldData.getLevels().size() - 1))
+			{
+				switchToLevel(worldData.getCurrentLevel() + 1);
+			}
 
-			player.teleport(destinationPoint);
-			player.lookAt(player.getPosition() + dirToNewVoxel);
-			player.setVelocityToZero();
+			// To do: add else statement for opening world map.
 		}
 	}
 }
