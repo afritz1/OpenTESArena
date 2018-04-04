@@ -64,6 +64,15 @@ namespace
 	};
 }
 
+GameData::TimedTextBox::TimedTextBox(double remainingDuration, std::unique_ptr<TextBox> textBox)
+	: textBox(std::move(textBox))
+{
+	this->remainingDuration = remainingDuration;
+}
+
+GameData::TimedTextBox::TimedTextBox()
+	: TimedTextBox(0.0, nullptr) { }
+
 // Arbitrary value for testing. One real second = six game minutes.
 // The value used in Arena is one real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;
@@ -71,8 +80,7 @@ const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY)
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
 
 GameData::GameData(Player &&player, const MiscAssets &miscAssets)
-	: player(std::move(player)), triggerText(0.0, nullptr), actionText(0.0, nullptr),
-	effectText(0.0, nullptr)
+	: player(std::move(player))
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
@@ -476,17 +484,17 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-std::pair<double, std::unique_ptr<TextBox>> &GameData::getTriggerText()
+GameData::TimedTextBox &GameData::getTriggerText()
 {
 	return this->triggerText;
 }
 
-std::pair<double, std::unique_ptr<TextBox>> &GameData::getActionText()
+GameData::TimedTextBox &GameData::getActionText()
 {
 	return this->actionText;
 }
 
-std::pair<double, std::unique_ptr<TextBox>> &GameData::getEffectText()
+GameData::TimedTextBox &GameData::getEffectText()
 {
 	return this->effectText;
 }

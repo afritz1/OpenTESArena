@@ -635,7 +635,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		auto &gameData = game.getGameData();
 		auto &actionText = gameData.getActionText();
 		const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
-		actionText = std::make_pair(duration, std::move(textBox));
+		actionText = GameData::TimedTextBox(duration, std::move(textBox));
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1261,7 +1261,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 			auto &gameData = game.getGameData();
 			auto &triggerText = gameData.getTriggerText();
 			const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-			triggerText = std::make_pair(duration, std::move(textBox));
+			triggerText = GameData::TimedTextBox(duration, std::move(textBox));
 
 			// Set the text trigger as activated (regardless of whether or not it's single-shot,
 			// just for consistency).
@@ -1624,14 +1624,14 @@ void GameWorldPanel::tick(double dt)
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
 
-	if (triggerText.first > 0.0)
+	if (triggerText.remainingDuration > 0.0)
 	{
-		triggerText.first -= dt;
+		triggerText.remainingDuration -= dt;
 	}
 
-	if (actionText.first > 0.0)
+	if (actionText.remainingDuration > 0.0)
 	{
-		actionText.first -= dt;
+		actionText.remainingDuration -= dt;
 	}
 
 	// To do: tick effect text, and draw in render().
@@ -1851,9 +1851,9 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
-	if (triggerText.first > 0.0)
+	if (triggerText.remainingDuration > 0.0)
 	{
-		const auto &triggerTextBox = *triggerText.second.get();
+		const auto &triggerTextBox = *triggerText.textBox.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
 			(triggerTextBox.getSurface()->w / 2) - 1;
 		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
@@ -1867,9 +1867,9 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 
-	if (actionText.first > 0.0)
+	if (actionText.remainingDuration > 0.0)
 	{
-		const auto &actionTextBox = *actionText.second.get();
+		const auto &actionTextBox = *actionText.textBox.get();
 		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -
 			(actionTextBox.getSurface()->w / 2);
 		const int textY = 20;

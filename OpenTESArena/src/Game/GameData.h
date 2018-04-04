@@ -40,6 +40,15 @@ enum class WorldType;
 
 class GameData
 {
+public:
+	struct TimedTextBox
+	{
+		double remainingDuration;
+		std::unique_ptr<TextBox> textBox;
+
+		TimedTextBox(double remainingDuration, std::unique_ptr<TextBox> textBox);
+		TimedTextBox();
+	};
 private:
 	// The time scale determines how long or short a real-time second is. If the time 
 	// scale is 5.0, then each real-time second is five game seconds, etc..
@@ -55,7 +64,7 @@ private:
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
-	std::pair<double, std::unique_ptr<TextBox>> triggerText, actionText, effectText;
+	TimedTextBox triggerText, actionText, effectText;
 
 	// One weather for each of the 36 province quadrants (updated hourly).
 	std::array<WeatherType, 36> weathers;
@@ -126,9 +135,9 @@ public:
 		int rmdBL, WeatherType weatherType, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
-	std::pair<double, std::unique_ptr<TextBox>> &getTriggerText();
-	std::pair<double, std::unique_ptr<TextBox>> &getActionText();
-	std::pair<double, std::unique_ptr<TextBox>> &getEffectText();
+	TimedTextBox &getTriggerText();
+	TimedTextBox &getActionText();
+	TimedTextBox &getEffectText();
 
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 
