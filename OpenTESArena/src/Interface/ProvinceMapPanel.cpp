@@ -655,11 +655,24 @@ void ProvinceMapPanel::handleFastTravel(const ProvinceMapPanel::TravelData &trav
 		}
 	}
 
+	// Update weathers.
+	gameData.updateWeather(game.getMiscAssets().getExeData());
+
 	// Decide how to load the location.
 	if (locationID < 32)
 	{
-		// To do: get weather type from MiscAssets + global quarter + season + variant.
-		const WeatherType weatherType = static_cast<WeatherType>(random.next(8));
+		// Get weather type from game data.
+		const WeatherType weatherType = [&gameData, locationID, provinceID]()
+		{
+			const auto &cityData = gameData.getCityDataFile();
+			const auto &provinceData = cityData.getProvinceData(provinceID);
+			const auto &locationData = provinceData.getLocationData(locationID);
+			const Int2 localPoint(locationData.x, locationData.y);
+			const Int2 globalPoint = CityDataFile::localPointToGlobal(
+				localPoint, provinceData.getGlobalRect());
+			const int globalQuarter = cityData.getGlobalQuarter(globalPoint);
+			return gameData.getWeathersArray().at(globalQuarter);
+		}();
 
 		// Load the destination city. For the center province, use the specialized method.
 		if (provinceID != 8)
