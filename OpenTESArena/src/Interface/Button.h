@@ -92,7 +92,7 @@ public:
 	// Calls the button's function.
 	void click(Args... args)
 	{
-		this->callback(args...);
+		this->callback(std::forward<Args>(args)...);
 	}
 };
 

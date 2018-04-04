@@ -23,8 +23,8 @@
 #include "../Rendering/Texture.h"
 #include "../World/Location.h"
 
-WorldMapPanel::WorldMapPanel(Game &game)
-	: Panel(game)
+WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
+	: Panel(game), travelData(std::move(travelData))
 {
 	this->backToGameButton = []()
 	{
@@ -40,11 +40,12 @@ WorldMapPanel::WorldMapPanel(Game &game)
 
 	this->provinceButton = []()
 	{
-		auto function = [](Game &game, int provinceID)
+		auto function = [](Game &game, int provinceID,
+			std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
 		{
-			game.setPanel<ProvinceMapPanel>(game, provinceID);
+			game.setPanel<ProvinceMapPanel>(game, provinceID, std::move(travelData));
 		};
-		return Button<Game&, int>(function);
+		return Button<Game&, int, std::unique_ptr<ProvinceMapPanel::TravelData>>(function);
 	}();
 
 	// Load province name offsets.
@@ -104,7 +105,8 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 					if (maskID < 9)
 					{
 						// Go to the selected province panel.
-						this->provinceButton.click(this->getGame(), maskID);
+						this->provinceButton.click(this->getGame(), maskID,
+							std::move(this->travelData));
 					}
 					else
 					{

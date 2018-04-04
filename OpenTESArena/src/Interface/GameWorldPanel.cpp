@@ -465,7 +465,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			}
 			else
 			{
-				game.setPanel<WorldMapPanel>(game);
+				game.setPanel<WorldMapPanel>(game, nullptr);
 			}
 		};
 		return Button<Game&, bool>(118, 151, 29, 22, function);

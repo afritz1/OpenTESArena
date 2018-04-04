@@ -18,14 +18,16 @@ enum class ProvinceButtonName;
 
 class ProvinceMapPanel : public Panel
 {
-private:
+public:
+	// Shared between WorldMapPanel and ProvinceMapPanel for remembering the
+	// selected destination.
 	struct TravelData
 	{
-		int locationID, travelDays;
+		int locationID, provinceID, travelDays;
 
-		TravelData(int locationID, int travelDays);
+		TravelData(int locationID, int provinceID, int travelDays);
 	};
-
+private:
 	// Current is where the player is. Selected is which location (if any) has been selected.
 	enum class LocationHighlightType { Current, Selected };
 
@@ -34,7 +36,7 @@ private:
 
 	Button<> searchButton;
 	Button<Game&, ProvinceMapPanel&> travelButton;
-	Button<Game&> backToWorldMapButton;
+	Button<Game&, std::unique_ptr<ProvinceMapPanel::TravelData>> backToWorldMapButton;
 	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
 	std::unique_ptr<TravelData> travelData;
 	Palette provinceMapPalette;
@@ -80,7 +82,8 @@ private:
 	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
 	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
 public:
-	ProvinceMapPanel(Game &game, int provinceID);
+	ProvinceMapPanel(Game &game, int provinceID,
+		std::unique_ptr<ProvinceMapPanel::TravelData> travelData);
 	virtual ~ProvinceMapPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;

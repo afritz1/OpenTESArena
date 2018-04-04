@@ -76,17 +76,19 @@ namespace
 	};
 }
 
-ProvinceMapPanel::TravelData::TravelData(int locationID, int travelDays)
+ProvinceMapPanel::TravelData::TravelData(int locationID, int provinceID, int travelDays)
 {
 	this->locationID = locationID;
+	this->provinceID = provinceID;
 	this->travelDays = travelDays;
 }
 
 const double ProvinceMapPanel::BLINK_PERIOD = 1.0 / 5.0;
 const double ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON = 0.75;
 
-ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
-	: Panel(game)
+ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
+	std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
+	: Panel(game), travelData(std::move(travelData))
 {
 	this->searchButton = []()
 	{
@@ -111,7 +113,8 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int height = clickArea.getHeight();
 		auto function = [](Game &game, ProvinceMapPanel &panel)
 		{
-			if (panel.travelData.get() != nullptr)
+			if ((panel.travelData.get() != nullptr) &&
+				(panel.travelData->provinceID == panel.provinceID))
 			{
 				// Fast travel to the selected destination.
 				panel.handleFastTravel(*panel.travelData.get());
@@ -147,11 +150,12 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = [](Game &game)
+		auto function = [](Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
 		{
-			game.setPanel<WorldMapPanel>(game);
+			game.setPanel<WorldMapPanel>(game, std::move(travelData));
 		};
-		return Button<Game&>(x, y, width, height, function);
+		return Button<Game&, std::unique_ptr<ProvinceMapPanel::TravelData>>(
+			x, y, width, height, function);
 	}();
 
 	this->provinceID = provinceID;
@@ -191,7 +195,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || rightClick)
 	{
-		this->backToWorldMapButton.click(game);
+		this->backToWorldMapButton.click(game, std::move(this->travelData));
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -212,7 +216,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->backToWorldMapButton.contains(originalPosition))
 		{
-			this->backToWorldMapButton.click(game);
+			this->backToWorldMapButton.click(game, std::move(this->travelData));
 		}
 		else
 		{
@@ -273,7 +277,8 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 					currentLocationID, currentLocation.provinceID,
 					closestLocationID, this->provinceID, currentDate.getMonth(),
 					gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
-				this->travelData = std::make_unique<TravelData>(closestLocationID, travelDays);
+				this->travelData = std::make_unique<TravelData>(
+					closestLocationID, this->provinceID, travelDays);
 				this->blinkTimer = 0.0;
 
 				// Create pop-up travel dialog.
@@ -992,9 +997,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 			textureManager, renderer);
 	}
 
-	// If there is a currently selected location, draw its blinking highlight if within
-	// the "blink on" interval.
-	if (this->travelData.get() != nullptr)
+	// If there is a currently selected location in this province, draw its blinking highlight
+	// if within the "blink on" interval.
+	if ((this->travelData.get() != nullptr) && (this->travelData->provinceID == this->provinceID))
 	{
 		const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapPanel::BLINK_PERIOD);
 		const double blinkPeriodPercent = blinkInterval / ProvinceMapPanel::BLINK_PERIOD;

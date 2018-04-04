@@ -5,6 +5,7 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "ProvinceMapPanel.h"
 #include "../Math/Vector2.h"
 
 class Renderer;
@@ -13,10 +14,11 @@ class WorldMapPanel : public Panel
 {
 private:
 	Button<Game&> backToGameButton;
-	Button<Game&, int> provinceButton;
+	Button<Game&, int, std::unique_ptr<ProvinceMapPanel::TravelData>> provinceButton;
 	std::array<Int2, 9> provinceNameOffsets; // Yellow province name positions.
+	std::unique_ptr<ProvinceMapPanel::TravelData> travelData;
 public:
-	WorldMapPanel(Game &game);
+	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData);
 	virtual ~WorldMapPanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
