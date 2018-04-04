@@ -1306,7 +1306,6 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	if (voxelData.dataType == VoxelDataType::Wall)
 	{
 		const VoxelData::WallData &wallData = voxelData.wall;
-		auto &player = gameData.getPlayer();
 
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
@@ -1349,19 +1348,37 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}();
 
 		// Player destination after going through a level up/down voxel.
+		auto &player = gameData.getPlayer();
 		const Double3 destinationPoint(
 			(static_cast<double>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
 			player.getPosition().y,
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
+		// Lambda for transitioning the player to the given level.
 		auto switchToLevel = [&game, &worldData, &player, &destinationPoint,
 			&dirToNewVoxel](int level)
 		{
 			worldData.setLevelActive(level, game.getTextureManager(), game.getRenderer());
 
+			// Move the player to where they should be in the new level.
 			player.teleport(destinationPoint);
 			player.lookAt(player.getPosition() + dirToNewVoxel);
 			player.setVelocityToZero();
+		};
+
+		// Lambda for opening the world map when the player enters a transition voxel
+		// that will "lead to the surface of the dungeon".
+		auto switchToWorldMap = [&playerVoxel, &game, &player]()
+		{
+			// Move player to center of previous voxel in case they change their mind
+			// about fast traveling. Don't change their direction.
+			player.teleport(Double3(
+				static_cast<double>(playerVoxel.x) + 0.50,
+				player.getPosition().y,
+				static_cast<double>(playerVoxel.y) + 0.50));
+			player.setVelocityToZero();
+
+			game.setPanel<WorldMapPanel>(game, nullptr);
 		};
 
 		// Check the voxel type to determine what it is exactly.
@@ -1371,8 +1388,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelUp)
 		{
-			// If the custom function has a target, call it and reset it. Otherwise,
-			// decrement the world's level index.
+			// If the custom function has a target, call it and reset it.
 			auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
 
 			if (onLevelUpVoxelEnter)
@@ -1382,19 +1398,25 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			}
 			else if (worldData.getCurrentLevel() > 0)
 			{
+				// Decrement the world's level index and activate the new level.
 				switchToLevel(worldData.getCurrentLevel() - 1);
 			}
-
-			// To do: add else statement for opening world map.
+			else
+			{
+				switchToWorldMap();
+			}
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
 		{
 			if (worldData.getCurrentLevel() < (worldData.getLevels().size() - 1))
 			{
+				// Increment the world's level index and activate the new level.
 				switchToLevel(worldData.getCurrentLevel() + 1);
 			}
-
-			// To do: add else statement for opening world map.
+			else
+			{
+				switchToWorldMap();
+			}
 		}
 	}
 }
