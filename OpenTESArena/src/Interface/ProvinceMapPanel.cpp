@@ -113,8 +113,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 		int height = clickArea.getHeight();
 		auto function = [](Game &game, ProvinceMapPanel &panel)
 		{
-			if ((panel.travelData.get() != nullptr) &&
-				(panel.travelData->provinceID == panel.provinceID))
+			if (panel.travelData.get() != nullptr)
 			{
 				// Fast travel to the selected destination.
 				panel.handleFastTravel(*panel.travelData.get());
@@ -631,8 +630,8 @@ void ProvinceMapPanel::handleFastTravel(const ProvinceMapPanel::TravelData &trav
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const int provinceID = this->provinceID;
-	Random random;
+	const int provinceID = travelData.provinceID;
+	const int locationID = travelData.locationID;
 
 	// Tick the game date by the number of travel days.
 	auto &date = gameData.getDate();
@@ -641,12 +640,22 @@ void ProvinceMapPanel::handleFastTravel(const ProvinceMapPanel::TravelData &trav
 		date.incrementDay();
 	}
 
-	// Randomize the clock (since the arrival time is more or less indeterminate).
+	// Add between 0 and 22 random hours to the clock time.
+	Random random;
 	auto &clock = gameData.getClock();
-	clock = Clock(random.next(24), random.next(60), random.next(60));
+	const int randomHours = random.next(23);
+	for (int i = 0; i < randomHours; i++)
+	{
+		clock.incrementHour();
+
+		// Increment day if the clock loops around.
+		if (clock.getHours24() == 0)
+		{
+			date.incrementDay();
+		}
+	}
 
 	// Decide how to load the location.
-	const int locationID = travelData.locationID;
 	if (locationID < 32)
 	{
 		// To do: get weather type from MiscAssets + global quarter + season + variant.
