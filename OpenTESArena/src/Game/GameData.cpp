@@ -73,6 +73,12 @@ GameData::TimedTextBox::TimedTextBox(double remainingDuration, std::unique_ptr<T
 GameData::TimedTextBox::TimedTextBox()
 	: TimedTextBox(0.0, nullptr) { }
 
+void GameData::TimedTextBox::reset()
+{
+	this->remainingDuration = 0.0;
+	this->textBox = nullptr;
+}
+
 // Arbitrary value for testing. One real second = six game minutes.
 // The value used in Arena is one real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;

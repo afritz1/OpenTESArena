@@ -48,6 +48,9 @@ public:
 
 		TimedTextBox(double remainingDuration, std::unique_ptr<TextBox> textBox);
 		TimedTextBox();
+
+		// Sets remaining duration to zero and empties the text box.
+		void reset();
 	};
 private:
 	// The time scale determines how long or short a real-time second is. If the time 

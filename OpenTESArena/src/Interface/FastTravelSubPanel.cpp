@@ -95,6 +95,9 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Update weathers.
 	gameData.updateWeather(game.getMiscAssets().getExeData());
 
+	// Clear the lore text (action text and effect text are unchanged).
+	gameData.getTriggerText().reset();
+
 	// Decide how to load the location.
 	if (this->travelData.locationID < 32)
 	{
