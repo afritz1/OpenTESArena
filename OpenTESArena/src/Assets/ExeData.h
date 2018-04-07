@@ -279,6 +279,9 @@ public:
 		// Location/date/days text when the player arrives at their destination.
 		std::string arrivalPopUpLocation, arrivalPopUpDate, arrivalPopUpDays;
 
+		// Filenames for each staff dungeon splash image.
+		std::array<std::string, 8> staffDungeonSplashes;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

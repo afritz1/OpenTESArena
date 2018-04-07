@@ -89,16 +89,6 @@ namespace
 		{ TextureName::UpDown, "UPDOWN.IMG" },
 		{ TextureName::YesNoCancel, "YESNO.IMG" },
 
-		// Main quest dungeon splash screens.
-		{ TextureName::CryptOfHeartsSplash, "CRYPT.IMG" },
-		{ TextureName::CrystalTowerSplash, "TOWER.IMG" },
-		{ TextureName::DagothUrSplash, "DAGOTHUR.IMG" },
-		{ TextureName::EldenGroveSplash, "GROVE.IMG" },
-		{ TextureName::FangLairSplash, "FANGLAIR.IMG" },
-		{ TextureName::HallsOfColossusSplash, "COLOSSUS.IMG" },
-		{ TextureName::LabyrinthianSplash, "LABRINTH.IMG" },
-		{ TextureName::MurkwoodSplash, "MIRKWOOD.IMG" },
-
 		// Maps (province maps are stored in a separate container).
 		{ TextureName::Automap, "AUTOMAP.IMG" },
 		{ TextureName::WorldMap, "TAMRIEL.MNU" },

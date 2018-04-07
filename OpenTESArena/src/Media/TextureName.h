@@ -69,16 +69,6 @@ enum class TextureName
 	UpDown, // Scroll arrows.
 	YesNoCancel, // Yes/No/Cancel texture for bartering.
 
-	// Main quest dungeon splash screens.
-	CryptOfHeartsSplash,
-	CrystalTowerSplash,
-	DagothUrSplash,
-	EldenGroveSplash,
-	FangLairSplash,
-	HallsOfColossusSplash,
-	LabyrinthianSplash,
-	MurkwoodSplash,
-
 	// Maps (province maps are accessed by ID, not texture name).
 	Automap,
 	WorldMap, // World map without location dots and with exit text.
