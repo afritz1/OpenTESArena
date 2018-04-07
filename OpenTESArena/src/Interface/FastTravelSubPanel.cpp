@@ -3,6 +3,7 @@
 #include "CursorAlignment.h"
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
+#include "MainQuestSplashPanel.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Media/MusicName.h"
@@ -54,9 +55,8 @@ std::pair<SDL_Texture*, CursorAlignment> FastTravelSubPanel::getCurrentCursor() 
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
-void FastTravelSubPanel::switchToGameWorld()
+void FastTravelSubPanel::tickTravelTime(Random &random) const
 {
-	// Handle fast travel behavior.
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 
@@ -68,7 +68,6 @@ void FastTravelSubPanel::switchToGameWorld()
 	}
 
 	// Add between 0 and 22 random hours to the clock time.
-	Random random;
 	auto &clock = gameData.getClock();
 	const int randomHours = random.next(23);
 	for (int i = 0; i < randomHours; i++)
@@ -81,6 +80,17 @@ void FastTravelSubPanel::switchToGameWorld()
 			date.incrementDay();
 		}
 	}
+}
+
+void FastTravelSubPanel::switchToNextPanel()
+{
+	// Handle fast travel behavior and decide which panel to switch to.
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+
+	// Update game clock.
+	Random random;
+	this->tickTravelTime(random);
 
 	// Update weathers.
 	gameData.updateWeather(game.getMiscAssets().getExeData());
@@ -114,9 +124,12 @@ void FastTravelSubPanel::switchToGameWorld()
 				game.getTextureManager(), game.getRenderer());
 		}
 
+		// Choose time-based music and enter the game world.
+		auto &clock = gameData.getClock();
 		const MusicName musicName = clock.nightMusicIsActive() ?
 			MusicName::Night : GameData::getExteriorMusicName(weatherType);
 		game.setMusic(musicName);
+		game.setPanel<GameWorldPanel>(game);
 	}
 	else
 	{
@@ -124,7 +137,8 @@ void FastTravelSubPanel::switchToGameWorld()
 
 		if ((localDungeonID == 0) || (localDungeonID == 1))
 		{
-			// Main quest dungeon.
+			// Main quest dungeon. The staff dungeons have a splash image before going
+			// to the game world panel.
 			const auto &cityData = gameData.getCityDataFile();
 			const uint32_t dungeonSeed = cityData.getDungeonSeed(
 				localDungeonID, this->travelData.provinceID);
@@ -132,8 +146,22 @@ void FastTravelSubPanel::switchToGameWorld()
 			const MIFFile mif(mifName);
 			const Location location = Location::makeDungeon(
 				localDungeonID, this->travelData.provinceID);
-			gameData.loadInterior(mif, location,
-				game.getTextureManager(), game.getRenderer());
+			gameData.loadInterior(mif, location, game.getTextureManager(), game.getRenderer());
+
+			const bool isStaffDungeon = localDungeonID == 0;
+
+			if (isStaffDungeon)
+			{
+				// Go to staff dungeon splash image first.
+				game.setPanel<MainQuestSplashPanel>(game, this->travelData.provinceID);
+			}
+			else
+			{
+				// Choose random dungeon music and enter game world.
+				const MusicName musicName = GameData::getDungeonMusicName(random);
+				game.setMusic(musicName);
+				game.setPanel<GameWorldPanel>(game);
+			}
 		}
 		else
 		{
@@ -141,14 +169,16 @@ void FastTravelSubPanel::switchToGameWorld()
 			const bool isArtifactDungeon = false;
 			gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
 				isArtifactDungeon, game.getTextureManager(), game.getRenderer());
-		}
 
-		const MusicName musicName = GameData::getDungeonMusicName(random);
-		game.setMusic(musicName);
+			// Choose random dungeon music and enter game world.
+			const MusicName musicName = GameData::getDungeonMusicName(random);
+			game.setMusic(musicName);
+			game.setPanel<GameWorldPanel>(game);
+		}
 	}
 
+	// Pop this sub-panel.
 	game.popSubPanel();
-	game.setPanel<GameWorldPanel>(game);
 }
 
 void FastTravelSubPanel::tick(double dt)
@@ -170,7 +200,7 @@ void FastTravelSubPanel::tick(double dt)
 	this->totalSeconds += dt;
 	if (this->totalSeconds >= this->targetSeconds)
 	{
-		this->switchToGameWorld();
+		this->switchToNextPanel();
 	}
 }
 

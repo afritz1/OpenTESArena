@@ -9,6 +9,7 @@
 
 // This sub-panel is the glue between the province map's travel button and the game world.
 
+class Random;
 class Renderer;
 class Texture;
 
@@ -27,8 +28,12 @@ private:
 	// Gets the animation for display.
 	const std::vector<Texture> &getAnimation() const;
 
-	// Called when the target animation time has been reached.
-	void switchToGameWorld();
+	// Updates the game clock based on the travel data.
+	void tickTravelTime(Random &random) const;
+
+	// Called when the target animation time has been reached. Decides whether to go
+	// straight to the game world panel or to a staff dungeon splash image panel.
+	void switchToNextPanel();
 public:
 	FastTravelSubPanel(Game &game, const ProvinceMapPanel::TravelData &travelData);
 	virtual ~FastTravelSubPanel() = default;
