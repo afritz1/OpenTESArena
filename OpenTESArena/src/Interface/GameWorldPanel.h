@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "TextBox.h"
 #include "../Math/Rect.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
@@ -16,7 +17,6 @@
 
 class Player;
 class Renderer;
-class TextBox;
 class TextureManager;
 
 class GameWorldPanel : public Panel

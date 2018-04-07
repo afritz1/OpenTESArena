@@ -12,7 +12,6 @@
 #include "PauseMenuPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
-#include "TextBox.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CFAFile.h"
