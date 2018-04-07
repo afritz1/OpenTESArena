@@ -118,6 +118,7 @@ ArrivalPopUpLocation=0x37465
 ArrivalPopUpDate=0x3747A
 ArrivalPopUpDays=0x37488
 StaffDungeonSplashes=0x432CA
+StaffDungeonSplashIndices=0x432C2
 
 # [WallHeightTables]
 Box1A=0x48206

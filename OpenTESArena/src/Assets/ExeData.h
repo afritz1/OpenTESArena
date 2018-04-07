@@ -282,6 +282,9 @@ public:
 		// Filenames for each staff dungeon splash image.
 		std::array<std::string, 8> staffDungeonSplashes;
 
+		// Province indices into the staff dungeon splash filenames.
+		std::array<uint8_t, 8> staffDungeonSplashIndices;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
