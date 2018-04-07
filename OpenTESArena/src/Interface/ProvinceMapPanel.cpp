@@ -7,6 +7,7 @@
 #include "SDL.h"
 
 #include "CursorAlignment.h"
+#include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
 #include "ProvinceButtonName.h"
 #include "ProvinceMapPanel.h"
@@ -116,7 +117,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 			if (panel.travelData.get() != nullptr)
 			{
 				// Fast travel to the selected destination.
-				panel.handleFastTravel(*panel.travelData.get());
+				panel.handleFastTravel();
 			}
 			else
 			{
@@ -626,99 +627,12 @@ void ProvinceMapPanel::tick(double dt)
 	this->blinkTimer += dt;
 }
 
-void ProvinceMapPanel::handleFastTravel(const ProvinceMapPanel::TravelData &travelData) const
+void ProvinceMapPanel::handleFastTravel()
 {
+	// Switch to world map and push fast travel sub-panel on top of it.
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
-	const int provinceID = travelData.provinceID;
-	const int locationID = travelData.locationID;
-
-	// Tick the game date by the number of travel days.
-	auto &date = gameData.getDate();
-	for (int i = 0; i < travelData.travelDays; i++)
-	{
-		date.incrementDay();
-	}
-
-	// Add between 0 and 22 random hours to the clock time.
-	Random random;
-	auto &clock = gameData.getClock();
-	const int randomHours = random.next(23);
-	for (int i = 0; i < randomHours; i++)
-	{
-		clock.incrementHour();
-
-		// Increment day if the clock loops around.
-		if (clock.getHours24() == 0)
-		{
-			date.incrementDay();
-		}
-	}
-
-	// Update weathers.
-	gameData.updateWeather(game.getMiscAssets().getExeData());
-
-	// Decide how to load the location.
-	if (locationID < 32)
-	{
-		// Get weather type from game data.
-		const WeatherType weatherType = [&gameData, locationID, provinceID]()
-		{
-			const auto &cityData = gameData.getCityDataFile();
-			const auto &provinceData = cityData.getProvinceData(provinceID);
-			const auto &locationData = provinceData.getLocationData(locationID);
-			const Int2 localPoint(locationData.x, locationData.y);
-			const Int2 globalPoint = CityDataFile::localPointToGlobal(
-				localPoint, provinceData.getGlobalRect());
-			const int globalQuarter = cityData.getGlobalQuarter(globalPoint);
-			return gameData.getWeathersArray().at(globalQuarter);
-		}();
-
-		// Load the destination city. For the center province, use the specialized method.
-		if (provinceID != 8)
-		{
-			gameData.loadCity(locationID, provinceID, weatherType,
-				game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
-		}
-		else
-		{
-			const MIFFile mif("IMPERIAL.MIF");
-			gameData.loadPremadeCity(mif, weatherType, game.getMiscAssets(),
-				game.getTextureManager(), game.getRenderer());
-		}
-
-		const MusicName musicName = clock.nightMusicIsActive() ?
-			MusicName::Night : GameData::getExteriorMusicName(weatherType);
-		game.setMusic(musicName);
-	}
-	else
-	{
-		const int localDungeonID = locationID - 32;
-
-		if ((localDungeonID == 0) || (localDungeonID == 1))
-		{
-			// Main quest dungeon.
-			const auto &cityData = gameData.getCityDataFile();
-			const uint32_t dungeonSeed = cityData.getDungeonSeed(localDungeonID, provinceID);
-			const std::string mifName = CityDataFile::getMainQuestDungeonMifName(dungeonSeed);
-			const MIFFile mif(mifName);
-			const Location location = Location::makeDungeon(localDungeonID, provinceID);
-			gameData.loadInterior(mif, location,
-				game.getTextureManager(), game.getRenderer());
-		}
-		else
-		{
-			// Random named dungeon.
-			const bool isArtifactDungeon = false;
-			gameData.loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
-				game.getTextureManager(), game.getRenderer());
-		}
-
-		const MusicName musicName = GameData::getDungeonMusicName(random);
-		game.setMusic(musicName);
-	}
-
-	game.setPanel<GameWorldPanel>(game);
+	game.pushSubPanel<FastTravelSubPanel>(game, *this->travelData.get());
+	game.setPanel<WorldMapPanel>(game, std::move(this->travelData));
 }
 
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,

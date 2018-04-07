@@ -44,6 +44,7 @@ enum class TextureName
 	CharacterStats, // Character sheet attributes, stats, etc..
 	CompassFrame, // Compass border with "gargoyle-like" object.
 	CompassSlider, // Actual compass headings.
+	FastTravel, // Horse animation on world map.
 	GameWorldInterface, // Portrait, stat bars, buttons in game world.
 	IntroTitle, // Arena copyright, etc..
 	IntroQuote, // "The best techniques...".

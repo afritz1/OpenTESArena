@@ -184,6 +184,12 @@ std::pair<SDL_Texture*, CursorAlignment> Panel::getCurrentCursor() const
 	return std::make_pair(nullptr, CursorAlignment::TopLeft);
 }
 
+void Panel::handleEvent(const SDL_Event &e)
+{
+	// Do nothing by default.
+	static_cast<void>(e);
+}
+
 void Panel::resize(int windowWidth, int windowHeight)
 {
 	// Do nothing by default.

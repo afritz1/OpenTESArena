@@ -50,7 +50,7 @@ public:
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.
-	virtual void handleEvent(const SDL_Event &e) = 0;
+	virtual void handleEvent(const SDL_Event &e);
 
 	// Called whenever the application window resizes. The panel should not handle
 	// the resize event itself, since it's more of an "application event" than a

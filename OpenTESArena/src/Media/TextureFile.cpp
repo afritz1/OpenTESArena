@@ -64,6 +64,7 @@ namespace
 		{ TextureName::CharacterStats, "CHARSTAT.IMG" },
 		{ TextureName::CompassFrame, "COMPASS.IMG" },
 		{ TextureName::CompassSlider, "SLIDER.IMG" },
+		{ TextureName::FastTravel, "HORSE.DFA" },
 		{ TextureName::GameWorldInterface, "P1.IMG" },
 		{ TextureName::IntroTitle, "TITLE.IMG" },
 		{ TextureName::IntroQuote, "QUOTE.IMG" },

@@ -61,7 +61,7 @@ private:
 
 	// Handles loading the target destination into the current game session
 	// and changing to the game world panel.
-	void handleFastTravel(const ProvinceMapPanel::TravelData &travelData) const;
+	void handleFastTravel();
 
 	// Draws an icon (i.e., location or highlight) centered at the given point.
 	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);
