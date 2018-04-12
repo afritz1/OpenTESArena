@@ -83,6 +83,7 @@ Climates=0x3EC2E
 WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
+RulerTitles=0x3EAC7
 WildernessNormalBlocks=0x3F02C
 WildernessVillageBlocks=0x3F045
 WildernessDungeonBlocks=0x3F052

@@ -322,6 +322,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int weatherTableOffset = ExeData::get("WeatherTable", keyValueMap);
 	const int climateSpeedTablesOffset = ExeData::get("ClimateSpeedTables", keyValueMap);
 	const int weatherSpeedTablesOffset = ExeData::get("WeatherSpeedTables", keyValueMap);
+	const int rulerTitlesOffset = ExeData::get("RulerTitles", keyValueMap);
 	const int wildernessNormalBlocksOffset = ExeData::get("WildernessNormalBlocks", keyValueMap);
 	const int wildernessVillageBlocksOffset = ExeData::get("WildernessVillageBlocks", keyValueMap);
 	const int wildernessDungeonBlocksOffset = ExeData::get("WildernessDungeonBlocks", keyValueMap);
@@ -343,6 +344,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->weatherTable, data + weatherTableOffset);
 	init2DInt8Array(this->climateSpeedTables, data + climateSpeedTablesOffset);
 	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
+	initStringArray(this->rulerTitles, data + rulerTitlesOffset);
 
 	auto initWildBlockList = [](std::vector<uint8_t> &vec, const char *data)
 	{

@@ -202,6 +202,9 @@ public:
 		// Eight weather-wise travel speed modifiers for each climate. 0 represents 100.
 		std::array<std::array<uint8_t, 8>, 7> weatherSpeedTables;
 
+		// Ruler titles for cities.
+		std::array<std::string, 14> rulerTitles;
+
 		// Wilderness .RMD index lists for each type of block (normal, village, dungeon,
 		// inn, and temple). Each list starts with the number of elements.
 		std::vector<uint8_t> wildernessNormalBlocks, wildernessVillageBlocks,
