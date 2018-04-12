@@ -279,6 +279,9 @@ public:
 		// Location/date/days text when the player arrives at their destination.
 		std::string arrivalPopUpLocation, arrivalPopUpDate, arrivalPopUpDays;
 
+		// Unique string for the center province's city in the arrival pop-up.
+		std::string arrivalCenterProvinceLocation;
+
 		// Filenames for each staff dungeon splash image.
 		std::array<std::string, 8> staffDungeonSplashes;
 

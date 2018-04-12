@@ -154,7 +154,7 @@ public:
 	const ExeData &getExeData() const;
 
 	// Finds the text in TEMPLATE.DAT given a key (i.e., "#0000a").
-	const std::string &getTemplateDatText(const std::string &key);
+	const std::string &getTemplateDatText(const std::string &key) const;
 
 	// Returns all of the questions in QUESTION.TXT.
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;

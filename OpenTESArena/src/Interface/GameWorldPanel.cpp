@@ -159,29 +159,13 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
+			auto &textureManager = game.getTextureManager();
+			auto &renderer = game.getRenderer();
 			const bool modernInterface = game.getOptions().getModernInterface();
 
 			// The center of the pop-up depends on the interface mode.
-			const Int2 center = [&game, modernInterface]()
-			{
-				auto &renderer = game.getRenderer();
-				auto &textureManager = game.getTextureManager();
-				const auto &gameWorldInterface = textureManager.getTexture(
-					TextureFile::fromName(TextureName::GameWorldInterface), renderer);
-
-				if (!modernInterface)
-				{
-					return Int2(
-						Renderer::ORIGINAL_WIDTH / 2,
-						(Renderer::ORIGINAL_HEIGHT - gameWorldInterface.getHeight()) / 2);
-				}
-				else
-				{
-					return Int2(
-						Renderer::ORIGINAL_WIDTH / 2,
-						Renderer::ORIGINAL_HEIGHT / 2);
-				}
-			}();
+			const Int2 center = GameWorldPanel::getInterfaceCenter(
+				modernInterface, textureManager, renderer);
 
 			const std::string text = [&game]()
 			{
@@ -251,37 +235,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				baseText = baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				const auto &date = gameData.getDate();
-				const std::string dateString = [&exeData, &date]()
-				{
-					std::string text = exeData.status.date;
-
-					// Replace carriage returns with newlines.
-					text = String::replace(text, '\r', '\n');
-
-					// Replace first %s with weekday.
-					const std::string &weekdayString =
-						exeData.calendar.weekdayNames.at(date.getWeekday());
-					size_t index = text.find("%s");
-					text = text.replace(index, 2, weekdayString);
-
-					// Replace %u%s with day and ordinal suffix.
-					const std::string dayString = date.getOrdinalDay();
-					index = text.find("%u%s");
-					text = text.replace(index, 4, dayString);
-
-					// Replace third %s with month.
-					const std::string &monthString =
-						exeData.calendar.monthNames.at(date.getMonth());
-					index = text.find("%s");
-					text = text.replace(index, 2, monthString);
-
-					// Replace %d with year.
-					index = text.find("%d");
-					text = text.replace(index, 2, std::to_string(date.getYear()));
-
-					return text;
-				}();
+				const std::string dateString = GameData::getDateString(
+					gameData.getDate(), exeData);
 
 				index = baseText.find("%s", index);
 				baseText = baseText.replace(index, 2, dateString);
@@ -331,8 +286,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			const Int2 &richTextDimensions = richText.getDimensions();
 
 			Texture texture(Texture::generate(Texture::PatternType::Dark, 
-				richTextDimensions.x + 12, richTextDimensions.y + 12, 
-				game.getTextureManager(), game.getRenderer()));
+				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer));
 
 			const Int2 textureCenter = center;
 
@@ -499,6 +453,23 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			this->weaponOffsets.push_back(Int2(cfaFile.getXOffset(), cfaFile.getYOffset()));
 		}
+	}
+}
+
+Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
+	Renderer &renderer)
+{
+	if (modernInterface)
+	{
+		return Int2(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
+	}
+	else
+	{
+		const auto &gameInterface = textureManager.getTexture(
+			TextureFile::fromName(TextureName::GameWorldInterface), renderer);
+		return Int2(
+			Renderer::ORIGINAL_WIDTH / 2,
+			(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) / 2);
 	}
 }
 

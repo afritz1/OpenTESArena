@@ -410,6 +410,8 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	const int arrivalPopUpLocationOffset = ExeData::get("ArrivalPopUpLocation", keyValueMap);
 	const int arrivalPopUpDateOffset = ExeData::get("ArrivalPopUpDate", keyValueMap);
 	const int arrivalPopUpDaysOffset = ExeData::get("ArrivalPopUpDays", keyValueMap);
+	const int arrivalCenterProvinceLocationOffset =
+		ExeData::get("ArrivalCenterProvinceLocation", keyValueMap);
 	const int staffDungeonSplashesOffset = ExeData::get("StaffDungeonSplashes", keyValueMap);
 	const int staffDungeonSplashIndicesOffset = ExeData::get("StaffDungeonSplashIndices", keyValueMap);
 
@@ -422,6 +424,8 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	this->arrivalPopUpLocation = ExeData::readString(data + arrivalPopUpLocationOffset);
 	this->arrivalPopUpDate = ExeData::readString(data + arrivalPopUpDateOffset);
 	this->arrivalPopUpDays = ExeData::readString(data + arrivalPopUpDaysOffset);
+	this->arrivalCenterProvinceLocation =
+		ExeData::readString(data + arrivalCenterProvinceLocationOffset);
 	initStringArray(this->staffDungeonSplashes, data + staffDungeonSplashesOffset);
 	initInt8Array(this->staffDungeonSplashIndices, data + staffDungeonSplashIndicesOffset);
 }

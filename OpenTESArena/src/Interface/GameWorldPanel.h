@@ -69,6 +69,11 @@ public:
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel() = default;
 
+	// Gets the center of the screen for pop-up related functions. The position depends on
+	// whether modern interface mode is set.
+	static Int2 getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
+		Renderer &renderer);
+
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void resize(int windowWidth, int windowHeight) override;

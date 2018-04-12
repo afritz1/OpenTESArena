@@ -28,6 +28,10 @@ private:
 	// Gets the animation for display.
 	const std::vector<Texture> &getAnimation() const;
 
+	// Creates a text sub-panel for display when the player arrives at a city.
+	// - To do: holiday pop-up function.
+	std::unique_ptr<Panel> makeCityArrivalPopUp() const;
+
 	// Updates the game clock based on the travel data.
 	void tickTravelTime(Random &random) const;
 

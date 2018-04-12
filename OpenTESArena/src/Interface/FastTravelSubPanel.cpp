@@ -1,17 +1,23 @@
 #include <algorithm>
+#include <sstream>
 
 #include "CursorAlignment.h"
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
+#include "TextAlignment.h"
+#include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../World/LocationType.h"
+#include "../Utilities/String.h"
 
 const double FastTravelSubPanel::FRAME_TIME = 1.0 / 24.0;
 const double FastTravelSubPanel::MIN_SECONDS = 1.0;
@@ -42,6 +48,218 @@ const std::vector<Texture> &FastTravelSubPanel::getAnimation() const
 		TextureFile::fromName(TextureName::FastTravel),
 		this->getBackgroundFilename(), renderer);
 	return animation;
+}
+
+std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
+{
+	auto &game = this->getGame();
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const bool modernInterface = game.getOptions().getModernInterface();
+	const Int2 center = GameWorldPanel::getInterfaceCenter(
+		modernInterface, textureManager, renderer) - Int2(0, 1);
+
+	const std::string text = [this, &game]()
+	{
+		auto &gameData = game.getGameData();
+		const auto &exeData = game.getMiscAssets().getExeData();
+
+		const auto &cityData = gameData.getCityDataFile();
+		const int provinceID = this->travelData.provinceID;
+		const int localCityID = this->travelData.locationID;
+		const auto &provinceData = cityData.getProvinceData(provinceID);
+		const auto &locationData = provinceData.getLocationData(localCityID);
+
+		const std::string locationString = [this, &gameData, &exeData, localCityID,
+			&provinceData, &locationData]()
+		{
+			if (this->travelData.provinceID != 8)
+			{
+				// The <city type> of <city name> in <province> Province.
+				// Replace first %s with location type.
+				const std::string &locationTypeName = [&exeData, localCityID]()
+				{
+					if (localCityID < 8)
+					{
+						// City.
+						return exeData.locations.locationTypes.front();
+					}
+					else if (localCityID < 16)
+					{
+						// Town.
+						return exeData.locations.locationTypes.at(1);
+					}
+					else
+					{
+						// Village.
+						return exeData.locations.locationTypes.at(2);
+					}
+				}();
+
+				std::string text = exeData.travel.locationFormatTexts.at(2);
+
+				// Replace first %s with location type name.
+				size_t index = text.find("%s");
+				text = text.replace(index, 2, locationTypeName);
+
+				// Replace second %s with location name.
+				index = text.find("%s", index);
+				text = text.replace(index, 2, locationData.name);
+
+				// Replace third %s with province name.
+				index = text.find("%s", index);
+				text = text.replace(index, 2, provinceData.name);
+
+				// Replace carriage returns with newlines.
+				text = String::replace(text, '\r', '\n');
+
+				return exeData.travel.arrivalPopUpLocation + text;
+			}
+			else
+			{
+				// Center province displays only the city name.
+				return exeData.travel.arrivalPopUpLocation +
+					exeData.travel.arrivalCenterProvinceLocation;
+			}
+		}();
+
+		const std::string dateString = [&gameData, &exeData]()
+		{
+			return exeData.travel.arrivalPopUpDate +
+				GameData::getDateString(gameData.getDate(), exeData);
+		}();
+
+		const std::string daysString = [this, &exeData]()
+		{
+			std::string text = exeData.travel.arrivalPopUpDays;
+
+			// Replace %d with travel days.
+			size_t index = text.find("%d");
+			text = text.replace(index, 2, std::to_string(this->travelData.travelDays));
+
+			return text;
+		}();
+
+		const std::string locationDescriptionString = [provinceID, localCityID,
+			&locationData, &game, &gameData]()
+		{
+			const auto &miscAssets = game.getMiscAssets();
+			const LocationType locationType = Location::getCityType(localCityID);
+			
+			// Get the description for the local location. If it's a town or village, choose
+			// one of the three substrings randomly. Otherwise, get the city description text
+			// directly.
+			std::string description = [&gameData, provinceID, localCityID, &locationData,
+				locationType, &miscAssets]()
+			{
+				// City descriptions start at #0600. The three town descriptions are at #1422,
+				// and the three village descriptions are at #1423.
+				const std::string &templateDatText = [provinceID, localCityID,
+					locationType, &miscAssets]()
+				{
+					// Get the key that maps into TEMPLATE.DAT.
+					// - To do: use an integer instead.
+					const std::string key = [provinceID, localCityID,
+						locationType]() -> std::string
+					{
+						if (locationType == LocationType::CityState)
+						{
+							std::stringstream ss;
+							ss << std::setfill('0') << std::setw(2) <<
+								std::to_string(localCityID + (8 * provinceID));
+							return "#06" + ss.str();
+						}
+						else if (locationType == LocationType::Town)
+						{
+							return "#1422";
+						}
+						else if (locationType == LocationType::Village)
+						{
+							return "#1423";
+						}
+						else
+						{
+							throw std::runtime_error("Bad location type \"" +
+								std::to_string(static_cast<int>(locationType)) + "\".");
+						}
+					}();
+
+					return miscAssets.getTemplateDatText(key);
+				}();
+
+				if (locationType == LocationType::CityState)
+				{
+					return templateDatText;
+				}
+				else
+				{
+					std::string description = [&gameData, &templateDatText]()
+					{
+						std::vector<std::string> strings = String::split(templateDatText, '&');
+						ArenaRandom &random = gameData.getRandom();
+						return strings.at(random.next() % strings.size());
+					}();
+
+					// Replace %cn with city name.
+					size_t index = description.find("%cn");
+					description = description.replace(index, 3, locationData.name);
+
+					// To do: replace %t with ruler title, etc.. See Name Generation in wiki.
+
+					// Remove erroneous carriage returns and newlines at the beginning.
+					// - To do: don't do clean-up on templateDat construction.
+					while ((description.front() == '\r') || (description.front() == '\n'))
+					{
+						description.erase(description.begin());
+					}
+
+					return description;
+				}
+			}();
+
+			// Remove erroneous carriage returns and newlines at the end (if any).
+			if ((description.back() == '\r') || (description.back() == '\n'))
+			{
+				description.pop_back();
+			}
+			
+			return description;
+		}();
+
+		// To do: re-distribute newlines based on max text box width.
+		std::string fullText = locationString + dateString +
+			daysString + '\n' + locationDescriptionString;
+
+		fullText = String::replace(fullText, '\r', '\n');
+
+		return fullText;
+	}();
+
+	const int lineSpacing = 1;
+	const Color color(251, 239, 77);
+
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		color,
+		TextAlignment::Center,
+		lineSpacing,
+		game.getFontManager());
+
+	Texture texture(Texture::generate(Texture::PatternType::Dark,
+		richText.getDimensions().x + 10, richText.getDimensions().y + 12,
+		textureManager, renderer));
+
+	const Int2 textureCenter(center.x, center.y + 1);
+
+	auto function = [](Game &game)
+	{
+		game.popSubPanel();
+	};
+
+	return std::make_unique<TextSubPanel>(game, center, richText, function,
+		std::move(texture), textureCenter);
 }
 
 std::pair<SDL_Texture*, CursorAlignment> FastTravelSubPanel::getCurrentCursor() const
@@ -98,6 +316,10 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Clear the lore text (action text and effect text are unchanged).
 	gameData.getTriggerText().reset();
 
+	// Pop this sub-panel on the next game loop. The game loop pops old sub-panels before
+	// pushing new ones, so call order doesn't matter.
+	game.popSubPanel();
+
 	// Decide how to load the location.
 	if (this->travelData.locationID < 32)
 	{
@@ -133,6 +355,10 @@ void FastTravelSubPanel::switchToNextPanel()
 			MusicName::Night : GameData::getExteriorMusicName(weatherType);
 		game.setMusic(musicName);
 		game.setPanel<GameWorldPanel>(game);
+
+		// Push a text sub-panel for the city arrival pop-up.
+		std::unique_ptr<Panel> arrivalPopUp = this->makeCityArrivalPopUp();
+		game.pushSubPanel(std::move(arrivalPopUp));
 	}
 	else
 	{
@@ -179,9 +405,6 @@ void FastTravelSubPanel::switchToNextPanel()
 			game.setPanel<GameWorldPanel>(game);
 		}
 	}
-
-	// Pop this sub-panel.
-	game.popSubPanel();
 }
 
 void FastTravelSubPanel::tick(double dt)

@@ -98,6 +98,9 @@ public:
 	GameData(GameData&&) = default;
 	~GameData();
 
+	// Gets the date string for a given date, using strings from the executable data.
+	static std::string getDateString(const Date &date, const ExeData &exeData);
+
 	// Gets the music name associated with the given weather. The caller may need to check
 	// the current time to see if they should use night music instead.
 	static MusicName getExteriorMusicName(WeatherType weatherType);

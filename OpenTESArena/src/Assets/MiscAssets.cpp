@@ -1104,7 +1104,7 @@ const ExeData &MiscAssets::getExeData() const
 	return this->exeData;
 }
 
-const std::string &MiscAssets::getTemplateDatText(const std::string &key)
+const std::string &MiscAssets::getTemplateDatText(const std::string &key) const
 {
 	const auto iter = this->templateDat.find(key);
 	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" +

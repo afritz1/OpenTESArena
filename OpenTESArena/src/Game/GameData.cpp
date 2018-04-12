@@ -137,6 +137,37 @@ GameData::~GameData()
 	DebugMention("Closing.");
 }
 
+std::string GameData::getDateString(const Date &date, const ExeData &exeData)
+{
+	std::string text = exeData.status.date;
+
+	// Replace carriage returns with newlines.
+	text = String::replace(text, '\r', '\n');
+
+	// Replace first %s with weekday.
+	const std::string &weekdayString =
+		exeData.calendar.weekdayNames.at(date.getWeekday());
+	size_t index = text.find("%s");
+	text = text.replace(index, 2, weekdayString);
+
+	// Replace %u%s with day and ordinal suffix.
+	const std::string dayString = date.getOrdinalDay();
+	index = text.find("%u%s");
+	text = text.replace(index, 4, dayString);
+
+	// Replace third %s with month.
+	const std::string &monthString =
+		exeData.calendar.monthNames.at(date.getMonth());
+	index = text.find("%s");
+	text = text.replace(index, 2, monthString);
+
+	// Replace %d with year.
+	index = text.find("%d");
+	text = text.replace(index, 2, std::to_string(date.getYear()));
+
+	return text;
+}
+
 std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 	TextureManager &textureManager)
 {
