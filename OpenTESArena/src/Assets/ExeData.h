@@ -187,6 +187,9 @@ public:
 		// Display name of the initial dungeon.
 		std::string startDungeonName;
 
+		// .MIF names of the initial and final main quest dungeons.
+		std::string startDungeonMifName, finalDungeonMifName;
+
 		// Indices for each province that has a staff piece, ordered as they are found in-game.
 		std::array<uint8_t, 8> staffProvinces;
 

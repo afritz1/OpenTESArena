@@ -266,7 +266,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 						// Load starting dungeon.
-						const MIFFile mif("START.MIF");
+						const auto &exeData = miscAssets.getExeData();
+						const std::string mifName = String::toUppercase(
+							exeData.locations.startDungeonMifName);
+						const MIFFile mif(mifName);
 						const int provinceID = 8;
 						const Location location = Location::makeSpecialCase(
 							Location::SpecialCaseType::StartDungeon, provinceID);

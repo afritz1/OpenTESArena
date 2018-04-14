@@ -317,6 +317,8 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int provinceImgFilenamesOffset = ExeData::get("ProvinceImgFilenames", keyValueMap);
 	const int locationTypesOffset = ExeData::get("LocationTypes", keyValueMap);
 	const int startDungeonNameOffset = ExeData::get("StartDungeonName", keyValueMap);
+	const int startDungeonMifNameOffset = ExeData::get("StartDungeonMifName", keyValueMap);
+	const int finalDungeonMifNameOffset = ExeData::get("FinalDungeonMifName", keyValueMap);
 	const int staffProvincesOffset = ExeData::get("StaffProvinces", keyValueMap);
 	const int climatesOffset = ExeData::get("Climates", keyValueMap);
 	const int weatherTableOffset = ExeData::get("WeatherTable", keyValueMap);
@@ -339,6 +341,8 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->provinceImgFilenames, data + provinceImgFilenamesOffset);
 	initStringArray(this->locationTypes, data + locationTypesOffset);
 	this->startDungeonName = ExeData::readString(data + startDungeonNameOffset);
+	this->startDungeonMifName = ExeData::readString(data + startDungeonMifNameOffset);
+	this->finalDungeonMifName = ExeData::readString(data + finalDungeonMifNameOffset);
 	initInt8Array(this->staffProvinces, data + staffProvincesOffset);
 	initInt8Array(this->climates, data + climatesOffset);
 	initInt8Array(this->weatherTable, data + weatherTableOffset);

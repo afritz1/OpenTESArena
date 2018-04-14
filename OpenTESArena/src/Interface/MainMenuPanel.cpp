@@ -649,24 +649,25 @@ std::string MainMenuPanel::getSelectedTestName() const
 {
 	if (this->testType == TestType_MainQuest)
 	{
+		auto &game = this->getGame();
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &exeData = miscAssets.getExeData();
+
 		// Decide how to get the main quest dungeon name.
 		if (this->testIndex == 0)
 		{
 			// Start dungeon.
-			return "START.MIF";
+			return String::toUppercase(exeData.locations.startDungeonMifName);
 		}
 		else if (this->testIndex == (MainQuestLocationCount - 1))
 		{
 			// Final dungeon.
-			return "IMPPAL.MIF";
+			return String::toUppercase(exeData.locations.finalDungeonMifName);
 		}
 		else
 		{
 			// Generate the location from the executable data, fetching data from a
 			// global function.
-			auto &game = this->getGame();
-			const auto &miscAssets = game.getMiscAssets();
-			const auto &exeData = miscAssets.getExeData();
 			const Location location = getMainQuestLocationFromIndex(exeData, this->testIndex);
 
 			// Calculate the .MIF name from the dungeon seed.
