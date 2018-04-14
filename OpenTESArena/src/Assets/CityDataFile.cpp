@@ -316,6 +316,17 @@ uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
 
+uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
+{
+	const auto &province = this->getProvinceData(provinceID);
+	const int locationID = Location::cityToLocationID(localCityID);
+	const auto &location = province.getLocationData(locationID);
+	const Int2 localPoint(location.x, location.y);
+	const Int2 globalPoint = CityDataFile::localPointToGlobal(
+		localPoint, province.getGlobalRect());
+	return static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
+}
+
 uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
 {
 	const auto &province = this->provinces.at(provinceID);

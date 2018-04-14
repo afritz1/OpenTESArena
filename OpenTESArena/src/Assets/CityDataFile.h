@@ -111,6 +111,9 @@ public:
 	// Gets the 32-bit seed for a city.
 	uint32_t getCitySeed(int localCityID, int provinceID) const;
 
+	// Gets the 32-bit seed for a city's ruler.
+	uint32_t getRulerSeed(int localCityID, int provinceID) const;
+
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID, where
 	// the dungeon ID is between 0 and 15.
 	uint32_t getDungeonSeed(int localDungeonID, int provinceID) const;
