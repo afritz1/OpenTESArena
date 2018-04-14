@@ -324,7 +324,8 @@ uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
 	const Int2 localPoint(location.x, location.y);
 	const Int2 globalPoint = CityDataFile::localPointToGlobal(
 		localPoint, province.getGlobalRect());
-	return static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
+	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
+	return Bytes::rol32(seed, 16);
 }
 
 uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
