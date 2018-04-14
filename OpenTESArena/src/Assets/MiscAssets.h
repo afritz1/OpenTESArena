@@ -21,6 +21,7 @@
 class ArenaRandom;
 
 enum class ClimateType;
+enum class LocationType;
 
 class MiscAssets
 {
@@ -173,6 +174,10 @@ public:
 
 	// Gets the trade text object for trade conversations.
 	const MiscAssets::TradeText &getTradeText() const;
+
+	// Gets the ruler title associated with the given parameters.
+	const std::string &getRulerTitle(int provinceID, LocationType locationType,
+		bool isMale, ArenaRandom &random) const;
 
 	// Creates a random NPC name from the given parameters.
 	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;

@@ -7,6 +7,7 @@
 #include "MainQuestSplashPanel.h"
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
+#include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
@@ -71,8 +72,8 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		const auto &provinceData = cityData.getProvinceData(provinceID);
 		const auto &locationData = provinceData.getLocationData(localCityID);
 
-		const std::string locationString = [this, &gameData, &exeData, localCityID,
-			&provinceData, &locationData]()
+		const std::string locationString = [this, &gameData, &exeData, &cityData,
+			localCityID, &provinceData, &locationData]()
 		{
 			if (this->travelData.provinceID != 8)
 			{
@@ -141,17 +142,17 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			return text;
 		}();
 
-		const std::string locationDescriptionString = [provinceID, localCityID,
-			&locationData, &game, &gameData]()
+		const std::string locationDescriptionString = [&game, &gameData, &exeData,
+			&cityData, provinceID, localCityID, &locationData]()
 		{
 			const auto &miscAssets = game.getMiscAssets();
 			const LocationType locationType = Location::getCityType(localCityID);
-			
+
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text
 			// directly.
-			std::string description = [&gameData, provinceID, localCityID, &locationData,
-				locationType, &miscAssets]()
+			std::string description = [&gameData, &exeData, &cityData, provinceID, localCityID,
+				&locationData, locationType, &miscAssets]()
 			{
 				// City descriptions start at #0600. The three town descriptions are at #1422,
 				// and the three village descriptions are at #1423.
@@ -194,18 +195,46 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 				}
 				else
 				{
-					std::string description = [&gameData, &templateDatText]()
+					ArenaRandom &random = gameData.getRandom();
+					std::string description = [&random, &templateDatText]()
 					{
 						std::vector<std::string> strings = String::split(templateDatText, '&');
-						ArenaRandom &random = gameData.getRandom();
 						return strings.at(random.next() % strings.size());
 					}();
 
 					// Replace %cn with city name.
 					size_t index = description.find("%cn");
-					description = description.replace(index, 3, locationData.name);
+					description.replace(index, 3, locationData.name);
 
-					// To do: replace %t with ruler title, etc.. See Name Generation in wiki.
+					const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
+					random.srand(rulerSeed);
+
+					const bool isMale = (rulerSeed & 0x3) != 0;
+
+					// Replace %t with ruler title (if it exists).
+					index = description.find("%t");
+					if (index != std::string::npos)
+					{
+						const std::string &rulerTitle = miscAssets.getRulerTitle(
+							provinceID, locationType, isMale, random);
+						description.replace(index, 2, rulerTitle);
+					}
+
+					// Replace %rf with ruler first name (if it exists).
+					index = description.find("%rf");
+					if (index != std::string::npos)
+					{
+						const std::string rulerFirstName = [&miscAssets, provinceID,
+							&random, isMale]()
+						{
+							const std::string fullName = miscAssets.generateNpcName(
+								provinceID, isMale, random);
+							const std::vector<std::string> tokens = String::split(fullName, ' ');
+							return tokens.front();
+						}();
+
+						description.replace(index, 3, rulerFirstName);
+					}
 
 					// Remove erroneous carriage returns and newlines at the beginning.
 					// - To do: don't do clean-up on templateDat construction.
@@ -223,7 +252,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			{
 				description.pop_back();
 			}
-			
+
 			return description;
 		}();
 

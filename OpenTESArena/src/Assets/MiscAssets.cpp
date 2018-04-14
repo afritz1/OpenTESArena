@@ -14,6 +14,7 @@
 #include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
+#include "../World/LocationType.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -1147,6 +1148,35 @@ const std::array<MiscAssets::ArtifactTavernText, 16> &MiscAssets::getArtifactTav
 const MiscAssets::TradeText &MiscAssets::getTradeText() const
 {
 	return this->tradeText;
+}
+
+const std::string &MiscAssets::getRulerTitle(int provinceID, LocationType locationType,
+	bool isMale, ArenaRandom &random) const
+{
+	// Get the index into the titles list.
+	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
+	{
+		if (provinceID == 8)
+		{
+			return isMale ? 6 : 13;
+		}
+		else if (locationType == LocationType::CityState)
+		{
+			return isMale ? 5 : 12;
+		}
+		else if (locationType == LocationType::Village)
+		{
+			return isMale ? 0 : 7;
+		}
+		else
+		{
+			// Random for town.
+			const int randVal = (random.next() % 4) + 1;
+			return isMale ? randVal : (randVal + 7);
+		}
+	}();
+
+	return this->exeData.locations.rulerTitles.at(titleIndex);
 }
 
 std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
