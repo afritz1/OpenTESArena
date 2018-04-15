@@ -366,20 +366,14 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isSET)
 	{
-		// Load the SET file.
-		SETFile setFile(filename, palette);
+		const SETFile setFile(filename);
 
-		// Create an SDL_Surface for each image in the SET.
-		const int imageCount = setFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a surface for each image in the .SET.
+		for (int i = 0; i < setFile.getImageCount(); i++)
 		{
-			uint32_t *pixels = setFile.getPixels(i);
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT,
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
-
-			surfaceSet.push_back(Surface(surface));
+			Surface surface = TextureManager::make32BitFromPaletted(
+				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, setFile.getPixels(i), palette);
+			surfaceSet.push_back(std::move(surface));
 		}
 	}
 	else
@@ -506,21 +500,14 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isSET)
 	{
-		// Load the SET file.
-		SETFile setFile(filename, palette);
+		const SETFile setFile(filename);
 
-		// Create an SDL_Texture for each image in the SET.
-		const int imageCount = setFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a texture for each image in the .SET.
+		for (int i = 0; i < setFile.getImageCount(); i++)
 		{
-			SDL_Texture *texture = renderer.createTexture(
-				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
-
-			const uint32_t *pixels = setFile.getPixels(i);
-			SDL_UpdateTexture(texture, nullptr, pixels,
-				SETFile::CHUNK_WIDTH * sizeof(*pixels));
-
+			Surface surface = TextureManager::make32BitFromPaletted(
+				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, setFile.getPixels(i), palette);
+			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
 			textureSet.push_back(Texture(texture));
 		}
 	}

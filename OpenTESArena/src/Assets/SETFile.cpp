@@ -9,7 +9,7 @@ const int SETFile::CHUNK_WIDTH = 64;
 const int SETFile::CHUNK_HEIGHT = 64;
 const int SETFile::CHUNK_SIZE = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
 
-SETFile::SETFile(const std::string &filename, const Palette &palette)
+SETFile::SETFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -28,32 +28,26 @@ SETFile::SETFile(const std::string &filename, const Palette &palette)
 		srcData.push_back(0);
 	}
 
-	// Number of uncompressed chunks packed in the SET.
+	// Number of uncompressed chunks packed in the .SET.
 	const int chunkCount = static_cast<int>(srcData.size()) / SETFile::CHUNK_SIZE;
 
-	// Create an image for each uncompressed chunk using the given palette.
-	for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
+	// Create an image for each uncompressed chunk.
+	for (int i = 0; i < chunkCount; i++)
 	{
-		this->chunks.push_back(std::make_unique<uint32_t[]>(SETFile::CHUNK_SIZE));
+		this->pixels.push_back(std::make_unique<uint8_t[]>(SETFile::CHUNK_SIZE));
 
-		const int byteOffset = SETFile::CHUNK_SIZE * chunkIndex;
-		const auto chunkStart = srcData.begin() + byteOffset;
-		const auto chunkEnd = chunkStart + SETFile::CHUNK_SIZE;
-
-		std::transform(chunkStart, chunkEnd, this->chunks.at(chunkIndex).get(),
-			[&palette](uint8_t col) -> uint32_t
-		{
-			return palette.get()[col].toARGB();
-		});
+		const uint8_t *srcPixels = srcData.data() + (SETFile::CHUNK_SIZE * i);
+		uint8_t *dstPixels = this->pixels.back().get();
+		std::copy(srcPixels, srcPixels + SETFile::CHUNK_SIZE, dstPixels);
 	}
 }
 
 int SETFile::getImageCount() const
 {
-	return static_cast<int>(this->chunks.size());
+	return static_cast<int>(this->pixels.size());
 }
 
-uint32_t *SETFile::getPixels(int index) const
+const uint8_t *SETFile::getPixels(int index) const
 {
-	return this->chunks.at(index).get();
+	return this->pixels.at(index).get();
 }
