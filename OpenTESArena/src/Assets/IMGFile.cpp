@@ -40,7 +40,7 @@ namespace
 	};
 }
 
-IMGFile::IMGFile(const std::string &filename, const Palette *palette)
+IMGFile::IMGFile(const std::string &filename)
 {
 	// There are a couple .INFs that reference misspelled .IMGs. Arena doesn't seem
 	// to use them, so if they are requested here, just return a dummy image.
@@ -48,8 +48,8 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	{
 		this->width = 1;
 		this->height = 1;
-		this->pixels = std::make_unique<uint32_t[]>(this->width * this->height);
-		this->pixels[0] = Color::Black.toARGB();
+		this->pixels = std::make_unique<uint8_t[]>(this->width * this->height);
+		this->pixels[0] = 0;
 		return;
 	}
 
@@ -63,7 +63,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 
 	uint16_t xoff, yoff, width, height, flags, len;
 
-	// Read header data if not raw. Wall IMGs have no header and are 4096 bytes.
+	// Read header data if not raw. Wall .IMGs have no header and are 4096 bytes.
 	const auto rawOverride = RawImgOverride.find(filename);
 	const bool isRaw = rawOverride != RawImgOverride.end();
 	if (isRaw)
@@ -77,9 +77,9 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	}
 	else if (srcData.size() == 4096)
 	{
-		// Some wall IMGs have rows of black (transparent) pixels near the 
+		// Some wall .IMGs have rows of black (transparent) pixels near the 
 		// beginning, so the header would just be zeroes. This is a guess to 
-		// try and fix that issue as well as cover all other wall IMGs.
+		// try and fix that issue as well as cover all other wall .IMGs.
 		xoff = 0;
 		yoff = 0;
 		width = 64;
@@ -100,36 +100,22 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 
 	const int headerSize = 12;
 
-	// Try and read the IMG's built-in palette if the given palette is null.
-	Palette builtInPalette;
-	const bool useBuiltInPalette = palette == nullptr;
-
-	if (useBuiltInPalette)
+	// Read the .IMG's built-in palette if it has one.
+	const bool hasBuiltInPalette = (flags & 0x0100) != 0;
+	if (hasBuiltInPalette)
 	{
-		// This code might run even if the IMG doesn't have a palette, because
-		// some IMGs have no header and are not "raw" (like walls, for instance).
-		DebugAssert((flags & 0x0100) != 0, "\"" + filename + 
-			"\" does not have a built-in palette.");
-
-		// Read the palette data and write it to the destination palette.
-		IMGFile::readPalette(srcData.data() + headerSize + len, builtInPalette);
+		// Read the palette data.
+		this->palette = std::make_unique<Palette>(
+			IMGFile::readPalette(srcData.data() + headerSize + len));
 	}
 
-	// Choose which palette to use.
-	const Palette &paletteRef = useBuiltInPalette ? builtInPalette : (*palette);
-
-	// Lambda for setting IMGFile members and constructing the final image.
-	auto makeImage = [this, &paletteRef](int width, int height, const uint8_t *data)
+	// Lambda for setting members and constructing the final image.
+	auto makeImage = [this](int width, int height, const uint8_t *data)
 	{
 		this->width = width;
 		this->height = height;
-		this->pixels = std::make_unique<uint32_t[]>(width * height);
-
-		std::transform(data, data + (width * height), this->pixels.get(),
-			[&paletteRef](uint8_t col) -> uint32_t
-		{
-			return paletteRef.get()[col].toARGB();
-		});
+		this->pixels = std::make_unique<uint8_t[]>(width * height);
+		std::copy(data, data + (width * height), this->pixels.get());
 	};
 
 	// Decide how to use the pixel data.
@@ -141,9 +127,8 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 		{
 			this->width = 64;
 			this->height = 64;
-			this->pixels = std::make_unique<uint32_t[]>(this->width * this->height);
-			std::fill(this->pixels.get(), this->pixels.get() + (this->width * this->height),
-				paletteRef.get()[0].toARGB());
+			this->pixels = std::make_unique<uint8_t[]>(this->width * this->height);
+			std::fill(this->pixels.get(), this->pixels.get() + (this->width * this->height), 0);
 
 			for (int y = 0; y < height; y++)
 			{
@@ -152,8 +137,7 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 					// Offset the destination X by 32 so it matches DZTTEP.IMG.
 					const int srcIndex = x + (y * width);
 					const int dstIndex = (x + 32) + (y * this->width);
-					const uint8_t color = *(srcData.data() + srcIndex);
-					this->pixels[dstIndex] = paletteRef.get()[color].toARGB();
+					this->pixels[dstIndex] = *(srcData.data() + srcIndex);
 				}
 			}
 		}
@@ -204,30 +188,33 @@ IMGFile::IMGFile(const std::string &filename, const Palette *palette)
 	}
 }
 
-void IMGFile::readPalette(const uint8_t *paletteData, Palette &dstPalette)
+Palette IMGFile::readPalette(const uint8_t *paletteData)
 {
 	// The palette data is 768 bytes, starting after the pixel data ends.
 	// Unlike COL files, embedded palettes are stored with components in
 	// the range of 0...63 rather than 0...255 (this was because old VGA
 	// hardware only had 6-bit DACs, giving a maximum intensity value of
 	// 63, while newer hardware had 8-bit DACs for up to 255.
+	Palette palette;
 	uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t g = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t b = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
-	dstPalette.get()[0] = Color(r, g, b, 0);
+	palette.get()[0] = Color(r, g, b, 0);
 
 	// Remaining are solid, so give them 255 alpha.
-	std::generate(dstPalette.get().begin() + 1, dstPalette.get().end(),
-		[&paletteData]() -> Color
+	std::generate(palette.get().begin() + 1, palette.get().end(),
+		[&paletteData]()
 	{
 		uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 		uint8_t g = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 		uint8_t b = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 		return Color(r, g, b, 255);
 	});
+
+	return palette;
 }
 
-void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
+Palette IMGFile::extractPalette(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -237,20 +224,20 @@ void IMGFile::extractPalette(const std::string &filename, Palette &dstPalette)
 	stream->seekg(0, std::ios::beg);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	// Read the flags and IMG file length. Skip the X and Y offsets and dimensions.
+	// Read the flags and .IMG file length. Skip the X and Y offsets and dimensions.
 	// No need to check for raw override. All given filenames should point to IMGs
-	// with "built-in" palettes, and none of those IMGs are in the raw override.
+	// with "built-in" palettes, and none of those .IMGs are in the raw override.
 	const uint16_t flags = Bytes::getLE16(srcData.data() + 8);
 	const uint16_t len = Bytes::getLE16(srcData.data() + 10);
 
 	const int headerSize = 12;
 
 	// Don't try to read a built-in palette is there isn't one.
-	DebugAssert((flags & 0x0100) != 0, "\"" + filename + 
+	DebugAssert((flags & 0x0100) != 0, "\"" + filename +
 		"\" has no built-in palette to extract.");
 
-	// Read the palette data and write it to the destination palette.
-	IMGFile::readPalette(srcData.data() + headerSize + len, dstPalette);
+	// Get the palette.
+	return IMGFile::readPalette(srcData.data() + headerSize + len);
 }
 
 int IMGFile::getWidth() const
@@ -263,7 +250,12 @@ int IMGFile::getHeight() const
 	return this->height;
 }
 
-uint32_t *IMGFile::getPixels() const
+const Palette *IMGFile::getPalette() const
+{
+	return this->palette.get();
+}
+
+const uint8_t *IMGFile::getPixels() const
 {
 	return this->pixels.get();
 }

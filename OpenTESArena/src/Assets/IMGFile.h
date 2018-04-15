@@ -14,28 +14,30 @@
 class IMGFile
 {
 private:
-	std::unique_ptr<uint32_t[]> pixels;
+	std::unique_ptr<uint8_t[]> pixels;
+	std::unique_ptr<Palette> palette;
 	int width, height;
 
-	// Reads the palette from an IMG file and writes into the given palette reference.
-	static void readPalette(const uint8_t *paletteData, Palette &dstPalette);
+	// Reads the palette from an .IMG file's palette data.
+	static Palette readPalette(const uint8_t *paletteData);
 public:
-	// Loads an IMG from file. Uses the given palette unless it is null, then it 
-	// refers to the IMG's built-in palette instead if it has one.
-	IMGFile(const std::string &filename, const Palette *palette);
+	IMGFile(const std::string &filename);
 
-	// Extracts the palette from an IMG file and writes it into the given palette
-	// reference. Causes an error if the IMG file doesn't have a palette.
-	static void extractPalette(const std::string &filename, Palette &dstPalette);
+	// Extracts the palette from an .IMG file. Causes an error if the .IMG doesn't
+	// have a palette.
+	static Palette extractPalette(const std::string &filename);
 
-	// Gets the width of the IMG in pixels.
+	// Gets the width in pixels.
 	int getWidth() const;
 
-	// Gets the height of the IMG in pixels.
+	// Gets the height in pixels.
 	int getHeight() const;
 
-	// Gets a pointer to the pixel data for the IMG.
-	uint32_t *getPixels() const;
+	// Gets the image's palette, or null if it doesn't have one.
+	const Palette *getPalette() const;
+
+	// Gets a pointer to the image's pixels.
+	const uint8_t *getPixels() const;
 };
 
 #endif

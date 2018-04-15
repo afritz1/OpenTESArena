@@ -162,7 +162,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	this->blinkTimer = 0.0;
 
 	// Get the palette for the background image.
-	IMGFile::extractPalette(this->getBackgroundFilename(), this->provinceMapPalette);
+	this->provinceMapPalette = IMGFile::extractPalette(this->getBackgroundFilename());
 
 	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
 	// raw palette indices (for yellow and red color swapping).

@@ -35,9 +35,8 @@ void TextureManager::loadCOLPalette(const std::string &colName)
 
 void TextureManager::loadIMGPalette(const std::string &imgName)
 {
-	Palette dstPalette;
-	IMGFile::extractPalette(imgName, dstPalette);
-	this->palettes.emplace(std::make_pair(imgName, dstPalette));
+	this->palettes.emplace(
+		std::make_pair(imgName, IMGFile::extractPalette(imgName)));
 }
 
 void TextureManager::loadPalette(const std::string &paletteName)
@@ -142,17 +141,25 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 	else if (isIMG || isMNU)
 	{
-		// Decide if the IMG will use its own palette or not.
-		const Palette *palette = useBuiltInPalette ? nullptr : 
-			&this->palettes.at(paletteName);
+		const IMGFile img(filename);
 
-		// Load the IMG file.
-		IMGFile img(filename, palette);
+		// Decide if the .IMG will use its own palette or not.
+		const Palette &palette = useBuiltInPalette ?
+			*img.getPalette() : this->palettes.at(paletteName);
 		
-		// Create a surface from the IMG.
+		// Create a surface from the .IMG.
 		surface = Surface::createSurfaceWithFormat(img.getWidth(), img.getHeight(),
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_memcpy(surface->pixels, img.getPixels(), surface->pitch * surface->h);
+
+		// Generate 32-bit colors from each palette index in the .IMG pixels and
+		// write them to the destination image.
+		const uint8_t *srcPixels = img.getPixels();
+		uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
+		std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
+			[&palette](uint8_t srcPixel)
+		{
+			return palette.get()[srcPixel].toARGB();
+		});
 	}
 	else
 	{
@@ -206,19 +213,34 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 
 	if (isIMG || isMNU)
 	{
-		// Decide if the IMG will use its own palette or not.
-		const Palette *palette = useBuiltInPalette ? nullptr : 
-			&this->palettes.at(paletteName);
+		Surface surface = [this, &filename, &paletteName, useBuiltInPalette]()
+		{
+			const IMGFile img(filename);
 
-		// Load the IMG file.
-		IMGFile img(filename, palette);
+			// Decide if the .IMG will use its own palette or not.
+			const Palette &palette = useBuiltInPalette ?
+				*img.getPalette() : this->palettes.at(paletteName);
 
-		// Create a texture from the IMG.
-		texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-			SDL_TEXTUREACCESS_STATIC, img.getWidth(), img.getHeight());
+			// Create a surface from the .IMG.
+			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				img.getWidth(), img.getHeight(), Renderer::DEFAULT_BPP,
+				Renderer::DEFAULT_PIXELFORMAT);
 
-		uint32_t *pixels = img.getPixels();
-		SDL_UpdateTexture(texture, nullptr, pixels, img.getWidth() * sizeof(*pixels));
+			// Generate 32-bit colors from each palette index in the .IMG pixels and
+			// write them to the destination image.
+			const uint8_t *srcPixels = img.getPixels();
+			uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
+			std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
+				[&palette](uint8_t srcPixel)
+			{
+				return palette.get()[srcPixel].toARGB();
+			});
+
+			return Surface(surface);
+		}();
+
+		// Create a texture from the surface.
+		texture = renderer.createTextureFromSurface(surface.get());
 
 		// Set alpha transparency on.
 		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
