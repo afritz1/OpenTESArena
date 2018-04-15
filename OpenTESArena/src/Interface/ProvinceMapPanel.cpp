@@ -169,7 +169,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	if (provinceID != 8)
 	{
 		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
-		this->staffDungeonCif = std::make_unique<CIFFile>(cifName, this->provinceMapPalette);
+		this->staffDungeonCif = std::make_unique<CIFFile>(cifName);
 	}
 }
 
@@ -789,11 +789,11 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 				// Convert each palette index to its equivalent 32-bit color, changing 
 				// background indices to highlight indices as they are found.
-				const uint8_t *srcPixels = iconCif.getRawPixels(this->provinceID);
+				const uint8_t *srcPixels = iconCif.getPixels(this->provinceID);
 				uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
 				const int pixelCount = surface->w * surface->h;
 				std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
-					[&getColorFromIndex, highlightColor](const uint8_t &srcPixel)
+					[&getColorFromIndex, highlightColor](uint8_t srcPixel)
 				{
 					return (srcPixel == BackgroundPaletteIndex) ?
 						highlightColor : getColorFromIndex(srcPixel);

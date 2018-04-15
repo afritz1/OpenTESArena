@@ -23,7 +23,7 @@ namespace
 	};
 }
 
-CIFFile::CIFFile(const std::string &filename, const Palette &palette)
+CIFFile::CIFFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -81,23 +81,15 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeRLE(header + 12, width * height, decomp);
 
-			this->rawPixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->pixels.push_back(std::make_unique<uint32_t[]>(width * height));
+			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *imagePixels = decomp.data();
-			uint8_t *dstRawPixels = this->rawPixels.back().get();
-			uint32_t *dstPixels = this->pixels.back().get();
+			const uint8_t *srcPixels = decomp.data();
+			uint8_t *dstPixels = this->pixels.back().get();
+			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
-			std::copy(imagePixels, imagePixels + (width * height), dstRawPixels);
-			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
-				[&palette](uint8_t col) -> uint32_t
-			{
-				return palette.get()[col].toARGB();
-			});
-
-			offset += (headerSize + len);
+			offset += headerSize + len;
 		}
 	}
 	else if ((flags & 0x00FF) == 0x0004)
@@ -118,23 +110,15 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeType04(header + 12, header + 12 + len, decomp);
 
-			this->rawPixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->pixels.push_back(std::make_unique<uint32_t[]>(width * height));
+			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *imagePixels = decomp.data();
-			uint8_t *dstRawPixels = this->rawPixels.back().get();
-			uint32_t *dstPixels = this->pixels.back().get();
+			const uint8_t *srcPixels = decomp.data();
+			uint8_t *dstPixels = this->pixels.back().get();
+			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
-			std::copy(imagePixels, imagePixels + (width * height), dstRawPixels);
-			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
-				[&palette](uint8_t col) -> uint32_t
-			{
-				return palette.get()[col].toARGB();
-			});
-
-			offset += (headerSize + len);
+			offset += headerSize + len;
 		}
 	}
 	else if ((flags & 0x00FF) == 0x0008)
@@ -158,23 +142,16 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			// (should be equivalent to width * height).
 			Compression::decodeType08(header + 12 + 2, header + 12 + len, decomp);
 
-			this->rawPixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->pixels.push_back(std::make_unique<uint32_t[]>(width * height));
+			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *imagePixels = decomp.data();
-			uint8_t *dstRawPixels = this->rawPixels.back().get();
-			uint32_t *dstPixels = this->pixels.back().get();
+			const uint8_t *srcPixels = decomp.data();
+			uint8_t *dstPixels = this->pixels.back().get();
+			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
-			std::copy(imagePixels, imagePixels + (width * height), dstRawPixels);
-			std::transform(imagePixels, imagePixels + (width * height), dstPixels,
-				[&palette](uint8_t col) -> uint32_t
-			{
-				return palette.get()[col].toARGB();
-			});
-
-			offset += (headerSize + len);
+			// Skip to the next image header.
+			offset += headerSize + len;
 		}
 	}
 	else if (isRaw)
@@ -184,21 +161,13 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 
 		for (int i = 0; i < imageCount; i++)
 		{
-			this->rawPixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->pixels.push_back(std::make_unique<uint32_t[]>(width * height));
+			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *imagePixels = srcData.data() + (i * len);
-			uint8_t *dstRawPixels = this->rawPixels.back().get();
-			uint32_t *dstPixels = this->pixels.back().get();
-
-			std::copy(imagePixels, imagePixels + len, dstRawPixels);
-			std::transform(imagePixels, imagePixels + len, dstPixels,
-				[&palette](uint8_t col) -> uint32_t
-			{
-				return palette.get()[col].toARGB();
-			});
+			const uint8_t *srcPixels = srcData.data() + (i * len);
+			uint8_t *dstPixels = this->pixels.back().get();
+			std::copy(srcPixels, srcPixels + len, dstPixels);
 		}
 	}
 	else if ((flags & 0x00FF) == 0)
@@ -217,24 +186,16 @@ CIFFile::CIFFile(const std::string &filename, const Palette &palette)
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			this->rawPixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->pixels.push_back(std::make_unique<uint32_t[]>(width * height));
+			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *imagePixels = header + headerSize;
-			uint8_t *dstRawPixels = this->rawPixels.back().get();
-			uint32_t *dstPixels = this->pixels.back().get();
-
-			std::copy(imagePixels, imagePixels + len, dstRawPixels);
-			std::transform(imagePixels, imagePixels + len, dstPixels,
-				[&palette](uint8_t col) -> uint32_t
-			{
-				return palette.get()[col].toARGB();
-			});
+			const uint8_t *srcPixels = header + headerSize;
+			uint8_t *dstPixels = this->pixels.back().get();
+			std::copy(srcPixels, srcPixels + len, dstPixels);
 
 			// Skip to the next image header.
-			offset += (headerSize + len);
+			offset += headerSize + len;
 		}
 	}
 	else
@@ -268,12 +229,7 @@ int CIFFile::getHeight(int index) const
 	return this->dimensions.at(index).y;
 }
 
-uint8_t *CIFFile::getRawPixels(int index) const
-{
-	return this->rawPixels.at(index).get();
-}
-
-uint32_t *CIFFile::getPixels(int index) const
+const uint8_t *CIFFile::getPixels(int index) const
 {
 	return this->pixels.at(index).get();
 }

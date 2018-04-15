@@ -49,7 +49,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 	}();
 
 	// Load province name offsets.
-	const CIFFile cif("OUTPROV.CIF", Palette());
+	const CIFFile cif("OUTPROV.CIF");
 	for (int i = 0; i < static_cast<int>(this->provinceNameOffsets.size()); i++)
 	{
 		this->provinceNameOffsets.at(i) = Int2(cif.getXOffset(i), cif.getYOffset(i));

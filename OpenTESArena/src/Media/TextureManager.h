@@ -47,7 +47,7 @@ public:
 	const Surface &getSurface(const std::string &filename, const std::string &paletteName);
 	const Surface &getSurface(const std::string &filename);
 
-	// Similar to getSurface(), but for hardware-accelerated textures.
+	// Similar to getSurface() but for hardware-accelerated textures.
 	const Texture &getTexture(const std::string &filename, const std::string &paletteName,
 		Renderer &renderer);
 	const Texture &getTexture(const std::string &filename, Renderer &renderer);

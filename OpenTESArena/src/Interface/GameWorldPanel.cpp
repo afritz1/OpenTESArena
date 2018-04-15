@@ -437,7 +437,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	if (!weaponAnimation.isRanged())
 	{
 		// Melee weapon offsets.
-		const CIFFile cifFile(weaponFilename, Palette());
+		const CIFFile cifFile(weaponFilename);
 
 		for (int i = 0; i < cifFile.getImageCount(); i++)
 		{

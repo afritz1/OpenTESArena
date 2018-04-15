@@ -148,7 +148,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	const auto &player = this->getGame().getGameData().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
 		player.getGenderName(), player.getRaceID(), false);
-	CIFFile cifFile(headsFilename, Palette());
+	const CIFFile cifFile(headsFilename);
 
 	for (int i = 0; i < cifFile.getImageCount(); i++)
 	{
