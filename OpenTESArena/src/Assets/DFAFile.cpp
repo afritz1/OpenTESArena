@@ -7,7 +7,7 @@
 
 #include "components/vfs/manager.hpp"
 
-DFAFile::DFAFile(const std::string &filename, const Palette &palette)
+DFAFile::DFAFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -77,17 +77,12 @@ DFAFile::DFAFile(const std::string &filename, const Palette &palette)
 	this->width = width;
 	this->height = height;
 
-	// Finally, create 32-bit images using each frame's palette indices.
+	// Store each 8-bit image.
 	for (const auto &frame : frames)
 	{
-		this->pixels.push_back(std::make_unique<uint32_t[]>(this->width * this->height));
-		uint32_t *dstPixels = this->pixels.back().get();
-
-		std::transform(frame.begin(), frame.begin() + frame.size(), dstPixels,
-			[&palette](uint8_t col) -> uint32_t
-		{
-			return palette.get()[col].toARGB();
-		});
+		this->pixels.push_back(std::make_unique<uint8_t[]>(this->width * this->height));
+		uint8_t *dstPixels = this->pixels.back().get();
+		std::copy(frame.begin(), frame.end(), dstPixels);
 	}
 }
 
@@ -106,7 +101,7 @@ int DFAFile::getHeight() const
 	return this->height;
 }
 
-uint32_t *DFAFile::getPixels(int index) const
+const uint8_t *DFAFile::getPixels(int index) const
 {
 	return this->pixels.at(index).get();
 }

@@ -307,20 +307,14 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isDFA)
 	{
-		// Load the DFA file.
-		DFAFile dfaFile(filename, palette);
+		const DFAFile dfaFile(filename);
 
-		// Create an SDL_Surface for each image in the DFA.
-		const int imageCount = dfaFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a surface for each image in the .DFA.
+		for (int i = 0; i < dfaFile.getImageCount(); i++)
 		{
-			uint32_t *pixels = dfaFile.getPixels(i);
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
-				dfaFile.getWidth(), dfaFile.getHeight(),
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
-
-			surfaceSet.push_back(Surface(surface));
+			Surface surface = TextureManager::make32BitFromPaletted(
+				dfaFile.getWidth(), dfaFile.getHeight(), dfaFile.getPixels(i), palette);
+			surfaceSet.push_back(std::move(surface));
 		}
 	}
 	else if (isFLC || isCEL)
@@ -461,21 +455,14 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isDFA)
 	{
-		// Load the DFA file.
-		DFAFile dfaFile(filename, palette);
+		const DFAFile dfaFile(filename);
 
-		// Create an SDL_Texture for each image in the DFA.
-		const int imageCount = dfaFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a texture for each image in the .DFA.
+		for (int i = 0; i < dfaFile.getImageCount(); i++)
 		{
-			SDL_Texture *texture = renderer.createTexture(
-				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
-				dfaFile.getWidth(), dfaFile.getHeight());
-
-			const uint32_t *pixels = dfaFile.getPixels(i);
-			SDL_UpdateTexture(texture, nullptr, pixels,
-				dfaFile.getWidth() * sizeof(*pixels));
-
+			Surface surface = TextureManager::make32BitFromPaletted(
+				dfaFile.getWidth(), dfaFile.getHeight(), dfaFile.getPixels(i), palette);
+			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
 			textureSet.push_back(Texture(texture));
 		}
 	}
