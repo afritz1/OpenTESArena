@@ -27,41 +27,45 @@
 class FLCFile
 {
 private:
-	// One unique_ptr for each frame.
-	std::vector<std::unique_ptr<uint32_t[]>> pixels;
+	// One unique_ptr for each frame. Each integer points into that frame's palette.
+	std::vector<std::pair<int, std::unique_ptr<uint8_t[]>>> pixels;
+	std::vector<Palette> palettes;
 	double frameDuration;
 	int width;
 	int height;
 
-	// Reads a palette chunk and writes the results to the given palette reference.
-	void readPaletteData(const uint8_t *chunkData, Palette &dstPalette);
+	// Reads a palette chunk returns the results.
+	static Palette readPalette(const uint8_t *chunkData);
 
 	// Decodes a fullscreen FLC chunk by updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint32_t[]> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
-		const Palette &palette, std::vector<uint8_t> &initialFrame);
+	std::unique_ptr<uint8_t[]> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
+		std::vector<uint8_t> &initialFrame);
 
 	// Decodes a delta FLC chunk by partially updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint32_t[]> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
-		const Palette &palette, std::vector<uint8_t> &initialFrame);
+	std::unique_ptr<uint8_t[]> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
+		std::vector<uint8_t> &initialFrame);
 public:
 	FLCFile(const std::string &filename);
 
-	// Gets the number of frames in the FLC file.
+	// Gets the number of frames.
 	int getFrameCount() const;
 
-	// Gets the duration of each frame in seconds in the FLC file.
+	// Gets the duration of each frame in seconds.
 	double getFrameDuration() const;
 
-	// Gets the width of each frame in the FLC file.
+	// Gets the width of each frame.
 	int getWidth() const;
 
-	// Gets the height of each frame in the FLC file.
+	// Gets the height of each frame.
 	int getHeight() const;
 
-	// Gets the pixel data for a frame in the FLC file.
-	uint32_t *getPixels(int index) const;
+	// Gets the palette associated with the given frame index.
+	const Palette &getFramePalette(int index) const;
+
+	// Gets the pixel data for some frame.
+	const uint8_t *getPixels(int index) const;
 };
 
 #endif

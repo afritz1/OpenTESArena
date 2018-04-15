@@ -319,20 +319,15 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isFLC || isCEL)
 	{
-		// Load the FLC file. CELs are basically identical to FLCs.
-		FLCFile flcFile(filename);
+		const FLCFile flcFile(filename);
 
-		// Create an SDL_Surface for each frame in the FLC.
-		const int imageCount = flcFile.getFrameCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a surface for each frame in the .FLC.
+		for (int i = 0; i < flcFile.getFrameCount(); i++)
 		{
-			uint32_t *pixels = flcFile.getPixels(i);
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
-				flcFile.getWidth(), flcFile.getHeight(),
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
-
-			surfaceSet.push_back(Surface(surface));
+			Surface surface = TextureManager::make32BitFromPaletted(
+				flcFile.getWidth(), flcFile.getHeight(), flcFile.getPixels(i),
+				flcFile.getFramePalette(i));
+			surfaceSet.push_back(std::move(surface));
 		}
 	}
 	else if (isRCI)
@@ -468,21 +463,15 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isFLC || isCEL)
 	{
-		// Load the FLC file. CELs are basically identical to FLCs.
-		FLCFile flcFile(filename);
+		const FLCFile flcFile(filename);
 
-		// Create an SDL_Texture for each frame in the FLC.
-		const int imageCount = flcFile.getFrameCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a texture for each frame in the .FLC.
+		for (int i = 0; i < flcFile.getFrameCount(); i++)
 		{
-			SDL_Texture *texture = renderer.createTexture(
-				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
-				flcFile.getWidth(), flcFile.getHeight());
-
-			const uint32_t *pixels = flcFile.getPixels(i);
-			SDL_UpdateTexture(texture, nullptr, pixels,
-				flcFile.getWidth() * sizeof(*pixels));
-
+			Surface surface = TextureManager::make32BitFromPaletted(
+				flcFile.getWidth(), flcFile.getHeight(), flcFile.getPixels(i),
+				flcFile.getFramePalette(i));
+			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
 			textureSet.push_back(Texture(texture));
 		}
 	}

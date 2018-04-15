@@ -111,15 +111,12 @@ FLCFile::FLCFile(const std::string &filename)
 	header.speed = Bytes::getLE32(srcData.data() + 16);
 
 	// This class will only support the format used by Arena (0xAF12) for now.
-	DebugAssert(header.type == static_cast<int>(FileType::FLC_TYPE), 
+	DebugAssert(header.type == static_cast<int>(FileType::FLC_TYPE),
 		"Unsupported file type \"" + std::to_string(header.type) + "\".");
 
 	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
 	this->width = header.width;
 	this->height = header.height;
-
-	// Palette which is filled by one of the FLIC color chunks.
-	Palette palette;
 
 	// Current state of the frame's palette indices. Completely updated by byte runs
 	// and partially updated by delta frames.
@@ -153,24 +150,24 @@ FLCFile::FLCFile(const std::string &filename)
 				// Just concerned with palettes, full frames, and delta frames.
 				if (chunkHeader.type == ChunkType::COLOR_256)
 				{
-					// Palette chunk.
-					this->readPaletteData(chunkData, palette);
+					// Palette.
+					this->palettes.push_back(this->readPalette(chunkData));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_BRUN)
 				{
 					// Full frame chunk.
-					auto frame = this->decodeFullFrame(chunkData, chunkHeader.size,
-						palette, framePixels);
-
-					this->pixels.push_back(std::move(frame));
+					std::unique_ptr<uint8_t[]> frame = this->decodeFullFrame(
+						chunkData, chunkHeader.size, framePixels);
+					const int paletteIndex = static_cast<int>(this->palettes.size() - 1);
+					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_SS2)
 				{
 					// Delta frame chunk.
-					auto frame = this->decodeDeltaFrame(chunkData, chunkHeader.size,
-						palette, framePixels);
-
-					this->pixels.push_back(std::move(frame));
+					std::unique_ptr<uint8_t[]> frame = this->decodeDeltaFrame(
+						chunkData, chunkHeader.size, framePixels);
+					const int paletteIndex = static_cast<int>(this->palettes.size() - 1);
+					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else
 				{
@@ -200,30 +197,33 @@ FLCFile::FLCFile(const std::string &filename)
 	this->pixels.pop_back();
 }
 
-void FLCFile::readPaletteData(const uint8_t *chunkData, Palette &dstPalette)
+Palette FLCFile::readPalette(const uint8_t *chunkData)
 {
 	// The number of elements (i.e., "groups" of pixels) should be one.
 	const uint16_t numberOfElements = Bytes::getLE16(chunkData);
-	DebugAssert(numberOfElements == 1, "Unusual palette element count: " + 
-		std::to_string(numberOfElements) + ".");
+	DebugAssert(numberOfElements == 1, "Unusual palette element count \"" +
+		std::to_string(numberOfElements) + "\".");
 
 	// Skip count and color count should both be ignored (one byte each).
 
 	// Read through the RGB components and place them in the palette. There isn't 
 	// a need for the first color to be transparent.
+	Palette palette;
 	const uint8_t *colorData = chunkData + 4;
-	for (int i = 0; i < 255; i++)
+	for (size_t i = 0; i < palette.get().size(); i++)
 	{
 		const uint8_t *ptr = colorData + (i * 3);
 		const uint8_t r = *(ptr + 0);
 		const uint8_t g = *(ptr + 1);
 		const uint8_t b = *(ptr + 2);
-		dstPalette.get()[i] = Color(r, g, b, 255);
+		palette.get()[i] = Color(r, g, b, 255);
 	}
+
+	return palette;
 }
 
-std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
-	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
+std::unique_ptr<uint8_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
+	int chunkSize, std::vector<uint8_t> &initialFrame)
 {
 	// Decode a fullscreen image chunk. Most likely the first image in the FLIC.
 	std::vector<uint8_t> decomp(this->width * this->height);
@@ -286,20 +286,16 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	// Write the decoded frame to the initial (scratch) frame.
 	initialFrame = decomp;
 
-	const uint8_t *decompPixels = decomp.data();
-	auto image = std::make_unique<uint32_t[]>(this->width * this->height);
-
-	std::transform(decompPixels, decompPixels + decomp.size(), image.get(),
-		[&palette](uint8_t col) -> uint32_t
-	{
-		return palette.get()[col].toARGB();
-	});
+	const uint8_t *srcPixels = decomp.data();
+	auto image = std::make_unique<uint8_t[]>(this->width * this->height);
+	uint8_t *dstPixels = image.get();
+	std::copy(srcPixels, srcPixels + decomp.size(), dstPixels);
 
 	return std::move(image);
 }
 
-std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
-	int chunkSize, const Palette &palette, std::vector<uint8_t> &initialFrame)
+std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
+	int chunkSize, std::vector<uint8_t> &initialFrame)
 {
 	// Decode a delta frame chunk. The majority of FLIC frames are this format.
 
@@ -422,14 +418,10 @@ std::unique_ptr<uint32_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 
 	// Use the modified initial frame as the source instead of a separate
 	// decompressed buffer.
-	const uint8_t *framePixels = initialFrame.data();
-	auto image = std::make_unique<uint32_t[]>(this->width * this->height);
-
-	std::transform(framePixels, framePixels + initialFrame.size(), image.get(),
-		[&palette](uint8_t col) -> uint32_t
-	{
-		return palette.get()[col].toARGB();
-	});
+	const uint8_t *srcPixels = initialFrame.data();
+	auto image = std::make_unique<uint8_t[]>(this->width * this->height);
+	uint8_t *dstPixels = image.get();
+	std::copy(srcPixels, srcPixels + initialFrame.size(), dstPixels);
 
 	return std::move(image);
 }
@@ -454,7 +446,13 @@ int FLCFile::getHeight() const
 	return this->height;
 }
 
-uint32_t *FLCFile::getPixels(int index) const
+const Palette &FLCFile::getFramePalette(int index) const
 {
-	return this->pixels.at(index).get();
+	const int paletteIndex = this->pixels.at(index).first;
+	return this->palettes.at(paletteIndex);
+}
+
+const uint8_t *FLCFile::getPixels(int index) const
+{
+	return this->pixels.at(index).second.get();
 }
