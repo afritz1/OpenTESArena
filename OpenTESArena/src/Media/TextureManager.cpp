@@ -354,20 +354,14 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isRCI)
 	{
-		// Load the RCI file.
-		RCIFile rciFile(filename, palette);
+		const RCIFile rciFile(filename);
 
-		// Create an SDL_Surface for each image in the RCI.
-		const int imageCount = rciFile.getCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a surface for each image in the .RCI.
+		for (int i = 0; i < rciFile.getImageCount(); i++)
 		{
-			uint32_t *pixels = rciFile.getPixels(i);
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
-				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT,
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
-
-			surfaceSet.push_back(Surface(surface));
+			Surface surface = TextureManager::make32BitFromPaletted(
+				RCIFile::WIDTH, RCIFile::HEIGHT, rciFile.getPixels(i), palette);
+			surfaceSet.push_back(std::move(surface));
 		}
 	}
 	else if (isSET)
@@ -499,21 +493,14 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isRCI)
 	{
-		// Load the RCI file.
-		RCIFile rciFile(filename, palette);
+		const RCIFile rciFile(filename);
 
-		// Create an SDL_Texture for each image in the RCI.
-		const int imageCount = rciFile.getCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a texture for each image in the .RCI.
+		for (int i = 0; i < rciFile.getImageCount(); i++)
 		{
-			SDL_Texture *texture = renderer.createTexture(
-				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
-				RCIFile::FRAME_WIDTH, RCIFile::FRAME_HEIGHT);
-
-			const uint32_t *pixels = rciFile.getPixels(i);
-			SDL_UpdateTexture(texture, nullptr, pixels,
-				RCIFile::FRAME_WIDTH * sizeof(*pixels));
-
+			Surface surface = TextureManager::make32BitFromPaletted(
+				RCIFile::WIDTH, RCIFile::HEIGHT, rciFile.getPixels(i), palette);
+			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
 			textureSet.push_back(Texture(texture));
 		}
 	}
