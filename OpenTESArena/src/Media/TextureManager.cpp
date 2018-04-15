@@ -29,9 +29,8 @@ TextureManager::~TextureManager()
 
 void TextureManager::loadCOLPalette(const std::string &colName)
 {
-	Palette dstPalette;
-	COLFile::toPalette(colName, dstPalette);
-	this->palettes.emplace(std::make_pair(colName, dstPalette));
+	const COLFile colFile(colName);
+	this->palettes.emplace(std::make_pair(colName, colFile.getPalette()));
 }
 
 void TextureManager::loadIMGPalette(const std::string &imgName)
@@ -109,8 +108,8 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	if (isCOL)
 	{
 		// A palette was requested as the primary image. Convert it to a surface.
-		Palette colPalette;
-		COLFile::toPalette(filename, colPalette);
+		const COLFile colFile(filename);
+		const Palette &colPalette = colFile.getPalette();
 
 		assert(colPalette.get().size() == 256);
 		surface = Surface::createSurfaceWithFormat(16, 16, Renderer::DEFAULT_BPP, 

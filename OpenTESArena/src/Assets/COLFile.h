@@ -7,17 +7,14 @@
 
 // A COL file (assuming it means "color" file) has the colors for a palette.
 
-// This is a static class because the only interface needed is for reading 
-// the palette once.
-
 class COLFile
 {
 private:
-	COLFile() = delete;
-	~COLFile() = delete;
+	Palette palette;
 public:
-	// Writes the data of a COL file into the given palette reference.
-	static void toPalette(const std::string &filename, Palette &dstPalette);
+	COLFile(const std::string &filename);
+
+	const Palette &getPalette() const;
 };
 
 #endif
