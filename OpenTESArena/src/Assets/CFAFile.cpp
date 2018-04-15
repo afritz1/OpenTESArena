@@ -8,7 +8,7 @@
 
 #include "components/vfs/manager.hpp"
 
-CFAFile::CFAFile(const std::string &filename, const Palette &palette)
+CFAFile::CFAFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -48,7 +48,7 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 		sizeof(uint32_t) + (widthUncompressed * 16));
 
 	// Decompress the RLE data of the CFA images (they're all packed together).
-	Compression::decodeRLE(srcData.data() + headerSize, 
+	Compression::decodeRLE(srcData.data() + headerSize,
 		widthCompressed * height * frameCount, decomp);
 
 	// Temporary buffers for frame palette indices.
@@ -143,17 +143,12 @@ CFAFile::CFAFile(const std::string &filename, const Palette &palette)
 	this->xOffset = xOffset;
 	this->yOffset = yOffset;
 
-	// Finally, create 32-bit images using each frame's palette indices.
+	// Store each 8-bit image.
 	for (const auto &frame : frames)
 	{
-		this->pixels.push_back(std::make_unique<uint32_t[]>(this->width * this->height));
-		uint32_t *pixels = this->pixels.back().get();
-
-		std::transform(frame.begin(), frame.begin() + frame.size(), pixels,
-			[&palette](uint8_t col) -> uint32_t
-		{
-			return palette.get()[col].toARGB();
-		});
+		this->pixels.push_back(std::make_unique<uint8_t[]>(this->width * this->height));
+		uint8_t *pixels = this->pixels.back().get();
+		std::copy(frame.begin(), frame.end(), pixels);
 	}
 }
 
@@ -182,7 +177,7 @@ int CFAFile::getYOffset() const
 	return this->yOffset;
 }
 
-uint32_t *CFAFile::getPixels(int index) const
+const uint8_t *CFAFile::getPixels(int index) const
 {
 	return this->pixels.at(index).get();
 }

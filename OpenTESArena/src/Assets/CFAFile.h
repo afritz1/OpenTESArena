@@ -6,14 +6,12 @@
 #include <string>
 #include <vector>
 
-#include "../Media/Palette.h"
-
 // A CFA file is for creatures and spell animations.
 
 class CFAFile
 {
 private:
-	std::vector<std::unique_ptr<uint32_t[]>> pixels;
+	std::vector<std::unique_ptr<uint8_t[]>> pixels;
 	int width, height, xOffset, yOffset;
 
 	// CFA files have their palette indices compressed into fewer bits depending
@@ -27,25 +25,25 @@ private:
 	static void demux6(const uint8_t *src, uint8_t *dst);
 	static void demux7(const uint8_t *src, uint8_t *dst);
 public:
-	CFAFile(const std::string &filename, const Palette &palette);
+	CFAFile(const std::string &filename);
 
-	// Gets the number of images in the CFA file.
+	// Gets the number of images.
 	int getImageCount() const;
 
-	// Gets the width of all images in the CFA file.
+	// Gets the width of all images.
 	int getWidth() const;
 
-	// Gets the height of all images in the CFA file.
+	// Gets the height of all images.
 	int getHeight() const;
 
-	// Gets the X offset of all images in the CFA file.
+	// Gets the X offset of all images.
 	int getXOffset() const;
 
-	// Gets the Y offset of all images in the CFA file.
+	// Gets the Y offset of all images.
 	int getYOffset() const;
 
-	// Gets a pointer to the pixels for an image in the CFA file.
-	uint32_t *getPixels(int index) const;
+	// Gets a pointer to an image's 8-bit pixels.
+	const uint8_t *getPixels(int index) const;
 };
 
 #endif

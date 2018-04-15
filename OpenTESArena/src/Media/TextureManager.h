@@ -37,6 +37,11 @@ public:
 
 	TextureManager &operator=(TextureManager &&textureManager) = delete;
 
+	// Creates a 32-bit image with the given dimensions and settings from an 8-bit image
+	// and a 256 color palette.
+	static Surface make32BitFromPaletted(int width, int height,
+		const uint8_t *srcPixels, const Palette &palette);
+
 	// Gets a surface by filename. It will be loaded if not already stored with the 
 	// requested palette. If no palette name is given, the active one is used.
 	const Surface &getSurface(const std::string &filename, const std::string &paletteName);

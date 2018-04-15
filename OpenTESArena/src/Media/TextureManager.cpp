@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 
 #include "SDL.h"
@@ -16,7 +17,6 @@
 #include "../Assets/SETFile.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
@@ -66,6 +66,25 @@ void TextureManager::loadPalette(const std::string &paletteName)
 
 	// Make sure everything above works as intended.
 	assert(this->palettes.find(paletteName) != this->palettes.end());
+}
+
+Surface TextureManager::make32BitFromPaletted(int width, int height,
+	const uint8_t *srcPixels, const Palette &palette)
+{
+	SDL_Surface *surface = Surface::createSurfaceWithFormat(
+		width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
+
+	// Generate a 32-bit color from each palette index in the source image and
+	// write them to the destination image.
+	const int pixelCount = width * height;
+	std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
+		[&palette](uint8_t pixel)
+	{
+		return palette.get()[pixel].toARGB();
+	});
+
+	return Surface(surface);
 }
 
 const Surface &TextureManager::getSurface(const std::string &filename,
@@ -264,20 +283,14 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 
 	if (isCFA)
 	{
-		// Load the CFA file.
-		CFAFile cfaFile(filename, palette);
+		const CFAFile cfaFile(filename);
 
-		// Create an SDL_Surface for each image in the CFA.
-		const int imageCount = cfaFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a surface for each image in the CFA.
+		for (int i = 0; i < cfaFile.getImageCount(); i++)
 		{
-			uint32_t *pixels = cfaFile.getPixels(i);
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
-				cfaFile.getWidth(), cfaFile.getHeight(),
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
-
-			surfaceSet.push_back(Surface(surface));
+			Surface surface = TextureManager::make32BitFromPaletted(
+				cfaFile.getWidth(), cfaFile.getHeight(), cfaFile.getPixels(i), palette);
+			surfaceSet.push_back(std::move(surface));
 		}
 	}
 	else if (isCIF)
@@ -429,17 +442,16 @@ const std::vector<Texture> &TextureManager::getTextures(
 	if (isCFA)
 	{
 		// Load the CFA file.
-		CFAFile cfaFile(filename, palette);
+		const CFAFile cfaFile(filename);
 
-		// Create an SDL_Texture for each image in the CFA.
-		const int imageCount = cfaFile.getImageCount();
-		for (int i = 0; i < imageCount; i++)
+		// Create a texture for each image in the CFA.
+		for (int i = 0; i < cfaFile.getImageCount(); i++)
 		{
 			SDL_Texture *texture = renderer.createTexture(
 				Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STATIC,
 				cfaFile.getWidth(), cfaFile.getHeight());
 
-			const uint32_t *pixels = cfaFile.getPixels(i);
+			const uint8_t *pixels = cfaFile.getPixels(i);
 			SDL_UpdateTexture(texture, nullptr, pixels,
 				cfaFile.getWidth() * sizeof(*pixels));
 

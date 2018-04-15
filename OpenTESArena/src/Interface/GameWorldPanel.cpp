@@ -447,7 +447,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	else
 	{
 		// Ranged weapon offsets.
-		const CFAFile cfaFile(weaponFilename, Palette());
+		const CFAFile cfaFile(weaponFilename);
 
 		for (int i = 0; i < cfaFile.getImageCount(); i++)
 		{
