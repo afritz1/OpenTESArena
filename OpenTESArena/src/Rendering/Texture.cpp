@@ -62,19 +62,19 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 			TextureFile::fromName(TextureName::Parchment), "STARTGAM.MNU");
 
 		// Four corner tiles.
-		SDL_Surface *topLeft = tiles.at(0);
-		SDL_Surface *topRight = tiles.at(2);
-		SDL_Surface *bottomLeft = tiles.at(6);
-		SDL_Surface *bottomRight = tiles.at(8);
+		SDL_Surface *topLeft = tiles.at(0).get();
+		SDL_Surface *topRight = tiles.at(2).get();
+		SDL_Surface *bottomLeft = tiles.at(6).get();
+		SDL_Surface *bottomRight = tiles.at(8).get();
 
 		// Four side tiles.
-		SDL_Surface *top = tiles.at(1);
-		SDL_Surface *left = tiles.at(3);
-		SDL_Surface *right = tiles.at(5);
-		SDL_Surface *bottom = tiles.at(7);
+		SDL_Surface *top = tiles.at(1).get();
+		SDL_Surface *left = tiles.at(3).get();
+		SDL_Surface *right = tiles.at(5).get();
+		SDL_Surface *bottom = tiles.at(7).get();
 
 		// One body tile.
-		SDL_Surface *body = tiles.at(4);
+		SDL_Surface *body = tiles.at(4).get();
 
 		// Draw body tiles.
 		for (int y = topLeft->h; y < (surface->h - topRight->h); y += body->h)

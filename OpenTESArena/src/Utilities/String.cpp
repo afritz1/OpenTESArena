@@ -126,7 +126,7 @@ std::string String::getExtension(const std::string &str)
 {
 	const size_t dotPos = str.rfind('.');
 	const bool hasDot = (dotPos < str.length()) && (dotPos != std::string::npos);
-	return hasDot ? std::string(str.begin() + dotPos, str.end()) : std::string();
+	return hasDot ? std::string(str.begin() + dotPos + 1, str.end()) : std::string();
 }
 
 std::string String::replace(const std::string &str, char a, char b)

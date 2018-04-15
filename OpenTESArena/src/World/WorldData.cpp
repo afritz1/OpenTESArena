@@ -416,21 +416,21 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 		const std::string textureName = String::toUppercase(textureData.filename);
 		const std::string extension = String::getExtension(textureName);
 
-		const bool isIMG = extension == ".IMG";
-		const bool isSET = extension == ".SET";
+		const bool isIMG = extension == "IMG";
+		const bool isSET = extension == "SET";
 		const bool noExtension = extension.size() == 0;
 
 		if (isSET)
 		{
 			// Use the texture data's .SET index to obtain the correct surface.
 			const auto &surfaces = textureManager.getSurfaces(textureName);
-			const SDL_Surface *surface = surfaces.at(textureData.setIndex);
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
+			const Surface &surface = surfaces.at(textureData.setIndex);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
 		}
 		else if (isIMG)
 		{
-			const SDL_Surface *surface = textureManager.getSurface(textureName);
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface->pixels));
+			const Surface &surface = textureManager.getSurface(textureName);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
 		}
 		else if (noExtension)
 		{
@@ -455,8 +455,8 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 		const std::string textureName = String::toUppercase(textureData.filename);
 		const std::string extension = String::getExtension(textureName);
 
-		const bool isDFA = extension == ".DFA";
-		const bool isIMG = extension == ".IMG";
+		const bool isDFA = extension == "DFA";
+		const bool isIMG = extension == "IMG";
 		const bool noExtension = extension.size() == 0;
 
 		if (isDFA)

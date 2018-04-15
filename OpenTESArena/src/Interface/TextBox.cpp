@@ -51,7 +51,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	// Lambda for setting all non-transparent pixels in the temp surface to some color.
 	auto setNonTransparentPixels = [&tempSurface](const Color &color)
 	{
-		uint32_t *pixels = static_cast<uint32_t*>(tempSurface.get()->pixels);
+		uint32_t *pixels = static_cast<uint32_t*>(tempSurface.getPixels());
 		const int pixelCount = tempSurface.getWidth() * tempSurface.getHeight();
 		const uint32_t transparent = SDL_MapRGBA(tempSurface.get()->format, 0, 0, 0, 0);
 		const uint32_t desiredColor = SDL_MapRGBA(tempSurface.get()->format,

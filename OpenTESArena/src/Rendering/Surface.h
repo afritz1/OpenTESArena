@@ -39,6 +39,7 @@ public:
 
 	int getWidth() const;
 	int getHeight() const;
+	void *getPixels() const;
 	SDL_Surface *get() const;
 };
 

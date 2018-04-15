@@ -93,6 +93,11 @@ int Surface::getHeight() const
 	return this->surface->h;
 }
 
+void *Surface::getPixels() const
+{
+	return this->surface->pixels;
+}
+
 SDL_Surface *Surface::get() const
 {
 	return this->surface;

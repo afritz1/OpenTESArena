@@ -177,9 +177,9 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 
 	// The palettes in the data files only cover half of the day, so some added
 	// darkness is needed for the other half.
-	const SDL_Surface *palette = textureManager.getSurface(paletteName);
-	const uint32_t *pixels = static_cast<const uint32_t*>(palette->pixels);
-	const int pixelCount = palette->w * palette->h;
+	const Surface &palette = textureManager.getSurface(paletteName);
+	const uint32_t *pixels = static_cast<const uint32_t*>(palette.getPixels());
+	const int pixelCount = palette.getWidth() * palette.getHeight();
 
 	std::vector<uint32_t> fullPalette(pixelCount * 2);
 

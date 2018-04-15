@@ -24,19 +24,7 @@
 
 TextureManager::~TextureManager()
 {
-	// Release the SDL_Surfaces.
-	for (auto &pair : this->surfaces)
-	{
-		SDL_FreeSurface(pair.second);
-	}
-
-	for (auto &pair : this->surfaceSets)
-	{
-		for (auto *surface : pair.second)
-		{
-			SDL_FreeSurface(surface);
-		}
-	}
+	
 }
 
 void TextureManager::loadCOLPalette(const std::string &colName)
@@ -60,9 +48,9 @@ void TextureManager::loadPalette(const std::string &paletteName)
 
 	// Get file extension of the palette name.
 	const std::string extension = String::getExtension(paletteName);
-	const bool isCOL = extension == ".COL";
-	const bool isIMG = extension == ".IMG";
-	const bool isMNU = extension == ".MNU";
+	const bool isCOL = extension == "COL";
+	const bool isIMG = extension == "IMG";
+	const bool isMNU = extension == "MNU";
 
 	if (isCOL)
 	{
@@ -81,7 +69,7 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	assert(this->palettes.find(paletteName) != this->palettes.end());
 }
 
-SDL_Surface *TextureManager::getSurface(const std::string &filename,
+const Surface &TextureManager::getSurface(const std::string &filename,
 	const std::string &paletteName)
 {
 	// Use this name when interfacing with the surfaces map.
@@ -104,17 +92,17 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	if ((!useBuiltInPalette && !paletteIsLoaded) ||
 		(useBuiltInPalette && !imagePaletteIsLoaded))
 	{
-		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
-		// Otherwise, use the given palette name (i.e., PAL.COL).
+		// Use the image's filename if using the built-in palette. Otherwise, use the given
+		// palette name.
 		this->loadPalette(useBuiltInPalette ? filename : paletteName);
 	}
 
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
-	const bool isCOL = extension == ".COL";
-	const bool isIMG = extension == ".IMG";
-	const bool isMNU = extension == ".MNU";
+	const bool isCOL = extension == "COL";
+	const bool isIMG = extension == "IMG";
+	const bool isMNU = extension == "MNU";
 
 	SDL_Surface *surface = nullptr;
 
@@ -154,11 +142,11 @@ SDL_Surface *TextureManager::getSurface(const std::string &filename,
 	}
 
 	// Add the new surface and return it.
-	auto iter = this->surfaces.emplace(std::make_pair(fullName, surface)).first;
+	auto iter = this->surfaces.emplace(std::make_pair(fullName, Surface(surface))).first;
 	return iter->second;
 }
 
-SDL_Surface *TextureManager::getSurface(const std::string &filename)
+const Surface &TextureManager::getSurface(const std::string &filename)
 {
 	return this->getSurface(filename, this->activePalette);
 }
@@ -193,8 +181,8 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
 	const std::string extension = String::getExtension(filename);
-	const bool isIMG = extension == ".IMG";
-	const bool isMNU = extension == ".MNU";
+	const bool isIMG = extension == "IMG";
+	const bool isMNU = extension == "MNU";
 
 	SDL_Texture *texture = nullptr;
 
@@ -232,7 +220,7 @@ const Texture &TextureManager::getTexture(const std::string &filename, Renderer 
 	return this->getTexture(filename, this->activePalette, renderer);
 }
 
-const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
+const std::vector<Surface> &TextureManager::getSurfaces(
 	const std::string &filename, const std::string &paletteName)
 {
 	// This method deals with animations and movies, so it will check filenames 
@@ -260,20 +248,20 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	}
 
 	// The file hasn't been loaded with the palette yet, so make a new entry.
-	auto iter = this->surfaceSets.emplace(std::make_pair(
-		fullName, std::vector<SDL_Surface*>())).first;
+	const auto iter = this->surfaceSets.emplace(
+		std::make_pair(fullName, std::vector<Surface>())).first;
 
-	std::vector<SDL_Surface*> &surfaceSet = iter->second;
+	std::vector<Surface> &surfaceSet = iter->second;
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
-	const bool isCFA = extension == ".CFA";
-	const bool isCIF = extension == ".CIF";
-	const bool isCEL = extension == ".CEL";
-	const bool isDFA = extension == ".DFA";
-	const bool isFLC = extension == ".FLC";
-	const bool isRCI = extension == ".RCI";
-	const bool isSET = extension == ".SET";
+	const bool isCFA = extension == "CFA";
+	const bool isCIF = extension == "CIF";
+	const bool isCEL = extension == "CEL";
+	const bool isDFA = extension == "DFA";
+	const bool isFLC = extension == "FLC";
+	const bool isRCI = extension == "RCI";
+	const bool isSET = extension == "SET";
 
 	if (isCFA)
 	{
@@ -290,7 +278,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else if (isCIF)
@@ -308,7 +296,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else if (isDFA)
@@ -326,7 +314,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else if (isFLC || isCEL)
@@ -344,7 +332,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else if (isRCI)
@@ -362,7 +350,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else if (isSET)
@@ -380,7 +368,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 			SDL_memcpy(surface->pixels, pixels, surface->pitch * surface->h);
 
-			surfaceSet.push_back(surface);
+			surfaceSet.push_back(Surface(surface));
 		}
 	}
 	else
@@ -391,7 +379,7 @@ const std::vector<SDL_Surface*> &TextureManager::getSurfaces(
 	return surfaceSet;
 }
 
-const std::vector<SDL_Surface*> &TextureManager::getSurfaces(const std::string &filename)
+const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename)
 {
 	return this->getSurfaces(filename, this->activePalette);
 }
@@ -424,20 +412,20 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 
 	// The file hasn't been loaded with the palette yet, so make a new entry.
-	auto iter = this->textureSets.emplace(std::make_pair(
-		fullName, std::vector<Texture>())).first;
+	const auto iter = this->textureSets.emplace(
+		std::make_pair(fullName, std::vector<Texture>())).first;
 
 	std::vector<Texture> &textureSet = iter->second;
 	const Palette &palette = this->palettes.at(paletteName);
 
 	const std::string extension = String::getExtension(filename);
-	const bool isCFA = extension == ".CFA";
-	const bool isCIF = extension == ".CIF";
-	const bool isCEL = extension == ".CEL";
-	const bool isDFA = extension == ".DFA";
-	const bool isFLC = extension == ".FLC";
-	const bool isRCI = extension == ".RCI";
-	const bool isSET = extension == ".SET";
+	const bool isCFA = extension == "CFA";
+	const bool isCIF = extension == "CIF";
+	const bool isCEL = extension == "CEL";
+	const bool isDFA = extension == "DFA";
+	const bool isFLC = extension == "FLC";
+	const bool isRCI = extension == "RCI";
+	const bool isSET = extension == "SET";
 
 	if (isCFA)
 	{
