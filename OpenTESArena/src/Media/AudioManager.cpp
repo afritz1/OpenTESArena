@@ -42,6 +42,10 @@ private:
 
 	ALint mResampler;
 
+	// Use this when resetting sound sources back to their default resampling. This uses
+	// whatever setting is the default within OpenAL.
+	static ALint getDefaultResampler();
+
 	// Gets the resampling index to use, given some resampling option. The two values are not
 	// necessarily identical (depending on the resampling implementation). Causes an error
 	// if the resampling extension is unsupported.
@@ -299,15 +303,6 @@ public:
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
-	void setResampler(ALint resampler)
-	{
-		assert(mSource != 0);
-
-		// This probably doesn't affect music at all, but it's important for the source to have
-		// the setting anyway, in case it eventually gets used for a sound.
-		alSourcei(mSource, AL_SOURCE_RESAMPLER_SOFT, resampler);
-	}
-
 	bool init(ALuint source, float volume)
 	{
 		assert(mSource == 0);
@@ -332,10 +327,6 @@ public:
 		alSourcef(source, AL_SEC_OFFSET, 0.0f);
 		alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
 		alSourcei(source, AL_LOOPING, AL_FALSE);
-
-		/* Reset resampling (I don't think this does anything for music, though). */
-		const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
-		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
 
 		if (alGetError() != AL_NO_ERROR)
 			return false;
@@ -395,10 +386,16 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
+ALint AudioManagerImpl::getDefaultResampler()
+{
+	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+	return defaultResampler;
+}
+
 ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
 {
 	const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
-	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+	const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
 
 	if (resamplingOption == 0)
 	{
@@ -452,22 +449,22 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	ALCdevice *device = alcOpenDevice(nullptr);
 	if (device == nullptr)
 	{
-		DebugWarning("alcOpenDevice() failed (error " + std::to_string(alGetError()) + ").");
+		DebugWarning("alcOpenDevice() error " + std::to_string(alGetError()) + ".");
 	}
 
 	ALCcontext *context = alcCreateContext(device, nullptr);
 	if (context == nullptr)
 	{
-		DebugWarning("alcCreateContext() failed (error " + std::to_string(alGetError()) + ").");
+		DebugWarning("alcCreateContext() error " + std::to_string(alGetError()) + ".");
 	}
 
 	const ALCboolean success = alcMakeContextCurrent(context);
 	if (success != AL_TRUE)
 	{
-		DebugWarning("alcMakeContextCurrent() failed (error " +
-			std::to_string(alGetError()) + ").");
+		DebugWarning("alcMakeContextCurrent() error " + std::to_string(alGetError()) + ".");
 	}
 
+	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
 	mResampler = mHasResamplerExtension ? 
 		AudioManagerImpl::getResamplingIndex(resamplingOption) :
@@ -482,10 +479,10 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 		const ALenum status = alGetError();
 		if (status != AL_NO_ERROR)
 		{
-			DebugWarning("alGenSources() failed (error " + std::to_string(status) + ").");
+			DebugWarning("alGenSources() error " + std::to_string(status) + ".");
 		}
 
-		// Set the source resampler if the extension is supported.
+		// Set resampling if the extension is supported.
 		if (mHasResamplerExtension)
 		{
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
@@ -508,7 +505,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 			mCurrentSong = MidiDevice::get().open(filename);
 		if (!mCurrentSong)
 		{
-			DebugMention("Failed to play " + filename + ".");
+			DebugWarning("Failed to play " + filename + ".");
 			return;
 		}
 
@@ -521,7 +518,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 		}
 		else
 		{
-			DebugMention("Failed to init song stream.");
+			DebugWarning("Failed to init " + filename + " stream.");
 		}
 	}
 }
@@ -545,9 +542,17 @@ void AudioManagerImpl::playSound(const std::string &filename)
 			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
 			const VOCFile voc(filename);
 
+			// Clear OpenAL error.
+			alGetError();
+
 			ALuint bufferID;
 			alGenBuffers(1, &bufferID);
-			DebugAssert(alGetError() == AL_NO_ERROR, "alGenBuffers");
+
+			const ALenum status = alGetError();
+			if (status != AL_NO_ERROR)
+			{
+				DebugWarning("alGenBuffers() error " + std::to_string(status) + ".");
+			}
 
 			const std::vector<uint8_t> &audioData = voc.getAudioData();
 
@@ -562,7 +567,12 @@ void AudioManagerImpl::playSound(const std::string &filename)
 		// Set up the sound source.
 		const ALuint source = mFreeSources.front();
 		alSourcei(source, AL_BUFFER, vocIter->second);
-		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+
+		// Set resampling if the extension is supported.
+		if (mHasResamplerExtension)
+		{
+			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+		}		
 
 		// Play the sound.
 		alSourcePlay(source);
@@ -592,6 +602,13 @@ void AudioManagerImpl::stopSound()
 		alSourceStop(source);
 		alSourceRewind(source);
 		alSourcei(source, AL_BUFFER, 0);
+
+		if (mHasResamplerExtension)
+		{
+			const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
+			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
+		}
+
 		mFreeSources.push_front(source);
 	}
 
@@ -644,13 +661,6 @@ void AudioManagerImpl::setResamplingOption(int resamplingOption)
 		const ALuint source = pair.second;
 		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 	}
-
-	if (mSongStream != nullptr)
-	{
-		// Not necessary for music itself, but necessary for keeping all sources in line,
-		// and the music source isn't stored in the used sources.
-		mSongStream->setResampler(mResampler);
-	}
 }
 
 void AudioManagerImpl::update()
@@ -667,6 +677,12 @@ void AudioManagerImpl::update()
 		{
 			alSourceRewind(source);
 			alSourcei(source, AL_BUFFER, 0);
+
+			if (mHasResamplerExtension)
+			{
+				const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
+				alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
+			}
 
 			mFreeSources.push_front(source);
 			mUsedSources.erase(mUsedSources.begin() + i);
