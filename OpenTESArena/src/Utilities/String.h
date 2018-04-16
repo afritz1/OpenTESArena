@@ -14,6 +14,9 @@ private:
 	String() = delete;
 	~String() = delete;
 public:
+	// Performs a case-insensitive ASCII string comparison.
+	static bool caseInsensitiveEquals(const std::string &a, const std::string &b);
+
 	// Splits a string on the given character.
 	static std::vector<std::string> split(const std::string &str, char separator);
 

@@ -2,6 +2,24 @@
 
 #include "String.h"
 
+bool String::caseInsensitiveEquals(const std::string &a, const std::string &b)
+{
+	if (a.size() != b.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < a.size(); i++)
+	{
+		if (std::tolower(a.at(i)) != std::tolower(b.at(i)))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 std::vector<std::string> String::split(const std::string &str, char separator)
 {
 	std::vector<std::string> strings;
