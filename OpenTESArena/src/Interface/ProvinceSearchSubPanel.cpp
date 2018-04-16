@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "SDL.h"
 
 #include "CursorAlignment.h"
