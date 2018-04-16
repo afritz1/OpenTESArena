@@ -77,6 +77,7 @@ ProvinceNames=0x392F8
 CharCreationProvinceNames=0x3E602
 ProvinceImgFilenames=0x3FDFA
 LocationTypes=0x3D0C3
+CenterProvinceCityMifName=0x3FF81
 StartDungeonName=0x402A1
 StartDungeonMifName=0x40297
 FinalDungeonMifName=0x43F21

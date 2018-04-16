@@ -374,7 +374,10 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 		else
 		{
-			const MIFFile mif("IMPERIAL.MIF");
+			const auto &exeData = game.getMiscAssets().getExeData();
+			const std::string mifName = String::toUppercase(
+				exeData.locations.centerProvinceCityMifName);
+			const MIFFile mif(mifName);
 			gameData.loadPremadeCity(mif, weatherType, game.getMiscAssets(),
 				game.getTextureManager(), game.getRenderer());
 		}

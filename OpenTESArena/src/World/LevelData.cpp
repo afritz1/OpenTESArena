@@ -960,9 +960,9 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 					// Transparent block with 2-sided texture on one side (i.e., fence).
 					const int textureIndex = (map1Voxel & 0x003F) - 1;
 
-					// It is clamped non-negative due to a case in IMPERIAL.MIF where one temple
-					// voxel has all zeroes for its texture index, and it appears solid gray
-					// in the original game (presumably a silent bug).
+					// It is clamped non-negative due to a case in the center province's city
+					// where one temple voxel has all zeroes for its texture index, and it
+					// appears solid gray in the original game (presumably a silent bug).
 					if (textureIndex >= 0)
 					{
 						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()

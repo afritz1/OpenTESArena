@@ -184,6 +184,9 @@ public:
 		// City-state, town, village (stored twice), dungeon.
 		std::array<std::string, 5> locationTypes;
 
+		// .MIF name of the center province's city.
+		std::string centerProvinceCityMifName;
+
 		// Display name of the initial dungeon.
 		std::string startDungeonName;
 
