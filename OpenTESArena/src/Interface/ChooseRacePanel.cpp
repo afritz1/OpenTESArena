@@ -483,9 +483,8 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	for (int maskID = 0; maskID < maskCount; maskID++)
 	{
 		// Ignore the center province and the "Exit" button.
-		const int lastProvinceID = 8;
 		const int exitButtonID = 9;
-		if ((maskID == lastProvinceID) || (maskID == exitButtonID))
+		if ((maskID == Location::CENTER_PROVINCE_ID) || (maskID == exitButtonID))
 		{
 			continue;
 		}

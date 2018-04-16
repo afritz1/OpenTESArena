@@ -166,7 +166,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 
 	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
 	// raw palette indices (for yellow and red color swapping).
-	if (provinceID != 8)
+	if (provinceID != Location::CENTER_PROVINCE_ID)
 	{
 		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
 		this->staffDungeonCif = std::make_unique<CIFFile>(cifName);
@@ -398,7 +398,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 			closestLocationID, &closestLocationData]()
 		{
 			// Decide the format based on whether it's the center province.
-			if (this->provinceID != 8)
+			if (this->provinceID != Location::CENTER_PROVINCE_ID)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (closestLocationID < 32)
@@ -691,7 +691,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	// Draw dungeon icons.
 	drawIconIfVisible(province.firstDungeon, dungeonIcon);
 
-	if (this->provinceID != 8)
+	if (this->provinceID != Location::CENTER_PROVINCE_ID)
 	{
 		// Only draw staff dungeon if not the center province.
 		const auto &staffDungeonIcon = textureManager.getTextures(

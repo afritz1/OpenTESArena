@@ -14,6 +14,7 @@
 #include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
+#include "../World/Location.h"
 #include "../World/LocationType.h"
 
 #include "components/vfs/manager.hpp"
@@ -1156,7 +1157,7 @@ const std::string &MiscAssets::getRulerTitle(int provinceID, LocationType locati
 	// Get the index into the titles list.
 	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
 	{
-		if (provinceID == 8)
+		if (provinceID == Location::CENTER_PROVINCE_ID)
 		{
 			return isMale ? 6 : 13;
 		}

@@ -270,7 +270,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						const std::string mifName = String::toUppercase(
 							exeData.locations.startDungeonMifName);
 						const MIFFile mif(mifName);
-						const int provinceID = 8;
+						const int provinceID = Location::CENTER_PROVINCE_ID;
 						const Location location = Location::makeSpecialCase(
 							Location::SpecialCaseType::StartDungeon, provinceID);
 						gameData->loadInterior(mif, location, textureManager, renderer);

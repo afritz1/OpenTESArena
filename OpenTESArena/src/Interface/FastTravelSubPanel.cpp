@@ -75,7 +75,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		const std::string locationString = [this, &gameData, &exeData, &cityData,
 			localCityID, &provinceData, &locationData]()
 		{
-			if (this->travelData.provinceID != 8)
+			if (this->travelData.provinceID != Location::CENTER_PROVINCE_ID)
 			{
 				// The <city type> of <city name> in <province> Province.
 				// Replace first %s with location type.
@@ -367,7 +367,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		}();
 
 		// Load the destination city. For the center province, use the specialized method.
-		if (this->travelData.provinceID != 8)
+		if (this->travelData.provinceID != Location::CENTER_PROVINCE_ID)
 		{
 			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID,
 				weatherType, game.getMiscAssets(), game.getTextureManager(), game.getRenderer());

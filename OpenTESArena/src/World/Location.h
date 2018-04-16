@@ -27,6 +27,9 @@ public:
 		WildDungeon // Only for testing (in reality a wild dungeon doesn't affect the location).
 	};
 
+	// Center province on the world map, excluded from certain groups and calculations.
+	static const int CENTER_PROVINCE_ID;
+
 	LocationDataType dataType; // Determines how the union is accessed.
 
 	union
