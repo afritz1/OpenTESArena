@@ -291,6 +291,9 @@ public:
 		// Unique string for the center province's city in the arrival pop-up.
 		std::string arrivalCenterProvinceLocation;
 
+		// Title text in location search pop-up.
+		std::string searchTitleText;
+
 		// Filenames for each staff dungeon splash image.
 		std::array<std::string, 8> staffDungeonSplashes;
 

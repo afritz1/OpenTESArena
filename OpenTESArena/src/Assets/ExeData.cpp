@@ -420,6 +420,7 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	const int arrivalPopUpDaysOffset = ExeData::get("ArrivalPopUpDays", keyValueMap);
 	const int arrivalCenterProvinceLocationOffset =
 		ExeData::get("ArrivalCenterProvinceLocation", keyValueMap);
+	const int searchTitleTextOffset = ExeData::get("SearchTitleText", keyValueMap);
 	const int staffDungeonSplashesOffset = ExeData::get("StaffDungeonSplashes", keyValueMap);
 	const int staffDungeonSplashIndicesOffset = ExeData::get("StaffDungeonSplashIndices", keyValueMap);
 
@@ -434,6 +435,7 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	this->arrivalPopUpDays = ExeData::readString(data + arrivalPopUpDaysOffset);
 	this->arrivalCenterProvinceLocation =
 		ExeData::readString(data + arrivalCenterProvinceLocationOffset);
+	this->searchTitleText = ExeData::readString(data + searchTitleTextOffset);
 	initStringArray(this->staffDungeonSplashes, data + staffDungeonSplashesOffset);
 	initInt8Array(this->staffDungeonSplashIndices, data + staffDungeonSplashIndicesOffset);
 }

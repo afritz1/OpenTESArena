@@ -122,6 +122,7 @@ ArrivalPopUpLocation=0x37465
 ArrivalPopUpDate=0x3747A
 ArrivalPopUpDays=0x37488
 ArrivalCenterProvinceLocation=0x42298
+SearchTitleText=0x42127
 StaffDungeonSplashes=0x432CA
 StaffDungeonSplashIndices=0x432C2
 
