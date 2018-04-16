@@ -10,6 +10,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "TextEntry.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
@@ -126,44 +127,14 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	}
 	else
 	{
-		// Listen for SDL text input and changes in text.
-		const bool textChanged = [this, &e, backspacePressed]()
+		// Listen for SDL text input and changes in text. Only letters and spaces are allowed.
+		auto charIsAllowed = [](char c)
 		{
-			if (backspacePressed)
-			{
-				// Erase one letter if able.
-				if (this->name.size() > 0)
-				{
-					this->name.pop_back();
-					return true;
-				}
-			}
-
-			const bool letterReceived = e.type == SDL_TEXTINPUT;
-
-			// Only process the input if a letter was received and the player's name has
-			// space remaining.
-			if (letterReceived && (this->name.size() < ChooseNamePanel::MAX_NAME_LENGTH))
-			{
-				const char letter = e.text.text[0];
-
-				// Only letters and spaces are allowed.
-				auto charIsAllowed = [](char c)
-				{
-					return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
-				};
-
-				if (charIsAllowed(letter))
-				{
-					// Append to the name string.
-					this->name.push_back(letter);
-					return true;
-				}
-			}
-			
-			// No change in the displayed text.
-			return false;
-		}();
+			return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
+		};
+		
+		const bool textChanged = TextEntry::updateText(this->name, e,
+			backspacePressed, charIsAllowed, ChooseNamePanel::MAX_NAME_LENGTH);
 
 		if (textChanged)
 		{
