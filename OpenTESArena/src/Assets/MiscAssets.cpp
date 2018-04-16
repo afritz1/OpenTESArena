@@ -803,7 +803,7 @@ void MiscAssets::parseDungeonTxt()
 			const size_t titleCarriageReturn = title.find('\r');
 			if (titleCarriageReturn != std::string::npos)
 			{
-				title = title.replace(titleCarriageReturn, 1, "");
+				title.replace(titleCarriageReturn, 1, "");
 			}
 		}
 		else
@@ -815,7 +815,7 @@ void MiscAssets::parseDungeonTxt()
 			const size_t descriptionCarriageReturn = description.find('\r');
 			if (descriptionCarriageReturn != std::string::npos)
 			{
-				description = description.replace(descriptionCarriageReturn, 1, "\n");
+				description.replace(descriptionCarriageReturn, 1, "\n");
 			}
 		}
 	}

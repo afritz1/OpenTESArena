@@ -148,22 +148,22 @@ std::string GameData::getDateString(const Date &date, const ExeData &exeData)
 	const std::string &weekdayString =
 		exeData.calendar.weekdayNames.at(date.getWeekday());
 	size_t index = text.find("%s");
-	text = text.replace(index, 2, weekdayString);
+	text.replace(index, 2, weekdayString);
 
 	// Replace %u%s with day and ordinal suffix.
 	const std::string dayString = date.getOrdinalDay();
 	index = text.find("%u%s");
-	text = text.replace(index, 4, dayString);
+	text.replace(index, 4, dayString);
 
 	// Replace third %s with month.
 	const std::string &monthString =
 		exeData.calendar.monthNames.at(date.getMonth());
 	index = text.find("%s");
-	text = text.replace(index, 2, monthString);
+	text.replace(index, 2, monthString);
 
 	// Replace %d with year.
 	index = text.find("%d");
-	text = text.replace(index, 2, std::to_string(date.getYear()));
+	text.replace(index, 2, std::to_string(date.getYear()));
 
 	return text;
 }

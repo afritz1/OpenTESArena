@@ -102,15 +102,15 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 				// Replace first %s with location type name.
 				size_t index = text.find("%s");
-				text = text.replace(index, 2, locationTypeName);
+				text.replace(index, 2, locationTypeName);
 
 				// Replace second %s with location name.
 				index = text.find("%s", index);
-				text = text.replace(index, 2, locationData.name);
+				text.replace(index, 2, locationData.name);
 
 				// Replace third %s with province name.
 				index = text.find("%s", index);
-				text = text.replace(index, 2, provinceData.name);
+				text.replace(index, 2, provinceData.name);
 
 				// Replace carriage returns with newlines.
 				text = String::replace(text, '\r', '\n');
@@ -137,7 +137,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 			// Replace %d with travel days.
 			size_t index = text.find("%d");
-			text = text.replace(index, 2, std::to_string(this->travelData.travelDays));
+			text.replace(index, 2, std::to_string(this->travelData.travelDays));
 
 			return text;
 		}();

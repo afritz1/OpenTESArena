@@ -227,28 +227,27 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 				// Replace first %s with location name.
 				size_t index = baseText.find("%s");
-				baseText = baseText.replace(index, 2,
-					location.getName(gameData.getCityDataFile(), exeData));
+				baseText.replace(index, 2, location.getName(gameData.getCityDataFile(), exeData));
 
 				// Replace second %s with time string.
 				index = baseText.find("%s", index);
-				baseText = baseText.replace(index, 2, timeString);
+				baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
 				const std::string dateString = GameData::getDateString(
 					gameData.getDate(), exeData);
 
 				index = baseText.find("%s", index);
-				baseText = baseText.replace(index, 2, dateString);
+				baseText.replace(index, 2, dateString);
 
 				// Replace %d's with current and total weight.
 				const int currentWeight = 0;
 				index = baseText.find("%d", index);
-				baseText = baseText.replace(index, 2, std::to_string(currentWeight));
+				baseText.replace(index, 2, std::to_string(currentWeight));
 
 				const int weightCapacity = 0;
 				index = baseText.find("%d", index);
-				baseText = baseText.replace(index, 2, std::to_string(weightCapacity));
+				baseText.replace(index, 2, std::to_string(weightCapacity));
 
 				// Append the list of effects at the bottom (healthy/diseased...).
 				const std::string effectText = [&exeData]()
@@ -261,7 +260,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					// Replace %s with placeholder.
 					const std::string &effectStr = exeData.status.effectsList.front();
 					size_t index = text.find("%s");
-					text = text.replace(index, 2, effectStr);
+					text.replace(index, 2, effectStr);
 
 					// Remove newline on end.
 					text.pop_back();

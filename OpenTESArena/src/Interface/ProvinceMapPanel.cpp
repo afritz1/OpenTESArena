@@ -304,7 +304,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 					// Replace %s with location name.
 					size_t index = text.find("%s");
-					text = text.replace(index, 2, currentLocation.getName(cityData, exeData));
+					text.replace(index, 2, currentLocation.getName(cityData, exeData));
 
 					return text;
 				}();
@@ -427,15 +427,15 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 					}();
 
 					size_t index = text.find("%s");
-					text = text.replace(index, 2, locationTypeName);
+					text.replace(index, 2, locationTypeName);
 
 					// Replace second %s with location name.
 					index = text.find("%s", index);
-					text = text.replace(index, 2, closestLocationData.name);
+					text.replace(index, 2, closestLocationData.name);
 
 					// Replace third %s with province name.
 					index = text.find("%s", index);
-					text = text.replace(index, 2, closestProvinceData.name);
+					text.replace(index, 2, closestProvinceData.name);
 
 					return text;
 				}
@@ -446,11 +446,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 					// Replace first %s with dungeon name.
 					size_t index = text.find("%s");
-					text = text.replace(index, 2, closestLocationData.name);
+					text.replace(index, 2, closestLocationData.name);
 
 					// Replace second %s with province name.
 					index = text.find("%s", index);
-					text = text.replace(index, 2, closestProvinceData.name);
+					text.replace(index, 2, closestProvinceData.name);
 
 					return text;
 				}
@@ -462,11 +462,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 				// Replace first %s with center province city name.
 				size_t index = text.find("%s");
-				text = text.replace(index, 2, closestLocationData.name);
+				text.replace(index, 2, closestLocationData.name);
 
 				// Replace second %s with center province name.
 				index = text.find("%s", index);
-				text = text.replace(index, 2, closestProvinceData.name);
+				text.replace(index, 2, closestProvinceData.name);
 
 				return text;
 			}
@@ -492,22 +492,22 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		const std::string &weekdayString =
 			exeData.calendar.weekdayNames.at(date.getWeekday());
 		size_t index = text.find("%s");
-		text = text.replace(index, 2, weekdayString);
+		text.replace(index, 2, weekdayString);
 
 		// Replace %u%s with day and ordinal suffix.
 		const std::string dayString = date.getOrdinalDay();
 		index = text.find("%u%s");
-		text = text.replace(index, 4, dayString);
+		text.replace(index, 4, dayString);
 
 		// Replace third %s with month.
 		const std::string &monthString =
 			exeData.calendar.monthNames.at(date.getMonth());
 		index = text.find("%s");
-		text = text.replace(index, 2, monthString);
+		text.replace(index, 2, monthString);
 
 		// Replace %d with year.
 		index = text.find("%d");
-		text = text.replace(index, 2, std::to_string(date.getYear()));
+		text.replace(index, 2, std::to_string(date.getYear()));
 
 		return text;
 	};
@@ -530,7 +530,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 			// Replace %d with travel days.
 			const size_t index = text.find("%d");
-			text = text.replace(index, 2, std::to_string(travelData.travelDays));
+			text.replace(index, 2, std::to_string(travelData.travelDays));
 
 			return text;
 		}();
@@ -565,7 +565,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 		// Replace %d with travel distance.
 		const size_t index = text.find("%d");
-		text = text.replace(index, 2, std::to_string(travelDistance * 20));
+		text.replace(index, 2, std::to_string(travelDistance * 20));
 
 		// Replace carriage returns with newlines.
 		return String::replace(text, '\r', '\n');
