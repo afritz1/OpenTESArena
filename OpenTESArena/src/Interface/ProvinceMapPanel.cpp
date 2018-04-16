@@ -11,6 +11,7 @@
 #include "GameWorldPanel.h"
 #include "ProvinceButtonName.h"
 #include "ProvinceMapPanel.h"
+#include "ProvinceSearchSubPanel.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
@@ -64,7 +65,7 @@ namespace
 
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
 	{
-		{ ProvinceButtonName::Search, "Search (not implemented)" },
+		{ ProvinceButtonName::Search, "Search" },
 		{ ProvinceButtonName::Travel, "Travel" },
 		{ ProvinceButtonName::BackToWorldMap, "Back to World Map" }
 	};
@@ -98,11 +99,12 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
 		int height = clickArea.getHeight();
-		auto function = []()
+		auto function = [](Game &game, ProvinceMapPanel &panel)
 		{
-			// Nothing yet.
+			// Push text entry sub-panel for location searching.
+			game.pushSubPanel<ProvinceSearchSubPanel>(game, panel, panel.provinceID);
 		};
-		return Button<>(x, y, width, height, function);
+		return Button<Game&, ProvinceMapPanel&>(x, y, width, height, function);
 	}();
 
 	this->travelButton = []()
@@ -173,6 +175,102 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	}
 }
 
+void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+
+	// Get the current location to compare with.
+	const auto &currentLocation = gameData.getLocation();
+	const int currentLocationID = [&currentLocation]()
+	{
+		if (currentLocation.dataType == LocationDataType::City)
+		{
+			return Location::cityToLocationID(currentLocation.localCityID);
+		}
+		else if (currentLocation.dataType == LocationDataType::Dungeon)
+		{
+			return Location::dungeonToLocationID(currentLocation.localDungeonID);
+		}
+		else if (currentLocation.dataType == LocationDataType::SpecialCase)
+		{
+			const Location::SpecialCaseType specialCaseType =
+				currentLocation.specialCaseType;
+
+			if (specialCaseType == Location::SpecialCaseType::StartDungeon)
+			{
+				// Technically this shouldn't be allowed, so just use a placeholder.
+				return Location::dungeonToLocationID(0);
+			}
+			else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
+			{
+				return Location::cityToLocationID(currentLocation.localCityID);
+			}
+			else
+			{
+				throw std::runtime_error("Bad special location type \"" +
+					std::to_string(static_cast<int>(specialCaseType)) + "\".");
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Bad location data type \"" +
+				std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
+		}
+	}();
+
+	// Only continue if the selected location is not the player's current location.
+	const bool matchesPlayerLocation =
+		(this->provinceID == currentLocation.provinceID) &&
+		(currentLocationID == selectedLocationID);
+
+	if (!matchesPlayerLocation)
+	{
+		// Set the travel data for the selected location and reset the blink timer.
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &cityData = gameData.getCityDataFile();
+		const Date &currentDate = gameData.getDate();
+		const int travelDays = cityData.getTravelDays(
+			currentLocationID, currentLocation.provinceID,
+			selectedLocationID, this->provinceID, currentDate.getMonth(),
+			gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
+		this->travelData = std::make_unique<TravelData>(
+			selectedLocationID, this->provinceID, travelDays);
+		this->blinkTimer = 0.0;
+
+		// Create pop-up travel dialog.
+		const std::string travelText = this->makeTravelText(currentLocationID,
+			currentLocation, selectedLocationID, *this->travelData.get());
+		std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
+		game.pushSubPanel(std::move(textPopUp));
+	}
+	else
+	{
+		// Cannot travel to the player's current location. Create an error pop-up.
+		const std::string errorText = [&game, &gameData, &currentLocation]()
+		{
+			const auto &cityData = gameData.getCityDataFile();
+			const auto &exeData = game.getMiscAssets().getExeData();
+			std::string text = exeData.travel.alreadyAtDestination;
+
+			// Remove carriage return at end.
+			text.pop_back();
+
+			// Replace carriage returns with newlines.
+			text = String::replace(text, '\r', '\n');
+
+			// Replace %s with location name.
+			size_t index = text.find("%s");
+			text.replace(index, 2, currentLocation.getName(cityData, exeData));
+
+			return text;
+		}();
+
+		std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(errorText);
+		game.pushSubPanel(std::move(textPopUp));
+	}
+}
+
 std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
@@ -208,7 +306,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 		if (this->searchButton.contains(originalPosition))
 		{
-			this->searchButton.click();
+			this->searchButton.click(game, *this);
 		}
 		else if (this->travelButton.contains(originalPosition))
 		{
@@ -220,98 +318,10 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		}
 		else
 		{
-			// Check locations for clicks. Get the current location to compare with.
-			auto &gameData = game.getGameData();
-			const auto &currentLocation = gameData.getLocation();
-			const int currentLocationID = [&currentLocation]()
-			{
-				if (currentLocation.dataType == LocationDataType::City)
-				{
-					return Location::cityToLocationID(currentLocation.localCityID);
-				}
-				else if (currentLocation.dataType == LocationDataType::Dungeon)
-				{
-					return Location::dungeonToLocationID(currentLocation.localDungeonID);
-				}
-				else if (currentLocation.dataType == LocationDataType::SpecialCase)
-				{
-					const Location::SpecialCaseType specialCaseType =
-						currentLocation.specialCaseType;
-
-					if (specialCaseType == Location::SpecialCaseType::StartDungeon)
-					{
-						// Technically this shouldn't be allowed, so just use a placeholder.
-						return Location::dungeonToLocationID(0);
-					}
-					else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
-					{
-						return Location::cityToLocationID(currentLocation.localCityID);
-					}
-					else
-					{
-						throw std::runtime_error("Bad special location type \"" +
-							std::to_string(static_cast<int>(specialCaseType)) + "\".");
-					}
-				}
-				else
-				{
-					throw std::runtime_error("Bad location data type \"" +
-						std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
-				}
-			}();
-
+			// The closest location to the cursor was clicked. See if it can be set as the
+			// travel destination (depending on whether the player is already there).
 			const int closestLocationID = this->getClosestLocationID(originalPosition);
-
-			// Only continue if the selected one is not the player's current location.
-			const bool matchesPlayerLocation =
-				(this->provinceID == currentLocation.provinceID) &&
-				(currentLocationID == closestLocationID);
-
-			if (!matchesPlayerLocation)
-			{
-				// Set the travel data for the selected location and reset the blink timer.
-				const auto &miscAssets = game.getMiscAssets();
-				const auto &cityData = gameData.getCityDataFile();
-				const Date &currentDate = gameData.getDate();
-				const int travelDays = cityData.getTravelDays(
-					currentLocationID, currentLocation.provinceID,
-					closestLocationID, this->provinceID, currentDate.getMonth(),
-					gameData.getWeathersArray(), gameData.getRandom(), miscAssets);
-				this->travelData = std::make_unique<TravelData>(
-					closestLocationID, this->provinceID, travelDays);
-				this->blinkTimer = 0.0;
-
-				// Create pop-up travel dialog.
-				const std::string travelText = this->makeTravelText(currentLocationID,
-					currentLocation, closestLocationID, *this->travelData.get());
-				std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
-				game.pushSubPanel(std::move(textPopUp));
-			}
-			else
-			{
-				// Cannot travel to the player's current location. Create an error pop-up.
-				const std::string errorText = [&game, &gameData, &currentLocation]()
-				{
-					const auto &cityData = gameData.getCityDataFile();
-					const auto &exeData = game.getMiscAssets().getExeData();
-					std::string text = exeData.travel.alreadyAtDestination;
-
-					// Remove carriage return at end.
-					text.pop_back();
-
-					// Replace carriage returns with newlines.
-					text = String::replace(text, '\r', '\n');
-
-					// Replace %s with location name.
-					size_t index = text.find("%s");
-					text.replace(index, 2, currentLocation.getName(cityData, exeData));
-
-					return text;
-				}();
-
-				std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(errorText);
-				game.pushSubPanel(std::move(textPopUp));
-			}
+			this->trySelectLocation(closestLocationID);
 		}
 	}
 }

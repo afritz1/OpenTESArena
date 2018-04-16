@@ -61,6 +61,7 @@ enum class TextureName
 	PauseBackground, // Arena logo with sound/music/detail and buttons
 	PopUp,
 	PopUp2, // For character creation classes.
+	PopUp8, // Province search list pop-up.
 	PopUp11, // For items, etc..
 	RaceSelect, // World map with location dots and no exit text.
 	Scroll, // Nine tiles, similar to parchment tiles, but with a different palette.

@@ -81,6 +81,7 @@ namespace
 		{ TextureName::PauseBackground, "OP.IMG" },
 		{ TextureName::PopUp, "POPUP.IMG" },
 		{ TextureName::PopUp2, "POPUP2.IMG" },
+		{ TextureName::PopUp8, "POPUP8.IMG" },
 		{ TextureName::PopUp11, "POPUP11.IMG" },
 		{ TextureName::RaceSelect, "TAMRIEL.MNU" },
 		{ TextureName::Scroll, "SCROLL.CIF" },

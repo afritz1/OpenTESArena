@@ -34,8 +34,7 @@ private:
 	static const double BLINK_PERIOD; // Duration of blink period in seconds.
 	static const double BLINK_PERIOD_PERCENT_ON; // Percentage of each period spent "on".
 
-	Button<> searchButton;
-	Button<Game&, ProvinceMapPanel&> travelButton;
+	Button<Game&, ProvinceMapPanel&> searchButton, travelButton;
 	Button<Game&, std::unique_ptr<ProvinceMapPanel::TravelData>> backToWorldMapButton;
 	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
 	std::unique_ptr<TravelData> travelData;
@@ -85,6 +84,11 @@ public:
 	ProvinceMapPanel(Game &game, int provinceID,
 		std::unique_ptr<ProvinceMapPanel::TravelData> travelData);
 	virtual ~ProvinceMapPanel() = default;
+
+	// Tries to set the given location ID as the selected one. If the player is already at
+	// that location, then an error pop-up is displayed instead. This is a public method
+	// so the province search sub-panel can call it, too.
+	void trySelectLocation(int selectedLocationID);
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

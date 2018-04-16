@@ -58,6 +58,9 @@ public:
 	// Gets the texture for drawing to the screen.
 	SDL_Texture *getTexture() const;
 
+	// Gets the width and height of the list box.
+	Int2 getDimensions() const;
+
 	// Returns whether the given point is within the bounds of the list box.
 	bool contains(const Int2 &point);
 

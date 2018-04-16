@@ -123,12 +123,17 @@ SDL_Texture *ListBox::getTexture() const
 	return this->texture;
 }
 
+Int2 ListBox::getDimensions() const
+{
+	int w, h;
+	SDL_QueryTexture(this->texture, nullptr, nullptr, &w, &h);
+	return Int2(w, h);
+}
+
 bool ListBox::contains(const Int2 &point)
 {
-	int width, height;
-	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, &height);
-
-	Rect rect(this->point.x, this->point.y, width, height);
+	const Int2 dims = this->getDimensions();
+	Rect rect(this->point.x, this->point.y, dims.x, dims.y);
 	return rect.contains(point);
 }
 
