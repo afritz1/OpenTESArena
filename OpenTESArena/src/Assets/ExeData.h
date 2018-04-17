@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "ExeTypes.h"
+
 // This class stores data from the Arena executable. In other words, it represents a
 // kind of "view" into the executable's data.
 
@@ -303,6 +305,13 @@ public:
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
+	struct UI
+	{
+		ExeTypes::List chooseClassListUI;
+
+		void init(const char *data, const KeyValueMap &keyValueMap);
+	};
+
 	struct WallHeightTables
 	{
 		// Values for interior and exterior wall heights. In wilderness cells, the values in
@@ -354,6 +363,7 @@ public:
 	Races races;
 	Status status;
 	Travel travel;
+	UI ui;
 	WallHeightTables wallHeightTables;
 
 	bool isFloppyVersion() const;

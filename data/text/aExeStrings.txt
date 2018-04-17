@@ -126,6 +126,9 @@ SearchTitleText=0x42127
 StaffDungeonSplashes=0x432CA
 StaffDungeonSplashIndices=0x432C2
 
+# [UI]
+ChooseClassListUI=0x40816
+
 # [WallHeightTables]
 Box1A=0x48206
 Box1B=0x48216

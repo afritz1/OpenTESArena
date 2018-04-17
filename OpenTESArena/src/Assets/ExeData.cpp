@@ -440,6 +440,13 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->staffDungeonSplashIndices, data + staffDungeonSplashIndicesOffset);
 }
 
+void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
+{
+	const int chooseClassListUIOffset = ExeData::get("ChooseClassListUI", keyValueMap);
+
+	this->chooseClassListUI.init(data + chooseClassListUIOffset);
+}
+
 void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
 {
 	const int box1aOffset = ExeData::get("Box1A", keyValueMap);
@@ -573,6 +580,7 @@ void ExeData::init(bool floppyVersion)
 	this->races.init(exeDataPtr, keyValueMap);
 	this->status.init(exeDataPtr, keyValueMap);
 	this->travel.init(exeDataPtr, keyValueMap);
+	this->ui.init(exeDataPtr, keyValueMap);
 	this->wallHeightTables.init(exeDataPtr, keyValueMap);
 
 	this->floppyVersion = floppyVersion;
