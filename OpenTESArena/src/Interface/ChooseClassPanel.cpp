@@ -179,16 +179,18 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	bool mouseWheelDown = inputManager.mouseWheeledDown(e);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+	const Int2 originalPoint = this->getGame().getRenderer()
 		.nativeToOriginal(mousePosition);
 
-	// See if a class in the list was clicked, or if it is being scrolled.
-	if (this->classesListBox->contains(mouseOriginalPoint))
+	// See if a class in the list was clicked, or if it is being scrolled. Use a custom
+	// width for the list box so it better fills the screen-space.
+	const Rect classesListBoxRect = this->getClassesListBoxRect();
+	if (classesListBoxRect.contains(originalPoint))
 	{
 		if (leftClick)
 		{
 			// Verify that the clicked index is valid. If so, use that character class.
-			int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+			const int index = this->classesListBox->getClickedIndex(originalPoint);
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
 				this->acceptButton.click(this->getGame(), this->charClasses.at(index));
@@ -203,15 +205,14 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			this->downButton.click(*this);
 		}
 	}
-
-	if (leftClick)
+	else if (leftClick)
 	{
 		// Check scroll buttons (they are outside the list box to the left).
-		if (this->upButton.contains(mouseOriginalPoint))
+		if (this->upButton.contains(originalPoint))
 		{
 			this->upButton.click(*this);
 		}
-		else if (this->downButton.contains(mouseOriginalPoint))
+		else if (this->downButton.contains(originalPoint))
 		{
 			this->downButton.click(*this);
 		}
@@ -371,6 +372,16 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
+Rect ChooseClassPanel::getClassesListBoxRect() const
+{
+	const int classesListBoxRectWidth = 143;
+	return Rect(
+		this->classesListBox->getPoint().x,
+		this->classesListBox->getPoint().y,
+		classesListBoxRectWidth,
+		this->classesListBox->getDimensions().y);
+}
+
 void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 {
 	// Make the tooltip if it doesn't already exist.
@@ -443,7 +454,8 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 	Int2 mouseOriginalPoint = renderer.nativeToOriginal(mousePosition);
 
-	if (this->classesListBox->contains(mouseOriginalPoint))
+	const Rect classesListBoxRect = this->getClassesListBoxRect();
+	if (classesListBoxRect.contains(mouseOriginalPoint))
 	{
 		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
 		if ((index >= 0) && (index < this->classesListBox->getElementCount()))

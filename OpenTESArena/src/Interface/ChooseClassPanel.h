@@ -14,6 +14,7 @@
 // list that says nothing about the classes (thus requiring the manual for 
 // information). I think it's better to have tooltips.
 
+class Rect;
 class Renderer;
 class Surface;
 class TextBox;
@@ -34,6 +35,9 @@ private:
 	std::string getClassArmors(const CharacterClass &characterClass) const;
 	std::string getClassShields(const CharacterClass &characterClass) const;
 	std::string getClassWeapons(const CharacterClass &characterClass) const;
+
+	// Gets a rectangle for the classes list box area (with some extra space on the right).
+	Rect getClassesListBoxRect() const;
 
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 public:
