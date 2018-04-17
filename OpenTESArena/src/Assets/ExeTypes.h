@@ -1,6 +1,7 @@
 #ifndef EXE_TYPES_H
 #define EXE_TYPES_H
 
+#include <cstddef>
 #include <cstdint>
 
 // Various helper records for composite data in the executable, primarily used with the

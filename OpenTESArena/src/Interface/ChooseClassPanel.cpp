@@ -69,8 +69,10 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	this->classesListBox = [this, &game]()
 	{
-		const int x = 85;
-		const int y = 46;
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
+		const int x = classListRect.getLeft();
+		const int y = classListRect.getTop();
 		const int maxDisplayed = 6;
 
 		std::vector<std::string> elements;
@@ -101,11 +103,14 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		return Button<Game&>(function);
 	}();
 
-	this->upButton = []
+	this->upButton = [&game]
 	{
-		const Int2 center(68, 22);
-		const int w = 8;
-		const int h = 8;
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+		const int x = chooseClassListUI.buttonUp.x;
+		const int y = chooseClassListUI.buttonUp.y;
+		const int w = chooseClassListUI.buttonUp.w;
+		const int h = chooseClassListUI.buttonUp.h;
 		auto function = [](ChooseClassPanel &panel)
 		{
 			// Scroll the list box up one if able.
@@ -114,14 +119,17 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 				panel.classesListBox->scrollUp();
 			}
 		};
-		return Button<ChooseClassPanel&>(center, w, h, function);
+		return Button<ChooseClassPanel&>(x, y, w, h, function);
 	}();
 
-	this->downButton = []
+	this->downButton = [&game]
 	{
-		const Int2 center(68, 117);
-		const int w = 8;
-		const int h = 8;
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+		const int x = chooseClassListUI.buttonDown.x;
+		const int y = chooseClassListUI.buttonDown.y;
+		const int w = chooseClassListUI.buttonDown.w;
+		const int h = chooseClassListUI.buttonDown.h;
 		auto function = [](ChooseClassPanel &panel)
 		{
 			// Scroll the list box down one if able.
@@ -133,7 +141,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 				panel.classesListBox->scrollDown();
 			}
 		};
-		return Button<ChooseClassPanel&>(center, w, h, function);
+		return Button<ChooseClassPanel&>(x, y, w, h, function);
 	}();
 
 	this->acceptButton = []
@@ -165,13 +173,13 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 {
 	// Eventually handle mouse motion: if mouse is over scroll bar and
 	// LMB state is down, move scroll bar to that Y position.
-
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
 	{
-		this->backToClassCreationButton.click(this->getGame());
+		this->backToClassCreationButton.click(game);
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -179,13 +187,14 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	bool mouseWheelDown = inputManager.mouseWheeledDown(e);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = this->getGame().getRenderer()
+	const Int2 originalPoint = game.getRenderer()
 		.nativeToOriginal(mousePosition);
 
 	// See if a class in the list was clicked, or if it is being scrolled. Use a custom
 	// width for the list box so it better fills the screen-space.
-	const Rect classesListBoxRect = this->getClassesListBoxRect();
-	if (classesListBoxRect.contains(originalPoint))
+	const auto &exeData = game.getMiscAssets().getExeData();
+	const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
+	if (classListRect.contains(originalPoint))
 	{
 		if (leftClick)
 		{
@@ -193,7 +202,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			const int index = this->classesListBox->getClickedIndex(originalPoint);
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
-				this->acceptButton.click(this->getGame(), this->charClasses.at(index));
+				this->acceptButton.click(game, this->charClasses.at(index));
 			}
 		}
 		else if (mouseWheelUp)
@@ -317,7 +326,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
 {
 	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
-	
+
 	// Get weapon names from the executable.
 	const auto &exeData = this->getGame().getMiscAssets().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
@@ -372,14 +381,11 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 	return weaponsString;
 }
 
-Rect ChooseClassPanel::getClassesListBoxRect() const
+Rect ChooseClassPanel::getClassListRect(const ExeData &exeData)
 {
-	const int classesListBoxRectWidth = 143;
-	return Rect(
-		this->classesListBox->getPoint().x,
-		this->classesListBox->getPoint().y,
-		classesListBoxRectWidth,
-		this->classesListBox->getDimensions().y);
+	const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+	return Rect(chooseClassListUI.area.x, chooseClassListUI.area.y,
+		chooseClassListUI.area.w, chooseClassListUI.area.h);
 }
 
 void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
@@ -426,7 +432,8 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &textureManager = game.getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw background.
@@ -450,14 +457,15 @@ void ChooseClassPanel::render(Renderer &renderer)
 		this->classesListBox->getPoint().y);
 
 	// Draw tooltip if over a valid element in the list box.
-	const auto &inputManager = this->getGame().getInputManager();
+	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	Int2 mouseOriginalPoint = renderer.nativeToOriginal(mousePosition);
+	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
-	const Rect classesListBoxRect = this->getClassesListBoxRect();
-	if (classesListBoxRect.contains(mouseOriginalPoint))
+	const auto &exeData = game.getMiscAssets().getExeData();
+	const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
+	if (classListRect.contains(originalPoint))
 	{
-		int index = this->classesListBox->getClickedIndex(mouseOriginalPoint);
+		int index = this->classesListBox->getClickedIndex(originalPoint);
 		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 		{
 			this->drawClassTooltip(index, renderer);
