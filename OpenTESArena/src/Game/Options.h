@@ -9,84 +9,52 @@
 
 enum class PlayerInterface;
 
-// Maps to each option in the options file. Intended to be used behind the scenes
-// in the options code.
-enum class OptionName
-{
-	ScreenWidth,
-	ScreenHeight,
-	Fullscreen,
-	TargetFPS,
-	ResolutionScale,
-	VerticalFOV,
-	LetterboxAspect,
-	CursorScale,
-	ModernInterface,
-
-	HorizontalSensitivity,
-	VerticalSensitivity,
-
-	MusicVolume,
-	SoundVolume,
-	MidiConfig,
-	SoundChannels,
-	SoundResampling,
-
-	ArenaPath,
-	Collision,
-	SkipIntro,
-	ShowDebug,
-	ShowCompass
-};
-
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<OptionName>
-	{
-		size_t operator()(const OptionName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 class Options
 {
 private:
-	typedef std::unordered_map<OptionName, bool> BoolMap;
-	typedef std::unordered_map<OptionName, int> IntegerMap;
-	typedef std::unordered_map<OptionName, double> DoubleMap;
-	typedef std::unordered_map<OptionName, std::string> StringMap;
+	typedef std::unordered_map<std::string, bool> BoolMap;
+	typedef std::unordered_map<std::string, int> IntegerMap;
+	typedef std::unordered_map<std::string, double> DoubleMap;
+	typedef std::unordered_map<std::string, std::string> StringMap;
 
-	// Default values come from the default options file. "Changed" values come from
-	// changes at runtime, and those are written to the changed options file.
-	Options::BoolMap defaultBools, changedBools;
-	Options::IntegerMap defaultInts, changedInts;
-	Options::DoubleMap defaultDoubles, changedDoubles;
-	Options::StringMap defaultStrings, changedStrings;
+	struct MapGroup
+	{
+		BoolMap bools;
+		IntegerMap integers;
+		DoubleMap doubles;
+		StringMap strings;
+	};
+
+	// Default values come from the default options file. Changed values come from
+	// changes at runtime, and those are written to the changed options file. Each
+	// section in the options file has its own map of values.
+	std::unordered_map<std::string, MapGroup> defaultMaps, changedMaps;
 
 	// Opens the given file and reads its key-value pairs into the given maps.
-	static void load(const std::string &filename, Options::BoolMap &boolMap,
-		Options::IntegerMap &integerMap, Options::DoubleMap &doubleMap,
-		Options::StringMap &stringMap);
+	static void load(const std::string &filename,
+		std::unordered_map<std::string, Options::MapGroup> &maps);
 
-	bool getBool(OptionName key) const;
-	int getInt(OptionName key) const;
-	double getDouble(OptionName key) const;
-	const std::string &getString(OptionName key) const;
+	bool getBool(const std::string &section, const std::string &key) const;
+	int getInt(const std::string &section, const std::string &key) const;
+	double getDouble(const std::string &section, const std::string &key) const;
+	const std::string &getString(const std::string &section, const std::string &key) const;
 
-	void setBool(OptionName key, bool value);
-	void setInt(OptionName key, int value);
-	void setDouble(OptionName key, double value);
-	void setString(OptionName key, const std::string &value);
+	void setBool(const std::string &section, const std::string &key, bool value);
+	void setInt(const std::string &section, const std::string &key, int value);
+	void setDouble(const std::string &section, const std::string &key, double value);
+	void setString(const std::string &section, const std::string &key, const std::string &value);
 public:
 	// Filename of the default options file.
 	static const std::string DEFAULT_FILENAME;
 
 	// Filename of the "changes" options file, the one that tracks runtime changes.
 	static const std::string CHANGES_FILENAME;
+
+	// Section names for each group of related values.
+	static const std::string SECTION_GRAPHICS;
+	static const std::string SECTION_AUDIO;
+	static const std::string SECTION_INPUT;
+	static const std::string SECTION_MISC;
 
 	// Min/max/allowed values for the application.
 	static const int MIN_FPS;
@@ -106,79 +74,79 @@ public:
 	static const double MAX_VOLUME;
 	static const int RESAMPLING_OPTION_COUNT;
 
-#define OPTION_BOOL(name) \
-bool get##name() const \
+#define OPTION_BOOL(section, name) \
+bool get##section##_##name() const \
 { \
-	return this->getBool(OptionName::name); \
+	return this->getBool(#section, #name); \
 } \
-void set##name(bool value) \
+void set##section##_##name(bool value) \
 { \
-	this->setBool(OptionName::name, value); \
+	this->setBool(#section, #name, value); \
 }
 
-#define OPTION_INT(name) \
-void check##name(int value) const; \
-int get##name() const \
+#define OPTION_INT(section, name) \
+void check##section##_##name(int value) const; \
+int get##section##_##name() const \
 { \
-	const int value = this->getInt(OptionName::name); \
-	this->check##name(value); \
+	const int value = this->getInt(#section, #name); \
+	this->check##section##_##name(value); \
 	return value; \
 } \
-void set##name(int value) \
+void set##section##_##name(int value) \
 { \
-	this->check##name(value); \
-	this->setInt(OptionName::name, value); \
+	this->check##section##_##name(value); \
+	this->setInt(#section, #name, value); \
 }
 
-#define OPTION_DOUBLE(name) \
-void check##name(double value) const; \
-double get##name() const \
+#define OPTION_DOUBLE(section, name) \
+void check##section##_##name(double value) const; \
+double get##section##_##name() const \
 { \
-	const double value = this->getDouble(OptionName::name); \
-	this->check##name(value); \
+	const double value = this->getDouble(#section, #name); \
+	this->check##section##_##name(value); \
 	return value; \
 } \
-void set##name(double value) \
+void set##section##_##name(double value) \
 { \
-	this->check##name(value); \
-	this->setDouble(OptionName::name, value); \
+	this->check##section##_##name(value); \
+	this->setDouble(#section, #name, value); \
 }
 
-#define OPTION_STRING(name) \
-const std::string &get##name() const \
+#define OPTION_STRING(section, name) \
+const std::string &get##section##_##name() const \
 { \
-	return this->getString(OptionName::name); \
+	return this->getString(#section, #name); \
 } \
-void set##name(const std::string &value) \
+void set##section##_##name(const std::string &value) \
 { \
-	this->setString(OptionName::name, value); \
+	this->setString(#section, #name, value); \
 }
 
 	// Getter, setter, and optional checker methods.
-	OPTION_INT(ScreenWidth)
-	OPTION_INT(ScreenHeight)
-	OPTION_BOOL(Fullscreen)
-	OPTION_INT(TargetFPS)
-	OPTION_DOUBLE(ResolutionScale)
-	OPTION_DOUBLE(VerticalFOV)
-	OPTION_DOUBLE(LetterboxAspect)
-	OPTION_DOUBLE(CursorScale)
-	OPTION_BOOL(ModernInterface)
+	OPTION_INT(Graphics, ScreenWidth)
+	OPTION_INT(Graphics, ScreenHeight)
+	OPTION_BOOL(Graphics, Fullscreen)
+	OPTION_INT(Graphics, TargetFPS)
+	OPTION_DOUBLE(Graphics, ResolutionScale)
+	OPTION_DOUBLE(Graphics, VerticalFOV)
+	OPTION_DOUBLE(Graphics, LetterboxAspect)
+	OPTION_DOUBLE(Graphics, CursorScale)
+	OPTION_BOOL(Graphics, ModernInterface)
 
-	OPTION_DOUBLE(HorizontalSensitivity)
-	OPTION_DOUBLE(VerticalSensitivity)
+	OPTION_DOUBLE(Audio, MusicVolume)
+	OPTION_DOUBLE(Audio, SoundVolume)
+	OPTION_STRING(Audio, MidiConfig)
+	OPTION_INT(Audio, SoundChannels)
+	OPTION_INT(Audio, SoundResampling)
 
-	OPTION_DOUBLE(MusicVolume)
-	OPTION_DOUBLE(SoundVolume)
-	OPTION_STRING(MidiConfig)
-	OPTION_INT(SoundChannels)
-	OPTION_INT(SoundResampling)
+	OPTION_DOUBLE(Input, HorizontalSensitivity)
+	OPTION_DOUBLE(Input, VerticalSensitivity)
 
-	OPTION_STRING(ArenaPath)
-	OPTION_BOOL(Collision)
-	OPTION_BOOL(SkipIntro)
-	OPTION_BOOL(ShowDebug)
-	OPTION_BOOL(ShowCompass)
+	OPTION_STRING(Misc, ArenaPath)
+	OPTION_BOOL(Misc, Collision)
+	OPTION_BOOL(Misc, SkipIntro)
+	OPTION_BOOL(Misc, ShowDebug)
+	OPTION_BOOL(Misc, ShowCompass)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);

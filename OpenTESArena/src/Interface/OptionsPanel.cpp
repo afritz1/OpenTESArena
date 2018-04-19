@@ -85,7 +85,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 45;
 
 		const RichTextString richText(
-			OptionsPanel::FPS_TEXT + std::to_string(game.getOptions().getTargetFPS()),
+			OptionsPanel::FPS_TEXT + std::to_string(game.getOptions().getGraphics_TargetFPS()),
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
@@ -100,7 +100,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 65;
 
 		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
-			String::fixedPrecision(game.getOptions().getResolutionScale(), 2);
+			String::fixedPrecision(game.getOptions().getGraphics_ResolutionScale(), 2);
 
 		const RichTextString richText(
 			text,
@@ -117,8 +117,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int x = 20;
 		const int y = 85;
 
+		const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			OptionsPanel::getPlayerInterfaceString(game.getOptions().getModernInterface());
+			OptionsPanel::getPlayerInterfaceString(modernInterface);
 
 		const RichTextString richText(
 			text,
@@ -136,7 +137,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 105;
 
 		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
-			String::fixedPrecision(game.getOptions().getVerticalFOV(), 1);
+			String::fixedPrecision(game.getOptions().getGraphics_VerticalFOV(), 1);
 
 		const RichTextString richText(
 			text,
@@ -154,7 +155,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 125;
 
 		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
-			String::fixedPrecision(game.getOptions().getCursorScale(), 1);
+			String::fixedPrecision(game.getOptions().getGraphics_CursorScale(), 1);
 
 		const RichTextString richText(
 			text,
@@ -172,7 +173,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 145;
 
 		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
-			String::fixedPrecision(game.getOptions().getLetterboxAspect(), 2);
+			String::fixedPrecision(game.getOptions().getGraphics_LetterboxAspect(), 2);
 
 		const RichTextString richText(
 			text,
@@ -190,7 +191,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 45;
 
 		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game.getOptions().getHorizontalSensitivity(), 1);
+			String::fixedPrecision(game.getOptions().getInput_HorizontalSensitivity(), 1);
 
 		const RichTextString richText(
 			text,
@@ -208,7 +209,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 65;
 
 		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game.getOptions().getVerticalSensitivity(), 1);
+			String::fixedPrecision(game.getOptions().getInput_VerticalSensitivity(), 1);
 
 		const RichTextString richText(
 			text,
@@ -226,7 +227,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 82;
 
 		const std::string text = OptionsPanel::COLLISION_TEXT +
-			(game.getOptions().getCollision() ? "On" : "Off");
+			(game.getOptions().getMisc_Collision() ? "On" : "Off");
 
 		const RichTextString richText(
 			text,
@@ -244,7 +245,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 96;
 
 		const std::string text = OptionsPanel::SKIP_INTRO_TEXT +
-			(game.getOptions().getSkipIntro() ? "On" : "Off");
+			(game.getOptions().getMisc_SkipIntro() ? "On" : "Off");
 
 		const RichTextString richText(
 			text,
@@ -262,7 +263,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int y = 110;
 
 		const std::string text = OptionsPanel::FULLSCREEN_TEXT +
-			(game.getOptions().getFullscreen() ? "On" : "Off");
+			(game.getOptions().getGraphics_Fullscreen() ? "On" : "Off");
 
 		const RichTextString richText(
 			text,
@@ -279,7 +280,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int x = 175;
 		const int y = 124;
 
-		const int resamplingOption = game.getOptions().getSoundResampling();
+		const int resamplingOption = game.getOptions().getAudio_SoundResampling();
 		const std::string text = OptionsPanel::SOUND_RESAMPLING_TEXT +
 			OptionsPanel::getSoundResamplingString(resamplingOption);
 
@@ -314,8 +315,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = 8;
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const int newFPS = options.getTargetFPS() + 5;
-			options.setTargetFPS(newFPS);
+			const int newFPS = options.getGraphics_TargetFPS() + 5;
+			options.setGraphics_TargetFPS(newFPS);
 			panel.updateFPSText(newFPS);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -329,8 +330,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = this->fpsUpButton.getHeight();
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const int newFPS = std::max(options.getTargetFPS() - 5, options.MIN_FPS);
-			options.setTargetFPS(newFPS);
+			const int newFPS = std::max(options.getGraphics_TargetFPS() - 5, options.MIN_FPS);
+			options.setGraphics_TargetFPS(newFPS);
 			panel.updateFPSText(newFPS);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -345,13 +346,13 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::min(
-				options.getResolutionScale() + 0.05, options.MAX_RESOLUTION_SCALE);
-			options.setResolutionScale(newResolutionScale);
+				options.getGraphics_ResolutionScale() + 0.05, options.MAX_RESOLUTION_SCALE);
+			options.setGraphics_ResolutionScale(newResolutionScale);
 			panel.updateResolutionScaleText(newResolutionScale);
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getModernInterface();
+			const bool fullGameWindow = options.getGraphics_ModernInterface();
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
@@ -368,13 +369,13 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			const double newResolutionScale = std::max(
-				options.getResolutionScale() - 0.05, options.MIN_RESOLUTION_SCALE);
-			options.setResolutionScale(newResolutionScale);
+				options.getGraphics_ResolutionScale() - 0.05, options.MIN_RESOLUTION_SCALE);
+			options.setGraphics_ResolutionScale(newResolutionScale);
 			panel.updateResolutionScaleText(newResolutionScale);
 
 			// Resize the game world rendering.
 			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getModernInterface();
+			const bool fullGameWindow = options.getGraphics_ModernInterface();
 			renderer.resize(windowDimensions.x, windowDimensions.y,
 				newResolutionScale, fullGameWindow);
 		};
@@ -391,9 +392,9 @@ OptionsPanel::OptionsPanel(Game &game)
 			Player &player, Renderer &renderer)
 		{
 			// Toggle the player interface option.
-			const auto newPlayerInterface = options.getModernInterface() ?
+			const auto newPlayerInterface = options.getGraphics_ModernInterface() ?
 				PlayerInterface::Classic : PlayerInterface::Modern;
-			options.setModernInterface(newPlayerInterface == PlayerInterface::Modern);
+			options.setGraphics_ModernInterface(newPlayerInterface == PlayerInterface::Modern);
 			panel.updatePlayerInterfaceText(newPlayerInterface);
 
 			// If classic mode, make sure the player is looking straight forward.
@@ -410,7 +411,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			const Int2 windowDimensions = renderer.getWindowDimensions();
 			const bool fullGameWindow = newPlayerInterface == PlayerInterface::Modern;
 			renderer.resize(windowDimensions.x, windowDimensions.y,
-				options.getResolutionScale(), fullGameWindow);
+				options.getGraphics_ResolutionScale(), fullGameWindow);
 		};
 		return Button<OptionsPanel&, Options&, Player&, Renderer&>(x, y, width, height, function);
 	}();
@@ -423,9 +424,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = 8;
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const double newVerticalFOV = std::min(options.getVerticalFOV() + 5.0,
+			const double newVerticalFOV = std::min(options.getGraphics_VerticalFOV() + 5.0,
 				Options::MAX_VERTICAL_FOV);
-			options.setVerticalFOV(newVerticalFOV);
+			options.setGraphics_VerticalFOV(newVerticalFOV);
 			panel.updateVerticalFOVText(newVerticalFOV);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -439,9 +440,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = this->verticalFOVUpButton.getHeight();
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const double newVerticalFOV = std::max(options.getVerticalFOV() - 5.0,
+			const double newVerticalFOV = std::max(options.getGraphics_VerticalFOV() - 5.0,
 				Options::MIN_VERTICAL_FOV);
-			options.setVerticalFOV(newVerticalFOV);
+			options.setGraphics_VerticalFOV(newVerticalFOV);
 			panel.updateVerticalFOVText(newVerticalFOV);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -455,9 +456,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = 8;
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const double newCursorScale = std::min(options.getCursorScale() + 0.10,
+			const double newCursorScale = std::min(options.getGraphics_CursorScale() + 0.10,
 				Options::MAX_CURSOR_SCALE);
-			options.setCursorScale(newCursorScale);
+			options.setGraphics_CursorScale(newCursorScale);
 			panel.updateCursorScaleText(newCursorScale);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -471,9 +472,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = this->cursorScaleUpButton.getHeight();
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
-			const double newCursorScale = std::max(options.getCursorScale() - 0.10,
+			const double newCursorScale = std::max(options.getGraphics_CursorScale() - 0.10,
 				Options::MIN_CURSOR_SCALE);
-			options.setCursorScale(newCursorScale);
+			options.setGraphics_CursorScale(newCursorScale);
 			panel.updateCursorScaleText(newCursorScale);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -487,9 +488,10 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = 8;
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
-			const double newLetterboxAspect = std::min(options.getLetterboxAspect() + 0.010,
+			const double newLetterboxAspect = std::min(
+				options.getGraphics_LetterboxAspect() + 0.010,
 				Options::MAX_LETTERBOX_ASPECT);
-			options.setLetterboxAspect(newLetterboxAspect);
+			options.setGraphics_LetterboxAspect(newLetterboxAspect);
 			panel.updateLetterboxAspectText(newLetterboxAspect);
 			renderer.setLetterboxAspect(newLetterboxAspect);
 		};
@@ -505,9 +507,10 @@ OptionsPanel::OptionsPanel(Game &game)
 		const int height = this->letterboxAspectUpButton.getHeight();
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
-			const double newLetterboxAspect = std::max(options.getLetterboxAspect() - 0.010,
+			const double newLetterboxAspect = std::max(
+				options.getGraphics_LetterboxAspect() - 0.010,
 				Options::MIN_LETTERBOX_ASPECT);
-			options.setLetterboxAspect(newLetterboxAspect);
+			options.setGraphics_LetterboxAspect(newLetterboxAspect);
 			panel.updateLetterboxAspectText(newLetterboxAspect);
 			renderer.setLetterboxAspect(newLetterboxAspect);
 		};
@@ -523,8 +526,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::min(
-				options.getHorizontalSensitivity() + 0.50, Options::MAX_HORIZONTAL_SENSITIVITY);
-			options.setHorizontalSensitivity(newHorizontalSensitivity);
+				options.getInput_HorizontalSensitivity() + 0.50,
+				Options::MAX_HORIZONTAL_SENSITIVITY);
+			options.setInput_HorizontalSensitivity(newHorizontalSensitivity);
 			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -540,8 +544,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newHorizontalSensitivity = std::max(
-				options.getHorizontalSensitivity() - 0.50, Options::MIN_HORIZONTAL_SENSITIVITY);
-			options.setHorizontalSensitivity(newHorizontalSensitivity);
+				options.getInput_HorizontalSensitivity() - 0.50,
+				Options::MIN_HORIZONTAL_SENSITIVITY);
+			options.setInput_HorizontalSensitivity(newHorizontalSensitivity);
 			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -556,8 +561,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::min(
-				options.getVerticalSensitivity() + 0.50, Options::MAX_VERTICAL_SENSITIVITY);
-			options.setVerticalSensitivity(newVerticalSensitivity);
+				options.getInput_VerticalSensitivity() + 0.50,
+				Options::MAX_VERTICAL_SENSITIVITY);
+			options.setInput_VerticalSensitivity(newVerticalSensitivity);
 			panel.updateVerticalSensitivityText(newVerticalSensitivity);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -573,8 +579,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			const double newVerticalSensitivity = std::max(
-				options.getVerticalSensitivity() - 0.50, Options::MIN_VERTICAL_SENSITIVITY);
-			options.setVerticalSensitivity(newVerticalSensitivity);
+				options.getInput_VerticalSensitivity() - 0.50,
+				Options::MIN_VERTICAL_SENSITIVITY);
+			options.setInput_VerticalSensitivity(newVerticalSensitivity);
 			panel.updateVerticalSensitivityText(newVerticalSensitivity);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -589,8 +596,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the collision option.
-			const bool newCollision = !options.getCollision();
-			options.setCollision(newCollision);
+			const bool newCollision = !options.getMisc_Collision();
+			options.setMisc_Collision(newCollision);
 			panel.updateCollisionText(newCollision);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -605,8 +612,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the skip intro option.
-			const bool newSkipIntro = !options.getSkipIntro();
-			options.setSkipIntro(newSkipIntro);
+			const bool newSkipIntro = !options.getMisc_SkipIntro();
+			options.setMisc_SkipIntro(newSkipIntro);
 			panel.updateSkipIntroText(newSkipIntro);
 		};
 		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
@@ -621,8 +628,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			// Toggle the fullscreen option.
-			const bool newFullscreen = !options.getFullscreen();
-			options.setFullscreen(newFullscreen);
+			const bool newFullscreen = !options.getGraphics_Fullscreen();
+			options.setGraphics_Fullscreen(newFullscreen);
 			renderer.setFullscreen(newFullscreen);
 			panel.updateFullscreenText(newFullscreen);
 		};
@@ -639,8 +646,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		{
 			// Increment the sound resampling option, or loop around.
 			const int newResamplingOption =
-				(options.getSoundResampling() + 1) % Options::RESAMPLING_OPTION_COUNT;
-			options.setSoundResampling(newResamplingOption);
+				(options.getAudio_SoundResampling() + 1) % Options::RESAMPLING_OPTION_COUNT;
+			options.setAudio_SoundResampling(newResamplingOption);
 
 			// If the sound resampling extension is supported, update the audio manager sources.
 			if (audioManager.hasResamplerExtension())

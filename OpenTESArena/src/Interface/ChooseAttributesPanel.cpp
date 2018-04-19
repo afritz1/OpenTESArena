@@ -232,9 +232,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
 						const auto &miscAssets = game.getMiscAssets();
-						const bool fullGameWindow = game.getOptions().getModernInterface();
+						const bool fullGameWindow =
+							game.getOptions().getGraphics_ModernInterface();
 						renderer.initializeWorldRendering(
-							game.getOptions().getResolutionScale(), fullGameWindow);
+							game.getOptions().getGraphics_ResolutionScale(), fullGameWindow);
 
 						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
 							&charClass, &miscAssets]()

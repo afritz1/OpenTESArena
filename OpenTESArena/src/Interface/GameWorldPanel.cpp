@@ -161,7 +161,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
-			const bool modernInterface = game.getOptions().getModernInterface();
+			const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 
 			// The center of the pop-up depends on the interface mode.
 			const Int2 center = GameWorldPanel::getInterfaceCenter(
@@ -478,7 +478,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const bool modernInterface = game.getOptions().getModernInterface();
+	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	const Int2 mousePosition = game.getInputManager().getMousePosition();
 
 	// If using the modern interface, just use the default arrow cursor.
@@ -524,7 +524,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (f4Pressed)
 	{
 		// Toggle debug display.
-		options.setShowDebug(!options.getShowDebug());
+		options.setMisc_ShowDebug(!options.getMisc_ShowDebug());
 	}
 
 	// Listen for hotkeys.
@@ -564,7 +564,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	else if (toggleCompassHotkeyPressed)
 	{
 		// Toggle compass display.
-		options.setShowCompass(!options.getShowCompass());
+		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
 	}
 
 	// Player's XY coordinate hotkey.
@@ -613,7 +613,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	const auto &renderer = game.getRenderer();
 
 	// Handle input events based on which player interface mode is active.
-	const bool modernInterface = game.getOptions().getModernInterface();
+	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Get mouse position relative to letterbox coordinates.
@@ -689,7 +689,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	// get the swing direction and swing.
 	const auto &inputManager = this->getGame().getInputManager();
 
-	const bool modernInterface = this->getGame().getOptions().getModernInterface();
+	const bool modernInterface = this->getGame().getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
@@ -754,8 +754,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			// Yaw the camera left or right. No vertical movement in classic camera mode.
 			// Multiply turning speed by delta time so it behaves correctly with different
 			// frame rates.
-			player.rotate(dx * dt, 0.0, options.getHorizontalSensitivity(),
-				options.getVerticalSensitivity());
+			player.rotate(dx * dt, 0.0, options.getInput_HorizontalSensitivity(),
+				options.getInput_VerticalSensitivity());
 		}
 		else if (!lCtrl)
 		{
@@ -766,14 +766,14 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			if (left)
 			{
 				// Turn left at a fixed angular velocity.
-				player.rotate(-turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
-					options.getVerticalSensitivity());
+				player.rotate(-turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
+					options.getInput_VerticalSensitivity());
 			}
 			else if (right)
 			{
 				// Turn right at a fixed angular velocity.
-				player.rotate(turnSpeed * dt, 0.0, options.getHorizontalSensitivity(),
-					options.getVerticalSensitivity());
+				player.rotate(turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
+					options.getInput_VerticalSensitivity());
 			}
 		}
 	}
@@ -803,8 +803,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			// Pitch and/or yaw the camera.
 			const auto &options = this->getGame().getOptions();
 			auto &player = this->getGame().getGameData().getPlayer();
-			player.rotate(dxx, -dyy, options.getHorizontalSensitivity(),
-				options.getVerticalSensitivity());
+			player.rotate(dxx, -dyy, options.getInput_HorizontalSensitivity(),
+				options.getInput_VerticalSensitivity());
 		}
 	}
 }
@@ -815,15 +815,16 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	// 1) handleClassicMovement()
 	// 2) handleModernMovement()
 
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 
 	// Arbitrary movement speeds.
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
 
-	const auto &worldData = this->getGame().getGameData().getWorldData();
+	const auto &worldData = game.getGameData().getWorldData();
 
-	const bool modernInterface = this->getGame().getOptions().getModernInterface();
+	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
@@ -848,7 +849,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = this->getGame().getGameData().getPlayer();
+		auto &player = game.getGameData().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -995,7 +996,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = this->getGame().getGameData().getPlayer();
+		auto &player = game.getGameData().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -1148,7 +1149,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 				const auto &options = game.getOptions();
 				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-				if (!options.getModernInterface())
+				if (!options.getGraphics_ModernInterface())
 				{
 					// The cursor must be above the game world interface in order to fire. In
 					// the original game, the cursor has to be in the center "X" region, but
@@ -1445,7 +1446,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Int2 windowDims = renderer.getWindowDimensions();
 
 	auto &game = this->getGame();
-	const double resolutionScale = game.getOptions().getResolutionScale();
+	const double resolutionScale = game.getOptions().getGraphics_ResolutionScale();
 
 	auto &gameData = game.getGameData();
 	const auto &player = gameData.getPlayer();
@@ -1688,7 +1689,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	}();
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getVerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
+		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
 		level.getCeilingHeight(), level.getVoxelGrid());
 
 	auto &textureManager = this->getGame().getTextureManager();
@@ -1699,7 +1700,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const bool modernInterface = options.getModernInterface();
+	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	// Continue drawing more interface objects if in classic mode.
 	// - To do: clamp game world interface to screen edges, not letterbox edges.
@@ -1735,7 +1736,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	}
 
 	// Draw some optional debug text.
-	if (options.getShowDebug())
+	if (options.getMisc_ShowDebug())
 	{
 		this->drawDebugText(renderer);
 	}
@@ -1756,7 +1757,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	auto &gameData = this->getGame().getGameData();
 	auto &player = gameData.getPlayer();
 	const auto &options = this->getGame().getOptions();
-	const bool modernInterface = options.getModernInterface();
+	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
@@ -1810,7 +1811,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	}
 
 	// Draw the visible portion of the compass slider, and the frame over it.
-	if (options.getShowCompass())
+	if (options.getMisc_ShowCompass())
 	{
 		this->drawCompass(player.getGroundDirection(), textureManager, renderer);
 	}

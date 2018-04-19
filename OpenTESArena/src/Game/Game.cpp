@@ -44,32 +44,34 @@ Game::Game()
 
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
 	const bool arenaPathIsRelative = File::pathIsRelative(
-		this->options.getArenaPath());
+		this->options.getMisc_ArenaPath());
 	const std::string globalBsaPath = [this, arenaPathIsRelative]()
 	{
 		// Include the base path if the ArenaPath is relative.
 		return (arenaPathIsRelative ? this->basePath : "") +
-			this->options.getArenaPath() + "/GLOBAL.BSA";
+			this->options.getMisc_ArenaPath() + "/GLOBAL.BSA";
 	}();
 
 	DebugAssert(File::exists(globalBsaPath),
-		"\"" + this->options.getArenaPath() + "\" not a valid ARENA path.");
+		"\"" + this->options.getMisc_ArenaPath() + "\" not a valid ARENA path.");
 
 	// Initialize virtual file system using the Arena path in the options file.
 	VFS::Manager::get().initialize(std::string(
-		(arenaPathIsRelative ? this->basePath : "") + this->options.getArenaPath()));
+		(arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.
-	const bool midiPathIsRelative = File::pathIsRelative(this->options.getMidiConfig());
+	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig());
 	const std::string midiPath = (midiPathIsRelative ? this->basePath : "") +
-		this->options.getMidiConfig();
+		this->options.getAudio_MidiConfig();
 
-	this->audioManager.init(this->options.getMusicVolume(), this->options.getSoundVolume(),
-		this->options.getSoundChannels(), this->options.getSoundResampling(), midiPath);
+	this->audioManager.init(this->options.getAudio_MusicVolume(),
+		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
+		this->options.getAudio_SoundResampling(), midiPath);
 
 	// Initialize the SDL renderer and window with the given settings.
-	this->renderer.init(this->options.getScreenWidth(), this->options.getScreenHeight(),
-		this->options.getFullscreen(), this->options.getLetterboxAspect());
+	this->renderer.init(this->options.getGraphics_ScreenWidth(),
+		this->options.getGraphics_ScreenHeight(), this->options.getGraphics_Fullscreen(),
+		this->options.getGraphics_LetterboxAspect());
 
 	// Initialize the texture manager.
 	this->textureManager.init();
@@ -223,8 +225,9 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 void Game::resizeWindow(int width, int height)
 {
 	// Resize the window, and the 3D renderer if initialized.
-	const bool fullGameWindow = this->options.getModernInterface();
-	this->renderer.resize(width, height, this->options.getResolutionScale(), fullGameWindow);
+	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
+	this->renderer.resize(width, height,
+		this->options.getGraphics_ResolutionScale(), fullGameWindow);
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -398,7 +401,7 @@ void Game::render()
 		// The panel should not be drawing the cursor themselves. It's done here 
 		// just to make sure that the cursor is drawn only once and is always drawn last.
 		this->renderer.drawCursor(cursor.first, cursor.second,
-			this->inputManager.getMousePosition(), this->options.getCursorScale());
+			this->inputManager.getMousePosition(), this->options.getGraphics_CursorScale());
 	}
 
 	this->renderer.present();
@@ -420,7 +423,7 @@ void Game::loop()
 
 		// Fastest allowed frame time in microseconds.
 		const std::chrono::duration<int64_t, std::micro> minimumMS(
-			1000000 / this->options.getTargetFPS());
+			1000000 / this->options.getGraphics_TargetFPS());
 
 		// Delay the current frame if the previous one was too fast.
 		auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);

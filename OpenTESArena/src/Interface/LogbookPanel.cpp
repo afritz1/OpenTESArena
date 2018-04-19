@@ -34,7 +34,7 @@ LogbookPanel::LogbookPanel(Game &game)
 			Renderer::ORIGINAL_HEIGHT / 2);
 
 		const auto &exeData = game.getMiscAssets().getExeData();
-		const std::string &text = exeData.logbook.logbookIsEmpty;
+		const std::string &text = exeData.logbook.isEmpty;
 
 		const RichTextString richText(
 			text,

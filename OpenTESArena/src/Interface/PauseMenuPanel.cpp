@@ -56,7 +56,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const Int2 center(127, 96);
 
 		const std::string text = std::to_string(static_cast<int>(
-			std::round(game.getOptions().getMusicVolume() * 100.0)));
+			std::round(game.getOptions().getAudio_MusicVolume() * 100.0)));
 
 		const RichTextString richText(
 			text,
@@ -73,7 +73,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const Int2 center(54, 96);
 
 		const std::string text = std::to_string(static_cast<int>(
-			std::round(game.getOptions().getSoundVolume() * 100.0)));
+			std::round(game.getOptions().getAudio_SoundVolume() * 100.0)));
 
 		const RichTextString richText(
 			text,
@@ -182,11 +182,11 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setMusicVolume(std::min(options.getMusicVolume() + 0.050, 1.0));
-			audioManager.setMusicVolume(options.getMusicVolume());
+			options.setAudio_MusicVolume(std::min(options.getAudio_MusicVolume() + 0.050, 1.0));
+			audioManager.setMusicVolume(options.getAudio_MusicVolume());
 
 			// Update the music volume text.
-			panel.updateMusicText(options.getMusicVolume());
+			panel.updateMusicText(options.getAudio_MusicVolume());
 		};
 		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
@@ -198,11 +198,11 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setMusicVolume(std::max(options.getMusicVolume() - 0.050, 0.0));
-			audioManager.setMusicVolume(options.getMusicVolume());
+			options.setAudio_MusicVolume(std::max(options.getAudio_MusicVolume() - 0.050, 0.0));
+			audioManager.setMusicVolume(options.getAudio_MusicVolume());
 
 			// Update the music volume text.
-			panel.updateMusicText(options.getMusicVolume());
+			panel.updateMusicText(options.getAudio_MusicVolume());
 		};
 		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
@@ -214,11 +214,11 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setSoundVolume(std::min(options.getSoundVolume() + 0.050, 1.0));
-			audioManager.setSoundVolume(options.getSoundVolume());
+			options.setAudio_SoundVolume(std::min(options.getAudio_SoundVolume() + 0.050, 1.0));
+			audioManager.setSoundVolume(options.getAudio_SoundVolume());
 
 			// Update the sound volume text.
-			panel.updateSoundText(options.getSoundVolume());
+			panel.updateSoundText(options.getAudio_SoundVolume());
 		};
 		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();
@@ -230,11 +230,11 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setSoundVolume(std::max(options.getSoundVolume() - 0.050, 0.0));
-			audioManager.setSoundVolume(options.getSoundVolume());
+			options.setAudio_SoundVolume(std::max(options.getAudio_SoundVolume() - 0.050, 0.0));
+			audioManager.setSoundVolume(options.getAudio_SoundVolume());
 
 			// Update the sound volume text.
-			panel.updateSoundText(options.getSoundVolume());
+			panel.updateSoundText(options.getAudio_SoundVolume());
 		};
 		return Button<Options&, AudioManager&, PauseMenuPanel&>(x, y, 17, 9, function);
 	}();

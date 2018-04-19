@@ -106,7 +106,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	this->upButton = [&game]
 	{
 		const auto &exeData = game.getMiscAssets().getExeData();
-		const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+		const auto &chooseClassListUI = exeData.ui.chooseClassList;
 		const int x = chooseClassListUI.buttonUp.x;
 		const int y = chooseClassListUI.buttonUp.y;
 		const int w = chooseClassListUI.buttonUp.w;
@@ -125,7 +125,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	this->downButton = [&game]
 	{
 		const auto &exeData = game.getMiscAssets().getExeData();
-		const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+		const auto &chooseClassListUI = exeData.ui.chooseClassList;
 		const int x = chooseClassListUI.buttonDown.x;
 		const int y = chooseClassListUI.buttonDown.y;
 		const int w = chooseClassListUI.buttonDown.w;
@@ -383,7 +383,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterCla
 
 Rect ChooseClassPanel::getClassListRect(const ExeData &exeData)
 {
-	const auto &chooseClassListUI = exeData.ui.chooseClassListUI;
+	const auto &chooseClassListUI = exeData.ui.chooseClassList;
 	return Rect(chooseClassListUI.area.x, chooseClassListUI.area.y,
 		chooseClassListUI.area.w, chooseClassListUI.area.h);
 }

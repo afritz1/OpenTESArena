@@ -57,7 +57,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
-	const bool modernInterface = game.getOptions().getModernInterface();
+	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	const Int2 center = GameWorldPanel::getInterfaceCenter(
 		modernInterface, textureManager, renderer) - Int2(0, 1);
 

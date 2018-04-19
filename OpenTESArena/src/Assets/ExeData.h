@@ -213,17 +213,12 @@ public:
 		// Ruler titles for cities.
 		std::array<std::string, 14> rulerTitles;
 
-		// Wilderness .RMD index lists for each type of block (normal, village, dungeon,
-		// inn, and temple). Each list starts with the number of elements.
-		std::vector<uint8_t> wildernessNormalBlocks, wildernessVillageBlocks,
-			wildernessDungeonBlocks, wildernessInnBlocks, wildernessTempleBlocks;
-
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
 	struct Logbook
 	{
-		std::string logbookIsEmpty;
+		std::string isEmpty;
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
@@ -307,7 +302,7 @@ public:
 
 	struct UI
 	{
-		ExeTypes::List chooseClassListUI;
+		ExeTypes::List chooseClassList;
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
@@ -325,6 +320,16 @@ public:
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
+
+	struct Wilderness
+	{
+		// .RMD index lists for each type of block (normal, village, dungeon, tavern, and temple).
+		// Each list starts with the number of elements.
+		std::vector<uint8_t> normalBlocks, villageBlocks, dungeonBlocks,
+			tavernBlocks, templeBlocks;
+
+		void init(const char *data, const KeyValueMap &keyValueMap);
+	};
 private:
 	static const std::string FLOPPY_VERSION_EXE_FILENAME;
 	static const std::string FLOPPY_VERSION_MAP_FILENAME;
@@ -332,11 +337,13 @@ private:
 	static const std::string CD_VERSION_MAP_FILENAME;
 	static const char PAIR_SEPARATOR;
 
-	// Gets the offset value from the given key.
-	static int get(const std::string &key, const KeyValueMap &keyValueMap);
+	// Gets the offset value from the given section and key.
+	static int get(const std::string &section, const std::string &key,
+		const KeyValueMap &keyValueMap);
 
-	// Gets the offset + length value from the given key.
-	static std::pair<int, int> getPair(const std::string &key, const KeyValueMap &keyValueMap);
+	// Gets the offset + length value from the given section and key.
+	static std::pair<int, int> getPair(const std::string &section, const std::string &key,
+		const KeyValueMap &keyValueMap);
 
 	static int8_t readInt8(const char *data);
 	static uint8_t readUint8(const char *data);
@@ -365,6 +372,7 @@ public:
 	Travel travel;
 	UI ui;
 	WallHeightTables wallHeightTables;
+	Wilderness wild;
 
 	bool isFloppyVersion() const;
 

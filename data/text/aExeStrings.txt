@@ -3,12 +3,12 @@
 # Each line has a key and value. The value is either an offset into the
 # executable or an offset and length pair for fixed-size strings.
 
-# [Calendar]
+[Calendar]
 MonthNames=0x3E894
 TimesOfDay=0x40529
 WeekdayNames=0x3E92A
 
-# [CharacterClasses]
+[CharacterClasses]
 AllowedArmors=0x36204
 AllowedShields=0x361D1
 AllowedShieldsLists=0x361F5
@@ -21,7 +21,7 @@ InitialExperienceCaps=0x36D0E
 LockpickingDivisors=0x3E13A
 PreferredAttributes=0x35E34
 
-# [CharacterCreation]
+[CharacterCreation]
 ChooseClassCreation=0x35A80,37
 ChooseClassCreationGenerate=0x3F637,8
 ChooseClassCreationSelect=0x3F641,6
@@ -44,13 +44,13 @@ ChooseAttributesSave=0x3F66B,12
 ChooseAttributesReroll=0x3F67B,14
 ChooseAppearance=0x35D84,174
 
-# [CityGeneration]
+[CityGeneration]
 CoastalCityList=0x3FEA8
 CityTemplateFilenames=0x3FEE2
 StartingPositions=0x3FF55
 ReservedBlockLists=0x3FF8E
 
-# [Entities]
+[Entities]
 CreatureNames=0x36BBE
 MaleMainRaceAttributes=0x35FC3
 FemaleMainRaceAttributes=0x35FCB
@@ -64,7 +64,7 @@ CFAFilenameTemplates=0x4200C
 CFAHumansWithWeaponAnimations=0x42033
 CFAWeaponAnimations=0x42067
 
-# [Equipment]
+[Equipment]
 BodyPartNames=0x3DB8D
 ArmorNames=0x3DB20
 ShieldNames=0x3DB5F
@@ -72,7 +72,7 @@ WeaponNames=0x3D900
 MetalNames=0x3DD3B
 WeaponAnimationFilenames=0x41DAC
 
-# [Locations]
+[Locations]
 ProvinceNames=0x392F8
 CharCreationProvinceNames=0x3E602
 ProvinceImgFilenames=0x3FDFA
@@ -87,31 +87,26 @@ WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
 RulerTitles=0x3EAC7
-WildernessNormalBlocks=0x3F02C
-WildernessVillageBlocks=0x3F045
-WildernessDungeonBlocks=0x3F052
-WildernessInnBlocks=0x3F05F
-WildernessTempleBlocks=0x3F06A
 
-# [Logbook]
-LogbookIsEmpty=0x42F45
+[Logbook]
+IsEmpty=0x42F45
 
-# [Meta]
+[Meta]
 DataSegmentOffset=0x32560
 
-# [Races]
-RaceSingularNames=0x3E290
-RacePluralNames=0x3E245
+[Races]
+SingularNames=0x3E290
+PluralNames=0x3E245
 
-# [Status]
-StatusPopUp=0x411D7
-StatusDate=0x404F4
-StatusFortify=0x41E86
-StatusDisease=0x41E9D
-StatusEffect=0x41EAB
-StatusEffectsList=0x41EB8
+[Status]
+PopUp=0x411D7
+Date=0x404F4
+Fortify=0x41E86
+Disease=0x41E9D
+Effect=0x41EAB
+EffectsList=0x41EB8
 
-# [Travel]
+[Travel]
 LocationFormatTexts=0x374AD
 DayPrediction=0x374F3
 DistancePrediction=0x37538
@@ -126,10 +121,10 @@ SearchTitleText=0x42127
 StaffDungeonSplashes=0x432CA
 StaffDungeonSplashIndices=0x432C2
 
-# [UI]
-ChooseClassListUI=0x40816
+[UI]
+ChooseClassList=0x40816
 
-# [WallHeightTables]
+[WallHeightTables]
 Box1A=0x48206
 Box1B=0x48216
 Box1C=0x48226
@@ -138,3 +133,10 @@ Box2B=0x48256
 Box3A=0x482E6
 Box3B=0x482F6
 Box4=0x48306
+
+[Wilderness]
+NormalBlocks=0x3F02C
+VillageBlocks=0x3F045
+DungeonBlocks=0x3F052
+TavernBlocks=0x3F05F
+TempleBlocks=0x3F06A

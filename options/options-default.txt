@@ -3,10 +3,10 @@
 # file in your prefs folder. For now, this is created on the program's
 # first run, but in the future, a wizard should be used instead.
 # - Windows: <username>/AppData/Roaming/OpenTESArena/options/
-# - Linux: ~/.local/share/OpenTESArena/options/
-# - macOS: ~/Library/Application Support/OpenTESArena/options/
+# - Linux: ~/.config/OpenTESArena/options/
+# - macOS: ~/Library/Preferences/OpenTESArena/options/
 
-# [Graphics]
+[Graphics]
 # Width and height of the window in windowed mode.
 ScreenWidth=1280
 ScreenHeight=720
@@ -19,7 +19,7 @@ TargetFPS=60
 # Resolution scale is the percent of the screen resolution used to
 # render the game world. Accepted values are between 0.10 and 1.0.
 ResolutionScale=0.50
-VerticalFieldOfView=60.0
+VerticalFOV=60.0
 
 # Default letterbox aspect is 1.60. "Stretched" aspect for simulating 
 # the look on 640x480 monitors is 1.33.
@@ -32,12 +32,7 @@ CursorScale=3.60
 # similar to Daggerfall's.
 ModernInterface=false
 
-# [Input]
-# Look sensitivity is normally between 5.0 and 15.0.
-HorizontalSensitivity=8.0
-VerticalSensitivity=8.0
-
-# [Sound]
+[Audio]
 MusicVolume=0.30
 SoundVolume=0.25
 
@@ -50,7 +45,12 @@ SoundChannels=32
 # 0: default, 1: fastest, 2: medium, 3: best.
 SoundResampling=0
 
-# [Misc]
+[Input]
+# Look sensitivity is normally between 5.0 and 15.0.
+HorizontalSensitivity=8.0
+VerticalSensitivity=8.0
+
+[Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
 # set by a wizard instead.
 ArenaPath=data/ARENA

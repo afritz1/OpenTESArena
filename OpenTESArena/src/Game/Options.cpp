@@ -1,5 +1,6 @@
-#include <cassert>
+#include <algorithm>
 #include <fstream>
+#include <sstream>
 
 #include "Options.h"
 #include "../Utilities/Debug.h"
@@ -12,44 +13,57 @@ namespace
 	// Supported value types by the parser.
 	enum class OptionType { Bool, Int, Double, String };
 
-	// Mappings of option names to key names and their associated type. The key names
-	// are for the parser, and the types are to prevent type errors when accessing
-	// elements.
-	const std::unordered_map<std::string, std::pair<OptionName, OptionType>> OptionMappings =
+	// Mappings of key names to their associated type for each section. These use vectors
+	// of pairs instead of hash tables to maintain ordering.
+	const std::vector<std::pair<std::string, OptionType>> GraphicsMappings =
 	{
-		{ "ScreenWidth", { OptionName::ScreenWidth, OptionType::Int } },
-		{ "ScreenHeight", { OptionName::ScreenHeight, OptionType::Int } },
-		{ "Fullscreen", { OptionName::Fullscreen, OptionType::Bool } },
-		{ "TargetFPS", { OptionName::TargetFPS, OptionType::Int } },
-		{ "ResolutionScale", { OptionName::ResolutionScale, OptionType::Double } },
-		{ "VerticalFieldOfView", { OptionName::VerticalFOV, OptionType::Double } },
-		{ "LetterboxAspect", { OptionName::LetterboxAspect, OptionType::Double } },
-		{ "CursorScale", { OptionName::CursorScale, OptionType::Double } },
-		{ "ModernInterface", { OptionName::ModernInterface, OptionType::Bool } },
+		{ "ScreenWidth", OptionType::Int },
+		{ "ScreenHeight", OptionType::Int },
+		{ "Fullscreen", OptionType::Bool },
+		{ "TargetFPS", OptionType::Int },
+		{ "ResolutionScale", OptionType::Double },
+		{ "VerticalFOV", OptionType::Double },
+		{ "LetterboxAspect", OptionType::Double },
+		{ "CursorScale", OptionType::Double },
+		{ "ModernInterface", OptionType::Bool }
+	};
 
-		{ "HorizontalSensitivity", { OptionName::HorizontalSensitivity, OptionType::Double } },
-		{ "VerticalSensitivity", { OptionName::VerticalSensitivity, OptionType::Double } },
+	const std::vector<std::pair<std::string, OptionType>> AudioMappings =
+	{
+		{ "MusicVolume", OptionType::Double },
+		{ "SoundVolume", OptionType::Double },
+		{ "MidiConfig", OptionType::String },
+		{ "SoundChannels", OptionType::Int },
+		{ "SoundResampling", OptionType::Int }
+	};
 
-		{ "MusicVolume", { OptionName::MusicVolume, OptionType::Double } },
-		{ "SoundVolume", { OptionName::SoundVolume, OptionType::Double } },
-		{ "MidiConfig", { OptionName::MidiConfig, OptionType::String } },
-		{ "SoundChannels", { OptionName::SoundChannels, OptionType::Int } },
-		{ "SoundResampling", { OptionName::SoundResampling, OptionType::Int } },
+	const std::vector<std::pair<std::string, OptionType>> InputMappings =
+	{
+		{ "HorizontalSensitivity", OptionType::Double },
+		{ "VerticalSensitivity", OptionType::Double }
+	};
 
-		{ "ArenaPath", { OptionName::ArenaPath, OptionType::String } },
-		{ "Collision", { OptionName::Collision, OptionType::Bool } },
-		{ "SkipIntro", { OptionName::SkipIntro, OptionType::Bool } },
-		{ "ShowDebug", { OptionName::ShowDebug, OptionType::Bool } },
-		{ "ShowCompass", { OptionName::ShowCompass, OptionType::Bool } }
+	const std::vector<std::pair<std::string, OptionType>> MiscMappings =
+	{
+		{ "ArenaPath", OptionType::String },
+		{ "Collision", OptionType::Bool },
+		{ "SkipIntro", OptionType::Bool },
+		{ "ShowDebug", OptionType::Bool },
+		{ "ShowCompass", OptionType::Bool }
 	};
 }
 
 // The "default" options file is shipped with releases, and it resides in the options 
-// folder on the base path. The "changes" options file is copied to the user's prefs 
+// folder on the base path. The "changes" options file is copied to the user's options 
 // folder (preferably by a wizard, otherwise by the user), and it contains changes to 
 // settings in the default file.
 const std::string Options::DEFAULT_FILENAME = "options-default.txt";
 const std::string Options::CHANGES_FILENAME = "options-changes.txt";
+
+const std::string Options::SECTION_GRAPHICS = "Graphics";
+const std::string Options::SECTION_INPUT = "Input";
+const std::string Options::SECTION_AUDIO = "Audio";
+const std::string Options::SECTION_MISC = "Misc";
 
 const int Options::MIN_FPS = 15;
 const double Options::MIN_RESOLUTION_SCALE = 0.10;
@@ -68,173 +82,369 @@ const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
 
-void Options::load(const std::string &filename, Options::BoolMap &boolMap,
-	Options::IntegerMap &integerMap, Options::DoubleMap &doubleMap,
-	Options::StringMap &stringMap)
+void Options::load(const std::string &filename,
+	std::unordered_map<std::string, Options::MapGroup> &maps)
 {
-	// Read the key-value pairs from the given options file.
+	// Read the key-value pairs from each section in the given options file.
 	const KeyValueMap keyValueMap(filename);
 
-	for (const auto &pair : keyValueMap.getAll())
+	for (const auto &sectionPair : keyValueMap.getAll())
 	{
-		const std::string &key = pair.first;
+		const std::string &section = sectionPair.first;
+		const KeyValueMap::SectionMap &sectionMap = sectionPair.second;
 
-		// See if the key is recognized, and if so, see what type the value should be, 
-		// convert it, and place it in the changed map.
-		const auto mapIter = OptionMappings.find(key);
-
-		if (mapIter != OptionMappings.end())
+		// Get the list of key-type pairs to pull from.
+		const auto &keyList = [&filename, &section]()
 		{
-			const OptionName name = mapIter->second.first;
-			const OptionType type = mapIter->second.second;
+			if (section == Options::SECTION_GRAPHICS)
+			{
+				return GraphicsMappings;
+			}
+			else if (section == Options::SECTION_INPUT)
+			{
+				return InputMappings;
+			}
+			else if (section == Options::SECTION_AUDIO)
+			{
+				return AudioMappings;
+			}
+			else if (section == Options::SECTION_MISC)
+			{
+				return MiscMappings;
+			}
+			else
+			{
+				throw std::runtime_error("Unrecognized section \"" +
+					section + "\" in " + filename);
+			}
+		}();
 
-			// (Using KeyValueMap's getter code here for convenience, despite it doing an
-			// unnecessary look-up).
-			if (type == OptionType::Bool)
+		for (const auto &pair : sectionMap)
+		{
+			// See if the key is recognized, and if so, see what type the value should be, 
+			// convert it, and place it in the changed map.
+			const std::string &key = pair.first;
+			const auto keyListIter = std::find_if(keyList.begin(), keyList.end(),
+				[&key](const std::pair<std::string, OptionType> &keyTypePair)
 			{
-				boolMap.insert(std::make_pair(name, keyValueMap.getBoolean(key)));
-			}
-			else if (type == OptionType::Int)
+				return keyTypePair.first == key;
+			});
+
+			if (keyListIter != keyList.end())
 			{
-				integerMap.insert(std::make_pair(name, keyValueMap.getInteger(key)));
+				const OptionType type = keyListIter->second;
+				auto groupIter = maps.find(section);
+
+				// Add an empty map group if the section is new.
+				if (groupIter == maps.end())
+				{
+					groupIter = maps.insert(std::make_pair(
+						section, Options::MapGroup())).first;
+				}
+
+				Options::MapGroup &mapGroup = groupIter->second;
+
+				// Using KeyValueMap's getter code here for convenience, despite it doing
+				// an unnecessary look-up.
+				if (type == OptionType::Bool)
+				{
+					mapGroup.bools.insert(std::make_pair(
+						key, keyValueMap.getBoolean(section, key)));
+				}
+				else if (type == OptionType::Int)
+				{
+					mapGroup.integers.insert(std::make_pair(
+						key, keyValueMap.getInteger(section, key)));
+				}
+				else if (type == OptionType::Double)
+				{
+					mapGroup.doubles.insert(std::make_pair(
+						key, keyValueMap.getDouble(section, key)));
+				}
+				else if (type == OptionType::String)
+				{
+					mapGroup.strings.insert(std::make_pair(
+						key, keyValueMap.getString(section, key)));
+				}
 			}
-			else if (type == OptionType::Double)
+			else
 			{
-				doubleMap.insert(std::make_pair(name, keyValueMap.getDouble(key)));
+				DebugMention("Key \"" + key + "\" not recognized in " + filename + ".");
 			}
-			else if (type == OptionType::String)
-			{
-				stringMap.insert(std::make_pair(name, keyValueMap.getString(key)));
-			}
+		}
+	}
+}
+
+bool Options::getBool(const std::string &section, const std::string &key) const
+{
+	auto getValuePtr = [](const std::string &section, const std::string &key,
+		const std::unordered_map<std::string, Options::MapGroup> &sectionMap) -> const bool*
+	{
+		// Check that the section map exists.
+		const auto sectionIter = sectionMap.find(section);
+		if (sectionIter != sectionMap.end())
+		{
+			// Check that the key exists.
+			const Options::BoolMap &boolMap = sectionIter->second.bools;
+			const auto valueIter = boolMap.find(key);
+			return (valueIter != boolMap.end()) ? &valueIter->second : nullptr;
 		}
 		else
 		{
-			DebugMention("Key \"" + key + "\" not recognized in \"" + filename + "\".");
+			return nullptr;
 		}
-	}
-}
+	};
 
-const std::string &getOptionsNameString(OptionName key)
-{
-	// Find the key given the value.
-	for (const auto &pair : OptionMappings)
+	// Check the changed map first, then the default map.
+	const bool *changedValue = getValuePtr(section, key, this->changedMaps);
+	if (changedValue != nullptr)
 	{
-		const OptionName name = pair.second.first;
-
-		if (name == key)
-		{
-			return pair.first;
-		}
-	}
-
-	// Programmer error if this is reached (means OptionMappings is out-of-date).
-	throw std::runtime_error("Key \"" +
-		std::to_string(static_cast<int>(key)) + "\" not in OptionMappings.");
-}
-
-template <typename T>
-const T &get(OptionName key, const std::unordered_map<OptionName, T> &defaultMap,
-	const std::unordered_map<OptionName, T> &changedMap)
-{
-	// The "changed" map is accessed first, and if the value isn't in that, it must be
-	// in the default map, otherwise error.
-	const auto changedIter = changedMap.find(key);
-
-	if (changedIter != changedMap.end())
-	{
-		return changedIter->second;
+		return *changedValue;
 	}
 	else
 	{
-		const auto defaultIter = defaultMap.find(key);
-
-		if (defaultIter != defaultMap.end())
+		const bool *defaultValue = getValuePtr(section, key, this->defaultMaps);
+		if (defaultValue != nullptr)
 		{
-			return defaultIter->second;
+			return *defaultValue;
 		}
 		else
 		{
-			const std::string &keyString = getOptionsNameString(key);
-			throw std::runtime_error("Key \"" + keyString + "\" missing from default options.");
+			throw std::runtime_error("Boolean \"" + key +
+				"\" (section \"" + section + "\") not in options.");
 		}
 	}
 }
 
-bool Options::getBool(OptionName key) const
+int Options::getInt(const std::string &section, const std::string &key) const
 {
-	return get(key, this->defaultBools, this->changedBools);
-}
-
-int Options::getInt(OptionName key) const
-{
-	return get(key, this->defaultInts, this->changedInts);
-}
-
-double Options::getDouble(OptionName key) const
-{
-	return get(key, this->defaultDoubles, this->changedDoubles);
-}
-
-const std::string &Options::getString(OptionName key) const
-{
-	return get(key, this->defaultStrings, this->changedStrings);
-}
-
-template <typename T>
-void set(OptionName key, const T &value,
-	std::unordered_map<OptionName, T> &changedMap)
-{
-	// All options changed at runtime go into the "changed" map which is saved separately 
-	// from the default map.
-	const auto iter = changedMap.find(key);
-
-	if (iter != changedMap.end())
+	auto getValuePtr = [](const std::string &section, const std::string &key,
+		const std::unordered_map<std::string, Options::MapGroup> &sectionMap) -> const int*
 	{
-		iter->second = value;
+		// Check that the section map exists.
+		const auto sectionIter = sectionMap.find(section);
+		if (sectionIter != sectionMap.end())
+		{
+			// Check that the key exists.
+			const Options::IntegerMap &integerMap = sectionIter->second.integers;
+			const auto valueIter = integerMap.find(key);
+			return (valueIter != integerMap.end()) ? &valueIter->second : nullptr;
+		}
+		else
+		{
+			return nullptr;
+		}
+	};
+
+	// Check the changed map first, then the default map.
+	const int *changedValue = getValuePtr(section, key, this->changedMaps);
+	if (changedValue != nullptr)
+	{
+		return *changedValue;
 	}
 	else
 	{
-		changedMap.insert(std::make_pair(key, value));
+		const int *defaultValue = getValuePtr(section, key, this->defaultMaps);
+		if (defaultValue != nullptr)
+		{
+			return *defaultValue;
+		}
+		else
+		{
+			throw std::runtime_error("Integer \"" + key +
+				"\" (section \"" + section + "\") not in options.");
+		}
 	}
 }
 
-void Options::setBool(OptionName key, bool value)
+double Options::getDouble(const std::string &section, const std::string &key) const
 {
-	set(key, value, this->changedBools);
+	auto getValuePtr = [](const std::string &section, const std::string &key,
+		const std::unordered_map<std::string, Options::MapGroup> &sectionMap) -> const double*
+	{
+		// Check that the section map exists.
+		const auto sectionIter = sectionMap.find(section);
+		if (sectionIter != sectionMap.end())
+		{
+			// Check that the key exists.
+			const Options::DoubleMap &doubleMap = sectionIter->second.doubles;
+			const auto valueIter = doubleMap.find(key);
+			return (valueIter != doubleMap.end()) ? &valueIter->second : nullptr;
+		}
+		else
+		{
+			return nullptr;
+		}
+	};
+
+	// Check the changed map first, then the default map.
+	const double *changedValue = getValuePtr(section, key, this->changedMaps);
+	if (changedValue != nullptr)
+	{
+		return *changedValue;
+	}
+	else
+	{
+		const double *defaultValue = getValuePtr(section, key, this->defaultMaps);
+		if (defaultValue != nullptr)
+		{
+			return *defaultValue;
+		}
+		else
+		{
+			throw std::runtime_error("Double \"" + key +
+				"\" (section \"" + section + "\") not in options.");
+		}
+	}
 }
 
-void Options::setInt(OptionName key, int value)
+const std::string &Options::getString(const std::string &section, const std::string &key) const
 {
-	set(key, value, this->changedInts);
+	auto getValuePtr = [](const std::string &section, const std::string &key,
+		const std::unordered_map<std::string, Options::MapGroup> &sectionMap) -> const std::string*
+	{
+		// Check that the section map exists.
+		const auto sectionIter = sectionMap.find(section);
+		if (sectionIter != sectionMap.end())
+		{
+			// Check that the key exists.
+			const Options::StringMap &stringMap = sectionIter->second.strings;
+			const auto valueIter = stringMap.find(key);
+			return (valueIter != stringMap.end()) ? &valueIter->second : nullptr;
+		}
+		else
+		{
+			return nullptr;
+		}
+	};
+
+	// Check the changed map first, then the default map.
+	const std::string *changedValue = getValuePtr(section, key, this->changedMaps);
+	if (changedValue != nullptr)
+	{
+		return *changedValue;
+	}
+	else
+	{
+		const std::string *defaultValue = getValuePtr(section, key, this->defaultMaps);
+		if (defaultValue != nullptr)
+		{
+			return *defaultValue;
+		}
+		else
+		{
+			throw std::runtime_error("String \"" + key +
+				"\" (section \"" + section + "\") not in options.");
+		}
+	}
 }
 
-void Options::setDouble(OptionName key, double value)
+void Options::setBool(const std::string &section, const std::string &key, bool value)
 {
-	set(key, value, this->changedDoubles);
+	// Check that the section map exists. If not, add it.
+	auto sectionIter = this->changedMaps.find(section);
+	if (sectionIter == this->changedMaps.end())
+	{
+		sectionIter = this->changedMaps.insert(
+			std::make_pair(section, Options::MapGroup())).first;
+	}
+
+	Options::BoolMap &sectionMap = sectionIter->second.bools;
+	
+	// Check that the key exists. If not, add it.
+	auto iter = sectionMap.find(key);
+	if (iter == sectionMap.end())
+	{
+		iter = sectionMap.insert(std::make_pair(key, value)).first;
+	}
+
+	iter->second = value;
 }
 
-void Options::setString(OptionName key, const std::string &value)
+void Options::setInt(const std::string &section, const std::string &key, int value)
 {
-	set(key, value, this->changedStrings);
+	// Check that the section map exists. If not, add it.
+	auto sectionIter = this->changedMaps.find(section);
+	if (sectionIter == this->changedMaps.end())
+	{
+		sectionIter = this->changedMaps.insert(
+			std::make_pair(section, Options::MapGroup())).first;
+	}
+
+	Options::IntegerMap &sectionMap = sectionIter->second.integers;
+
+	// Check that the key exists. If not, add it.
+	auto iter = sectionMap.find(key);
+	if (iter == sectionMap.end())
+	{
+		iter = sectionMap.insert(std::make_pair(key, value)).first;
+	}
+
+	iter->second = value;
 }
 
-void Options::checkScreenWidth(int value) const
+void Options::setDouble(const std::string &section, const std::string &key, double value)
+{
+	// Check that the section map exists. If not, add it.
+	auto sectionIter = this->changedMaps.find(section);
+	if (sectionIter == this->changedMaps.end())
+	{
+		sectionIter = this->changedMaps.insert(
+			std::make_pair(section, Options::MapGroup())).first;
+	}
+
+	Options::DoubleMap &sectionMap = sectionIter->second.doubles;
+
+	// Check that the key exists. If not, add it.
+	auto iter = sectionMap.find(key);
+	if (iter == sectionMap.end())
+	{
+		iter = sectionMap.insert(std::make_pair(key, value)).first;
+	}
+
+	iter->second = value;
+}
+
+void Options::setString(const std::string &section, const std::string &key,
+	const std::string &value)
+{
+	// Check that the section map exists. If not, add it.
+	auto sectionIter = this->changedMaps.find(section);
+	if (sectionIter == this->changedMaps.end())
+	{
+		sectionIter = this->changedMaps.insert(
+			std::make_pair(section, Options::MapGroup())).first;
+	}
+
+	Options::StringMap &sectionMap = sectionIter->second.strings;
+
+	// Check that the key exists. If not, add it.
+	auto iter = sectionMap.find(key);
+	if (iter == sectionMap.end())
+	{
+		iter = sectionMap.insert(std::make_pair(key, value)).first;
+	}
+
+	iter->second = value;
+}
+
+void Options::checkGraphics_ScreenWidth(int value) const
 {
 	DebugAssert(value > 0, "Screen width must be positive.");
 }
 
-void Options::checkScreenHeight(int value) const
+void Options::checkGraphics_ScreenHeight(int value) const
 {
 	DebugAssert(value > 0, "Screen height must be positive.");
 }
 
-void Options::checkTargetFPS(int value) const
+void Options::checkGraphics_TargetFPS(int value) const
 {
 	DebugAssert(value >= Options::MIN_FPS, "Target FPS cannot be less than " +
 		std::to_string(Options::MIN_FPS) + ".");
 }
 
-void Options::checkResolutionScale(double value) const
+void Options::checkGraphics_ResolutionScale(double value) const
 {
 	DebugAssert(value >= Options::MIN_RESOLUTION_SCALE,
 		"Resolution scale cannot be less than " +
@@ -244,7 +454,7 @@ void Options::checkResolutionScale(double value) const
 		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
 }
 
-void Options::checkVerticalFOV(double value) const
+void Options::checkGraphics_VerticalFOV(double value) const
 {
 	DebugAssert(value >= Options::MIN_VERTICAL_FOV, "Vertical FOV cannot be less than " +
 		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + ".");
@@ -252,7 +462,7 @@ void Options::checkVerticalFOV(double value) const
 		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
 }
 
-void Options::checkLetterboxAspect(double value) const
+void Options::checkGraphics_LetterboxAspect(double value) const
 {
 	DebugAssert(value >= Options::MIN_LETTERBOX_ASPECT,
 		"Letterbox aspect cannot be less than " +
@@ -262,7 +472,7 @@ void Options::checkLetterboxAspect(double value) const
 		String::fixedPrecision(Options::MAX_LETTERBOX_ASPECT, 2) + ".");
 }
 
-void Options::checkCursorScale(double value) const
+void Options::checkGraphics_CursorScale(double value) const
 {
 	DebugAssert(value >= Options::MIN_CURSOR_SCALE,
 		"Cursor scale cannot be less than " +
@@ -272,7 +482,34 @@ void Options::checkCursorScale(double value) const
 		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
 }
 
-void Options::checkHorizontalSensitivity(double value) const
+void Options::checkAudio_MusicVolume(double value) const
+{
+	DebugAssert(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
+	DebugAssert(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
+		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
+}
+
+void Options::checkAudio_SoundVolume(double value) const
+{
+	DebugAssert(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
+	DebugAssert(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
+		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
+}
+
+void Options::checkAudio_SoundChannels(int value) const
+{
+	DebugAssert(value >= 1, "Sound channel count must be positive.");
+}
+
+void Options::checkAudio_SoundResampling(int value) const
+{
+	DebugAssert(value >= 0, "Sound resampling value cannot be negative.");
+	DebugAssert(value < Options::RESAMPLING_OPTION_COUNT,
+		"Sound resampling value cannot be greater than " +
+		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
+}
+
+void Options::checkInput_HorizontalSensitivity(double value) const
 {
 	DebugAssert(value >= Options::MIN_HORIZONTAL_SENSITIVITY,
 		"Horizontal sensitivity cannot be less than " +
@@ -282,7 +519,7 @@ void Options::checkHorizontalSensitivity(double value) const
 		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
 }
 
-void Options::checkVerticalSensitivity(double value) const
+void Options::checkInput_VerticalSensitivity(double value) const
 {
 	DebugAssert(value >= Options::MIN_VERTICAL_SENSITIVITY,
 		"Vertical sensitivity cannot be less than " +
@@ -292,47 +529,18 @@ void Options::checkVerticalSensitivity(double value) const
 		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
 }
 
-void Options::checkMusicVolume(double value) const
-{
-	DebugAssert(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
-	DebugAssert(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
-}
-
-void Options::checkSoundVolume(double value) const
-{
-	DebugAssert(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
-	DebugAssert(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
-}
-
-void Options::checkSoundChannels(int value) const
-{
-	DebugAssert(value >= 1, "Sound channel count must be positive.");
-}
-
-void Options::checkSoundResampling(int value) const
-{
-	DebugAssert(value >= 0, "Sound resampling value cannot be negative.");
-	DebugAssert(value < Options::RESAMPLING_OPTION_COUNT,
-		"Sound resampling value cannot be greater than " +
-		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
-}
-
 void Options::loadDefaults(const std::string &filename)
 {
 	DebugMention("Reading defaults \"" + filename + "\".");
 
-	Options::load(filename, this->defaultBools, this->defaultInts,
-		this->defaultDoubles, this->defaultStrings);
+	Options::load(filename, this->defaultMaps);
 }
 
 void Options::loadChanges(const std::string &filename)
 {
 	DebugMention("Reading changes \"" + filename + "\".");
 
-	Options::load(filename, this->changedBools, this->changedInts,
-		this->changedDoubles, this->changedStrings);
+	Options::load(filename, this->changedMaps);
 }
 
 void Options::saveChanges()
@@ -343,45 +551,89 @@ void Options::saveChanges()
 
 	if (ofs.is_open())
 	{
-		ofs << "# \"Changed\" options file for OpenTESArena. This is where the program" << '\n' <<
+		// Writes out all key-value pairs in a section if it exists.
+		auto tryWriteSection = [this, &ofs](const std::string &section,
+			const std::vector<std::pair<std::string, OptionType>> &keyList)
+		{
+			const auto sectionIter = this->changedMaps.find(section);
+			if (sectionIter != this->changedMaps.end())
+			{
+				const auto &mapGroup = sectionIter->second;
+
+				// Print section line.
+				ofs << KeyValueMap::SECTION_FRONT << section << KeyValueMap::SECTION_BACK << '\n';
+
+				// Write all pairs present in the current section.
+				for (const auto &pair : keyList)
+				{
+					const std::string &key = pair.first;
+					const OptionType type = pair.second;
+
+					auto writePair = [&ofs, &key](const std::string &value)
+					{
+						ofs << key << KeyValueMap::PAIR_SEPARATOR << value << '\n';
+					};
+
+					// If the associated changed map has the key, print the key-value pair.
+					if (type == OptionType::Bool)
+					{
+						const auto iter = mapGroup.bools.find(key);
+						if (iter != mapGroup.bools.end())
+						{
+							const bool value = iter->second;
+							writePair(value ? "true" : "false");
+						}
+					}
+					else if (type == OptionType::Int)
+					{
+						const auto iter = mapGroup.integers.find(key);
+						if (iter != mapGroup.integers.end())
+						{
+							const int value = iter->second;
+							writePair(std::to_string(value));
+						}
+					}
+					else if (type == OptionType::Double)
+					{
+						const auto iter = mapGroup.doubles.find(key);
+						if (iter != mapGroup.doubles.end())
+						{
+							const double value = iter->second;
+							std::stringstream ss;
+							ss << value;
+							writePair(ss.str());
+						}
+					}
+					else if (type == OptionType::String)
+					{
+						const auto iter = mapGroup.strings.find(key);
+						if (iter != mapGroup.strings.end())
+						{
+							const std::string &value = iter->second;
+							writePair(value);
+						}
+					}
+					else
+					{
+						throw std::runtime_error("Bad option type \"" +
+							std::to_string(static_cast<int>(type)) + "\".");
+					}
+				}
+
+				ofs << '\n';
+			}
+		};
+
+		ofs << "# Changed options file for OpenTESArena. This is where the program" << '\n' <<
 			"# saves options that differ from the defaults." << '\n';
 
 		ofs << '\n';
 
-		// Save each option to the "changes" options file.
-		// - To do: order these by their appearance in options-default.txt.
-		//   Iterate over OptionMappings? Switch on type?
-		for (const auto &pair : this->changedBools)
-		{
-			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << (pair.second ? "true" : "false") << '\n';
-		}
-
-		ofs << '\n';
-
-		for (const auto &pair : this->changedInts)
-		{
-			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << std::to_string(pair.second) << '\n';
-		}
-
-		ofs << '\n';
-
-		for (const auto &pair : this->changedDoubles)
-		{
-			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << String::fixedPrecision(pair.second, 4) << '\n';
-		}
-
-		ofs << '\n';
-
-		for (const auto &pair : this->changedStrings)
-		{
-			const std::string &nameString = getOptionsNameString(pair.first);
-			ofs << nameString << '=' << pair.second << '\n';
-		}
-
-		ofs << '\n';
+		// Write out each section in a strict order.
+		tryWriteSection(Options::SECTION_GRAPHICS, GraphicsMappings);
+		tryWriteSection(Options::SECTION_AUDIO, AudioMappings);
+		tryWriteSection(Options::SECTION_INPUT, InputMappings);
+		tryWriteSection(Options::SECTION_MISC, MiscMappings);
 
 		DebugMention("Saved settings in \"" + filename + "\".");
 	}

@@ -389,7 +389,7 @@ void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
 	this->updatePhysics(game.getGameData().getWorldData(), 
-		game.getOptions().getCollision(), dt);
+		game.getOptions().getMisc_Collision(), dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

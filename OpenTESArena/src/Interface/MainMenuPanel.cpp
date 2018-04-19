@@ -226,7 +226,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				game,
 				PaletteFile::fromName(PaletteName::Default),
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
-				0.042,
+				1.0 / 24.0,
 				changeToNewGameStory);
 			game.setMusic(MusicName::EvilIntro);
 		};
@@ -241,8 +241,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
 			const auto &options = game.getOptions();
-			const bool fullGameWindow = options.getModernInterface();
-			renderer.initializeWorldRendering(options.getResolutionScale(), fullGameWindow);
+			const bool fullGameWindow = options.getGraphics_ModernInterface();
+			renderer.initializeWorldRendering(
+				options.getGraphics_ResolutionScale(), fullGameWindow);
 
 			// Game data instance, to be initialized further by one of the loading methods below.
 			// Create a player with random data for testing.
