@@ -18,7 +18,7 @@ std::string Platform::getBasePath()
 
 	if (basePathPtr == nullptr)
 	{
-		DebugMention("SDL_GetBasePath() not available on this platform.");
+		DebugWarning("SDL_GetBasePath() not available on this platform.");
 		basePathPtr = SDL_strdup("./");
 	}
 
@@ -31,20 +31,38 @@ std::string Platform::getBasePath()
 
 std::string Platform::getOptionsPath()
 {
-	// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
-	char *optionsPathPtr = SDL_GetPrefPath("OpenTESArena", "options");
+	const std::string platform = Platform::getPlatform();
 
-	if (optionsPathPtr == nullptr)
+	if (platform == "Windows")
 	{
-		DebugMention("SDL_GetPrefPath() not available on this platform.");
-		optionsPathPtr = SDL_strdup("options/");
+		// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
+		char *optionsPathPtr = SDL_GetPrefPath("OpenTESArena", "options");
+
+		if (optionsPathPtr == nullptr)
+		{
+			DebugWarning("SDL_GetPrefPath() not available on this platform.");
+			optionsPathPtr = SDL_strdup("options/");
+		}
+
+		const std::string optionsPathString(optionsPathPtr);
+		SDL_free(optionsPathPtr);
+
+		// Convert Windows backslashes to forward slashes.
+		return String::replace(optionsPathString, '\\', '/');
 	}
-
-	const std::string optionsPathString(optionsPathPtr);
-	SDL_free(optionsPathPtr);
-
-	// Convert Windows backslashes to forward slashes.
-	return String::replace(optionsPathString, '\\', '/');
+	else if (platform == "Linux")
+	{
+		return "~/.config/OpenTESArena/options/";
+	}
+	else if (platform == "Mac OS X")
+	{
+		return "~/Library/Preferences/OpenTESArena/options/";
+	}
+	else
+	{
+		DebugWarning("No default options path on this platform.");
+		return "OpenTESArena/options/";
+	}
 }
 
 std::string Platform::getScreenshotPath()
@@ -54,7 +72,7 @@ std::string Platform::getScreenshotPath()
 
 	if (screenshotPathPtr == nullptr)
 	{
-		DebugMention("SDL_GetPrefPath() not available on this platform.");
+		DebugWarning("SDL_GetPrefPath() not available on this platform.");
 		screenshotPathPtr = SDL_strdup("screenshots/");
 	}
 
@@ -76,7 +94,7 @@ std::string Platform::getLogPath()
 
 		if (logPathPtr == nullptr)
 		{
-			DebugMention("SDL_GetPrefPath() not available on this platform.");
+			DebugWarning("SDL_GetPrefPath() not available on this platform.");
 			logPathPtr = SDL_strdup("log/");
 		}
 
@@ -88,16 +106,16 @@ std::string Platform::getLogPath()
 	}
 	else if (platform == "Linux")
 	{
-		return "/var/logs/";
+		return "~/.config/OpenTESArena/log/";
 	}
 	else if (platform == "Mac OS X")
 	{
-		return "~/Library/Logs/";
+		return "~/Library/Logs/OpenTESArena/log/";
 	}
 	else
 	{
-		DebugMention("No default log path on this platform.");
-		return "log/";
+		DebugWarning("No default log path on this platform.");
+		return "OpenTESArena/log/";
 	}
 }
 
