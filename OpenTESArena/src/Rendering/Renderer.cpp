@@ -54,7 +54,7 @@ SDL_Renderer *Renderer::createRenderer()
 		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		DebugMention("Could not set interpolation hint.");
+		DebugWarning("Could not set interpolation hint.");
 	}
 
 	// Set the size of the render texture to be the size of the whole screen
@@ -65,8 +65,7 @@ SDL_Renderer *Renderer::createRenderer()
 	// (such as with Linux), so we retry with software.
 	if (!nativeSurface)
 	{
-		DebugMention("Failed to initialize accelerated SDL_Renderer.");
-		DebugMention("Trying software fallback.");
+		DebugWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
 
 		SDL_DestroyRenderer(rendererContext);
 

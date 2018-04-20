@@ -169,7 +169,7 @@ void Options::load(const std::string &filename,
 			}
 			else
 			{
-				DebugMention("Key \"" + key + "\" not recognized in " + filename + ".");
+				DebugWarning("Key \"" + key + "\" not recognized in " + filename + ".");
 			}
 		}
 	}
