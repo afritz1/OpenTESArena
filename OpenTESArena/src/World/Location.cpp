@@ -5,6 +5,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
+#include "../Utilities/Debug.h"
 
 const int Location::CENTER_PROVINCE_ID = 8;
 
@@ -47,7 +48,7 @@ Location Location::makeFromLocationID(int locationID, int provinceID)
 	}
 	else
 	{
-		throw std::runtime_error("Bad location ID \"" + std::to_string(locationID) + "\".");
+		throw DebugException("Bad location ID \"" + std::to_string(locationID) + "\".");
 	}
 }
 
@@ -152,13 +153,13 @@ const std::string &Location::getName(const CityDataFile &cityData, const ExeData
 		}
 		else
 		{
-			throw std::runtime_error("Bad special case type \"" +
+			throw DebugException("Bad special case type \"" +
 				std::to_string(static_cast<int>(this->specialCaseType)) + "\".");
 		}
 	}
 	else
 	{
-		throw std::runtime_error("Bad location data type \"" +
+		throw DebugException("Bad location data type \"" +
 			std::to_string(static_cast<int>(this->dataType)) + "\".");
 	}
 }

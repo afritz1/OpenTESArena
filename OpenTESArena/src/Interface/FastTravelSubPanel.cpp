@@ -18,6 +18,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../World/LocationType.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
 const double FastTravelSubPanel::FRAME_TIME = 1.0 / 24.0;
@@ -181,7 +182,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 						}
 						else
 						{
-							throw std::runtime_error("Bad location type \"" +
+							throw DebugException("Bad location type \"" +
 								std::to_string(static_cast<int>(locationType)) + "\".");
 						}
 					}();

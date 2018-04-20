@@ -1025,7 +1025,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 							{
 								// I don't believe any doors in Arena split (but they are
 								// supported by the engine).
-								throw std::runtime_error("Bad door type \"" +
+								throw DebugException("Bad door type \"" +
 									std::to_string(type) + "\".");
 							}
 						}();

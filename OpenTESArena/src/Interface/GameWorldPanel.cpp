@@ -1313,7 +1313,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			}
 			else
 			{
-				throw std::runtime_error("Bad player transition voxel.");
+				throw DebugException("Bad player transition voxel.");
 			}
 		}();
 

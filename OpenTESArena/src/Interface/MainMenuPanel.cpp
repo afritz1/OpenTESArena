@@ -286,7 +286,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 						else
 						{
-							throw std::runtime_error("Bad .MIF name \"" + mifName + "\".");
+							throw DebugException("Bad .MIF name \"" + mifName + "\".");
 						}
 					}();
 

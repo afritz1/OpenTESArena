@@ -419,7 +419,7 @@ ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
 	}
 	else
 	{
-		throw std::runtime_error("Bad resampling option \"" +
+		throw DebugException("Bad resampling option \"" +
 			std::to_string(resamplingOption) + "\".");
 	}
 }

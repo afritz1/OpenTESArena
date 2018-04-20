@@ -175,7 +175,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 
 	if (sectionIter == this->sectionMaps.end())
 	{
-		throw std::runtime_error("Section \"" + section +
+		throw DebugException("Section \"" + section +
 			"\" not found in " + this->filename + ".");
 	}
 	else
@@ -184,7 +184,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 		const auto keyIter = sectionMap.find(key);
 		if (keyIter == sectionMap.end())
 		{
-			throw std::runtime_error("Key \"" + key + "\" not found in " +
+			throw DebugException("Key \"" + key + "\" not found in " +
 				KeyValueMap::SECTION_FRONT + section + KeyValueMap::SECTION_BACK +
 				" in " + this->filename + ".");
 		}

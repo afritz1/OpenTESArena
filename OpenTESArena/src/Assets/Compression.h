@@ -59,12 +59,12 @@ public:
 			{
 				if (src == srcend)
 				{
-					throw std::runtime_error("Unexpected end of image.");
+					throw DebugException("Unexpected end of image.");
 				}
 
 				if (dst == out.end())
 				{
-					throw std::runtime_error("Decoded image overflow.");
+					throw DebugException("Decoded image overflow.");
 				}
 
 				history[historypos++ & 0x0FFF] = *src;
@@ -74,7 +74,7 @@ public:
 			{
 				if (std::distance(src, srcend) < 2)
 				{
-					throw std::runtime_error("Unexpected end of image.");
+					throw DebugException("Unexpected end of image.");
 				}
 
 				uint8_t byte1 = *(src++);
@@ -84,7 +84,7 @@ public:
 
 				if (std::distance(dst, out.end()) < tocopy)
 				{
-					throw std::runtime_error("Decoded image overflow.");
+					throw DebugException("Decoded image overflow.");
 				}
 
 				for (int i = 0; i < tocopy; i++)

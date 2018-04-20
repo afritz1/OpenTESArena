@@ -62,7 +62,7 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 	}
 	else
 	{
-		throw std::runtime_error("Bad location ID \"" +
+		throw DebugException("Bad location ID \"" +
 			std::to_string(locationID) + "\".");
 	}
 }
@@ -133,7 +133,7 @@ int CityDataFile::getCityDimensions(LocationType locationType)
 	}
 	else
 	{
-		throw std::runtime_error("Bad location type \"" +
+		throw DebugException("Bad location type \"" +
 			std::to_string(static_cast<int>(locationType)) + "\".");
 	}
 }
@@ -159,7 +159,7 @@ int CityDataFile::getCityTemplateNameIndex(LocationType locationType, bool isCoa
 	}
 	else
 	{
-		throw std::runtime_error("Bad location type \"" +
+		throw DebugException("Bad location type \"" +
 			std::to_string(static_cast<int>(locationType)) + "\".");
 	}
 }
@@ -181,7 +181,7 @@ int CityDataFile::getCityStartingPositionIndex(LocationType locationType,
 	}
 	else
 	{
-		throw std::runtime_error("Bad location type \"" +
+		throw DebugException("Bad location type \"" +
 			std::to_string(static_cast<int>(locationType)) + "\".");
 	}
 }

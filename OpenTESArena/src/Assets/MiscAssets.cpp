@@ -218,7 +218,7 @@ ClimateType MiscAssets::WorldMapTerrain::toClimateType(uint8_t index)
 	}
 	else
 	{
-		throw std::runtime_error("Bad terrain index \"" +
+		throw DebugException("Bad terrain index \"" +
 			std::to_string(static_cast<int>(index)) + "\".");
 	}
 }
@@ -466,7 +466,7 @@ void MiscAssets::parseQuestionTxt()
 			}
 			else
 			{
-				throw std::runtime_error("Bad QUESTION.TXT class category.");
+				throw DebugException("Bad QUESTION.TXT class category.");
 			}
 		};
 
@@ -642,7 +642,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 			}
 			else
 			{
-				throw std::runtime_error("Bad allowed armors value \"" +
+				throw DebugException("Bad allowed armors value \"" +
 					std::to_string(value) + "\".");
 			}
 		}();
@@ -1217,7 +1217,7 @@ std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &ra
 		}
 		else
 		{
-			throw std::runtime_error("Bad rule type \"" +
+			throw DebugException("Bad rule type \"" +
 				std::to_string(static_cast<int>(rule.type)) + "\".");
 		}
 	}

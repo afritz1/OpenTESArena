@@ -114,7 +114,7 @@ void Options::load(const std::string &filename,
 			}
 			else
 			{
-				throw std::runtime_error("Unrecognized section \"" +
+				throw DebugException("Unrecognized section \"" +
 					section + "\" in " + filename);
 			}
 		}();
@@ -210,7 +210,7 @@ bool Options::getBool(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			throw std::runtime_error("Boolean \"" + key +
+			throw DebugException("Boolean \"" + key +
 				"\" (section \"" + section + "\") not in options.");
 		}
 	}
@@ -251,7 +251,7 @@ int Options::getInt(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			throw std::runtime_error("Integer \"" + key +
+			throw DebugException("Integer \"" + key +
 				"\" (section \"" + section + "\") not in options.");
 		}
 	}
@@ -292,7 +292,7 @@ double Options::getDouble(const std::string &section, const std::string &key) co
 		}
 		else
 		{
-			throw std::runtime_error("Double \"" + key +
+			throw DebugException("Double \"" + key +
 				"\" (section \"" + section + "\") not in options.");
 		}
 	}
@@ -333,7 +333,7 @@ const std::string &Options::getString(const std::string &section, const std::str
 		}
 		else
 		{
-			throw std::runtime_error("String \"" + key +
+			throw DebugException("String \"" + key +
 				"\" (section \"" + section + "\") not in options.");
 		}
 	}
@@ -615,7 +615,7 @@ void Options::saveChanges()
 					}
 					else
 					{
-						throw std::runtime_error("Bad option type \"" +
+						throw DebugException("Bad option type \"" +
 							std::to_string(static_cast<int>(type)) + "\".");
 					}
 				}
@@ -639,6 +639,6 @@ void Options::saveChanges()
 	}
 	else
 	{
-		throw std::runtime_error("Could not save to \"" + filename + "\".");
+		throw DebugException("Could not save to \"" + filename + "\".");
 	}
 }

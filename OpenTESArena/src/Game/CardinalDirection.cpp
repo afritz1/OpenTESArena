@@ -4,6 +4,7 @@
 
 #include "CardinalDirection.h"
 #include "CardinalDirectionName.h"
+#include "../Utilities/Debug.h"
 
 namespace std
 {
@@ -99,7 +100,8 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 	}
 	else
 	{
-		throw std::runtime_error("Invalid direction for CardinalDirection.");
+		DebugCrash("Invalid CardinalDirection (" + std::to_string(direction.x) + ", " +
+			std::to_string(direction.y) + ").");
 	}
 
 	return name;

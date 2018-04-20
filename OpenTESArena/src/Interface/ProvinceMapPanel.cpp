@@ -208,13 +208,13 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 			}
 			else
 			{
-				throw std::runtime_error("Bad special location type \"" +
+				throw DebugException("Bad special location type \"" +
 					std::to_string(static_cast<int>(specialCaseType)) + "\".");
 			}
 		}
 		else
 		{
-			throw std::runtime_error("Bad location data type \"" +
+			throw DebugException("Bad location data type \"" +
 				std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
 		}
 	}();
@@ -855,13 +855,13 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 		}
 		else
 		{
-			throw std::runtime_error("Bad special location type \"" +
+			throw DebugException("Bad special location type \"" +
 				std::to_string(static_cast<int>(location.specialCaseType)) + "\".");
 		}
 	}
 	else
 	{
-		throw std::runtime_error("Bad location data type \"" +
+		throw DebugException("Bad location data type \"" +
 			std::to_string(static_cast<int>(location.dataType)) + "\".");
 	}
 }
