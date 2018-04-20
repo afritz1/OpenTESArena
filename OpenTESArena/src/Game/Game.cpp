@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 
@@ -180,7 +181,7 @@ void Game::popSubPanel()
 {
 	// The active sub-panel must not pop more than one sub-panel, because it may 
 	// have unintended side effects for other panels below it.
-	DebugAssert(!this->requestedSubPanelPop, "Already scheduled to pop this sub-panel.");
+	DebugAssert(!this->requestedSubPanelPop, "Already scheduled to pop sub-panel.");
 
 	// If there are no sub-panels, then there is only the main panel, and panels 
 	// should never have any sub-panels to pop.
@@ -448,13 +449,34 @@ void Game::loop()
 		this->fpsCounter.updateFrameTime(dt);
 
 		// Listen for input events.
-		this->handleEvents(running);
+		try
+		{
+			this->handleEvents(running);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("handleEvents() exception! " + std::string(e.what()));
+		}
 
 		// Animate the current game state by delta time.
-		this->tick(dt);
+		try
+		{
+			this->tick(dt);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("tick() exception! " + std::string(e.what()));
+		}
 
 		// Draw to the screen.
-		this->render();
+		try
+		{
+			this->render();
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrash("render() exception! " + std::string(e.what()));
+		}
 	}
 
 	// At this point, the program has received an exit signal, and is now 

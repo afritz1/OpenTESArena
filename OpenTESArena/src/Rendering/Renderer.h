@@ -46,6 +46,8 @@ private:
 	// For use with window dimensions, etc.. No longer used for rendering.
 	SDL_Surface *getWindowSurface() const;
 public:
+	// Only defined so members are initialized for Game ctor exception handling.
+	Renderer();
 	~Renderer();
 
 	// Original screen dimensions.

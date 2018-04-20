@@ -20,6 +20,16 @@ const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
 const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
+Renderer::Renderer()
+{
+	this->window = nullptr;
+	this->renderer = nullptr;
+	this->nativeTexture = nullptr;
+	this->gameWorldTexture = nullptr;
+	this->letterboxAspect = 0.0;
+	this->fullGameWindow = false;
+}
+
 Renderer::~Renderer()
 {
 	DebugMention("Closing.");
