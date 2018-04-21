@@ -14,27 +14,35 @@ private:
 public:
 	struct Light
 	{
-		// To do. 6 bytes.
+		std::array<uint8_t, 6> unknown;
 	};
 
 	struct MIFHeader
 	{
-		// To do.
+		uint8_t headerSize, unknown1, unknown2, entryCount;
+		std::array<uint16_t, 4> startX, startY;
+		uint8_t startingLevelIndex, levelCount, unknown3;
+		uint16_t mapWidth, mapHeight;
+		std::array<uint8_t, 33> unknown4;
 	};
 
 	struct MIFLock
 	{
-		// To do. Same as .MIF lock.
+		uint8_t x, y, lockLevel;
 	};
 
 	struct MIFTarget
 	{
-		// To do. Same as .MIF target.
+		uint8_t x, y;
 	};
 
 	struct MIFTrigger
 	{
-		// To do. Same as .MIF trigger.
+		uint8_t x, y;
+
+		// Some text and sound indices are negative (which means they're unused), 
+		// so they need to be signed.
+		int8_t textIndex, soundIndex;
 	};
 
 	struct GameState
@@ -110,7 +118,7 @@ public:
 			InventoryItem inventoryItem;
 		};
 
-		struct NpcData
+		struct NPCData
 		{
 			uint32_t randomSeed;
 			uint8_t raceID, classID, level, isFemale, homeCityID;
@@ -157,7 +165,7 @@ public:
 			std::array<uint8_t, 60> unknown;
 		};
 
-		struct NpcSprite
+		struct NPCSprite
 		{
 			// To do.
 		};
@@ -224,8 +232,8 @@ public:
 			CityGenData currentCity;
 			std::array<uint8_t, 36> weather;
 			std::array<uint8_t, 53> junk6;
-			std::array<NpcSprite, 15> npcs;
-			std::array<NpcSprite, 8> enemies;
+			std::array<NPCSprite, 15> npcs;
+			std::array<NPCSprite, 8> enemies;
 			std::array<uint8_t, 93> junk7;
 			std::array<BaseQuest, 4> cityQuests;
 			std::array<ExtQuest, 4> palaceQuests;
@@ -247,9 +255,9 @@ public:
 		};
 
 		// First two members are scrambled.
-		NpcData player;
+		NPCData player;
 		PlayerData playerData;
-		std::array<NpcData, 8> enemies;
+		std::array<NPCData, 8> enemies;
 		std::array<LootItem, 200> loot;
 		InternalState gameState2;
 
