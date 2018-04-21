@@ -1,71 +1,52 @@
 #include "ArenaSave.h"
-#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 
-void ArenaSave::SaveEngine::unscramble()
+ArenaTypes::Automap ArenaSave::loadAUTOMAP(int index)
 {
-	auto scramble = [](uint8_t *data, uint16_t length)
-	{
-		uint16_t buffer = length;
-		for (uint16_t i = 0; i < length; i++)
-		{
-			const uint8_t key = Bytes::ror16(buffer, buffer & 0xF) & 0xFF;
-			data[i] ^= key;
-			buffer--;
-		}
-	};
-
-	// Unscramble first two members (player and player data).
-	scramble(reinterpret_cast<uint8_t*>(&this->player), 1054);
-	scramble(reinterpret_cast<uint8_t*>(&this->playerData), 2609);
-}
-
-ArenaSave::Automap ArenaSave::loadAutomap(int index)
-{
-	ArenaSave::Automap automap;
+	ArenaTypes::Automap automap;
 	DebugNotImplemented();
 	return automap;
 }
 
-ArenaSave::Log ArenaSave::loadLog(int index)
+ArenaTypes::Log ArenaSave::loadLOG(int index)
 {
-	ArenaSave::Log log;
+	ArenaTypes::Log log;
 	DebugNotImplemented();
 	return log;
 }
 
-ArenaSave::SaveEngine ArenaSave::loadSaveEngn(int index)
+ArenaTypes::SaveEngine ArenaSave::loadSAVEENGN(int index)
 {
-	ArenaSave::SaveEngine saveEngine;
+	ArenaTypes::SaveEngine saveEngine;
 	DebugNotImplemented();
 	return saveEngine;
 }
 
-ArenaSave::SaveGame ArenaSave::loadSaveGame(int index)
+ArenaTypes::SaveGame ArenaSave::loadSAVEGAME(int index)
 {
-	ArenaSave::SaveGame saveGame;
+	ArenaTypes::SaveGame saveGame;
 	DebugNotImplemented();
 	return saveGame;
 }
 
-ArenaSave::SpellData ArenaSave::loadSpells(int index)
+ArenaTypes::SpellData ArenaSave::loadSPELLS(int index)
 {
-	ArenaSave::SpellData spellData;
+	ArenaTypes::SpellData spellData;
 	DebugNotImplemented();
 	return spellData;
 }
 
-ArenaSave::SpellData ArenaSave::loadSpellsg(int index)
+ArenaTypes::SpellData ArenaSave::loadSPELLSG(int index)
 {
-	ArenaSave::SpellData spellData;
+	ArenaTypes::SpellData spellData;
 	DebugNotImplemented();
 	return spellData;
 }
 
-ArenaSave::MQLevelState ArenaSave::loadState(int index)
+ArenaTypes::MQLevelState ArenaSave::loadSTATE(int index)
 {
-	ArenaSave::MQLevelState state;
+	ArenaTypes::MQLevelState state;
 	DebugNotImplemented();
 	return state;
 }
