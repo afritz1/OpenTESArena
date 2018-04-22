@@ -10,33 +10,44 @@
 class ArenaSave
 {
 private:
+	static const std::string AUTOMAP_FILENAME;
+	static const std::string LOG_FILENAME;
+	static const std::string SAVEENGN_FILENAME;
+	static const std::string SAVEGAME_FILENAME;
+	static const std::string SPELLS_FILENAME;
+	static const std::string SPELLSG_FILENAME;
+	static const std::string STATE_FILENAME;
+
 	ArenaSave() = delete;
 	~ArenaSave() = delete;
+
+	// Makes a numbered extension for the given index.
+	static std::string makeSaveExtension(int index);
 public:
-	static ArenaTypes::Automap loadAUTOMAP(const std::string &filename, int index);
-	static ArenaTypes::Log loadLOG(const std::string &filename, int index);
-	static ArenaTypes::SaveEngine loadSAVEENGN(const std::string &filename, int index);
-	static ArenaTypes::SaveGame loadSAVEGAME(const std::string &filename, int index);
-	static ArenaTypes::Spells loadSPELLS(const std::string &filename, int index);
-	static ArenaTypes::Spellsg loadSPELLSG(const std::string &filename, int index);
-	static ArenaTypes::MQLevelState loadSTATE(const std::string &filename, int index);
+	static ArenaTypes::Automap loadAUTOMAP(const std::string &savePath, int index);
+	static ArenaTypes::Log loadLOG(const std::string &savePath, int index);
+	static ArenaTypes::SaveEngine loadSAVEENGN(const std::string &savePath, int index);
+	static ArenaTypes::SaveGame loadSAVEGAME(const std::string &savePath, int index);
+	static ArenaTypes::Spells loadSPELLS(const std::string &savePath, int index);
+	static ArenaTypes::Spellsg loadSPELLSG(const std::string &savePath, int index);
+	static ArenaTypes::MQLevelState loadSTATE(const std::string &savePath, int index);
 	// To do: load city data.
 	// To do: load INN.0x.
 	// To do: load wild 001, 002, 003, 004.
 
-	static void saveAUTOMAP(const std::string &filename, int index,
+	static void saveAUTOMAP(const std::string &savePath, int index,
 		const ArenaTypes::Automap &data);
-	static void saveLOG(const std::string &filename, int index,
+	static void saveLOG(const std::string &savePath, int index,
 		const ArenaTypes::Log &data);
-	static void saveSAVEENGN(const std::string &filename, int index,
+	static void saveSAVEENGN(const std::string &savePath, int index,
 		const ArenaTypes::SaveEngine &data);
-	static void saveSAVEGAME(const std::string &filename, int index,
+	static void saveSAVEGAME(const std::string &savePath, int index,
 		const ArenaTypes::SaveGame &data);
-	static void saveSPELLS(const std::string &filename, int index,
+	static void saveSPELLS(const std::string &savePath, int index,
 		const ArenaTypes::Spells &data);
-	static void saveSPELLSG(const std::string &filename, int index,
+	static void saveSPELLSG(const std::string &savePath, int index,
 		const ArenaTypes::Spellsg &data);
-	static void saveSTATE(const std::string &filename, int index,
+	static void saveSTATE(const std::string &savePath, int index,
 		const ArenaTypes::MQLevelState &data);
 	// To do: save city data.
 	// To do: save INN.0x.
