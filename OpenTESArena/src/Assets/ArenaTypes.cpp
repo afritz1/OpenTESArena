@@ -381,3 +381,19 @@ void ArenaTypes::Log::init(const uint8_t *data)
 {
 	DebugNotImplemented();
 }
+
+void ArenaTypes::Names::Entry::init(const uint8_t *data)
+{
+	const char *nameStart = reinterpret_cast<const char*>(data);
+	const char *nameEnd = nameStart + this->name.size();
+	std::copy(nameStart, nameEnd, this->name.begin());
+}
+
+void ArenaTypes::Names::init(const uint8_t *data)
+{
+	const uint8_t *entriesStart = data;
+	for (size_t i = 0; i < this->entries.size(); i++)
+	{
+		this->entries.at(i).init(entriesStart + (Entry::SIZE * i));
+	}
+}

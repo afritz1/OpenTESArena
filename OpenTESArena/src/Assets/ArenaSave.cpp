@@ -17,9 +17,8 @@ namespace
 
 	// Convenience function for loading a binary save file and returning the initialized record.
 	template <typename T>
-	T loadBinary(const std::string &savePath, const std::string &name, int index)
+	T loadBinary(const std::string &filename)
 	{
-		const std::string filename = savePath + name + makeSaveExtension(index);
 		std::ifstream ifs(filename, std::ios::binary);
 
 		if (ifs.is_open())
@@ -40,6 +39,7 @@ namespace
 
 const std::string ArenaSave::AUTOMAP_FILENAME = "AUTOMAP";
 const std::string ArenaSave::LOG_FILENAME = "LOG";
+const std::string ArenaSave::NAMES_FILENAME = "NAMES.DAT";
 const std::string ArenaSave::SAVEENGN_FILENAME = "SAVEENGN";
 const std::string ArenaSave::SAVEGAME_FILENAME = "SAVEGAME";
 const std::string ArenaSave::SPELLS_FILENAME = "SPELLS";
@@ -48,7 +48,8 @@ const std::string ArenaSave::STATE_FILENAME = "STATE";
 
 ArenaTypes::Automap ArenaSave::loadAUTOMAP(const std::string &savePath, int index)
 {
-	return loadBinary<ArenaTypes::Automap>(savePath, ArenaSave::AUTOMAP_FILENAME, index);
+	return loadBinary<ArenaTypes::Automap>(
+		savePath + ArenaSave::AUTOMAP_FILENAME + makeSaveExtension(index));
 }
 
 ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
@@ -62,14 +63,21 @@ ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 	return log;
 }
 
+ArenaTypes::Names ArenaSave::loadNAMES(const std::string &savePath)
+{
+	return loadBinary<ArenaTypes::Names>(savePath + ArenaSave::NAMES_FILENAME);
+}
+
 ArenaTypes::SaveEngine ArenaSave::loadSAVEENGN(const std::string &savePath, int index)
 {
-	return loadBinary<ArenaTypes::SaveEngine>(savePath, ArenaSave::SAVEENGN_FILENAME, index);
+	return loadBinary<ArenaTypes::SaveEngine>(
+		savePath + ArenaSave::SAVEENGN_FILENAME + makeSaveExtension(index));
 }
 
 ArenaTypes::SaveGame ArenaSave::loadSAVEGAME(const std::string &savePath, int index)
 {
-	return loadBinary<ArenaTypes::SaveGame>(savePath, ArenaSave::SAVEGAME_FILENAME, index);
+	return loadBinary<ArenaTypes::SaveGame>(
+		savePath + ArenaSave::SAVEGAME_FILENAME + makeSaveExtension(index));
 }
 
 ArenaTypes::Spells ArenaSave::loadSPELLS(const std::string &savePath, int index)
@@ -126,7 +134,8 @@ ArenaTypes::Spellsg ArenaSave::loadSPELLSG(const std::string &savePath, int inde
 
 ArenaTypes::MQLevelState ArenaSave::loadSTATE(const std::string &savePath, int index)
 {
-	return loadBinary<ArenaTypes::MQLevelState>(savePath, ArenaSave::STATE_FILENAME, index);
+	return loadBinary<ArenaTypes::MQLevelState>(
+		savePath + ArenaSave::STATE_FILENAME + makeSaveExtension(index));
 }
 
 void ArenaSave::saveAUTOMAP(const std::string &savePath, int index,

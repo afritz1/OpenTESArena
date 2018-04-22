@@ -12,6 +12,7 @@ class ArenaSave
 private:
 	static const std::string AUTOMAP_FILENAME;
 	static const std::string LOG_FILENAME;
+	static const std::string NAMES_FILENAME;
 	static const std::string SAVEENGN_FILENAME;
 	static const std::string SAVEGAME_FILENAME;
 	static const std::string SPELLS_FILENAME;
@@ -23,6 +24,7 @@ private:
 public:
 	static ArenaTypes::Automap loadAUTOMAP(const std::string &savePath, int index);
 	static ArenaTypes::Log loadLOG(const std::string &savePath, int index);
+	static ArenaTypes::Names loadNAMES(const std::string &savePath);
 	static ArenaTypes::SaveEngine loadSAVEENGN(const std::string &savePath, int index);
 	static ArenaTypes::SaveGame loadSAVEGAME(const std::string &savePath, int index);
 	static ArenaTypes::Spells loadSPELLS(const std::string &savePath, int index);

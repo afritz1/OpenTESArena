@@ -437,6 +437,25 @@ public:
 		// To do.
 		void init(const uint8_t *data);
 	};
+
+	// For NAMES.DAT.
+	struct Names
+	{
+		static constexpr size_t SIZE = 480;
+
+		struct Entry
+		{
+			static constexpr size_t SIZE = 48;
+
+			std::array<char, 48> name;
+
+			void init(const uint8_t *data);
+		};
+
+		std::array<Entry, 10> entries;
+
+		void init(const uint8_t *data);
+	};
 };
 
 #endif
