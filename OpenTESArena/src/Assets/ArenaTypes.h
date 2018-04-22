@@ -23,11 +23,11 @@ public:
 
 	struct MIFHeader
 	{
-		uint8_t headerSize, unknown1, unknown2, entryCount;
+		uint8_t unknown1, entryCount;
 		std::array<uint16_t, 4> startX, startY;
-		uint8_t startingLevelIndex, levelCount, unknown3;
+		uint8_t startingLevelIndex, levelCount, unknown2;
 		uint16_t mapWidth, mapHeight;
-		std::array<uint8_t, 34> unknown4;
+		std::array<uint8_t, 34> unknown3;
 
 		void init(const uint8_t *data);
 	};

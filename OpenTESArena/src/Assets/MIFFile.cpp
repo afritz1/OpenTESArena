@@ -62,10 +62,12 @@ MIFFile::MIFFile(const std::string &filename)
 	stream->seekg(0, std::ios::beg);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
+	const uint16_t headerSize = Bytes::getLE16(srcData.data() + 4);
+
 	// Get data from the header (after "MHDR"). Constant for all levels. The header 
 	// size should be 61.
 	ArenaTypes::MIFHeader mifHeader;
-	mifHeader.init(srcData.data() + 4);
+	mifHeader.init(srcData.data() + 6);
 
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
@@ -83,7 +85,7 @@ MIFFile::MIFFile(const std::string &filename)
 
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,
 	// so this needs to be in a loop.
-	int levelOffset = mifHeader.headerSize + 6;
+	int levelOffset = headerSize + 6;
 
 	// The level count is unused since it's inferred by this level loading loop.
 	while (levelOffset < srcData.size())

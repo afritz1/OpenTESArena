@@ -13,12 +13,10 @@ void ArenaTypes::Light::init(const uint8_t *data)
 
 void ArenaTypes::MIFHeader::init(const uint8_t *data)
 {
-	this->headerSize = *data;
-	this->unknown1 = *(data + 1);
-	this->unknown2 = *(data + 2);
-	this->entryCount = *(data + 3);
+	this->unknown1 = *data;
+	this->entryCount = *(data + 1);
 
-	const uint16_t *startXStart = reinterpret_cast<const uint16_t*>(data + 4);
+	const uint16_t *startXStart = reinterpret_cast<const uint16_t*>(data + 2);
 	const uint16_t *startXEnd = startXStart + this->startX.size();
 	std::copy(startXStart, startXEnd, this->startX.begin());
 
@@ -26,15 +24,15 @@ void ArenaTypes::MIFHeader::init(const uint8_t *data)
 	const uint16_t *startYEnd = startYStart + this->startY.size();
 	std::copy(startYStart, startYEnd, this->startY.begin());
 
-	this->startingLevelIndex = *(data + 20);
-	this->levelCount = *(data + 21);
-	this->unknown3 = *(data + 22);
-	this->mapWidth = Bytes::getLE16(data + 23);
-	this->mapHeight = Bytes::getLE16(data + 25);
+	this->startingLevelIndex = *(data + 18);
+	this->levelCount = *(data + 19);
+	this->unknown2 = *(data + 20);
+	this->mapWidth = Bytes::getLE16(data + 21);
+	this->mapHeight = Bytes::getLE16(data + 23);
 
-	const uint8_t *unknown4Start = data + 27;
-	const uint8_t *unknown4End = unknown4Start + this->unknown4.size();
-	std::copy(unknown4Start, unknown4End, this->unknown4.begin());
+	const uint8_t *unknown3Start = data + 25;
+	const uint8_t *unknown3End = unknown3Start + this->unknown3.size();
+	std::copy(unknown3Start, unknown3End, this->unknown3.begin());
 }
 
 const size_t ArenaTypes::MIFLock::SIZE = 3;
