@@ -20,9 +20,6 @@ private:
 
 	ArenaSave() = delete;
 	~ArenaSave() = delete;
-
-	// Makes a numbered extension for the given index.
-	static std::string makeSaveExtension(int index);
 public:
 	static ArenaTypes::Automap loadAUTOMAP(const std::string &savePath, int index);
 	static ArenaTypes::Log loadLOG(const std::string &savePath, int index);

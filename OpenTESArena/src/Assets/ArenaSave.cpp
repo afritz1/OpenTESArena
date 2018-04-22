@@ -1,9 +1,42 @@
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 
 #include "ArenaSave.h"
 #include "../Utilities/Debug.h"
-#include "../Utilities/File.h"
+
+namespace
+{
+	// Makes a numbered extension for the given save index.
+	std::string makeSaveExtension(int index)
+	{
+		std::stringstream ss;
+		ss << '.' << std::setw(2) << std::setfill('0') << index;
+		return ss.str();
+	}
+
+	// Convenience function for loading a binary save file and returning the initialized record.
+	template <typename T>
+	T loadBinary(const std::string &savePath, const std::string &name, int index)
+	{
+		const std::string filename = savePath + name + makeSaveExtension(index);
+		std::ifstream ifs(filename, std::ios::binary);
+
+		if (ifs.is_open())
+		{
+			std::array<uint8_t, T::SIZE> buffer;
+			ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+
+			T obj;
+			obj.init(buffer.data());
+			return obj;
+		}
+		else
+		{
+			throw DebugException("\"" + filename + "\" not found.");
+		}
+	}
+}
 
 const std::string ArenaSave::AUTOMAP_FILENAME = "AUTOMAP";
 const std::string ArenaSave::LOG_FILENAME = "LOG";
@@ -13,27 +46,16 @@ const std::string ArenaSave::SPELLS_FILENAME = "SPELLS";
 const std::string ArenaSave::SPELLSG_FILENAME = "SPELLSG";
 const std::string ArenaSave::STATE_FILENAME = "STATE";
 
-std::string ArenaSave::makeSaveExtension(int index)
-{
-	std::stringstream ss;
-	ss << '.' << std::setw(2) << std::setfill('0') << index;
-	return ss.str();
-}
-
 ArenaTypes::Automap ArenaSave::loadAUTOMAP(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::AUTOMAP_FILENAME +
-		ArenaSave::makeSaveExtension(index);
-
-	ArenaTypes::Automap automap;
-	DebugNotImplemented();
-	return automap;
+	return loadBinary<ArenaTypes::Automap>(savePath, ArenaSave::AUTOMAP_FILENAME, index);
 }
 
 ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::LOG_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::LOG_FILENAME + makeSaveExtension(index);
+	std::ifstream ifs(filename);
 
 	ArenaTypes::Log log;
 	DebugNotImplemented();
@@ -42,59 +64,76 @@ ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 
 ArenaTypes::SaveEngine ArenaSave::loadSAVEENGN(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::SAVEENGN_FILENAME +
-		ArenaSave::makeSaveExtension(index);
-
-	ArenaTypes::SaveEngine saveEngine;
-	DebugNotImplemented();
-	return saveEngine;
+	return loadBinary<ArenaTypes::SaveEngine>(savePath, ArenaSave::SAVEENGN_FILENAME, index);
 }
 
 ArenaTypes::SaveGame ArenaSave::loadSAVEGAME(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::SAVEGAME_FILENAME +
-		ArenaSave::makeSaveExtension(index);
-
-	ArenaTypes::SaveGame saveGame;
-	DebugNotImplemented();
-	return saveGame;
+	return loadBinary<ArenaTypes::SaveGame>(savePath, ArenaSave::SAVEGAME_FILENAME, index);
 }
 
 ArenaTypes::Spells ArenaSave::loadSPELLS(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::SPELLS_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SPELLS_FILENAME + makeSaveExtension(index);
+	std::ifstream ifs(filename, std::ios::binary);
 
-	ArenaTypes::Spells spells;
-	DebugNotImplemented();
-	return spells;
+	if (ifs.is_open())
+	{
+		ArenaTypes::Spells spells;
+
+		std::array<uint8_t, ArenaTypes::SpellData::SIZE * spells.size()> buffer;
+		ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+
+		for (size_t i = 0; i < spells.size(); i++)
+		{
+			spells.at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
+		}
+
+		return spells;
+	}
+	else
+	{
+		throw DebugException("\"" + filename + "\" not found.");
+	}
 }
 
 ArenaTypes::Spellsg ArenaSave::loadSPELLSG(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::SPELLSG_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SPELLSG_FILENAME + makeSaveExtension(index);
+	std::ifstream ifs(filename, std::ios::binary);
 
-	ArenaTypes::Spellsg spellsg;
-	DebugNotImplemented();
-	return spellsg;
+	if (ifs.is_open())
+	{
+		ArenaTypes::Spellsg spellsg;
+
+		std::array<uint8_t, ArenaTypes::SpellData::SIZE * spellsg.size()> buffer;
+		ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+
+		for (size_t i = 0; i < spellsg.size(); i++)
+		{
+			spellsg.at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
+		}
+
+		return spellsg;
+	}
+	else
+	{
+		throw DebugException("\"" + filename + "\" not found.");
+	}
 }
 
 ArenaTypes::MQLevelState ArenaSave::loadSTATE(const std::string &savePath, int index)
 {
-	const std::string filename = savePath + ArenaSave::STATE_FILENAME +
-		ArenaSave::makeSaveExtension(index);
-
-	ArenaTypes::MQLevelState state;
-	DebugNotImplemented();
-	return state;
+	return loadBinary<ArenaTypes::MQLevelState>(savePath, ArenaSave::STATE_FILENAME, index);
 }
 
 void ArenaSave::saveAUTOMAP(const std::string &savePath, int index,
 	const ArenaTypes::Automap &data)
 {
-	const std::string filename = savePath + ArenaSave::AUTOMAP_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::AUTOMAP_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -102,8 +141,8 @@ void ArenaSave::saveAUTOMAP(const std::string &savePath, int index,
 void ArenaSave::saveLOG(const std::string &savePath, int index,
 	const ArenaTypes::Log &data)
 {
-	const std::string filename = savePath + ArenaSave::LOG_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::LOG_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -111,8 +150,8 @@ void ArenaSave::saveLOG(const std::string &savePath, int index,
 void ArenaSave::saveSAVEENGN(const std::string &savePath, int index,
 	const ArenaTypes::SaveEngine &data)
 {
-	const std::string filename = savePath + ArenaSave::SAVEENGN_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SAVEENGN_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -120,8 +159,8 @@ void ArenaSave::saveSAVEENGN(const std::string &savePath, int index,
 void ArenaSave::saveSAVEGAME(const std::string &savePath, int index,
 	const ArenaTypes::SaveGame &data)
 {
-	const std::string filename = savePath + ArenaSave::SAVEGAME_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SAVEGAME_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -129,8 +168,8 @@ void ArenaSave::saveSAVEGAME(const std::string &savePath, int index,
 void ArenaSave::saveSPELLS(const std::string &savePath, int index,
 	const ArenaTypes::Spells &data)
 {
-	const std::string filename = savePath + ArenaSave::SPELLS_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SPELLS_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -138,8 +177,8 @@ void ArenaSave::saveSPELLS(const std::string &savePath, int index,
 void ArenaSave::saveSPELLSG(const std::string &savePath, int index,
 	const ArenaTypes::Spellsg &data)
 {
-	const std::string filename = savePath + ArenaSave::SPELLSG_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::SPELLSG_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -147,8 +186,8 @@ void ArenaSave::saveSPELLSG(const std::string &savePath, int index,
 void ArenaSave::saveSTATE(const std::string &savePath, int index,
 	const ArenaTypes::MQLevelState &data)
 {
-	const std::string filename = savePath + ArenaSave::STATE_FILENAME +
-		ArenaSave::makeSaveExtension(index);
+	const std::string filename = savePath +
+		ArenaSave::STATE_FILENAME + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
