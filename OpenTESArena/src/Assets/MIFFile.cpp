@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "ArenaTypes.h"
 #include "Compression.h"
 #include "MIFFile.h"
 #include "../Utilities/Bytes.h"
@@ -64,18 +65,15 @@ MIFFile::MIFFile(const std::string &filename)
 
 	// Get data from the header (after "MHDR"). Constant for all levels. The header 
 	// size should be 61.
-	const uint8_t headerSize = *(srcData.data() + 4);
-	const uint8_t unknown1 = *(srcData.data() + 6);
-	const uint8_t entryCount = *(srcData.data() + 7);
-	const uint16_t mapWidth = Bytes::getLE16(srcData.data() + 27);
-	const uint16_t mapDepth = Bytes::getLE16(srcData.data() + 29);
+	ArenaTypes::MIFHeader mifHeader;
+	mifHeader.init(srcData.data() + 4);
 
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
-		const uint16_t mifX = Bytes::getLE16(srcData.data() + 8 + (i * 2));
-		const uint16_t mifY = Bytes::getLE16(srcData.data() + 16 + (i * 2));
-
+		const uint16_t mifX = mifHeader.startX.at(i);
+		const uint16_t mifY = mifHeader.startY.at(i);
+		
 		// Convert the coordinates from .MIF format to voxel format. The remainder
 		// of the division is used for positioning within the voxel.
 		const double x = static_cast<double>(mifX) / MIFFile::ARENA_UNITS;
@@ -84,13 +82,11 @@ MIFFile::MIFFile(const std::string &filename)
 		this->startPoints.at(i) = Double2(x, y);
 	}
 
-	// Get starting level index. The level count (a single byte) comes right after this, 
-	// but it is unused in this reader (it's inferred by the level loading loop).
-	this->startingLevelIndex = *(srcData.data() + 24);
-
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,
 	// so this needs to be in a loop.
-	int levelOffset = headerSize + 6;
+	int levelOffset = mifHeader.headerSize + 6;
+
+	// The level count is unused since it's inferred by this level loading loop.
 	while (levelOffset < srcData.size())
 	{
 		MIFFile::Level level;
@@ -104,8 +100,9 @@ MIFFile::MIFFile(const std::string &filename)
 		this->levels.push_back(std::move(level));
 	}
 
-	this->width = mapWidth;
-	this->depth = mapDepth;
+	this->width = mifHeader.mapWidth;
+	this->depth = mifHeader.mapHeight;
+	this->startingLevelIndex = mifHeader.startingLevelIndex;
 	this->name = filename;
 }
 
