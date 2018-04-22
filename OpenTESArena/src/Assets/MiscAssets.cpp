@@ -942,43 +942,7 @@ void MiscAssets::parseStandardSpells()
 	stream->seekg(0, std::ios::beg);
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
-	size_t offset = 0;
-	const size_t spellSize = 85;
-	for (auto &spell : this->standardSpells)
-	{
-		const uint8_t *spellPtr = srcData.data() + offset;
-		
-		// Read each spell parameter.
-		size_t paramOffset = 0;
-		const size_t paramSize = 6;
-		for (auto &param : spell.params)
-		{
-			param.at(0) = Bytes::getLE16(spellPtr + paramOffset);
-			param.at(1) = Bytes::getLE16(spellPtr + paramOffset + 2);
-			param.at(2) = Bytes::getLE16(spellPtr + paramOffset + 4);
-			paramOffset += paramSize;
-		}
-
-		spell.targetType = *(spellPtr + 36);
-		spell.unknown = *(spellPtr + 37);
-		spell.element = *(spellPtr + 38);
-		spell.flags = Bytes::getLE16(spellPtr + 39);
-
-		// Read each spell effect.
-		for (size_t i = 0; i < 3; i++)
-		{
-			spell.effects.at(i) = *(spellPtr + 41 + i);
-			spell.subEffects.at(i) = *(spellPtr + 44 + i);
-			spell.affectedAttributes.at(i) = *(spellPtr + 47 + i);
-		}
-
-		spell.cost = Bytes::getLE16(spellPtr + 50);
-
-		const uint8_t *namePtr = spellPtr + 52;
-		std::copy(namePtr, namePtr + spell.name.size(), spell.name.begin());
-
-		offset += spellSize;
-	}
+	ArenaTypes::SpellData::initArray(this->standardSpells, srcData.data());
 }
 
 void MiscAssets::parseSpellMakerDescriptions()
@@ -1230,7 +1194,7 @@ const CityDataFile &MiscAssets::getCityDataFile() const
 	return this->cityDataFile;
 }
 
-const std::array<MiscAssets::SpellData, 128> &MiscAssets::getStandardSpells() const
+const ArenaTypes::Spellsg &MiscAssets::getStandardSpells() const
 {
 	return this->standardSpells;
 }

@@ -344,12 +344,39 @@ public:
 		void init(const uint8_t *data);
 	};
 
-	// For SPELLS.0x and SPELLSG.0x.
-	struct Spells
+	// For each spell in SPELLS.0x and SPELLSG.0x.
+	struct SpellData
 	{
-		// To do: get from existing SpellData in MiscAssets.
+		static const size_t SIZE;
+
+		std::array<std::array<uint16_t, 3>, 6> params;
+		uint8_t targetType, unknown, element;
+		uint16_t flags;
+
+		// Effects (i.e., "Fortify"; 0xFF = nothing), sub-effects (i.e., "Attribute"),
+		// and affected attributes (i.e., "Strength").
+		std::array<uint8_t, 3> effects, subEffects, affectedAttributes;
+
+		uint16_t cost;
+		std::array<char, 33> name;
+
 		void init(const uint8_t *data);
+
+		template <size_t T>
+		static void initArray(std::array<SpellData, T> &arr, const uint8_t *data)
+		{
+			for (size_t i = 0; i < arr.size(); i++)
+			{
+				arr.at(i).init(data + (SpellData::SIZE * i));
+			}
+		}
 	};
+
+	// For SPELLS.0x (custom spells).
+	typedef std::array<SpellData, 32> Spells;
+
+	// For SPELLSG.0x (general spells).
+	typedef std::array<SpellData, 128> Spellsg;
 
 	// For INN.0x.
 	struct Tavern

@@ -326,9 +326,36 @@ void ArenaTypes::MQLevelState::init(const uint8_t *data)
 	}
 }
 
-void ArenaTypes::Spells::init(const uint8_t *data)
+const size_t ArenaTypes::SpellData::SIZE = 85;
+
+void ArenaTypes::SpellData::init(const uint8_t *data)
 {
-	DebugNotImplemented();
+	for (size_t i = 0; i < this->params.size(); i++)
+	{
+		const size_t offset = i * 6;
+		auto &param = this->params.at(i);
+		param.at(0) = Bytes::getLE16(data + offset);
+		param.at(1) = Bytes::getLE16(data + offset + 2);
+		param.at(2) = Bytes::getLE16(data + offset + 4);
+	}
+
+	this->targetType = *(data + 36);
+	this->unknown = *(data + 37);
+	this->element = *(data + 38);
+	this->flags = Bytes::getLE16(data + 39);
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		this->effects.at(i) = *(data + 41 + i);
+		this->subEffects.at(i) = *(data + 44 + i);
+		this->affectedAttributes.at(i) = *(data + 47 + i);
+	}
+
+	this->cost = Bytes::getLE16(data + 50);
+
+	const char *nameStart = reinterpret_cast<const char*>(data + 52);
+	const char *nameEnd = nameStart + this->name.size();
+	std::copy(nameStart, nameEnd, this->name.begin());
 }
 
 void ArenaTypes::Tavern::init(const uint8_t *data)

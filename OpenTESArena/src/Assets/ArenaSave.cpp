@@ -37,9 +37,9 @@ ArenaTypes::Spells ArenaSave::loadSPELLS(const std::string &filename, int index)
 	return spells;
 }
 
-ArenaTypes::Spells ArenaSave::loadSPELLSG(const std::string &filename, int index)
+ArenaTypes::Spellsg ArenaSave::loadSPELLSG(const std::string &filename, int index)
 {
-	ArenaTypes::Spells spells;
+	ArenaTypes::Spellsg spells;
 	DebugNotImplemented();
 	return spells;
 }
@@ -82,7 +82,7 @@ void ArenaSave::saveSPELLS(const std::string &filename, int index,
 }
 
 void ArenaSave::saveSPELLSG(const std::string &filename, int index,
-	const ArenaTypes::Spells &data)
+	const ArenaTypes::Spellsg &data)
 {
 	DebugNotImplemented();
 }

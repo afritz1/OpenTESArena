@@ -18,7 +18,7 @@ public:
 	static ArenaTypes::SaveEngine loadSAVEENGN(const std::string &filename, int index);
 	static ArenaTypes::SaveGame loadSAVEGAME(const std::string &filename, int index);
 	static ArenaTypes::Spells loadSPELLS(const std::string &filename, int index);
-	static ArenaTypes::Spells loadSPELLSG(const std::string &filename, int index);
+	static ArenaTypes::Spellsg loadSPELLSG(const std::string &filename, int index);
 	static ArenaTypes::MQLevelState loadSTATE(const std::string &filename, int index);
 	// To do: load city data.
 	// To do: load INN.0x.
@@ -35,7 +35,7 @@ public:
 	static void saveSPELLS(const std::string &filename, int index,
 		const ArenaTypes::Spells &data);
 	static void saveSPELLSG(const std::string &filename, int index,
-		const ArenaTypes::Spells &data);
+		const ArenaTypes::Spellsg &data);
 	static void saveSTATE(const std::string &filename, int index,
 		const ArenaTypes::MQLevelState &data);
 	// To do: save city data.
