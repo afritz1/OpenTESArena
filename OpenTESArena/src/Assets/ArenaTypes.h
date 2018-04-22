@@ -2,6 +2,7 @@
 #define ARENA_TYPES_H
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 
 // Various composite types used with Arena's binary data files.
@@ -14,7 +15,10 @@ private:
 public:
 	struct Light
 	{
-		std::array<uint8_t, 6> unknown;
+		// X and Y are in Arena units.
+		uint16_t x, y, radius;
+
+		void init(const uint8_t *data);
 	};
 
 	struct MIFHeader
@@ -23,26 +27,38 @@ public:
 		std::array<uint16_t, 4> startX, startY;
 		uint8_t startingLevelIndex, levelCount, unknown3;
 		uint16_t mapWidth, mapHeight;
-		std::array<uint8_t, 33> unknown4;
+		std::array<uint8_t, 34> unknown4;
+
+		void init(const uint8_t *data);
 	};
 
 	struct MIFLock
 	{
+		static const size_t SIZE;
+
 		uint8_t x, y, lockLevel;
+
+		void init(const uint8_t *data);
 	};
 
 	struct MIFTarget
 	{
 		uint8_t x, y;
+
+		void init(const uint8_t *data);
 	};
 
 	struct MIFTrigger
 	{
+		static const size_t SIZE;
+
 		uint8_t x, y;
 
 		// Some text and sound indices are negative (which means they're unused), 
 		// so they need to be signed.
 		int8_t textIndex, soundIndex;
+
+		void init(const uint8_t *data);
 	};
 
 	struct GameState
@@ -52,7 +68,7 @@ public:
 		uint8_t playerFloor;
 		uint8_t oldFloor;
 		std::array<uint8_t, 182> junk2;
-		uint16_t LightsCount;
+		uint16_t lightsCount;
 		std::array<Light, 256> lights; // Auto-generated lights.
 		uint32_t junk3;
 		std::array<char, 33> levelName;
@@ -81,6 +97,8 @@ public:
 		std::array<MIFTrigger, 64> triggers;
 		uint16_t triggerCount;
 		std::array<uint8_t, 89> junk10;
+
+		void init(const uint8_t *data);
 	};
 
 	// For SAVEGAME.0x.
@@ -90,6 +108,8 @@ public:
 		std::array<uint8_t, 256 * 3> palette;
 		GameState gameState;
 		std::array<uint16_t, 128 * 128 * 3> gameLevel;
+
+		void init(const uint8_t *data);
 	};
 
 	// For SAVEENGN.0x.
@@ -98,6 +118,8 @@ public:
 		struct CreatureData
 		{
 			std::array<uint8_t, 32> unknown;
+
+			void init(const uint8_t *data);
 		};
 
 		struct InventoryItem
@@ -108,18 +130,26 @@ public:
 			uint16_t health, maxHealth;
 			uint32_t price;
 			uint8_t flags, x, material, y, attribute;
+
+			void init(const uint8_t *data);
 		};
 
 		struct LootItem
 		{
+			static const size_t SIZE;
+
 			uint16_t unknown1, containerPosition;
 			uint8_t floor;
 			uint16_t goldValue, unknown2;
 			InventoryItem inventoryItem;
+
+			void init(const uint8_t *data);
 		};
 
 		struct NPCData
 		{
+			static const size_t SIZE;
+
 			uint32_t randomSeed;
 			uint8_t raceID, classID, level, isFemale, homeCityID;
 
@@ -144,6 +174,8 @@ public:
 			std::array<uint8_t, 10> statusCounters;
 			uint8_t encumbranceMod;
 			uint16_t activeEffects, shieldValue;
+
+			void init(const uint8_t *data);
 		};
 
 		struct CityGenData
@@ -152,26 +184,33 @@ public:
 			std::array<char, 13> mifName;
 			uint8_t citySize; // 4, 5, 6.
 			uint16_t blockOffset;
-			uint8_t province, cityType;
+			uint8_t provinceID, cityType;
 			uint16_t localX, localY;
 			uint8_t cityID, unknown;
 			uint16_t absLatitude;
 			uint8_t terrainType, quarter;
 			uint32_t rulerSeed, citySeed;
+
+			void init(const uint8_t *data);
 		};
 
 		struct Buff
 		{
 			std::array<uint8_t, 60> unknown;
+
+			void init(const uint8_t *data);
 		};
 
 		struct NPCSprite
 		{
 			// To do.
+			void init(const uint8_t *data);
 		};
 
 		struct BaseQuest
 		{
+			static const size_t SIZE;
+
 			uint32_t questSeed;
 			uint16_t location1, item1;
 			uint32_t startDate, dueDate, tavernData, destinationData, reward;
@@ -179,35 +218,51 @@ public:
 			uint32_t questGiverSeed;
 			uint16_t opponentFaction;
 			uint8_t destinationCityID, questCityID, unknown, relationship, escorteeIsFemale;
+
+			void init(const uint8_t *data);
 		};
 
 		struct ExtQuest
 		{
+			static const size_t SIZE;
+
 			BaseQuest baseQuest;
 			std::array<uint8_t, 5> unknown;
 			uint8_t faction, npcRace, monsterRace, locationName, locNameTemplate;
+
+			void init(const uint8_t *data);
 		};
 
 		struct MainQuestData
 		{
+			static const size_t SIZE;
+
 			uint8_t canHaveVision, nextStep, dungeonLocationKnown, acceptedKeyQuest,
 				hadVision, talkedToRuler, stepDone, hasKeyItem, hasStaffPiece, showKey;
+
+			void init(const uint8_t *data);
 		};
 
 		struct ArtifactQuestData
 		{
+			static const size_t SIZE;
+
 			uint8_t currentArtifact;
 			uint32_t tavernLocation;
-			uint8_t mapDungeonID, mapProvince, artifactDungeonID, artifactProvince,
+			uint8_t mapDungeonID, mapProvinceID, artifactDungeonID, artifactProvinceID,
 				artifactQuestFlags;
 			uint16_t artifactBitMask;
 			uint32_t artifactQuestStarted;
 			uint8_t artifactDays;
 			uint16_t artifactPriceOrOffset;
+
+			void init(const uint8_t *data);
 		};
 
 		struct PlayerData
 		{
+			static const size_t SIZE;
+
 			uint32_t gold, experience;
 			uint16_t blessing, flags2, gameOptions;
 			uint32_t gameTime;
@@ -247,11 +302,15 @@ public:
 			std::array<uint8_t, 9> portrait;
 			ArtifactQuestData artifactQuest;
 			std::array<uint8_t, 5> junk11;
+
+			void init(const uint8_t *data);
 		};
 
 		struct InternalState
 		{
 			std::array<uint8_t, 288> unknown;
+
+			void init(const uint8_t *data);
 		};
 
 		// First two members are scrambled.
@@ -261,28 +320,35 @@ public:
 		std::array<LootItem, 200> loot;
 		InternalState gameState2;
 
-		void unscramble();
+		void init(const uint8_t *data);
 	};
 
 	// For STATES.0x (main quest lock and trigger states).
 	struct MQLevelState
 	{
-		struct LevelHashTable
+		struct HashTable
 		{
+			static const size_t SIZE;
+
 			uint8_t triggerCount;
 			std::array<MIFTrigger, 64> triggers;
 			uint8_t lockCount;
 			std::array<MIFLock, 64> locks;
+
+			void init(const uint8_t *data);
 		};
 
 		// Index is (((provinceID * 2) + localDungeonID) * 4) + level.
-		std::array<LevelHashTable, 64> hashTables;
+		std::array<HashTable, 64> hashTables;
+
+		void init(const uint8_t *data);
 	};
 
 	// For SPELLS.0x and SPELLSG.0x.
-	struct SpellData
+	struct Spells
 	{
 		// To do: get from existing SpellData in MiscAssets.
+		void init(const uint8_t *data);
 	};
 
 	// For INN.0x.
@@ -290,6 +356,8 @@ public:
 	{
 		uint16_t remainingHours;
 		uint32_t timeLimit;
+
+		void init(const uint8_t *data);
 	};
 
 	// For AUTOMAP.0x.
@@ -297,24 +365,35 @@ public:
 	{
 		struct FogOfWarCache
 		{
+			static const size_t SIZE;
+
 			struct Note
 			{
+				static const size_t SIZE;
+
 				uint16_t x, y;
 				std::array<char, 60> text;
+
+				void init(const uint8_t *data);
 			};
 
 			uint32_t levelHash;
 			std::array<Note, 64> notes;
 			std::array<uint8_t, 4096> bitmap; // 2 bits per block.
+
+			void init(const uint8_t *data);
 		};
 
 		std::array<FogOfWarCache, 16> caches;
+
+		void init(const uint8_t *data);
 	};
 
 	// For LOG.0x.
 	struct Log
 	{
 		// To do.
+		void init(const uint8_t *data);
 	};
 };
 
