@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "ArenaTypes.h"
 #include "Compression.h"
 #include "MIFFile.h"
 #include "../Utilities/Bytes.h"
@@ -257,20 +256,15 @@ int MIFFile::Level::loadLOCK(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Each lock record is 3 bytes.
 	const int lockCount = size / 3;
-	level.lock = std::vector<MIFFile::Level::Lock>(lockCount);
+	level.lock = std::vector<ArenaTypes::MIFLock>(lockCount);
 
 	const uint8_t *tagDataStart = tagStart + 6;
 	for (int i = 0; i < lockCount; i++)
 	{
 		const int offset = i * 3;
-		const uint8_t x = *(tagDataStart + offset);
-		const uint8_t y = *(tagDataStart + offset + 1);
-		const uint8_t lockLevel = *(tagDataStart + offset + 2);
 
-		MIFFile::Level::Lock &lock = level.lock.at(i);
-		lock.x = x;
-		lock.y = y;
-		lock.lockLevel = lockLevel;
+		ArenaTypes::MIFLock &lock = level.lock.at(i);
+		lock.init(tagDataStart + offset);
 	}
 
 	return size + 6;
@@ -355,11 +349,19 @@ int MIFFile::Level::loadNUMF(MIFFile::Level &level, const uint8_t *tagStart)
 int MIFFile::Level::loadTARG(MIFFile::Level &level, const uint8_t *tagStart)
 {
 	const uint16_t size = Bytes::getLE16(tagStart + 4);
-	const uint8_t *tagDataStart = tagStart + 6;
 
-	// Currently unknown.
-	level.targ = std::vector<uint8_t>(size);
-	std::copy(tagDataStart, tagDataStart + level.targ.size(), level.targ.begin());
+	// Each target record is 2 bytes.
+	const int targetCount = size / 2;
+	level.targ = std::vector<ArenaTypes::MIFTarget>(targetCount);
+	
+	const uint8_t *tagDataStart = tagStart + 6;
+	for (int i = 0; i < targetCount; i++)
+	{
+		const int offset = i * 2;
+
+		ArenaTypes::MIFTarget &target = level.targ.at(i);
+		target.init(tagDataStart + offset);
+	}
 
 	return size + 6;
 }
@@ -370,25 +372,15 @@ int MIFFile::Level::loadTRIG(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Each trigger record is 4 bytes.
 	const int triggerCount = size / 4;
-	level.trig = std::vector<MIFFile::Level::Trigger>(triggerCount);
+	level.trig = std::vector<ArenaTypes::MIFTrigger>(triggerCount);
 
 	const uint8_t *tagDataStart = tagStart + 6;
 	for (int i = 0; i < triggerCount; i++)
 	{
 		const int offset = i * 4;
-		const uint8_t x = *(tagDataStart + offset);
-		const uint8_t y = *(tagDataStart + offset + 1);
-
-		// Some text and sound indices are negative (which means they're unused), 
-		// so they need to be signed.
-		const int8_t textIndex = *(tagDataStart + offset + 2);
-		const int8_t soundIndex = *(tagDataStart + offset + 3);
-
-		MIFFile::Level::Trigger &trigger = level.trig.at(i);
-		trigger.x = x;
-		trigger.y = y;
-		trigger.textIndex = textIndex;
-		trigger.soundIndex = soundIndex;
+		
+		ArenaTypes::MIFTrigger &trigger = level.trig.at(i);
+		trigger.init(tagDataStart + offset);
 	}
 
 	return size + 6;

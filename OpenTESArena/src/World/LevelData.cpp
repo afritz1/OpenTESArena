@@ -115,8 +115,8 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 	// Create temp buffers for dungeon block data.
 	std::vector<uint16_t> tempFlor(gridWidth * gridDepth, 0);
 	std::vector<uint16_t> tempMap1(gridWidth * gridDepth, 0);
-	std::vector<MIFFile::Level::Lock> tempLocks;
-	std::vector<MIFFile::Level::Trigger> tempTriggers;
+	std::vector<ArenaTypes::MIFLock> tempLocks;
+	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
 
 	const int chunkDim = 32;
 	const int tileSet = random.next() % 4;
@@ -154,7 +154,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 			// Assign locks to the current block.
 			for (const auto &lock : blockLevel.lock)
 			{
-				MIFFile::Level::Lock tempLock;
+				ArenaTypes::MIFLock tempLock;
 				tempLock.x = lock.x + dX;
 				tempLock.y = lock.y + dZ;
 				tempLock.lockLevel = lock.lockLevel;
@@ -165,7 +165,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 			// Assign text/sound triggers to the current block.
 			for (const auto &trigger : blockLevel.trig)
 			{
-				MIFFile::Level::Trigger tempTrigger;
+				ArenaTypes::MIFTrigger tempTrigger;
 				tempTrigger.x = trigger.x + dX;
 				tempTrigger.y = trigger.y + dZ;
 				tempTrigger.textIndex = trigger.textIndex;
@@ -1159,7 +1159,7 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 	}
 }
 
-void LevelData::readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth)
+void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth)
 {
 	for (const auto &lock : locks)
 	{
@@ -1170,7 +1170,7 @@ void LevelData::readLocks(const std::vector<MIFFile::Level::Lock> &locks, int wi
 	}
 }
 
-void LevelData::readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers,
+void LevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers,
 	const INFFile &inf, int width, int depth)
 {
 	for (const auto &trigger : triggers)

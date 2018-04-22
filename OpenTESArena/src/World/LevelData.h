@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "VoxelGrid.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
 #include "../Math/Vector2.h"
 
@@ -100,8 +101,8 @@ private:
 	void readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth, int gridDepth);
 	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
-	void readLocks(const std::vector<MIFFile::Level::Lock> &locks, int width, int depth);
-	void readTriggers(const std::vector<MIFFile::Level::Trigger> &triggers, const INFFile &inf,
+	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth);
+	void readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers, const INFFile &inf,
 		int width, int depth);
 public:
 	LevelData(LevelData &&levelData) = default;

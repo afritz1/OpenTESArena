@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "ArenaTypes.h"
 #include "../Math/Vector2.h"
 
 // A MIF file contains map information. It defines the dimensions of a particular area 
@@ -19,25 +20,16 @@ class MIFFile
 public:
 	struct Level
 	{
-		struct Lock
-		{
-			int x, y, lockLevel;
-		};
-
-		struct Trigger
-		{
-			int x, y, textIndex, soundIndex;
-		};
-
 		std::string name, info; // Name of level and associated INF filename.
 		int numf; // Number of floor textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
 		// - To do: maybe store MAP2 data with each voxel's extended height?
 		std::vector<uint16_t> flor, map1, map2;
-		std::vector<uint8_t> flat, inns, loot, targ;
-		std::vector<MIFFile::Level::Lock> lock;
-		std::vector<MIFFile::Level::Trigger> trig;
+		std::vector<uint8_t> flat, inns, loot;
+		std::vector<ArenaTypes::MIFTarget> targ;
+		std::vector<ArenaTypes::MIFLock> lock;
+		std::vector<ArenaTypes::MIFTrigger> trig;
 
 		Level();
 
