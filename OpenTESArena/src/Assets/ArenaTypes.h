@@ -5,7 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 
-// Various composite types used with Arena's binary data files.
+// Various composite types used with Arena's binary data files. Struct sizes are hardcoded
+// to show intent and to avoid issues with padding since they map directly to Arena's data.
 
 class ArenaTypes
 {
@@ -15,6 +16,8 @@ private:
 public:
 	struct Light
 	{
+		static constexpr size_t SIZE = 6;
+
 		// X and Y are in Arena units.
 		uint16_t x, y, radius;
 
@@ -34,7 +37,7 @@ public:
 
 	struct MIFLock
 	{
-		static const size_t SIZE;
+		static constexpr size_t SIZE = 3;
 
 		uint8_t x, y, lockLevel;
 
@@ -43,6 +46,8 @@ public:
 
 	struct MIFTarget
 	{
+		static constexpr size_t SIZE = 2;
+
 		uint8_t x, y;
 
 		void init(const uint8_t *data);
@@ -50,7 +55,7 @@ public:
 
 	struct MIFTrigger
 	{
-		static const size_t SIZE;
+		static constexpr size_t SIZE = 4;
 
 		uint8_t x, y;
 
@@ -63,6 +68,8 @@ public:
 
 	struct GameState
 	{
+		static constexpr size_t SIZE = 3559;
+
 		uint8_t junk1;
 		uint8_t weatherFlags; // 0x80 precipitation, 1 rain, 2 snow.
 		uint8_t playerFloor;
@@ -104,6 +111,8 @@ public:
 	// For SAVEGAME.0x.
 	struct SaveGame
 	{
+		static constexpr size_t SIZE = 166631;
+
 		std::array<uint8_t, 320 * 200> screenBuffer;
 		std::array<uint8_t, 256 * 3> palette;
 		GameState gameState;
@@ -115,6 +124,8 @@ public:
 	// For SAVEENGN.0x.
 	struct SaveEngine
 	{
+		static constexpr size_t SIZE = 17983;
+
 		struct CreatureData
 		{
 			std::array<uint8_t, 32> unknown;
@@ -136,7 +147,7 @@ public:
 
 		struct LootItem
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 28;
 
 			uint16_t unknown1, containerPosition;
 			uint8_t floor;
@@ -148,7 +159,7 @@ public:
 
 		struct NPCData
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 1054;
 
 			uint32_t randomSeed;
 			uint8_t raceID, classID, level, isFemale, homeCityID;
@@ -209,7 +220,7 @@ public:
 
 		struct BaseQuest
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 41;
 
 			uint32_t questSeed;
 			uint16_t location1, item1;
@@ -224,7 +235,7 @@ public:
 
 		struct ExtQuest
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 51;
 
 			BaseQuest baseQuest;
 			std::array<uint8_t, 5> unknown;
@@ -235,7 +246,7 @@ public:
 
 		struct MainQuestData
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 10;
 
 			uint8_t canHaveVision, nextStep, dungeonLocationKnown, acceptedKeyQuest,
 				hadVision, talkedToRuler, stepDone, hasKeyItem, hasStaffPiece, showKey;
@@ -245,7 +256,7 @@ public:
 
 		struct ArtifactQuestData
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 19;
 
 			uint8_t currentArtifact;
 			uint32_t tavernLocation;
@@ -261,7 +272,7 @@ public:
 
 		struct PlayerData
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 2609;
 
 			uint32_t gold, experience;
 			uint16_t blessing, flags2, gameOptions;
@@ -326,9 +337,11 @@ public:
 	// For STATES.0x (main quest lock and trigger states).
 	struct MQLevelState
 	{
+		static constexpr size_t SIZE = 28800;
+
 		struct HashTable
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 450;
 
 			uint8_t triggerCount;
 			std::array<MIFTrigger, 64> triggers;
@@ -347,7 +360,7 @@ public:
 	// For each spell in SPELLS.0x and SPELLSG.0x.
 	struct SpellData
 	{
-		static const size_t SIZE;
+		static constexpr size_t SIZE = 85;
 
 		std::array<std::array<uint16_t, 3>, 6> params;
 		uint8_t targetType, unknown, element;
@@ -390,13 +403,15 @@ public:
 	// For AUTOMAP.0x.
 	struct Automap
 	{
+		static constexpr size_t SIZE = 131136;
+
 		struct FogOfWarCache
 		{
-			static const size_t SIZE;
+			static constexpr size_t SIZE = 8196;
 
 			struct Note
 			{
-				static const size_t SIZE;
+				static constexpr size_t SIZE = 64;
 
 				uint16_t x, y;
 				std::array<char, 60> text;

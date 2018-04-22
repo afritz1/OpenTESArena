@@ -35,8 +35,6 @@ void ArenaTypes::MIFHeader::init(const uint8_t *data)
 	std::copy(unknown3Start, unknown3End, this->unknown3.begin());
 }
 
-const size_t ArenaTypes::MIFLock::SIZE = 3;
-
 void ArenaTypes::MIFLock::init(const uint8_t *data)
 {
 	this->x = *data;
@@ -49,8 +47,6 @@ void ArenaTypes::MIFTarget::init(const uint8_t *data)
 	this->x = *data;
 	this->y = *(data + 1);
 }
-
-const size_t ArenaTypes::MIFTrigger::SIZE = 4;
 
 void ArenaTypes::MIFTrigger::init(const uint8_t *data)
 {
@@ -76,7 +72,7 @@ void ArenaTypes::SaveGame::init(const uint8_t *data)
 	std::copy(paletteStart, paletteEnd, this->palette.begin());
 
 	const uint8_t *gameStateStart = paletteEnd;
-	const uint8_t *gameStateEnd = gameStateStart + 3559;
+	const uint8_t *gameStateEnd = gameStateStart + GameState::SIZE;
 	this->gameState.init(gameStateStart);
 
 	const uint16_t *gameLevelStart = reinterpret_cast<const uint16_t*>(gameStateEnd);
@@ -106,8 +102,6 @@ void ArenaTypes::SaveEngine::InventoryItem::init(const uint8_t *data)
 	this->attribute = *(data + 18);
 }
 
-const size_t ArenaTypes::SaveEngine::LootItem::SIZE = 28;
-
 void ArenaTypes::SaveEngine::LootItem::init(const uint8_t *data)
 {
 	this->unknown1 = Bytes::getLE16(data);
@@ -119,8 +113,6 @@ void ArenaTypes::SaveEngine::LootItem::init(const uint8_t *data)
 	const uint8_t *inventoryItemStart = data + 8;
 	this->inventoryItem.init(inventoryItemStart);
 }
-
-const size_t ArenaTypes::SaveEngine::NPCData::SIZE = 1054;
 
 void ArenaTypes::SaveEngine::NPCData::init(const uint8_t *data)
 {
@@ -162,8 +154,6 @@ void ArenaTypes::SaveEngine::NPCSprite::init(const uint8_t *data)
 	DebugNotImplemented();
 }
 
-const size_t ArenaTypes::SaveEngine::BaseQuest::SIZE = 41;
-
 void ArenaTypes::SaveEngine::BaseQuest::init(const uint8_t *data)
 {
 	this->questSeed = Bytes::getLE32(data);
@@ -184,8 +174,6 @@ void ArenaTypes::SaveEngine::BaseQuest::init(const uint8_t *data)
 	this->escorteeIsFemale = *(data + 40);
 }
 
-const size_t ArenaTypes::SaveEngine::ExtQuest::SIZE = 51;
-
 void ArenaTypes::SaveEngine::ExtQuest::init(const uint8_t *data)
 {
 	const uint8_t *baseQuestStart = data;
@@ -203,8 +191,6 @@ void ArenaTypes::SaveEngine::ExtQuest::init(const uint8_t *data)
 	this->locNameTemplate = *(data + 50);
 }
 
-const size_t ArenaTypes::SaveEngine::MainQuestData::SIZE = 10;
-
 void ArenaTypes::SaveEngine::MainQuestData::init(const uint8_t *data)
 {
 	this->canHaveVision = *data;
@@ -218,8 +204,6 @@ void ArenaTypes::SaveEngine::MainQuestData::init(const uint8_t *data)
 	this->hasStaffPiece = *(data + 8);
 	this->showKey = *(data + 9);
 }
-
-const size_t ArenaTypes::SaveEngine::ArtifactQuestData::SIZE = 19;
 
 void ArenaTypes::SaveEngine::ArtifactQuestData::init(const uint8_t *data)
 {
@@ -235,8 +219,6 @@ void ArenaTypes::SaveEngine::ArtifactQuestData::init(const uint8_t *data)
 	this->artifactDays = *(data + 16);
 	this->artifactPriceOrOffset = Bytes::getLE16(data + 17);
 }
-
-const size_t ArenaTypes::SaveEngine::PlayerData::SIZE = 2609;
 
 void ArenaTypes::SaveEngine::PlayerData::init(const uint8_t *data)
 {
@@ -295,8 +277,6 @@ void ArenaTypes::SaveEngine::init(const uint8_t *data)
 	this->gameState2.init(gameState2Start);
 }
 
-const size_t ArenaTypes::MQLevelState::HashTable::SIZE = 450;
-
 void ArenaTypes::MQLevelState::HashTable::init(const uint8_t *data)
 {
 	this->triggerCount = *data;
@@ -325,8 +305,6 @@ void ArenaTypes::MQLevelState::init(const uint8_t *data)
 		this->hashTables.at(i).init(hashTablesStart + (HashTable::SIZE * i));
 	}
 }
-
-const size_t ArenaTypes::SpellData::SIZE = 85;
 
 void ArenaTypes::SpellData::init(const uint8_t *data)
 {
@@ -364,8 +342,6 @@ void ArenaTypes::Tavern::init(const uint8_t *data)
 	this->timeLimit = Bytes::getLE32(data + 2);
 }
 
-const size_t ArenaTypes::Automap::FogOfWarCache::Note::SIZE = 64;
-
 void ArenaTypes::Automap::FogOfWarCache::Note::init(const uint8_t *data)
 {
 	this->x = Bytes::getLE16(data);
@@ -375,8 +351,6 @@ void ArenaTypes::Automap::FogOfWarCache::Note::init(const uint8_t *data)
 	const char *textEnd = textStart + this->text.size();
 	std::copy(textStart, textEnd, this->text.begin());
 }
-
-const size_t ArenaTypes::Automap::FogOfWarCache::SIZE = 8196;
 
 void ArenaTypes::Automap::FogOfWarCache::init(const uint8_t *data)
 {
