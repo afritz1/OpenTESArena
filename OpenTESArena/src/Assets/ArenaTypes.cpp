@@ -252,9 +252,9 @@ void ArenaTypes::SaveEngine::InternalState::init(const uint8_t *data)
 
 void ArenaTypes::SaveEngine::init(const uint8_t *data)
 {
-	auto unscramble = [](uint8_t *data, uint16_t length)
+	auto unscramble = [](uint8_t *data, size_t length)
 	{
-		uint16_t buffer = length;
+		uint16_t buffer = static_cast<uint16_t>(length);
 		for (uint16_t i = 0; i < length; i++)
 		{
 			const uint8_t key = Bytes::ror16(buffer, buffer & 0xF) & 0xFF;
