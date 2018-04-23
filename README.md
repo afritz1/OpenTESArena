@@ -8,11 +8,15 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-This project is early in development.
+No actual gameplay yet, but all cities, main quest dungeons, random dungeons, interior locations, and a fixed portion of wilderness can be accessed from test options on the main menu.
 
-All of the main quest dungeons, all cities, several interior locations, and a fixed portion of wilderness can be accessed with a test character by choosing from test options on the main menu and then either clicking the Test button or pressing 'F'.
+Fast traveling works and you can go to any city or main quest dungeon on the world map.
 
-There is partial collision detection, and motion is currently restricted to the horizontal plane. A few of the menus work, including some of character creation, and some of the game interface icons have basic behavior, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
+Clicking in the game world isn't implemented, so you can't click on things like doors yet.
+
+Collision detection is partially implemented (you can't jump or fall yet).
+
+A few menus work, including some of character creation, and some of the game interface icons work, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
 Here are some keys in the game world:
 - WASD - move and turn. Hold LCtrl to strafe with A and D.
@@ -20,7 +24,7 @@ Here are some keys in the game world:
 - Tab - character sheet
 - F - draw/sheathe weapon
 - L - logbook
-- M - world map (click on provinces for province maps)
+- M - world map
 - N - automap
 - V - status
 - F4 - toggle debug text
@@ -33,7 +37,7 @@ Here are some keys in the game world:
 
 ## Project Details
 
-The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake (and it still is quite an experiment), but now the project is steadily inching closer to something akin to the original.
+The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
 Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version  [here](http://www.elderscrolls.com/arena/) for free, and this project is currently only compatible with that. The user must still acquire their own copy of Arena in any case because OpenTESArena is just an engine and does not contain any content.
 
@@ -87,10 +91,10 @@ cd ..
 ### Options files
 `options-default.txt` comes with releases and stores default settings. `options-changes.txt` is generated in your user prefs folder and stores user-specific settings, and you can either create it yourself or let the program create it. For now, you can change things like `ArenaPath` in `options-default.txt`, but in the future, a wizard will take care of this instead. The prefs folders are:
 - Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
-- Linux: `~/.local/share/OpenTESArena/options/`
-- macOS: `~/Library/Application Support/OpenTESArena/options/`
+- Linux: `~/.config/OpenTESArena/options/`
+- macOS: `~/Library/Preferences/OpenTESArena/options/`
 
-### Obtaining a MIDI sound patches library (for music):
+### Obtaining a MIDI sound patches library for music:
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
 - If you would like to use a different sound patches library, simply edit `MidiConfig` in the options file to point to another existing MIDI `.cfg` file.
 
