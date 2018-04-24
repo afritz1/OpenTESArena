@@ -3,7 +3,6 @@
 #include "ArenaTypes.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 
 void ArenaTypes::Light::init(const uint8_t *data)
 {

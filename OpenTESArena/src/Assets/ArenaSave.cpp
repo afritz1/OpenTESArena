@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -13,6 +14,17 @@ namespace
 		std::stringstream ss;
 		ss << '.' << std::setw(2) << std::setfill('0') << index;
 		return ss.str();
+	}
+
+	// Converts the given service number or wilderness service number to its equivalent
+	// string representation, with the first two digits removed.
+	std::string getServiceNumberString(int number)
+	{
+		const std::string numberStr = std::to_string(number);
+		DebugAssert(numberStr.size() > 2, "Number string \"" + numberStr + "\" too small.");
+
+		const size_t offset = 2;
+		return numberStr.substr(offset);
 	}
 
 	// Convenience function for loading a binary save file and returning the initialized record.
@@ -56,7 +68,7 @@ ArenaTypes::Automap ArenaSave::loadAUTOMAP(const std::string &savePath, int inde
 
 ArenaTypes::Tavern ArenaSave::loadIN(const std::string &savePath, int number, int index)
 {
-	const std::string innName = ArenaSave::IN_FILENAME + std::to_string(number);
+	const std::string innName = ArenaSave::IN_FILENAME + getServiceNumberString(number);
 	return loadBinary<ArenaTypes::Tavern>(savePath + innName + makeSaveExtension(index));
 }
 
@@ -90,7 +102,7 @@ ArenaTypes::Names ArenaSave::loadNAMES(const std::string &savePath)
 
 ArenaTypes::Repair ArenaSave::loadRE(const std::string &savePath, int number, int index)
 {
-	const std::string repairName = ArenaSave::RE_FILENAME + std::to_string(number);
+	const std::string repairName = ArenaSave::RE_FILENAME + getServiceNumberString(number);
 	return loadBinary<ArenaTypes::Repair>(savePath + repairName + makeSaveExtension(index));
 }
 
@@ -177,7 +189,7 @@ void ArenaSave::saveIN(const std::string &savePath, int number, int index,
 	const ArenaTypes::Tavern &data)
 {
 	const std::string filename = savePath + ArenaSave::IN_FILENAME +
-		std::to_string(number) + makeSaveExtension(index);
+		getServiceNumberString(number) + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
@@ -195,7 +207,7 @@ void ArenaSave::saveRE(const std::string &savePath, int number, int index,
 	const ArenaTypes::Repair &data)
 {
 	const std::string filename = savePath + ArenaSave::RE_FILENAME +
-		std::to_string(number) + makeSaveExtension(index);
+		getServiceNumberString(number) + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }
