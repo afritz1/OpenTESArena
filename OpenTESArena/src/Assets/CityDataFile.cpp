@@ -191,6 +191,16 @@ int CityDataFile::getCityReservedBlockListIndex(bool isCoastal, int templateID)
 	return isCoastal ? (5 + templateID) : templateID;
 }
 
+int CityDataFile::getServiceSaveFileNumber(int doorX, int doorY)
+{
+	return (doorY << 8) + doorX;
+}
+
+int CityDataFile::getWildernessServiceSaveFileNumber(int wildX, int wildY)
+{
+	return (wildY << 16) + wildX;
+}
+
 int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 {
 	Rect provinceRect;

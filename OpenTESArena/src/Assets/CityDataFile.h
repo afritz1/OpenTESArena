@@ -100,6 +100,10 @@ public:
 	// Gets an index into the city reserved block list.
 	static int getCityReservedBlockListIndex(bool isCoastal, int templateID);
 
+	// Gets the '#' number used in IN#.0x and RE#.0x save files.
+	static int getServiceSaveNumber(int doorX, int doorY);
+	static int getWildernessServiceSaveNumber(int wildX, int wildY);
+
 	// Gets the quarter within a province (to determine weather).
 	int getGlobalQuarter(const Int2 &globalPoint) const;
 
