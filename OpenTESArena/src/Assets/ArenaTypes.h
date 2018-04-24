@@ -121,6 +121,18 @@ public:
 		void init(const uint8_t *data);
 	};
 
+	struct InventoryItem
+	{
+		uint8_t slotID;
+		uint16_t weight;
+		uint8_t hands, param1, param2;
+		uint16_t health, maxHealth;
+		uint32_t price;
+		uint8_t flags, x, material, y, attribute;
+
+		void init(const uint8_t *data);
+	};
+
 	// For SAVEENGN.0x.
 	struct SaveEngine
 	{
@@ -129,18 +141,6 @@ public:
 		struct CreatureData
 		{
 			std::array<uint8_t, 32> unknown;
-
-			void init(const uint8_t *data);
-		};
-
-		struct InventoryItem
-		{
-			uint8_t slotID;
-			uint16_t weight;
-			uint8_t hands, param1, param2;
-			uint16_t health, maxHealth;
-			uint32_t price;
-			uint8_t flags, x, material, y, attribute;
 
 			void init(const uint8_t *data);
 		};
@@ -391,11 +391,34 @@ public:
 	// For SPELLSG.0x (general spells).
 	typedef std::array<SpellData, 128> Spellsg;
 
-	// For INN.0x.
+	// For IN#.0x.
 	struct Tavern
 	{
+		static constexpr size_t SIZE = 6;
+
 		uint16_t remainingHours;
 		uint32_t timeLimit;
+
+		void init(const uint8_t *data);
+	};
+
+	// For RE#.0x (EQ#.0x can be ignored).
+	struct Repair
+	{
+		static constexpr size_t SIZE = 120;
+
+		struct Job
+		{
+			static constexpr size_t SIZE = 24;
+
+			uint8_t valid;
+			uint32_t dueTo;
+			InventoryItem item;
+
+			void init(const uint8_t *data);
+		};
+
+		std::array<Job, 5> jobs;
 
 		void init(const uint8_t *data);
 	};

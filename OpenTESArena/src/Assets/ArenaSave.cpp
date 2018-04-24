@@ -38,8 +38,10 @@ namespace
 }
 
 const std::string ArenaSave::AUTOMAP_FILENAME = "AUTOMAP";
+const std::string ArenaSave::IN_FILENAME = "IN";
 const std::string ArenaSave::LOG_FILENAME = "LOG";
 const std::string ArenaSave::NAMES_FILENAME = "NAMES.DAT";
+const std::string ArenaSave::RE_FILENAME = "RE";
 const std::string ArenaSave::SAVEENGN_FILENAME = "SAVEENGN";
 const std::string ArenaSave::SAVEGAME_FILENAME = "SAVEGAME";
 const std::string ArenaSave::SPELLS_FILENAME = "SPELLS";
@@ -50,6 +52,12 @@ ArenaTypes::Automap ArenaSave::loadAUTOMAP(const std::string &savePath, int inde
 {
 	return loadBinary<ArenaTypes::Automap>(
 		savePath + ArenaSave::AUTOMAP_FILENAME + makeSaveExtension(index));
+}
+
+ArenaTypes::Tavern ArenaSave::loadIN(const std::string &savePath, int number, int index)
+{
+	const std::string innName = ArenaSave::IN_FILENAME + std::to_string(number);
+	return loadBinary<ArenaTypes::Tavern>(savePath + innName + makeSaveExtension(index));
 }
 
 ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
@@ -66,6 +74,12 @@ ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 ArenaTypes::Names ArenaSave::loadNAMES(const std::string &savePath)
 {
 	return loadBinary<ArenaTypes::Names>(savePath + ArenaSave::NAMES_FILENAME);
+}
+
+ArenaTypes::Repair ArenaSave::loadRE(const std::string &savePath, int number, int index)
+{
+	const std::string repairName = ArenaSave::RE_FILENAME + std::to_string(number);
+	return loadBinary<ArenaTypes::Repair>(savePath + repairName + makeSaveExtension(index));
 }
 
 ArenaTypes::SaveEngine ArenaSave::loadSAVEENGN(const std::string &savePath, int index)
@@ -147,11 +161,29 @@ void ArenaSave::saveAUTOMAP(const std::string &savePath, int index,
 	DebugNotImplemented();
 }
 
+void ArenaSave::saveIN(const std::string &savePath, int number, int index,
+	const ArenaTypes::Tavern &data)
+{
+	const std::string filename = savePath + ArenaSave::IN_FILENAME +
+		std::to_string(number) + makeSaveExtension(index);
+
+	DebugNotImplemented();
+}
+
 void ArenaSave::saveLOG(const std::string &savePath, int index,
 	const ArenaTypes::Log &data)
 {
 	const std::string filename = savePath +
 		ArenaSave::LOG_FILENAME + makeSaveExtension(index);
+
+	DebugNotImplemented();
+}
+
+void ArenaSave::saveRE(const std::string &savePath, int number, int index,
+	const ArenaTypes::Repair &data)
+{
+	const std::string filename = savePath + ArenaSave::RE_FILENAME +
+		std::to_string(number) + makeSaveExtension(index);
 
 	DebugNotImplemented();
 }

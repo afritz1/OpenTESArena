@@ -80,12 +80,7 @@ void ArenaTypes::SaveGame::init(const uint8_t *data)
 	std::copy(gameLevelStart, gameLevelEnd, this->gameLevel.begin());
 }
 
-void ArenaTypes::SaveEngine::CreatureData::init(const uint8_t *data)
-{
-	std::copy(data, data + this->unknown.size(), this->unknown.begin());
-}
-
-void ArenaTypes::SaveEngine::InventoryItem::init(const uint8_t *data)
+void ArenaTypes::InventoryItem::init(const uint8_t *data)
 {
 	this->slotID = *data;
 	this->weight = Bytes::getLE16(data + 1);
@@ -100,6 +95,11 @@ void ArenaTypes::SaveEngine::InventoryItem::init(const uint8_t *data)
 	this->material = *(data + 16);
 	this->y = *(data + 17);
 	this->attribute = *(data + 18);
+}
+
+void ArenaTypes::SaveEngine::CreatureData::init(const uint8_t *data)
+{
+	std::copy(data, data + this->unknown.size(), this->unknown.begin());
 }
 
 void ArenaTypes::SaveEngine::LootItem::init(const uint8_t *data)
@@ -340,6 +340,22 @@ void ArenaTypes::Tavern::init(const uint8_t *data)
 {
 	this->remainingHours = Bytes::getLE16(data);
 	this->timeLimit = Bytes::getLE32(data + 2);
+}
+
+void ArenaTypes::Repair::Job::init(const uint8_t *data)
+{
+	this->valid = *data;
+	this->dueTo = Bytes::getLE32(data + 1);
+	this->item.init(data + 5);
+}
+
+void ArenaTypes::Repair::init(const uint8_t *data)
+{
+	const uint8_t *jobsStart = data;
+	for (size_t i = 0; i < this->jobs.size(); i++)
+	{
+		this->jobs.at(i).init(jobsStart + (Job::SIZE * i));
+	}
 }
 
 void ArenaTypes::Automap::FogOfWarCache::Note::init(const uint8_t *data)
