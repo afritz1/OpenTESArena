@@ -4,6 +4,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 // Various composite types used with Arena's binary data files. Struct sizes are hardcoded
 // to show intent and to avoid issues with padding since they map directly to Arena's data.
@@ -457,8 +459,16 @@ public:
 	// For LOG.0x.
 	struct Log
 	{
-		// To do.
-		void init(const uint8_t *data);
+		struct Entry
+		{
+			std::string title, body;
+
+			void init(const std::string &data);
+		};
+
+		std::vector<Entry> entries;
+
+		void init(const std::string &data);
 	};
 
 	// For NAMES.DAT.

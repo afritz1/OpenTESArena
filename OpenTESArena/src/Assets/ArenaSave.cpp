@@ -66,9 +66,21 @@ ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 		ArenaSave::LOG_FILENAME + makeSaveExtension(index);
 	std::ifstream ifs(filename);
 
-	ArenaTypes::Log log;
-	DebugNotImplemented();
-	return log;
+	if (ifs.is_open())
+	{
+		ifs.seekg(0, std::ios::end);
+		std::string buffer(ifs.tellg(), '\0');
+		ifs.seekg(0, std::ios::beg);
+		ifs.read(&buffer.front(), buffer.size());
+
+		ArenaTypes::Log log;
+		log.init(buffer);
+		return log;
+	}
+	else
+	{
+		throw DebugException("\"" + filename + "\" not found.");
+	}
 }
 
 ArenaTypes::Names ArenaSave::loadNAMES(const std::string &savePath)

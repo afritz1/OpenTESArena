@@ -3,6 +3,7 @@
 #include "ArenaTypes.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 
 void ArenaTypes::Light::init(const uint8_t *data)
 {
@@ -393,9 +394,31 @@ void ArenaTypes::Automap::init(const uint8_t *data)
 	}
 }
 
-void ArenaTypes::Log::init(const uint8_t *data)
+void ArenaTypes::Log::Entry::init(const std::string &data)
 {
-	DebugNotImplemented();
+	// Split the title and body on the first newline (there are no carriage returns).
+	const char delimiter = '\n';
+	const size_t index = data.find(delimiter);
+
+	this->title = data.substr(0, index);
+	this->body = data.substr(index + 1);
+}
+
+void ArenaTypes::Log::init(const std::string &data)
+{
+	const std::string delimiter = " *";
+	size_t offset = 0;
+	size_t index = data.find(delimiter);
+	while (index != std::string::npos)
+	{
+		// Leave out the ampersand at the start of each entry.
+		const std::string entryStr = data.substr(offset + 1, index - offset - 1);
+		this->entries.push_back(Entry());
+		this->entries.back().init(entryStr);
+
+		offset = index + delimiter.size();
+		index = data.find(delimiter, offset);
+	}
 }
 
 void ArenaTypes::Names::Entry::init(const uint8_t *data)
