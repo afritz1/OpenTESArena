@@ -192,27 +192,43 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(const std::string 
 		// Only check visible locations.
 		const bool locationIsVisible = locationData.isVisible();
 
-		// See if the location names are an exact match.
-		const bool nameIsExactMatch = String::caseInsensitiveEquals(
-			locationName, locationData.name);
-
-		if (locationIsVisible && nameIsExactMatch)
+		if (locationIsVisible)
 		{
-			// Exact match.
-			locationIDs.push_back(i);
-			*exactLocationID = &locationIDs.back();
-			break;
-		}
+			// See if the location names are an exact match.
+			const bool isExactMatch = String::caseInsensitiveEquals(
+				locationName, locationData.name);
 
-		// To do: add approximate match behavior. If the current location's name is not
-		// a case-insensitive match but it has the same first letter for example, then
-		// add it to the vector.
+			if (isExactMatch)
+			{
+				locationIDs.push_back(i);
+				*exactLocationID = &locationIDs.back();
+				break;
+			}
+			else
+			{
+				// Approximate match behavior. If the given location name is a case-insensitive
+				// substring of the current location, it's a match.
+				const std::string locNameLower = String::toLowercase(locationName);
+				const std::string locDataNameLower = String::toLowercase(locationData.name);
+				const bool isApproxMatch = locDataNameLower.find(locNameLower) != std::string::npos;
+
+				if (isApproxMatch)
+				{
+					locationIDs.push_back(i);
+				}
+			}
+		}
 	}
 
-	// Temp: since there's no approximate behavior yet, just fill the vector with all
-	// visible IDs if no exact match was found.
-	if (locationIDs.empty())
+	// If one approximate match was found and no exact match was found, treat the approximate
+	// match as the nearest.
+	if ((locationIDs.size() == 1) && (*exactLocationID == nullptr))
 	{
+		*exactLocationID = &locationIDs.front();
+	}
+	else if (locationIDs.empty())
+	{
+		// If no exact or approximate matches, just return all location IDs.
 		for (int i = 0; i < locationCount; i++)
 		{
 			const auto &locationData = provinceData.getLocationData(i);
