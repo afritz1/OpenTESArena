@@ -220,15 +220,9 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(const std::string 
 		}
 	}
 
-	// If one approximate match was found and no exact match was found, treat the approximate
-	// match as the nearest.
-	if ((locationIDs.size() == 1) && (*exactLocationID == nullptr))
+	// If no exact or approximate matches, just fill the list with all visible location IDs.
+	if (locationIDs.empty())
 	{
-		*exactLocationID = &locationIDs.front();
-	}
-	else if (locationIDs.empty())
-	{
-		// If no exact or approximate matches, just return all location IDs.
 		for (int i = 0; i < locationCount; i++)
 		{
 			const auto &locationData = provinceData.getLocationData(i);
@@ -239,6 +233,13 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(const std::string 
 				locationIDs.push_back(i);
 			}
 		}
+	}
+
+	// If one approximate match was found and no exact match was found, treat the approximate
+	// match as the nearest.
+	if ((locationIDs.size() == 1) && (*exactLocationID == nullptr))
+	{
+		*exactLocationID = &locationIDs.front();
 	}
 
 	// The original game orders locations by their ID, but that's hardly helpful for the
