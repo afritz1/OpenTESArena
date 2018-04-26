@@ -53,7 +53,10 @@ VerticalSensitivity=8.0
 [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
 # set by a wizard instead.
-ArenaPath=data/ARENA
+ArenaPath=data/ARENA/
+
+# Change "ArenaSavesPath" to your classic saves folder (if any).
+ArenaSavesPath=data/ArenaSaves/
 
 # Determines whether collision detection is calculated for the player.
 Collision=true

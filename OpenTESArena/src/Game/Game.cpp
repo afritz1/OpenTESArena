@@ -50,7 +50,7 @@ Game::Game()
 	{
 		// Include the base path if the ArenaPath is relative.
 		return (arenaPathIsRelative ? this->basePath : "") +
-			this->options.getMisc_ArenaPath() + "/GLOBAL.BSA";
+			this->options.getMisc_ArenaPath() + "GLOBAL.BSA";
 	}();
 
 	DebugAssert(File::exists(globalBsaPath),

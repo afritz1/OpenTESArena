@@ -143,6 +143,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_DOUBLE(Input, VerticalSensitivity)
 
 	OPTION_STRING(Misc, ArenaPath)
+	OPTION_STRING(Misc, ArenaSavesPath)
 	OPTION_BOOL(Misc, Collision)
 	OPTION_BOOL(Misc, SkipIntro)
 	OPTION_BOOL(Misc, ShowDebug)
