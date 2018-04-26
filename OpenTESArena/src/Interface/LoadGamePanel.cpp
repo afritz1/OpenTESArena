@@ -1,13 +1,13 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "CursorAlignment.h"
 #include "LoadGamePanel.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
+#include "RichTextString.h"
 #include "TextAlignment.h"
-#include "TextBox.h"
+#include "TextSubPanel.h"
+#include "../Assets/ArenaSave.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -22,10 +22,87 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
+#include "../Utilities/File.h"
+#include "../Utilities/Platform.h"
+
+namespace
+{
+	const int SaveSlotCount = 10;
+}
 
 LoadGamePanel::LoadGamePanel(Game &game)
 	: Panel(game)
 {
+	// Load each name in NAMES.DAT.
+	// - To do: also check associated save files for each ".0x" index.
+	const std::string savesPath = [&game]()
+	{
+		const std::string &arenaSavesPath = game.getOptions().getMisc_ArenaSavesPath();
+		const bool savesPathIsRelative = File::pathIsRelative(arenaSavesPath);
+		return (savesPathIsRelative ? Platform::getBasePath() : "") + arenaSavesPath;
+	}();
+
+	if (File::exists(savesPath + "NAMES.DAT"))
+	{
+		const ArenaTypes::Names names = ArenaSave::loadNAMES(savesPath);
+		for (int i = 0; i < SaveSlotCount; i++)
+		{
+			const auto &entry = names.entries.at(i);
+
+			const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 8 + (i * 14));
+			const RichTextString richText(
+				std::string(entry.name.data()),
+				FontName::Arena,
+				Color::White,
+				TextAlignment::Center,
+				game.getFontManager());
+
+			// Create text box from entry text.
+			this->saveTextBoxes.at(i) = std::make_unique<TextBox>(
+				center, richText, game.getRenderer());
+		}
+	}
+	else
+	{
+		DebugMention("No NAMES.DAT found in \"" + savesPath + "\".");
+	}
+
+	this->loadButton = []()
+	{
+		auto function = [](Game &game, int index)
+		{
+			// Temp: draw not implemented pop-up.
+			const Int2 center(
+				Renderer::ORIGINAL_WIDTH / 2,
+				Renderer::ORIGINAL_HEIGHT / 2);
+			
+			const int lineSpacing = 1;
+			const RichTextString richText(
+				"Not implemented\n(save slot " + std::to_string(index) + ")",
+				FontName::Arena,
+				Color(150, 97, 0),
+				TextAlignment::Center,
+				lineSpacing,
+				game.getFontManager());
+
+			auto popUpFunction = [](Game &game)
+			{
+				game.popSubPanel();
+			};
+
+			Texture texture = Texture::generate(Texture::PatternType::Dark,
+				richText.getDimensions().x + 10, richText.getDimensions().y + 10,
+				game.getTextureManager(), game.getRenderer());
+
+			auto notImplPopUp = std::make_unique<TextSubPanel>(
+				game, center, richText, popUpFunction, std::move(texture), center);
+
+			game.pushSubPanel(std::move(notImplPopUp));
+		};
+		return Button<Game&, int>(function);
+	}();
+
 	this->backButton = []()
 	{
 		auto function = [](Game &game)
@@ -44,6 +121,30 @@ LoadGamePanel::LoadGamePanel(Game &game)
 	}();
 }
 
+int LoadGamePanel::getClickedIndex(const Int2 &point)
+{
+	int y = 2;
+	for (int i = 0; i < SaveSlotCount; i++)
+	{
+		const int x = 2;
+		const int clickWidth = 316;
+		const int clickHeight = 13;
+		const int ySpacing = 1;
+
+		const Rect rect(x, y, clickWidth, clickHeight);
+		if (rect.contains(point))
+		{
+			return i;
+		}
+		else
+		{
+			y += clickHeight + ySpacing;
+		}
+	}
+
+	return -1;
+}
+
 std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
@@ -57,23 +158,27 @@ std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 
 void LoadGamePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
-	if (escapePressed)
+	if (escapePressed || rightClick)
 	{
-		this->backButton.click(this->getGame());
+		this->backButton.click(game);
 	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
+	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
-		// Listen for up/down arrow click, saved game click...
+		// Listen for saved game click.
+		const int clickedIndex = LoadGamePanel::getClickedIndex(originalPoint);
+		if (clickedIndex >= 0)
+		{
+			this->loadButton.click(game, clickedIndex);
+		}
 	}
 }
 
@@ -90,4 +195,15 @@ void LoadGamePanel::render(Renderer &renderer)
 	const auto &slotsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::LoadSave), renderer);
 	renderer.drawOriginal(slotsBackground.get());
+
+	// Draw save text.
+	for (const auto &textBox : this->saveTextBoxes)
+	{
+		if (textBox.get() != nullptr)
+		{
+			const Rect textBoxRect = textBox->getRect();
+			renderer.drawOriginal(textBox->getTexture(),
+				textBoxRect.getLeft(), textBoxRect.getTop());
+		}
+	}
 }
