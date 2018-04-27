@@ -56,6 +56,11 @@ void ArenaTypes::MIFTrigger::init(const uint8_t *data)
 	this->soundIndex = *(data + 3);
 }
 
+void ArenaTypes::DynamicTrigger::init(const uint8_t *data)
+{
+	std::copy(data, data + this->unknown.size(), this->unknown.begin());
+}
+
 void ArenaTypes::GameState::init(const uint8_t *data)
 {
 	DebugNotImplemented();

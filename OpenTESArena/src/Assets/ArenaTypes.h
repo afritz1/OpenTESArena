@@ -68,6 +68,16 @@ public:
 		void init(const uint8_t *data);
 	};
 
+	struct DynamicTrigger
+	{
+		static constexpr size_t SIZE = 6;
+
+		// To do. Similar to MIFTrigger but can be disabled?
+		std::array<uint8_t, 6> unknown;
+
+		void init(const uint8_t *data);
+	};
+
 	struct GameState
 	{
 		static constexpr size_t SIZE = 3559;
@@ -76,14 +86,14 @@ public:
 		uint8_t weatherFlags; // 0x80 precipitation, 1 rain, 2 snow.
 		uint8_t playerFloor;
 		uint8_t oldFloor;
-		std::array<uint8_t, 182> junk2;
+		std::array<uint8_t, 388> junk2;
 		uint16_t lightsCount;
 		std::array<Light, 256> lights; // Auto-generated lights.
 		uint32_t junk3;
 		std::array<char, 33> levelName;
 		std::array<char, 13> infName;
-		std::array<uint8_t, 80> junk4;
-		MIFHeader levelHeader; // 61 bytes; same as in .MIF files.
+		std::array<uint8_t, 128> junk4;
+		MIFHeader levelHeader;
 		std::array<char, 13> mifName;
 		uint32_t junk5;
 		uint16_t walkSpeed;
@@ -91,21 +101,21 @@ public:
 		uint32_t junk6;
 		uint16_t flags5;
 		uint16_t flags4;
-		std::array<uint8_t, 30> junk7;
+		std::array<uint8_t, 48> junk7;
 		uint16_t levelEntryX, levelEntryY;
 		uint16_t playerX, playerZ, playerY;
 		uint32_t unknown1;
 		uint16_t playerAngle;
 		std::array<uint8_t, 6> junk8;
 		uint16_t lightRadius;
-		std::array<uint8_t, 240> junk9;
+		std::array<uint8_t, 576> junk9;
 		std::array<MIFLock, 64> locks;
-		uint16_t lockCount;
+		uint8_t lockCount;
 		std::array<MIFTarget, 64> targets;
-		uint16_t targetCount;
+		uint8_t targetCount;
 		std::array<MIFTrigger, 64> triggers;
-		uint16_t triggerCount;
-		std::array<uint8_t, 89> junk10;
+		uint8_t triggerCount;
+		std::array<uint8_t, 136> junk10;
 
 		void init(const uint8_t *data);
 	};
@@ -193,6 +203,8 @@ public:
 
 		struct CityGenData
 		{
+			static constexpr size_t SIZE = 56;
+
 			std::array<char, 20> cityName;
 			std::array<char, 13> mifName;
 			uint8_t citySize; // 4, 5, 6.
@@ -276,7 +288,7 @@ public:
 		{
 			static constexpr size_t SIZE = 2609;
 
-			uint32_t gold, experience;
+			uint32_t gold;
 			uint16_t blessing, flags2, gameOptions;
 			uint32_t gameTime;
 			std::array<uint16_t, 5> dateTime; // YMDHm.
@@ -293,7 +305,7 @@ public:
 			uint16_t angle;
 			uint32_t wildSeed;
 			std::array<uint8_t, 8> junk4;
-			std::array<MIFTrigger, 6> dynamicTriggers;
+			std::array<DynamicTrigger, 8> dynamicTriggers;
 			std::array<uint8_t, 14> keyRing;
 			std::array<Buff, 16> buffs;
 			std::array<uint8_t, 2> junk5;
@@ -302,19 +314,20 @@ public:
 			std::array<uint8_t, 53> junk6;
 			std::array<NPCSprite, 15> npcs;
 			std::array<NPCSprite, 8> enemies;
-			std::array<uint8_t, 93> junk7;
+			std::array<uint8_t, 147> junk7;
 			std::array<BaseQuest, 4> cityQuests;
 			std::array<ExtQuest, 4> palaceQuests;
 			ExtQuest rumorsBuffer;
 			uint32_t unknown;
-			MainQuestData mainQuest; // 11 bytes.
+			MainQuestData mainQuest;
 			std::array<uint8_t, 8> junk8;
 			std::array<uint16_t, 32> pickedLocks;
 			std::array<uint8_t, 6> junk9;
 			uint16_t worldX, worldY, junk10;
 			std::array<uint8_t, 9> portrait;
 			ArtifactQuestData artifactQuest;
-			std::array<uint8_t, 5> junk11;
+			std::array<uint8_t, 2> junk11;
+			uint8_t lootRecordCount;
 
 			void init(const uint8_t *data);
 		};
