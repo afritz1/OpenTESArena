@@ -158,13 +158,86 @@ public:
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
+	// See Items wiki page for more information.
 	struct Equipment
 	{
-		std::array<std::string, 7> bodyPartNames; // Chest, ..., foot.
-		std::array<std::string, 7> armorNames; // Cuirass, ..., boots.
-		std::array<std::string, 4> shieldNames; // Buckler, ..., tower shield.
+		// Three chances for what enchantment is selected; a random number 1..10 is tested
+		// against it. 0: special material, 1: enchantment, 2: material + enchantment.
+		std::array<uint8_t, 3> enchantmentChances;
+
+		// Material values.
+		std::array<std::string, 8> materialNames;
+		std::array<int8_t, 8> materialBonuses;
+		std::array<uint8_t, 8> materialChances;
+		std::array<uint16_t, 8> materialPriceMultipliers; // In quarters.
+
+		// Plate armor values (including shields).
+		std::array<std::string, 11> armorNames; // Cuirass, ..., tower shield.
+		std::array<std::string, 11> plateArmorNames; // Plate cuirass, ..., tower shield.
+		std::array<uint8_t, 11> plateArmorQualities;
+		std::array<uint8_t, 11> plateArmorBasePrices;
+		std::array<uint16_t, 11> plateArmorWeights; // In kg/256.
+
+		// Chain armor values (including shields).
+		std::array<std::string, 11> chainArmorNames; // Chain cuirass, ..., tower shield.
+		std::array<uint8_t, 11> chainArmorQualities;
+		std::array<uint8_t, 11> chainArmorBasePrices;
+		std::array<uint16_t, 11> chainArmorWeights; // In kg/256.
+
+		// Leather armor values (including shields).
+		std::array<std::string, 11> leatherArmorNames; // Leather cuirass, ..., tower shield.
+		std::array<uint8_t, 11> leatherArmorQualities;
+		std::array<uint8_t, 11> leatherArmorBasePrices;
+		std::array<uint16_t, 11> leatherArmorWeights; // In kg/256.
+
+		// Shield armor classes, used with armor class bonuses for shields.
+		std::array<uint8_t, 4> shieldArmorClasses;
+
+		// Armor enchantment values.
+		std::array<std::string, 14> armorEnchantmentNames;
+		std::array<uint8_t, 14> armorEnchantmentQualities;
+		std::array<uint8_t, 14> armorEnchantmentSpells; // 255 means attribute bonus instead of spell.
+		std::array<uint8_t, 14> armorEnchantmentBonusPrices;
+
+		// Weapon values.
 		std::array<std::string, 18> weaponNames; // Staff, ..., long bow.
-		std::array<std::string, 8> metalNames;
+		std::array<uint8_t, 18> weaponQualities;
+		std::array<uint8_t, 18> weaponBasePrices;
+		std::array<uint16_t, 18> weaponWeights; // In kg/256.
+		std::array<std::pair<uint8_t, uint8_t>, 18> weaponDamages; // Min/max pairs.
+		std::array<uint8_t, 18> weaponHandednesses;
+
+		// Weapon enchantment values.
+		std::array<std::string, 14> weaponEnchantmentNames;
+		std::array<uint8_t, 14> weaponEnchantmentQualities;
+		std::array<uint8_t, 14> weaponEnchantmentSpells; // See armor enchantment note.
+		std::array<uint8_t, 14> weaponEnchantmentBonusPrices;
+
+		// Three categories of trinkets: spellcasting items, attribute enhancement items,
+		// and armor class items. Spellcasting items are split into offense/defense/misc.
+		std::array<std::string, 4> spellcastingItemNames;
+		std::array<uint8_t, 4> spellcastingItemCumulativeChances;
+		std::array<uint8_t, 4> spellcastingItemBasePrices;
+		std::array<std::pair<uint8_t, uint8_t>, 4> spellcastingItemChargeRanges; // Min/max + 1...
+		std::array<std::string, 15> spellcastingItemAttackSpellNames;
+		std::array<uint8_t, 15> spellcastingItemAttackSpellQualities;
+		std::array<uint8_t, 15> spellcastingItemAttackSpellSpells;
+		std::array<uint8_t, 15> spellcastingItemAttackSpellPricesPerCharge;
+		std::array<std::string, 9> spellcastingItemDefensiveSpellNames;
+		std::array<uint8_t, 9> spellcastingItemDefensiveSpellQualities;
+		std::array<uint8_t, 9> spellcastingItemDefensiveSpellSpells;
+		std::array<uint8_t, 9> spellcastingItemDefensiveSpellPricesPerCharge;
+		std::array<std::string, 8> spellcastingItemMiscSpellNames;
+		std::array<uint8_t, 9> spellcastingItemMiscSpellQualities;
+		std::array<uint8_t, 9> spellcastingItemMiscSpellSpells;
+		std::array<uint8_t, 9> spellcastingItemMiscSpellPricesPerCharge;
+		std::array<std::string, 4> enhancementItemNames;
+		std::array<uint8_t, 4> enhancementItemCumulativeChances;
+		std::array<uint8_t, 4> enhancementItemBasePrices;
+
+		// To do: artifacts.
+
+		std::array<std::string, 11> bodyPartNames; // Chest, ..., general.
 		std::array<std::string, 11> weaponAnimationFilenames; // staff.cif, ..., spell.img.
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
