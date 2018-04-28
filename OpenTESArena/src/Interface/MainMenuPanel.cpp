@@ -100,7 +100,7 @@ namespace
 	// These also need ".MIF" appended at the end.
 	const std::vector<std::pair<std::string, std::pair<int, int>>> InteriorLocations =
 	{
-		{ "BS", { 1, 5 } },
+		{ "BS", { 1, 8 } },
 		{ "EQUIP", { 1, 8 } },
 		{ "MAGE", { 1, 8 } },
 		{ "NOBLE", { 1, 8 } },
