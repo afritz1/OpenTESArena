@@ -164,7 +164,10 @@ const int INFFile::NO_INDEX = -1;
 
 INFFile::INFFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	// Some filenames (i.e., Crystal3.inf) have different casing between the floppy version and
+	// CD version, so this needs to use the case-insensitive open() method for correct behavior
+	// on Unix-based systems.
+	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);

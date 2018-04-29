@@ -79,10 +79,11 @@ IStreamPtr Manager::openCaseInsensitive(const std::string &name)
 	// worry about filenames just like it but with different casing.
 	std::string newName = name;
 
-	// Case 1: All uppercase.
-	for (char &c : newName)
+	// Case 1: upper first character, lower rest.
+	newName.front() = std::toupper(newName.front());
+	for (auto iter = newName.begin() + 1; iter != newName.end(); ++iter)
 	{
-		c = std::toupper(c);
+		*iter = std::tolower(*iter);
 	}
 
 	IStreamPtr stream = this->open(newName);
@@ -93,11 +94,10 @@ IStreamPtr Manager::openCaseInsensitive(const std::string &name)
 	}
 	else
 	{
-		// Case 2: Normal case (upper first character, lower rest).
-		newName.front() = std::toupper(newName.front());
-		for (auto iter = newName.begin() + 1; iter != newName.end(); ++iter)
+		// Case 2: all uppercase.
+		for (char &c : newName)
 		{
-			*iter = std::tolower(*iter);
+			c = std::toupper(c);
 		}
 
 		stream = this->open(newName);
