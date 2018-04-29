@@ -46,15 +46,22 @@ Game::Game()
 	// Verify that GLOBAL.BSA (the most important Arena file) exists.
 	const bool arenaPathIsRelative = File::pathIsRelative(
 		this->options.getMisc_ArenaPath());
-	const std::string globalBsaPath = [this, arenaPathIsRelative]()
+	const std::string fullArenaPath = [this, arenaPathIsRelative]()
 	{
 		// Include the base path if the ArenaPath is relative.
-		return (arenaPathIsRelative ? this->basePath : "") +
-			this->options.getMisc_ArenaPath() + "GLOBAL.BSA";
+		return (arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath();
 	}();
 
+	const std::string globalBsaPath = fullArenaPath + "GLOBAL.BSA";
 	DebugAssert(File::exists(globalBsaPath),
 		"\"" + this->options.getMisc_ArenaPath() + "\" not a valid ARENA path.");
+
+	// Verify that the floppy version's executable exists. If not, it's probably the CD version,
+	// which is not currently supported.
+	const std::string exeName = "A.EXE";
+	const std::string exePath = fullArenaPath + exeName;
+	DebugAssert(File::exists(exePath), exeName + " not found in \"" + fullArenaPath +
+		"\". The CD version is not supported. Please use the floppy version.");
 
 	// Initialize virtual file system using the Arena path in the options file.
 	VFS::Manager::get().initialize(std::string(
