@@ -49,7 +49,9 @@ Game::Game()
 	const std::string fullArenaPath = [this, arenaPathIsRelative]()
 	{
 		// Include the base path if the ArenaPath is relative.
-		return (arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath();
+		const std::string path = (arenaPathIsRelative ? this->basePath : "") +
+			this->options.getMisc_ArenaPath();
+		return String::addTrailingSlashIfMissing(path);
 	}();
 
 	const std::string globalBsaPath = fullArenaPath + "GLOBAL.BSA";

@@ -41,6 +41,9 @@ public:
 	// Gets the right-most extension from a string, i.e., ".txt".
 	static std::string getExtension(const std::string &str);
 
+	// Adds a forward slash at the end if there is not one. Intended for paths.
+	static std::string addTrailingSlashIfMissing(const std::string &str);
+
 	// Creates a new string with all 'a' characters replaced by 'b' characters.
 	static std::string replace(const std::string &str, char a, char b);
 

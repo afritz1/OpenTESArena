@@ -25,6 +25,7 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/Platform.h"
+#include "../Utilities/String.h"
 
 namespace
 {
@@ -40,7 +41,8 @@ LoadGamePanel::LoadGamePanel(Game &game)
 	{
 		const std::string &arenaSavesPath = game.getOptions().getMisc_ArenaSavesPath();
 		const bool savesPathIsRelative = File::pathIsRelative(arenaSavesPath);
-		return (savesPathIsRelative ? Platform::getBasePath() : "") + arenaSavesPath;
+		const std::string path = (savesPathIsRelative ? Platform::getBasePath() : "") + arenaSavesPath;
+		return String::addTrailingSlashIfMissing(path);
 	}();
 
 	if (File::exists(savesPath + "NAMES.DAT"))

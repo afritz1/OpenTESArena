@@ -147,6 +147,22 @@ std::string String::getExtension(const std::string &str)
 	return hasDot ? std::string(str.begin() + dotPos + 1, str.end()) : std::string();
 }
 
+std::string String::addTrailingSlashIfMissing(const std::string &str)
+{
+	if (str.empty())
+	{
+		return "/";
+	}
+	else if ((str.back() != '/') && (str.back() != '\\'))
+	{
+		return str + '/';
+	}
+	else
+	{
+		return str;
+	}
+}
+
 std::string String::replace(const std::string &str, char a, char b)
 {
 	std::string newStr(str);
