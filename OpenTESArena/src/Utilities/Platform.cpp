@@ -6,6 +6,29 @@
 #include "Platform.h"
 #include "String.h"
 
+const std::string Platform::XDGDataHome = "XDG_DATA_HOME";
+const std::string Platform::XDGConfigHome = "XDG_CONFIG_HOME";
+
+std::string Platform::getHomeEnv()
+{
+	const char *homeEnvPtr = SDL_getenv("HOME");
+	return (homeEnvPtr != nullptr) ? std::string(homeEnvPtr) : std::string();
+}
+
+std::string Platform::getXDGDataHomeEnv()
+{
+	const char *xdgEnv = SDL_getenv(Platform::XDGDataHome.c_str());
+	return (xdgEnv != nullptr) ? std::string(xdgEnv) :
+		(Platform::getHomeEnv() + "/.local/share");
+}
+
+std::string Platform::getXDGConfigHomeEnv()
+{
+	const char *xdgEnv = SDL_getenv(Platform::XDGConfigHome.c_str());
+	return (xdgEnv != nullptr) ? std::string(xdgEnv) :
+		(Platform::getHomeEnv() + "/.config");
+}
+
 std::string Platform::getPlatform()
 {
 	return std::string(SDL_GetPlatform());
@@ -52,11 +75,11 @@ std::string Platform::getOptionsPath()
 	}
 	else if (platform == "Linux")
 	{
-		return "~/.config/OpenTESArena/options/";
+		return Platform::getXDGConfigHomeEnv() + "/OpenTESArena/options/";
 	}
 	else if (platform == "Mac OS X")
 	{
-		return "~/Library/Preferences/OpenTESArena/options/";
+		return Platform::getHomeEnv() + "/Library/Preferences/OpenTESArena/options/";
 	}
 	else
 	{
@@ -106,11 +129,11 @@ std::string Platform::getLogPath()
 	}
 	else if (platform == "Linux")
 	{
-		return "~/.config/OpenTESArena/log/";
+		return Platform::getXDGConfigHomeEnv() + "/OpenTESArena/log/";
 	}
 	else if (platform == "Mac OS X")
 	{
-		return "~/Library/Logs/OpenTESArena/log/";
+		return Platform::getHomeEnv() + "/Library/Logs/OpenTESArena/log/";
 	}
 	else
 	{
@@ -122,7 +145,7 @@ std::string Platform::getLogPath()
 int Platform::getThreadCount()
 {
 	const int threadCount = static_cast<int>(std::thread::hardware_concurrency());
-	
+
 	// hardware_concurrency() might return 0, so it needs to be clamped positive.
 	if (threadCount == 0)
 	{
