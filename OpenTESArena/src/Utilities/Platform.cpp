@@ -164,6 +164,22 @@ int Platform::getThreadCount()
 	}
 }
 
+bool Platform::directoryExists(const std::string &path)
+{
+#if defined(_WINDOWS)
+	const DWORD attrs = GetFileAttributes(path.c_str());
+	return (attrs != INVALID_FILE_ATTRIBUTES) &&
+		((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+	DebugNotImplemented();
+	return false;
+#else
+	// Unknown platform.
+	DebugNotImplemented();
+	return false;
+#endif
+}
+
 namespace
 {
 #if defined(_WINDOWS)
@@ -184,14 +200,7 @@ namespace
 			index = path.find_first_of("\\/", index + 1);
 			const std::string subStr = path.substr(0, index);
 
-			const bool directoryExists = [&subStr]()
-			{
-				const DWORD attrs = GetFileAttributes(subStr.c_str());
-				return (attrs != INVALID_FILE_ATTRIBUTES) &&
-					((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
-			}();
-
-			if (!directoryExists)
+			if (!Platform::directoryExists(subStr))
 			{
 				CreateDirectoryA(subStr.c_str(), nullptr);
 			}
@@ -211,5 +220,8 @@ void Platform::createDirectoryRecursively(const std::string &path)
 	createWindowsDirectoryRecursively(path);
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 	createUnixDirectoryRecursively(path);
+#else
+	// Unknown platform.
+	DebugNotImplemented();
 #endif
 }

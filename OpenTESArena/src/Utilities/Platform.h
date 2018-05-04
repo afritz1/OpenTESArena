@@ -48,6 +48,9 @@ public:
 	// Gets the max number of threads available on the CPU.
 	static int getThreadCount();
 
+	// Returns whether the given directory exists.
+	static bool directoryExists(const std::string &path);
+
 	// Creates a directory with all intermediate directories from the given path.
 	// There must be a trailing slash in the path.
 	static void createDirectoryRecursively(const std::string &path);

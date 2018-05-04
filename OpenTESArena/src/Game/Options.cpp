@@ -546,7 +546,14 @@ void Options::loadChanges(const std::string &filename)
 
 void Options::saveChanges()
 {
-	const std::string filename(Platform::getOptionsPath() + Options::CHANGES_FILENAME);
+	const std::string optionsPath = Platform::getOptionsPath();
+	const std::string filename(optionsPath + Options::CHANGES_FILENAME);
+
+	// Create options directory if it doesn't exist.
+	if (!Platform::directoryExists(optionsPath))
+	{
+		Platform::createDirectoryRecursively(optionsPath);
+	}
 
 	std::ofstream ofs(filename);
 
