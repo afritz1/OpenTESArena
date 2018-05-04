@@ -6,6 +6,12 @@
 #include "Platform.h"
 #include "String.h"
 
+#if defined(_WINDOWS)
+#include <Windows.h>
+#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <sys/stat.h>
+#endif
+
 const std::string Platform::XDGDataHome = "XDG_DATA_HOME";
 const std::string Platform::XDGConfigHome = "XDG_CONFIG_HOME";
 
@@ -156,4 +162,54 @@ int Platform::getThreadCount()
 	{
 		return threadCount;
 	}
+}
+
+namespace
+{
+#if defined(_WINDOWS)
+	void createWindowsDirectoryRecursively(std::string path)
+	{
+		const bool pathIsEmpty = path.size() == 0;
+		const bool hasTrailingSlash = !pathIsEmpty &&
+			((path.back() == '/') || (path.back() == '\\'));
+
+		if (!hasTrailingSlash)
+		{
+			path.push_back('/');
+		}
+
+		size_t index = 0;
+		do
+		{
+			index = path.find_first_of("\\/", index + 1);
+			const std::string subStr = path.substr(0, index);
+
+			const bool directoryExists = [&subStr]()
+			{
+				const DWORD attrs = GetFileAttributes(subStr.c_str());
+				return (attrs != INVALID_FILE_ATTRIBUTES) &&
+					((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
+			}();
+
+			if (!directoryExists)
+			{
+				CreateDirectoryA(subStr.c_str(), nullptr);
+			}
+		} while (index != std::string::npos);
+	}
+#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+	void createUnixDirectoryRecursively(const std::string &path)
+	{
+		DebugNotImplemented();
+	}
+#endif
+}
+
+void Platform::createDirectoryRecursively(const std::string &path)
+{
+#if defined(_WINDOWS)
+	createWindowsDirectoryRecursively(path);
+#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+	createUnixDirectoryRecursively(path);
+#endif
 }
