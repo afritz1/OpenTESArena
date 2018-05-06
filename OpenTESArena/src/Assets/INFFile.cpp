@@ -11,19 +11,6 @@
 
 namespace
 {
-	// These are all the .INF files in the Arena directory. They are not encrypted,
-	// unlike the .INF files inside GLOBAL.BSA.
-	const std::unordered_set<std::string> UnencryptedINFs =
-	{
-		"Crystal3.inf", // Floppy version.
-		"CRYSTAL3.INF", // CD version.
-		"DEMO.INF",
-		"IMPPAL1.INF",
-		"IMPPAL2.INF",
-		"IMPPAL3.INF",
-		"IMPPAL4.INF"
-	};
-
 	// Each '@' section may or may not have some state it currently possesses. They 
 	// also have a mode they can be in, via a tag like *BOXCAP or *TEXT.
 	struct FloorState
@@ -166,10 +153,12 @@ const int INFFile::NO_INDEX = -1;
 
 INFFile::INFFile(const std::string &filename)
 {
+	bool inGlobalBSA; // Set by VFS open() function.
+
 	// Some filenames (i.e., Crystal3.inf) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
-	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
+	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename, inGlobalBSA);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
@@ -178,7 +167,7 @@ INFFile::INFFile(const std::string &filename)
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	// Check if the .INF is encrypted.
-	const bool isEncrypted = UnencryptedINFs.find(filename) == UnencryptedINFs.end();
+	const bool isEncrypted = inGlobalBSA;
 
 	if (isEncrypted)
 	{
