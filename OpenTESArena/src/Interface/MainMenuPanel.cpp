@@ -9,7 +9,7 @@
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
-#include "LoadGamePanel.h"
+#include "LoadSavePanel.h"
 #include "MainMenuPanel.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
@@ -174,7 +174,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		int height = 20;
 		auto function = [](Game &game)
 		{
-			game.setPanel<LoadGamePanel>(game);
+			game.setPanel<LoadSavePanel>(game, LoadSavePanel::Type::Load);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();

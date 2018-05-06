@@ -1,7 +1,7 @@
 #include "SDL.h"
 
 #include "CursorAlignment.h"
-#include "LoadGamePanel.h"
+#include "LoadSavePanel.h"
 #include "MainMenuPanel.h"
 #include "PauseMenuPanel.h"
 #include "RichTextString.h"
@@ -27,12 +27,9 @@
 #include "../Utilities/Platform.h"
 #include "../Utilities/String.h"
 
-namespace
-{
-	const int SaveSlotCount = 10;
-}
+const int LoadSavePanel::SlotCount = 10;
 
-LoadGamePanel::LoadGamePanel(Game &game)
+LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	: Panel(game)
 {
 	// Load each name in NAMES.DAT.
@@ -48,7 +45,7 @@ LoadGamePanel::LoadGamePanel(Game &game)
 	if (File::exists(savesPath + "NAMES.DAT"))
 	{
 		const ArenaTypes::Names names = ArenaSave::loadNAMES(savesPath);
-		for (int i = 0; i < SaveSlotCount; i++)
+		for (int i = 0; i < LoadSavePanel::SlotCount; i++)
 		{
 			const auto &entry = names.entries.at(i);
 
@@ -70,7 +67,7 @@ LoadGamePanel::LoadGamePanel(Game &game)
 		DebugMention("No NAMES.DAT found in \"" + savesPath + "\".");
 	}
 
-	this->loadButton = []()
+	this->confirmButton = []()
 	{
 		auto function = [](Game &game, int index)
 		{
@@ -121,12 +118,14 @@ LoadGamePanel::LoadGamePanel(Game &game)
 		};
 		return Button<Game&>(function);
 	}();
+
+	this->type = type;
 }
 
-int LoadGamePanel::getClickedIndex(const Int2 &point)
+int LoadSavePanel::getClickedIndex(const Int2 &point)
 {
 	int y = 2;
-	for (int i = 0; i < SaveSlotCount; i++)
+	for (int i = 0; i < LoadSavePanel::SlotCount; i++)
 	{
 		const int x = 2;
 		const int clickWidth = 316;
@@ -147,7 +146,7 @@ int LoadGamePanel::getClickedIndex(const Int2 &point)
 	return -1;
 }
 
-std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
+std::pair<SDL_Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -158,7 +157,7 @@ std::pair<SDL_Texture*, CursorAlignment> LoadGamePanel::getCurrentCursor() const
 	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
 }
 
-void LoadGamePanel::handleEvent(const SDL_Event &e)
+void LoadSavePanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
 	const auto &inputManager = game.getInputManager();
@@ -176,15 +175,15 @@ void LoadGamePanel::handleEvent(const SDL_Event &e)
 		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		// Listen for saved game click.
-		const int clickedIndex = LoadGamePanel::getClickedIndex(originalPoint);
+		const int clickedIndex = LoadSavePanel::getClickedIndex(originalPoint);
 		if (clickedIndex >= 0)
 		{
-			this->loadButton.click(game, clickedIndex);
+			this->confirmButton.click(game, clickedIndex);
 		}
 	}
 }
 
-void LoadGamePanel::render(Renderer &renderer)
+void LoadSavePanel::render(Renderer &renderer)
 {
 	// Clear full screen.
 	renderer.clear();

@@ -6,7 +6,7 @@
 
 #include "CursorAlignment.h"
 #include "GameWorldPanel.h"
-#include "LoadGamePanel.h"
+#include "LoadSavePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
@@ -108,7 +108,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int y = 118;
 		auto function = [](Game &game)
 		{
-			game.setPanel<LoadGamePanel>(game);
+			game.setPanel<LoadSavePanel>(game, LoadSavePanel::Type::Load);
 		};
 		return Button<Game&>(x, y, 64, 29, function);
 	}();

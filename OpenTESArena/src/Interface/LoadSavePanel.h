@@ -1,5 +1,5 @@
-#ifndef LOAD_GAME_PANEL_H
-#define LOAD_GAME_PANEL_H
+#ifndef LOAD_SAVE_PANEL_H
+#define LOAD_SAVE_PANEL_H
 
 #include <array>
 
@@ -10,19 +10,23 @@
 class Renderer;
 class Surface;
 
-class LoadGamePanel : public Panel
+class LoadSavePanel : public Panel
 {
+public:
+	enum class Type { Load, Save };
 private:
+	static const int SlotCount;
+
 	std::array<std::unique_ptr<TextBox>, 10> saveTextBoxes;
-	Button<Game&, int> loadButton;
+	Button<Game&, int> confirmButton;
 	Button<Game&> backButton;
-	// up/down arrow buttons, saved game buttons...
+	LoadSavePanel::Type type;
 
 	// Returns a non-negative integer if the point is contained in a save's click area.
 	static int getClickedIndex(const Int2 &point);
 public:
-	LoadGamePanel(Game &game);
-	virtual ~LoadGamePanel() = default;
+	LoadSavePanel(Game &game, LoadSavePanel::Type type);
+	virtual ~LoadSavePanel() = default;
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
