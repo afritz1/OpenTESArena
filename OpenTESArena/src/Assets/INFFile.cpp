@@ -15,7 +15,9 @@ namespace
 	// unlike the .INF files inside GLOBAL.BSA.
 	const std::unordered_set<std::string> UnencryptedINFs =
 	{
-		"CRYSTAL3.INF",
+		"Crystal3.inf", // Floppy version.
+		"CRYSTAL3.INF", // CD version.
+		"DEMO.INF",
 		"IMPPAL1.INF",
 		"IMPPAL2.INF",
 		"IMPPAL3.INF",
