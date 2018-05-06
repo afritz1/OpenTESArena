@@ -17,6 +17,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
     std::streamsize base = stream.tellg();
     if(!stream.seekg(std::streampos(count) * -18, std::ios_base::end))
         throw std::runtime_error("Failed to seek to archive footer ("+std::to_string(count)+" entries)");
+
     for(size_t i = 0;i < count;++i)
     {
         std::array<char,13> name;
@@ -25,8 +26,8 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         std::replace(name.begin(), name.end(), '\\', '/');
         names.push_back(std::string(name.data()));
 
-        int iscompressed = read_le16(stream);
-        if(iscompressed != 0)
+        const bool isCompressed = read_le16(stream) != 0;
+        if(isCompressed)
             throw std::runtime_error("Compressed entries not supported");
 
         Entry entry;
@@ -34,6 +35,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         entry.mEnd = entry.mStart + read_le32(stream);
         entries.push_back(entry);
     }
+
     if(!stream.good())
         throw std::runtime_error("Failed reading archive footer");
 
@@ -43,6 +45,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
         if(iter == mLookupName.end() || *iter != name)
             mLookupName.insert(iter, name);
     }
+
     mEntries.resize(mLookupName.size());
     for(size_t i = 0;i < count;++i)
     {
@@ -55,7 +58,7 @@ void BsaArchive::load(const std::string &fname)
 {
     mFilename = fname;
 
-    std::ifstream stream(mFilename.c_str(), std::ios::binary);
+    std::ifstream stream(mFilename, std::ios::binary);
     if(!stream.is_open())
         throw std::runtime_error("Failed to open "+mFilename);
 
@@ -67,7 +70,7 @@ void BsaArchive::load(const std::string &fname)
 
 IStreamPtr BsaArchive::open(const Entry &entry)
 {
-    std::unique_ptr<std::istream> stream(new std::ifstream(mFilename.c_str(), std::ios::binary));
+    std::unique_ptr<std::istream> stream(new std::ifstream(mFilename, std::ios::binary));
     if(!stream->seekg(entry.mStart))
         return IStreamPtr(nullptr);
     return IStreamPtr(new ConstrainedFileStream(std::move(stream), entry.mStart, entry.mEnd));

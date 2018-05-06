@@ -30,12 +30,9 @@ class BsaArchive : public Archive {
 public:
     void load(const std::string &fname);
 
-    virtual IStreamPtr open(const char *name);
-
-    virtual bool exists(const char *name) const;
-
-    virtual const std::vector<std::string> &list() const final
-    { return mLookupName; };
+    virtual IStreamPtr open(const char *name) override;
+    virtual bool exists(const char *name) const override;
+    virtual const std::vector<std::string> &list() const override final { return mLookupName; }
 };
 
 } // namespace Archives

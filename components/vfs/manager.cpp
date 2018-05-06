@@ -31,24 +31,24 @@ Manager::Manager()
 {
 }
 
-void Manager::initialize(std::string&& root_path)
+void Manager::initialize(std::string&& rootPath)
 {
-	if (root_path.empty())
-		root_path += "./";
-	else if (root_path.back() != '/' && root_path.back() != '\\')
-		root_path += "/";
+	if (rootPath.empty())
+		rootPath += "./";
+	else if ((rootPath.back() != '/') && (rootPath.back() != '\\'))
+		rootPath += '/';
 
-	gGlobalBsa.load(root_path + "GLOBAL.BSA");
-
-	gRootPaths.push_back(std::move(root_path));
+	gGlobalBsa.load(rootPath + "GLOBAL.BSA");
+	gRootPaths.push_back(std::move(rootPath));
 }
 
 void Manager::addDataPath(std::string&& path)
 {
 	if (path.empty())
 		path += "./";
-	else if (path.back() != '/' && path.back() != '\\')
-		path += "/";
+	else if ((path.back() != '/') && (path.back() != '\\'))
+		path += '/';
+
 	gRootPaths.push_back(std::move(path));
 }
 
@@ -134,37 +134,41 @@ IStreamPtr Manager::openCaseInsensitive(const std::string &name)
 bool Manager::exists(const char *name)
 {
 	std::ifstream file;
-	for (const std::string &path : gRootPaths)
+	const auto iter = std::find_if(gRootPaths.begin(), gRootPaths.end(),
+		[name, &file](const std::string &rootPath)
 	{
-		file.open(path + name, std::ios_base::binary);
-		if (file.is_open()) return true;
-	}
+		file.open(rootPath + name, std::ios::binary);
+		return file.is_open();
+	});
 
-	return gGlobalBsa.exists(name);
+	// If not in the root paths, then check inside GLOBAL.BSA.
+	return (iter != gRootPaths.end()) || gGlobalBsa.exists(name);
 }
 
-void Manager::add_dir(const std::string &path, const std::string &pre, const char *pattern, std::vector<std::string> &names)
+void Manager::addDir(const std::string &path, const std::string &pre, const char *pattern,
+	std::vector<std::string> &names)
 {
 	DIR *dir = opendir(path.c_str());
-	if (!dir) return;
+	if (dir == nullptr) return;
 
 	dirent *ent;
 	while ((ent = readdir(dir)) != nullptr)
 	{
-		if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+		if ((std::strcmp(ent->d_name, ".") == 0) || 
+			(std::strcmp(ent->d_name, "..") == 0))
 			continue;
 
 		if (!S_ISDIR(ent->d_type))
 		{
 			std::string fname = pre + ent->d_name;
-			if (!pattern || fnmatch(pattern, fname.c_str(), 0) == 0)
-				names.push_back(fname);
+			if ((pattern == nullptr) || (fnmatch(pattern, fname.c_str(), 0) == 0))
+				names.push_back(std::move(fname));
 		}
 		else
 		{
-			std::string newpath = path + "/" + ent->d_name;
-			std::string newpre = pre + ent->d_name + "/";
-			add_dir(newpath, newpre, pattern, names);
+			const std::string newPath = path + '/' + ent->d_name;
+			const std::string newPre = pre + ent->d_name + '/';
+			Manager::addDir(newPath, newPre, pattern, names);
 		}
 	}
 
@@ -175,26 +179,25 @@ std::vector<std::string> Manager::list(const char *pattern) const
 {
 	std::vector<std::string> files;
 
-	auto piter = gRootPaths.rbegin();
-	while (piter != gRootPaths.rend())
+	std::for_each(gRootPaths.rbegin(), gRootPaths.rend(),
+		[pattern, &files](const std::string &rootPath)
 	{
-		add_dir(*piter + ".", "", pattern, files);
-		++piter;
-	}
+		Manager::addDir(rootPath + '.', std::string(), pattern, files);
+	});
 
-	if (!pattern)
+	const std::vector<std::string> &bsaList = gGlobalBsa.list();
+
+	if (pattern == nullptr)
 	{
-		const auto &list = gGlobalBsa.list();
-		std::copy(list.begin(), list.end(), std::back_inserter(files));
+		std::copy(bsaList.begin(), bsaList.end(), std::back_inserter(files));
 	}
 	else
 	{
-		const auto &list = gGlobalBsa.list();
-		std::copy_if(list.begin(), list.end(), std::back_inserter(files),
-			[pattern](const std::string &name) -> bool
+		std::copy_if(bsaList.begin(), bsaList.end(), std::back_inserter(files),
+			[pattern](const std::string &name)
 		{
-			const char *dirsep = strrchr(name.c_str(), '/');
-			return (fnmatch(pattern, dirsep ? dirsep : name.c_str(), 0) == 0);
+			const char *dirsep = std::strrchr(name.c_str(), '/');
+			return fnmatch(pattern, (dirsep != nullptr) ? dirsep : name.c_str(), 0) == 0;
 		});
 	}
 
