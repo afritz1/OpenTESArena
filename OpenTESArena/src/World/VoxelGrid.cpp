@@ -5,8 +5,7 @@
 VoxelGrid::VoxelGrid(int width, int height, int depth)
 {
 	const int voxelCount = width * height * depth;
-	this->voxels = std::vector<uint16_t>(voxelCount);
-	std::fill(this->voxels.begin(), this->voxels.end(), 0);
+	this->voxels = std::vector<uint16_t>(voxelCount, 0);
 
 	this->width = width;
 	this->height = height;

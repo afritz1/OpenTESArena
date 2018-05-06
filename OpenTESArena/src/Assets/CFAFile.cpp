@@ -35,8 +35,7 @@ CFAFile::CFAFile(const std::string &filename)
 	const uint8_t *lookUpTable = srcData.data() + 76;
 
 	// Line buffer (generously over-allocated for demuxing).
-	std::vector<uint8_t> encoded(widthUncompressed + 16);
-	std::fill(encoded.begin(), encoded.end(), 0);
+	std::vector<uint8_t> encoded(widthUncompressed + 16, 0);
 
 	// Index values from demuxing are stored here each pass, and are
 	// eventually translated into color indices.

@@ -249,8 +249,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 	}();
 
 	// Buffer for the decompressed data (also little endian).
-	this->exeData = std::vector<uint8_t>(decompLen);
-	std::fill(this->exeData.begin(), this->exeData.end(), 0);
+	this->exeData = std::vector<uint8_t>(decompLen, 0);
 
 	// Current position for inserting decompressed data.
 	size_t decompIndex = 0;

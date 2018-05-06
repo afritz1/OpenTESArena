@@ -216,8 +216,7 @@ int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
-	std::fill(decomp.begin(), decomp.end(), 0);
+	std::vector<uint8_t> decomp(uncompressedSize, 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
@@ -292,8 +291,7 @@ int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
-	std::fill(decomp.begin(), decomp.end(), 0);
+	std::vector<uint8_t> decomp(uncompressedSize, 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
@@ -312,8 +310,7 @@ int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart)
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
 	// Allocate space for this floor, using 2 bytes per voxel.
-	std::vector<uint8_t> decomp = std::vector<uint8_t>(uncompressedSize);
-	std::fill(decomp.begin(), decomp.end(), 0);
+	std::vector<uint8_t> decomp(uncompressedSize, 0);
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;

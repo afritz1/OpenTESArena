@@ -181,11 +181,9 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 	const uint32_t *pixels = static_cast<const uint32_t*>(palette.getPixels());
 	const int pixelCount = palette.getWidth() * palette.getHeight();
 
-	std::vector<uint32_t> fullPalette(pixelCount * 2);
-
-	// Fill with darkness (the first color in the palette is the closest to night).
+	// Fill palette with darkness (the first color in the palette is the closest to night).
 	const uint32_t darkness = pixels[0];
-	std::fill(fullPalette.begin(), fullPalette.end(), darkness);
+	std::vector<uint32_t> fullPalette(pixelCount * 2, darkness);
 
 	// Copy the sky palette over the center of the full palette.
 	std::copy(pixels, pixels + pixelCount, 
