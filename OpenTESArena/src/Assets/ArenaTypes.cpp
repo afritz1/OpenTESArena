@@ -156,7 +156,22 @@ void ArenaTypes::SaveEngine::Buff::init(const uint8_t *data)
 
 void ArenaTypes::SaveEngine::NPCSprite::init(const uint8_t *data)
 {
-	DebugNotImplemented();
+	this->x = Bytes::getLE16(data);
+	this->z = Bytes::getLE16(data + 2);
+	this->y = Bytes::getLE16(data + 4);
+	this->pDynamicLight = Bytes::getLE16(data + 6);
+	this->speed = Bytes::getLE16(data + 8);
+	this->angle = Bytes::getLE16(data + 10);
+	this->flags = *(data + 12);
+	this->frame = *(data + 13);
+	this->param1 = *(data + 14);
+	this->flags = Bytes::getLE16(data + 15);
+	this->param2 = *(data + 17);
+	this->data = Bytes::getLE16(data + 18);
+	this->param3 = Bytes::getLE16(data + 20);
+	this->unknown1 = Bytes::getLE16(data + 22);
+	this->unknown2 = Bytes::getLE16(data + 24);
+	this->param4 = Bytes::getLE16(data + 26);
 }
 
 void ArenaTypes::SaveEngine::BaseQuest::init(const uint8_t *data)

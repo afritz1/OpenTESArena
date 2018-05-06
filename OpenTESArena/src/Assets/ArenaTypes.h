@@ -228,7 +228,16 @@ public:
 
 		struct NPCSprite
 		{
-			// To do.
+			static constexpr size_t SIZE = 28;
+
+			uint16_t x, z, y;
+			uint16_t pDynamicLight; // void* in original.
+			uint16_t speed, angle;
+			uint8_t flat, frame, param1;
+			uint16_t flags;
+			uint8_t param2;
+			uint16_t data, param3, unknown1, unknown2, param4;
+
 			void init(const uint8_t *data);
 		};
 
