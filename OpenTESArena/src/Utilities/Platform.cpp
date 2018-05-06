@@ -9,7 +9,10 @@
 #if defined(_WINDOWS)
 #include <Windows.h>
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <cerrno>
+#include <cstring>
 #include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 const std::string Platform::XDGDataHome = "XDG_DATA_HOME";
@@ -171,8 +174,22 @@ bool Platform::directoryExists(const std::string &path)
 	return (attrs != INVALID_FILE_ATTRIBUTES) &&
 		((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-	DebugNotImplemented();
-	return false;
+	struct stat st;
+	std::memset(&st, 0, sizeof(st));
+	if (stat(path.c_str(), &st) == 0)
+	{
+		// Returns true if the entry is a directory.
+		return (st.st_mode & S_IFDIR) != 0;
+	}
+	else
+	{
+		if (errno != ENOENT)
+		{
+			throw DebugException("stat(): " + std::string(strerror(errno)) + ".");
+		}
+		
+		return false;
+	}
 #else
 	// Unknown platform.
 	DebugNotImplemented();
@@ -183,45 +200,48 @@ bool Platform::directoryExists(const std::string &path)
 namespace
 {
 #if defined(_WINDOWS)
-	void createWindowsDirectoryRecursively(std::string path)
+	void createWindowsDirectory(const std::string &path)
 	{
-		const bool pathIsEmpty = path.size() == 0;
-		const bool hasTrailingSlash = !pathIsEmpty &&
-			((path.back() == '/') || (path.back() == '\\'));
-
-		if (!hasTrailingSlash)
-		{
-			path.push_back('/');
-		}
-
-		size_t index = 0;
-		do
-		{
-			index = path.find_first_of("\\/", index + 1);
-			const std::string subStr = path.substr(0, index);
-
-			if (!Platform::directoryExists(subStr))
-			{
-				CreateDirectoryA(subStr.c_str(), nullptr);
-			}
-		} while (index != std::string::npos);
+		CreateDirectoryA(path.c_str(), nullptr);
 	}
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-	void createUnixDirectoryRecursively(const std::string &path)
+	void createUnixDirectory(const std::string &path, mode_t permissions)
 	{
-		DebugNotImplemented();
+		if (mkdir(path.c_str(), permissions) == -1)
+		{
+			DebugWarning("mkdir(): " + std::string(strerror(errno)) + ".");
+		}
 	}
 #endif
 }
 
-void Platform::createDirectoryRecursively(const std::string &path)
+void Platform::createDirectoryRecursively(std::string path)
 {
+	const bool pathIsEmpty = path.size() == 0;
+	const bool hasTrailingSlash = !pathIsEmpty &&
+		((path.back() == '/') || (path.back() == '\\'));
+
+	if (!hasTrailingSlash)
+	{
+		path.push_back('/');
+	}
+
+	size_t index = 0;
+	do
+	{
+		index = path.find_first_of("\\/", index + 1);
+		const std::string subStr = path.substr(0, index);
+
+		if (!Platform::directoryExists(subStr))
+		{
 #if defined(_WINDOWS)
-	createWindowsDirectoryRecursively(path);
+			createWindowsDirectory(subStr);
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-	createUnixDirectoryRecursively(path);
+			createUnixDirectory(subStr, 0700);
 #else
-	// Unknown platform.
-	DebugNotImplemented();
+			// Unknown platform.
+			DebugNotImplemented();
 #endif
+		}
+	} while (index != std::string::npos);
 }

@@ -51,9 +51,8 @@ public:
 	// Returns whether the given directory exists.
 	static bool directoryExists(const std::string &path);
 
-	// Creates a directory with all intermediate directories from the given path.
-	// There must be a trailing slash in the path.
-	static void createDirectoryRecursively(const std::string &path);
+	// Creates a directory and all intermediate directories from the given path.
+	static void createDirectoryRecursively(std::string path);
 };
 
 #endif
