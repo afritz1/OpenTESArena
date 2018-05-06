@@ -26,7 +26,7 @@ public:
 		// Various data, not always present. FLOR and MAP1 are probably always present.
 		// - To do: maybe store MAP2 data with each voxel's extended height?
 		std::vector<uint16_t> flor, map1, map2;
-		std::vector<uint8_t> flat, inns, loot;
+		std::vector<uint8_t> flat, inns, loot, stor;
 		std::vector<ArenaTypes::MIFTarget> targ;
 		std::vector<ArenaTypes::MIFLock> lock;
 		std::vector<ArenaTypes::MIFTrigger> trig;
@@ -54,6 +54,7 @@ public:
 		static int loadMAP2(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadNAME(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadNUMF(MIFFile::Level &level, const uint8_t *tagStart);
+		static int loadSTOR(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadTARG(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadTRIG(MIFFile::Level &level, const uint8_t *tagStart);
 	};

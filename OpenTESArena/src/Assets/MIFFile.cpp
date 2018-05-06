@@ -21,6 +21,7 @@ namespace
 	const std::string Tag_MAP2 = "MAP2";
 	const std::string Tag_NAME = "NAME";
 	const std::string Tag_NUMF = "NUMF";
+	const std::string Tag_STOR = "STOR";
 	const std::string Tag_TARG = "TARG";
 	const std::string Tag_TRIG = "TRIG";
 
@@ -37,6 +38,7 @@ namespace
 		{ Tag_MAP2, MIFFile::Level::loadMAP2 },
 		{ Tag_NAME, MIFFile::Level::loadNAME },
 		{ Tag_NUMF, MIFFile::Level::loadNUMF },
+		{ Tag_STOR, MIFFile::Level::loadSTOR },
 		{ Tag_TARG, MIFFile::Level::loadTARG },
 		{ Tag_TRIG, MIFFile::Level::loadTRIG }
 	};
@@ -344,6 +346,18 @@ int MIFFile::Level::loadNUMF(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Just one byte.
 	level.numf = *tagDataStart;
+
+	return size + 6;
+}
+
+int MIFFile::Level::loadSTOR(MIFFile::Level &level, const uint8_t *tagStart)
+{
+	const uint16_t size = Bytes::getLE16(tagStart + 4);
+	const uint8_t *tagDataStart = tagStart + 6;
+
+	// Currently unknown. Only present in the demo?
+	level.stor = std::vector<uint8_t>(size);
+	std::copy(tagDataStart, tagDataStart + level.stor.size(), level.stor.begin());
 
 	return size + 6;
 }
