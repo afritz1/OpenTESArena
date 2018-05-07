@@ -28,11 +28,143 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/String.h"
 
-namespace
+OptionsPanel::Option::Option(const std::string &name, std::string &&tooltip, Type type)
+	: name(name), tooltip(std::move(tooltip))
 {
-	const int ToggleButtonSize = 8;
+	this->type = type;
 }
 
+OptionsPanel::Option::Option(const std::string &name, Type type)
+	: Option(name, std::string(), type) { }
+
+const std::string &OptionsPanel::Option::getName() const
+{
+	return this->name;
+}
+
+const std::string &OptionsPanel::Option::getTooltip() const
+{
+	return this->tooltip;
+}
+
+OptionsPanel::Option::Type OptionsPanel::Option::getType() const
+{
+	return this->type;
+}
+
+OptionsPanel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip,
+	bool value, Callback &&callback)
+	: Option(name, std::move(tooltip), Option::Type::Bool), callback(std::move(callback))
+{
+	this->value = value;
+}
+
+OptionsPanel::BoolOption::BoolOption(const std::string &name, bool value, Callback &&callback)
+	: BoolOption(name, std::string(), value, std::move(callback)) { }
+
+std::string OptionsPanel::BoolOption::getDisplayedValue() const
+{
+	return this->value ? "true" : "false";
+}
+
+void OptionsPanel::BoolOption::toggle()
+{
+	this->value = !this->value;
+	this->callback(this->value);
+}
+
+OptionsPanel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value,
+	int delta, int min, int max, Callback &&callback)
+	: Option(name, std::move(tooltip), Option::Type::Int), callback(std::move(callback))
+{
+	this->value = value;
+	this->delta = delta;
+	this->min = min;
+	this->max = max;
+}
+
+OptionsPanel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
+	Callback &&callback)
+	: IntOption(name, std::string(), value, delta, min, max, std::move(callback)) { }
+
+int OptionsPanel::IntOption::getNext() const
+{
+	return std::min(this->value + this->delta, this->max);
+}
+
+int OptionsPanel::IntOption::getPrev() const
+{
+	return std::max(this->value - this->delta, this->min);
+}
+
+std::string OptionsPanel::IntOption::getDisplayedValue() const
+{
+	return std::to_string(this->value);
+}
+
+void OptionsPanel::IntOption::set(int value)
+{
+	this->value = value;
+	this->callback(this->value);
+}
+
+OptionsPanel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,
+	double value, double delta, double min, double max, int precision, Callback &&callback)
+	: Option(name, std::move(tooltip), Option::Type::Double), callback(std::move(callback))
+{
+	this->value = value;
+	this->delta = delta;
+	this->min = min;
+	this->max = max;
+	this->precision = precision;
+}
+
+OptionsPanel::DoubleOption::DoubleOption(const std::string &name, double value, double delta,
+	double min, double max, int precision, Callback &&callback)
+	: DoubleOption(name, std::string(), value, delta, min, max, precision, std::move(callback)) { }
+
+double OptionsPanel::DoubleOption::getNext() const
+{
+	return std::min(this->value + this->delta, this->max);
+}
+
+double OptionsPanel::DoubleOption::getPrev() const
+{
+	return std::max(this->value - this->delta, this->min);
+}
+
+std::string OptionsPanel::DoubleOption::getDisplayedValue() const
+{
+	return String::fixedPrecision(this->value, this->precision);
+}
+
+void OptionsPanel::DoubleOption::set(double value)
+{
+	this->value = value;
+	this->callback(this->value);
+}
+
+OptionsPanel::StringOption::StringOption(const std::string &name, std::string &&tooltip,
+	std::string &&value, Callback &&callback)
+	: Option(name, std::move(tooltip), Option::Type::String), value(std::move(value)),
+	callback(std::move(callback)) { }
+
+OptionsPanel::StringOption::StringOption(const std::string &name, std::string &&value,
+	Callback &&callback)
+	: StringOption(name, std::string(), std::move(value), std::move(callback)) { }
+
+std::string OptionsPanel::StringOption::getDisplayedValue() const
+{
+	return this->value;
+}
+
+void OptionsPanel::StringOption::set(std::string &&value)
+{
+	this->value = std::move(value);
+	this->callback(this->value);
+}
+
+const int OptionsPanel::TOGGLE_BUTTON_SIZE = 8;
 const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
 const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
 const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
@@ -386,8 +518,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 136;
 		const int y = 86;
-		const int width = ToggleButtonSize;
-		const int height = ToggleButtonSize;
+		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
+		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
 		auto function = [](OptionsPanel &panel, Options &options,
 			Player &player, Renderer &renderer)
 		{
@@ -591,8 +723,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 232;
 		const int y = 82;
-		const int width = ToggleButtonSize;
-		const int height = ToggleButtonSize;
+		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
+		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the collision option.
@@ -607,8 +739,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 240;
 		const int y = 96;
-		const int width = ToggleButtonSize;
-		const int height = ToggleButtonSize;
+		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
+		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
 		auto function = [](OptionsPanel &panel, Options &options)
 		{
 			// Toggle the skip intro option.
@@ -623,8 +755,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 245;
 		const int y = 110;
-		const int width = ToggleButtonSize;
-		const int height = ToggleButtonSize;
+		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
+		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
 		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
 		{
 			// Toggle the fullscreen option.
@@ -640,8 +772,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const int x = 296;
 		const int y = 124;
-		const int width = ToggleButtonSize;
-		const int height = ToggleButtonSize;
+		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
+		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
 		auto function = [](OptionsPanel &panel, Options &options, AudioManager &audioManager)
 		{
 			// Increment the sound resampling option, or loop around.
