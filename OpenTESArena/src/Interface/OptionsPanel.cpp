@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <limits>
 
 #include "SDL.h"
 
@@ -14,7 +15,6 @@
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
-#include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
@@ -26,7 +26,48 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+
+namespace
+{
+	// Screen locations for various options things.
+	const Int2 TabsOrigin(3, 38);
+	const Int2 TabsDimensions(54, 16);
+	const Int2 ListOrigin(
+		TabsOrigin.x + TabsDimensions.x + 5,
+		TabsOrigin.y);
+	const Int2 ListDimensions(254, TabsDimensions.y * 5);
+	const Int2 DescriptionOrigin(
+		TabsOrigin.x + 2,
+		TabsOrigin.y + (TabsDimensions.y * 5) + 3);
+
+	const Rect GraphicsTabRect(
+		TabsOrigin.x,
+		TabsOrigin.y,
+		TabsDimensions.x,
+		TabsDimensions.y);
+	const Rect AudioTabRect(
+		TabsOrigin.x,
+		TabsOrigin.y + TabsDimensions.y,
+		TabsDimensions.x,
+		TabsDimensions.y);
+	const Rect InputTabRect(
+		TabsOrigin.x,
+		TabsOrigin.y + (TabsDimensions.y * 2),
+		TabsDimensions.x,
+		TabsDimensions.y);
+	const Rect MiscTabRect(
+		TabsOrigin.x,
+		TabsOrigin.y + (TabsDimensions.y * 3),
+		TabsDimensions.x,
+		TabsDimensions.y);
+	const Rect DevTabRect(
+		TabsOrigin.x,
+		TabsOrigin.y + (TabsDimensions.y * 4),
+		TabsDimensions.x,
+		TabsDimensions.y);
+}
 
 OptionsPanel::Option::Option(const std::string &name, std::string &&tooltip, Type type)
 	: name(name), tooltip(std::move(tooltip))
@@ -99,13 +140,19 @@ int OptionsPanel::IntOption::getPrev() const
 
 std::string OptionsPanel::IntOption::getDisplayedValue() const
 {
-	return std::to_string(this->value);
+	return (this->displayOverrides.size() > 0) ?
+		this->displayOverrides.at(this->value) : std::to_string(this->value);
 }
 
 void OptionsPanel::IntOption::set(int value)
 {
 	this->value = value;
 	this->callback(this->value);
+}
+
+void OptionsPanel::IntOption::setDisplayOverrides(std::vector<std::string> &&displayOverrides)
+{
+	this->displayOverrides = std::move(displayOverrides);
 }
 
 OptionsPanel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,
@@ -164,26 +211,43 @@ void OptionsPanel::StringOption::set(std::string &&value)
 	this->callback(this->value);
 }
 
-const int OptionsPanel::TOGGLE_BUTTON_SIZE = 8;
-const std::string OptionsPanel::FPS_TEXT = "FPS Limit: ";
-const std::string OptionsPanel::RESOLUTION_SCALE_TEXT = "Resolution Scale: ";
-const std::string OptionsPanel::PLAYER_INTERFACE_TEXT = "Player Interface: ";
-const std::string OptionsPanel::VERTICAL_FOV_TEXT = "Vertical FOV: ";
-const std::string OptionsPanel::CURSOR_SCALE_TEXT = "Cursor Scale: ";
-const std::string OptionsPanel::LETTERBOX_ASPECT_TEXT = "Letterbox Aspect: ";
-const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT = "H. Sensitivity: ";
-const std::string OptionsPanel::VERTICAL_SENSITIVITY_TEXT = "V. Sensitivity: ";
-const std::string OptionsPanel::COLLISION_TEXT = "Collision: ";
-const std::string OptionsPanel::SKIP_INTRO_TEXT = "Skip Intro: ";
-const std::string OptionsPanel::FULLSCREEN_TEXT = "Fullscreen: ";
-const std::string OptionsPanel::SOUND_RESAMPLING_TEXT = "Sound Resampling: ";
+// Tabs.
+const std::string OptionsPanel::GRAPHICS_TAB_NAME = "Graphics";
+const std::string OptionsPanel::AUDIO_TAB_NAME = "Audio";
+const std::string OptionsPanel::INPUT_TAB_NAME = "Input";
+const std::string OptionsPanel::MISC_TAB_NAME = "Misc";
+const std::string OptionsPanel::DEV_TAB_NAME = "Dev";
+
+// Graphics.
+const std::string OptionsPanel::CURSOR_SCALE_NAME = "Cursor Scale";
+const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
+const std::string OptionsPanel::FULLSCREEN_NAME = "Fullscreen";
+const std::string OptionsPanel::LETTERBOX_ASPECT_NAME = "Letterbox Aspect";
+const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
+const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
+const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
+
+// Audio.
+const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
+
+// Input.
+const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
+const std::string OptionsPanel::VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
+
+// Misc.
+const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
+const std::string OptionsPanel::SKIP_INTRO_NAME = "Skip Intro";
+
+// Dev.
+const std::string OptionsPanel::COLLISION_NAME = "Collision";
+const std::string OptionsPanel::SHOW_DEBUG_NAME = "Show Debug";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
 {
 	this->titleTextBox = [&game]()
 	{
-		const Int2 center(160, 30);
+		const Int2 center(160, 24);
 
 		const RichTextString richText(
 			"Options",
@@ -195,7 +259,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
-	this->backToPauseTextBox = [&game]()
+	this->backToPauseMenuTextBox = [&game]()
 	{
 		const Int2 center(
 			Renderer::ORIGINAL_WIDTH - 30,
@@ -211,222 +275,39 @@ OptionsPanel::OptionsPanel(Game &game)
 		return std::make_unique<TextBox>(center, richText, game.getRenderer());
 	}();
 
-	this->fpsTextBox = [&game]()
+	// Lambda for creating tab text boxes.
+	auto makeTabTextBox = [&game](const Int2 &center, const std::string &text)
 	{
-		const int x = 20;
-		const int y = 45;
-
-		const RichTextString richText(
-			OptionsPanel::FPS_TEXT + std::to_string(game.getOptions().getGraphics_TargetFPS()),
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->resolutionScaleTextBox = [&game]()
-	{
-		const int x = 20;
-		const int y = 65;
-
-		const std::string text = OptionsPanel::RESOLUTION_SCALE_TEXT +
-			String::fixedPrecision(game.getOptions().getGraphics_ResolutionScale(), 2);
-
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
-			TextAlignment::Left,
+			TextAlignment::Center,
 			game.getFontManager());
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
+		return std::make_unique<TextBox>(
+			center, richText, game.getRenderer());
+	};
 
-	this->playerInterfaceTextBox = [&game]()
-	{
-		const int x = 20;
-		const int y = 85;
+	const Int2 initialTabCenter(
+		GraphicsTabRect.getLeft() + (GraphicsTabRect.getWidth() / 2),
+		GraphicsTabRect.getTop() + (GraphicsTabRect.getHeight() / 2));
+	this->graphicsTextBox = makeTabTextBox(
+		initialTabCenter, OptionsPanel::GRAPHICS_TAB_NAME);
+	this->audioTextBox = makeTabTextBox(
+		initialTabCenter + Int2(0, TabsDimensions.y),
+		OptionsPanel::AUDIO_TAB_NAME);
+	this->inputTextBox = makeTabTextBox(
+		initialTabCenter + Int2(0, TabsDimensions.y * 2),
+		OptionsPanel::INPUT_TAB_NAME);
+	this->miscTextBox = makeTabTextBox(
+		initialTabCenter + Int2(0, TabsDimensions.y * 3),
+		OptionsPanel::MISC_TAB_NAME);
+	this->devTextBox = makeTabTextBox(
+		initialTabCenter + Int2(0, TabsDimensions.y * 4),
+		OptionsPanel::DEV_TAB_NAME);
 
-		const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			OptionsPanel::getPlayerInterfaceString(modernInterface);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->verticalFOVTextBox = [&game]()
-	{
-		const int x = 20;
-		const int y = 105;
-
-		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
-			String::fixedPrecision(game.getOptions().getGraphics_VerticalFOV(), 1);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->cursorScaleTextBox = [&game]()
-	{
-		const int x = 20;
-		const int y = 125;
-
-		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
-			String::fixedPrecision(game.getOptions().getGraphics_CursorScale(), 1);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->letterboxAspectTextBox = [&game]()
-	{
-		const int x = 20;
-		const int y = 145;
-
-		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
-			String::fixedPrecision(game.getOptions().getGraphics_LetterboxAspect(), 2);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->hSensitivityTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 45;
-
-		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game.getOptions().getInput_HorizontalSensitivity(), 1);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->vSensitivityTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 65;
-
-		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(game.getOptions().getInput_VerticalSensitivity(), 1);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->collisionTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 82;
-
-		const std::string text = OptionsPanel::COLLISION_TEXT +
-			(game.getOptions().getMisc_Collision() ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->skipIntroTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 96;
-
-		const std::string text = OptionsPanel::SKIP_INTRO_TEXT +
-			(game.getOptions().getMisc_SkipIntro() ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->fullscreenTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 110;
-
-		const std::string text = OptionsPanel::FULLSCREEN_TEXT +
-			(game.getOptions().getGraphics_Fullscreen() ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->soundResamplingTextBox = [&game]()
-	{
-		const int x = 175;
-		const int y = 124;
-
-		const int resamplingOption = game.getOptions().getAudio_SoundResampling();
-		const std::string text = OptionsPanel::SOUND_RESAMPLING_TEXT +
-			OptionsPanel::getSoundResamplingString(resamplingOption);
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			game.getFontManager());
-
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
-	}();
-
-	this->backToPauseButton = []()
+	this->backToPauseMenuButton = [this]()
 	{
 		const Int2 center(
 			Renderer::ORIGINAL_WIDTH - 30,
@@ -436,669 +317,341 @@ OptionsPanel::OptionsPanel(Game &game)
 		{
 			game.setPanel<PauseMenuPanel>(game);
 		};
+
 		return Button<Game&>(center, 40, 16, function);
 	}();
 
-	this->fpsUpButton = []()
+	this->tabButton = []()
 	{
-		const int x = 85;
-		const int y = 41;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options)
+		auto function = [](OptionsPanel &panel, OptionsPanel::Tab tab)
 		{
-			const int newFPS = options.getGraphics_TargetFPS() + 5;
-			options.setGraphics_TargetFPS(newFPS);
-			panel.updateFPSText(newFPS);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+			// Update display if the tab values are different.
+			const bool tabsAreEqual = panel.tab == tab;
+			panel.tab = tab;
 
-	this->fpsDownButton = [this]()
-	{
-		const int x = this->fpsUpButton.getX();
-		const int y = this->fpsUpButton.getY() + this->fpsUpButton.getHeight();
-		const int width = this->fpsUpButton.getWidth();
-		const int height = this->fpsUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const int newFPS = std::max(options.getGraphics_TargetFPS() - 5, options.MIN_FPS);
-			options.setGraphics_TargetFPS(newFPS);
-			panel.updateFPSText(newFPS);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
-
-	this->resolutionScaleUpButton = []()
-	{
-		const int x = 120;
-		const int y = 61;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
-		{
-			const double newResolutionScale = std::min(
-				options.getGraphics_ResolutionScale() + 0.05, options.MAX_RESOLUTION_SCALE);
-			options.setGraphics_ResolutionScale(newResolutionScale);
-			panel.updateResolutionScaleText(newResolutionScale);
-
-			// Resize the game world rendering.
-			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getGraphics_ModernInterface();
-			renderer.resize(windowDimensions.x, windowDimensions.y,
-				newResolutionScale, fullGameWindow);
-		};
-		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
-	}();
-
-	this->resolutionScaleDownButton = [this]()
-	{
-		const int x = this->resolutionScaleUpButton.getX();
-		const int y = this->resolutionScaleUpButton.getY() +
-			this->resolutionScaleUpButton.getHeight();
-		const int width = this->resolutionScaleUpButton.getWidth();
-		const int height = this->resolutionScaleUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
-		{
-			const double newResolutionScale = std::max(
-				options.getGraphics_ResolutionScale() - 0.05, options.MIN_RESOLUTION_SCALE);
-			options.setGraphics_ResolutionScale(newResolutionScale);
-			panel.updateResolutionScaleText(newResolutionScale);
-
-			// Resize the game world rendering.
-			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = options.getGraphics_ModernInterface();
-			renderer.resize(windowDimensions.x, windowDimensions.y,
-				newResolutionScale, fullGameWindow);
-		};
-		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
-	}();
-
-	this->playerInterfaceButton = []()
-	{
-		const int x = 136;
-		const int y = 86;
-		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		auto function = [](OptionsPanel &panel, Options &options,
-			Player &player, Renderer &renderer)
-		{
-			// Toggle the player interface option.
-			const auto newPlayerInterface = options.getGraphics_ModernInterface() ?
-				PlayerInterface::Classic : PlayerInterface::Modern;
-			options.setGraphics_ModernInterface(newPlayerInterface == PlayerInterface::Modern);
-			panel.updatePlayerInterfaceText(newPlayerInterface);
-
-			// If classic mode, make sure the player is looking straight forward.
-			// This is a restriction on the camera to retain the original feel.
-			if (newPlayerInterface == PlayerInterface::Classic)
+			if (!tabsAreEqual)
 			{
-				const Double2 groundDirection = player.getGroundDirection();
-				const Double3 lookAtPoint = player.getPosition() +
-					Double3(groundDirection.x, 0.0, groundDirection.y);
-				player.lookAt(lookAtPoint);
+				panel.updateVisibleOptionTextBoxes();
 			}
-
-			// Resize the game world rendering.
-			const Int2 windowDimensions = renderer.getWindowDimensions();
-			const bool fullGameWindow = newPlayerInterface == PlayerInterface::Modern;
-			renderer.resize(windowDimensions.x, windowDimensions.y,
-				options.getGraphics_ResolutionScale(), fullGameWindow);
 		};
-		return Button<OptionsPanel&, Options&, Player&, Renderer&>(x, y, width, height, function);
+
+		return Button<OptionsPanel&, OptionsPanel::Tab>(function);
 	}();
 
-	this->verticalFOVUpButton = []()
+	const auto &options = game.getOptions();
+
+	// Create graphics options.
+	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::FULLSCREEN_NAME,
+		options.getGraphics_Fullscreen(),
+		[this](bool value)
 	{
-		const int x = 105;
-		const int y = 101;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options)
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		auto &renderer = game.getRenderer();
+		options.setGraphics_Fullscreen(value);
+		renderer.setFullscreen(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<IntOption>(
+		OptionsPanel::FPS_LIMIT_NAME,
+		options.getGraphics_TargetFPS(),
+		5,
+		Options::MIN_FPS,
+		std::numeric_limits<int>::max(),
+		[this](int value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_TargetFPS(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::RESOLUTION_SCALE_NAME,
+		"Percent of the window resolution to use for software rendering.\nThis has a significant impact on performance.",
+		options.getGraphics_ResolutionScale(),
+		0.050,
+		Options::MIN_RESOLUTION_SCALE,
+		Options::MAX_RESOLUTION_SCALE,
+		2,
+		[this](double value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_ResolutionScale(value);
+
+		// Resize the game world rendering.
+		auto &renderer = game.getRenderer();
+		const Int2 windowDimensions = renderer.getWindowDimensions();
+		const bool fullGameWindow = options.getGraphics_ModernInterface();
+		renderer.resize(windowDimensions.x, windowDimensions.y,
+			value, fullGameWindow);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::VERTICAL_FOV_NAME,
+		"Recommended 60.0 for classic mode.",
+		options.getGraphics_VerticalFOV(),
+		5.0,
+		Options::MIN_VERTICAL_FOV,
+		Options::MAX_VERTICAL_FOV,
+		1,
+		[this](double value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_VerticalFOV(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::LETTERBOX_ASPECT_NAME,
+		"Default is 1.60 (16:10). The 640x480 look is 1.33 (4:3).",
+		options.getGraphics_LetterboxAspect(),
+		0.010,
+		Options::MIN_LETTERBOX_ASPECT,
+		Options::MAX_LETTERBOX_ASPECT,
+		2,
+		[this](double value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		auto &renderer = game.getRenderer();
+		options.setGraphics_LetterboxAspect(value);
+		renderer.setLetterboxAspect(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::CURSOR_SCALE_NAME,
+		options.getGraphics_CursorScale(),
+		0.10,
+		Options::MIN_CURSOR_SCALE,
+		Options::MAX_CURSOR_SCALE,
+		1,
+		[this](double value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_CursorScale(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::MODERN_INTERFACE_NAME,
+		"Modern mode uses a new minimal interface with free-look.",
+		options.getGraphics_ModernInterface(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_ModernInterface(value);
+
+		// If classic mode, make sure the player is looking straight forward.
+		// This is a restriction on the camera to retain the original feel.
+		const bool isModernMode = value;
+		if (!isModernMode)
 		{
-			const double newVerticalFOV = std::min(options.getGraphics_VerticalFOV() + 5.0,
-				Options::MAX_VERTICAL_FOV);
-			options.setGraphics_VerticalFOV(newVerticalFOV);
-			panel.updateVerticalFOVText(newVerticalFOV);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+			auto &player = game.getGameData().getPlayer();
+			const Double2 groundDirection = player.getGroundDirection();
+			const Double3 lookAtPoint = player.getPosition() +
+				Double3(groundDirection.x, 0.0, groundDirection.y);
+			player.lookAt(lookAtPoint);
+		}
 
-	this->verticalFOVDownButton = [this]()
+		// Resize the game world rendering.
+		auto &renderer = game.getRenderer();
+		const Int2 windowDimensions = renderer.getWindowDimensions();
+		const bool fullGameWindow = isModernMode;
+		renderer.resize(windowDimensions.x, windowDimensions.y,
+			options.getGraphics_ResolutionScale(), fullGameWindow);
+	}));
+
+	// Create audio options.
+	auto soundResamplingOption = std::make_unique<IntOption>(
+		OptionsPanel::SOUND_RESAMPLING_NAME,
+		"Affects quality of sounds. Results may vary depending on\nOpenAL Soft version.",
+		options.getAudio_SoundResampling(),
+		1,
+		0,
+		Options::RESAMPLING_OPTION_COUNT - 1,
+		[this](int value)
 	{
-		const int x = this->verticalFOVUpButton.getX();
-		const int y = this->verticalFOVUpButton.getY() + this->verticalFOVUpButton.getHeight();
-		const int width = this->verticalFOVUpButton.getWidth();
-		const int height = this->verticalFOVUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options)
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setAudio_SoundResampling(value);
+
+		// If the sound resampling extension is supported, update the audio manager sources.
+		auto &audioManager = game.getAudioManager();
+		if (audioManager.hasResamplerExtension())
 		{
-			const double newVerticalFOV = std::max(options.getGraphics_VerticalFOV() - 5.0,
-				Options::MIN_VERTICAL_FOV);
-			options.setGraphics_VerticalFOV(newVerticalFOV);
-			panel.updateVerticalFOVText(newVerticalFOV);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+			audioManager.setResamplingOption(value);
+		}
+	});
 
-	this->cursorScaleUpButton = []()
+	soundResamplingOption->setDisplayOverrides({ "Default", "Fastest", "Medium", "Best" });
+	this->audioOptions.push_back(std::move(soundResamplingOption));
+
+	// Create input options.
+	this->inputOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::HORIZONTAL_SENSITIVITY_NAME,
+		options.getInput_HorizontalSensitivity(),
+		0.10,
+		Options::MIN_HORIZONTAL_SENSITIVITY,
+		Options::MAX_HORIZONTAL_SENSITIVITY,
+		1,
+		[this](double value)
 	{
-		const int x = 99;
-		const int y = 121;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newCursorScale = std::min(options.getGraphics_CursorScale() + 0.10,
-				Options::MAX_CURSOR_SCALE);
-			options.setGraphics_CursorScale(newCursorScale);
-			panel.updateCursorScaleText(newCursorScale);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setInput_HorizontalSensitivity(value);
+	}));
 
-	this->cursorScaleDownButton = [this]()
+	this->inputOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::VERTICAL_SENSITIVITY_NAME,
+		"Only affects camera look in modern mode.",
+		options.getInput_VerticalSensitivity(),
+		0.10,
+		Options::MIN_VERTICAL_SENSITIVITY,
+		Options::MAX_VERTICAL_SENSITIVITY,
+		1,
+		[this](double value)
 	{
-		const int x = this->cursorScaleUpButton.getX();
-		const int y = this->cursorScaleUpButton.getY() + this->cursorScaleUpButton.getHeight();
-		const int width = this->cursorScaleUpButton.getWidth();
-		const int height = this->cursorScaleUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newCursorScale = std::max(options.getGraphics_CursorScale() - 0.10,
-				Options::MIN_CURSOR_SCALE);
-			options.setGraphics_CursorScale(newCursorScale);
-			panel.updateCursorScaleText(newCursorScale);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setInput_VerticalSensitivity(value);
+	}));
 
-	this->letterboxAspectUpButton = []()
+	// Create miscellaneous options.
+	this->miscOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::SHOW_COMPASS_NAME,
+		options.getMisc_ShowCompass(),
+		[this](bool value)
 	{
-		const int x = 120;
-		const int y = 141;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
-		{
-			const double newLetterboxAspect = std::min(
-				options.getGraphics_LetterboxAspect() + 0.010,
-				Options::MAX_LETTERBOX_ASPECT);
-			options.setGraphics_LetterboxAspect(newLetterboxAspect);
-			panel.updateLetterboxAspectText(newLetterboxAspect);
-			renderer.setLetterboxAspect(newLetterboxAspect);
-		};
-		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_ShowCompass(value);
+	}));
 
-	this->letterboxAspectDownButton = [this]()
+	this->miscOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::SKIP_INTRO_NAME,
+		"Skips startup logo and related screens.",
+		options.getMisc_SkipIntro(),
+		[this](bool value)
 	{
-		const int x = this->letterboxAspectUpButton.getX();
-		const int y = this->letterboxAspectUpButton.getY() +
-			this->letterboxAspectUpButton.getHeight();
-		const int width = this->letterboxAspectUpButton.getWidth();
-		const int height = this->letterboxAspectUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
-		{
-			const double newLetterboxAspect = std::max(
-				options.getGraphics_LetterboxAspect() - 0.010,
-				Options::MIN_LETTERBOX_ASPECT);
-			options.setGraphics_LetterboxAspect(newLetterboxAspect);
-			panel.updateLetterboxAspectText(newLetterboxAspect);
-			renderer.setLetterboxAspect(newLetterboxAspect);
-		};
-		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_SkipIntro(value);
+	}));
 
-	this->hSensitivityUpButton = []()
+	// Create developer options.
+	this->devOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::COLLISION_NAME,
+		"Enables player collision (not fully implemented yet).",
+		options.getMisc_Collision(),
+		[this](bool value)
 	{
-		const int x = 255;
-		const int y = 41;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newHorizontalSensitivity = std::min(
-				options.getInput_HorizontalSensitivity() + 0.50,
-				Options::MAX_HORIZONTAL_SENSITIVITY);
-			options.setInput_HorizontalSensitivity(newHorizontalSensitivity);
-			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_Collision(value);
+	}));
 
-	this->hSensitivityDownButton = [this]()
+	this->devOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::SHOW_DEBUG_NAME,
+		"Displays debug information in the game world.",
+		options.getMisc_ShowDebug(),
+		[this](bool value)
 	{
-		const int x = this->hSensitivityUpButton.getX();
-		const int y = this->hSensitivityUpButton.getY() +
-			this->hSensitivityUpButton.getHeight();
-		const int width = this->hSensitivityUpButton.getWidth();
-		const int height = this->hSensitivityUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newHorizontalSensitivity = std::max(
-				options.getInput_HorizontalSensitivity() - 0.50,
-				Options::MIN_HORIZONTAL_SENSITIVITY);
-			options.setInput_HorizontalSensitivity(newHorizontalSensitivity);
-			panel.updateHorizontalSensitivityText(newHorizontalSensitivity);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_ShowDebug(value);
+	}));
 
-	this->vSensitivityUpButton = []()
-	{
-		const int x = 256;
-		const int y = 61;
-		const int width = 8;
-		const int height = 8;
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newVerticalSensitivity = std::min(
-				options.getInput_VerticalSensitivity() + 0.50,
-				Options::MAX_VERTICAL_SENSITIVITY);
-			options.setInput_VerticalSensitivity(newVerticalSensitivity);
-			panel.updateVerticalSensitivityText(newVerticalSensitivity);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
+	// Set initial tab.
+	this->tab = OptionsPanel::Tab::Graphics;
 
-	this->vSensitivityDownButton = [this]()
-	{
-		const int x = this->vSensitivityUpButton.getX();
-		const int y = this->vSensitivityUpButton.getY() +
-			this->vSensitivityUpButton.getHeight();
-		const int width = this->vSensitivityUpButton.getWidth();
-		const int height = this->vSensitivityUpButton.getHeight();
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			const double newVerticalSensitivity = std::max(
-				options.getInput_VerticalSensitivity() - 0.50,
-				Options::MIN_VERTICAL_SENSITIVITY);
-			options.setInput_VerticalSensitivity(newVerticalSensitivity);
-			panel.updateVerticalSensitivityText(newVerticalSensitivity);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
-
-	this->collisionButton = []()
-	{
-		const int x = 232;
-		const int y = 82;
-		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			// Toggle the collision option.
-			const bool newCollision = !options.getMisc_Collision();
-			options.setMisc_Collision(newCollision);
-			panel.updateCollisionText(newCollision);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
-
-	this->skipIntroButton = []()
-	{
-		const int x = 240;
-		const int y = 96;
-		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		auto function = [](OptionsPanel &panel, Options &options)
-		{
-			// Toggle the skip intro option.
-			const bool newSkipIntro = !options.getMisc_SkipIntro();
-			options.setMisc_SkipIntro(newSkipIntro);
-			panel.updateSkipIntroText(newSkipIntro);
-		};
-		return Button<OptionsPanel&, Options&>(x, y, width, height, function);
-	}();
-
-	this->fullscreenButton = []()
-	{
-		const int x = 245;
-		const int y = 110;
-		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		auto function = [](OptionsPanel &panel, Options &options, Renderer &renderer)
-		{
-			// Toggle the fullscreen option.
-			const bool newFullscreen = !options.getGraphics_Fullscreen();
-			options.setGraphics_Fullscreen(newFullscreen);
-			renderer.setFullscreen(newFullscreen);
-			panel.updateFullscreenText(newFullscreen);
-		};
-		return Button<OptionsPanel&, Options&, Renderer&>(x, y, width, height, function);
-	}();
-
-	this->soundResamplingButton = []()
-	{
-		const int x = 296;
-		const int y = 124;
-		const int width = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		const int height = OptionsPanel::TOGGLE_BUTTON_SIZE;
-		auto function = [](OptionsPanel &panel, Options &options, AudioManager &audioManager)
-		{
-			// Increment the sound resampling option, or loop around.
-			const int newResamplingOption =
-				(options.getAudio_SoundResampling() + 1) % Options::RESAMPLING_OPTION_COUNT;
-			options.setAudio_SoundResampling(newResamplingOption);
-
-			// If the sound resampling extension is supported, update the audio manager sources.
-			if (audioManager.hasResamplerExtension())
-			{
-				audioManager.setResamplingOption(newResamplingOption);
-			}
-
-			panel.updateSoundResamplingText(newResamplingOption);
-		};
-		return Button<OptionsPanel&, Options&, AudioManager&>(x, y, width, height, function);
-	}();
+	// Initialize all option text boxes for the initial tab.
+	this->updateVisibleOptionTextBoxes();
 }
 
-std::string OptionsPanel::getPlayerInterfaceString(bool modernInterface)
+std::vector<std::unique_ptr<OptionsPanel::Option>> &OptionsPanel::getVisibleOptions()
 {
-	return modernInterface ? "Modern" : "Classic";
-}
-
-std::string OptionsPanel::getSoundResamplingString(int resamplingOption)
-{
-	const std::array<std::string, 4> SoundResamplingOptions =
+	if (this->tab == OptionsPanel::Tab::Graphics)
 	{
-		"Default", "Fastest", "Medium", "Best"
-	};
-
-	return SoundResamplingOptions.at(resamplingOption);
-}
-
-void OptionsPanel::updateFPSText(int fps)
-{
-	assert(this->fpsTextBox.get() != nullptr);
-
-	this->fpsTextBox = [this, fps]()
+		return this->graphicsOptions;
+	}
+	else if (this->tab == OptionsPanel::Tab::Audio)
 	{
-		const RichTextString &oldRichText = this->fpsTextBox->getRichText();
-
-		const RichTextString richText(
-			OptionsPanel::FPS_TEXT + std::to_string(fps),
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->fpsTextBox->getX(), this->fpsTextBox->getY(), richText,
-			this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateResolutionScaleText(double resolutionScale)
-{
-	assert(this->resolutionScaleTextBox.get() != nullptr);
-
-	this->resolutionScaleTextBox = [this, resolutionScale]()
+		return this->audioOptions;
+	}
+	else if (this->tab == OptionsPanel::Tab::Input)
 	{
-		const RichTextString &oldRichText = this->resolutionScaleTextBox->getRichText();
-
-		const RichTextString richText(
-			OptionsPanel::RESOLUTION_SCALE_TEXT + String::fixedPrecision(resolutionScale, 2),
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updatePlayerInterfaceText(PlayerInterface playerInterface)
-{
-	assert(this->playerInterfaceTextBox.get() != nullptr);
-
-	this->playerInterfaceTextBox = [this, playerInterface]()
+		return this->inputOptions;
+	}
+	else if (this->tab == OptionsPanel::Tab::Misc)
 	{
-		const RichTextString &oldRichText = this->playerInterfaceTextBox->getRichText();
-
-		const std::string text = OptionsPanel::PLAYER_INTERFACE_TEXT +
-			this->getPlayerInterfaceString(playerInterface == PlayerInterface::Modern);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateVerticalFOVText(double verticalFOV)
-{
-	assert(this->verticalFOVTextBox.get() != nullptr);
-
-	this->verticalFOVTextBox = [this, verticalFOV]()
+		return this->miscOptions;
+	}
+	else if (this->tab == OptionsPanel::Tab::Dev)
 	{
-		const RichTextString &oldRichText = this->verticalFOVTextBox->getRichText();
-
-		const std::string text = OptionsPanel::VERTICAL_FOV_TEXT +
-			String::fixedPrecision(verticalFOV, 1);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateCursorScaleText(double cursorScale)
-{
-	assert(this->cursorScaleTextBox.get() != nullptr);
-
-	this->cursorScaleTextBox = [this, cursorScale]()
+		return this->devOptions;
+	}
+	else
 	{
-		const RichTextString &oldRichText = this->cursorScaleTextBox->getRichText();
-
-		const std::string text = OptionsPanel::CURSOR_SCALE_TEXT +
-			String::fixedPrecision(cursorScale, 1);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
+		throw DebugException("Invalid tab \"" +
+			std::to_string(static_cast<int>(this->tab)) + "\".");
+	}
 }
 
-void OptionsPanel::updateLetterboxAspectText(double letterboxAspect)
+void OptionsPanel::updateOptionTextBox(int index)
 {
-	assert(this->letterboxAspectTextBox.get() != nullptr);
+	auto &game = this->getGame();
+	const auto &visibleOption = this->getVisibleOptions().at(index);
 
-	this->letterboxAspectTextBox = [this, letterboxAspect]()
+	const RichTextString richText(
+		visibleOption->getName() + ": " + visibleOption->getDisplayedValue(),
+		FontName::Arena,
+		Color::White,
+		TextAlignment::Left,
+		game.getFontManager());
+
+	this->currentTabTextBoxes.at(index) = std::make_unique<TextBox>(
+		ListOrigin.x,
+		ListOrigin.y + (richText.getDimensions().y * index),
+		richText,
+		game.getRenderer());
+}
+
+void OptionsPanel::updateVisibleOptionTextBoxes()
+{
+	auto &game = this->getGame();
+	const auto &visibleOptions = this->getVisibleOptions();
+
+	this->currentTabTextBoxes.clear();
+	this->currentTabTextBoxes.resize(visibleOptions.size());
+	
+	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		const RichTextString &oldRichText = this->letterboxAspectTextBox->getRichText();
-
-		const std::string text = OptionsPanel::LETTERBOX_ASPECT_TEXT +
-			String::fixedPrecision(letterboxAspect, 2);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
+		this->updateOptionTextBox(i);
+	}
 }
 
-void OptionsPanel::updateHorizontalSensitivityText(double hSensitivity)
+void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 {
-	assert(this->hSensitivityTextBox.get() != nullptr);
+	auto &game = this->getGame();
 
-	this->hSensitivityTextBox = [this, hSensitivity]()
-	{
-		const RichTextString &oldRichText = this->hSensitivityTextBox->getRichText();
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		Color::White,
+		TextAlignment::Left,
+		game.getFontManager());
 
-		const std::string text = OptionsPanel::HORIZONTAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(hSensitivity, 1);
+	auto descriptionTextBox = std::make_unique<TextBox>(
+		DescriptionOrigin.x,
+		DescriptionOrigin.y,
+		richText,
+		game.getRenderer());
 
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateVerticalSensitivityText(double vSensitivity)
-{
-	assert(this->vSensitivityTextBox.get() != nullptr);
-
-	this->vSensitivityTextBox = [this, vSensitivity]()
-	{
-		const RichTextString &oldRichText = this->vSensitivityTextBox->getRichText();
-
-		const std::string text = OptionsPanel::VERTICAL_SENSITIVITY_TEXT +
-			String::fixedPrecision(vSensitivity, 1);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateCollisionText(bool collision)
-{
-	assert(this->collisionTextBox.get() != nullptr);
-
-	this->collisionTextBox = [this, collision]()
-	{
-		const RichTextString &oldRichText = this->collisionTextBox->getRichText();
-		const std::string text = OptionsPanel::COLLISION_TEXT + (collision ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->collisionTextBox->getX(), this->collisionTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateSkipIntroText(bool skip)
-{
-	assert(this->skipIntroTextBox.get() != nullptr);
-
-	this->skipIntroTextBox = [this, skip]()
-	{
-		const RichTextString &oldRichText = this->skipIntroTextBox->getRichText();
-		const std::string text = OptionsPanel::SKIP_INTRO_TEXT + (skip ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateFullscreenText(bool fullscreen)
-{
-	assert(this->fullscreenTextBox.get() != nullptr);
-
-	this->fullscreenTextBox = [this, fullscreen]()
-	{
-		const RichTextString &oldRichText = this->fullscreenTextBox->getRichText();
-		const std::string text = OptionsPanel::FULLSCREEN_TEXT + (fullscreen ? "On" : "Off");
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::updateSoundResamplingText(int resamplingOption)
-{
-	assert(this->soundResamplingTextBox.get() != nullptr);
-
-	this->soundResamplingTextBox = [this, resamplingOption]()
-	{
-		const RichTextString &oldRichText = this->soundResamplingTextBox->getRichText();
-		const std::string text = OptionsPanel::SOUND_RESAMPLING_TEXT +
-			OptionsPanel::getSoundResamplingString(resamplingOption);
-
-		const RichTextString richText(
-			text,
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
-
-		return std::make_unique<TextBox>(
-			this->soundResamplingTextBox->getX(), this->soundResamplingTextBox->getY(),
-			richText, this->getGame().getRenderer());
-	}();
-}
-
-void OptionsPanel::drawTooltip(const std::string &text, Renderer &renderer)
-{
-	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer));
-
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 originalPosition = renderer.nativeToOriginal(
-		inputManager.getMousePosition());
-	const int mouseX = originalPosition.x;
-	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
-		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
-		mouseY : (mouseY - tooltip.getHeight());
-
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(descriptionTextBox->getTexture(),
+		descriptionTextBox->getX(), descriptionTextBox->getY());
 }
 
 std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
@@ -1115,108 +668,143 @@ std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 void OptionsPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
+
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 originalPoint = this->getGame().getRenderer()
+		.nativeToOriginal(mousePosition);
 
 	if (escapePressed)
 	{
-		this->backToPauseButton.click(this->getGame());
+		this->backToPauseMenuButton.click(this->getGame());
+	}
+	else if (leftClick)
+	{
+		// Check for various button clicks.
+		if (this->backToPauseMenuButton.contains(originalPoint))
+		{
+			this->backToPauseMenuButton.click(this->getGame());
+		}
+		else if (GraphicsTabRect.contains(originalPoint))
+		{
+			this->tabButton.click(*this, OptionsPanel::Tab::Graphics);
+		}
+		else if (AudioTabRect.contains(originalPoint))
+		{
+			this->tabButton.click(*this, OptionsPanel::Tab::Audio);
+		}
+		else if (InputTabRect.contains(originalPoint))
+		{
+			this->tabButton.click(*this, OptionsPanel::Tab::Input);
+		}
+		else if (MiscTabRect.contains(originalPoint))
+		{
+			this->tabButton.click(*this, OptionsPanel::Tab::Misc);
+		}
+		else if (DevTabRect.contains(originalPoint))
+		{
+			this->tabButton.click(*this, OptionsPanel::Tab::Dev);
+		}
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
+	// Check for option clicks. Left click is "next", right click is "previous", with
+	// respect to an option's value in its pre-defined range (if any).
+	if (leftClick || rightClick)
 	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		auto &visibleOptions = this->getVisibleOptions();
 
-		// Check for various button clicks.
-		if (this->fpsUpButton.contains(mouseOriginalPoint))
+		for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 		{
-			this->fpsUpButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->fpsDownButton.contains(mouseOriginalPoint))
-		{
-			this->fpsDownButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->resolutionScaleUpButton.contains(mouseOriginalPoint))
-		{
-			this->resolutionScaleUpButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getRenderer());
-		}
-		else if (this->resolutionScaleDownButton.contains(mouseOriginalPoint))
-		{
-			this->resolutionScaleDownButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getRenderer());
-		}
-		else if (this->playerInterfaceButton.contains(mouseOriginalPoint))
-		{
-			this->playerInterfaceButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getGameData().getPlayer(), this->getGame().getRenderer());
-		}
-		else if (this->verticalFOVUpButton.contains(mouseOriginalPoint))
-		{
-			this->verticalFOVUpButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->verticalFOVDownButton.contains(mouseOriginalPoint))
-		{
-			this->verticalFOVDownButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->cursorScaleUpButton.contains(mouseOriginalPoint))
-		{
-			this->cursorScaleUpButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->cursorScaleDownButton.contains(mouseOriginalPoint))
-		{
-			this->cursorScaleDownButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->letterboxAspectUpButton.contains(mouseOriginalPoint))
-		{
-			this->letterboxAspectUpButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getRenderer());
-		}
-		else if (this->letterboxAspectDownButton.contains(mouseOriginalPoint))
-		{
-			this->letterboxAspectDownButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getRenderer());
-		}
-		else if (this->hSensitivityUpButton.contains(mouseOriginalPoint))
-		{
-			this->hSensitivityUpButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->hSensitivityDownButton.contains(mouseOriginalPoint))
-		{
-			this->hSensitivityDownButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->vSensitivityUpButton.contains(mouseOriginalPoint))
-		{
-			this->vSensitivityUpButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->vSensitivityDownButton.contains(mouseOriginalPoint))
-		{
-			this->vSensitivityDownButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->collisionButton.contains(mouseOriginalPoint))
-		{
-			this->collisionButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->skipIntroButton.contains(mouseOriginalPoint))
-		{
-			this->skipIntroButton.click(*this, this->getGame().getOptions());
-		}
-		else if (this->fullscreenButton.contains(mouseOriginalPoint))
-		{
-			this->fullscreenButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getRenderer());
-		}
-		else if (this->soundResamplingButton.contains(mouseOriginalPoint))
-		{
-			this->soundResamplingButton.click(*this, this->getGame().getOptions(),
-				this->getGame().getAudioManager());
-		}
-		else if (this->backToPauseButton.contains(mouseOriginalPoint))
-		{
-			this->backToPauseButton.click(this->getGame());
+			const auto &optionTextBox = this->currentTabTextBoxes.at(i);
+			const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
+
+			const Rect optionRect(
+				ListOrigin.x,
+				ListOrigin.y + (optionTextBoxHeight * i),
+				ListDimensions.x,
+				optionTextBoxHeight);
+
+			// See if the option's rectangle contains the mouse click.
+			if (optionRect.contains(originalPoint))
+			{
+				auto &option = visibleOptions.at(i);
+
+				// Lambdas for modifying the option value based on what it is and whether
+				// to try and increment it or decrement it (if that has any meaning).
+				auto tryIncrement = [&option]()
+				{
+					if (option->getType() == Option::Type::Bool)
+					{
+						BoolOption *boolOpt = static_cast<BoolOption*>(option.get());
+						boolOpt->toggle();
+					}
+					else if (option->getType() == Option::Type::Int)
+					{
+						IntOption *intOpt = static_cast<IntOption*>(option.get());
+						intOpt->set(intOpt->getNext());
+					}
+					else if (option->getType() == Option::Type::Double)
+					{
+						DoubleOption *doubleOpt = static_cast<DoubleOption*>(option.get());
+						doubleOpt->set(doubleOpt->getNext());
+					}
+					else if (option->getType() == Option::Type::String)
+					{
+						// Do nothing.
+						static_cast<void>(option);
+					}
+					else
+					{
+						throw DebugException("Invalid type \"" +
+							std::to_string(static_cast<int>(option->getType())) + "\".");
+					}
+				};
+
+				auto tryDecrement = [&option]()
+				{
+					if (option->getType() == Option::Type::Bool)
+					{
+						BoolOption *boolOpt = static_cast<BoolOption*>(option.get());
+						boolOpt->toggle();
+					}
+					else if (option->getType() == Option::Type::Int)
+					{
+						IntOption *intOpt = static_cast<IntOption*>(option.get());
+						intOpt->set(intOpt->getPrev());
+					}
+					else if (option->getType() == Option::Type::Double)
+					{
+						DoubleOption *doubleOpt = static_cast<DoubleOption*>(option.get());
+						doubleOpt->set(doubleOpt->getPrev());
+					}
+					else if (option->getType() == Option::Type::String)
+					{
+						// Do nothing.
+						static_cast<void>(option);
+					}
+					else
+					{
+						throw DebugException("Invalid type \"" +
+							std::to_string(static_cast<int>(option->getType())) + "\".");
+					}
+				};
+
+				// Modify the option based on which button was pressed.
+				if (leftClick)
+				{
+					tryIncrement();
+				}
+				else
+				{
+					tryDecrement();
+				}
+
+				// Update option text.
+				this->updateOptionTextBox(i);
+				break;
+			}
 		}
 	}
 }
@@ -1231,98 +819,87 @@ void OptionsPanel::render(Renderer &renderer)
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	// Draw solid background.
-	renderer.clearOriginal(Color(70, 70, 78));
+	const Color backgroundColor(60, 60, 68);
+	renderer.clearOriginal(backgroundColor);
 
-	// Draw buttons.
-	const auto &arrows = textureManager.getTexture(
-		TextureFile::fromName(TextureName::UpDown),
-		PaletteFile::fromName(PaletteName::CharSheet), renderer);
-	renderer.drawOriginal(arrows.get(), this->fpsUpButton.getX(),
-		this->fpsUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->resolutionScaleUpButton.getX(),
-		this->resolutionScaleUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->verticalFOVUpButton.getX(),
-		this->verticalFOVUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->cursorScaleUpButton.getX(),
-		this->cursorScaleUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->letterboxAspectUpButton.getX(),
-		this->letterboxAspectUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->hSensitivityUpButton.getX(),
-		this->hSensitivityUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->vSensitivityUpButton.getX(),
-		this->vSensitivityUpButton.getY());
-
-	Texture toggleButtonBackground(Texture::generate(Texture::PatternType::Custom1,
-		this->playerInterfaceButton.getWidth(), this->playerInterfaceButton.getHeight(),
-		textureManager, renderer));
-	renderer.drawOriginal(toggleButtonBackground.get(), this->playerInterfaceButton.getX(),
-		this->playerInterfaceButton.getY());
-	renderer.drawOriginal(toggleButtonBackground.get(), this->collisionButton.getX(),
-		this->collisionButton.getY());
-	renderer.drawOriginal(toggleButtonBackground.get(), this->skipIntroButton.getX(),
-		this->skipIntroButton.getY());
-	renderer.drawOriginal(toggleButtonBackground.get(), this->fullscreenButton.getX(),
-		this->fullscreenButton.getY());
-	renderer.drawOriginal(toggleButtonBackground.get(), this->soundResamplingButton.getX(),
-		this->soundResamplingButton.getY());
+	// Draw return button and tabs.
+	Texture tabBackground(Texture::generate(Texture::PatternType::Custom1,
+		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer));
+	for (int i = 0; i < 5; i++)
+	{
+		renderer.drawOriginal(tabBackground.get(),
+			GraphicsTabRect.getLeft(),
+			GraphicsTabRect.getTop() + (tabBackground.getHeight() * i));
+	}
 
 	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
-		this->backToPauseButton.getWidth(), this->backToPauseButton.getHeight(),
+		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
 		textureManager, renderer));
-	renderer.drawOriginal(returnBackground.get(), this->backToPauseButton.getX(),
-		this->backToPauseButton.getY());
+	renderer.drawOriginal(returnBackground.get(), this->backToPauseMenuButton.getX(),
+		this->backToPauseMenuButton.getY());
 
 	// Draw text.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->backToPauseTextBox->getTexture(),
-		this->backToPauseTextBox->getX(), this->backToPauseTextBox->getY());
-	renderer.drawOriginal(this->fpsTextBox->getTexture(),
-		this->fpsTextBox->getX(), this->fpsTextBox->getY());
-	renderer.drawOriginal(this->resolutionScaleTextBox->getTexture(),
-		this->resolutionScaleTextBox->getX(), this->resolutionScaleTextBox->getY());
-	renderer.drawOriginal(this->playerInterfaceTextBox->getTexture(),
-		this->playerInterfaceTextBox->getX(), this->playerInterfaceTextBox->getY());
-	renderer.drawOriginal(this->verticalFOVTextBox->getTexture(),
-		this->verticalFOVTextBox->getX(), this->verticalFOVTextBox->getY());
-	renderer.drawOriginal(this->cursorScaleTextBox->getTexture(),
-		this->cursorScaleTextBox->getX(), this->cursorScaleTextBox->getY());
-	renderer.drawOriginal(this->letterboxAspectTextBox->getTexture(),
-		this->letterboxAspectTextBox->getX(), this->letterboxAspectTextBox->getY());
-	renderer.drawOriginal(this->hSensitivityTextBox->getTexture(),
-		this->hSensitivityTextBox->getX(), this->hSensitivityTextBox->getY());
-	renderer.drawOriginal(this->vSensitivityTextBox->getTexture(),
-		this->vSensitivityTextBox->getX(), this->vSensitivityTextBox->getY());
-	renderer.drawOriginal(this->collisionTextBox->getTexture(),
-		this->collisionTextBox->getX(), this->collisionTextBox->getY());
-	renderer.drawOriginal(this->skipIntroTextBox->getTexture(),
-		this->skipIntroTextBox->getX(), this->skipIntroTextBox->getY());
-	renderer.drawOriginal(this->fullscreenTextBox->getTexture(),
-		this->fullscreenTextBox->getX(), this->fullscreenTextBox->getY());
-	renderer.drawOriginal(this->soundResamplingTextBox->getTexture(),
-		this->soundResamplingTextBox->getX(), this->soundResamplingTextBox->getY());
+	renderer.drawOriginal(this->backToPauseMenuTextBox->getTexture(),
+		this->backToPauseMenuTextBox->getX(), this->backToPauseMenuTextBox->getY());
+	renderer.drawOriginal(this->graphicsTextBox->getTexture(),
+		this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
+	renderer.drawOriginal(this->audioTextBox->getTexture(),
+		this->audioTextBox->getX(), this->audioTextBox->getY());
+	renderer.drawOriginal(this->inputTextBox->getTexture(),
+		this->inputTextBox->getX(), this->inputTextBox->getY());
+	renderer.drawOriginal(this->miscTextBox->getTexture(),
+		this->miscTextBox->getX(), this->miscTextBox->getY());
+	renderer.drawOriginal(this->devTextBox->getTexture(),
+		this->devTextBox->getX(), this->devTextBox->getY());
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
-	// Draw tooltips for certain things.
-	if (this->resolutionScaleTextBox->getRect().contains(originalPosition))
+	// Draw each option's text.
+	const auto &visibleOptions = this->getVisibleOptions();
+	int highlightedOptionIndex = -1;
+	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		this->drawTooltip("Percent of the window resolution\nto use for 3D rendering.", renderer);
+		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
+		const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
+		const Rect optionRect(
+			ListOrigin.x,
+			ListOrigin.y + (optionTextBoxHeight * i),
+			ListDimensions.x,
+			optionTextBoxHeight);
+
+		const bool optionRectContainsMouse = optionRect.contains(originalPosition);
+
+		// If the options rect contains the mouse cursor, highlight it before drawing text.
+		if (optionRectContainsMouse)
+		{
+			const Color highlightColor = backgroundColor + Color(20, 20, 20);
+			renderer.fillOriginalRect(highlightColor,
+				optionRect.getLeft(), optionRect.getTop(),
+				optionRect.getWidth(), optionRect.getHeight());
+
+			// Store the highlighted option index for tooltip drawing.
+			highlightedOptionIndex = i;
+		}
+
+		// Draw option text.
+		renderer.drawOriginal(optionTextBox->getTexture(),
+			optionTextBox->getX(), optionTextBox->getY());
 	}
-	else if (this->playerInterfaceTextBox->getRect().contains(originalPosition))
+
+	// Draw description if hovering over an option with a non-empty tooltip.
+	if (highlightedOptionIndex != -1)
 	{
-		this->drawTooltip("Modern mode uses a new minimal\ninterface with free-look.", renderer);
-	}
-	else if (this->letterboxAspectTextBox->getRect().contains(originalPosition))
-	{
-		this->drawTooltip(std::string("1.60 represents the 'unaltered' look,\n") +
-			"and 1.33 represents the 'tall pixels'\n" +
-			"look on a 640x480 monitor.", renderer);
-	}
-	else if (this->vSensitivityTextBox->getRect().contains(originalPosition))
-	{
-		this->drawTooltip("Only affects vertical camera look\nin modern mode.", renderer);
+		const auto &visibleOption = visibleOptions.at(highlightedOptionIndex);
+		const std::string &tooltip = visibleOption->getTooltip();
+
+		// Only draw if the tooltip has text.
+		if (!tooltip.empty())
+		{
+			this->drawDescription(tooltip, renderer);
+		}
 	}
 }

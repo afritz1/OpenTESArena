@@ -2,9 +2,13 @@
 #define OPTIONS_PANEL_H
 
 #include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Math/Vector2.h"
 
 class AudioManager;
 class Options;
@@ -62,6 +66,7 @@ private:
 	private:
 		int value, delta, min, max;
 		Callback callback;
+		std::vector<std::string> displayOverrides; // For displaying names instead of integers.
 	public:
 		IntOption(const std::string &name, std::string &&tooltip, int value, int delta,
 			int min, int max, Callback &&callback);
@@ -73,6 +78,7 @@ private:
 		virtual std::string getDisplayedValue() const override;
 
 		void set(int value);
+		void setDisplayOverrides(std::vector<std::string> &&displayOverrides);
 	};
 
 	class DoubleOption : public Option
@@ -113,52 +119,61 @@ private:
 		void set(std::string &&value);
 	};
 
-	static const int TOGGLE_BUTTON_SIZE;
-	static const std::string FPS_TEXT;
-	static const std::string RESOLUTION_SCALE_TEXT;
-	static const std::string PLAYER_INTERFACE_TEXT;
-	static const std::string VERTICAL_FOV_TEXT;
-	static const std::string CURSOR_SCALE_TEXT;
-	static const std::string LETTERBOX_ASPECT_TEXT;
-	static const std::string HORIZONTAL_SENSITIVITY_TEXT;
-	static const std::string VERTICAL_SENSITIVITY_TEXT;
-	static const std::string COLLISION_TEXT;
-	static const std::string SKIP_INTRO_TEXT;
-	static const std::string FULLSCREEN_TEXT;
-	static const std::string SOUND_RESAMPLING_TEXT;
+	// Options panel tabs.
+	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
-	std::unique_ptr<TextBox> titleTextBox, backToPauseTextBox, fpsTextBox,
-		resolutionScaleTextBox, playerInterfaceTextBox, verticalFOVTextBox,
-		cursorScaleTextBox, letterboxAspectTextBox, hSensitivityTextBox, vSensitivityTextBox,
-		collisionTextBox, skipIntroTextBox, fullscreenTextBox, soundResamplingTextBox;
-	Button<Game&> backToPauseButton;
-	Button<OptionsPanel&, Options&> fpsUpButton, fpsDownButton,
-		verticalFOVUpButton, verticalFOVDownButton, cursorScaleUpButton, cursorScaleDownButton,
-		hSensitivityUpButton, hSensitivityDownButton, vSensitivityUpButton, vSensitivityDownButton,
-		collisionButton, skipIntroButton;
-	Button<OptionsPanel&, Options&, Renderer&> resolutionScaleUpButton,
-		resolutionScaleDownButton, letterboxAspectUpButton, letterboxAspectDownButton,
-		fullscreenButton;
-	Button<OptionsPanel&, Options&, AudioManager&> soundResamplingButton;
-	Button<OptionsPanel&, Options&, Player&, Renderer&> playerInterfaceButton;
+	// Tabs.
+	static const std::string GRAPHICS_TAB_NAME;
+	static const std::string AUDIO_TAB_NAME;
+	static const std::string INPUT_TAB_NAME;
+	static const std::string MISC_TAB_NAME;
+	static const std::string DEV_TAB_NAME;
 
-	static std::string getPlayerInterfaceString(bool modernInterface);
-	static std::string getSoundResamplingString(int resamplingOption);
+	// Graphics.
+	static const std::string CURSOR_SCALE_NAME;
+	static const std::string FPS_LIMIT_NAME;
+	static const std::string FULLSCREEN_NAME;
+	static const std::string LETTERBOX_ASPECT_NAME;
+	static const std::string MODERN_INTERFACE_NAME;
+	static const std::string RESOLUTION_SCALE_NAME;
+	static const std::string VERTICAL_FOV_NAME;
 
-	void updateFPSText(int fps);
-	void updateResolutionScaleText(double resolutionScale);
-	void updatePlayerInterfaceText(PlayerInterface playerInterface);
-	void updateVerticalFOVText(double verticalFOV);
-	void updateCursorScaleText(double cursorScale);
-	void updateLetterboxAspectText(double letterboxAspect);
-	void updateHorizontalSensitivityText(double hSensitivity);
-	void updateVerticalSensitivityText(double vSensitivity);
-	void updateCollisionText(bool collision);
-	void updateSkipIntroText(bool skip);
-	void updateFullscreenText(bool fullscreen);
-	void updateSoundResamplingText(int resamplingOption);
+	// Audio.
+	static const std::string SOUND_RESAMPLING_NAME;
 
-	void drawTooltip(const std::string &text, Renderer &renderer);
+	// Input.
+	static const std::string HORIZONTAL_SENSITIVITY_NAME;
+	static const std::string VERTICAL_SENSITIVITY_NAME;
+
+	// Misc.
+	static const std::string SHOW_COMPASS_NAME;
+	static const std::string SKIP_INTRO_NAME;
+
+	// Dev.
+	static const std::string COLLISION_NAME;
+	static const std::string SHOW_DEBUG_NAME;
+
+	std::unique_ptr<TextBox> titleTextBox, backToPauseMenuTextBox, graphicsTextBox, audioTextBox,
+		inputTextBox, miscTextBox, devTextBox;
+	Button<Game&> backToPauseMenuButton;
+	Button<OptionsPanel&, OptionsPanel::Tab> tabButton;
+	std::vector<std::unique_ptr<OptionsPanel::Option>> graphicsOptions, audioOptions,
+		inputOptions, miscOptions, devOptions;
+	std::vector<std::unique_ptr<TextBox>> currentTabTextBoxes;
+	OptionsPanel::Tab tab;
+
+	// Gets the visible options group based on the current tab.
+	std::vector<std::unique_ptr<OptionsPanel::Option>> &getVisibleOptions();
+
+	// Regenerates option text for one option.
+	void updateOptionTextBox(int index);
+
+	// Regenerates all option text boxes in the current tab.
+	void updateVisibleOptionTextBoxes();
+
+	// Draws description for an option. Not using mouse tooltips because they
+	// get in the way of seeing what an option's value is.
+	void drawDescription(const std::string &text, Renderer &renderer);
 public:
 	OptionsPanel(Game &game);
 	virtual ~OptionsPanel() = default;
