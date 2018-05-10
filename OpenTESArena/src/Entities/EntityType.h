@@ -4,28 +4,19 @@
 // An entity type determines the behavior of an entity when time is ticking or when 
 // they are interacted with.
 
-// Containers are: treasure chests, piles, etc..
-// Doodads are: furniture, trees, light posts, sign posts, junk, staff pieces, etc..
-// Doors are: swinging doors, raising portcullises.
-// Non-players are: anything with an AI (an NPC or creature).
-// Projectiles are: flying objects or spells.
-// Transitions are: a sprite entrance to somewhere, like a den.
+// Containers: treasure chests, piles, etc..
+// Doodads: furniture, trees, street lights, junk, staff pieces, etc..
+// Non-players: an NPC or creature.
+// Projectiles: flying objects or spells.
+// Transitions: a sprite entrance to somewhere, like a den.
 
-// Should a non-player be converted to a container on death? Maybe not. When activated,
-// they should behave like a container instead of an actor.
-
-// Activation:
-// Some entities can be "activated"; that is, friendly non-players can be talked to,
-// doors can be toggled, transitions can be entered, and staff pieces can be picked up.
-
-// Lights:
-// Doodads, the player, non-players, and projectiles can have a light.
+// Some entities can be activated; that is, friendly non-players can be talked to,
+// transitions can be entered, and staff pieces can be picked up.
 
 enum class EntityType
 {
 	Container,
-	Doodad,	
-	Door,
+	Doodad,
 	NonPlayer,
 	Projectile,
 	Transition

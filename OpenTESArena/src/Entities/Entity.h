@@ -6,9 +6,7 @@
 #include "../Math/Vector3.h"
 
 // Entities are any non-player objects in the world that aren't part of the 
-// voxel grid. Every entity has a world position and a unique referencing ID. 
-
-// Not all sprites turn to face the camera (such as doors and portcullises).
+// voxel grid. Every entity has a world position and a unique referencing ID.
 
 class EntityManager;
 class Game;
@@ -49,12 +47,9 @@ public:
 	virtual EntityType getEntityType() const = 0;
 
 	// Gets the 3D position of the entity. The semantics of this depends on how it is 
-	// implemented for each entity. For example, the player's position is at their eye, 
-	// while the position of NPCs is at the center of their feet.
+	// implemented for each entity. Sometimes it's an NPC's feet, sometimes it's the
+	// center of a projectile.
 	virtual const Double3 &getPosition() const = 0;
-
-	// Returns whether the entity's 3D flat faces the player (like a sprite).
-	virtual bool facesPlayer() const = 0;
 
 	// Animates the entity's state by delta time.
 	virtual void tick(Game &game, double dt) = 0;

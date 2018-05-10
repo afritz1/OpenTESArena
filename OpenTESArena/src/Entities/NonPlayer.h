@@ -44,7 +44,6 @@ public:
 
 	virtual EntityType getEntityType() const override;
 	virtual const Double3 &getPosition() const override;
-	virtual bool facesPlayer() const override;
 
 	virtual void tick(Game &game, double dt) override;
 };
