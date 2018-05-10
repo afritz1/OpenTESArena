@@ -376,6 +376,30 @@ public:
 	struct UI
 	{
 		ExeTypes::List chooseClassList;
+		ExeTypes::List buyingWeapons; // POPUP3.
+		ExeTypes::List buyingArmor; // POPUP4.
+		ExeTypes::List spellmaker; // POPUP.
+		ExeTypes::List popUp5;
+		ExeTypes::List loadSave;
+		ExeTypes::List charClassSelection; // POPUP2.
+		ExeTypes::List buyingMagicItems; // POPUP7.
+		ExeTypes::List travelCitySelection; // POPUP8.
+		ExeTypes::List dialogue; // POPUP11.
+		ExeTypes::List roomSelectionAndCures; // NEWPOP.
+		ExeTypes::List generalLootAndSelling; // NEWPOP.
+
+		// In X, Y format.
+		std::array<uint16_t, 16> followerPortraitPositions;
+
+		// Armor class numbers on character sheet. In X, Y format.
+		std::array<uint16_t, 14> maleArmorClassPositions, femaleArmorClassPositions;
+
+		// Thirty palette indices to translate some races' helmet skin colors with.
+		// "race#" points to the race in "province #". Race 7 is a special case; they
+		// use "xLIZn.IMG" instead, where 'x' is either 'M' or 'F', and 'n' is the
+		// armor type (plate=0, etc.).
+		std::array<uint8_t, 30> helmetPaletteIndices, race1HelmetPaletteValues,
+			race3HelmetPaletteValues, race4HelmetPaletteValues;
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};

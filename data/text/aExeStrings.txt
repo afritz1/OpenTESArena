@@ -171,6 +171,24 @@ StaffDungeonSplashIndices=0x432C2
 
 [UI]
 ChooseClassList=0x40816
+BuyingWeapons=0x4076C
+BuyingArmor=0x4076C
+Spellmaker=0x406C2
+PopUp5=0x406C2
+LoadSave=0x406C2
+CharacterClassSelection=0x40816
+BuyingMagicItems=0x4076C
+TravelCitySelection=0x406C2
+Dialogue=0x407C1
+RoomSelectionAndCures=0x40717
+GeneralLootAndSelling=0x406C2
+FollowerPortraitPositions=0x43200
+MaleArmorClassPositions=0x413E9
+FemaleArmorClassPositions=0x41405
+HelmetPaletteIndices=0x37CB0
+Race1HelmetPaletteValues=0x37CDE
+Race3HelmetPaletteValues=0x37CFC
+Race4HelmetPaletteValues=0x37D1A
 
 [WallHeightTables]
 Box1A=0x48206

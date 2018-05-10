@@ -94,6 +94,21 @@ namespace
 		}
 	}
 
+	// Convenience method for initializing an array of 16-bit integer pairs.
+	template <typename T, size_t U>
+	void initInt16PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
+	{
+		static_assert(sizeof(T) == 2, "sizeof(T) != 2.");
+		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
+
+		for (size_t i = 0; i < arr.size(); i++)
+		{
+			std::pair<T, T> &pair = arr.at(i);
+			pair.first = static_cast<T>(Bytes::getLE16(ptr + (i * 4)));
+			pair.second = static_cast<T>(Bytes::getLE16(ptr + ((i * 4) + 2)));
+		}
+	}
+
 	// Convenience method for initializing an index array.
 	template <typename T, size_t U>
 	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
@@ -525,8 +540,44 @@ void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
 {
 	const std::string section = "UI";
 	const int chooseClassListOffset = ExeData::get(section, "ChooseClassList", keyValueMap);
+	const int buyingWeaponsOffset = ExeData::get(section, "BuyingWeapons", keyValueMap);
+	const int buyingArmorOffset = ExeData::get(section, "BuyingArmor", keyValueMap);
+	const int spellmakerOffset = ExeData::get(section, "Spellmaker", keyValueMap);
+	const int popUp5Offset = ExeData::get(section, "PopUp5", keyValueMap);
+	const int loadSaveOffset = ExeData::get(section, "LoadSave", keyValueMap);
+	const int charClassSelectionOffset = ExeData::get(section, "CharacterClassSelection", keyValueMap);
+	const int buyingMagicItemsOffset = ExeData::get(section, "BuyingMagicItems", keyValueMap);
+	const int travelCitySelectionOffset = ExeData::get(section, "TravelCitySelection", keyValueMap);
+	const int dialogueOffset = ExeData::get(section, "Dialogue", keyValueMap);
+	const int roomSelectionAndCuresOffset = ExeData::get(section, "RoomSelectionAndCures", keyValueMap);
+	const int generalLootAndSellingOffset = ExeData::get(section, "GeneralLootAndSelling", keyValueMap);
+	const int followerPortraitPositionsOffset = ExeData::get(section, "FollowerPortraitPositions", keyValueMap);
+	const int maleArmorClassPositionsOffset = ExeData::get(section, "MaleArmorClassPositions", keyValueMap);
+	const int femaleArmorClassPositionsOffset = ExeData::get(section, "FemaleArmorClassPositions", keyValueMap);
+	const int helmetPaletteIndicesOffset = ExeData::get(section, "HelmetPaletteIndices", keyValueMap);
+	const int race1HelmetPaletteValuesOffset = ExeData::get(section, "Race1HelmetPaletteValues", keyValueMap);
+	const int race3HelmetPaletteValuesOffset = ExeData::get(section, "Race3HelmetPaletteValues", keyValueMap);
+	const int race4HelmetPaletteValuesOffset = ExeData::get(section, "Race4HelmetPaletteValues", keyValueMap);
 
 	this->chooseClassList.init(data + chooseClassListOffset);
+	this->buyingWeapons.init(data + buyingWeaponsOffset);
+	this->buyingArmor.init(data + buyingArmorOffset);
+	this->spellmaker.init(data + spellmakerOffset);
+	this->popUp5.init(data + popUp5Offset);
+	this->loadSave.init(data + loadSaveOffset);
+	this->charClassSelection.init(data + charClassSelectionOffset);
+	this->buyingMagicItems.init(data + buyingMagicItemsOffset);
+	this->travelCitySelection.init(data + travelCitySelectionOffset);
+	this->dialogue.init(data + dialogueOffset);
+	this->roomSelectionAndCures.init(data + roomSelectionAndCuresOffset);
+	this->generalLootAndSelling.init(data + generalLootAndSellingOffset);
+	initInt16Array(this->followerPortraitPositions, data + followerPortraitPositionsOffset);
+	initInt16Array(this->maleArmorClassPositions, data + maleArmorClassPositionsOffset);
+	initInt16Array(this->femaleArmorClassPositions, data + femaleArmorClassPositionsOffset);
+	initInt8Array(this->helmetPaletteIndices, data + helmetPaletteIndicesOffset);
+	initInt8Array(this->race1HelmetPaletteValues, data + race1HelmetPaletteValuesOffset);
+	initInt8Array(this->race3HelmetPaletteValues, data + race3HelmetPaletteValuesOffset);
+	initInt8Array(this->race4HelmetPaletteValues, data + race4HelmetPaletteValuesOffset);
 }
 
 void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
