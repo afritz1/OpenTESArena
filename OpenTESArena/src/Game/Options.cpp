@@ -23,7 +23,7 @@ namespace
 		{ "TargetFPS", OptionType::Int },
 		{ "ResolutionScale", OptionType::Double },
 		{ "VerticalFOV", OptionType::Double },
-		{ "LetterboxAspect", OptionType::Double },
+		{ "LetterboxMode", OptionType::Int },
 		{ "CursorScale", OptionType::Double },
 		{ "ModernInterface", OptionType::Bool }
 	};
@@ -73,8 +73,8 @@ const double Options::MIN_VERTICAL_FOV = 40.0;
 const double Options::MAX_VERTICAL_FOV = 150.0;
 const double Options::MIN_CURSOR_SCALE = 0.50;
 const double Options::MAX_CURSOR_SCALE = 8.0;
-const double Options::MIN_LETTERBOX_ASPECT = 0.75;
-const double Options::MAX_LETTERBOX_ASPECT = 3.0;
+const int Options::MIN_LETTERBOX_MODE = 0;
+const int Options::MAX_LETTERBOX_MODE = 2;
 const double Options::MIN_HORIZONTAL_SENSITIVITY = 0.50;
 const double Options::MAX_HORIZONTAL_SENSITIVITY = 50.0;
 const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
@@ -463,14 +463,12 @@ void Options::checkGraphics_VerticalFOV(double value) const
 		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
 }
 
-void Options::checkGraphics_LetterboxAspect(double value) const
+void Options::checkGraphics_LetterboxMode(int value) const
 {
-	DebugAssert(value >= Options::MIN_LETTERBOX_ASPECT,
-		"Letterbox aspect cannot be less than " +
-		String::fixedPrecision(Options::MIN_LETTERBOX_ASPECT, 2) + ".");
-	DebugAssert(value <= Options::MAX_LETTERBOX_ASPECT,
-		"Letterbox aspect cannot be greater than " +
-		String::fixedPrecision(Options::MAX_LETTERBOX_ASPECT, 2) + ".");
+	DebugAssert(value >= Options::MIN_LETTERBOX_MODE, "Letterbox mode cannot be less than " +
+		std::to_string(Options::MIN_LETTERBOX_MODE) + ".");
+	DebugAssert(value <= Options::MAX_LETTERBOX_MODE, "Letterbox mode cannot be greater than " +
+		std::to_string(Options::MAX_LETTERBOX_MODE) + ".");
 }
 
 void Options::checkGraphics_CursorScale(double value) const

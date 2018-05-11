@@ -26,7 +26,7 @@ Renderer::Renderer()
 	this->renderer = nullptr;
 	this->nativeTexture = nullptr;
 	this->gameWorldTexture = nullptr;
-	this->letterboxAspect = 0.0;
+	this->letterboxMode = 0;
 	this->fullGameWindow = false;
 }
 
@@ -89,6 +89,31 @@ SDL_Surface *Renderer::getWindowSurface() const
 	return SDL_GetWindowSurface(this->window);
 }
 
+double Renderer::getLetterboxAspect() const
+{
+	if (this->letterboxMode == 0)
+	{
+		// 16:10.
+		return 16.0 / 10.0;
+	}
+	else if (this->letterboxMode == 1)
+	{
+		// 4:3.
+		return 4.0 / 3.0;
+	}
+	else if (this->letterboxMode == 2)
+	{
+		// Stretch to fill.
+		const Int2 windowDims = this->getWindowDimensions();
+		return static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
+	}
+	else
+	{
+		throw DebugException("Bad letterbox mode \"" +
+			std::to_string(this->letterboxMode) + "\".");
+	}
+}
+
 Int2 Renderer::getWindowDimensions() const
 {
 	const SDL_Surface *nativeSurface = this->getWindowSurface();
@@ -113,11 +138,12 @@ int Renderer::getViewHeight() const
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
 	const auto *nativeSurface = this->getWindowSurface();
-	double nativeAspect = static_cast<double>(nativeSurface->w) /
+	const double nativeAspect = static_cast<double>(nativeSurface->w) /
 		static_cast<double>(nativeSurface->h);
+	const double letterboxAspect = this->getLetterboxAspect();
 
 	// Compare the two aspects to decide what the letterbox dimensions are.
-	if (std::abs(nativeAspect - this->letterboxAspect) < Constants::Epsilon)
+	if (std::abs(nativeAspect - letterboxAspect) < Constants::Epsilon)
 	{
 		// Equal aspects. The letterbox is equal to the screen size.
 		SDL_Rect rect;
@@ -127,11 +153,11 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 		rect.h = nativeSurface->h;
 		return rect;
 	}
-	else if (nativeAspect > this->letterboxAspect)
+	else if (nativeAspect > letterboxAspect)
 	{
 		// Native window is wider = empty left and right.
 		int subWidth = static_cast<int>(std::ceil(
-			static_cast<double>(nativeSurface->h) * this->letterboxAspect));
+			static_cast<double>(nativeSurface->h) * letterboxAspect));
 		SDL_Rect rect;
 		rect.x = (nativeSurface->w - subWidth) / 2;
 		rect.y = 0;
@@ -143,7 +169,7 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 	{
 		// Native window is taller = empty top and bottom.
 		int subHeight = static_cast<int>(std::ceil(
-			static_cast<double>(nativeSurface->w) / this->letterboxAspect));
+			static_cast<double>(nativeSurface->w) / letterboxAspect));
 		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = (nativeSurface->h - subHeight) / 2;
@@ -263,14 +289,14 @@ SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
 	return SDL_CreateTextureFromSurface(this->renderer, surface);
 }
 
-void Renderer::init(int width, int height, bool fullscreen, double letterboxAspect)
+void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 {
 	DebugMention("Initializing.");
 
 	assert(width > 0);
 	assert(height > 0);
 
-	this->letterboxAspect = letterboxAspect;
+	this->letterboxMode = letterboxMode;
 
 	// Initialize window. The SDL_Surface is obtained from this window.
 	this->window = [width, height, fullscreen]()
@@ -347,9 +373,9 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	}
 }
 
-void Renderer::setLetterboxAspect(double letterboxAspect)
+void Renderer::setLetterboxMode(int letterboxMode)
 {
-	this->letterboxAspect = letterboxAspect;
+	this->letterboxMode = letterboxMode;
 }
 
 void Renderer::setFullscreen(bool fullscreen)
@@ -409,7 +435,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	DebugAssert(this->gameWorldTexture != nullptr, 
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
-	// Initialize 3D rendering program.
+	// Initialize 3D rendering.
 	this->softwareRenderer = std::make_unique<SoftwareRenderer>(renderWidth, renderHeight);
 }
 

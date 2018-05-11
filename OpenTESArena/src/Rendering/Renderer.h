@@ -37,7 +37,7 @@ private:
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	std::unique_ptr<SoftwareRenderer> softwareRenderer; // 3D renderer.
-	double letterboxAspect;
+	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
 	// Helper method for making a renderer context.
@@ -59,6 +59,9 @@ public:
 
 	// Default bits per pixel.
 	static const int DEFAULT_BPP;
+
+	// Gets the letterbox aspect associated with the current letterbox mode.
+	double getLetterboxAspect() const;
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
@@ -92,14 +95,13 @@ public:
 	SDL_Texture *createTexture(uint32_t format, int access, int w, int h);
 	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
 
-	void init(int width, int height, bool fullscreen, double letterboxAspect);
+	void init(int width, int height, bool fullscreen, int letterboxMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
 
-	// Sets the letterbox aspect. 1.60 is the default, and 1.33 is the "stretched"
-	// aspect for simulating tall pixels on a 640x480 display.
-	void setLetterboxAspect(double letterboxAspect);
+	// Sets the letterbox mode.
+	void setLetterboxMode(int letterboxMode);
 
 	// Sets whether the program is windowed or fullscreen.
 	void setFullscreen(bool fullscreen);

@@ -222,7 +222,7 @@ const std::string OptionsPanel::DEV_TAB_NAME = "Dev";
 const std::string OptionsPanel::CURSOR_SCALE_NAME = "Cursor Scale";
 const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
 const std::string OptionsPanel::FULLSCREEN_NAME = "Fullscreen";
-const std::string OptionsPanel::LETTERBOX_ASPECT_NAME = "Letterbox Aspect";
+const std::string OptionsPanel::LETTERBOX_MODE_NAME = "Letterbox Mode";
 const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
 const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
 const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
@@ -403,22 +403,24 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_VerticalFOV(value);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::LETTERBOX_ASPECT_NAME,
-		"Default is 1.60 (16:10). The 640x480 look is 1.33 (4:3).",
-		options.getGraphics_LetterboxAspect(),
-		0.010,
-		Options::MIN_LETTERBOX_ASPECT,
-		Options::MAX_LETTERBOX_ASPECT,
+	auto letterboxModeOption = std::make_unique<IntOption>(
+		OptionsPanel::LETTERBOX_MODE_NAME,
+		"Determines the aspect ratio of the game UI.",
+		options.getGraphics_LetterboxMode(),
+		1,
+		0,
 		2,
-		[this](double value)
+		[this](int value)
 	{
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		auto &renderer = game.getRenderer();
-		options.setGraphics_LetterboxAspect(value);
-		renderer.setLetterboxAspect(value);
-	}));
+		options.setGraphics_LetterboxMode(value);
+		renderer.setLetterboxMode(value);
+	});
+
+	letterboxModeOption->setDisplayOverrides({ "16:10", "4:3", "Stretch" });
+	this->graphicsOptions.push_back(std::move(letterboxModeOption));
 
 	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
 		OptionsPanel::CURSOR_SCALE_NAME,

@@ -21,9 +21,9 @@ TargetFPS=60
 ResolutionScale=0.50
 VerticalFOV=60.0
 
-# Default letterbox aspect is 1.60. "Stretched" aspect for simulating 
-# the look on 640x480 monitors is 1.33.
-LetterboxAspect=1.60
+# Each letterbox mode defines a particular aspect ratio for the game UI.
+# 0: 16:10 (default), 1: 4:3, 2: stretch to fill
+LetterboxMode=0
 
 CursorScale=3.60
 

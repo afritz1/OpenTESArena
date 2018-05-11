@@ -64,8 +64,8 @@ public:
 	static const double MAX_VERTICAL_FOV;
 	static const double MIN_CURSOR_SCALE;
 	static const double MAX_CURSOR_SCALE;
-	static const double MIN_LETTERBOX_ASPECT;
-	static const double MAX_LETTERBOX_ASPECT;
+	static const int MIN_LETTERBOX_MODE;
+	static const int MAX_LETTERBOX_MODE;
 	static const double MIN_HORIZONTAL_SENSITIVITY;
 	static const double MAX_HORIZONTAL_SENSITIVITY;
 	static const double MIN_VERTICAL_SENSITIVITY;
@@ -129,7 +129,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Graphics, TargetFPS)
 	OPTION_DOUBLE(Graphics, ResolutionScale)
 	OPTION_DOUBLE(Graphics, VerticalFOV)
-	OPTION_DOUBLE(Graphics, LetterboxAspect)
+	OPTION_INT(Graphics, LetterboxMode)
 	OPTION_DOUBLE(Graphics, CursorScale)
 	OPTION_BOOL(Graphics, ModernInterface)
 

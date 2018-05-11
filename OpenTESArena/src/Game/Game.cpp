@@ -81,7 +81,7 @@ Game::Game()
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getGraphics_ScreenWidth(),
 		this->options.getGraphics_ScreenHeight(), this->options.getGraphics_Fullscreen(),
-		this->options.getGraphics_LetterboxAspect());
+		this->options.getGraphics_LetterboxMode());
 
 	// Initialize the texture manager.
 	this->textureManager.init();
