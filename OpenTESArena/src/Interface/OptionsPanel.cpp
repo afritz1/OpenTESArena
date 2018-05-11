@@ -408,8 +408,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		"Determines the aspect ratio of the game UI.",
 		options.getGraphics_LetterboxMode(),
 		1,
-		0,
-		2,
+		Options::MIN_LETTERBOX_MODE,
+		Options::MAX_LETTERBOX_MODE,
 		[this](int value)
 	{
 		auto &game = this->getGame();
