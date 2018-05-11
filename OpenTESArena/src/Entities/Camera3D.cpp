@@ -5,12 +5,6 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 
-// The intention with using 45 degrees is to have the software renderer translate the
-// projected Y coordinates by +/- one screen height at a vertical field of view of 90.0. 
-// That's an arbitrary value I'm basing the Y-shearing on, just to have some kind of 
-// "identity" for everything else to be relative to.
-const double Camera3D::MIN_Y_LIMIT = (Constants::Pi / 4.0) * Constants::RadToDeg;
-
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
 	up(right.cross(forward).normalized()), position(position) { }
@@ -63,31 +57,28 @@ void Camera3D::yaw(double radians)
 	this->up = this->right.cross(this->forward).normalized();
 }
 
-void Camera3D::rotate(double dx, double dy, double yLimit)
+void Camera3D::rotate(double dx, double dy, double pitchLimit)
 {
 	assert(std::isfinite(this->forward.length()));
-	assert(yLimit >= Camera3D::MIN_Y_LIMIT);
+	assert(pitchLimit >= 0.0);
+	assert(pitchLimit < 90.0);
 
-	double lookRightRads = dx * Constants::DegToRad;
-	double lookUpRads = dy * Constants::DegToRad;
-
-	if (!std::isfinite(lookRightRads))
+	auto safeDegToRad = [](double degrees)
 	{
-		lookRightRads = 0.0;
-	}
+		const double rads = degrees * Constants::DegToRad;
+		return std::isfinite(rads) ? rads : 0.0;
+	};
 
-	if (!std::isfinite(lookUpRads))
-	{
-		lookUpRads = 0.0;
-	}
+	const double lookRightRads = safeDegToRad(dx);
+	double lookUpRads = safeDegToRad(dy);
 
 	const double currentDec = std::acos(this->forward.normalized().y);
 	const double requestedDec = currentDec - lookUpRads;
 
 	// Clamp the range that the camera can tilt up or down to avoid breaking
 	// the vector cross product at extreme angles.
-	const double zenithMaxDec = yLimit * Constants::DegToRad;
-	const double zenithMinDec = (180.0 - yLimit) * Constants::DegToRad;
+	const double zenithMaxDec = (90.0 - pitchLimit) * Constants::DegToRad;
+	const double zenithMinDec = (90.0 + pitchLimit) * Constants::DegToRad;
 
 	lookUpRads = (requestedDec > zenithMinDec) ? (currentDec - zenithMinDec) :
 		((requestedDec < zenithMaxDec) ? (currentDec - zenithMaxDec) : lookUpRads);
@@ -96,11 +87,6 @@ void Camera3D::rotate(double dx, double dy, double yLimit)
 	//const double zoom = 1.0 / std::tan((fovY * 0.5) * DEG_TO_RAD);
 	this->pitch(lookUpRads/* / zoom*/);
 	this->yaw(-lookRightRads/* / zoom*/);
-}
-
-void Camera3D::rotate(double dx, double dy)
-{
-	this->rotate(dx, dy, Camera3D::MIN_Y_LIMIT);
 }
 
 void Camera3D::lookAt(const Double3 &point)

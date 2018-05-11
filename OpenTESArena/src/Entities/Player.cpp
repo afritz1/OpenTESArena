@@ -179,10 +179,12 @@ void Player::teleport(const Double3 &position)
 	this->camera.position = position;
 }
 
-void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity)
+void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivity,
+	double pitchLimit)
 {
-	// Multiply sensitivities by 100 so the values in options.txt are nicer.
-	this->camera.rotate(dx * (100.0 * hSensitivity), dy * (100.0 * vSensitivity));
+	// Multiply sensitivities by 100 so the values in the options are nicer.
+	this->camera.rotate(dx * (100.0 * hSensitivity),
+		dy * (100.0 * vSensitivity), pitchLimit);
 }
 
 void Player::lookAt(const Double3 &point)

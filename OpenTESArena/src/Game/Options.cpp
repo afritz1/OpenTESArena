@@ -40,7 +40,8 @@ namespace
 	const std::vector<std::pair<std::string, OptionType>> InputMappings =
 	{
 		{ "HorizontalSensitivity", OptionType::Double },
-		{ "VerticalSensitivity", OptionType::Double }
+		{ "VerticalSensitivity", OptionType::Double },
+		{ "CameraPitchLimit", OptionType::Double }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> MiscMappings =
@@ -79,6 +80,8 @@ const double Options::MIN_HORIZONTAL_SENSITIVITY = 0.50;
 const double Options::MAX_HORIZONTAL_SENSITIVITY = 50.0;
 const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
 const double Options::MAX_VERTICAL_SENSITIVITY = 50.0;
+const double Options::MIN_CAMERA_PITCH_LIMIT = 0.0;
+const double Options::MAX_CAMERA_PITCH_LIMIT = 85.0;
 const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
@@ -526,6 +529,16 @@ void Options::checkInput_VerticalSensitivity(double value) const
 	DebugAssert(value <= Options::MAX_VERTICAL_SENSITIVITY,
 		"Vertical sensitivity cannot be greater than " +
 		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
+}
+
+void Options::checkInput_CameraPitchLimit(double value) const
+{
+	DebugAssert(value >= Options::MIN_CAMERA_PITCH_LIMIT,
+		"Camera pitch limit cannot be less than " +
+		String::fixedPrecision(Options::MIN_CAMERA_PITCH_LIMIT, 1) + ".");
+	DebugAssert(value <= Options::MAX_CAMERA_PITCH_LIMIT,
+		"Camera pitch limit cannot be greater than " +
+		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
 }
 
 void Options::loadDefaults(const std::string &filename)

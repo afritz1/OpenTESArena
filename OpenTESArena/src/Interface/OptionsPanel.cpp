@@ -233,6 +233,7 @@ const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
 // Input.
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
+const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
 
 // Misc.
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
@@ -519,6 +520,28 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		options.setInput_VerticalSensitivity(value);
+	}));
+
+	this->inputOptions.push_back(std::make_unique<DoubleOption>(
+		OptionsPanel::CAMERA_PITCH_LIMIT_NAME,
+		"Determines how far above or below the horizon the camera can\nlook in modern mode.",
+		options.getInput_CameraPitchLimit(),
+		5.0,
+		Options::MIN_CAMERA_PITCH_LIMIT,
+		Options::MAX_CAMERA_PITCH_LIMIT,
+		1,
+		[this](double value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setInput_CameraPitchLimit(value);
+
+		// Reset player view to forward.
+		auto &player = game.getGameData().getPlayer();
+		const Double2 groundDirection = player.getGroundDirection();
+		const Double3 lookAtPoint = player.getPosition() +
+			Double3(groundDirection.x, 0.0, groundDirection.y);
+		player.lookAt(lookAtPoint);
 	}));
 
 	// Create miscellaneous options.

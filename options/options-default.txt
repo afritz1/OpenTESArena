@@ -50,6 +50,10 @@ SoundResampling=0
 HorizontalSensitivity=8.0
 VerticalSensitivity=8.0
 
+# The camera pitch limit determines in degrees how high or low the camera
+# can look relative to the horizon in modern mode. Must be less than 90.
+CameraPitchLimit=45.0
+
 [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
 # set by a wizard instead.

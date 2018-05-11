@@ -70,6 +70,8 @@ public:
 	static const double MAX_HORIZONTAL_SENSITIVITY;
 	static const double MIN_VERTICAL_SENSITIVITY;
 	static const double MAX_VERTICAL_SENSITIVITY;
+	static const double MIN_CAMERA_PITCH_LIMIT;
+	static const double MAX_CAMERA_PITCH_LIMIT;
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
 	static const int RESAMPLING_OPTION_COUNT;
@@ -141,6 +143,7 @@ void set##section##_##name(const std::string &value) \
 
 	OPTION_DOUBLE(Input, HorizontalSensitivity)
 	OPTION_DOUBLE(Input, VerticalSensitivity)
+	OPTION_DOUBLE(Input, CameraPitchLimit)
 
 	OPTION_STRING(Misc, ArenaPath)
 	OPTION_STRING(Misc, ArenaSavesPath)

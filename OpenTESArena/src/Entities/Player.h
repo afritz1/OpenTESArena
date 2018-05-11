@@ -92,7 +92,7 @@ public:
 	void teleport(const Double3 &position);
 
 	// Rotates the player's camera based on some change in X (left/right) and Y (up/down).
-	void rotate(double dx, double dy, double hSensitivity, double vSensitivity);
+	void rotate(double dx, double dy, double hSensitivity, double vSensitivity, double pitchLimit);
 
 	// Recalculates the player's view so they look at a point.
 	void lookAt(const Double3 &point);

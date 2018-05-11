@@ -755,7 +755,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			// Multiply turning speed by delta time so it behaves correctly with different
 			// frame rates.
 			player.rotate(dx * dt, 0.0, options.getInput_HorizontalSensitivity(),
-				options.getInput_VerticalSensitivity());
+				options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 		}
 		else if (!lCtrl)
 		{
@@ -767,13 +767,13 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			{
 				// Turn left at a fixed angular velocity.
 				player.rotate(-turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
-					options.getInput_VerticalSensitivity());
+					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 			}
 			else if (right)
 			{
 				// Turn right at a fixed angular velocity.
 				player.rotate(turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
-					options.getInput_VerticalSensitivity());
+					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 			}
 		}
 	}
@@ -804,7 +804,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			const auto &options = this->getGame().getOptions();
 			auto &player = this->getGame().getGameData().getPlayer();
 			player.rotate(dxx, -dyy, options.getInput_HorizontalSensitivity(),
-				options.getInput_VerticalSensitivity());
+				options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 		}
 	}
 }
