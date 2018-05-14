@@ -47,6 +47,8 @@ private:
 	{
 		std::vector<FlatTexel> texels;
 		int width, height;
+
+		FlatTexture();
 	};
 
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
@@ -162,19 +164,20 @@ private:
 		};
 	};
 
-	typedef std::array<VoxelTexture, 64> VoxelTextureArray;
-	typedef std::array<FlatTexture, 256> FlatTextureArray;
-
 	// Clipping planes for Z coordinates.
 	static const double NEAR_PLANE;
 	static const double FAR_PLANE;
+
+	// Default texture array sizes (using vector instead of array to avoid stack overflow).
+	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
+	static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<std::pair<const Flat*, Flat::Frame>> visibleFlats; // Flats to be drawn.
-	VoxelTextureArray voxelTextures;
-	FlatTextureArray flatTextures;
+	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
+	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
@@ -272,14 +275,14 @@ private:
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid,
-		const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame);
+		double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid, const VoxelTextureArray &textures,
+		double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
@@ -295,12 +298,15 @@ private:
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid, 
-		const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame);
+		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
 public:
-	SoftwareRenderer(int width, int height);
+	SoftwareRenderer();
+
+	bool isInited() const;
 
 	// Adds a flat. Causes an error if the ID exists.
 	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
@@ -344,6 +350,10 @@ public:
 
 	// Zeroes out all voxel and flat textures.
 	void clearTextures();
+
+	// Initializes software renderer with the given frame buffer dimensions. This can be called
+	// on first start or to reset the software renderer.
+	void init(int width, int height);
 
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);

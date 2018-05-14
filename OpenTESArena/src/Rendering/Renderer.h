@@ -36,7 +36,7 @@ private:
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
-	std::unique_ptr<SoftwareRenderer> softwareRenderer; // 3D renderer.
+	SoftwareRenderer softwareRenderer; // Game world renderer.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 

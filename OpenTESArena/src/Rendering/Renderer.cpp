@@ -328,7 +328,6 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	this->gameWorldTexture = nullptr;
-	this->softwareRenderer = nullptr;
 	this->fullGameWindow = false;
 }
 
@@ -351,7 +350,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	this->fullGameWindow = fullGameWindow;
 
 	// Rebuild the 3D renderer if initialized.
-	if (this->softwareRenderer.get() != nullptr)
+	if (this->softwareRenderer.isInited())
 	{
 		// Height of the game world view in pixels. Determined by whether the game 
 		// interface is visible or not.
@@ -369,7 +368,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
 
 		// Resize 3D renderer.
-		this->softwareRenderer->resize(renderWidth, renderHeight);
+		this->softwareRenderer.resize(renderWidth, renderHeight);
 	}
 }
 
@@ -424,7 +423,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
 
 	// Remove any previous game world frame buffer.
-	if (this->softwareRenderer.get() != nullptr)
+	if (this->softwareRenderer.isInited())
 	{
 		SDL_DestroyTexture(this->gameWorldTexture);
 	}
@@ -436,82 +435,82 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering.
-	this->softwareRenderer = std::make_unique<SoftwareRenderer>(renderWidth, renderHeight);
+	this->softwareRenderer.init(renderWidth, renderHeight);
 }
 
 void Renderer::addFlat(int id, const Double3 &position, double width, 
 	double height, int textureID)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->addFlat(id, position, width, height, textureID);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.addFlat(id, position, width, height, textureID);
 }
 
 void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->addLight(id, point, color, intensity);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.addLight(id, point, color, intensity);
 }
 
 void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
 	const double *height, const int *textureID, const bool *flipped)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->updateFlat(id, position, width, height, textureID, flipped);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.updateFlat(id, position, width, height, textureID, flipped);
 }
 
 void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
 	const double *intensity)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->updateLight(id, point, color, intensity);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.updateLight(id, point, color, intensity);
 }
 
 void Renderer::setFogDistance(double fogDistance)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setFogDistance(fogDistance);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setFogDistance(fogDistance);
 }
 
 void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setVoxelTexture(id, srcTexels);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setVoxelTexture(id, srcTexels);
 }
 
 void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setFlatTexture(id, srcTexels, width, height);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setFlatTexture(id, srcTexels, width, height);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setSkyPalette(colors, count);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setSkyPalette(colors, count);
 }
 
 void Renderer::setNightLightsActive(bool active)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->setNightLightsActive(active);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setNightLightsActive(active);
 }
 
 void Renderer::removeFlat(int id)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->removeFlat(id);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.removeFlat(id);
 }
 
 void Renderer::removeLight(int id)
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->removeLight(id);
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.removeLight(id);
 }
 
 void Renderer::clearTextures()
 {
-	assert(this->softwareRenderer.get() != nullptr);
-	this->softwareRenderer->clearTextures();
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.clearTextures();
 }
 
 void Renderer::clear(const Color &color)
@@ -595,7 +594,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	double ambient, double daytimePercent, double ceilingHeight, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
-	assert(this->softwareRenderer.get() != nullptr);
+	assert(this->softwareRenderer.isInited());
 	
 	// Lock the game world texture and give the pixel pointer to the software renderer.
 	// - Supposedly this is faster than SDL_UpdateTexture(). In any case, there's one
@@ -608,7 +607,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 		std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.
-	this->softwareRenderer->render(eye, forward, fovY, ambient, daytimePercent, 
+	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, 
 		ceilingHeight, voxelGrid, gameWorldPixels);
 
 	// Update the game world texture with the new ARGB8888 pixels.

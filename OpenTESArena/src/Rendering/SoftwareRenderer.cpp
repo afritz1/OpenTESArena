@@ -30,6 +30,12 @@ SoftwareRenderer::FlatTexel::FlatTexel()
 	this->a = 0.0;
 }
 
+SoftwareRenderer::FlatTexture::FlatTexture()
+{
+	this->width = 0;
+	this->height = 0;
+}
+
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	double fovY, double aspect)
 	: eye(eye)
@@ -202,8 +208,25 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
+const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
+const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
 
-SoftwareRenderer::SoftwareRenderer(int width, int height)
+SoftwareRenderer::SoftwareRenderer()
+{
+	// Initialize values to empty.
+	this->width = 0;
+	this->height = 0;
+	this->renderThreadCount = 0;
+	this->fogDistance = 0.0;
+}
+
+bool SoftwareRenderer::isInited() const
+{
+	// Frame buffer area must be positive.
+	return (this->width > 0) && (this->height > 0);
+}
+
+void SoftwareRenderer::init(int width, int height)
 {
 	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
@@ -213,13 +236,9 @@ SoftwareRenderer::SoftwareRenderer(int width, int height)
 	// Initialize occlusion columns.
 	this->occlusion = std::vector<OcclusionData>(width, OcclusionData(0, height));
 
-	// Initialize flat textures to empty.
-	for (auto &texture : this->flatTextures)
-	{
-		texture.texels = std::vector<FlatTexel>();
-		texture.width = 0;
-		texture.height = 0;
-	}
+	// Initialize texture vectors to default sizes.
+	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
+	this->flatTextures = std::vector<FlatTexture>(SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT);
 
 	this->width = width;
 	this->height = height;
@@ -1766,8 +1785,8 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const VoxelTextureArray &textures, OcclusionData &occlusion,
-	const FrameView &frame)
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -2733,8 +2752,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const VoxelTextureArray &textures, OcclusionData &occlusion,
-	const FrameView &frame)
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -3978,7 +3997,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const VoxelTextureArray &textures, OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
 	// expensive as it does not stop at the first wall intersection, and it also renders voxels 
