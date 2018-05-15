@@ -25,7 +25,8 @@ namespace
 		{ "VerticalFOV", OptionType::Double },
 		{ "LetterboxMode", OptionType::Int },
 		{ "CursorScale", OptionType::Double },
-		{ "ModernInterface", OptionType::Bool }
+		{ "ModernInterface", OptionType::Bool },
+		{ "RenderThreadsMode", OptionType::Int }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> AudioMappings =
@@ -76,6 +77,8 @@ const double Options::MIN_CURSOR_SCALE = 0.50;
 const double Options::MAX_CURSOR_SCALE = 8.0;
 const int Options::MIN_LETTERBOX_MODE = 0;
 const int Options::MAX_LETTERBOX_MODE = 2;
+const int Options::MIN_RENDER_THREADS_MODE = 0;
+const int Options::MAX_RENDER_THREADS_MODE = 3;
 const double Options::MIN_HORIZONTAL_SENSITIVITY = 0.50;
 const double Options::MAX_HORIZONTAL_SENSITIVITY = 50.0;
 const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
@@ -482,6 +485,16 @@ void Options::checkGraphics_CursorScale(double value) const
 	DebugAssert(value <= Options::MAX_CURSOR_SCALE,
 		"Cursor scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
+}
+
+void Options::checkGraphics_RenderThreadsMode(int value) const
+{
+	DebugAssert(value >= Options::MIN_RENDER_THREADS_MODE,
+		"Render threads mode cannot be less than " +
+		std::to_string(Options::MIN_RENDER_THREADS_MODE) + ".");
+	DebugAssert(value <= Options::MAX_RENDER_THREADS_MODE,
+		"Render threads mode cannot be greater than " +
+		std::to_string(Options::MAX_RENDER_THREADS_MODE) + ".");
 }
 
 void Options::checkAudio_MusicVolume(double value) const

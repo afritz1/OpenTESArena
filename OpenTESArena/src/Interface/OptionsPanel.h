@@ -135,6 +135,7 @@ private:
 	static const std::string FULLSCREEN_NAME;
 	static const std::string LETTERBOX_MODE_NAME;
 	static const std::string MODERN_INTERFACE_NAME;
+	static const std::string RENDER_THREADS_MODE_NAME;
 	static const std::string RESOLUTION_SCALE_NAME;
 	static const std::string VERTICAL_FOV_NAME;
 

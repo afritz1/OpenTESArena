@@ -224,6 +224,7 @@ const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
 const std::string OptionsPanel::FULLSCREEN_NAME = "Fullscreen";
 const std::string OptionsPanel::LETTERBOX_MODE_NAME = "Letterbox Mode";
 const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
+const std::string OptionsPanel::RENDER_THREADS_MODE_NAME = "Render Threads Mode";
 const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
 const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
 
@@ -439,7 +440,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
 		OptionsPanel::MODERN_INTERFACE_NAME,
-		"Modern mode uses a new minimal interface with free-look.",
+		"Modern mode uses a minimal interface with free-look.",
 		options.getGraphics_ModernInterface(),
 		[this](bool value)
 	{
@@ -467,10 +468,29 @@ OptionsPanel::OptionsPanel(Game &game)
 			options.getGraphics_ResolutionScale(), fullGameWindow);
 	}));
 
+	auto renderThreadsModeOption = std::make_unique<IntOption>(
+		OptionsPanel::RENDER_THREADS_MODE_NAME,
+		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.",
+		options.getGraphics_RenderThreadsMode(),
+		1,
+		Options::MIN_RENDER_THREADS_MODE,
+		Options::MAX_RENDER_THREADS_MODE,
+		[this](int value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		auto &renderer = game.getRenderer();
+		options.setGraphics_RenderThreadsMode(value);
+		renderer.setRenderThreadsMode(value);
+	});
+
+	renderThreadsModeOption->setDisplayOverrides({ "Low", "Medium", "High", "Max" });
+	this->graphicsOptions.push_back(std::move(renderThreadsModeOption));
+
 	// Create audio options.
 	auto soundResamplingOption = std::make_unique<IntOption>(
 		OptionsPanel::SOUND_RESAMPLING_NAME,
-		"Affects quality of sounds. Results may vary depending on\nOpenAL Soft version.",
+		"Affects quality of sounds. Results may vary depending on\nOpenAL version.",
 		options.getAudio_SoundResampling(),
 		1,
 		0,

@@ -123,7 +123,11 @@ public:
 	// determines whether to render a "fullscreen" 3D image or just the part above 
 	// the game interface. If there is an existing renderer in memory, it will be 
 	// overwritten with the new one.
-	void initializeWorldRendering(double resolutionScale, bool fullGameWindow);
+	void initializeWorldRendering(double resolutionScale, bool fullGameWindow,
+		int renderThreadsMode);
+
+	// Sets which mode to use for software render threads (low, medium, high, etc.).
+	void setRenderThreadsMode(int mode);
 
 	// Helper methods for changing data in the 3D renderer. Some data, like the voxel
 	// grid, are passed each frame by reference.

@@ -181,7 +181,7 @@ private:
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
-	int renderThreadCount; // Number of threads to use for rendering.
+	int renderThreadsMode; // Determines number of threads to use for rendering.
 
 	// Gets the fog color (based on the time of day). It returns a value instead of
 	// a reference because it interpolates between two colors for a smoother transition.
@@ -189,6 +189,9 @@ private:
 
 	// Gets the current sun direction based on the time of day.
 	Double3 getSunDirection(double daytimePercent) const;
+
+	// Gets the number of render threads to use based on the given mode.
+	static int getRenderThreadsFromMode(int mode);
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	static double fullAtan2(double y, double x);
@@ -308,6 +311,9 @@ public:
 
 	bool isInited() const;
 
+	// Sets the render threads mode to use (low, medium, high, etc.).
+	void setRenderThreadsMode(int mode);
+
 	// Adds a flat. Causes an error if the ID exists.
 	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 
@@ -353,7 +359,7 @@ public:
 
 	// Initializes software renderer with the given frame buffer dimensions. This can be called
 	// on first start or to reset the software renderer.
-	void init(int width, int height);
+	void init(int width, int height, int renderThreadsMode);
 
 	// Resizes the frame buffer and related values.
 	void resize(int width, int height);

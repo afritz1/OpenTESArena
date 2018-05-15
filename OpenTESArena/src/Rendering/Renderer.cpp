@@ -408,7 +408,8 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	SDL_RenderSetClipRect(this->renderer, rect);
 }
 
-void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow)
+void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWindow,
+	int renderThreadsMode)
 {
 	this->fullGameWindow = fullGameWindow;
 
@@ -435,7 +436,13 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering.
-	this->softwareRenderer.init(renderWidth, renderHeight);
+	this->softwareRenderer.init(renderWidth, renderHeight, renderThreadsMode);
+}
+
+void Renderer::setRenderThreadsMode(int mode)
+{
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setRenderThreadsMode(mode);
 }
 
 void Renderer::addFlat(int id, const Double3 &position, double width, 

@@ -242,8 +242,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			auto &renderer = game.getRenderer();
 			const auto &options = game.getOptions();
 			const bool fullGameWindow = options.getGraphics_ModernInterface();
-			renderer.initializeWorldRendering(
-				options.getGraphics_ResolutionScale(), fullGameWindow);
+			renderer.initializeWorldRendering(options.getGraphics_ResolutionScale(),
+				fullGameWindow, options.getGraphics_RenderThreadsMode());
 
 			// Game data instance, to be initialized further by one of the loading methods below.
 			// Create a player with random data for testing.

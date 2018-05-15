@@ -66,6 +66,8 @@ public:
 	static const double MAX_CURSOR_SCALE;
 	static const int MIN_LETTERBOX_MODE;
 	static const int MAX_LETTERBOX_MODE;
+	static const int MIN_RENDER_THREADS_MODE;
+	static const int MAX_RENDER_THREADS_MODE;
 	static const double MIN_HORIZONTAL_SENSITIVITY;
 	static const double MAX_HORIZONTAL_SENSITIVITY;
 	static const double MIN_VERTICAL_SENSITIVITY;
@@ -134,6 +136,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Graphics, LetterboxMode)
 	OPTION_DOUBLE(Graphics, CursorScale)
 	OPTION_BOOL(Graphics, ModernInterface)
+	OPTION_INT(Graphics, RenderThreadsMode)
 
 	OPTION_DOUBLE(Audio, MusicVolume)
 	OPTION_DOUBLE(Audio, SoundVolume)

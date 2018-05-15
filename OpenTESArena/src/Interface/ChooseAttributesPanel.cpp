@@ -231,11 +231,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					{
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
+						const auto &options = game.getOptions();
 						const auto &miscAssets = game.getMiscAssets();
-						const bool fullGameWindow =
-							game.getOptions().getGraphics_ModernInterface();
+						const bool fullGameWindow = options.getGraphics_ModernInterface();
 						renderer.initializeWorldRendering(
-							game.getOptions().getGraphics_ResolutionScale(), fullGameWindow);
+							options.getGraphics_ResolutionScale(),
+							fullGameWindow,
+							options.getGraphics_RenderThreadsMode());
 
 						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
 							&charClass, &miscAssets]()

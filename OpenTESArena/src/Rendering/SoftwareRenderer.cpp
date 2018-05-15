@@ -216,7 +216,7 @@ SoftwareRenderer::SoftwareRenderer()
 	// Initialize values to empty.
 	this->width = 0;
 	this->height = 0;
-	this->renderThreadCount = 0;
+	this->renderThreadsMode = 0;
 	this->fogDistance = 0.0;
 }
 
@@ -226,7 +226,7 @@ bool SoftwareRenderer::isInited() const
 	return (this->width > 0) && (this->height > 0);
 }
 
-void SoftwareRenderer::init(int width, int height)
+void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 {
 	// Initialize 2D frame buffer.
 	const int pixelCount = width * height;
@@ -242,12 +242,15 @@ void SoftwareRenderer::init(int width, int height)
 
 	this->width = width;
 	this->height = height;
-
-	// Obtain the number of threads to use.
-	this->renderThreadCount = Platform::getThreadCount();
+	this->renderThreadsMode = renderThreadsMode;
 
 	// Fog distance is zero by default.
 	this->fogDistance = 0.0;
+}
+
+void SoftwareRenderer::setRenderThreadsMode(int mode)
+{
+	this->renderThreadsMode = mode;
 }
 
 void SoftwareRenderer::addFlat(int id, const Double3 &position, double width, 
@@ -867,6 +870,35 @@ Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
 	// The sun rises in the east (+Z) and sets in the west (-Z).
 	const double radians = daytimePercent * (2.0 * Constants::Pi);
 	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
+}
+
+int SoftwareRenderer::getRenderThreadsFromMode(int mode)
+{
+	if (mode == 0)
+	{
+		// Low.
+		return 1;
+	}
+	else if (mode == 1)
+	{
+		// Medium.
+		return std::max(Platform::getThreadCount() / 2, 1);
+	}
+	else if (mode == 2)
+	{
+		// High.
+		return std::max(Platform::getThreadCount() - 1, 1);
+	}
+	else if (mode == 3)
+	{
+		// Max.
+		return Platform::getThreadCount();
+	}
+	else
+	{
+		throw DebugException("Invalid render threads mode \"" +
+			std::to_string(mode) + "\".");
+	}
 }
 
 double SoftwareRenderer::fullAtan2(double y, double x)
@@ -4281,15 +4313,17 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// calculate a new list, and sort it by depth.
 	std::thread sortThread([this, &camera] { this->updateVisibleFlats(camera); });
 
-	// Prepare render threads. These are used for clearing the frame buffer and rendering.
-	std::vector<std::thread> renderThreads(this->renderThreadCount);
+	// Prepare render threads, obtaining the number of threads to use from the render threads
+	// mode. These are used for clearing the frame buffer and rendering.
+	std::vector<std::thread> renderThreads(
+		SoftwareRenderer::getRenderThreadsFromMode(this->renderThreadsMode));
 
 	// Start clearing the frame buffer with the render threads.
 	for (size_t i = 0; i < renderThreads.size(); i++)
 	{
 		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
-		const double blockSize = heightReal / static_cast<double>(this->renderThreadCount);
+		const double blockSize = heightReal / static_cast<double>(renderThreads.size());
 		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
 		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
@@ -4318,7 +4352,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	{
 		// "blockSize" is the approximate number of columns per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
-		const double blockSize = widthReal / static_cast<double>(this->renderThreadCount);
+		const double blockSize = widthReal / static_cast<double>(renderThreads.size());
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
