@@ -105,6 +105,7 @@ cd ..
 - [OpenAL Soft 1.18.2](http://kcat.strangesoft.net/openal.html#download)
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
+  - Windows users: build WildMIDI 0.4.3 from source to avoid [crash bug](https://github.com/Mindwerks/wildmidi/issues/192#issuecomment-389211843) in `wildmidi_dynamic.dll`
 
 #### Building the executable:
 - Create a `build` folder in the top-level directory.
