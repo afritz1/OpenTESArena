@@ -187,13 +187,11 @@ bool Platform::directoryExists(const std::string &path)
 		{
 			throw DebugException("stat(): " + std::string(strerror(errno)) + ".");
 		}
-		
+
 		return false;
 	}
 #else
-	// Unknown platform.
-	DebugNotImplemented();
-	return false;
+#error Unknown platform.
 #endif
 }
 
@@ -202,7 +200,28 @@ namespace
 #if defined(_WINDOWS)
 	void createWindowsDirectory(const std::string &path)
 	{
-		CreateDirectoryA(path.c_str(), nullptr);
+		const BOOL success = CreateDirectoryA(path.c_str(), nullptr);
+		if (success == 0)
+		{
+			const std::string message = [&path]() -> std::string
+			{
+				const DWORD lastError = GetLastError();
+				if (lastError == ERROR_ALREADY_EXISTS)
+				{
+					return "\"" + path + "\" already exists.";
+				}
+				else if (lastError == ERROR_PATH_NOT_FOUND)
+				{
+					return "\"" + path + "\" not found.";
+				}
+				else
+				{
+					return "Unknown error.";
+				}
+			}();
+
+			DebugWarning("CreateDirectoryA(): " + message);
+		}
 	}
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 	void createUnixDirectory(const std::string &path, mode_t permissions)
@@ -239,8 +258,7 @@ void Platform::createDirectoryRecursively(std::string path)
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 			createUnixDirectory(subStr, 0700);
 #else
-			// Unknown platform.
-			DebugNotImplemented();
+#error Unknown platform.
 #endif
 		}
 	} while (index != std::string::npos);
