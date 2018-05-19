@@ -112,11 +112,9 @@ INFFile::FlatTextureData::FlatTextureData(const std::string &filename)
 INFFile::CeilingData::CeilingData()
 {
 	const int defaultHeight = 128;
-	const double defaultScale = 1.0;
 
 	this->textureIndex = INFFile::NO_INDEX;
 	this->height = defaultHeight;
-	this->boxScale = defaultScale;
 	this->outdoorDungeon = false;
 }
 
@@ -317,8 +315,8 @@ INFFile::INFFile(const std::string &filename)
 
 				if (tokens.size() >= 3)
 				{
-					// To do: This might need some more math. (Y * boxScale) / 256?
-					floorState->ceilingData->boxScale = std::stoi(tokens.at(2));
+					floorState->ceilingData->boxScale =
+						std::make_unique<int>(std::stoi(tokens.at(2)));
 				}
 
 				if (tokens.size() == 4)
@@ -406,7 +404,7 @@ INFFile::INFFile(const std::string &filename)
 			{
 				this->ceiling.textureIndex = currentIndex;
 				this->ceiling.height = floorState->ceilingData->height;
-				this->ceiling.boxScale = floorState->ceilingData->boxScale;
+				this->ceiling.boxScale = std::move(floorState->ceilingData->boxScale);
 				this->ceiling.outdoorDungeon = floorState->ceilingData->outdoorDungeon;
 			}
 

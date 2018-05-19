@@ -37,8 +37,15 @@ public:
 	struct CeilingData
 	{
 		int textureIndex; // Index into textures vector.
-		int height; // Size of walls on main floor. Default is 128.
-		double boxScale; // Main floor box scale. Formula: (Y * boxScale) / 256.
+
+		// Size of walls on main floor (first *CEILING number). Default is 128.
+		int height;
+
+		// Main floor box scale (second *CEILING number). Formula: (Y * boxScale) / 256.
+		// If missing and in wilderness, then use 192. Else if missing and not in wilderness,
+		// then box values are unchanged.
+		std::unique_ptr<int> boxScale;
+
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
 
 		CeilingData();

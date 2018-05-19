@@ -406,9 +406,21 @@ public:
 
 	struct WallHeightTables
 	{
-		// Values for interior and exterior wall heights. In wilderness cells, the values in
-		// box1 and box2 are multiplied by 192/256. In interiors, they are also scaled by the
-		// ceiling2 value (second value in *CEILING lines; default=128?).
+		// Values for interior and exterior wall heights and texture mapping.
+
+		// If ceiling2 is given, the box value is scaled with (x * ceiling2) / 256. Otherwise,
+		// if it is wilderness, the scale value is 192.
+
+		// In the voxel data, the most significant byte of raised platforms contains the thickness
+		// and height indices, organized as 0x0tttthhh.
+
+		// Box1: raised platform heights
+		// Box2: raised platform thicknesses
+		// Box3 and Box4: texture coordinates? Possible bug that Box4 is used instead of Box3c.
+		// 'a': interiors/dungeons
+		// 'b': cities
+		// 'c': wilderness
+
 		std::array<uint16_t, 8> box1a, box1b, box1c;
 		std::array<uint16_t, 16> box2a, box2b;
 		// Ignore "source" array, a copy of previous 56 words.

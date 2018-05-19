@@ -911,6 +911,17 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 							const double platformHeight = static_cast<double>(mostSigByte) /
 								static_cast<double>(MIFFile::ARENA_UNITS);
 
+							// To do: redesign this code for use with ExeData::WallHeightTables.
+							// Also take some parameters for which kind of location it is
+							// (interior, city, wilderness).
+
+							// Box indices for thickness and height of raised platforms. Four
+							// thickness bits allows 16 values, and three height bits allows 8
+							// values. Bit pattern in most significant byte: 0x0tttthhh.
+							// - To do: use these to obtain box values from WallHeightTables.
+							const int thicknessIndex = (mostSigByte & 0x78) >> 3;
+							const int heightIndex = mostSigByte & 0x07;
+
 							const double yOffset = 0.0;
 							const double ySize = platformHeight;
 
