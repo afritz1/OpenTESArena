@@ -6,7 +6,7 @@
 #include "Platform.h"
 #include "String.h"
 
-#if defined(_WINDOWS)
+#if defined(_WIN32)
 #include <Windows.h>
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include <cerrno>
@@ -169,7 +169,7 @@ int Platform::getThreadCount()
 
 bool Platform::directoryExists(const std::string &path)
 {
-#if defined(_WINDOWS)
+#if defined(_WIN32)
 	const DWORD attrs = GetFileAttributes(path.c_str());
 	return (attrs != INVALID_FILE_ATTRIBUTES) &&
 		((attrs & FILE_ATTRIBUTE_DIRECTORY) != 0);
@@ -197,7 +197,7 @@ bool Platform::directoryExists(const std::string &path)
 
 namespace
 {
-#if defined(_WINDOWS)
+#if defined(_WIN32)
 	void createWindowsDirectory(const std::string &path)
 	{
 		const BOOL success = CreateDirectoryA(path.c_str(), nullptr);
@@ -253,7 +253,7 @@ void Platform::createDirectoryRecursively(std::string path)
 
 		if (!Platform::directoryExists(subStr))
 		{
-#if defined(_WINDOWS)
+#if defined(_WIN32)
 			createWindowsDirectory(subStr);
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 			createUnixDirectory(subStr, 0700);
