@@ -37,7 +37,7 @@ SoftwareRenderer::FlatTexture::FlatTexture()
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
-	double fovY, double aspect)
+	double fovY, double aspect, double projectionModifier)
 	: eye(eye)
 {
 	// Variations of eye position for certain voxel calculations.
@@ -57,10 +57,10 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	const Double3 rightXZ = forwardXZ.cross(Double3::UnitY).normalized();
 
 	// Transformation matrix (model matrix isn't required because it's just the identity).
-	this->transform = [&eye, &forwardXZ, &rightXZ, fovY, aspect]()
+	this->transform = [&eye, &forwardXZ, &rightXZ, fovY, aspect, projectionModifier]()
 	{
-		// Global up vector.
-		const Double3 up = Double3::UnitY;
+		// Global up vector, scaled by the projection modifier (i.e., to account for tall pixels).
+		const Double3 up = Double3::UnitY * projectionModifier;
 
 		const Matrix4d view = Matrix4d::view(eye, forwardXZ, rightXZ, up);
 		const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
@@ -1865,9 +1865,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -1876,7 +1875,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
-				camera.eyeVoxelReal.y + voxelHeight,
+				voxelYReal + voxelHeight,
 				farPoint.y);
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -1884,7 +1883,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				nearPoint.y);
 			const Double3 farFloorPoint(
 				farPoint.x,
-				camera.eyeVoxelReal.y,
+				voxelYReal,
 				farPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
@@ -1934,7 +1933,35 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Ceiling)
 		{
-			// Do nothing. Ceilings can only be seen from below.
+			// Draw bottom of ceiling voxel if the camera is below it.
+			if (camera.eye.y < voxelYReal)
+			{
+				const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+
+				const Double3 nearFloorPoint(
+					nearPoint.x,
+					voxelYReal,
+					nearPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearFloorScreenY, frame.height);
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
+					occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Raised)
 		{
@@ -1942,11 +1969,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + (raisedData.yOffset * voxelHeight),
+				voxelYReal + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
 			// Draw order depends on the player's Y position relative to the platform.
@@ -2063,7 +2090,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				SoftwareRenderer::diagProjection(camera.eyeVoxelReal.y, voxelHeight, hit.point,
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
 					camera.transform, camera.yShear, frame.height, frame.heightReal,
 					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
@@ -2089,12 +2116,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + voxelHeight + edgeData.yOffset,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + edgeData.yOffset,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -2151,13 +2178,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
 
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+
 				const Double3 farCeilingPoint(
 					farPoint.x,
-					camera.eyeVoxelReal.y + voxelHeight,
+					voxelYReal + voxelHeight,
 					farPoint.y);
 				const Double3 farFloorPoint(
 					farPoint.x,
-					camera.eyeVoxelReal.y,
+					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -2189,10 +2220,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -2472,13 +2501,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
 
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+
 				const Double3 farCeilingPoint(
 					farPoint.x,
 					voxelYReal + voxelHeight,
 					farPoint.y);
 				const Double3 farFloorPoint(
 					farPoint.x,
-					voxelYReal,
+					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -2510,10 +2543,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -2555,7 +2586,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				1.0 + ceilingHeight,
+				voxelYReal,
 				nearPoint.y);
 			const Double3 farFloorPoint(
 				farPoint.x,
@@ -2839,9 +2870,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -2850,11 +2880,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + voxelHeight,
+				voxelYReal + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y,
+				voxelYReal,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -2877,7 +2907,35 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Ceiling)
 		{
-			// Do nothing. Ceilings can only be seen from below.
+			// Draw bottom of ceiling voxel if the camera is below it.
+			if (camera.eye.y < voxelYReal)
+			{
+				const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+
+				const Double3 nearFloorPoint(
+					nearPoint.x,
+					voxelYReal,
+					nearPoint.y);
+				const Double3 farFloorPoint(
+					farPoint.x,
+					nearFloorPoint.y,
+					farPoint.y);
+
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
+					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearFloorScreenY, frame.height);
+				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
+					farFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
+					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
+					occlusion, frame);
+			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Raised)
 		{
@@ -2885,11 +2943,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + (raisedData.yOffset * voxelHeight),
+				voxelYReal + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -2979,7 +3037,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				double diagTopScreenY, diagBottomScreenY;
 				int diagStart, diagEnd;
 
-				SoftwareRenderer::diagProjection(camera.eyeVoxelReal.y, voxelHeight, hit.point,
+				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
 					camera.transform, camera.yShear, frame.height, frame.heightReal,
 					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
 
@@ -2995,11 +3053,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + voxelHeight,
+				voxelYReal + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y,
+				voxelYReal,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3029,12 +3087,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				const Double3 edgeTopPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + voxelHeight + edgeData.yOffset,
+					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
 
 				const Double3 edgeBottomPoint(
 					hit.point.x,
-					camera.eyeVoxelReal.y + edgeData.yOffset,
+					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
 				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
@@ -3067,14 +3125,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				const double nearU = Constants::JustBelowOne - wallU;
 				const Double3 nearNormal = wallNormal;
+				
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 nearCeilingPoint(
 					nearPoint.x,
-					camera.eyeVoxelReal.y + voxelHeight,
+					voxelYReal + voxelHeight,
 					nearPoint.y);
 				const Double3 nearFloorPoint(
 					nearPoint.x,
-					camera.eyeVoxelReal.y,
+					nearCeilingPoint.y - chasmDepth,
 					nearPoint.y);
 
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3122,13 +3184,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
 
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+
 				const Double3 farCeilingPoint(
 					farPoint.x,
-					camera.eyeVoxelReal.y + voxelHeight,
+					voxelYReal + voxelHeight,
 					farPoint.y);
 				const Double3 farFloorPoint(
 					farPoint.x,
-					camera.eyeVoxelReal.y,
+					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3155,11 +3221,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y + voxelHeight,
+				voxelYReal + voxelHeight,
 				nearPoint.y);
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				camera.eyeVoxelReal.y,
+				voxelYReal,
 				nearPoint.y);
 
 			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3185,10 +3251,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -3455,13 +3519,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				const double nearU = Constants::JustBelowOne - wallU;
 				const Double3 nearNormal = wallNormal;
 
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+
 				const Double3 nearCeilingPoint(
 					nearPoint.x,
 					voxelYReal + voxelHeight,
 					nearPoint.y);
 				const Double3 nearFloorPoint(
 					nearPoint.x,
-					voxelYReal,
+					nearCeilingPoint.y - chasmDepth,
 					nearPoint.y);
 
 				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3509,13 +3577,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
 
+				// Wet chasms and lava chasms are unaffected by ceiling height.
+				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+
 				const Double3 farCeilingPoint(
 					farPoint.x,
 					voxelYReal + voxelHeight,
 					farPoint.y);
 				const Double3 farFloorPoint(
 					farPoint.x,
-					voxelYReal,
+					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
 				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
@@ -3572,10 +3644,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const double voxelYReal = static_cast<double>(voxelY);
-
-		// Height of the voxel depends on whether it's the main floor.
-		const double voxelHeight = (voxelY == 1) ? ceilingHeight : 1.0;
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 		if (voxelData.dataType == VoxelDataType::Wall)
 		{
@@ -3631,7 +3701,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			const Double3 nearFloorPoint(
 				nearPoint.x,
-				1.0 + ceilingHeight,
+				voxelYReal,
 				nearPoint.y);
 			const Double3 farFloorPoint(
 				farPoint.x,
@@ -4213,9 +4283,10 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const double widthReal = static_cast<double>(this->width);
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
+	const double projectionModifier = 1.20; // To account for tall pixels.
 
 	// 2.5D camera definition.
-	const Camera camera(eye, direction, fovY, aspect);
+	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
 
 	// Camera values for generating 2D rays with.
 	const Double2 forwardComp = 

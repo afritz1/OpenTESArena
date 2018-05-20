@@ -111,10 +111,8 @@ INFFile::FlatTextureData::FlatTextureData(const std::string &filename)
 
 INFFile::CeilingData::CeilingData()
 {
-	const int defaultHeight = 128;
-
 	this->textureIndex = INFFile::NO_INDEX;
-	this->height = defaultHeight;
+	this->height = CeilingData::DEFAULT_HEIGHT;
 	this->outdoorDungeon = false;
 }
 

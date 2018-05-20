@@ -75,10 +75,10 @@ public:
 	static const uint8_t LAVA_CHASM;
 
 	// This value is used for transforming .MIF coordinates to voxel coordinates. For example, 
-	// if the values in the .MIF files are "centimeters", then dividing by this value converts 
+	// if the values in the .MIF files are centimeters, then dividing by this value converts 
 	// them to voxel coordinates (including decimal values; i.e., X=1.5 means the middle of the 
 	// voxel at X coordinate 1).
-	static const double ARENA_UNITS;
+	static constexpr double ARENA_UNITS = 128.0;
 
 	// Generates the filename for a main quest .MIF file given the XY province coordinates 
 	// and the province ID.

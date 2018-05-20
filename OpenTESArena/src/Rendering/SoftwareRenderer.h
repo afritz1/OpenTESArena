@@ -63,7 +63,8 @@ private:
 		double fovY, zoom, aspect;
 		double yShear; // Projected Y-coordinate translation.
 
-		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect);
+		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
+			double projectionModifier);
 	};
 
 	// Ray for 2.5D ray casting. The start point is always at the camera's eye.

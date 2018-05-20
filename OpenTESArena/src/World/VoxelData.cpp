@@ -3,7 +3,12 @@
 
 #include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "../Assets/INFFile.h"
+#include "../Assets/MIFFile.h"
 #include "../Utilities/Debug.h"
+
+const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
+	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
 
 bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
 {

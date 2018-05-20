@@ -52,7 +52,6 @@ MIFFile::Level::Level()
 const uint8_t MIFFile::DRY_CHASM = 0xC;
 const uint8_t MIFFile::WET_CHASM = 0xD;
 const uint8_t MIFFile::LAVA_CHASM = 0xE;
-const double MIFFile::ARENA_UNITS = 128.0;
 
 MIFFile::MIFFile(const std::string &filename)
 {

@@ -16,7 +16,7 @@
 #include "../World/VoxelGrid.h"
 #include "../World/WorldData.h"
 
-const double Player::HEIGHT = 0.70;
+const double Player::HEIGHT = 60.0 / MIFFile::ARENA_UNITS;
 const double Player::DEFAULT_WALK_SPEED = 2.0;
 const double Player::DEFAULT_RUN_SPEED = 8.0;
 const double Player::STEPPING_HEIGHT = 0.25;
@@ -194,10 +194,11 @@ void Player::lookAt(const Double3 &point)
 
 void Player::handleCollision(const WorldData &worldData, double dt)
 {
-	auto getVoxel = [&worldData](int x, int y, int z) -> VoxelData
+	const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
+
+	auto getVoxel = [&levelData](int x, int y, int z) -> VoxelData
 	{
-		const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
-		const VoxelGrid &voxelGrid = level.getVoxelGrid();
+		const VoxelGrid &voxelGrid = levelData.getVoxelGrid();
 
 		// Voxels outside the world are air.
 		if ((x < 0) || (x >= voxelGrid.getWidth()) ||
@@ -214,24 +215,24 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 	};
 
-	const double feetY = this->getFeetY();
-
 	// Coordinates of the base of the voxel the feet are in.
-	const double feetVoxelYPos = std::floor(feetY + (this->velocity.y * dt));
+	// - To do: add delta velocity Y?
+	const int feetVoxelY = static_cast<int>(std::floor(
+		this->getFeetY() / levelData.getCeilingHeight()));
 
 	// Get the voxel data for each voxel the player would touch on each axis.
 	const Int3 playerVoxel = this->getVoxelPosition();
 	const VoxelData &xVoxel = getVoxel(
 		static_cast<int>(std::floor(this->camera.position.x + (this->velocity.x * dt))),
-		playerVoxel.y,
+		feetVoxelY,
 		playerVoxel.z);
 	const VoxelData &yVoxel = getVoxel(
 		playerVoxel.x,
-		static_cast<int>(feetVoxelYPos),
+		feetVoxelY,
 		playerVoxel.z);
 	const VoxelData &zVoxel = getVoxel(
 		playerVoxel.x,
-		playerVoxel.y,
+		feetVoxelY,
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
 
 	// Check horizontal collisions.
@@ -351,15 +352,25 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
 
+	// Temp: get floor Y until Y collision is implemented.
+	const double floorY = [&worldData]()
+	{
+		const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
+		return levelData.getCeilingHeight();
+	}();
+
 	// Change the player's velocity based on collision.
 	if (collision)
 	{
 		this->handleCollision(worldData, dt);
+
+		// Temp: keep camera Y fixed until Y collision is implemented.
+		this->camera.position.y = floorY + Player::HEIGHT;
 	}
 	else
 	{
 		// Keep the player's Y position constant, but otherwise let them act as a ghost.
-		this->camera.position.y = Player::HEIGHT + 1.0;
+		this->camera.position.y = floorY + Player::HEIGHT;
 		this->velocity.y = 0.0;
 	}
 

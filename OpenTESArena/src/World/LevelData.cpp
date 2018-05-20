@@ -234,7 +234,7 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
 	levelData.name = level.name;
 	levelData.infName = inf.getName();
-	levelData.ceilingHeight = 1.0;
+	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
@@ -410,7 +410,7 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, in
 	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
 	levelData.name = level.name;
 	levelData.infName = inf.getName();
-	levelData.ceilingHeight = 1.0;
+	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
@@ -483,7 +483,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
 	levelData.name = level.name;
 	levelData.infName = inf.getName();
-	levelData.ceilingHeight = 1.0;
+	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
@@ -978,8 +978,10 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 					{
 						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()
 						{
+							// To do: verify this, and find where the 4.50 comes from.
 							const double yOffset =
-								static_cast<double>((map1Voxel & 0x0E00) >> 8) / 7.0;
+								static_cast<double>((map1Voxel & 0x0E00) >> 9) / 4.50;
+
 							const bool collider = (map1Voxel & 0x0100) != 0;
 
 							const VoxelData::Facing facing = [map1Voxel]()

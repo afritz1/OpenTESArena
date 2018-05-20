@@ -36,9 +36,11 @@ public:
 
 	struct CeilingData
 	{
+		static constexpr int DEFAULT_HEIGHT = 100;
+
 		int textureIndex; // Index into textures vector.
 
-		// Size of walls on main floor (first *CEILING number). Default is 128.
+		// Size of ceiling (first *CEILING number). Determines wall and dry chasm height.
 		int height;
 
 		// Main floor box scale (second *CEILING number). Formula: (Y * boxScale) / 256.

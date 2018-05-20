@@ -83,6 +83,9 @@ public:
 	{
 		enum class Type { Dry, Wet, Lava };
 
+		// The sizes of wet chasms and lava chasms are unaffected by ceiling height.
+		static const double WET_LAVA_DEPTH;
+
 		int id;
 		bool north, east, south, west;
 		Type type;

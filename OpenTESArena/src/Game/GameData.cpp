@@ -275,7 +275,9 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -312,7 +314,9 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x - 1.0, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -353,7 +357,9 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x - 1.0, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x - 1.0, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location (since wilderness dungeons aren't their own location, use a placeholder
@@ -387,7 +393,9 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -467,7 +475,9 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -501,7 +511,9 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 
 	// Set arbitrary player starting position and velocity (no starting point in WILD.MIF).
 	const Double2 startPoint(63.50, 63.50);
-	this->player.teleport(Double3(startPoint.x, 1.0 + Player::HEIGHT, startPoint.y));
+	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	this->player.teleport(Double3(
+		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
