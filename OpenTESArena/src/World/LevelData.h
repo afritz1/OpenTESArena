@@ -47,6 +47,8 @@ namespace std
 class ArenaRandom;
 class INFFile;
 
+enum class WorldType;
+
 class LevelData
 {
 public:
@@ -98,7 +100,8 @@ private:
 
 	void setVoxel(int x, int y, int z, uint16_t id);
 	void readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth);
-	void readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth, int gridDepth);
+	void readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
+		int gridWidth, int gridDepth);
 	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
 	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth);

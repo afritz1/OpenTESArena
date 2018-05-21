@@ -15,6 +15,7 @@
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/WorldType.h"
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	: position(position)
@@ -86,7 +87,7 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -217,7 +218,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth);
 	levelData.readCeiling(inf, gridWidth, gridDepth);
 
 	// Load locks and triggers (if any).
@@ -242,7 +243,7 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth);
 	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
 	return levelData;
@@ -418,7 +419,7 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, in
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 
 	return levelData;
@@ -491,7 +492,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 	// To do: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
@@ -747,7 +748,8 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 	}
 }
 
-void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
+	int gridWidth, int gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [map1, gridWidth, gridDepth](int x, int z)
@@ -976,11 +978,16 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, int gridWidth
 					// appears solid gray in the original game (presumably a silent bug).
 					if (textureIndex >= 0)
 					{
-						const int dataIndex = getDataIndex([map1Voxel, textureIndex]()
+						const int dataIndex = getDataIndex([worldType, map1Voxel, textureIndex]()
 						{
-							// To do: verify this, and find where the 4.50 comes from.
-							const double yOffset =
-								static_cast<double>((map1Voxel & 0x0E00) >> 9) / 4.50;
+							const double yOffset = [worldType, map1Voxel]()
+							{
+								const int baseOffset = (map1Voxel & 0x0E00) >> 9;
+								const int fullOffset = (worldType == WorldType::Interior) ?
+									(baseOffset * 8) : ((baseOffset * 32) - 8);
+
+								return static_cast<double>(fullOffset) / MIFFile::ARENA_UNITS;
+							}();
 
 							const bool collider = (map1Voxel & 0x0100) != 0;
 
