@@ -45,6 +45,7 @@ namespace std
 }
 
 class ArenaRandom;
+class ExeData;
 class INFFile;
 
 enum class WorldType;
@@ -101,7 +102,7 @@ private:
 	void setVoxel(int x, int y, int z, uint16_t id);
 	void readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth);
 	void readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-		int gridWidth, int gridDepth);
+		int gridWidth, int gridDepth, const ExeData &exeData);
 	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
 	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth);
@@ -111,29 +112,30 @@ public:
 	LevelData(LevelData &&levelData) = default;
 
 	// Interior level. The .INF is obtained from the level's info member.
-	static LevelData loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth);
+	static LevelData loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth,
+		const ExeData &exeData);
 
 	// Dungeon level. Each chunk is determined by an "inner seed" which depends on the
 	// dungeon level count being calculated beforehand.
 	static LevelData loadDungeon(ArenaRandom &random, const std::vector<MIFFile::Level> &levels,
 		int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
-		const INFFile &inf, int gridWidth, int gridDepth);
+		const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData);
 
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
 	static LevelData loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
-		int gridWidth, int gridDepth);
+		int gridWidth, int gridDepth, const ExeData &exeData);
 
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
 	// required .MIF chunks.
 	static LevelData loadCity(const MIFFile::Level &level, uint32_t citySeed, int cityDim,
 		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-		const INFFile &inf, int gridWidth, int gridDepth);
+		const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.
 	static LevelData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		const INFFile &inf);
+		const INFFile &inf, const ExeData &exeData);
 
 	bool isOutdoorDungeon() const;
 	double getCeilingHeight() const;

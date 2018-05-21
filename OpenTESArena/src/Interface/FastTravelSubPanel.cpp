@@ -336,13 +336,14 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Handle fast travel behavior and decide which panel to switch to.
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
+	const auto &exeData = game.getMiscAssets().getExeData();
 
 	// Update game clock.
 	Random random;
 	this->tickTravelTime(random);
 
 	// Update weathers.
-	gameData.updateWeather(game.getMiscAssets().getExeData());
+	gameData.updateWeather(exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
 	gameData.getTriggerText().reset();
@@ -375,7 +376,6 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 		else
 		{
-			const auto &exeData = game.getMiscAssets().getExeData();
 			const std::string mifName = String::toUppercase(
 				exeData.locations.centerProvinceCityMifName);
 			const MIFFile mif(mifName);
@@ -409,7 +409,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			const MIFFile mif(mifName);
 			const Location location = Location::makeDungeon(
 				localDungeonID, this->travelData.provinceID);
-			gameData.loadInterior(mif, location, game.getTextureManager(), game.getRenderer());
+			gameData.loadInterior(mif, location, exeData, game.getTextureManager(), game.getRenderer());
 
 			const bool isStaffDungeon = localDungeonID == 0;
 
@@ -431,7 +431,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			// Random named dungeon.
 			const bool isArtifactDungeon = false;
 			gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
-				isArtifactDungeon, game.getTextureManager(), game.getRenderer());
+				isArtifactDungeon, exeData, game.getTextureManager(), game.getRenderer());
 
 			// Choose random dungeon music and enter game world.
 			const MusicName musicName = GameData::getDungeonMusicName(random);

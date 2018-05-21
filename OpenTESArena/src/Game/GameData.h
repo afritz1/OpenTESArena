@@ -113,18 +113,19 @@ public:
 	static MusicName getInteriorMusicName(const std::string &mifName, Random &random);
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, const Location &location,
+	void loadInterior(const MIFFile &mif, const Location &location, const ExeData &exeData,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-		TextureManager &textureManager, Renderer &renderer);
+		const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
 	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-		const CityDataFile &cityData, TextureManager &textureManager, Renderer &renderer);
+		const CityDataFile &cityData, const ExeData &exeData, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).

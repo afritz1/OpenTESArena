@@ -267,10 +267,10 @@ MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &ran
 }
 
 void GameData::loadInterior(const MIFFile &mif, const Location &location,
-	TextureManager &textureManager, Renderer &renderer)
+	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
 	// Call interior WorldData loader.
-	this->worldData = WorldData::loadInterior(mif);
+	this->worldData = WorldData::loadInterior(mif, exeData);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position and velocity.
@@ -296,7 +296,7 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-	TextureManager &textureManager, Renderer &renderer)
+	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
 	DebugAssert(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
@@ -308,8 +308,8 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const int widthChunks = 2;
 	const int depthChunks = 1;
-	this->worldData = WorldData::loadDungeon(
-		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+	this->worldData = WorldData::loadDungeon(dungeonSeed, widthChunks, depthChunks,
+		isArtifactDungeon, exeData);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position and velocity.
@@ -335,7 +335,8 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 }
 
 void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-	const CityDataFile &cityData, TextureManager &textureManager, Renderer &renderer)
+	const CityDataFile &cityData, const ExeData &exeData, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	// Verify that the wilderness block coordinates are valid (0..63).
 	DebugAssert((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
@@ -351,8 +352,8 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	const int widthChunks = 2;
 	const int depthChunks = 2;
 	const bool isArtifactDungeon = false;
-	this->worldData = WorldData::loadDungeon(
-		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+	this->worldData = WorldData::loadDungeon(wildDungeonSeed, widthChunks, depthChunks,
+		isArtifactDungeon, exeData);
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position and velocity.
@@ -388,7 +389,8 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 		localCityID, provinceID, miscAssets);
 
 	// Call premade WorldData loader.
-	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType);
+	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType,
+		miscAssets.getExeData());
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set player starting position and velocity.
@@ -506,7 +508,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 
 	// Call wilderness WorldData loader.
 	this->worldData = WorldData::loadWilderness(
-		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType);
+		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, miscAssets.getExeData());
 	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
 
 	// Set arbitrary player starting position and velocity (no starting point in WILD.MIF).

@@ -8,6 +8,7 @@
 #include "WorldData.h"
 #include "WorldType.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/MIFFile.h"
@@ -143,7 +144,7 @@ std::string WorldData::generateWildernessInfName(ClimateType climateType, Weathe
 	return climateLetter + locationLetter + weatherLetter + ".INF";
 }
 
-WorldData WorldData::loadInterior(const MIFFile &mif)
+WorldData WorldData::loadInterior(const MIFFile &mif, const ExeData &exeData)
 {
 	WorldData worldData;
 
@@ -151,7 +152,7 @@ WorldData WorldData::loadInterior(const MIFFile &mif)
 	for (const auto &level : mif.getLevels())
 	{
 		worldData.levels.push_back(LevelData::loadInterior(
-			level, mif.getDepth(), mif.getWidth()));
+			level, mif.getDepth(), mif.getWidth(), exeData));
 	}
 
 	// Convert start points from the old coordinate system to the new one.
@@ -169,7 +170,7 @@ WorldData WorldData::loadInterior(const MIFFile &mif)
 }
 
 WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
-	bool isArtifactDungeon)
+	bool isArtifactDungeon, const ExeData &exeData)
 {
 	// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
 	const MIFFile mif("RANDOM1.MIF");
@@ -235,7 +236,7 @@ WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks
 
 		worldData.levels.push_back(LevelData::loadDungeon(
 			random, mif.getLevels(), levelUpBlock, levelDownBlock, widthChunks,
-			depthChunks, inf, gridWidth, gridDepth));
+			depthChunks, inf, gridWidth, gridDepth, exeData));
 	}
 
 	// The start point depends on where the level up voxel is on the first level.
@@ -257,7 +258,7 @@ WorldData WorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks
 }
 
 WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-	WeatherType weatherType)
+	WeatherType weatherType, const ExeData &exeData)
 {
 	WorldData worldData;
 
@@ -266,7 +267,7 @@ WorldData WorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);
 	worldData.levels.push_back(LevelData::loadPremadeCity(
-		level, inf, mif.getDepth(), mif.getWidth()));
+		level, inf, mif.getDepth(), mif.getWidth(), exeData));
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
@@ -302,7 +303,7 @@ WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mi
 	const std::string infName = WorldData::generateCityInfName(climateType, weatherType);
 	const INFFile inf(infName);
 	worldData.levels.push_back(LevelData::loadCity(level, citySeed, cityDim, reservedBlocks,
-		startPosition, inf, mif.getDepth(), mif.getWidth()));
+		startPosition, inf, mif.getDepth(), mif.getWidth(), miscAssets.getExeData()));
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
@@ -319,7 +320,7 @@ WorldData WorldData::loadCity(int localCityID, int provinceID, const MIFFile &mi
 }
 
 WorldData WorldData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-	ClimateType climateType, WeatherType weatherType)
+	ClimateType climateType, WeatherType weatherType, const ExeData &exeData)
 {
 	WorldData worldData;
 
@@ -327,7 +328,8 @@ WorldData WorldData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
 	const INFFile inf(infName);
 
 	// Load wilderness data (128x128 blank slate with four chunks. No starting points to load).
-	worldData.levels.push_back(LevelData::loadWilderness(rmdTR, rmdTL, rmdBR, rmdBL, inf));
+	worldData.levels.push_back(LevelData::loadWilderness(
+		rmdTR, rmdTL, rmdBR, rmdBL, inf, exeData));
 
 	worldData.currentLevel = 0;
 	worldData.worldType = WorldType::Wilderness;

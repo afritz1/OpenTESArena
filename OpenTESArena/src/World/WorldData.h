@@ -12,6 +12,7 @@
 // This class stores data regarding elements in the game world. It should be constructible
 // from a pair of .MIF and .INF files.
 
+class ExeData;
 class INFFile;
 class MIFFile;
 class MiscAssets;
@@ -45,15 +46,15 @@ public:
 	WorldData &operator=(WorldData &&worldData) = default;
 
 	// Loads all levels of an interior .MIF file.
-	static WorldData loadInterior(const MIFFile &mif);
+	static WorldData loadInterior(const MIFFile &mif, const ExeData &exeData);
 
 	// Loads a set of levels randomly selected from RANDOM1.MIF based on the given seed.
 	static WorldData loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
-		bool isArtifactDungeon);
+		bool isArtifactDungeon, const ExeData &exeData);
 
 	// Loads a premade exterior city (only used by center province).
 	static WorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-		WeatherType weatherType);
+		WeatherType weatherType, const ExeData &exeData);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static WorldData loadCity(int localCityID, int provinceID, const MIFFile &mif, int cityDim,
@@ -62,7 +63,7 @@ public:
 
 	// Loads some wilderness blocks.
 	static WorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		ClimateType climateType, WeatherType weatherType);
+		ClimateType climateType, WeatherType weatherType, const ExeData &exeData);
 
 	int getCurrentLevel() const;
 	WorldType getWorldType() const;

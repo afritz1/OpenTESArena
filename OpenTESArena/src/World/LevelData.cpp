@@ -6,6 +6,7 @@
 #include "LevelData.h"
 #include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Constants.h"
@@ -66,7 +67,8 @@ LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth)
 	// Just for initializing grid dimensions. The rest is initialized by load methods.
 }
 
-LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth)
+LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth,
+	const ExeData &exeData)
 {
 	// .INF file associated with the interior level.
 	const INFFile inf(String::toUppercase(level.info));
@@ -87,7 +89,7 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -111,7 +113,7 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 
 LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile::Level> &levels,
 	int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
-	const INFFile &inf, int gridWidth, int gridDepth)
+	const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
 	std::vector<uint16_t> tempFlor(gridWidth * gridDepth, 0);
@@ -218,7 +220,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
 	levelData.readCeiling(inf, gridWidth, gridDepth);
 
 	// Load locks and triggers (if any).
@@ -229,7 +231,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 }
 
 LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
-	int gridWidth, int gridDepth)
+	int gridWidth, int gridDepth, const ExeData &exeData)
 {
 	// Premade exterior level (only used by center province).
 	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
@@ -243,7 +245,7 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth);
+	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
 	return levelData;
@@ -251,7 +253,7 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 
 LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, int cityDim,
 	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	const INFFile &inf, int gridWidth, int gridDepth)
+	const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
@@ -419,13 +421,14 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, in
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 
 	return levelData;
 }
 
-LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, const INFFile &inf)
+LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, const INFFile &inf,
+	const ExeData &exeData)
 {
 	// Load WILD.MIF (blank slate, to be filled in by four .RMD files).
 	const MIFFile mif("WILD.MIF");
@@ -492,7 +495,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 	// To do: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
@@ -749,7 +752,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 }
 
 void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-	int gridWidth, int gridDepth)
+	int gridWidth, int gridDepth, const ExeData &exeData)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [map1, gridWidth, gridDepth](int x, int z)
@@ -857,7 +860,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					else
 					{
 						// Raised platform.
-						const int dataIndex = getDataIndex([&inf, map1Voxel, mostSigByte]()
+						const int dataIndex = getDataIndex([&inf, worldType, &exeData,
+							map1Voxel, mostSigByte]()
 						{
 							const uint8_t wallTextureID = map1Voxel & 0x000F;
 							const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
@@ -908,35 +912,58 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 							}();
 
-							// To do: The height appears to be some fraction of 64, and 
-							// when it's greater than 64, then that determines the offset?
-							const double platformHeight = static_cast<double>(mostSigByte) /
-								static_cast<double>(MIFFile::ARENA_UNITS);
-
-							// To do: redesign this code for use with ExeData::WallHeightTables.
-							// Also take some parameters for which kind of location it is
-							// (interior, city, wilderness).
-
-							// Box indices for thickness and height of raised platforms. Four
-							// thickness bits allows 16 values, and three height bits allows 8
-							// values. Bit pattern in most significant byte: 0x0tttthhh.
-							// - To do: use these to obtain box values from WallHeightTables.
-							const int thicknessIndex = (mostSigByte & 0x78) >> 3;
+							const auto &wallHeightTables = exeData.wallHeightTables;
 							const int heightIndex = mostSigByte & 0x07;
+							const int thicknessIndex = (mostSigByte & 0x78) >> 3;
+							int baseOffset, baseSize;
 
-							const double yOffset = 0.0;
-							const double ySize = platformHeight;
+							if (worldType == WorldType::City)
+							{
+								baseOffset = wallHeightTables.box1b.at(heightIndex);
+								baseSize = wallHeightTables.box2b.at(thicknessIndex);
+							}
+							else if (worldType == WorldType::Interior)
+							{
+								baseOffset = wallHeightTables.box1a.at(heightIndex);
 
-							// To do: Clamp top V coordinate positive until the correct platform 
-							// height calculation is figured out. Maybe the platform height
-							// needs to be multiplied by the ratio between the current ceiling
-							// height and the default ceiling height (128)? I.e., multiply by
-							// "ceilingHeight"?
-							const double vTop = std::max(0.0, 1.0 - platformHeight);
-							const double vBottom = Constants::JustBelowOne; // To do: should also be a function.
+								const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
+								const int *boxScale = inf.getCeiling().boxScale.get();
+								baseSize = (boxScale != nullptr) ?
+									((boxSize * (*boxScale)) / 256) : boxSize;
+							}
+							else if (worldType == WorldType::Wilderness)
+							{
+								baseOffset = wallHeightTables.box1c.at(heightIndex);
+
+								const int boxSize = 32;
+								const int *boxScale = inf.getCeiling().boxScale.get();
+								baseSize = (boxSize * ((boxScale != nullptr) ?
+									*boxScale : 192)) / 256;
+							}
+							else
+							{
+								throw DebugException("Invalid world type \"" +
+									std::to_string(static_cast<int>(worldType)) + "\".");
+							}
+
+							const double yOffset =
+								static_cast<double>(baseOffset) / MIFFile::ARENA_UNITS;
+							const double ySize =
+								static_cast<double>(baseSize) / MIFFile::ARENA_UNITS;
+
+							const double normalizedScale =
+								static_cast<double>(inf.getCeiling().height) /
+								MIFFile::ARENA_UNITS;
+							const double yOffsetNormalized = yOffset / normalizedScale;
+							const double ySizeNormalized = ySize / normalizedScale;
+
+							// To do: might need some tweaking with box3/box4 values.
+							const double vTop = std::max(
+								0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
+							const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
 							return VoxelData::makeRaised(sideID, floorID, ceilingID,
-								yOffset, ySize, vTop, vBottom);
+								yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);

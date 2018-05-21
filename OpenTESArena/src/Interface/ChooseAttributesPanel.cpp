@@ -276,7 +276,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						const int provinceID = Location::CENTER_PROVINCE_ID;
 						const Location location = Location::makeSpecialCase(
 							Location::SpecialCaseType::StartDungeon, provinceID);
-						gameData->loadInterior(mif, location, textureManager, renderer);
+						gameData->loadInterior(mif, location, exeData, textureManager, renderer);
 
 						// Set the game data before constructing the game world panel.
 						game.setGameData(std::move(gameData));
