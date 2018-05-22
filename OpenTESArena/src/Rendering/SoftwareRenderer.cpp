@@ -138,9 +138,7 @@ SoftwareRenderer::OcclusionData::OcclusionData()
 
 void SoftwareRenderer::OcclusionData::clipRange(int *yStart, int *yEnd) const
 {
-	// To do.
-
-	/*const bool occluded = (*yEnd <= this->yMin) || (*yStart >= this->yMax);
+	const bool occluded = (*yEnd <= this->yMin) || (*yStart >= this->yMax);
 
 	if (occluded)
 	{
@@ -149,24 +147,24 @@ void SoftwareRenderer::OcclusionData::clipRange(int *yStart, int *yEnd) const
 	}
 	else
 	{
-		// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.).
+		// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.)
+		// for contribution from ranges not fully covering a screen column.
 
 		// Clip the drawing range.
 		*yStart = std::max(*yStart, this->yMin);
 		*yEnd = std::min(*yEnd, this->yMax);
-	}*/
+	}
 }
 
 void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 {
-	// To do.
-
 	// Slightly different than clipRange() because values just needs to be adjacent
 	// rather than overlap.
-	/*const bool canIncreaseMin = yStart <= this->yMin;
+	const bool canIncreaseMin = yStart <= this->yMin;
 	const bool canDecreaseMax = yEnd >= this->yMax;
 
-	// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.).
+	// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.)
+	// for contribution from ranges not fully covering a screen column.
 
 	// Determine how to update the occlusion ranges.
 	if (canIncreaseMin && canDecreaseMax)
@@ -177,12 +175,12 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 	}
 	else if (canIncreaseMin)
 	{
-		this->yMin = std::min(yEnd, this->yMax);
+		// To do.
 	}
 	else if (canDecreaseMax)
 	{
-		this->yMax = std::max(yStart, this->yMin);
-	}*/
+		// To do.
+	}
 }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor, 
