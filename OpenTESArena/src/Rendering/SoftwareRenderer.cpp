@@ -147,9 +147,6 @@ void SoftwareRenderer::OcclusionData::clipRange(int *yStart, int *yEnd) const
 	}
 	else
 	{
-		// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.)
-		// for contribution from ranges not fully covering a screen column.
-
 		// Clip the drawing range.
 		*yStart = std::max(*yStart, this->yMin);
 		*yEnd = std::min(*yEnd, this->yMax);
@@ -163,9 +160,6 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 	const bool canIncreaseMin = yStart <= this->yMin;
 	const bool canDecreaseMax = yEnd >= this->yMax;
 
-	// To do: need to handle more cases (yStart == yEnd, outside of screen, etc.)
-	// for contribution from ranges not fully covering a screen column.
-
 	// Determine how to update the occlusion ranges.
 	if (canIncreaseMin && canDecreaseMax)
 	{
@@ -175,11 +169,13 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 	}
 	else if (canIncreaseMin)
 	{
-		// To do.
+		// Move the top of the window downward.
+		this->yMin = std::max(yEnd, this->yMin);
 	}
 	else if (canDecreaseMax)
 	{
-		// To do.
+		// Move the bottom of the window upward.
+		this->yMax = std::min(yStart, this->yMax);
 	}
 }
 
