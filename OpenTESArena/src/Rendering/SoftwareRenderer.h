@@ -65,6 +65,9 @@ private:
 
 		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
 			double projectionModifier);
+
+		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
+		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};
 
 	// Ray for 2.5D ray casting. The start point is always at the camera's eye.

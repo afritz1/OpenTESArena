@@ -121,6 +121,11 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	}();
 }
 
+int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
+{
+	return static_cast<int>(this->eye.y / ceilingHeight);
+}
+
 SoftwareRenderer::Ray::Ray(double dirX, double dirZ)
 {
 	this->dirX = dirX;
@@ -1853,9 +1858,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
-		&textures, &occlusion, &frame]()
+		&textures, &occlusion, &frame](int voxelY)
 	{
-		const int voxelY = camera.eyeVoxel.y;
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
@@ -2790,17 +2794,20 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 	};
 
+	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
+	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
+
 	// Draw the player's current voxel first.
-	drawInitialVoxel();
+	drawInitialVoxel(adjustedVoxelY);
 
 	// Draw voxels below the player's voxel.
-	for (int voxelY = (camera.eyeVoxel.y - 1); voxelY >= 0; voxelY--)
+	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		drawInitialVoxelBelow(voxelY);
 	}
 
 	// Draw voxels above the player's voxel.
-	for (int voxelY = (camera.eyeVoxel.y + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		drawInitialVoxelAbove(voxelY);
 	}
@@ -2858,9 +2865,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
-		&occlusion, &frame]()
+		&occlusion, &frame](int voxelY)
 	{
-		const int voxelY = camera.eyeVoxel.y;
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
@@ -3927,17 +3933,20 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 	};
 
+	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
+	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
+
 	// Draw voxel straight ahead first.
-	drawVoxel();
+	drawVoxel(adjustedVoxelY);
 
 	// Draw voxels below the voxel.
-	for (int voxelY = (camera.eyeVoxel.y - 1); voxelY >= 0; voxelY--)
+	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		drawVoxelBelow(voxelY);
 	}
 
 	// Draw voxels above the voxel.
-	for (int voxelY = (camera.eyeVoxel.y + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		drawVoxelAbove(voxelY);
 	}
