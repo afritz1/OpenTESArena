@@ -580,8 +580,20 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
 			voxelGrid.getWidth(), voxelGrid.getDepth());
 
-		const std::string text = "Your position is " + std::to_string(originalVoxel.x) +
-			", " + std::to_string(originalVoxel.y) + ".";
+		const auto &exeData = game.getMiscAssets().getExeData();
+		const std::string text = [&exeData, &originalVoxel]()
+		{
+			std::string str = exeData.ui.currentWorldPosition;
+
+			// Replace first %d with X, second %d with Y.
+			size_t index = str.find("%d");
+			str.replace(index, 2, std::to_string(originalVoxel.x));
+
+			index = str.find("%d", index);
+			str.replace(index, 2, std::to_string(originalVoxel.y));
+
+			return str;
+		}();
 
 		const RichTextString richText(
 			text,

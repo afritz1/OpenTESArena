@@ -401,6 +401,9 @@ public:
 		std::array<uint8_t, 30> helmetPaletteIndices, race1HelmetPaletteValues,
 			race3HelmetPaletteValues, race4HelmetPaletteValues;
 
+		// Displayed when pressing F2.
+		std::string currentWorldPosition;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

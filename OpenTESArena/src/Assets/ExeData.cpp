@@ -558,6 +558,7 @@ void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
 	const int race1HelmetPaletteValuesOffset = ExeData::get(section, "Race1HelmetPaletteValues", keyValueMap);
 	const int race3HelmetPaletteValuesOffset = ExeData::get(section, "Race3HelmetPaletteValues", keyValueMap);
 	const int race4HelmetPaletteValuesOffset = ExeData::get(section, "Race4HelmetPaletteValues", keyValueMap);
+	const int currentWorldPositionOffset = ExeData::get(section, "CurrentWorldPosition", keyValueMap);
 
 	this->chooseClassList.init(data + chooseClassListOffset);
 	this->buyingWeapons.init(data + buyingWeaponsOffset);
@@ -578,6 +579,7 @@ void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->race1HelmetPaletteValues, data + race1HelmetPaletteValuesOffset);
 	initInt8Array(this->race3HelmetPaletteValues, data + race3HelmetPaletteValuesOffset);
 	initInt8Array(this->race4HelmetPaletteValues, data + race4HelmetPaletteValuesOffset);
+	this->currentWorldPosition = ExeData::readString(data + currentWorldPositionOffset);
 }
 
 void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
