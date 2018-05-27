@@ -60,6 +60,14 @@ public:
 	// Returns whether the weapon is currently not moving. This is relevant when
 	// determining if the state can safely be changed without interrupting something.
 	bool isIdle() const;
+	
+	// Returns whether the weapon should be on the right side of the screen. This is 
+	// relevant in modern mode for aspect ratios other than stretch.
+	bool isLeft() const;
+	
+	//Returns whether the weapon should be on the left side of the screen. This is 
+	// relevant in modern mode for aspect ratios other than stretch.
+	bool isRight() const;
 
 	// Gets the filename associated with the weapon (i.e., AXE, HAMMER, etc.).
 	// This is used with the current index to determine which frame is drawn.
