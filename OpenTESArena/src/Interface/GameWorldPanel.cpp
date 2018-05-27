@@ -1801,8 +1801,37 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			const int newRight = renderer.nativeToOriginal(
 				Int2(renderer.getWindowDimensions().x, 0)).x;
 
-			const int weaponX = newLeft + static_cast<int>(std::round(
-				static_cast<double>(newRight - newLeft) * weaponOffsetXPercent));
+			//const int weaponXAdjusted = newLeft + static_cast<int>(std::round(
+				//static_cast<double>(newRight - newLeft) * weaponOffsetXPercent));
+			
+			int weaponX = weaponOffset.x;
+			
+			if (renderer.getLetterboxMode() == 1)
+			{
+				if (weaponAnimation.isLeft()) 
+				{
+					weaponX = weaponOffset.x-55;
+				} else if (weaponAnimation.isRight())
+				{
+					weaponX = weaponOffset.x+55;
+				} else 
+				{
+					weaponX = weaponOffset.x;
+				}
+			} else if (renderer.getLetterboxMode() == 0)
+			{
+				if (weaponAnimation.isLeft()) 
+				{
+					weaponX = weaponOffset.x-20;
+				} else if (weaponAnimation.isRight())
+				{
+					weaponX = weaponOffset.x+20;
+				} else 
+				{
+					weaponX = weaponOffset.x;
+				}
+			}
+				
 			const int weaponY = static_cast<int>(std::round(
 				static_cast<double>(weaponOffset.y) * weaponScale));
 			const int weaponWidth = static_cast<int>(std::round(
@@ -1812,7 +1841,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 					Renderer::ORIGINAL_HEIGHT - weaponY)) * weaponScale));
 
 			renderer.drawOriginal(weaponTexture.get(),
-				weaponX, weaponY, weaponWidth, weaponHeight);
+				weaponX, weaponY, weaponTexture.getWidth(), weaponHeight);//weaponX, weaponY, weaponWidth, weaponHeight);
 		}
 		else
 		{

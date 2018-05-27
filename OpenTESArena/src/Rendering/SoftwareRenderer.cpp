@@ -4234,12 +4234,12 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		if (onXAxis)
 		{
 			zDistance = (static_cast<double>(cell.x) - 
-				camera.eye.x + static_cast<double>((1 - stepX) / 2)) / ray.dirX;
+				camera.eye.x + static_cast<double>((1 - stepX) * .5)) / ray.dirX;
 		}
 		else
 		{
 			zDistance = (static_cast<double>(cell.z) -
-				camera.eye.z + static_cast<double>((1 - stepZ) / 2)) / ray.dirZ;
+				camera.eye.z + static_cast<double>((1 - stepZ) * .5)) / ray.dirZ;
 		}
 	};
 

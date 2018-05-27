@@ -161,6 +161,26 @@ bool WeaponAnimation::isIdle() const
 	return this->state == WeaponAnimation::State::Idle;
 }
 
+bool WeaponAnimation::isLeft() const
+{
+	if ((this->weaponID == 16) || (this->weaponID == 17) || (this->weaponID == -1)) 
+	{
+		return false;
+	}
+	
+	return (this->state == WeaponAnimation::State::Left);
+}
+
+bool WeaponAnimation::isRight() const
+{
+	if ((this->weaponID == 16) || (this->weaponID == 17) || (this->weaponID == -1)) 
+	{
+		return false;
+	}
+	
+	return (this->state == WeaponAnimation::State::Idle) || (this->state == WeaponAnimation::State::Sheathing) || (this->state == WeaponAnimation::State::Unsheathing) || (this->state == WeaponAnimation::State::Right);
+}
+
 const std::string &WeaponAnimation::getAnimationFilename() const
 {
 	return this->animationFilename;

@@ -62,6 +62,9 @@ public:
 
 	// Gets the letterbox aspect associated with the current letterbox mode.
 	double getLetterboxAspect() const;
+	
+	//Gets the current letterbox mode.
+	int getLetterboxMode() const;
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;

@@ -183,7 +183,7 @@ int MIFFile::Level::load(const uint8_t *levelStart)
 	// size in WILD.MIF (six bytes short of where it should be, probably due to FLAT
 	// tag and size not being accounted for, causing this loader to incorrectly start
 	// a second level six bytes from the end of the file).
-	return static_cast<int>(std::distance(levelStart, tagStart));
+	return static_cast<int>(levelEnd - levelStart);
 }
 
 int MIFFile::Level::getHeight() const
