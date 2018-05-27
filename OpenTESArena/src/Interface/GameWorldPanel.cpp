@@ -1331,19 +1331,22 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 		// Player destination after going through a level up/down voxel.
 		auto &player = gameData.getPlayer();
-		const Double3 destinationPoint(
+		const Double2 destinationXZ(
 			(static_cast<double>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
-			player.getPosition().y,
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Lambda for transitioning the player to the given level.
-		auto switchToLevel = [&game, &worldData, &player, &destinationPoint,
+		auto switchToLevel = [&game, &worldData, &player, &destinationXZ,
 			&dirToNewVoxel](int level)
 		{
 			worldData.setLevelActive(level, game.getTextureManager(), game.getRenderer());
+			const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
 
 			// Move the player to where they should be in the new level.
-			player.teleport(destinationPoint);
+			player.teleport(Double3(
+				destinationXZ.x,
+				levelData.getCeilingHeight() + Player::HEIGHT,
+				destinationXZ.y));
 			player.lookAt(player.getPosition() + dirToNewVoxel);
 			player.setVelocityToZero();
 		};
