@@ -85,7 +85,7 @@ LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, in
 		levelData.isOutdoorDungeon() ? Color::Gray.toARGB() : Color::Black.toARGB());
 
 	// Empty voxel data (for air).
-	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+	levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
@@ -216,7 +216,7 @@ LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile:
 	levelData.interiorSkyColor = std::make_unique<uint32_t>(Color::Black.toARGB());
 	
 	// Empty voxel data (for air).
-	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+	levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
@@ -241,7 +241,7 @@ LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile 
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
-	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+	levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
@@ -417,7 +417,7 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, in
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
-	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+	levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
@@ -491,7 +491,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 	levelData.outdoorDungeon = false;
 
 	// Empty voxel data (for air).
-	const int emptyID = levelData.voxelGrid.addVoxelData(VoxelData());
+	levelData.voxelGrid.addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
