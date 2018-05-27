@@ -162,7 +162,7 @@ int MIFFile::Level::load(const uint8_t *levelStart)
 	while (tagStart < levelEnd)
 	{
 		// Check what the four letter tag is (FLOR, MAP1, etc., never LEVL).
-		const std::string tag = std::string(tagStart, tagStart + 4);
+		const std::string tag(tagStart, tagStart + 4);
 
 		// Find the function associated with the tag.
 		const auto tagIter = MIFLevelTags.find(tag);
@@ -179,7 +179,11 @@ int MIFFile::Level::load(const uint8_t *levelStart)
 		}
 	}
 
-	return static_cast<int>(levelEnd - levelStart);
+	// Use the updated tag start instead of the level end due to a bug with the LEVL
+	// size in WILD.MIF (six bytes short of where it should be, probably due to FLAT
+	// tag and size not being accounted for, causing this loader to incorrectly start
+	// a second level six bytes from the end of the file).
+	return static_cast<int>(std::distance(levelStart, tagStart));
 }
 
 int MIFFile::Level::getHeight() const
