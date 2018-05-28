@@ -407,7 +407,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	auto letterboxModeOption = std::make_unique<IntOption>(
 		OptionsPanel::LETTERBOX_MODE_NAME,
-		"Determines the aspect ratio of the game UI.",
+		"Determines the aspect ratio of the game UI. The weapon animation\nin modern mode is unaffected by this.",
 		options.getGraphics_LetterboxMode(),
 		1,
 		Options::MIN_LETTERBOX_MODE,

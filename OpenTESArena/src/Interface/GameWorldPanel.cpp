@@ -1788,31 +1788,40 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		// Draw the current weapon image depending on interface mode.
 		if (modernInterface)
 		{
-			// Scale vertically to fit, then scale/translate everything else accordingly.
-			const double weaponScale = static_cast<double>(Renderer::ORIGINAL_HEIGHT) /
-				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
+			// Draw stretched to fit the window.
+			const int letterboxStretchMode = Options::MAX_LETTERBOX_MODE;
+			renderer.setLetterboxMode(letterboxStretchMode);
 
 			// Percent of the horizontal weapon offset across the original screen.
 			const double weaponOffsetXPercent = static_cast<double>(weaponOffset.x) /
 				static_cast<double>(Renderer::ORIGINAL_WIDTH);
 
 			// Native left and right screen edges converted to original space.
-			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x - 1;
+			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x;
 			const int newRight = renderer.nativeToOriginal(
 				Int2(renderer.getWindowDimensions().x, 0)).x;
+			const double newDiff = static_cast<double>(newRight - newLeft);
 
-			const int weaponX = newLeft + static_cast<int>(std::round(
-				static_cast<double>(newRight - newLeft) * weaponOffsetXPercent));
+			// Values to scale original weapon dimensions by.
+			const double weaponScaleX = newDiff / static_cast<double>(Renderer::ORIGINAL_WIDTH);
+			const double weaponScaleY = static_cast<double>(Renderer::ORIGINAL_HEIGHT) /
+				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
+
+			const int weaponX = newLeft +
+				static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
 			const int weaponY = static_cast<int>(std::round(
-				static_cast<double>(weaponOffset.y) * weaponScale));
+				static_cast<double>(weaponOffset.y) * weaponScaleY));
 			const int weaponWidth = static_cast<int>(std::round(
-				static_cast<double>(weaponTexture.getWidth()) * weaponScale));
+				static_cast<double>(weaponTexture.getWidth()) * weaponScaleX));
 			const int weaponHeight = static_cast<int>(std::round(
 				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
-					Renderer::ORIGINAL_HEIGHT - weaponY)) * weaponScale));
+					Renderer::ORIGINAL_HEIGHT - weaponY)) * weaponScaleY));
 
 			renderer.drawOriginal(weaponTexture.get(),
 				weaponX, weaponY, weaponWidth, weaponHeight);
+
+			// Reset letterbox mode back to what it was.
+			renderer.setLetterboxMode(options.getGraphics_LetterboxMode());
 		}
 		else
 		{
