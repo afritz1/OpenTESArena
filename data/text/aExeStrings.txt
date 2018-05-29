@@ -77,6 +77,8 @@ CFAFilenameTemplates=0x4200C
 CFAHumansWithWeaponAnimations=0x42033
 CFAWeaponAnimations=0x42067
 EffectAnimations=0x3F1CC
+CitizenColorBase=0x43366
+CitizenSkinColors=0x43376
 
 [Equipment]
 EnchantmentChances=0x3D9F4

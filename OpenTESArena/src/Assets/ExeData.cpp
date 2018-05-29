@@ -320,6 +320,8 @@ void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 	const int cfaHumansWithWeaponAnimsOffset = ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueMap);
 	const int cfaWeaponAnimationsOffset = ExeData::get(section, "CFAWeaponAnimations", keyValueMap);
 	const int effectAnimsOffset = ExeData::get(section, "EffectAnimations", keyValueMap);
+	const int citizenColorBaseOffset = ExeData::get(section, "CitizenColorBase", keyValueMap);
+	const int citizenSkinColorsOffset = ExeData::get(section, "CitizenSkinColors", keyValueMap);
 
 	initStringArray(this->creatureNames, data + creatureNamesOffset);
 	initInt8Array(this->creatureLevels, data + creatureLevelsOffset);
@@ -347,6 +349,8 @@ void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->cfaHumansWithWeaponAnimations, data + cfaHumansWithWeaponAnimsOffset);
 	initStringArray(this->cfaWeaponAnimations, data + cfaWeaponAnimationsOffset);
 	initStringArray(this->effectAnimations, data + effectAnimsOffset);
+	initInt8Array(this->citizenColorBase, data + citizenColorBaseOffset);
+	initInt8Array(this->citizenSkinColors, data + citizenSkinColorsOffset);
 }
 
 void ExeData::Equipment::init(const char *data, const KeyValueMap &keyValueMap)

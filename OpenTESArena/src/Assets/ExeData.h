@@ -169,6 +169,10 @@ public:
 		// .CFA filenames for spell explosions, blood, etc..
 		std::array<std::string, 27> effectAnimations;
 
+		// Townsfolk clothes and skin color transformations. See NPCs wiki page for the algorithms.
+		std::array<uint8_t, 16> citizenColorBase;
+		std::array<uint8_t, 10> citizenSkinColors;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
