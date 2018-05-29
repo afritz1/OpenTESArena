@@ -106,21 +106,32 @@ public:
 
 	struct Entities
 	{
-		// Creature names ("Rat", "Goblin", etc.). Each creature type could simply use
-		// its index in this array as its identifier, much like with provinces.
-		std::array<std::string, 23> names;
-
-		// Attribute arrays for male/female races, guards, and creatures. 255 is displayed
-		// as 100.
-		std::array<std::array<uint8_t, 8>, 8> maleMainRaceAttributes, femaleMainRaceAttributes;
-		std::array<std::array<uint8_t, 8>, 9> guardAttributes;
-		std::array<std::array<uint8_t, 8>, 24> creatureAttributes;
+		// Creature races are 1-based.
+		std::array<std::string, 23> creatureNames; // Rat, Goblin, ...
+		std::array<uint8_t, 24> creatureLevels; // Zero-based, as with the player.
+		std::array<std::pair<uint16_t, uint16_t>, 24> creatureHitPoints; // Min/max format.
+		std::array<uint32_t, 24> creatureBaseExps; // Exp = baseExp + (maxHP * expMultiplier).
+		std::array<uint8_t, 24> creatureExpMultipliers;
+		std::array<uint8_t, 24> creatureSounds; // Indices into creature .VOC filenames.
+		std::array<std::string, 26> creatureSoundNames; // Used by creature sound indices.
+		std::array<std::pair<uint8_t, uint8_t>, 24> creatureDamages; // Min/max format.
+		std::array<uint16_t, 24> creatureMagicEffects; // Goes into NPC's ActiveEffects.
+		std::array<uint16_t, 24> creatureScales; // In 1/256th's, 0 == 100%.
+		std::array<int8_t, 24> creatureYOffsets;
+		std::array<uint8_t, 24> creatureHasNoCorpse;
+		std::array<uint8_t, 24> creatureBlood; // Indices into effects animation list.
+		std::array<int8_t, 24> creatureDiseaseChances; // Negative values have special meaning.
+		std::array<std::array<uint8_t, 8>, 24> creatureAttributes; // 255 == 100.
 
 		// Creature animations (i.e., their .CFA filenames). These are ordered the same
 		// as creature names, and there is an extra entry at the end for the final boss.
 		// Replace '@' with a number from 1 to 6 indicating which .CFA file to fetch for
 		// angle-relative animations.
-		std::array<std::string, 24> animationFilenames;
+		std::array<std::string, 24> creatureAnimationFilenames;
+
+		// Attribute arrays for male/female races and guards. 255 is displayed as 100.
+		std::array<std::array<uint8_t, 8>, 8> maleMainRaceAttributes, femaleMainRaceAttributes;
+		std::array<std::array<uint8_t, 8>, 9> guardAttributes;
 
 		// Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.
 		// - Order: Winter, Desert, Temperate.
@@ -154,6 +165,9 @@ public:
 		// - Order: Sword, Axe, Mace, "P" sword, "P" axe, "P" mace, "B" sword, "B" axe,
 		//   "B" mace, Shield, "P" shield, "B" shield.
 		std::array<std::string, 12> cfaWeaponAnimations;
+
+		// .CFA filenames for spell explosions, blood, etc..
+		std::array<std::string, 27> effectAnimations;
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};

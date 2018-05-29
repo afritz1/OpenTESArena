@@ -109,6 +109,19 @@ namespace
 		}
 	}
 
+	// Convenience method for initializing an array of 32-bit integers.
+	template <typename T, size_t U>
+	void initInt32Array(std::array<T, U> &arr, const char *data)
+	{
+		static_assert(sizeof(T) == 4, "sizeof(T) != 4.");
+
+		for (size_t i = 0; i < arr.size(); i++)
+		{
+			arr.at(i) = static_cast<T>(
+				Bytes::getLE32(reinterpret_cast<const uint8_t*>(data + (i * 4))));
+		}
+	}
+
 	// Convenience method for initializing an index array.
 	template <typename T, size_t U>
 	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
@@ -117,9 +130,12 @@ namespace
 		// Remove zeroes because they do not count as offsets (they represent "null").
 		std::array<T, U> uniqueArr;
 		const auto uniqueBegin = uniqueArr.begin();
-		auto uniqueEnd = std::remove_copy(arr.begin(), arr.end(), uniqueBegin, 0);
-		std::sort(uniqueBegin, uniqueEnd);
-		uniqueEnd = std::unique(uniqueBegin, uniqueEnd);
+		const auto uniqueEnd = [&arr, uniqueBegin]()
+		{
+			const auto iter = std::remove_copy(arr.begin(), arr.end(), uniqueBegin, 0);
+			std::sort(uniqueBegin, iter);
+			return std::unique(uniqueBegin, iter);
+		}();
 
 		// For each offset, if it is non-zero, its position in the uniques array is
 		// the index to put into the index array.
@@ -279,34 +295,58 @@ void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 {
 	const std::string section = "Entities";
 	const int creatureNamesOffset = ExeData::get(section, "CreatureNames", keyValueMap);
+	const int creatureLevelsOffset = ExeData::get(section, "CreatureLevels", keyValueMap);
+	const int creatureHitPointsOffset = ExeData::get(section, "CreatureHitPoints", keyValueMap);
+	const int creatureBaseExpsOffset = ExeData::get(section, "CreatureBaseExperience", keyValueMap);
+	const int creatureExpMultipliersOffset = ExeData::get(section, "CreatureExperienceMultipliers", keyValueMap);
+	const int creatureSoundsOffset = ExeData::get(section, "CreatureSounds", keyValueMap);
+	const int creatureSoundNamesOffset = ExeData::get(section, "CreatureSoundNames", keyValueMap);
+	const int creatureDamagesOffset = ExeData::get(section, "CreatureDamages", keyValueMap);
+	const int creatureMagicEffectsOffset = ExeData::get(section, "CreatureMagicEffects", keyValueMap);
+	const int creatureScalesOffset = ExeData::get(section, "CreatureScales", keyValueMap);
+	const int creatureYOffsetsOffset = ExeData::get(section, "CreatureYOffsets", keyValueMap);
+	const int creatureHasNoCorpseOffset = ExeData::get(section, "CreatureHasNoCorpse", keyValueMap);
+	const int creatureBloodOffset = ExeData::get(section, "CreatureBlood", keyValueMap);
+	const int creatureDiseaseChancesOffset = ExeData::get(section, "CreatureDiseaseChances", keyValueMap);
+	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes", keyValueMap);
+	const int creatureAnimFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames", keyValueMap);
 	const int maleMainRaceAttrsOffset = ExeData::get(section, "MaleMainRaceAttributes", keyValueMap);
 	const int femaleMainRaceAttrsOffset = ExeData::get(section, "FemaleMainRaceAttributes", keyValueMap);
 	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes", keyValueMap);
-	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes", keyValueMap);
-	const int animationFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames", keyValueMap);
-	const int maleCitizenAnimFilenamesOffset =
-		ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueMap);
-	const int femaleCitizenAnimFilenamesOffset =
-		ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueMap);
+	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueMap);
+	const int femaleCitizenAnimFilenamesOffset = ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueMap);
 	const int cfaFilenameChunksOffset = ExeData::get(section, "CFAFilenameChunks", keyValueMap);
 	const int cfaFilenameTemplatesOffset = ExeData::get(section, "CFAFilenameTemplates", keyValueMap);
-	const int cfaHumansWithWeaponAnimsOffset =
-		ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueMap);
+	const int cfaHumansWithWeaponAnimsOffset = ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueMap);
 	const int cfaWeaponAnimationsOffset = ExeData::get(section, "CFAWeaponAnimations", keyValueMap);
+	const int effectAnimsOffset = ExeData::get(section, "EffectAnimations", keyValueMap);
 
-	initStringArray(this->names, data + creatureNamesOffset);
+	initStringArray(this->creatureNames, data + creatureNamesOffset);
+	initInt8Array(this->creatureLevels, data + creatureLevelsOffset);
+	initInt16PairArray(this->creatureHitPoints, data + creatureHitPointsOffset);
+	initInt32Array(this->creatureBaseExps, data + creatureBaseExpsOffset);
+	initInt8Array(this->creatureExpMultipliers, data + creatureExpMultipliersOffset);
+	initInt8Array(this->creatureSounds, data + creatureSoundsOffset);
+	initStringArray(this->creatureSoundNames, data + creatureSoundNamesOffset);
+	initInt8PairArray(this->creatureDamages, data + creatureDamagesOffset);
+	initInt16Array(this->creatureMagicEffects, data + creatureMagicEffectsOffset);
+	initInt16Array(this->creatureScales, data + creatureScalesOffset);
+	initInt8Array(this->creatureYOffsets, data + creatureYOffsetsOffset);
+	initInt8Array(this->creatureHasNoCorpse, data + creatureHasNoCorpseOffset);
+	initInt8Array(this->creatureBlood, data + creatureBloodOffset);
+	initInt8Array(this->creatureDiseaseChances, data + creatureDiseaseChancesOffset);
+	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
+	initStringArray(this->creatureAnimationFilenames, data + creatureAnimFilenamesOffset);
 	init2DInt8Array(this->maleMainRaceAttributes, data + maleMainRaceAttrsOffset);
 	init2DInt8Array(this->femaleMainRaceAttributes, data + femaleMainRaceAttrsOffset);
 	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
-	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
-	initStringArray(this->animationFilenames, data + animationFilenamesOffset);
 	initStringArray(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
-	initStringArray(this->femaleCitizenAnimationFilenames,
-		data + femaleCitizenAnimFilenamesOffset);
+	initStringArray(this->femaleCitizenAnimationFilenames, data + femaleCitizenAnimFilenamesOffset);
 	initStringArray(this->cfaFilenameChunks, data + cfaFilenameChunksOffset);
 	initStringArray(this->cfaFilenameTemplates, data + cfaFilenameTemplatesOffset);
 	initStringArray(this->cfaHumansWithWeaponAnimations, data + cfaHumansWithWeaponAnimsOffset);
 	initStringArray(this->cfaWeaponAnimations, data + cfaWeaponAnimationsOffset);
+	initStringArray(this->effectAnimations, data + effectAnimsOffset);
 }
 
 void ExeData::Equipment::init(const char *data, const KeyValueMap &keyValueMap)

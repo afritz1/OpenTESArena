@@ -52,17 +52,31 @@ ReservedBlockLists=0x3FF8E
 
 [Entities]
 CreatureNames=0x36BBE
+CreatureLevels=0x3E366
+CreatureHitPoints=0x3E3AE
+CreatureBaseExperience=0x3E40E
+CreatureExperienceMultipliers=0x3E46E
+CreatureSounds=0x3E2EE
+CreatureSoundNames=0x3FA9D
+CreatureDamages=0x3E486
+CreatureMagicEffects=0x3E37E
+CreatureScales=0x3E336
+CreatureYOffsets=0x3E306
+CreatureHasNoCorpse=0x3E31E
+CreatureBlood=0x438FF
+CreatureDiseaseChances=0x3E4E2
+CreatureAttributes=0x35FDC
+CreatureAnimationFilenames=0x3E4FB
 MaleMainRaceAttributes=0x35FC3
 FemaleMainRaceAttributes=0x35FCB
 GuardAttributes=0x35FD3
-CreatureAttributes=0x35FDC
-CreatureAnimationFilenames=0x3E4FB
 MaleCitizenAnimationFilenames=0x4186A
 FemaleCitizenAnimationFilenames=0x41891
 CFAFilenameChunks=0x41FF0
 CFAFilenameTemplates=0x4200C
 CFAHumansWithWeaponAnimations=0x42033
 CFAWeaponAnimations=0x42067
+EffectAnimations=0x3F1CC
 
 [Equipment]
 EnchantmentChances=0x3D9F4
