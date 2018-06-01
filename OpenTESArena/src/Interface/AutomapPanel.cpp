@@ -122,7 +122,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		// is (0, 0), left to right is the Z axis, and up and down is the X axis, because 
 		// north is +X in-game. It is scaled by 3 so that all directions of the player's 
 		// arrow are representable.
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(
+		SDL_Surface *surface = Surface::createWithFormat(
 			voxelGrid.getDepth() * 3, voxelGrid.getWidth() * 3, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 

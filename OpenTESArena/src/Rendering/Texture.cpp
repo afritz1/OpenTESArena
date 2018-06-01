@@ -46,7 +46,7 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
-	SDL_Surface *surface = Surface::createSurfaceWithFormat(width, height,
+	SDL_Surface *surface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	const uint32_t clearColor = SDL_MapRGBA(surface->format, 0, 0, 0, 0);
 	SDL_FillRect(surface, nullptr, clearColor);

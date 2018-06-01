@@ -75,7 +75,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	// currently have an arbitrary size (otherwise they could extend to the end of 
 	// each row), and because SDL_UpdateTexture requires pixels (so this avoids an 
 	// allocation each time the update method is called).
-	this->clearSurface = Surface::createSurfaceWithFormat(width, height,
+	this->clearSurface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	SDL_FillRect(this->clearSurface, nullptr, 
 		SDL_MapRGBA(clearSurface->format, 0, 0, 0, 0));

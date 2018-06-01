@@ -70,7 +70,7 @@ void TextureManager::loadPalette(const std::string &paletteName)
 Surface TextureManager::make32BitFromPaletted(int width, int height,
 	const uint8_t *srcPixels, const Palette &palette)
 {
-	SDL_Surface *surface = Surface::createSurfaceWithFormat(
+	SDL_Surface *surface = Surface::createWithFormat(
 		width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
 
@@ -130,7 +130,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		const Palette &colPalette = colFile.getPalette();
 
 		assert(colPalette.get().size() == 256);
-		surface = Surface::createSurfaceWithFormat(16, 16, Renderer::DEFAULT_BPP, 
+		surface = Surface::createWithFormat(16, 16, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 		
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
@@ -148,7 +148,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 			*img.getPalette() : this->palettes.at(paletteName);
 		
 		// Create a surface from the .IMG.
-		surface = Surface::createSurfaceWithFormat(img.getWidth(), img.getHeight(),
+		surface = Surface::createWithFormat(img.getWidth(), img.getHeight(),
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 		// Generate 32-bit colors from each palette index in the .IMG pixels and
@@ -222,7 +222,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 				*img.getPalette() : this->palettes.at(paletteName);
 
 			// Create a surface from the .IMG.
-			SDL_Surface *surface = Surface::createSurfaceWithFormat(
+			SDL_Surface *surface = Surface::createWithFormat(
 				img.getWidth(), img.getHeight(), Renderer::DEFAULT_BPP,
 				Renderer::DEFAULT_PIXELFORMAT);
 

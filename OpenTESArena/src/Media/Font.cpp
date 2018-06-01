@@ -61,7 +61,7 @@ Font::Font(FontName fontName)
 		const int elementWidth = fontFile.getWidth(c);
 		const uint32_t *elementPixels = fontFile.getPixels(c);
 
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(elementWidth,
+		SDL_Surface *surface = Surface::createWithFormat(elementWidth,
 			elementHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);

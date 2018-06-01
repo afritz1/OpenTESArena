@@ -49,8 +49,7 @@ SDL_Surface *Surface::loadBMP(const std::string &filename, uint32_t format)
 	return optimizedSurface;
 }
 
-SDL_Surface *Surface::createSurfaceWithFormat(int width, int height,
-	int depth, uint32_t format)
+SDL_Surface *Surface::createWithFormat(int width, int height, int depth, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)
 	return SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format);
@@ -70,14 +69,14 @@ SDL_Surface *Surface::createSurfaceWithFormat(int width, int height,
 #endif
 }
 
-SDL_Surface *Surface::createSurfaceWithFormatFrom(void *pixels,
-	int width, int height, int depth, int pitch, uint32_t format)
+SDL_Surface *Surface::createWithFormatFrom(void *pixels, int width, int height,
+	int depth, int pitch, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)
 	return SDL_CreateRGBSurfaceWithFormatFrom(pixels, width, height,
 		depth, pitch, format);
 #else
-	SDL_Surface *surface = Surface::createSurfaceWithFormat(width, height, depth, format);
+	SDL_Surface *surface = Surface::createWithFormat(width, height, depth, format);
 	SDL_memcpy(surface->pixels, pixels, height * pitch);
 	return surface;
 #endif

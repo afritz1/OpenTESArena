@@ -54,7 +54,7 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 
 	// Create background. Make it a little bigger than the text box.
 	const int padding = 4;
-	SDL_Surface *background = Surface::createSurfaceWithFormat(
+	SDL_Surface *background = Surface::createWithFormat(
 		textSurface->w + padding, textSurface->h + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	SDL_FillRect(background, nullptr, SDL_MapRGBA(background->format, backColor.r,

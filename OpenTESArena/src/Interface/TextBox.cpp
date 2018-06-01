@@ -29,7 +29,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	// before changing all non-transparent pixels to the desired text color.
 	Surface tempSurface = [&dimensions, &renderer]()
 	{
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(dimensions.x,
+		SDL_Surface *surface = Surface::createWithFormat(dimensions.x,
 			dimensions.y, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
 
@@ -131,7 +131,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 			tempSurface.getWidth() + std::abs(shadowOffset.x),
 			tempSurface.getHeight() + std::abs(shadowOffset.y));
 
-		SDL_Surface *surface = Surface::createSurfaceWithFormat(surfaceDims.x,
+		SDL_Surface *surface = Surface::createWithFormat(surfaceDims.x,
 			surfaceDims.y, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 		SDL_FillRect(surface, nullptr, SDL_MapRGBA(surface->format, 0, 0, 0, 0));
 

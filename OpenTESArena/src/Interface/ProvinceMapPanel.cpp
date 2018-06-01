@@ -784,7 +784,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 				// Make a copy of the staff dungeon icon with changes based on which
 				// pixels should be highlighted.
-				SDL_Surface *surface = Surface::createSurfaceWithFormat(
+				SDL_Surface *surface = Surface::createWithFormat(
 					cifWidth, cifHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 				auto getColorFromIndex = [this, highlightType, surface](int paletteIndex)
