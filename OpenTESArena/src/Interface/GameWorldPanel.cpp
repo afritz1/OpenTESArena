@@ -1066,7 +1066,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 
 void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 {
-	// To do: run this method at fixed time-steps instead of every frame, because if, 
+	// @todo: run this method at fixed time-steps instead of every frame, because if, 
 	// for example, the game is running at 200 fps, then the player has to move their 
 	// cursor much faster for it to count as a swing. The GameWorldPanel would probably 
 	// need to save its own "swing" mouse delta independently of the input manager, or
@@ -1297,7 +1297,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			const int diffX = transitionVoxel.x - playerVoxel.x;
 			const int diffZ = transitionVoxel.y - playerVoxel.y;
 
-			// To do: this probably isn't robust enough. Maybe also check the player's angle
+			// @todo: this probably isn't robust enough. Maybe also check the player's angle
 			// of velocity with angles to the voxel's corners to get the "arrival vector"
 			// and thus the "near face" that is intersected, because this method doesn't
 			// handle the player coming in at a diagonal.
@@ -1619,7 +1619,7 @@ void GameWorldPanel::tick(double dt)
 		actionText.remainingDuration -= dt;
 	}
 
-	// To do: tick effect text, and draw in render().
+	// @todo: tick effect text, and draw in render().
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
@@ -1666,7 +1666,7 @@ void GameWorldPanel::tick(double dt)
 		{
 			this->handleTriggers(newPlayerVoxelXZ);
 
-			// To do: determine if the player would collide with the voxel instead
+			// @todo: determine if the player would collide with the voxel instead
 			// of checking that they're in the voxel.
 			this->handleLevelTransition(oldPlayerVoxelXZ, newPlayerVoxelXZ);
 		}
@@ -1692,7 +1692,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	{
 		// Interiors are always completely dark, but for testing purposes, they
 		// will be 100% bright until lights are implemented.
-		// To do: take into account "outdoorDungeon". Add it to LevelData?
+		// @todo: take into account "outdoorDungeon". Add it to LevelData?
 		if (worldData.getWorldType() == WorldType::Interior)
 		{
 			return 1.0;
@@ -1718,7 +1718,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	// Continue drawing more interface objects if in classic mode.
-	// - To do: clamp game world interface to screen edges, not letterbox edges.
+	// - @todo: clamp game world interface to screen edges, not letterbox edges.
 	if (!modernInterface)
 	{
 		// Draw game world interface.
@@ -1841,7 +1841,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	}
 
 	// Draw each pop-up text if its duration is positive.
-	// - To do: maybe give delta time to render()? Or store in tick()? I want to avoid 
+	// - @todo: maybe give delta time to render()? Or store in tick()? I want to avoid 
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
@@ -1870,7 +1870,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		renderer.drawOriginal(actionTextBox.getTexture(), textX, textY);
 	}
 
-	// To do: draw "effect text" (similar to trigger text).
+	// @todo: draw "effect text" (similar to trigger text).
 
 	// Check if the mouse is over one of the buttons for tooltips in classic mode.
 	if (!modernInterface)

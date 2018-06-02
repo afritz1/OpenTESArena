@@ -10,12 +10,12 @@
 #include "../Assets/ExeData.h"
 #include "../Utilities/Debug.h"
 
-// To do: most of this class could be in MiscAssets as plain old data, and any instance-related
+// @todo: most of this class could be in MiscAssets as plain old data, and any instance-related
 // things (condition, artifact state, etc.) would be in this class.
 
 namespace
 {
-	// To do: obtain from executable data.
+	// @todo: obtain from executable data.
 	const std::array<WeaponHandCount, 18> WeaponHandCounts =
 	{
 		WeaponHandCount::Two, // Staff
@@ -39,7 +39,7 @@ namespace
 	};
 
 	// Base damage values from the manual. Fists are {1, 2}.
-	// - To do: obtain from executable data.
+	// - @todo: obtain from executable data.
 	const std::array<std::pair<int, int>, 18> WeaponBaseDamages =
 	{
 		std::make_pair(1, 8), // Staff
@@ -64,7 +64,7 @@ namespace
 
 	// Weights in kilograms. For some odd reason, the manual lists fists as having
 	// a weight of 1 kilogram (ignored here).
-	// - To do: obtain from executable data.
+	// - @todo: obtain from executable data.
 	const std::array<double, 18> WeaponWeights =
 	{
 		3.0, // Staff
@@ -88,7 +88,7 @@ namespace
 	};
 
 	// Gold values.
-	// - To do: obtain from executable data.
+	// - @todo: obtain from executable data.
 	const std::array<int, 18> WeaponGoldValues =
 	{
 		1, // Staff
@@ -180,7 +180,7 @@ double Weapon::getWeight() const
 
 int Weapon::getGoldValue() const
 {
-	// To do: use values from original game.
+	// @todo: use values from original game.
 	const int baseValue = WeaponGoldValues.at(this->weaponID);
 	const int ratingMultiplier = this->getMetal().getRatingModifier();
 	const double weightMultiplier = this->getMetal().getWeightMultiplier();

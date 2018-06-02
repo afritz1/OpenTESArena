@@ -287,7 +287,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 	{
 		for (int x = 0; x < VoxelTexture::WIDTH; x++)
 		{
-			// To do: change this calculation for rotated textures. Make sure to have a 
+			// @todo: change this calculation for rotated textures. Make sure to have a 
 			// source index and destination index.
 			// - "dstX" and "dstY" should be calculated, and also used with lightTexels.
 			const int index = x + (y * VoxelTexture::WIDTH);
@@ -393,7 +393,7 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 
 void SoftwareRenderer::setNightLightsActive(bool active)
 {
-	// To do: activate lights (don't worry about textures).
+	// @todo: activate lights (don't worry about textures).
 
 	// Change voxel texels based on whether it's night.
 	const Double4 texelColor = Double4::fromARGB(
@@ -545,7 +545,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 	// Technically, it could be considered a "3D-DDA" algorithm. It will eventually 
 	// have some additional features so all of Arena's geometry can be represented.
 
-	// To do:
+	// @todo:
 	// - Figure out proper DDA lengths for variable-height voxels, and why using
 	//   voxelHeight squared instead of 1.0 in deltaDist.y looks weird (sideDist.y?).
 	// - Cuboids within voxels (bridges, beds, shelves) with variable Y offset and size.
@@ -1522,7 +1522,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	VoxelData::DoorData::Type doorType, const Double2 &nearPoint, 
 	const Double2 &farPoint, RayHit &hit)
 {
-	// To do.
+	// @todo.
 	return false;
 }
 
@@ -1566,7 +1566,7 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 		0.0, 1.0 - shadingInfo.ambient);
 
 	// Shading on the texture.
-	// - To do: contribution from lights.
+	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -1582,7 +1582,7 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 		const int index = x + (y * frame.width);
 
 		// Check depth of the pixel before rendering.
-		// - To do: implement occlusion culling and back-to-front transparent rendering so
+		// - @todo: implement occlusion culling and back-to-front transparent rendering so
 		//   this depth check isn't needed.
 		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
 		{
@@ -1644,7 +1644,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 		0.0, 1.0 - shadingInfo.ambient);
 
 	// Shading on the texture.
-	// - To do: contribution from lights.
+	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -1676,7 +1676,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 			(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
 
 		// Check depth of the pixel before rendering.
-		// - To do: implement occlusion culling and back-to-front transparent rendering so
+		// - @todo: implement occlusion culling and back-to-front transparent rendering so
 		//   this depth check isn't needed.
 		if (depth <= frame.depthBuffer[index])
 		{
@@ -1748,7 +1748,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 		0.0, 1.0 - shadingInfo.ambient);
 
 	// Shading on the texture.
-	// - To do: contribution from lights.
+	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -2206,7 +2206,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 			// Render nothing for now.
 		}
 	};
@@ -2529,7 +2529,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 			// Render nothing for now.
 		}
 	};
@@ -2789,7 +2789,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 			// Render nothing for now.
 		}
 	};
@@ -3214,7 +3214,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 
 			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
@@ -3607,7 +3607,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 
 			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
@@ -3903,7 +3903,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// To do: find intersection via SoftwareRenderer::findDoorIntersection().
+			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
 
 			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
@@ -4016,7 +4016,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(projectedYEnd, frame.height);
 
 	// Shading on the texture.
-	// - To do: contribution from lights.
+	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,

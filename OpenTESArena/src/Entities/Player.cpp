@@ -136,7 +136,7 @@ double Player::getFeetY() const
 
 bool Player::onGround(const WorldData &worldData) const
 {
-	// To do: find a non-hack way to do this.
+	// @todo: find a non-hack way to do this.
 
 	return true;
 
@@ -216,7 +216,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	};
 
 	// Coordinates of the base of the voxel the feet are in.
-	// - To do: add delta velocity Y?
+	// - @todo: add delta velocity Y?
 	const int feetVoxelY = static_cast<int>(std::floor(
 		this->getFeetY() / levelData.getCeilingHeight()));
 
@@ -238,7 +238,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
-	// - To do: formalize the collision calculation and get rid of this hack.
+	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
 	auto wouldCollideWithVoxel = [](const VoxelData &voxelData)
 	{
@@ -251,7 +251,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		else if (voxelData.dataType == VoxelDataType::Edge)
 		{
 			// Edge collision.
-			// - To do: treat as edge, not solid voxel.
+			// - @todo: treat as edge, not solid voxel.
 			const VoxelData::EdgeData &edge = voxelData.edge;
 			return edge.collider;
 		}
@@ -262,7 +262,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			const bool isDoor = voxelData.dataType == VoxelDataType::Door;
 
 			// -- Temporary hack for "on voxel enter" transitions --
-			// - To do: replace with "on would enter voxel" event and near facing check.			
+			// - @todo: replace with "on would enter voxel" event and near facing check.			
 			const bool isLevelUpDown = [&voxelData]()
 			{
 				if (voxelData.dataType == VoxelDataType::Wall)
@@ -294,7 +294,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	this->velocity.y = 0.0;
 	// -- end hack --
 
-	// To do: use an axis-aligned bounding box or cylinder instead of a point?
+	// @todo: use an axis-aligned bounding box or cylinder instead of a point?
 }
 
 void Player::setVelocityToZero()

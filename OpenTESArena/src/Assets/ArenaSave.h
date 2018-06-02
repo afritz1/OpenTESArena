@@ -34,9 +34,9 @@ public:
 	static ArenaTypes::Spells loadSPELLS(const std::string &savePath, int index);
 	static ArenaTypes::Spellsg loadSPELLSG(const std::string &savePath, int index);
 	static ArenaTypes::MQLevelState loadSTATE(const std::string &savePath, int index);
-	// To do: load city data.
-	// To do: load INN.0x.
-	// To do: load wild 001, 002, 003, 004.
+	// @todo: load city data.
+	// @todo: load INN.0x.
+	// @todo: load wild 001, 002, 003, 004.
 
 	static void saveAUTOMAP(const std::string &savePath, int index,
 		const ArenaTypes::Automap &data);
@@ -56,9 +56,9 @@ public:
 		const ArenaTypes::Spellsg &data);
 	static void saveSTATE(const std::string &savePath, int index,
 		const ArenaTypes::MQLevelState &data);
-	// To do: save city data.
-	// To do: save INN.0x.
-	// To do: save wild 001, 002, 003, 004.
+	// @todo: save city data.
+	// @todo: save INN.0x.
+	// @todo: save wild 001, 002, 003, 004.
 };
 
 #endif

@@ -24,7 +24,7 @@ public:
 		int numf; // Number of floor textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
-		// - To do: maybe store MAP2 data with each voxel's extended height?
+		// - @todo: maybe store MAP2 data with each voxel's extended height?
 		std::vector<uint16_t> flor, map1, map2;
 		std::vector<uint8_t> flat, inns, loot, stor;
 		std::vector<ArenaTypes::MIFTarget> targ;

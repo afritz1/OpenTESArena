@@ -66,7 +66,7 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 		}
 	}
 
-	// To do: custom hotkeys.
+	// @todo: custom hotkeys.
 }
 
 void MessageBoxSubPanel::render(Renderer &renderer)

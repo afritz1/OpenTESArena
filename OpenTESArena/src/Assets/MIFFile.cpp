@@ -191,7 +191,7 @@ int MIFFile::Level::getHeight() const
 	// If there is MAP2 data, then check through each voxel to find the highest point.
 	if (this->map2.size() > 0)
 	{
-		// To do: look at MAP2 voxels and determine highest column.
+		// @todo: look at MAP2 voxels and determine highest column.
 		return 6;
 	}
 	else

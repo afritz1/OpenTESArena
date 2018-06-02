@@ -16,7 +16,7 @@ public:
 		double t;
 		Double3 point, normal;
 		Int3 voxel;
-		// To do: type of intersection (voxel/entity). Probably with a union?
+		// @todo: type of intersection (voxel/entity). Probably with a union?
 	};
 private:
 	Physics() = delete;

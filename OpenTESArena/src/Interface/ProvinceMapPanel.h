@@ -55,7 +55,7 @@ private:
 	// Generates a text sub-panel with a parchment message.
 	std::unique_ptr<Panel> makeTextPopUp(const std::string &text) const;
 
-	// To do: makeDiseasedWarningPopUp().
+	// @todo: makeDiseasedWarningPopUp().
 	// - Display when the player is diseased.
 
 	// Handles loading the target destination into the current game session

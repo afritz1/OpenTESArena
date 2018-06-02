@@ -72,7 +72,7 @@ public:
 	{
 		static constexpr size_t SIZE = 6;
 
-		// To do. Similar to MIFTrigger but can be disabled?
+		// @todo. Similar to MIFTrigger but can be disabled?
 		std::array<uint8_t, 6> unknown;
 
 		void init(const uint8_t *data);

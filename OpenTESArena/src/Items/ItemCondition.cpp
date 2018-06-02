@@ -40,7 +40,7 @@ const std::unordered_map<ItemConditionName, std::string> ItemConditionDisplayNam
 
 ItemCondition ItemCondition::makeArmorCondition(BodyPartName partName, const ArmorMaterial &material)
 {
-	// To do: use values from original game.
+	// @todo: use values from original game.
 	ItemCondition itemCondition;
 
 	const int maxArmorCondition = 1;
@@ -57,7 +57,7 @@ ItemCondition ItemCondition::makeArmorCondition(BodyPartName partName, const Arm
 
 ItemCondition ItemCondition::makeShieldCondition(ShieldType shieldType, const Metal &metal)
 {
-	// To do: use values from original game.
+	// @todo: use values from original game.
 	ItemCondition itemCondition;
 
 	const int maxShieldCondition = 1;
@@ -71,7 +71,7 @@ ItemCondition ItemCondition::makeShieldCondition(ShieldType shieldType, const Me
 
 ItemCondition ItemCondition::makeWeaponCondition(int weaponID, const Metal &metal)
 {
-	// To do: use values from original game.
+	// @todo: use values from original game.
 	ItemCondition itemCondition;
 
 	const int maxWeaponCondition = 1;
@@ -100,7 +100,7 @@ ItemConditionName ItemCondition::getCurrentConditionName() const
 		static_cast<double>(this->maxCondition);
 
 	// Placeholder condition ranges.
-	// - To do: get actual condition ranges.
+	// - @todo: get actual condition ranges.
 	if (percent > 0.90)
 	{
 		return ItemConditionName::New;

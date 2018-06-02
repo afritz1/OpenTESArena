@@ -298,7 +298,7 @@ private:
 		const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo, 
 		const FlatTexture &texture, const FrameView &frame);
 
-	// To do: drawAlphaFlat(...), for flats with partial transparency.
+	// @todo: drawAlphaFlat(...), for flats with partial transparency.
 	// - Must be back to front.
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels

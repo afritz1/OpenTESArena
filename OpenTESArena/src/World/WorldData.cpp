@@ -406,7 +406,7 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 	}
 
 	// Load the .INF file associated with the level.
-	// - To do: not sure if LevelData should store its own INFFile or just the name.
+	// - @todo: not sure if LevelData should store its own INFFile or just the name.
 	const INFFile inf(level.getInfName());
 
 	// Load .INF voxel textures into the renderer. Assume all voxel textures are 64x64.
@@ -447,7 +447,7 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 	}
 
 	// Load .INF flat textures into the renderer.
-	// - To do: maybe turn this into a while loop, so the index variable can be incremented
+	// - @todo: maybe turn this into a while loop, so the index variable can be incremented
 	//   by the size of each .DFA. It's incorrect as-is.
 	/*const int flatTextureCount = static_cast<int>(inf.getFlatTextures().size());
 	for (int i = 0; i < flatTextureCount; i++)
@@ -463,7 +463,7 @@ void WorldData::setLevelActive(int levelIndex, TextureManager &textureManager,
 
 		if (isDFA)
 		{
-			// To do: creatures don't have .DFA files (although they're referenced in the .INF
+			// @todo: creatures don't have .DFA files (although they're referenced in the .INF
 			// files), so I think the extension needs to be .CFA instead for them.
 			//const auto &surfaces = textureManager.getSurfaces(textureName);
 			//for (const auto *surface : surfaces)

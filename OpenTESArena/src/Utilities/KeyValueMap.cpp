@@ -38,7 +38,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 	{
 		// Get a filtered version of the current line so it can be parsed. If the filtered
 		// string is empty, then skip to the next line.
-		// - To do: std::string_view would be useful here. The skip/remove/comment code
+		// - @todo: std::string_view would be useful here. The skip/remove/comment code
 		//   combined could return the usable portion of the line.
 		const std::string filteredLine = [&line]()
 		{

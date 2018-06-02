@@ -161,7 +161,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					locationType, &miscAssets]()
 				{
 					// Get the key that maps into TEMPLATE.DAT.
-					// - To do: use an integer instead.
+					// - @todo: use an integer instead.
 					const std::string key = [provinceID, localCityID,
 						locationType]() -> std::string
 					{
@@ -239,7 +239,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					}
 
 					// Remove erroneous carriage returns and newlines at the beginning.
-					// - To do: don't do clean-up on templateDat construction.
+					// - @todo: don't do clean-up on templateDat construction.
 					while ((description.front() == '\r') || (description.front() == '\n'))
 					{
 						description.erase(description.begin());
@@ -258,7 +258,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			return description;
 		}();
 
-		// To do: re-distribute newlines based on max text box width.
+		// @todo: re-distribute newlines based on max text box width.
 		std::string fullText = locationString + dateString +
 			daysString + '\n' + locationDescriptionString;
 

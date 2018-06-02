@@ -396,7 +396,7 @@ LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, in
 				writeRow(blockLevel.map2, tempMap2);
 			}
 
-			// To do: load flats.
+			// @todo: load flats.
 		}
 
 		xDim++;
@@ -497,7 +497,7 @@ LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, 
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
-	// To do: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
+	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
 	return levelData;
 }
@@ -957,7 +957,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 							const double yOffsetNormalized = yOffset / normalizedScale;
 							const double ySizeNormalized = ySize / normalizedScale;
 
-							// To do: might need some tweaking with box3/box4 values.
+							// @todo: might need some tweaking with box3/box4 values.
 							const double vTop = std::max(
 								0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 							const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
@@ -979,7 +979,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					// To do.
+					// @todo.
 				}
 				else if (mostSigNibble == 0x9)
 				{
@@ -1186,7 +1186,7 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 		}
 		else
 		{
-			// To do: get ceiling from .INFs without *CEILING (like START.INF). Maybe
+			// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe
 			// hardcoding index 1 is enough?
 			return 1;
 		}

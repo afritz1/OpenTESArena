@@ -6,7 +6,7 @@
 bool Physics::rayCast(const Double3 &point, const Double3 &direction, double ceilingHeight,
 	const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
-	// To do.
+	// @todo.
 	return false;
 }
 

@@ -664,7 +664,7 @@ INFFile::INFFile(const std::string &filename)
 				}
 				else
 				{
-					// To do: refine String::split() to account for whitespace in general so
+					// @todo: refine String::split() to account for whitespace in general so
 					// we can avoid doing the extra steps above.
 					return String::split(replacedStr);
 				}
@@ -687,7 +687,7 @@ INFFile::INFFile(const std::string &filename)
 				{
 					// It's not a creature flat. Return the string, excluding any dash.
 					const std::string &firstToken = tokens.at(0);
-					const bool hasDash = firstToken.at(0) == '-'; // To do: not sure what this is.
+					const bool hasDash = firstToken.at(0) == '-'; // @todo: not sure what this is.
 					return String::toUppercase(hasDash ? 
 						firstToken.substr(1, firstToken.size() - 1) : firstToken);
 				}

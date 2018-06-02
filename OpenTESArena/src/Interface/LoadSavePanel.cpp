@@ -33,7 +33,7 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	: Panel(game)
 {
 	// Load each name in NAMES.DAT.
-	// - To do: also check associated save files for each ".0x" index.
+	// - @todo: also check associated save files for each ".0x" index.
 	const std::string savesPath = [&game]()
 	{
 		const std::string &arenaSavesPath = game.getOptions().getMisc_ArenaSavesPath();

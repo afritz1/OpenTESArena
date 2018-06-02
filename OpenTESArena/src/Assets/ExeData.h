@@ -253,7 +253,7 @@ public:
 		std::array<uint8_t, 4> enhancementItemCumulativeChances;
 		std::array<uint8_t, 4> enhancementItemBasePrices;
 
-		// To do: artifacts.
+		// @todo: artifacts.
 
 		std::array<std::string, 11> bodyPartNames; // Chest, ..., general.
 		std::array<std::string, 11> weaponAnimationFilenames; // staff.cif, ..., spell.img.

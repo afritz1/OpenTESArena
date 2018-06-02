@@ -28,7 +28,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		{
 			const auto &miscAssets = game.getMiscAssets();
 
-			// To do: maybe don't split these two strings in the first place. And convert
+			// @todo: maybe don't split these two strings in the first place. And convert
 			// the carriage return to a newline instead of removing it.
 			const std::pair<std::string, std::string> &pair = [provinceID, &miscAssets]()
 			{

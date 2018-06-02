@@ -160,7 +160,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 				const auto &exeData = game.getMiscAssets().getExeData();
 				std::string text = exeData.charCreation.chooseAttributesSave;
 
-				// To do: use the formatting characters in the string for color.
+				// @todo: use the formatting characters in the string for color.
 				// - For now, just delete them.
 				text.erase(1, 2);
 
@@ -320,7 +320,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								const int provinceID = gameData.getPlayer().getRaceID();
 
 								// Random weather for now.
-								// - To do: make it depend on the location (no need to prevent
+								// - @todo: make it depend on the location (no need to prevent
 								//   deserts from having snow since the climates are still hardcoded).
 								const WeatherType weatherType = [&random]()
 								{
@@ -399,7 +399,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 				const auto &exeData = game.getMiscAssets().getExeData();
 				std::string text = exeData.charCreation.chooseAttributesReroll;
 
-				// To do: use the formatting characters in the string for color.
+				// @todo: use the formatting characters in the string for color.
 				// - For now, just delete them.
 				text.erase(1, 2);
 
@@ -427,7 +427,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 			messageBoxReroll.function = [](Game &game)
 			{
-				// To do: reroll attributes.
+				// @todo: reroll attributes.
 				game.popSubPanel();
 			};
 

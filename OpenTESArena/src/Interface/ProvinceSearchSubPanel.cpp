@@ -445,7 +445,7 @@ void ProvinceSearchSubPanel::handleEvent(const SDL_Event &e)
 
 void ProvinceSearchSubPanel::tick(double dt)
 {
-	// To do: eventually blink text input cursor in text entry, and listen for
+	// @todo: eventually blink text input cursor in text entry, and listen for
 	// scrolling in list.
 	static_cast<void>(dt);
 }
@@ -463,7 +463,7 @@ void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 	renderer.drawOriginal(this->textEntryTextBox->getTexture(),
 		this->textEntryTextBox->getX(), this->textEntryTextBox->getY());
 
-	// To do: draw blinking cursor.
+	// @todo: draw blinking cursor.
 }
 
 void ProvinceSearchSubPanel::renderList(Renderer &renderer)
