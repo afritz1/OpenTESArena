@@ -906,29 +906,6 @@ double SoftwareRenderer::fullAtan2(double y, double x)
 	return (angle >= 0.0) ? angle : ((2.0 * Constants::Pi) + angle);
 }
 
-Double3 SoftwareRenderer::getNormal(VoxelData::Facing facing)
-{
-	// Decide what the normal is, based on the facing. It can only be on the X or Z axis 
-	// because floors and ceilings are drawn separately from walls, and their 
-	// normals are trivial.
-	if (facing == VoxelData::Facing::PositiveX)
-	{
-		return Double3::UnitX;
-	}
-	else if (facing == VoxelData::Facing::NegativeX)
-	{
-		return -Double3::UnitX;
-	}
-	else if (facing == VoxelData::Facing::PositiveZ)
-	{
-		return Double3::UnitZ;
-	}
-	else
-	{
-		return -Double3::UnitZ;
-	}
-}
-
 VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 &eye, const Ray &ray)
 {
@@ -1447,7 +1424,7 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 		}();
 
 		hit.point = farPoint;
-		hit.normal = -SoftwareRenderer::getNormal(farFacing);
+		hit.normal = -VoxelData::getNormal(farFacing);
 		return true;
 	}
 	else
@@ -1467,7 +1444,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 		hit.innerZ = 0.0;
 		hit.u = nearU;
 		hit.point = nearPoint;
-		hit.normal = SoftwareRenderer::getNormal(nearFacing);
+		hit.normal = VoxelData::getNormal(nearFacing);
 		return true;
 	}
 	else
@@ -1507,7 +1484,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 			}();
 
 			hit.point = farPoint;
-			hit.normal = -SoftwareRenderer::getNormal(farFacing);
+			hit.normal = -VoxelData::getNormal(farFacing);
 			return true;
 		}
 		else
@@ -1522,8 +1499,28 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	VoxelData::DoorData::Type doorType, const Double2 &nearPoint, 
 	const Double2 &farPoint, RayHit &hit)
 {
-	// @todo.
-	return false;
+	// @todo: Get the door's "percent open" (maybe as a parameter instead?).
+
+	if (doorType == VoxelData::DoorData::Type::Swinging)
+	{
+		// @todo.
+		return false;
+	}
+	else if (doorType == VoxelData::DoorData::Type::Sliding)
+	{
+		// @todo.
+		return false;
+	}
+	else if (doorType == VoxelData::DoorData::Type::Raising)
+	{
+		// @todo.
+		return false;
+	}
+	else
+	{
+		// Invalid door type. Fail silently to avoid overhead of error reporting.
+		return false;
+	}
 }
 
 void SoftwareRenderer::diagProjection(double voxelYReal, double voxelHeight,
@@ -1854,7 +1851,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
 	// this voxel column.
-	const Double3 wallNormal = -SoftwareRenderer::getNormal(facing);
+	const Double3 wallNormal = -VoxelData::getNormal(facing);
 
 	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
@@ -2174,7 +2171,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 				}();
 
-				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+				const Double3 farNormal = -VoxelData::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
 				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
@@ -2497,7 +2494,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 				}();
 
-				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+				const Double3 farNormal = -VoxelData::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
 				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
@@ -2861,7 +2858,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
 	// this voxel column.
-	const Double3 wallNormal = SoftwareRenderer::getNormal(facing);
+	const Double3 wallNormal = VoxelData::getNormal(facing);
 
 	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
@@ -3182,7 +3179,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 				}();
 
-				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+				const Double3 farNormal = -VoxelData::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
 				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
@@ -3575,7 +3572,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
 				}();
 
-				const Double3 farNormal = -SoftwareRenderer::getNormal(farFacing);
+				const Double3 farNormal = -VoxelData::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
 				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
@@ -4147,9 +4144,6 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		stepZ = -1;
 		sideDistZ = (camera.eye.z - camera.eyeVoxelReal.z) * deltaDistZ;
 	}
-
-	// Pointer to voxel ID grid data.
-	const uint16_t *voxels = voxelGrid.getVoxels();
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 

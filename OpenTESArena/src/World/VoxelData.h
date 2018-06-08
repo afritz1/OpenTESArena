@@ -1,6 +1,8 @@
 #ifndef VOXEL_DATA_H
 #define VOXEL_DATA_H
 
+#include "../Math/Vector3.h"
+
 // Voxel data is the definition of a voxel that a voxel ID points to. Since there will 
 // only be a few kinds of voxel data per world, their size can be much larger than just 
 // a byte or two.
@@ -21,6 +23,7 @@ public:
 
 	// This defines which axis a wall's normal is facing towards on the outside
 	// (i.e., away from the center of the voxel). Used with edges and rendering.
+	// The Y axis is elided for simplicity (although it might be added eventually).
 	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
 	// Regular wall with Y size equal to ceiling height if on main floor, otherwise 1.0.
@@ -133,6 +136,9 @@ public:
 	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
 		ChasmData::Type type);
 	static VoxelData makeDoor(int id, DoorData::Type type);
+
+	// Gets the normal associated with a voxel facing.
+	static Double3 getNormal(VoxelData::Facing facing);
 };
 
 #endif

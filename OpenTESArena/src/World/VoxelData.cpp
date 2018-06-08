@@ -237,3 +237,24 @@ VoxelData VoxelData::makeDoor(int id, DoorData::Type type)
 
 	return data;
 }
+
+Double3 VoxelData::getNormal(VoxelData::Facing facing)
+{
+	// Decide what the normal is, based on the facing.
+	if (facing == VoxelData::Facing::PositiveX)
+	{
+		return Double3::UnitX;
+	}
+	else if (facing == VoxelData::Facing::NegativeX)
+	{
+		return -Double3::UnitX;
+	}
+	else if (facing == VoxelData::Facing::PositiveZ)
+	{
+		return Double3::UnitZ;
+	}
+	else
+	{
+		return -Double3::UnitZ;
+	}
+}

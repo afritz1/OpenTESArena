@@ -199,10 +199,7 @@ private:
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	static double fullAtan2(double y, double x);
-
-	// Gets the normal associated with a facing.
-	static Double3 getNormal(VoxelData::Facing facing);
-
+	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
 		const Double2 &eye, const Ray &ray);
