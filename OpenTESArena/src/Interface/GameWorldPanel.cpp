@@ -26,6 +26,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Game/Physics.h"
 #include "../Game/PlayerInterface.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -671,8 +672,15 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			{
 				this->campButton.click();
 			}
-
-			// Later... any entities in the world clicked?
+			else
+			{
+				// Check for clicks in the game world.
+				const int centerIndex = 4;
+				if (this->nativeCursorRegions.at(centerIndex).contains(mousePosition))
+				{
+					this->handleClickInWorld(mousePosition);
+				}
+			}
 		}
 		else if (rightClick)
 		{
@@ -680,6 +688,22 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			{
 				this->mapButton.click(game, false);
 			}
+		}
+	}
+	else
+	{
+		// Check for clicks in the game world in modern mode. Eventually the mouse cursor
+		// will be restricted to the center of the screen, so this implementation just
+		// assumes that's true now.
+
+		// Hardcoded "activate" button.
+		const bool ePressed = inputManager.keyPressed(e, SDLK_e);
+
+		if (ePressed)
+		{
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 nativeCenter = windowDims / 2;
+			this->handleClickInWorld(nativeCenter);
 		}
 	}
 }
@@ -1196,6 +1220,79 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 			}
 		}
 	}	
+}
+
+void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const auto &player = gameData.getPlayer();
+	auto &worldData = gameData.getWorldData();
+	auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	auto &voxelGrid = level.getVoxelGrid();
+	const double ceilingHeight = level.getCeilingHeight();
+
+	const Double3 rayStart = player.getPosition();
+	const Double3 rayDirection = [&nativePoint, &game, &player]()
+	{
+		// Modify ray direction based on various factors:
+		// - Screen aspect, mouse position, y-shearing, tall pixels.
+		const auto &renderer = game.getRenderer();
+		const Int2 windowDims = renderer.getWindowDimensions();
+		const int viewWidth = windowDims.x;
+		const int viewHeight = renderer.getViewHeight();
+		const double viewAspectRatio = static_cast<double>(viewWidth) /
+			static_cast<double>(viewHeight);
+
+		// Mouse position percents across the screen.
+		const double mouseXPercent = static_cast<double>(nativePoint.x) /
+			static_cast<double>(viewWidth);
+		const double mouseYPercent = static_cast<double>(nativePoint.y) /
+			static_cast<double>(viewHeight);
+
+		// Zoom of the camera, based on vertical field of view.
+		const double zoom = [&game]()
+		{
+			const auto &options = game.getOptions();
+			const double fovY = options.getGraphics_VerticalFOV();
+
+			// @todo: pull code out of software renderer camera and put into reusable code.
+			return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+		}();
+
+		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from
+		// screen space to world space?
+		const Double3 forward = player.getDirection();
+		const Double3 &right = player.getRight();
+		const Double3 up = right.cross(forward).normalized();
+
+		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
+		// of the screen.
+		const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
+
+		// @todo: include SoftwareRenderer::TALL_PIXEL_RATIO here? Maybe it needs to do
+		// a screen-to-world projection of the y-shearing?
+		const double upPercent = (mouseYPercent * 2.0) - 1.0;
+
+		const Double3 forwardComponent = forward * zoom;
+		const Double3 rightComponent = right * rightPercent;
+		const Double3 upComponent = up * upPercent;
+		return (forwardComponent + rightComponent - upComponent).normalized();
+	}();
+
+	Physics::Hit hit;
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, hit);
+
+	// See if the ray hit anything.
+	if (success)
+	{
+		// @todo: finish implementing gameplay behavior for selection. For now, just delete
+		// the clicked voxel.
+		const Int3 &voxel = hit.voxel;
+		const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
+			(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
+		voxelGrid.getVoxels()[voxelIndex] = 0;
+	}
 }
 
 void GameWorldPanel::handleTriggers(const Int2 &voxel)

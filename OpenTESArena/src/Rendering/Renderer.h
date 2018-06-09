@@ -54,11 +54,11 @@ public:
 	static const int ORIGINAL_WIDTH;
 	static const int ORIGINAL_HEIGHT;
 
-	// The default pixel format for all software surfaces, ARGB8888.
-	static const uint32_t DEFAULT_PIXELFORMAT;
-
 	// Default bits per pixel.
 	static const int DEFAULT_BPP;
+
+	// The default pixel format for all software surfaces, ARGB8888.
+	static const uint32_t DEFAULT_PIXELFORMAT;
 
 	// Gets the letterbox aspect associated with the current letterbox mode.
 	double getLetterboxAspect() const;

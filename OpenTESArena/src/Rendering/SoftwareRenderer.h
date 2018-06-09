@@ -310,6 +310,9 @@ private:
 public:
 	SoftwareRenderer();
 
+	// Height ratio between normal pixels and tall pixels.
+	static const double TALL_PIXEL_RATIO;
+
 	bool isInited() const;
 
 	// Sets the render threads mode to use (low, medium, high, etc.).

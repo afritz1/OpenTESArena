@@ -209,6 +209,7 @@ const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
+const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
 {
@@ -4280,7 +4281,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const double widthReal = static_cast<double>(this->width);
 	const double heightReal = static_cast<double>(this->height);
 	const double aspect = widthReal / heightReal;
-	const double projectionModifier = 1.20; // To account for tall pixels.
+
+	// To account for tall pixels.
+	const double projectionModifier = SoftwareRenderer::TALL_PIXEL_RATIO;
 
 	// 2.5D camera definition.
 	const Camera camera(eye, direction, fovY, aspect, projectionModifier);

@@ -46,6 +46,9 @@ private:
 	// the previous frame.
 	void handlePlayerAttack(const Int2 &mouseDelta);
 
+	// Handles the behavior of the player clicking in the game world.
+	void handleClickInWorld(const Int2 &nativePoint);
+
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
 	void handleTriggers(const Int2 &voxel);
