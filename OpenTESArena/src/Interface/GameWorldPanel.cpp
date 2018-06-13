@@ -29,6 +29,7 @@
 #include "../Game/Physics.h"
 #include "../Game/PlayerInterface.h"
 #include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
@@ -1255,9 +1256,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 		{
 			const auto &options = game.getOptions();
 			const double fovY = options.getGraphics_VerticalFOV();
-
-			// @todo: pull code out of software renderer camera and put into reusable code.
-			return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+			return MathUtils::verticalFovToZoom(fovY);
 		}();
 
 		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from

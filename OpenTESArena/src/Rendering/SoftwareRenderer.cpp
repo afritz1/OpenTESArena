@@ -6,6 +6,7 @@
 
 #include "SoftwareRenderer.h"
 #include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
@@ -76,7 +77,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->fovY = fovY;
 
 	// Zoom of the camera, based on vertical field of view.
-	this->zoom = 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+	this->zoom = MathUtils::verticalFovToZoom(fovY);
 
 	this->aspect = aspect;
 
