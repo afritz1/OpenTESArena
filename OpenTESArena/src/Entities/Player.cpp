@@ -5,12 +5,14 @@
 #include "EntityType.h"
 #include "GenderName.h"
 #include "Player.h"
+#include "../Assets/MIFFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Utilities/String.h"
+#include "../World/LevelData.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
@@ -194,11 +196,11 @@ void Player::lookAt(const Double3 &point)
 
 void Player::handleCollision(const WorldData &worldData, double dt)
 {
-	const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
+	const LevelData &activeLevel = worldData.getActiveLevel();
 
-	auto getVoxel = [&levelData](int x, int y, int z) -> VoxelData
+	auto getVoxel = [&activeLevel](int x, int y, int z) -> VoxelData
 	{
-		const VoxelGrid &voxelGrid = levelData.getVoxelGrid();
+		const VoxelGrid &voxelGrid = activeLevel.getVoxelGrid();
 
 		// Voxels outside the world are air.
 		if ((x < 0) || (x >= voxelGrid.getWidth()) ||
@@ -218,7 +220,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// Coordinates of the base of the voxel the feet are in.
 	// - @todo: add delta velocity Y?
 	const int feetVoxelY = static_cast<int>(std::floor(
-		this->getFeetY() / levelData.getCeilingHeight()));
+		this->getFeetY() / activeLevel.getCeilingHeight()));
 
 	// Get the voxel data for each voxel the player would touch on each axis.
 	const Int3 playerVoxel = this->getVoxelPosition();
@@ -355,8 +357,8 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 	// Temp: get floor Y until Y collision is implemented.
 	const double floorY = [&worldData]()
 	{
-		const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
-		return levelData.getCeilingHeight();
+		const LevelData &activeLevel = worldData.getActiveLevel();
+		return activeLevel.getCeilingHeight();
 	}();
 
 	// Change the player's velocity based on collision.
@@ -401,8 +403,8 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	this->updatePhysics(game.getGameData().getWorldData(), 
-		game.getOptions().getMisc_Collision(), dt);
+	const WorldData &worldData = game.getGameData().getWorldData();
+	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

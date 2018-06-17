@@ -50,6 +50,9 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/InteriorLevelData.h"
+#include "../World/InteriorWorldData.h"
+#include "../World/LevelData.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
@@ -383,7 +386,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				auto &gameData = game.getGameData();
 				const auto &exeData = game.getMiscAssets().getExeData();
 				const auto &worldData = gameData.getWorldData();
-				const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+				const auto &level = worldData.getActiveLevel();
 				const auto &player = gameData.getPlayer();
 				const Location &location = gameData.getLocation();
 				const Double3 &position = player.getPosition();
@@ -577,7 +580,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
 		const auto &worldData = game.getGameData().getWorldData();
-		const auto &voxelGrid = worldData.getLevels().at(0).getVoxelGrid();
+		const auto &level = worldData.getActiveLevel();
+		const auto &voxelGrid = level.getVoxelGrid();
 		const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 			Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
 			voxelGrid.getWidth(), voxelGrid.getDepth());
@@ -1229,7 +1233,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 	auto &gameData = game.getGameData();
 	const auto &player = gameData.getPlayer();
 	auto &worldData = gameData.getWorldData();
-	auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
 	const double ceilingHeight = level.getCeilingHeight();
 
@@ -1298,62 +1302,67 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
 	auto &game = this->getGame();
 	auto &worldData = game.getGameData().getWorldData();
-	auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
 
-	// See if there's a text trigger.
-	LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
-	if (textTrigger != nullptr)
+	// Only interior levels have triggers.
+	if (worldData.getWorldType() == WorldType::Interior)
 	{
-		// Only display it if it should be displayed (i.e., not already displayed 
-		// if it's a single-display text).
-		const bool canDisplay = !textTrigger->isSingleDisplay() ||
-			(textTrigger->isSingleDisplay() && !textTrigger->hasBeenDisplayed());
+		auto &level = static_cast<InteriorLevelData&>(worldData.getActiveLevel());
 
-		if (canDisplay)
+		// See if there's a text trigger.
+		LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
+		if (textTrigger != nullptr)
 		{
-			// Ignore the newline at the end.
-			const std::string text = textTrigger->getText().substr(
-				0, textTrigger->getText().size() - 1);
-			const int lineSpacing = 1;
+			// Only display it if it should be displayed (i.e., not already displayed 
+			// if it's a single-display text).
+			const bool canDisplay = !textTrigger->isSingleDisplay() ||
+				(textTrigger->isSingleDisplay() && !textTrigger->hasBeenDisplayed());
 
-			const RichTextString richText(
-				text,
-				FontName::Arena,
-				TriggerTextColor,
-				TextAlignment::Center,
-				lineSpacing,
-				game.getFontManager());
+			if (canDisplay)
+			{
+				// Ignore the newline at the end.
+				const std::string text = textTrigger->getText().substr(
+					0, textTrigger->getText().size() - 1);
+				const int lineSpacing = 1;
 
-			const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+				const RichTextString richText(
+					text,
+					FontName::Arena,
+					TriggerTextColor,
+					TextAlignment::Center,
+					lineSpacing,
+					game.getFontManager());
 
-			// Create the text box for display (set position to zero; the renderer will decide
-			// where to draw it).
-			auto textBox = std::make_unique<TextBox>(
-				Int2(0, 0), 
-				richText, 
-				&shadowData,
-				game.getRenderer());
+				const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
 
-			// Assign the text box and its duration to the triggered text member. It will 
-			// be displayed in the render method until the duration is no longer positive.
-			auto &gameData = game.getGameData();
-			auto &triggerText = gameData.getTriggerText();
-			const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-			triggerText = GameData::TimedTextBox(duration, std::move(textBox));
+				// Create the text box for display (set position to zero; the renderer will
+				// decide where to draw it).
+				auto textBox = std::make_unique<TextBox>(
+					Int2(0, 0),
+					richText,
+					&shadowData,
+					game.getRenderer());
 
-			// Set the text trigger as activated (regardless of whether or not it's single-shot,
-			// just for consistency).
-			textTrigger->setPreviouslyDisplayed(true);
+				// Assign the text box and its duration to the triggered text member. It will 
+				// be displayed in the render method until the duration is no longer positive.
+				auto &gameData = game.getGameData();
+				auto &triggerText = gameData.getTriggerText();
+				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+				triggerText = GameData::TimedTextBox(duration, std::move(textBox));
+
+				// Set the text trigger as activated (regardless of whether or not it's
+				// single-shot, just for consistency).
+				textTrigger->setPreviouslyDisplayed(true);
+			}
 		}
-	}
 
-	// See if there's a sound trigger.
-	const std::string *soundTrigger = level.getSoundTrigger(voxel);
-	if (soundTrigger != nullptr)
-	{
-		// Play the sound.
-		auto &audioManager = game.getAudioManager();
-		audioManager.playSound(*soundTrigger);
+		// See if there's a sound trigger.
+		const std::string *soundTrigger = level.getSoundTrigger(voxel);
+		if (soundTrigger != nullptr)
+		{
+			// Play the sound.
+			auto &audioManager = game.getAudioManager();
+			audioManager.playSound(*soundTrigger);
+		}
 	}
 }
 
@@ -1361,8 +1370,11 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	auto &worldData = game.getGameData().getWorldData();
-	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+
+	// Level transitions are always between interiors.
+	auto &worldData = static_cast<InteriorWorldData&>(game.getGameData().getWorldData());
+
+	const auto &level = worldData.getActiveLevel();
 	const auto &voxelGrid = level.getVoxelGrid();
 
 	// Get the voxel data associated with the voxel.
@@ -1433,15 +1445,19 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 		// Lambda for transitioning the player to the given level.
 		auto switchToLevel = [&game, &worldData, &player, &destinationXZ,
-			&dirToNewVoxel](int level)
+			&dirToNewVoxel](int levelIndex)
 		{
-			worldData.setLevelActive(level, game.getTextureManager(), game.getRenderer());
-			const auto &levelData = worldData.getLevels().at(worldData.getCurrentLevel());
+			// Select the new level.
+			worldData.setLevelIndex(levelIndex);
+
+			// Set the level active in the renderer.
+			auto &activeLevel = worldData.getActiveLevel();
+			activeLevel.setActive(game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
 				destinationXZ.x,
-				levelData.getCeilingHeight() + Player::HEIGHT,
+				activeLevel.getCeilingHeight() + Player::HEIGHT,
 				destinationXZ.y));
 			player.lookAt(player.getPosition() + dirToNewVoxel);
 			player.setVelocityToZero();
@@ -1477,10 +1493,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 				onLevelUpVoxelEnter(game);
 				onLevelUpVoxelEnter = std::function<void(Game&)>();
 			}
-			else if (worldData.getCurrentLevel() > 0)
+			else if (worldData.getLevelIndex() > 0)
 			{
 				// Decrement the world's level index and activate the new level.
-				switchToLevel(worldData.getCurrentLevel() - 1);
+				switchToLevel(worldData.getLevelIndex() - 1);
 			}
 			else
 			{
@@ -1489,10 +1505,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
 		{
-			if (worldData.getCurrentLevel() < (worldData.getLevels().size() - 1))
+			if (worldData.getLevelIndex() < (worldData.getLevelCount() - 1))
 			{
 				// Increment the world's level index and activate the new level.
-				switchToLevel(worldData.getCurrentLevel() + 1);
+				switchToLevel(worldData.getLevelIndex() + 1);
 			}
 			else
 			{
@@ -1565,14 +1581,14 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const Double3 &direction = player.getDirection();
 
 	const auto &worldData = gameData.getWorldData();
-	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	const auto &level = worldData.getActiveLevel();
 
 	const std::string text =
 		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
 		"FPS: " + String::fixedPrecision(game.getFPSCounter().getFPS(), 1) + "\n" +
 		"Map: " + worldData.getMifName() + "\n" +
-		"Info: " + level.getInfName() + "\n" +
+		"Info: " + level.getInfFile().getName() + "\n" +
 		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
 		"Y: " + String::fixedPrecision(position.y, 5) + "\n" +
 		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
@@ -1727,7 +1743,8 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerAttack(mouseDelta);
 
 	// Update entities and their state in the renderer.
-	auto &entityManager = worldData.getEntityManager();
+	// @todo: entity management.
+	/*auto &entityManager = worldData.getEntityManager();
 	for (auto *entity : entityManager.getAllEntities())
 	{
 		// Tick entity state.
@@ -1739,7 +1756,7 @@ void GameWorldPanel::tick(double dt)
 		const bool flipped = entity->getFlipped();
 		renderer.updateFlat(entity->getID(), &position, nullptr, nullptr,
 			&textureID, &flipped);
-	}
+	}*/
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and
 	// sound events, and handle any level transition.
@@ -1752,7 +1769,7 @@ void GameWorldPanel::tick(double dt)
 		// Don't handle triggers and level transitions if outside the voxel grid.
 		const bool inVoxelGrid = [&worldData, &newPlayerVoxelXZ]()
 		{
-			const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+			const auto &level = worldData.getActiveLevel();
 			const auto &voxelGrid = level.getVoxelGrid();
 			return (newPlayerVoxelXZ.x >= 0) && (newPlayerVoxelXZ.x < voxelGrid.getWidth()) &&
 				(newPlayerVoxelXZ.y >= 0) && (newPlayerVoxelXZ.y < voxelGrid.getDepth());
@@ -1782,7 +1799,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &gameData = this->getGame().getGameData();
 	auto &player = gameData.getPlayer();
 	const auto &worldData = gameData.getWorldData();
-	const auto &level = worldData.getLevels().at(worldData.getCurrentLevel());
+	const auto &level = worldData.getActiveLevel();
 	const auto &options = this->getGame().getOptions();
 	const double ambientPercent = [&gameData, &worldData]()
 	{

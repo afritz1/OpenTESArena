@@ -30,6 +30,8 @@
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/ClimateType.h"
+#include "../World/ExteriorWorldData.h"
+#include "../World/InteriorWorldData.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
@@ -186,7 +188,7 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 	std::vector<uint32_t> fullPalette(pixelCount * 2, darkness);
 
 	// Copy the sky palette over the center of the full palette.
-	std::copy(pixels, pixels + pixelCount, 
+	std::copy(pixels, pixels + pixelCount,
 		fullPalette.data() + (fullPalette.size() / 4));
 
 	return fullPalette;
@@ -270,23 +272,21 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
 	// Call interior WorldData loader.
-	this->worldData = WorldData::loadInterior(mif, exeData);
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	this->worldData = std::make_unique<InteriorWorldData>(
+		InteriorWorldData::loadInterior(mif, exeData));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = location;
-
-	// Set interior sky palette.
-	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
-	const uint32_t skyColor = level.getInteriorSkyColor();
-	renderer.setSkyPalette(&skyColor, 1);
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
@@ -308,24 +308,21 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const int widthChunks = 2;
 	const int depthChunks = 1;
-	this->worldData = WorldData::loadDungeon(dungeonSeed, widthChunks, depthChunks,
-		isArtifactDungeon, exeData);
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
+		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x - 1.0, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
 	this->location = Location::makeDungeon(localDungeonID, provinceID);
-
-	// Set interior sky palette.
-	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
-	const uint32_t skyColor = level.getInteriorSkyColor();
-	renderer.setSkyPalette(&skyColor, 1);
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
@@ -352,25 +349,22 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	const int widthChunks = 2;
 	const int depthChunks = 2;
 	const bool isArtifactDungeon = false;
-	this->worldData = WorldData::loadDungeon(wildDungeonSeed, widthChunks, depthChunks,
-		isArtifactDungeon, exeData);
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
+		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x - 1.0, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location (since wilderness dungeons aren't their own location, use a placeholder
 	// value for testing).
 	this->location = Location::makeSpecialCase(Location::SpecialCaseType::WildDungeon, provinceID);
-
-	// Set interior sky palette.
-	const auto &level = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
-	const uint32_t skyColor = level.getInteriorSkyColor();
-	renderer.setSkyPalette(&skyColor, 1);
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
@@ -388,16 +382,18 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 	const ClimateType climateType = Location::getCityClimateType(
 		localCityID, provinceID, miscAssets);
 
-	// Call premade WorldData loader.
-	this->worldData = WorldData::loadPremadeCity(mif, climateType, weatherType,
-		miscAssets.getExeData());
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	// Call premade city loader.
+	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
+		mif, climateType, weatherType, miscAssets.getExeData()));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 &startPoint = this->worldData.getStartPoints().front();
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -407,7 +403,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 	const std::vector<uint32_t> skyPalette =
 		GameData::makeExteriorSkyPalette(weatherType, textureManager);
 	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
-	
+
 	// Set weather, fog, and night lights.
 	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
@@ -427,7 +423,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		"Use loadPremadeCity() instead for center province.");
 	DebugAssert((globalCityID >= 0) && (globalCityID < 256),
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
-	
+
 	// Determine city traits from the given city ID.
 	const LocationType locationType = Location::getCityType(localCityID);
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
@@ -471,15 +467,18 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	}();
 
 	// Call city WorldData loader.
-	this->worldData = WorldData::loadCity(localCityID, provinceID, mif, cityDim,
-		reservedBlocks, startPosition, weatherType, miscAssets);
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
+		localCityID, provinceID, mif, cityDim, reservedBlocks, startPosition,
+		weatherType, miscAssets));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 &startPoint = worldData.getStartPoints().front();
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
+	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -507,15 +506,17 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 		localCityID, provinceID, miscAssets);
 
 	// Call wilderness WorldData loader.
-	this->worldData = WorldData::loadWilderness(
-		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, miscAssets.getExeData());
-	this->worldData.setLevelActive(this->worldData.getCurrentLevel(), textureManager, renderer);
+	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
+		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, miscAssets.getExeData()));
+
+	// Set initial level active in the renderer.
+	LevelData &activeLevel = this->worldData->getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
 
 	// Set arbitrary player starting position and velocity (no starting point in WILD.MIF).
 	const Double2 startPoint(63.50, 63.50);
-	const auto &levelData = this->worldData.getLevels().at(this->worldData.getCurrentLevel());
 	this->player.teleport(Double3(
-		startPoint.x, levelData.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Set location.
@@ -561,7 +562,8 @@ Player &GameData::getPlayer()
 
 WorldData &GameData::getWorldData()
 {
-	return this->worldData;
+	assert(this->worldData.get() != nullptr);
+	return *this->worldData.get();
 }
 
 Location &GameData::getLocation()
@@ -607,7 +609,7 @@ WeatherType GameData::getWeatherType() const
 
 double GameData::getAmbientPercent() const
 {
-	if (this->worldData.getWorldType() == WorldType::Interior)
+	if (this->worldData->getWorldType() == WorldType::Interior)
 	{
 		// Completely dark indoors (some places might be an exception to this, and those
 		// would be handled eventually).

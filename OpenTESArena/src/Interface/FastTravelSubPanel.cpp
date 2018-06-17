@@ -8,6 +8,7 @@
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/MIFFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"

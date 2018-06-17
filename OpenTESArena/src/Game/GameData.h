@@ -73,7 +73,7 @@ private:
 	std::array<WeatherType, 36> weathers;
 
 	Player player;
-	WorldData worldData;
+	std::unique_ptr<WorldData> worldData;
 	Location location;
 	CityDataFile cityData;
 	Date date;

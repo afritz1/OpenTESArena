@@ -1,14 +1,11 @@
 #include <algorithm>
-#include <cassert>
 #include <functional>
-#include <sstream>
 
 #include "LevelData.h"
 #include "VoxelData.h"
 #include "VoxelDataType.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
-#include "../Assets/RMDFile.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
@@ -61,455 +58,13 @@ void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 	this->previouslyDisplayed = previouslyDisplayed;
 }
 
-LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth)
-	: voxelGrid(gridWidth, gridHeight, gridDepth)
+LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
+	const std::string &name)
+	: voxelGrid(gridWidth, gridHeight, gridDepth), inf(infName), name(name) { }
+
+LevelData::~LevelData()
 {
-	// Just for initializing grid dimensions. The rest is initialized by load methods.
-}
 
-LevelData LevelData::loadInterior(const MIFFile::Level &level, int gridWidth, int gridDepth,
-	const ExeData &exeData)
-{
-	// .INF file associated with the interior level.
-	const INFFile inf(String::toUppercase(level.info));
-
-	// Interior level.
-	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
-	levelData.name = level.name;
-	levelData.infName = inf.getName();
-	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-	levelData.outdoorDungeon = inf.getCeiling().outdoorDungeon;
-
-	// Interior sky color (usually black, but also gray for "outdoor" dungeons).
-	levelData.interiorSkyColor = std::make_unique<uint32_t>(
-		levelData.isOutdoorDungeon() ? Color::Gray.toARGB() : Color::Black.toARGB());
-
-	// Empty voxel data (for air).
-	levelData.voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR and MAP1 voxels.
-	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
-
-	// All interiors have ceilings except some main quest dungeons which have a 1
-	// as the third number after *CEILING in their .INF file.
-	const bool hasCeiling = !inf.getCeiling().outdoorDungeon;
-
-	// Fill the second floor with ceiling tiles if it's an "indoor dungeon". Otherwise,
-	// leave it empty (for some "outdoor dungeons").
-	if (hasCeiling)
-	{
-		levelData.readCeiling(inf, gridWidth, gridDepth);
-	}
-
-	// Assign locks.
-	levelData.readLocks(level.lock, gridWidth, gridDepth);
-
-	// Assign text and sound triggers.
-	levelData.readTriggers(level.trig, inf, gridWidth, gridDepth);
-
-	return levelData;
-}
-
-LevelData LevelData::loadDungeon(ArenaRandom &random, const std::vector<MIFFile::Level> &levels,
-	int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
-	const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData)
-{
-	// Create temp buffers for dungeon block data.
-	std::vector<uint16_t> tempFlor(gridWidth * gridDepth, 0);
-	std::vector<uint16_t> tempMap1(gridWidth * gridDepth, 0);
-	std::vector<ArenaTypes::MIFLock> tempLocks;
-	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
-
-	const int chunkDim = 32;
-	const int tileSet = random.next() % 4;
-
-	for (int row = 0; row < depthChunks; row++)
-	{
-		const int dZ = row * chunkDim;
-		for (int column = 0; column < widthChunks; column++)
-		{
-			const int dX = column * chunkDim;
-
-			// Get the selected level from the .MIF file.
-			const int blockIndex = (tileSet * 8) + (random.next() % 8);
-			const auto &blockLevel = levels.at(blockIndex);
-
-			// Copy block data to temp buffers.
-			for (int z = 0; z < chunkDim; z++)
-			{
-				const int srcIndex = z * chunkDim;
-				const int dstIndex = dX + ((z + dZ) * gridDepth);
-
-				auto writeRow = [chunkDim, srcIndex, dstIndex](
-					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
-				{
-					const auto srcBegin = src.begin() + srcIndex;
-					const auto srcEnd = srcBegin + chunkDim;
-					const auto dstBegin = dst.begin() + dstIndex;
-					std::copy(srcBegin, srcEnd, dstBegin);
-				};
-
-				writeRow(blockLevel.flor, tempFlor);
-				writeRow(blockLevel.map1, tempMap1);
-			}
-
-			// Assign locks to the current block.
-			for (const auto &lock : blockLevel.lock)
-			{
-				ArenaTypes::MIFLock tempLock;
-				tempLock.x = lock.x + dX;
-				tempLock.y = lock.y + dZ;
-				tempLock.lockLevel = lock.lockLevel;
-
-				tempLocks.push_back(std::move(tempLock));
-			}
-
-			// Assign text/sound triggers to the current block.
-			for (const auto &trigger : blockLevel.trig)
-			{
-				ArenaTypes::MIFTrigger tempTrigger;
-				tempTrigger.x = trigger.x + dX;
-				tempTrigger.y = trigger.y + dZ;
-				tempTrigger.textIndex = trigger.textIndex;
-				tempTrigger.soundIndex = trigger.soundIndex;
-
-				tempTriggers.push_back(std::move(tempTrigger));
-			}
-		}
-	}
-
-	// Draw perimeter blocks. First top and bottom, then right and left.
-	const uint16_t perimeterVoxel = 0x7800;
-	std::fill(tempMap1.begin(), tempMap1.begin() + gridDepth, perimeterVoxel);
-	std::fill(tempMap1.rbegin(), tempMap1.rbegin() + gridDepth, perimeterVoxel);
-
-	for (int z = 1; z < (gridWidth - 1); z++)
-	{
-		tempMap1.at(z * gridDepth) = perimeterVoxel;
-		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
-	}
-
-	// Put transition blocks, unless null. Unpack the level up/down block indices
-	// into X and Z chunk offsets.
-	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const int levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
-	const int levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
-	tempMap1.at(levelUpX + (levelUpZ * gridDepth)) = (levelUpVoxelByte << 8) | levelUpVoxelByte;
-
-	if (levelDownBlock != nullptr)
-	{
-		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const int levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
-		const int levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
-		tempMap1.at(levelDownX + (levelDownZ * gridDepth)) =
-			(levelDownVoxelByte << 8) | levelDownVoxelByte;
-	}
-
-	// Dungeon (either named or in wilderness).
-	LevelData levelData(gridWidth, 3, gridDepth);
-	levelData.infName = inf.getName();
-	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-	levelData.outdoorDungeon = false;
-
-	// Interior sky color (always black for dungeons).
-	levelData.interiorSkyColor = std::make_unique<uint32_t>(Color::Black.toARGB());
-	
-	// Empty voxel data (for air).
-	levelData.voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR, MAP1, and ceiling into the voxel grid.
-	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
-	levelData.readCeiling(inf, gridWidth, gridDepth);
-
-	// Load locks and triggers (if any).
-	levelData.readLocks(tempLocks, gridWidth, gridDepth);
-	levelData.readTriggers(tempTriggers, inf, gridWidth, gridDepth);
-
-	return levelData;
-}
-
-LevelData LevelData::loadPremadeCity(const MIFFile::Level &level, const INFFile &inf,
-	int gridWidth, int gridDepth, const ExeData &exeData)
-{
-	// Premade exterior level (only used by center province).
-	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
-	levelData.name = level.name;
-	levelData.infName = inf.getName();
-	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-	levelData.outdoorDungeon = false;
-
-	// Empty voxel data (for air).
-	levelData.voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
-	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
-	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
-
-	return levelData;
-}
-
-LevelData LevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed, int cityDim,
-	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	const INFFile &inf, int gridWidth, int gridDepth, const ExeData &exeData)
-{
-	// Create temp voxel data buffers and write the city skeleton data to them. Each city
-	// block will be written to them as well.
-	std::vector<uint16_t> tempFlor(level.flor.begin(), level.flor.end());
-	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
-	std::vector<uint16_t> tempMap2(level.map2.begin(), level.map2.end());
-
-	// Decide which city blocks to load.
-	enum class BlockType
-	{
-		Empty, Reserved, Equipment, MagesGuild,
-		NobleHouse, Temple, Tavern, Spacer, Houses
-	};
-
-	const int citySize = cityDim * cityDim;
-	std::vector<BlockType> plan(citySize, BlockType::Empty);
-	ArenaRandom random(citySeed);
-
-	auto placeBlock = [citySize, &plan, &random](BlockType blockType)
-	{
-		int planIndex;
-
-		do
-		{
-			planIndex = random.next() % citySize;
-		} while (plan.at(planIndex) != BlockType::Empty);
-
-		plan.at(planIndex) = blockType;
-	};
-
-	// Set reserved blocks.
-	for (const uint8_t block : reservedBlocks)
-	{
-		// The original engine uses a fixed array so all block indices always fall within the
-		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
-		// explicitly.
-		if (block < plan.size())
-		{
-			plan.at(block) = BlockType::Reserved;
-		}
-	}
-
-	// Initial block placement.
-	placeBlock(BlockType::Equipment);
-	placeBlock(BlockType::MagesGuild);
-	placeBlock(BlockType::NobleHouse);
-	placeBlock(BlockType::Temple);
-	placeBlock(BlockType::Tavern);
-	placeBlock(BlockType::Spacer);
-
-	// Create city plan according to RNG.
-	const int emptyBlocksInPlan = static_cast<int>(
-		std::count(plan.begin(), plan.end(), BlockType::Empty));
-	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
-	{
-		const uint32_t randVal = random.next();
-		const BlockType blockType = [randVal]()
-		{
-			if (randVal <= 0x7333)
-			{
-				return BlockType::Houses;
-			}
-			else if (randVal <= 0xA666)
-			{
-				return BlockType::Tavern;
-			}
-			else if (randVal <= 0xCCCC)
-			{
-				return BlockType::Equipment;
-			}
-			else if (randVal <= 0xE666)
-			{
-				return BlockType::Temple;
-			}
-			else
-			{
-				return BlockType::NobleHouse;
-			}
-		}();
-
-		placeBlock(blockType);
-	}
-
-	// Build the city, loading data for each block. Load blocks right to left, top to bottom.
-	int xDim = 0;
-	int yDim = 0;
-
-	for (const BlockType block : plan)
-	{
-		if (block != BlockType::Reserved)
-		{
-			const std::array<std::string, 7> BlockCodes =
-			{
-				"EQ", "MG", "NB", "TP", "TV", "TS", "BS"
-			};
-
-			const std::array<int, 7> VariationCounts =
-			{
-				13, 11, 10, 12, 15, 11, 20
-			};
-
-			const std::array<std::string, 4> Rotations =
-			{
-				"A", "B", "C", "D"
-			};
-
-			const int blockIndex = static_cast<int>(block) - 2;
-			const std::string &blockCode = BlockCodes.at(blockIndex);
-			const std::string &rotation = Rotations.at(random.next() % Rotations.size());
-			const int variationCount = VariationCounts.at(blockIndex);
-			const int variation = std::max(random.next() % variationCount, 1);
-			const std::string blockMifName = blockCode + "BD" +
-				std::to_string(variation) + rotation + ".MIF";
-
-			// Load the block's .MIF data into the level.
-			const MIFFile blockMif(blockMifName);
-			const auto &blockLevel = blockMif.getLevels().front();
-
-			// Offset of the block in the voxel grid.
-			const int xOffset = startPosition.x + (xDim * 20);
-			const int zOffset = startPosition.y + (yDim * 20);
-
-			// Copy block data to temp buffers.
-			for (int z = 0; z < blockMif.getDepth(); z++)
-			{
-				const int srcIndex = z * blockMif.getWidth();
-				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
-
-				auto writeRow = [&blockMif, srcIndex, dstIndex](
-					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
-				{
-					const auto srcBegin = src.begin() + srcIndex;
-					const auto srcEnd = srcBegin + blockMif.getWidth();
-					const auto dstBegin = dst.begin() + dstIndex;
-					std::copy(srcBegin, srcEnd, dstBegin);
-				};
-
-				writeRow(blockLevel.flor, tempFlor);
-				writeRow(blockLevel.map1, tempMap1);
-				writeRow(blockLevel.map2, tempMap2);
-			}
-
-			// @todo: load flats.
-		}
-
-		xDim++;
-
-		// Move to the next row if done with the current one.
-		if (xDim == cityDim)
-		{
-			xDim = 0;
-			yDim++;
-		}
-	}
-
-	// Create the level for the voxel data to be written into.
-	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
-	levelData.name = level.name;
-	levelData.infName = inf.getName();
-	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-	levelData.outdoorDungeon = false;
-
-	// Empty voxel data (for air).
-	levelData.voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
-	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
-	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
-
-	return levelData;
-}
-
-LevelData LevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL, const INFFile &inf,
-	const ExeData &exeData)
-{
-	// Load WILD.MIF (blank slate, to be filled in by four .RMD files).
-	const MIFFile mif("WILD.MIF");
-	const MIFFile::Level &level = mif.getLevels().front();
-	const int gridWidth = 128;
-	const int gridDepth = gridWidth;
-
-	// Copy voxel data into temp buffers. Each floor in the four 64x64 wilderness blocks
-	// is 8192 bytes.
-	std::array<uint16_t, 4096 * 4> tempFlor, tempMap1, tempMap2;
-	std::copy(level.flor.begin(), level.flor.end(), tempFlor.begin());
-	std::copy(level.map1.begin(), level.map1.end(), tempMap1.begin());
-	std::copy(level.map2.begin(), level.map2.end(), tempMap2.begin());
-
-	auto writeRMD = [gridDepth, &tempFlor, &tempMap1, &tempMap2](
-		int rmdID, int xOffset, int zOffset)
-	{
-		const std::string rmdName = [rmdID]()
-		{
-			std::stringstream ss;
-			ss << std::setw(3) << std::setfill('0') << rmdID;
-			return "WILD" + ss.str() + ".RMD";
-		}();
-
-		const RMDFile rmd(rmdName);
-
-		// Copy .RMD voxel data to temp buffers.
-		for (int z = 0; z < RMDFile::DEPTH; z++)
-		{
-			const int srcIndex = z * RMDFile::WIDTH;
-			const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
-
-			auto writeRow = [srcIndex, dstIndex](const RMDFile::ArrayType &src,
-				std::array<uint16_t, 4096 * 4> &dst)
-			{
-				const auto srcBegin = src.begin() + srcIndex;
-				const auto srcEnd = srcBegin + RMDFile::WIDTH;
-				const auto dstBegin = dst.begin() + dstIndex;
-				std::copy(srcBegin, srcEnd, dstBegin);
-			};
-
-			writeRow(rmd.getFLOR(), tempFlor);
-			writeRow(rmd.getMAP1(), tempMap1);
-			writeRow(rmd.getMAP2(), tempMap2);
-		}
-	};
-
-	// Load four .RMD files into the wilderness skeleton, each at some X and Z offset in
-	// the voxel grid.
-	writeRMD(rmdTR, 0, 0); // Top right.
-	writeRMD(rmdTL, RMDFile::WIDTH, 0); // Top left.
-	writeRMD(rmdBR, 0, RMDFile::DEPTH); // Bottom right.
-	writeRMD(rmdBL, RMDFile::WIDTH, RMDFile::DEPTH); // Bottom left.
-
-	// Create the level for the voxel data to be written into.
-	LevelData levelData(gridWidth, level.getHeight(), gridDepth);
-	levelData.name = level.name;
-	levelData.infName = inf.getName();
-	levelData.ceilingHeight = static_cast<double>(inf.getCeiling().height) / MIFFile::ARENA_UNITS;
-	levelData.outdoorDungeon = false;
-
-	// Empty voxel data (for air).
-	levelData.voxelGrid.addVoxelData(VoxelData());
-
-	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
-	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
-	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
-	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
-
-	return levelData;
-}
-
-bool LevelData::isOutdoorDungeon() const
-{
-	return this->outdoorDungeon;
-}
-
-double LevelData::getCeilingHeight() const
-{
-	return this->ceilingHeight;
 }
 
 const std::string &LevelData::getName() const
@@ -517,15 +72,14 @@ const std::string &LevelData::getName() const
 	return this->name;
 }
 
-const std::string &LevelData::getInfName() const
+double LevelData::getCeilingHeight() const
 {
-	return this->infName;
+	return static_cast<double>(this->inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 }
 
-uint32_t LevelData::getInteriorSkyColor() const
+const INFFile &LevelData::getInfFile() const
 {
-	assert(this->interiorSkyColor.get() != nullptr);
-	return *this->interiorSkyColor.get();
+	return this->inf;
 }
 
 VoxelGrid &LevelData::getVoxelGrid()
@@ -541,19 +95,7 @@ const VoxelGrid &LevelData::getVoxelGrid() const
 const LevelData::Lock *LevelData::getLock(const Int2 &voxel) const
 {
 	const auto lockIter = this->locks.find(voxel);
-	return (lockIter != this->locks.end()) ? (&lockIter->second) : nullptr;
-}
-
-LevelData::TextTrigger *LevelData::getTextTrigger(const Int2 &voxel)
-{
-	const auto textIter = this->textTriggers.find(voxel);
-	return (textIter != this->textTriggers.end()) ? (&textIter->second) : nullptr;
-}
-
-const std::string *LevelData::getSoundTrigger(const Int2 &voxel) const
-{
-	const auto soundIter = this->soundTriggers.find(voxel);
-	return (soundIter != this->soundTriggers.end()) ? (&soundIter->second) : nullptr;
+	return (lockIter != this->locks.end()) ? &lockIter->second : nullptr;
 }
 
 void LevelData::setVoxel(int x, int y, int z, uint16_t id)
@@ -561,7 +103,6 @@ void LevelData::setVoxel(int x, int y, int z, uint16_t id)
 	uint16_t *voxels = this->voxelGrid.getVoxels();
 	const int index = x + (y * this->voxelGrid.getWidth()) +
 		(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight());
-
 	voxels[index] = id;
 }
 
@@ -1217,30 +758,94 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 	}
 }
 
-void LevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers,
-	const INFFile &inf, int width, int depth)
+void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 {
-	for (const auto &trigger : triggers)
+	// Clear all entities.
+	// @todo: entities.
+	/*for (const auto *entity : this->entityManager.getAllEntities())
 	{
-		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const Int2 voxel = VoxelGrid::getTransformedCoordinate(
-			Int2(trigger.x, trigger.y), width, depth);
+		renderer.removeFlat(entity->getID());
+		this->entityManager.remove(entity->getID());
+	}*/
 
-		// There can be a text trigger and sound trigger in the same voxel.
-		const bool isTextTrigger = trigger.textIndex != -1;
-		const bool isSoundTrigger = trigger.soundIndex != -1;
+	// Clear renderer textures.
+	renderer.clearTextures();
 
-		// Make sure the text index points to a text value (i.e., not a key or riddle).
-		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
+	// Load .INF voxel textures into the renderer.
+	const int voxelTextureCount = static_cast<int>(this->inf.getVoxelTextures().size());
+	for (int i = 0; i < voxelTextureCount; i++)
+	{
+		const auto &textureData = this->inf.getVoxelTextures().at(i);
+
+		const std::string textureName = String::toUppercase(textureData.filename);
+		const std::string extension = String::getExtension(textureName);
+
+		const bool isIMG = extension == "IMG";
+		const bool isSET = extension == "SET";
+		const bool noExtension = extension.size() == 0;
+
+		if (isSET)
 		{
-			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
-			this->textTriggers.insert(std::make_pair(
-				voxel, TextTrigger(textData.text, textData.displayedOnce)));
+			// Use the texture data's .SET index to obtain the correct surface.
+			const auto &surfaces = textureManager.getSurfaces(textureName);
+			const Surface &surface = surfaces.at(textureData.setIndex);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
 		}
-
-		if (isSoundTrigger)
+		else if (isIMG)
 		{
-			this->soundTriggers.insert(std::make_pair(voxel, inf.getSound(trigger.soundIndex)));
+			const Surface &surface = textureManager.getSurface(textureName);
+			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
+		}
+		else if (noExtension)
+		{
+			// Ignore texture names with no extension. They appear to be lore-related names
+			// that were used at one point in Arena's development.
+			static_cast<void>(textureData);
+		}
+		else
+		{
+			DebugCrash("Unrecognized voxel texture extension \"" + extension + "\".");
 		}
 	}
+
+	// Load .INF flat textures into the renderer.
+	// - @todo: maybe turn this into a while loop, so the index variable can be incremented
+	//   by the size of each .DFA. It's incorrect as-is.
+	/*const int flatTextureCount = static_cast<int>(inf.getFlatTextures().size());
+	for (int i = 0; i < flatTextureCount; i++)
+	{
+		const auto &textureData = inf.getFlatTextures().at(i);
+		const std::string textureName = String::toUppercase(textureData.filename);
+		const std::string extension = String::getExtension(textureName);
+		const bool isDFA = extension == "DFA";
+		const bool isIMG = extension == "IMG";
+		const bool noExtension = extension.size() == 0;
+		if (isDFA)
+		{
+			// @todo: creatures don't have .DFA files (although they're referenced in the .INF
+			// files), so I think the extension needs to be .CFA instead for them.
+			//const auto &surfaces = textureManager.getSurfaces(textureName);
+			//for (const auto *surface : surfaces)
+			//{
+			//renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
+			//surface->w, surface->h);
+			//}
+		}
+		else if (isIMG)
+		{
+			const SDL_Surface *surface = textureManager.getSurface(textureName);
+			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface->pixels),
+				surface->w, surface->h);
+		}
+		else if (noExtension)
+		{
+			// Ignore texture names with no extension. They appear to be lore-related names
+			// that were used at one point in Arena's development.
+			static_cast<void>(textureData);
+		}
+		else
+		{
+			DebugCrash("Unrecognized texture extension \"" + extension + "\".");
+		}
+	}*/
 }
