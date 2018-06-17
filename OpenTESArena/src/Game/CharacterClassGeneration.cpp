@@ -45,7 +45,7 @@ const CharacterClassGeneration::ClassData &CharacterClassGeneration::getClassDat
 
 		DebugAssert(iter != this->choices.end(), "No class mapping found (a:" +
 			std::to_string(a) + ", b:" + std::to_string(b) + ", c:" + std::to_string(c) + ").");
-		return static_cast<int>(iter - this->choices.begin());
+		return static_cast<int>(std::distance(this->choices.begin(), iter));
 	}();
 
 	// Calculate the class ID from the choice ID.

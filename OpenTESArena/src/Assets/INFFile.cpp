@@ -1033,7 +1033,7 @@ int INFFile::getMenuIndex(int textureID) const
 	// Returns the index of the texture ID in the menus array, or -1 if not found.
 	const auto iter = std::find(this->menus.begin(), this->menus.end(), textureID);
 	return (iter != this->menus.end()) ? 
-		static_cast<int>(iter - this->menus.begin()) : -1;
+		static_cast<int>(std::distance(this->menus.begin(), iter)) : -1;
 }
 
 const INFFile::FlatData &INFFile::getFlat(int index) const
