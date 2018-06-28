@@ -1541,10 +1541,8 @@ void SoftwareRenderer::diagProjection(double voxelYReal, double voxelHeight,
 		diagBottom, transform, yShear) * heightReal;
 
 	// Y drawing range on-screen.
-	diagStart = std::min(std::max(0,
-		static_cast<int>(std::ceil(diagTopScreenY - 0.50))), frameHeight);
-	diagEnd = std::min(std::max(0,
-		static_cast<int>(std::floor(diagBottomScreenY + 0.50))), frameHeight);
+	diagStart = SoftwareRenderer::getLowerBoundedPixel(diagTopScreenY, frameHeight);
+	diagEnd = SoftwareRenderer::getUpperBoundedPixel(diagBottomScreenY, frameHeight);
 }
 
 void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedYStart,
