@@ -60,9 +60,10 @@ public:
 	// Returns the current active interior (if any).
 	InteriorWorldData *getInterior() const;
 
-	// This should be independent of any active interior (i.e., it always returns either city
-	// or wilderness).
-	virtual WorldType getWorldType() const override;
+	virtual const std::string &getMifName() const override;
+
+	virtual WorldType getBaseWorldType() const override;
+	virtual WorldType getActiveWorldType() const override;
 
 	virtual LevelData &getActiveLevel() override;
 	virtual const LevelData &getActiveLevel() const override;

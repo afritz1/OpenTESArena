@@ -7,6 +7,19 @@
 #include "../Assets/MIFFile.h"
 #include "../Utilities/Debug.h"
 
+bool VoxelData::WallData::isMenu() const
+{
+	if (this->type == WallData::Type::Menu)
+	{
+		assert(this->menuID != -1);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
 	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
 

@@ -34,10 +34,10 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (farPoint - nearPoint).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
 		hit.point = rayStart + (direction * hit.t);
-		hit.normal = VoxelData::getNormal(facing);
 		hit.voxel = voxel;
+		hit.facing = facing;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;
@@ -155,10 +155,10 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (farPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
 		hit.point = rayStart + (direction * hit.t);
-		hit.normal = VoxelData::getNormal(facing);
 		hit.voxel = voxel;
+		hit.facing = facing;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;

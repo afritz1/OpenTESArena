@@ -75,6 +75,11 @@ GameData::TimedTextBox::TimedTextBox(double remainingDuration, std::unique_ptr<T
 GameData::TimedTextBox::TimedTextBox()
 	: TimedTextBox(0.0, nullptr) { }
 
+bool GameData::TimedTextBox::hasRemainingDuration() const
+{
+	return this->remainingDuration > 0.0;
+}
+
 void GameData::TimedTextBox::reset()
 {
 	this->remainingDuration = 0.0;
@@ -293,6 +298,72 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const ExeData &exeData,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	assert(this->worldData.get() != nullptr);
+	assert(this->worldData->getActiveWorldType() != WorldType::Interior);
+
+	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
+	assert(exterior.getInterior() == nullptr);
+
+	InteriorWorldData interior = InteriorWorldData::loadInterior(mif, exeData);
+
+	// Give the interior world data to the active exterior.
+	exterior.enterInterior(std::move(interior), returnVoxel);
+
+	// Set interior level active in the renderer.
+	LevelData &activeLevel = exterior.getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
+
+	// Set player starting position and velocity.
+	const Double2 &startPoint = exterior.getInterior()->getStartPoints().front();
+	this->player.teleport(Double3(
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
+
+	// Arbitrary interior fog. Do not change weather (@todo: save it maybe?).
+	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	this->fogDistance = fogDistance;
+	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::leaveInterior(TextureManager &textureManager, Renderer &renderer)
+{
+	assert(this->worldData.get() != nullptr);
+	assert(this->worldData->getActiveWorldType() == WorldType::Interior);
+	assert(this->worldData->getBaseWorldType() != WorldType::Interior);
+
+	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
+	assert(exterior.getInterior() != nullptr);
+
+	// Leave the interior and get the voxel to return to in the exterior.
+	const Int2 returnVoxel = exterior.leaveInterior();
+
+	// Set exterior level active in the renderer.
+	LevelData &activeLevel = exterior.getActiveLevel();
+	activeLevel.setActive(textureManager, renderer);
+
+	// Set player starting position and velocity.
+	const Double2 startPoint(
+		static_cast<double>(returnVoxel.x) + 0.50,
+		static_cast<double>(returnVoxel.y) + 0.50);
+	this->player.teleport(Double3(
+		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+	this->player.setVelocityToZero();
+
+	// Regular sky palette based on weather.
+	const std::vector<uint32_t> skyPalette =
+		GameData::makeExteriorSkyPalette(this->weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+
+	// Set fog and night lights.
+	const double fogDistance = GameData::getFogDistanceFromWeather(this->weatherType);
+	this->fogDistance = fogDistance;
+	renderer.setFogDistance(fogDistance);
+	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
@@ -609,7 +680,7 @@ WeatherType GameData::getWeatherType() const
 
 double GameData::getAmbientPercent() const
 {
-	if (this->worldData->getWorldType() == WorldType::Interior)
+	if (this->worldData->getActiveWorldType() == WorldType::Interior)
 	{
 		// Completely dark indoors (some places might be an exception to this, and those
 		// would be handled eventually).

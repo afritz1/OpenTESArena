@@ -233,9 +233,21 @@ InteriorWorldData *ExteriorWorldData::getInterior() const
 	return (this->interior.get() != nullptr) ? &this->interior->worldData : nullptr;
 }
 
-WorldType ExteriorWorldData::getWorldType() const
+const std::string &ExteriorWorldData::getMifName() const
+{
+	return (this->interior.get() != nullptr) ?
+		this->interior->worldData.getMifName() : this->mifName;
+}
+
+WorldType ExteriorWorldData::getBaseWorldType() const
 {
 	return this->isCity ? WorldType::City : WorldType::Wilderness;
+}
+
+WorldType ExteriorWorldData::getActiveWorldType() const
+{
+	return (this->interior.get() != nullptr) ?
+		WorldType::Interior : this->getBaseWorldType();
 }
 
 LevelData &ExteriorWorldData::getActiveLevel()

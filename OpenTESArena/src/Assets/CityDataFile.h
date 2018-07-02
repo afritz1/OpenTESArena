@@ -83,6 +83,17 @@ public:
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);
 
+	// Gets the offset value of a door voxel in the world. Used with various calculations
+	// (.MIF name, lock level).
+	static uint16_t getDoorVoxelOffset(int x, int y);
+
+	// Gets the .MIF name for a door voxel in a city or the wilderness.
+	static std::string getDoorVoxelMifName(int x, int y, int menuID,
+		uint32_t rulerSeed, bool isCity);
+
+	// Gets the lock level for a door voxel at the given XY coordinate.
+	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);
+
 	// Gets the side length of a city in city blocks.
 	static int getCityDimensions(LocationType locationType);
 

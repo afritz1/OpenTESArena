@@ -33,8 +33,11 @@ public:
 	// Gets the number of levels in the interior.
 	int getLevelCount() const;
 
+	virtual const std::string &getMifName() const override;
+
 	// Always interior for interior world data.
-	virtual WorldType getWorldType() const override;
+	virtual WorldType getBaseWorldType() const override;
+	virtual WorldType getActiveWorldType() const override;
 
 	virtual LevelData &getActiveLevel() override;
 	virtual const LevelData &getActiveLevel() const override;

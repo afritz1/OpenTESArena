@@ -136,7 +136,17 @@ int InteriorWorldData::getLevelCount() const
 	return static_cast<int>(this->levels.size());
 }
 
-WorldType InteriorWorldData::getWorldType() const
+const std::string &InteriorWorldData::getMifName() const
+{
+	return this->mifName;
+}
+
+WorldType InteriorWorldData::getBaseWorldType() const
+{
+	return WorldType::Interior;
+}
+
+WorldType InteriorWorldData::getActiveWorldType() const
 {
 	return WorldType::Interior;
 }

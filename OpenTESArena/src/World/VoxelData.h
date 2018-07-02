@@ -34,6 +34,8 @@ public:
 
 		int sideID, floorID, ceilingID, menuID;
 		Type type;
+
+		bool isMenu() const;
 	};
 
 	// Floors only have their top rendered.

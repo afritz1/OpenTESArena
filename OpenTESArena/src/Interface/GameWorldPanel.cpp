@@ -26,7 +26,6 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
-#include "../Game/Physics.h"
 #include "../Game/PlayerInterface.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
@@ -50,6 +49,7 @@
 #include "../Rendering/Texture.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
@@ -1231,7 +1231,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &player = gameData.getPlayer();
+	auto &player = gameData.getPlayer();
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
@@ -1289,12 +1289,29 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 	// See if the ray hit anything.
 	if (success)
 	{
-		// @todo: finish implementing gameplay behavior for selection. For now, just delete
-		// the clicked voxel.
-		const Int3 &voxel = hit.voxel;
-		const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
-			(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
-		voxelGrid.getVoxels()[voxelIndex] = 0;
+		// Arbitrary max distance for selection.
+		const double maxSelectionDist = 1.50;
+
+		if (hit.t <= maxSelectionDist)
+		{
+			const Int3 &voxel = hit.voxel;
+			const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
+				(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
+			const uint16_t voxelID = voxelGrid.getVoxels()[voxelIndex];
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+			// @todo: check more cases than just walls.
+			if (voxelData.dataType == VoxelDataType::Wall)
+			{
+				const VoxelData::WallData &wallData = voxelData.wall;
+
+				// @todo: check more cases than just *MENU blocks.
+				if (wallData.isMenu())
+				{
+					this->handleWorldTransition(hit, wallData.menuID);
+				}
+			}
+		}
 	}
 }
 
@@ -1304,7 +1321,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	auto &worldData = game.getGameData().getWorldData();
 
 	// Only interior levels have triggers.
-	if (worldData.getWorldType() == WorldType::Interior)
+	if (worldData.getActiveWorldType() == WorldType::Interior)
 	{
 		auto &level = static_cast<InteriorLevelData&>(worldData.getActiveLevel());
 
@@ -1366,15 +1383,140 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 }
 
+void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	auto &worldData = gameData.getWorldData();
+	auto &activeLevel = worldData.getActiveLevel();
+	auto &voxelGrid = activeLevel.getVoxelGrid();
+	const Int2 voxel(hit.voxel.x, hit.voxel.z);
+
+	// Decide based on the current world type.
+	if (worldData.getActiveWorldType() == WorldType::Interior)
+	{
+		// @temp: temporary condition while test interiors are allowed on the main menu.
+		if (worldData.getBaseWorldType() == WorldType::Interior)
+		{
+			DebugWarning("Test interiors have no exterior.");
+			return;
+		}
+
+		// Leave the interior and go to the saved exterior.
+		gameData.leaveInterior(textureManager, renderer);
+
+		// Change to exterior music.
+		const auto &clock = gameData.getClock();
+		const MusicName musicName = !clock.nightMusicIsActive() ?
+			GameData::getExteriorMusicName(gameData.getWeatherType()) :
+			MusicName::Night;
+
+		game.setMusic(musicName);
+	}
+	else if (worldData.getActiveWorldType() == WorldType::City)
+	{
+		// If the menu ID is for an interior, enter it. Otherwise, it's the city gates.
+		const bool isTransitionIntoInterior = (menuID != 7) && (menuID != 8);
+
+		if (isTransitionIntoInterior)
+		{
+			const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+				voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+			const uint32_t rulerSeed = [&gameData]()
+			{
+				const Location &location = gameData.getLocation();
+				const CityDataFile &cityData = gameData.getCityDataFile();
+				return cityData.getRulerSeed(
+					location.localCityID, location.provinceID);
+			}();
+
+			const bool isCity = true;
+			const std::string mifName = CityDataFile::getDoorVoxelMifName(
+				originalVoxel.x, originalVoxel.y, menuID, rulerSeed, isCity);
+
+			const Int3 returnVoxel = [&hit]()
+			{
+				const Int3 delta = [&hit]()
+				{
+					if (hit.facing == VoxelData::Facing::PositiveX)
+					{
+						return Int3(1, 0, 0);
+					}
+					else if (hit.facing == VoxelData::Facing::NegativeX)
+					{
+						return Int3(-1, 0, 0);
+					}
+					else if (hit.facing == VoxelData::Facing::PositiveZ)
+					{
+						return Int3(0, 0, 1);
+					}
+					else if (hit.facing == VoxelData::Facing::NegativeZ)
+					{
+						return Int3(0, 0, -1);
+					}
+					else
+					{
+						throw DebugException("Invalid hit facing \"" +
+							std::to_string(static_cast<int>(hit.facing)) + "\".");
+					}
+				}();
+
+				return hit.voxel + delta;
+			}();
+
+			// Enter the interior location.
+			const MIFFile mif(mifName);
+			gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
+				game.getMiscAssets().getExeData(), game.getTextureManager(),
+				game.getRenderer());
+
+			// Change to interior music.
+			Random random;
+			const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
+			game.setMusic(musicName);
+		}
+		else
+		{
+			DebugWarning("Wilderness transition not implemented.");
+		}
+	}
+	else
+	{
+		// @todo: Wilderness transition into some place.
+		DebugMention("Menu ID: " + std::to_string(menuID));
+
+		// I think dungeons can't use "enterInterior". They need an "enterDungeon" method.
+	}
+}
+
 void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 
 	// Level transitions are always between interiors.
-	auto &worldData = static_cast<InteriorWorldData&>(game.getGameData().getWorldData());
+	auto &interior = [&gameData]() -> InteriorWorldData&
+	{
+		auto &worldData = gameData.getWorldData();
+		assert(worldData.getActiveWorldType() == WorldType::Interior);
 
-	const auto &level = worldData.getActiveLevel();
+		if (worldData.getBaseWorldType() != WorldType::Interior)
+		{
+			auto &exterior = static_cast<ExteriorWorldData&>(worldData);
+			auto *interiorPtr = exterior.getInterior();
+			assert(interiorPtr != nullptr);
+			return *interiorPtr;
+		}
+		else
+		{
+			return static_cast<InteriorWorldData&>(worldData);
+		}
+	}();
+
+	const auto &level = interior.getActiveLevel();
 	const auto &voxelGrid = level.getVoxelGrid();
 
 	// Get the voxel data associated with the voxel.
@@ -1444,14 +1586,14 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Lambda for transitioning the player to the given level.
-		auto switchToLevel = [&game, &worldData, &player, &destinationXZ,
+		auto switchToLevel = [&game, &interior, &player, &destinationXZ,
 			&dirToNewVoxel](int levelIndex)
 		{
 			// Select the new level.
-			worldData.setLevelIndex(levelIndex);
+			interior.setLevelIndex(levelIndex);
 
 			// Set the level active in the renderer.
-			auto &activeLevel = worldData.getActiveLevel();
+			auto &activeLevel = interior.getActiveLevel();
 			activeLevel.setActive(game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
@@ -1493,10 +1635,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 				onLevelUpVoxelEnter(game);
 				onLevelUpVoxelEnter = std::function<void(Game&)>();
 			}
-			else if (worldData.getLevelIndex() > 0)
+			else if (interior.getLevelIndex() > 0)
 			{
 				// Decrement the world's level index and activate the new level.
-				switchToLevel(worldData.getLevelIndex() - 1);
+				switchToLevel(interior.getLevelIndex() - 1);
 			}
 			else
 			{
@@ -1505,10 +1647,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
 		{
-			if (worldData.getLevelIndex() < (worldData.getLevelCount() - 1))
+			if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
 			{
 				// Increment the world's level index and activate the new level.
-				switchToLevel(worldData.getLevelIndex() + 1);
+				switchToLevel(interior.getLevelIndex() + 1);
 			}
 			else
 			{
@@ -1692,7 +1834,7 @@ void GameWorldPanel::tick(double dt)
 	}
 
 	auto &worldData = gameData.getWorldData();
-	const WorldType worldType = worldData.getWorldType();
+	const WorldType worldType = worldData.getActiveWorldType();
 
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 	{
@@ -1721,12 +1863,12 @@ void GameWorldPanel::tick(double dt)
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
 
-	if (triggerText.remainingDuration > 0.0)
+	if (triggerText.hasRemainingDuration())
 	{
 		triggerText.remainingDuration -= dt;
 	}
 
-	if (actionText.remainingDuration > 0.0)
+	if (actionText.hasRemainingDuration())
 	{
 		actionText.remainingDuration -= dt;
 	}
@@ -1775,7 +1917,7 @@ void GameWorldPanel::tick(double dt)
 				(newPlayerVoxelXZ.y >= 0) && (newPlayerVoxelXZ.y < voxelGrid.getDepth());
 		}();
 
-		if (inVoxelGrid)
+		if (inVoxelGrid && (worldData.getActiveWorldType() == WorldType::Interior))
 		{
 			this->handleTriggers(newPlayerVoxelXZ);
 
@@ -1806,7 +1948,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Interiors are always completely dark, but for testing purposes, they
 		// will be 100% bright until lights are implemented.
 		// @todo: take into account "outdoorDungeon". Add it to LevelData?
-		if (worldData.getWorldType() == WorldType::Interior)
+		if (worldData.getActiveWorldType() == WorldType::Interior)
 		{
 			return 1.0;
 		}
@@ -1958,7 +2100,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
-	if (triggerText.remainingDuration > 0.0)
+	if (triggerText.hasRemainingDuration())
 	{
 		const auto &triggerTextBox = *triggerText.textBox.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
@@ -1974,7 +2116,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
 	}
 
-	if (actionText.remainingDuration > 0.0)
+	if (actionText.hasRemainingDuration())
 	{
 		const auto &actionTextBox = *actionText.textBox.get();
 		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -

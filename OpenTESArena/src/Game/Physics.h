@@ -18,8 +18,9 @@ public:
 		enum class Type { Voxel, Entity };
 
 		double t;
-		Double3 point, normal;
+		Double3 point;
 		Int3 voxel;
+		VoxelData::Facing facing;
 		Hit::Type type;
 		union { uint16_t voxelID; int entityID; };
 	};
