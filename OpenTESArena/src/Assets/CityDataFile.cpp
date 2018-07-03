@@ -119,7 +119,7 @@ std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
 
 uint16_t CityDataFile::getDoorVoxelOffset(int x, int y)
 {
-	return (y << 8) + (x << 2);
+	return (y << 8) + (x << 1);
 }
 
 std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
