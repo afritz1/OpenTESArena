@@ -26,16 +26,42 @@ public:
 	// The Y axis is elided for simplicity (although it might be added eventually).
 	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
-	// Regular wall with Y size equal to ceiling height if on main floor, otherwise 1.0.
-	// Y offset is 0, and Y size can be inferred by the renderer on the main floor.
+	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
+	// can be inferred by the renderer on the main floor.
 	struct WallData
 	{
 		enum class Type { Solid, LevelUp, LevelDown, Menu };
 
+		// Maps one or more *MENU IDs to a type of menu voxel, for city and wilderness menus.
+		// Cities and the wilderness interpret the ID differently.
+		enum class MenuType
+		{
+			None,
+			CityGates,
+			Crypt, // WCRYPT
+			Dungeon, // DUNGEON
+			Equipment, // EQUIP
+			House, // BS
+			MagesGuild, // MAGE
+			Noble, // NOBLE
+			Palace, // PALACE
+			Tavern, // TAVERN
+			Temple, // TEMPLE
+			Tower // TOWER
+		};
+
 		int sideID, floorID, ceilingID, menuID;
 		Type type;
 
+		// Returns whether the wall data is for a *MENU block.
 		bool isMenu() const;
+
+		// Gets exterior menu type from *MENU ID and city boolean, or "none" if no mapping exists.
+		static MenuType getMenuType(int menuID, bool isCity);
+
+		// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
+		// else (like city gates).
+		static bool menuLeadsToInterior(MenuType menuType);
 	};
 
 	// Floors only have their top rendered.

@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <cassert>
 #include <stdexcept>
 
@@ -18,6 +20,101 @@ bool VoxelData::WallData::isMenu() const
 	{
 		return false;
 	}
+}
+
+VoxelData::WallData::MenuType VoxelData::WallData::getMenuType(int menuID, bool isCity)
+{
+	if (menuID != -1)
+	{
+		// Mappings of *MENU IDs to city menu types.
+		const std::array<std::pair<int, VoxelData::WallData::MenuType>, 14> CityMenuMappings =
+		{
+			{
+				{ 0, VoxelData::WallData::MenuType::Equipment },
+				{ 1, VoxelData::WallData::MenuType::Tavern },
+				{ 2, VoxelData::WallData::MenuType::MagesGuild },
+				{ 3, VoxelData::WallData::MenuType::Temple },
+				{ 4, VoxelData::WallData::MenuType::House },
+				{ 5, VoxelData::WallData::MenuType::House },
+				{ 6, VoxelData::WallData::MenuType::House },
+				{ 7, VoxelData::WallData::MenuType::CityGates },
+				{ 8, VoxelData::WallData::MenuType::CityGates },
+				{ 9, VoxelData::WallData::MenuType::Noble },
+				{ 10, VoxelData::WallData::MenuType::None },
+				{ 11, VoxelData::WallData::MenuType::Palace },
+				{ 12, VoxelData::WallData::MenuType::Palace },
+				{ 13, VoxelData::WallData::MenuType::Palace }
+			}
+		};
+
+		// Mappings of *MENU IDs to wilderness menu types.
+		const std::array<std::pair<int, VoxelData::WallData::MenuType>, 10> WildMenuMappings =
+		{
+			{
+				{ 0, VoxelData::WallData::MenuType::None },
+				{ 1, VoxelData::WallData::MenuType::Crypt },
+				{ 2, VoxelData::WallData::MenuType::House },
+				{ 3, VoxelData::WallData::MenuType::Tavern },
+				{ 4, VoxelData::WallData::MenuType::Temple },
+				{ 5, VoxelData::WallData::MenuType::Tower },
+				{ 6, VoxelData::WallData::MenuType::CityGates },
+				{ 7, VoxelData::WallData::MenuType::CityGates },
+				{ 8, VoxelData::WallData::MenuType::Dungeon },
+				{ 9, VoxelData::WallData::MenuType::Dungeon }
+			}
+		};
+
+		// Get the menu type associated with the *MENU ID and city boolean, or null if there
+		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
+		// to their std::array size.
+		const VoxelData::WallData::MenuType *typePtr = [menuID, isCity, &CityMenuMappings,
+			&WildMenuMappings]()
+		{
+			auto getPtr = [menuID](const auto &arr)
+			{
+				const auto iter = std::find_if(arr.begin(), arr.end(),
+					[menuID](const std::pair<int, VoxelData::WallData::MenuType> &pair)
+				{
+					return pair.first == menuID;
+				});
+
+				return (iter != arr.end()) ? &iter->second : nullptr;
+			};
+
+			// Interpretation of *MENU ID depends on whether it's a city or wilderness.
+			return isCity ? getPtr(CityMenuMappings) : getPtr(WildMenuMappings);
+		}();
+
+		// See if the array contains the associated *MENU ID.
+		if (typePtr != nullptr)
+		{
+			return *typePtr;
+		}
+		else
+		{
+			DebugWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
+			return VoxelData::WallData::MenuType::None;
+		}
+	}
+	else
+	{
+		// Not a *MENU block.
+		return VoxelData::WallData::MenuType::None;
+	}
+}
+
+bool VoxelData::WallData::menuLeadsToInterior(MenuType menuType)
+{
+	return (menuType == VoxelData::WallData::MenuType::Crypt) ||
+		(menuType == VoxelData::WallData::MenuType::Dungeon) ||
+		(menuType == VoxelData::WallData::MenuType::Equipment) ||
+		(menuType == VoxelData::WallData::MenuType::House) ||
+		(menuType == VoxelData::WallData::MenuType::MagesGuild) ||
+		(menuType == VoxelData::WallData::MenuType::Noble) ||
+		(menuType == VoxelData::WallData::MenuType::Palace) ||
+		(menuType == VoxelData::WallData::MenuType::Tavern) ||
+		(menuType == VoxelData::WallData::MenuType::Temple) ||
+		(menuType == VoxelData::WallData::MenuType::Tower);
 }
 
 const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(

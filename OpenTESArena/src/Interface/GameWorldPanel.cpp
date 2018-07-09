@@ -56,7 +56,6 @@
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
-#include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/WorldType.h"
 
@@ -1308,7 +1307,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 				// @todo: check more cases than just *MENU blocks.
 				if (wallData.isMenu())
 				{
-					this->handleWorldTransition(hit, wallData.menuID);
+					this->handleWorldTransition(hit, wallData);
 				}
 			}
 		}
@@ -1383,7 +1382,8 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 }
 
-void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
+void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
+	const VoxelData::WallData &wallData)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -1391,11 +1391,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	auto &renderer = game.getRenderer();
 	auto &worldData = gameData.getWorldData();
 	auto &activeLevel = worldData.getActiveLevel();
-	auto &voxelGrid = activeLevel.getVoxelGrid();
-	const Int2 voxel(hit.voxel.x, hit.voxel.z);
+	const WorldType activeWorldType = worldData.getActiveWorldType();
 
-	// Decide based on the current world type.
-	if (worldData.getActiveWorldType() == WorldType::Interior)
+	// Decide based on the active world type.
+	if (activeWorldType == WorldType::Interior)
 	{
 		// @temp: temporary condition while test interiors are allowed on the main menu.
 		if (worldData.getBaseWorldType() == WorldType::Interior)
@@ -1415,80 +1414,89 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		game.setMusic(musicName);
 	}
-	else if (worldData.getActiveWorldType() == WorldType::City)
-	{
-		// If the menu ID is for an interior, enter it. Otherwise, it's the city gates.
-		const bool isTransitionIntoInterior = (menuID != 7) && (menuID != 8);
-
-		if (isTransitionIntoInterior)
-		{
-			const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-				voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
-
-			const uint32_t rulerSeed = [&gameData]()
-			{
-				const Location &location = gameData.getLocation();
-				const CityDataFile &cityData = gameData.getCityDataFile();
-				return cityData.getRulerSeed(
-					location.localCityID, location.provinceID);
-			}();
-
-			const bool isCity = true;
-			const std::string mifName = CityDataFile::getDoorVoxelMifName(
-				originalVoxel.x, originalVoxel.y, menuID, rulerSeed, isCity);
-
-			const Int3 returnVoxel = [&hit]()
-			{
-				const Int3 delta = [&hit]()
-				{
-					if (hit.facing == VoxelData::Facing::PositiveX)
-					{
-						return Int3(1, 0, 0);
-					}
-					else if (hit.facing == VoxelData::Facing::NegativeX)
-					{
-						return Int3(-1, 0, 0);
-					}
-					else if (hit.facing == VoxelData::Facing::PositiveZ)
-					{
-						return Int3(0, 0, 1);
-					}
-					else if (hit.facing == VoxelData::Facing::NegativeZ)
-					{
-						return Int3(0, 0, -1);
-					}
-					else
-					{
-						throw DebugException("Invalid hit facing \"" +
-							std::to_string(static_cast<int>(hit.facing)) + "\".");
-					}
-				}();
-
-				return hit.voxel + delta;
-			}();
-
-			// Enter the interior location.
-			const MIFFile mif(mifName);
-			gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
-				game.getMiscAssets().getExeData(), game.getTextureManager(),
-				game.getRenderer());
-
-			// Change to interior music.
-			Random random;
-			const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
-			game.setMusic(musicName);
-		}
-		else
-		{
-			DebugWarning("Wilderness transition not implemented.");
-		}
-	}
 	else
 	{
-		// @todo: Wilderness transition into some place.
-		DebugMention("Menu ID: " + std::to_string(menuID));
+		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
+		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
+		const bool isCity = activeWorldType == WorldType::City;
+		const VoxelData::WallData::MenuType menuType =
+			VoxelData::WallData::getMenuType(wallData.menuID, isCity);
+		const bool isTransitionVoxel = menuType != VoxelData::WallData::MenuType::None;
 
-		// I think dungeons can't use "enterInterior". They need an "enterDungeon" method.
+		// Make sure the voxel will actually lead somewhere first.
+		if (isTransitionVoxel)
+		{
+			auto &voxelGrid = activeLevel.getVoxelGrid();
+			const Int2 voxel(hit.voxel.x, hit.voxel.z);
+			const bool isTransitionToInterior = VoxelData::WallData::menuLeadsToInterior(menuType);
+
+			if (isTransitionToInterior)
+			{
+				// @todo: this probably needs to be relative to the current chunk when in the
+				// wilderness.
+				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+				const uint32_t rulerSeed = [&gameData]()
+				{
+					const Location &location = gameData.getLocation();
+					const CityDataFile &cityData = gameData.getCityDataFile();
+					return cityData.getRulerSeed(location.localCityID, location.provinceID);
+				}();
+
+				const std::string mifName = CityDataFile::getDoorVoxelMifName(
+					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity);
+
+				// @todo: the return data needs to include chunk coordinates when in the
+				// wilderness. Maybe make that a discriminated union: "city return" and
+				// "wild return".
+				const Int3 returnVoxel = [&hit]()
+				{
+					const Int3 delta = [&hit]()
+					{
+						if (hit.facing == VoxelData::Facing::PositiveX)
+						{
+							return Int3(1, 0, 0);
+						}
+						else if (hit.facing == VoxelData::Facing::NegativeX)
+						{
+							return Int3(-1, 0, 0);
+						}
+						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						{
+							return Int3(0, 0, 1);
+						}
+						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						{
+							return Int3(0, 0, -1);
+						}
+						else
+						{
+							throw DebugException("Invalid hit facing \"" +
+								std::to_string(static_cast<int>(hit.facing)) + "\".");
+						}
+					}();
+
+					return hit.voxel + delta;
+				}();
+
+				// Enter the interior location.
+				// @todo: I think dungeons can't use enterInterior(). They need an enterDungeon() method.
+				const MIFFile mif(mifName);
+				gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
+					game.getMiscAssets().getExeData(), game.getTextureManager(),
+					game.getRenderer());
+
+				// Change to interior music.
+				Random random;
+				const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
+				game.setMusic(musicName);
+			}
+			else
+			{
+				DebugWarning("City gate transition not implemented.");
+			}
+		}
 	}
 }
 

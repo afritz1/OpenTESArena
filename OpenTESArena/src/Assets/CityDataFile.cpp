@@ -9,6 +9,7 @@
 #include "../Utilities/Debug.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
+#include "../World/VoxelData.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -128,118 +129,53 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	// Offset is based on X and Y position in world; used with variant calculation.
 	const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
 
-	// Get the prefix associated with the *MENU ID.
-	const std::string menuName = [menuID, isCity]() -> std::string
+	// Get the menu type associated with the *MENU ID.
+	const VoxelData::WallData::MenuType menuType =
+		VoxelData::WallData::getMenuType(menuID, isCity);
+
+	// Get the prefix associated with the menu type.
+	const std::string menuName = [menuType]() -> std::string
 	{
 		// @todo: use strings from ExeData. I don't think *MENU indices directly
 		// map to an array in the executable, though.
-		if (isCity)
+		switch (menuType)
 		{
-			// City door voxel.
-			if (menuID == 0)
-			{
-				// Equipment store.
-				return "EQUIP";
-			}
-			else if (menuID == 1)
-			{
-				// Tavern.
-				return "TAVERN";
-			}
-			else if (menuID == 2)
-			{
-				// Mage's guild.
-				return "MAGE";
-			}
-			else if (menuID == 3)
-			{
-				// Temple.
-				return "TEMPLE";
-			}
-			else if ((menuID == 4) || (menuID == 5) || (menuID == 6))
-			{
-				// Normal house.
-				return "BS";
-			}
-			else if ((menuID == 7) || (menuID == 8))
-			{
-				// Wilderness (city gates).
-				return "WILD";
-			}
-			else if (menuID == 9)
-			{
-				// Noble house.
-				return "NOBLE";
-			}
-			else if (menuID == 10)
-			{
-				// No action.
-				return std::string();
-			}
-			else if ((menuID == 11) || (menuID == 12) || (menuID == 13))
-			{
-				// Palace.
-				return "PALACE";
-			}
-			else
-			{
-				throw DebugException("Bad menu ID \"" + std::to_string(menuID) + "\".");
-			}
-		}
-		else
-		{
-			// Wilderness door voxel.
-			if (menuID == 0)
-			{
-				// No action.
-				return std::string();
-			}
-			else if (menuID == 1)
-			{
-				// Crypt.
-				return "WCRYPT";
-			}
-			else if (menuID == 2)
-			{
-				// Normal house.
-				return "BS";
-			}
-			else if (menuID == 3)
-			{
-				// Tavern.
-				return "TAVERN";
-			}
-			else if (menuID == 4)
-			{
-				// Temple.
-				return "TEMPLE";
-			}
-			else if (menuID == 5)
-			{
-				// Tower.
-				return "TOWER";
-			}
-			else if ((menuID == 6) || (menuID == 7))
-			{
-				// City entrance.
-				return "CITY";
-			}
-			else if ((menuID == 8) || (menuID == 9))
-			{
-				// Dungeon entrance.
-				return "DUNGEON";
-			}
-			else
-			{
-				throw DebugException("Bad menu ID \"" + std::to_string(menuID) + "\".");
-			}
+		case VoxelData::WallData::MenuType::CityGates:
+			// @todo: treat as special case, without string.
+			return "CITYGATE";
+		case VoxelData::WallData::MenuType::Crypt:
+			return "WCRYPT";
+		case VoxelData::WallData::MenuType::Dungeon:
+			return "DUNGEON";
+		case VoxelData::WallData::MenuType::Equipment:
+			return "EQUIP";
+		case VoxelData::WallData::MenuType::House:
+			return "BS";
+		case VoxelData::WallData::MenuType::MagesGuild:
+			return "MAGE";
+		case VoxelData::WallData::MenuType::Noble:
+			return "NOBLE";
+		case VoxelData::WallData::MenuType::None:
+			// @todo: treat as special case, without string.
+			return std::string();
+		case VoxelData::WallData::MenuType::Palace:
+			return "PALACE";
+		case VoxelData::WallData::MenuType::Tavern:
+			return "TAVERN";
+		case VoxelData::WallData::MenuType::Temple:
+			return "TEMPLE";
+		case VoxelData::WallData::MenuType::Tower:
+			return "TOWER";
+		default:
+			throw DebugException("Bad menu type \"" +
+				std::to_string(static_cast<int>(menuType)) + "\".");
 		}
 	}();
 
 	// Some menu names don't map to an actual building type, so they are special cases
 	// and should be ignored by the caller.
-	const bool isSpecialCase = (menuName.size() == 0) || (menuName == "CITY") ||
-		(menuName == "DUNGEON") || (menuName == "WILD");
+	const bool isSpecialCase = (menuName.size() == 0) ||
+		(menuName == "CITYGATE") || (menuName == "DUNGEON");
 
 	if (isSpecialCase)
 	{
@@ -249,13 +185,13 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	else
 	{
 		// Decide which variant of the interior to use.
-		const int variantID = [rulerSeed, offset, &menuName]()
+		const int variantID = [rulerSeed, offset, menuType]()
 		{
 			// Palaces have fewer .MIF files to choose from, and their variant depends
 			// on the ruler seed.
 			// @todo: city-states have five palace variants, right? Should the modulo
 			// be 3 or 5 depending on the city type?
-			const bool isPalace = menuName == "PALACE";
+			const bool isPalace = menuType == VoxelData::WallData::MenuType::Palace;
 			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % 3) :
 				((Bytes::ror16(offset, 4) ^ offset) % 8);
 		}();
