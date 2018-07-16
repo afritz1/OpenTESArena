@@ -52,6 +52,9 @@ public:
 	// are handled by the game loop.
 	virtual void handleEvent(const SDL_Event &e);
 
+	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
+	virtual void onPauseChanged(bool paused);
+
 	// Called whenever the application window resizes. The panel should not handle
 	// the resize event itself, since it's more of an "application event" than a
 	// panel event, so it's handled in the game loop instead.

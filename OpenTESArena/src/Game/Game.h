@@ -50,6 +50,9 @@ private:
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
 
+	// Gets the top-most sub-panel if one exists, or the main panel if no sub-panels exist.
+	Panel *getActivePanel() const;
+
 	void initOptions(const std::string &basePath, const std::string &optionsPath);
 
 	// Resizes the SDL renderer and any other renderer-associated components.

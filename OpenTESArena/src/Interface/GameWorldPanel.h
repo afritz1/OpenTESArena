@@ -38,6 +38,9 @@ private:
 	// the current window correctly represent regions for different arrow cursors.
 	void updateCursorRegions(int width, int height);
 
+	// Sets whether to change the mouse input for modern mode.
+	void setFreeLookActive(bool active);
+
 	// Handles input for the player camera.
 	void handlePlayerTurning(double dt, const Int2 &mouseDelta);
 
@@ -73,10 +76,9 @@ private:
 	// Draws some debug text.
 	void drawDebugText(Renderer &renderer);
 public:
-	// Constructs the game world panel. The GameData object in Game must be
-	// initialized.
+	// Constructs the game world panel. The GameData object in Game must be initialized.
 	GameWorldPanel(Game &game);
-	virtual ~GameWorldPanel() = default;
+	virtual ~GameWorldPanel();
 
 	// Gets the center of the screen for pop-up related functions. The position depends on
 	// whether modern interface mode is set.
@@ -85,6 +87,7 @@ public:
 
 	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
+	virtual void onPauseChanged(bool paused) override;
 	virtual void resize(int windowWidth, int windowHeight) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

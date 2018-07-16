@@ -190,6 +190,12 @@ void Panel::handleEvent(const SDL_Event &e)
 	static_cast<void>(e);
 }
 
+void Panel::onPauseChanged(bool paused)
+{
+	// Do nothing by default.
+	static_cast<void>(paused);
+}
+
 void Panel::resize(int windowWidth, int windowHeight)
 {
 	// Do nothing by default.

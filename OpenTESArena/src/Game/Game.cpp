@@ -123,6 +123,12 @@ Game::Game()
 	this->requestedSubPanelPop = false;
 }
 
+Panel *Game::getActivePanel() const
+{
+	return (this->subPanels.size() > 0) ?
+		this->subPanels.back().get() : this->panel.get();
+}
+
 AudioManager &Game::getAudioManager()
 {
 	return this->audioManager;
@@ -286,11 +292,19 @@ void Game::handlePanelChanges()
 	{
 		this->subPanels.pop_back();
 		this->requestedSubPanelPop = false;
+		
+		// Unpause the panel that is now the top-most one.
+		const bool paused = false;
+		this->getActivePanel()->onPauseChanged(paused);
 	}
 
 	// If a new sub-panel was requested, then add it to the stack.
 	if (this->nextSubPanel.get() != nullptr)
 	{
+		// Pause the top-most panel.
+		const bool paused = true;
+		this->getActivePanel()->onPauseChanged(paused);
+
 		this->subPanels.push_back(std::move(this->nextSubPanel));
 	}
 
@@ -343,16 +357,8 @@ void Game::handleEvents(bool &running)
 			this->saveScreenshot(screenshot);
 		}
 
-		// Panel-specific events are handled by the active panel or sub-panel. If any 
-		// sub-panels exist, choose the top one. Otherwise, choose the main panel.
-		if (this->subPanels.size() > 0)
-		{
-			this->subPanels.back()->handleEvent(e);
-		}
-		else
-		{
-			this->panel->handleEvent(e);
-		}
+		// Panel-specific events are handled by the active panel.
+		this->getActivePanel()->handleEvent(e);
 
 		// See if the event requested any changes in active panels.
 		this->handlePanelChanges();
@@ -361,16 +367,8 @@ void Game::handleEvents(bool &running)
 
 void Game::tick(double dt)
 {
-	// If any sub-panels are active, tick the top one by delta time. Otherwise, 
-	// tick the main panel.
-	if (this->subPanels.size() > 0)
-	{
-		this->subPanels.back()->tick(dt);
-	}
-	else
-	{
-		this->panel->tick(dt);
-	}
+	// Tick the active panel.
+	this->getActivePanel()->tick(dt);
 
 	// See if the panel tick requested any changes in active panels.
 	this->handlePanelChanges();
@@ -387,22 +385,13 @@ void Game::render()
 		subPanel->render(this->renderer);
 	}
 
-	const bool subPanelsExist = this->subPanels.size() > 0;
-
-	// Call the top-most panel's secondary render method. Secondary render items are those
+	// Call the active panel's secondary render method. Secondary render items are those
 	// that are hidden on panels below the active one.
-	if (subPanelsExist)
-	{
-		this->subPanels.back()->renderSecondary(this->renderer);
-	}
-	else
-	{
-		this->panel->renderSecondary(this->renderer);
-	}
+	Panel *activePanel = this->getActivePanel();
+	activePanel->renderSecondary(this->renderer);
 
 	// Get the active panel's cursor texture and alignment.
-	const std::pair<SDL_Texture*, CursorAlignment> cursor = subPanelsExist ?
-		this->subPanels.back()->getCurrentCursor() : this->panel->getCurrentCursor();
+	const std::pair<SDL_Texture*, CursorAlignment> cursor = activePanel->getCurrentCursor();
 
 	// Draw cursor if not null. Some panels do not define a cursor (like cinematics), 
 	// so their cursor is always null.

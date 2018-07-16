@@ -457,6 +457,28 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			this->weaponOffsets.push_back(Int2(cfaFile.getXOffset(), cfaFile.getYOffset()));
 		}
 	}
+
+	// If in modern mode, lock mouse to center of screen for free-look.
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	if (modernInterface)
+	{
+		this->setFreeLookActive(true);
+	}
+}
+
+GameWorldPanel::~GameWorldPanel()
+{
+	// If in modern mode, disable free-look.
+	auto &game = this->getGame();
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	if (modernInterface)
+	{
+		this->setFreeLookActive(false);
+	}
 }
 
 Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
@@ -485,12 +507,10 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	const Int2 mousePosition = game.getInputManager().getMousePosition();
 
-	// If using the modern interface, just use the default arrow cursor.
 	if (modernInterface)
 	{
-		const auto &texture = textureManager.getTextures(
-			TextureFile::fromName(TextureName::ArrowCursors), renderer).at(4);
-		return std::make_pair(texture.get(), CursorAlignment::Middle);
+		// Do not show cursor in modern mode.
+		return std::make_pair(nullptr, CursorAlignment::TopLeft);
 	}
 	else
 	{
@@ -512,14 +532,68 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 	}
 }
 
+void GameWorldPanel::updateCursorRegions(int width, int height)
+{
+	// Scale ratios.
+	const double xScale = static_cast<double>(width) /
+		static_cast<double>(Renderer::ORIGINAL_WIDTH);
+	const double yScale = static_cast<double>(height) /
+		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+
+	// Lambda for making a cursor region that scales to the current resolution.
+	auto scaleRect = [xScale, yScale](const Rect &rect)
+	{
+		const int x = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getLeft()) * xScale));
+		const int y = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getTop()) * yScale));
+		const int width = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getWidth()) * xScale));
+		const int height = static_cast<int>(std::ceil(
+			static_cast<double>(rect.getHeight()) * yScale));
+
+		return Rect(x, y, width, height);
+	};
+
+	// Top row.
+	this->nativeCursorRegions.at(0) = scaleRect(TopLeftRegion);
+	this->nativeCursorRegions.at(1) = scaleRect(TopMiddleRegion);
+	this->nativeCursorRegions.at(2) = scaleRect(TopRightRegion);
+
+	// Middle row.
+	this->nativeCursorRegions.at(3) = scaleRect(MiddleLeftRegion);
+	this->nativeCursorRegions.at(4) = scaleRect(MiddleRegion);
+	this->nativeCursorRegions.at(5) = scaleRect(MiddleRightRegion);
+
+	// Bottom row.
+	this->nativeCursorRegions.at(6) = scaleRect(BottomLeftRegion);
+	this->nativeCursorRegions.at(7) = scaleRect(BottomMiddleRegion);
+	this->nativeCursorRegions.at(8) = scaleRect(BottomRightRegion);
+}
+
+void GameWorldPanel::setFreeLookActive(bool active)
+{
+	auto &game = this->getGame();
+
+	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but
+	// relative motion events are still recorded.
+	auto &inputManager = game.getInputManager();
+	inputManager.setRelativeMouseMode(active);
+
+	// Warp mouse to center of screen.
+	auto &renderer = game.getRenderer();
+	const Int2 windowDims = renderer.getWindowDimensions();
+	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
+}
+
 void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
 	auto &options = game.getOptions();
 	auto &player = game.getGameData().getPlayer();
 	const auto &inputManager = game.getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
 
 	if (escapePressed)
 	{
@@ -532,14 +606,14 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 
 	// Listen for hotkeys.
-	bool drawWeaponHotkeyPressed = inputManager.keyPressed(e, SDLK_f);
-	bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
-	bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
-	bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) ||
+	const bool drawWeaponHotkeyPressed = inputManager.keyPressed(e, SDLK_f);
+	const bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
+	const bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
+	const bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) ||
 		inputManager.keyPressed(e, SDLK_F1);
-	bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
-	bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
-	bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
+	const bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
+	const bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
+	const bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
 
 	if (drawWeaponHotkeyPressed)
 	{
@@ -547,7 +621,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (automapHotkeyPressed)
 	{
-		this->mapButton.click(game, true);
+		const bool isAutomap = true;
+		this->mapButton.click(game, isAutomap);
 	}
 	else if (logbookHotkeyPressed)
 	{
@@ -563,7 +638,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (worldMapHotkeyPressed)
 	{
-		this->mapButton.click(game, false);
+		const bool isAutomap = false;
+		this->mapButton.click(game, isAutomap);
 	}
 	else if (toggleCompassHotkeyPressed)
 	{
@@ -624,8 +700,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		actionText = GameData::TimedTextBox(duration, std::move(textBox));
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	const auto &renderer = game.getRenderer();
 
@@ -712,6 +788,20 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
+void GameWorldPanel::onPauseChanged(bool paused)
+{
+	auto &game = this->getGame();
+
+	// If in modern mode, set free-look to the given value.
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
+
+	if (modernInterface)
+	{
+		this->setFreeLookActive(!paused);
+	}
+}
+
 void GameWorldPanel::resize(int windowWidth, int windowHeight)
 {
 	// Update the cursor's regions for camera motion.
@@ -727,27 +817,21 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	// Don't handle weapon swinging here. That can go in another method.
 	// If right click is held, weapon is out, and mouse motion is significant, then
 	// get the swing direction and swing.
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
+	const auto &options = game.getOptions();
+	const bool modernInterface = options.getGraphics_ModernInterface();
 
-	const bool modernInterface = this->getGame().getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		// Arena's mouse look is pretty clunky, and I much prefer the free-look model,
-		// but this option needs to be here all the same.
-
-		// Holding the LMB in the left, right, upper left, or upper right parts of the
-		// screen turns the player. A and D turn the player as well.
-
-		const auto &options = this->getGame().getOptions();
-		auto &player = this->getGame().getGameData().getPlayer();
-
-		// Listen for LMB, A, or D. Don't turn if Ctrl is held.
+		auto &player = game.getGameData().getPlayer();
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
+		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
+		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
 
-		bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
-		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
-		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
+		// Don't turn if LCtrl is held.
+		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
 		// Mouse turning takes priority over key turning.
 		if (leftClick)
@@ -758,34 +842,40 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 			// the left or right screen edge.
 			const double dx = [this, &mousePosition]()
 			{
-				const int mouseX = mousePosition.x;
-
-				// Native cursor regions for turning (scaled to the current window).
-				const Rect &topLeft = this->nativeCursorRegions.at(0);
-				const Rect &topRight = this->nativeCursorRegions.at(2);
-				const Rect &middleLeft = this->nativeCursorRegions.at(3);
-				const Rect &middleRight = this->nativeCursorRegions.at(5);
-
 				// Measure the magnitude of rotation. -1.0 is left, 1.0 is right.
-				double percent = 0.0;
-				if (topLeft.contains(mousePosition))
+				const double percent = [this, &mousePosition]()
 				{
-					percent = -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
-				}
-				else if (topRight.contains(mousePosition))
-				{
-					percent = static_cast<double>(mouseX - topRight.getLeft()) /
-						topRight.getWidth();
-				}
-				else if (middleLeft.contains(mousePosition))
-				{
-					percent = -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
-				}
-				else if (middleRight.contains(mousePosition))
-				{
-					percent = static_cast<double>(mouseX - middleRight.getLeft()) /
-						middleRight.getWidth();
-				}
+					const int mouseX = mousePosition.x;
+
+					// Native cursor regions for turning (scaled to the current window).
+					const Rect &topLeft = this->nativeCursorRegions.at(0);
+					const Rect &topRight = this->nativeCursorRegions.at(2);
+					const Rect &middleLeft = this->nativeCursorRegions.at(3);
+					const Rect &middleRight = this->nativeCursorRegions.at(5);
+
+					if (topLeft.contains(mousePosition))
+					{
+						return -1.0 + (static_cast<double>(mouseX) / topLeft.getWidth());
+					}
+					else if (topRight.contains(mousePosition))
+					{
+						return static_cast<double>(mouseX - topRight.getLeft()) /
+							topRight.getWidth();
+					}
+					else if (middleLeft.contains(mousePosition))
+					{
+						return -1.0 + (static_cast<double>(mouseX) / middleLeft.getWidth());
+					}
+					else if (middleRight.contains(mousePosition))
+					{
+						return static_cast<double>(mouseX - middleRight.getLeft()) /
+							middleRight.getWidth();
+					}
+					else
+					{
+						return 0.0;
+					}
+				}();
 
 				// No NaNs or infinities allowed.
 				return std::isfinite(percent) ? percent : 0.0;
@@ -819,30 +909,27 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	}
 	else
 	{
-		// Modern interface. Make the camera look around.
-		// - Relative mouse state isn't called because it can only be called once per frame,
-		//   and its value is used in multiple places.
+		// Modern interface. Make the camera look around if the player's weapon is not in use.
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
+		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
-		bool turning = ((dx != 0) || (dy != 0)) && leftClick;
+		auto &player = game.getGameData().getPlayer();
+		const auto &weaponAnim = player.getWeaponAnimation();
+		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
 		if (turning)
 		{
-			const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
+			const Int2 dimensions = game.getRenderer().getWindowDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative 
 			// to a square instead of a rectangle. This keeps the camera look independent 
 			// of the aspect ratio.
 			const int minDimension = std::min(dimensions.x, dimensions.y);
-
-			double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
-			double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
+			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
+			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
 
 			// Pitch and/or yaw the camera.
-			const auto &options = this->getGame().getOptions();
-			auto &player = this->getGame().getGameData().getPlayer();
 			player.rotate(dxx, -dyy, options.getInput_HorizontalSensitivity(),
 				options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 		}
@@ -1758,45 +1845,6 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const TextBox tempText(x, y, richText, renderer);
 
 	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
-}
-
-void GameWorldPanel::updateCursorRegions(int width, int height)
-{
-	// Scale ratios.
-	const double xScale = static_cast<double>(width) /
-		static_cast<double>(Renderer::ORIGINAL_WIDTH);
-	const double yScale = static_cast<double>(height) /
-		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
-
-	// Lambda for making a cursor region that scales to the current resolution.
-	auto scaleRect = [xScale, yScale](const Rect &rect)
-	{
-		const int x = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getLeft()) * xScale));
-		const int y = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getTop()) * yScale));
-		const int width = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getWidth()) * xScale));
-		const int height = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getHeight()) * yScale));
-
-		return Rect(x, y, width, height);
-	};
-
-	// Top row.
-	this->nativeCursorRegions.at(0) = scaleRect(TopLeftRegion);
-	this->nativeCursorRegions.at(1) = scaleRect(TopMiddleRegion);
-	this->nativeCursorRegions.at(2) = scaleRect(TopRightRegion);
-
-	// Middle row.
-	this->nativeCursorRegions.at(3) = scaleRect(MiddleLeftRegion);
-	this->nativeCursorRegions.at(4) = scaleRect(MiddleRegion);
-	this->nativeCursorRegions.at(5) = scaleRect(MiddleRightRegion);
-
-	// Bottom row.
-	this->nativeCursorRegions.at(6) = scaleRect(BottomLeftRegion);
-	this->nativeCursorRegions.at(7) = scaleRect(BottomMiddleRegion);
-	this->nativeCursorRegions.at(8) = scaleRect(BottomRightRegion);
 }
 
 void GameWorldPanel::tick(double dt)
