@@ -470,7 +470,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	auto renderThreadsModeOption = std::make_unique<IntOption>(
 		OptionsPanel::RENDER_THREADS_MODE_NAME,
-		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.",
+		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nLow: one, Medium: half, High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
 		Options::MIN_RENDER_THREADS_MODE,
