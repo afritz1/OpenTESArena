@@ -1531,8 +1531,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 					return cityData.getRulerSeed(location.localCityID, location.provinceID);
 				}();
 
+				const auto &exeData = game.getMiscAssets().getExeData();
 				const std::string mifName = CityDataFile::getDoorVoxelMifName(
-					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity);
+					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
@@ -1571,8 +1572,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 				// @todo: I think dungeons can't use enterInterior(). They need an enterDungeon() method.
 				const MIFFile mif(mifName);
 				gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
-					game.getMiscAssets().getExeData(), game.getTextureManager(),
-					game.getRenderer());
+					exeData, game.getTextureManager(), game.getRenderer());
 
 				// Change to interior music.
 				Random random;

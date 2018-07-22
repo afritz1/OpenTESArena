@@ -474,6 +474,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int charCreationProvinceNamesOffset = ExeData::get(section, "CharCreationProvinceNames", keyValueMap);
 	const int provinceImgFilenamesOffset = ExeData::get(section, "ProvinceImgFilenames", keyValueMap);
 	const int locationTypesOffset = ExeData::get(section, "LocationTypes", keyValueMap);
+	const int menuMifPrefixesOffset = ExeData::get(section, "MenuMifPrefixes", keyValueMap);
 	const int centerProvinceCityMifNameOffset = ExeData::get(section, "CenterProvinceCityMifName", keyValueMap);
 	const int startDungeonNameOffset = ExeData::get(section, "StartDungeonName", keyValueMap);
 	const int startDungeonMifNameOffset = ExeData::get(section, "StartDungeonMifName", keyValueMap);
@@ -494,6 +495,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->charCreationProvinceNames, data + charCreationProvinceNamesOffset);
 	initStringArray(this->provinceImgFilenames, data + provinceImgFilenamesOffset);
 	initStringArray(this->locationTypes, data + locationTypesOffset);
+	initStringArray(this->menuMifPrefixes, data + menuMifPrefixesOffset);
 	this->centerProvinceCityMifName = ExeData::readString(data + centerProvinceCityMifNameOffset);
 	this->startDungeonName = ExeData::readString(data + startDungeonNameOffset);
 	this->startDungeonMifName = ExeData::readString(data + startDungeonMifNameOffset);

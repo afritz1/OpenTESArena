@@ -15,6 +15,7 @@
 // *.0x files contain save-specific modifications (i.e., to save random dungeon names).
 
 class ArenaRandom;
+class ExeData;
 class MiscAssets;
 
 enum class LocationType;
@@ -89,7 +90,7 @@ public:
 
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	static std::string getDoorVoxelMifName(int x, int y, int menuID,
-		uint32_t rulerSeed, bool isCity);
+		uint32_t rulerSeed, bool isCity, const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);

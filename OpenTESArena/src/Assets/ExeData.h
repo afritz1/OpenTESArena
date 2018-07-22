@@ -277,6 +277,9 @@ public:
 		// City-state, town, village (stored twice), dungeon.
 		std::array<std::string, 5> locationTypes;
 
+		// Palace, bs, noble, ..., vilpal, tower. Used with *MENU voxel .MIF filenames.
+		std::array<std::string, 11> menuMifPrefixes;
+
 		// .MIF name of the center province's city.
 		std::string centerProvinceCityMifName;
 

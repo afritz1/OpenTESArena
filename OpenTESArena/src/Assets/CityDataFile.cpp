@@ -7,6 +7,7 @@
 #include "../Math/Random.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelData.h"
@@ -124,7 +125,7 @@ uint16_t CityDataFile::getDoorVoxelOffset(int x, int y)
 }
 
 std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
-	uint32_t rulerSeed, bool isCity)
+	uint32_t rulerSeed, bool isCity, const ExeData &exeData)
 {
 	// Offset is based on X and Y position in world; used with variant calculation.
 	const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
@@ -134,48 +135,68 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 		VoxelData::WallData::getMenuType(menuID, isCity);
 
 	// Get the prefix associated with the menu type.
-	const std::string menuName = [menuType]() -> std::string
+	const std::string menuName = [&exeData, menuType]()
 	{
-		// @todo: use strings from ExeData. I don't think *MENU indices directly
-		// map to an array in the executable, though.
-		switch (menuType)
+		const std::string name = [&exeData, menuType]() -> std::string
 		{
-		case VoxelData::WallData::MenuType::CityGates:
-			// @todo: treat as special case, without string.
-			return "CITYGATE";
-		case VoxelData::WallData::MenuType::Crypt:
-			return "WCRYPT";
-		case VoxelData::WallData::MenuType::Dungeon:
-			return "DUNGEON";
-		case VoxelData::WallData::MenuType::Equipment:
-			return "EQUIP";
-		case VoxelData::WallData::MenuType::House:
-			return "BS";
-		case VoxelData::WallData::MenuType::MagesGuild:
-			return "MAGE";
-		case VoxelData::WallData::MenuType::Noble:
-			return "NOBLE";
-		case VoxelData::WallData::MenuType::None:
-			// @todo: treat as special case, without string.
-			return std::string();
-		case VoxelData::WallData::MenuType::Palace:
-			return "PALACE";
-		case VoxelData::WallData::MenuType::Tavern:
-			return "TAVERN";
-		case VoxelData::WallData::MenuType::Temple:
-			return "TEMPLE";
-		case VoxelData::WallData::MenuType::Tower:
-			return "TOWER";
-		default:
-			throw DebugException("Bad menu type \"" +
-				std::to_string(static_cast<int>(menuType)) + "\".");
-		}
+			// Mappings of menu types to menu .MIF prefix indices. Menus that have no .MIF
+			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
+			// since the palace type can be deduced from the current city type.
+			const int NO_INDEX = -1;
+			const std::array<std::pair<VoxelData::WallData::MenuType, int>, 12> MenuMifMappings =
+			{
+				{
+					{ VoxelData::WallData::MenuType::CityGates, NO_INDEX },
+					{ VoxelData::WallData::MenuType::Crypt, 7 },
+					{ VoxelData::WallData::MenuType::Dungeon, NO_INDEX },
+					{ VoxelData::WallData::MenuType::Equipment, 5 },
+					{ VoxelData::WallData::MenuType::House, 1 },
+					{ VoxelData::WallData::MenuType::MagesGuild, 6 },
+					{ VoxelData::WallData::MenuType::Noble, 2 },
+					{ VoxelData::WallData::MenuType::None, NO_INDEX },
+					{ VoxelData::WallData::MenuType::Palace, 0 },
+					{ VoxelData::WallData::MenuType::Tavern, 3 },
+					{ VoxelData::WallData::MenuType::Temple, 4 },
+					{ VoxelData::WallData::MenuType::Tower, 10 }
+				}
+			};
+
+			// See if the given menu type has a .MIF prefix mapping.
+			const auto iter = std::find_if(MenuMifMappings.begin(), MenuMifMappings.end(),
+				[menuType](const std::pair<VoxelData::WallData::MenuType, int> &pair)
+			{
+				return pair.first == menuType;
+			});
+
+			if (iter != MenuMifMappings.end())
+			{
+				const int menuMifIndex = iter->second;
+
+				if (menuMifIndex != NO_INDEX)
+				{
+					// Get the menu's .MIF prefix.
+					const auto &prefixes = exeData.locations.menuMifPrefixes;
+					return prefixes.at(menuMifIndex);
+				}
+				else
+				{
+					// The menu has no valid .MIF prefix.
+					return std::string();
+				}
+			}
+			else
+			{
+				throw DebugException("Bad menu type \"" +
+					std::to_string(static_cast<int>(menuType)) + "\".");
+			}
+		}();
+
+		return String::toUppercase(name);
 	}();
 
 	// Some menu names don't map to an actual building type, so they are special cases
 	// and should be ignored by the caller.
-	const bool isSpecialCase = (menuName.size() == 0) ||
-		(menuName == "CITYGATE") || (menuName == "DUNGEON");
+	const bool isSpecialCase = menuName.size() == 0;
 
 	if (isSpecialCase)
 	{
