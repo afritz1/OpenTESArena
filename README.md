@@ -100,22 +100,24 @@ cd ..
 
 ## Building from source
 
-#### Project dependencies:
+### Project dependencies
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.18.2](http://kcat.strangesoft.net/openal.html#download)
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
 - [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
-  - Windows users: build WildMIDI 0.4.3 from source to avoid [crash bug](https://github.com/Mindwerks/wildmidi/issues/192#issuecomment-389211843) in `wildmidi_dynamic.dll`
+  - Windows users building with Visual Studio must build WildMIDI 0.4.3 from source to avoid [crash bug](https://github.com/Mindwerks/wildmidi/issues/192#issuecomment-389211843) in `wildmidi_dynamic.dll`
 
-#### Building the executable:
+### Building the executable
 - Create a `build` folder in the top-level directory.
 - Use CMake to generate your project files in `build`, then compile the executable.
 
-#### Running the executable:
+### Running the executable
 - Verify that the `data` and `options` folders are in the same folder as the executable, and that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
-[Build manual for Visual Studio](docs/setup_windows.md)  
-[MSYS2 guide for Windows](docs/setup_windows_msys2.md)
+If you struggle, here are some more detailed guides:
+
+- [Building with Visual Studio (Windows)](docs/setup_windows.md)  
+- [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
 If there is a bug or technical problem in the program, check out the issues tab!
 
