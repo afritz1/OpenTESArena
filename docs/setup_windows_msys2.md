@@ -42,11 +42,11 @@ It will use Window's by default.
 
 ### Building OpenTESArena (64x)
 
-1. Install OpenAL using `pacman`, this will install the last current version (1.18.0).
+1. Install OpenAL using `pacman`, this will install the last current version (1.18.2).
 
         $ pacman -S mingw-w64-x86_64-openal --noconfirm
 
-2. Install SDL2 (current version  2.0.5).
+2. Install SDL2 (current version  2.0.8).
 
         $ pacman -S mingw-w64-x86_64-SDL2 --noconfirm
 
@@ -56,13 +56,12 @@ It will use Window's by default.
    You can just use the command below to automate the whole process.
 
         $ pacman -S unzip --noconfirm && \
-        wget https://github.com/Mindwerks/wildmidi/releases/download/wildmidi-0.4.1/wildmidi-0.4.1-win64.zip && \
-        unzip wildmidi-0.4.1-win64.zip && \
-        cp wildmidi-0.4.1-win64/mingw/*.h /mingw64/include/ && \
-        cp wildmidi-0.4.1-win64/mingw/*.a /mingw64/lib/
+        wget https://github.com/Mindwerks/wildmidi/releases/download/wildmidi-0.4.2/wildmidi-0.4.2-win64.zip && \
+        unzip wildmidi-0.4.2-win64.zip && \
+        cp wildmidi-0.4.2-win64/mingw/*.h /mingw64/include/ && \
+        cp wildmidi-0.4.2-win64/mingw/*.a /mingw64/lib/
 
-   **Note:** _After that you can safely delete all the WildMidi files but `libWildMidi.dll`.
-   Required to run the binary_
+   **Note:** _After that, you can safely delete all the WildMidi files except for `libWildMidi.dll`, which is required to run the binary._
 
 4. Clone `OpenTESArena` and move to the directory.
 
@@ -71,8 +70,7 @@ It will use Window's by default.
 
 5. Create `build` directory and move into it.
 
-        $ mkdir build
-        $ cd build
+        $ mkdir build && cd build
 
 6. Create make files with `cmake`.
 
@@ -93,13 +91,15 @@ Process should complete and you'll find the `.exe` file inside the `build` direc
 
 1. Copy the generated `.exe` to a directory of your choice.
 
-2. Follow instruction it https://github.com/afritz1/OpenTESArena#windows regarding setup of ARENA dir, options.txt and MIDI accordingly.
+2. Follow instruction in https://github.com/afritz1/OpenTESArena#options-files regarding setup of ARENA dir, options-defaults.txt and MIDI accordingly.
 
    Remember that Midi setup is only required if you want to have sound.
 
-3. Copy the required libraries to the deployment directory.
+3. Copy `data` and `options` directories and all its contents from source code to the location where you copied the `.exe`.
 
-   All of them are found inside the `msys64` directory except for libWildMidi.dll, which is inside the WildMidi zip:
+4. Copy the required libraries to the deployment directory.
+
+   All of them are found inside the `msys64/bin` directory except for `libWildMidi.dll`, which is inside the WildMidi zip:
 
    * libgcc_s_seh-1.dll
    * libopenal-1.dll
