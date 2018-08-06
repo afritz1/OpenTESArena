@@ -58,6 +58,63 @@ void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 	this->previouslyDisplayed = previouslyDisplayed;
 }
 
+LevelData::DoorState::DoorState(const Int2 &voxel, double percentOpen,
+	DoorState::Direction direction)
+	: voxel(voxel)
+{
+	this->percentOpen = percentOpen;
+	this->direction = direction;
+}
+
+LevelData::DoorState::DoorState(const Int2 &voxel)
+	: DoorState(voxel, 0.0, DoorState::Direction::Opening) { }
+
+const Int2 &LevelData::DoorState::getVoxel() const
+{
+	return this->voxel;
+}
+
+double LevelData::DoorState::getPercentOpen() const
+{
+	return this->percentOpen;
+}
+
+bool LevelData::DoorState::isClosed() const
+{
+	return this->percentOpen == 0.0;
+}
+
+void LevelData::DoorState::setDirection(DoorState::Direction direction)
+{
+	this->direction = direction;
+}
+
+void LevelData::DoorState::update(double dt)
+{
+	const double delta = DoorState::DEFAULT_SPEED * dt;
+
+	// Decide how to change the door state depending on its current direction.
+	if (this->direction == DoorState::Direction::Opening)
+	{
+		this->percentOpen = std::min(this->percentOpen + delta, 1.0);
+		const bool isOpen = this->percentOpen == 1.0;
+
+		if (isOpen)
+		{
+			this->direction = DoorState::Direction::None;
+		}
+	}
+	else if (this->direction == DoorState::Direction::Closing)
+	{
+		this->percentOpen = std::max(this->percentOpen - delta, 0.0);
+
+		if (this->isClosed())
+		{
+			this->direction = DoorState::Direction::None;
+		}
+	}
+}
+
 LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), inf(infName), name(name) { }
@@ -75,6 +132,16 @@ const std::string &LevelData::getName() const
 double LevelData::getCeilingHeight() const
 {
 	return static_cast<double>(this->inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+}
+
+std::vector<LevelData::DoorState> &LevelData::getOpenDoors()
+{
+	return this->openDoors;
+}
+
+const std::vector<LevelData::DoorState> &LevelData::getOpenDoors() const
+{
+	return this->openDoors;
 }
 
 const INFFile &LevelData::getInfFile() const

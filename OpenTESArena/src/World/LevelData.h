@@ -82,6 +82,34 @@ public:
 		bool hasBeenDisplayed() const;
 		void setPreviouslyDisplayed(bool previouslyDisplayed);
 	};
+
+	class DoorState
+	{
+	public:
+		enum class Direction { None, Opening, Closing };
+	private:
+		static constexpr double DEFAULT_SPEED = 1.0 / 5.0; // @todo: currently arbitrary value.
+
+		Int2 voxel;
+		double percentOpen;
+		Direction direction;
+	public:
+		DoorState(const Int2 &voxel, double percentOpen, DoorState::Direction direction);
+
+		// Defaults to opening state (as if the player had just activated it).
+		DoorState(const Int2 &voxel);
+
+		const Int2 &getVoxel() const;
+		double getPercentOpen() const;
+
+		// Removed from open doors list when true. The code that manages open doors should
+		// update the doors before removing closed ones because direction is write-only,
+		// so the caller must assume that "closed" is a function of only the percent open.
+		bool isClosed() const;
+
+		void setDirection(DoorState::Direction direction);
+		void update(double dt);
+	};
 private:
 	std::unordered_map<Int2, Lock> locks;
 
@@ -93,6 +121,7 @@ private:
 
 	VoxelGrid voxelGrid;
 	INFFile inf;
+	std::vector<DoorState> openDoors;
 	std::string name;
 protected:
 	// Used by derived LevelData load methods.
@@ -112,6 +141,8 @@ public:
 
 	const std::string &getName() const;
 	double getCeilingHeight() const;
+	std::vector<DoorState> &getOpenDoors();
+	const std::vector<DoorState> &getOpenDoors() const;
 	const INFFile &getInfFile() const;
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;

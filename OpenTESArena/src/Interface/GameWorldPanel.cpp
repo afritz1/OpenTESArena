@@ -1469,6 +1469,48 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 	}
 }
 
+void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	auto &worldData = gameData.getWorldData();
+	auto &activeLevel = worldData.getActiveLevel();
+	auto &openDoors = activeLevel.getOpenDoors();
+
+	// Update each open door and remove ones that become closed.
+	for (auto it = openDoors.rbegin(); it != openDoors.rend(); ++it)
+	{
+		auto &door = *it;
+		door.update(dt);
+
+		if (door.isClosed())
+		{
+			// Convert to forward iterator before erasing.
+			openDoors.erase(std::next(it).base());
+		}
+		else
+		{
+			// Auto-close doors that the player is far enough away from.
+			const bool farEnough = [&playerPos, &door]()
+			{
+				const double maxDistance = 3.50; // @todo: arbitrary value.
+				const double maxDistanceSqr = maxDistance * maxDistance;
+				const Int2 &doorVoxel = door.getVoxel();
+				const Double2 diff(
+					playerPos.x - (static_cast<double>(doorVoxel.x) + 0.50),
+					playerPos.y - (static_cast<double>(doorVoxel.y) + 0.50));
+				const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
+				return distSqr > maxDistanceSqr;
+			}();
+
+			if (farEnough)
+			{
+				door.setDirection(LevelData::DoorState::Direction::Closing);
+			}
+		}
+	}
+}
+
 void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 	const VoxelData::WallData &wallData)
 {
@@ -1852,7 +1894,7 @@ void GameWorldPanel::tick(double dt)
 	auto &game = this->getGame();
 	assert(game.gameDataIsActive());
 
-	// Get the relative mouse state (can only be called once per frame).	
+	// Get the relative mouse state.
 	const auto &inputManager = game.getInputManager();
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 
@@ -1892,9 +1934,9 @@ void GameWorldPanel::tick(double dt)
 	auto &worldData = gameData.getWorldData();
 	const WorldType worldType = worldData.getActiveWorldType();
 
+	// Check for changes in exterior music depending on the time.
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 	{
-		// Check for changes in exterior music depending on the time.
 		const double dayMusicStartTime = Clock::MusicSwitchToDay.getPreciseTotalSeconds();
 		const double nightMusicStartTime = Clock::MusicSwitchToNight.getPreciseTotalSeconds();
 		const bool changeToDayMusic =
@@ -1939,6 +1981,10 @@ void GameWorldPanel::tick(double dt)
 
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);
+
+	// Handle door animations.
+	const Double3 newPlayerPos = player.getPosition();
+	this->handleDoors(dt, Double2(newPlayerPos.x, newPlayerPos.z));
 
 	// Update entities and their state in the renderer.
 	// @todo: entity management.
