@@ -234,16 +234,29 @@ private:
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
-	// determines which edge of the voxel an intersection can occur on.. This function is separate
+	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
 	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
 		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
+	
+	// Gathers potential intersection data from a voxel containing a door ID. The door
+	// type determines what kind of door formula to calculate for the intersection.
+	static bool findInitialDoorIntersection(int voxelX, int voxelZ,
+		VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
+
+	// Helper method for findDoorIntersection() for swinging doors.
+	static bool findSwingingDoorIntersection(int voxelX, int voxelZ,
+		VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
-	// type determines what kind of door formula to calculate for intersection.
+	// type determines what kind of door formula to calculate for the intersection. Raising doors
+	// are always hit, so they do not need a specialized method.
 	static bool findDoorIntersection(int voxelX, int voxelZ, VoxelData::DoorData::Type doorType,
-		const Double2 &nearPoint, const Double2 &farPoint, RayHit &hit);
+		double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates all the projection data for a diagonal wall after successful intersection
 	// and assigns it to various reference variables. This method assumes that all diagonals

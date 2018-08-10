@@ -127,8 +127,8 @@ public:
 	struct DoorData
 	{
 		// Each type of door. Most doors swing open, while others raise up or slide to the side.
-		// Splitting doors are unused.
-		enum class Type { Swinging, Sliding, Raising };
+		// Splitting doors are unused in the original game.
+		enum class Type { Swinging, Sliding, Raising, Splitting };
 
 		int id;
 		Type type;

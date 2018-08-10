@@ -1497,30 +1497,133 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 	}
 }
 
-bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
-	VoxelData::DoorData::Type doorType, const Double2 &nearPoint, 
-	const Double2 &farPoint, RayHit &hit)
+bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
+	VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
 {
-	// @todo: Get the door's "percent open" (maybe as a parameter instead?).
+	// @todo: for now, no doors will be shown when the player is in the same voxel column.
+	// Not sure if they're context-sensitive. I know that the swinging doors have a
+	// preference of putting the door hinge on the corner with the lower coordinate.
+	return false;
+}
 
+bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
+	VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
+{
+	// @todo.
+	return false;
+}
+
+bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
+	VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
+{
 	if (doorType == VoxelData::DoorData::Type::Swinging)
 	{
-		// @todo.
-		return false;
+		return SoftwareRenderer::findSwingingDoorIntersection(voxelX, voxelZ, doorType,
+			percentOpen, nearFacing, nearPoint, farPoint, nearU, hit);
 	}
 	else if (doorType == VoxelData::DoorData::Type::Sliding)
 	{
-		// @todo.
-		return false;
+		// If near U coordinate is within percent closed, it's a hit. At 100% open,
+		// a sliding door is still partially visible.
+		const double minVisible = 0.050;
+		const double visibleAmount = 1.0 - ((1.0 - minVisible) * percentOpen);
+		if (visibleAmount > nearU)
+		{
+			hit.innerZ = 0.0;
+			hit.u = std::min(std::max(
+				nearU + (1.0 - visibleAmount), 0.0), Constants::JustBelowOne);
+			hit.point = nearPoint;
+			hit.normal = VoxelData::getNormal(nearFacing);
+			return true;
+		}
+		else
+		{
+			// No hit.
+			return false;
+		}
 	}
 	else if (doorType == VoxelData::DoorData::Type::Raising)
 	{
-		// @todo.
-		return false;
+		// Raising doors are always hit.
+		hit.innerZ = 0.0;
+		hit.u = nearU;
+		hit.point = nearPoint;
+		hit.normal = VoxelData::getNormal(nearFacing);
+		return true;
+	}
+	else if (doorType == VoxelData::DoorData::Type::Splitting)
+	{
+		// If near U coordinate is within percent closed on left or right half, it's a hit.
+		// At 100% open, a splitting door is still partially visible.
+		const double minVisible = 0.050;
+		const bool leftHalf = nearU < 0.50;
+		const bool rightHalf = nearU > 0.50;
+		double leftVisAmount, rightVisAmount;
+		const bool success = [percentOpen, nearU, minVisible, leftHalf, rightHalf,
+			&leftVisAmount, &rightVisAmount]()
+		{
+			if (leftHalf)
+			{
+				// Left half.
+				leftVisAmount = 0.50 - ((0.50 - minVisible) * percentOpen);
+				return nearU <= leftVisAmount;
+			}
+			else if (rightHalf)
+			{
+				// Right half.
+				rightVisAmount = 0.50 + ((0.50 - minVisible) * percentOpen);
+				return nearU >= rightVisAmount;
+			}
+			else
+			{
+				// Midpoint (only when door is completely closed).
+				return percentOpen == 0.0;
+			}
+		}();
+		
+		if (success)
+		{
+			// Hit.
+			hit.innerZ = 0.0;
+			hit.u = [nearU, leftHalf, rightHalf, leftVisAmount, rightVisAmount]()
+			{
+				const double u = [nearU, leftHalf, rightHalf, leftVisAmount, rightVisAmount]()
+				{
+					if (leftHalf)
+					{
+						return nearU + (0.50 - leftVisAmount);
+					}
+					else if (rightHalf)
+					{
+						return nearU - (0.50 + rightVisAmount);
+					}
+					else
+					{
+						// Midpoint.
+						return 0.50;
+					}
+				}();
+				
+				return std::min(std::max(u, 0.0), Constants::JustBelowOne);
+			}();
+
+			hit.point = nearPoint;
+			hit.normal = VoxelData::getNormal(nearFacing);
+
+			return true;
+		}
+		else
+		{
+			// No hit.
+			return false;
+		}
 	}
 	else
 	{
-		// Invalid door type. Fail silently to avoid overhead of error reporting.
+		// Invalid door type.
 		return false;
 	}
 }
@@ -3211,33 +3314,68 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
-
-			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
 
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
+			// @todo: get from VoxelGrid (i.e., mapping of Int2 to double; if no mapping, then 0.0).
+			const double percentOpen = 0.75;
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			RayHit hit;
+			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
+			if (success)
+			{
+				// @todo: implement drawing for each door type.
 
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(doorData.id), shadingInfo, occlusion, frame);
+				/*const Double3 doorBottomPoint(
+					hit.point.x,
+					voxelYReal,
+					hit.point.y);
+				const Double3 doorTopPoint(
+					doorBottomPoint.x,
+					doorBottomPoint.y + voxelHeight,
+					doorBottomPoint.z);*/
+
+				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				{
+
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				{
+
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				{
+
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				{
+
+				}
+
+				/*const Double3 nearCeilingPoint(
+					nearPoint.x,
+					voxelYReal + voxelHeight,
+					nearPoint.y);
+				const Double3 nearFloorPoint(
+					nearPoint.x,
+					voxelYReal,
+					nearPoint.y);
+
+				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
+					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
+					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+				const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
+					nearCeilingScreenY, frame.height);
+				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
+					nearFloorScreenY, frame.height);
+
+				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
+					nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
+					textures.at(doorData.id), shadingInfo, occlusion, frame);*/
+			}
 		}
 	};
 
