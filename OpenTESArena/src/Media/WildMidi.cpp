@@ -66,7 +66,7 @@ WildMidiDevice::WildMidiDevice(const std::string &midiConfig)
 {
 	sInitState = WildMidi_Init(midiConfig.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
 	if (sInitState < 0)
-		DebugWarning("Failed to init WildMIDI.");
+		DebugWarning("Failed to init WildMIDI with config \"" + midiConfig + "\".");
 	else
 		WildMidi_MasterVolume(100);
 }
