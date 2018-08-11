@@ -14,7 +14,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     
 ### Research / Documentation
     A4136
-    Abel Romero (abelsromero)
+    Abel Salgado Romero (abelsromero)
     AnotherFoxGuy
     Carmina16
     Dozayon
