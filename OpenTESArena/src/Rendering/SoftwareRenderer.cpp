@@ -1701,31 +1701,16 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	}
 }
 
-void SoftwareRenderer::diagProjection(double voxelYReal, double voxelHeight,
-	const Double2 &point, const Matrix4d &transform, double yShear, int frameHeight, 
-	double heightReal, double &diagTopScreenY, double &diagBottomScreenY, 
-	int &diagStart, int &diagEnd)
+void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double depth, double u,
+	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
 {
-	// Points in world space for the top and bottom of the diagonal wall slice.
-	const Double3 diagTop(point.x, voxelYReal + voxelHeight, point.y);
-	const Double3 diagBottom(point.x, voxelYReal, point.y);
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	int yStart = drawRange.yStart;
+	int yEnd = drawRange.yEnd;
 
-	// Projected Y coordinates on-screen.
-	diagTopScreenY = SoftwareRenderer::getProjectedY(
-		diagTop, transform, yShear) * heightReal;
-	diagBottomScreenY = SoftwareRenderer::getProjectedY(
-		diagBottom, transform, yShear) * heightReal;
-
-	// Y drawing range on-screen.
-	diagStart = SoftwareRenderer::getLowerBoundedPixel(diagTopScreenY, frameHeight);
-	diagEnd = SoftwareRenderer::getUpperBoundedPixel(diagBottomScreenY, frameHeight);
-}
-
-void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedYStart,
-	double projectedYEnd, double depth, double u, double vStart, double vEnd,
-	const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
-	OcclusionData &occlusion, const FrameView &frame)
-{
 	// Horizontal offset in texture.
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
@@ -1761,8 +1746,7 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 		{
 			// Percent stepped from beginning to end on the column.
 			const double yPercent = 
-				((static_cast<double>(y) + 0.50) - projectedYStart) /
-				(projectedYEnd - projectedYStart);
+				((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
 
 			// Vertical texture coordinate.
 			const double v = vStart + ((vEnd - vStart) * yPercent);
@@ -1803,11 +1787,17 @@ void SoftwareRenderer::drawPixels(int x, int yStart, int yEnd, double projectedY
 	}
 }
 
-void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
-	double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint, double depthStart,
-	double depthEnd, const Double3 &normal, const VoxelTexture &texture,
-	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
+void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
+	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
 {
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	int yStart = drawRange.yStart;
+	int yEnd = drawRange.yEnd;
+
 	// Fog color to interpolate with.
 	const Double3 &fogColor = shadingInfo.horizonSkyColor;
 
@@ -1841,8 +1831,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 
 		// Percent stepped from beginning to end on the column.
 		const double yPercent = 
-			((static_cast<double>(y) + 0.50) - projectedYStart) /
-			(projectedYEnd - projectedYStart);
+			((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
 
 		// Interpolate between the near and far depth.
 		const double depth = 1.0 / 
@@ -1903,11 +1892,16 @@ void SoftwareRenderer::drawPerspectivePixels(int x, int yStart, int yEnd, double
 	}
 }
 
-void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
-	double projectedYEnd, double depth, double u, double vStart, double vEnd,
-	const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
-	const OcclusionData &occlusion, const FrameView &frame)
+void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, double depth,
+	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame)
 {
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	int yStart = drawRange.yStart;
+	int yEnd = drawRange.yEnd;
+
 	// Horizontal offset in texture.
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
@@ -1941,8 +1935,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, int yStart, int yEnd, double
 		{
 			// Percent stepped from beginning to end on the column.
 			const double yPercent =
-				((static_cast<double>(y) + 0.50) - projectedYStart) /
-				(projectedYEnd - projectedYStart);
+				((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
 
 			// Vertical texture coordinate.
 			const double v = vStart + ((vEnd - vStart) * yPercent);
@@ -2061,41 +2054,22 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farFloorPoint.y,
 				nearPoint.y);
 
-			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farCeilingScreenY, frame.height);
-			const int wallStart = ceilingEnd;
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farFloorScreenY, frame.height);
-			const int floorStart = wallEnd;
-			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 
 			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-				nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.ceilingID), shadingInfo,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(wallData.ceilingID), shadingInfo,
 				occlusion, frame);
 
-			// Side.
-			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, farCeilingScreenY,
-				farFloorScreenY, farZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
+			// Wall.
+			SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), shadingInfo,
+				occlusion, frame);
 
 			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-				farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.floorID), shadingInfo,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(wallData.floorID), shadingInfo,
 				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
@@ -2118,19 +2092,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearFloorPoint, farFloorPoint, camera, frame);
 
-				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearFloorScreenY, frame.height);
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
 					occlusion, frame);
 			}
 		}
@@ -2156,21 +2122,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearCeilingScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, nearCeilingPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
+					occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -2180,21 +2138,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearFloorScreenY, frame.height);
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearFloorPoint, farFloorPoint, camera, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
@@ -2208,42 +2158,24 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int wallStart = ceilingEnd;
-				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+					camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
+					occlusion, frame);
 
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -2258,16 +2190,21 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -2289,25 +2226,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
-					hit.point.x,
+					edgeTopPoint.x,
 					voxelYReal + edgeData.yOffset,
-					hit.point.y);
+					edgeTopPoint.z);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -2362,19 +2291,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, farFloorPoint, camera, frame);
 
-				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
@@ -2407,21 +2329,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farCeilingPoint.y,
 				nearPoint.y);
 
-			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-				farCeilingScreenY, frame.height);
-			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearCeilingScreenY, frame.height);
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
 
 			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID),
-				shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID), shadingInfo,
+				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -2437,19 +2351,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farCeilingPoint.y,
 				nearPoint.y);
 
-			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-				farCeilingScreenY, frame.height);
-			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearCeilingScreenY, frame.height);
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
 
 			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 				nearZ, Double3::UnitY, textures.at(floorData.id), shadingInfo,
 				occlusion, frame);
 		}
@@ -2479,21 +2385,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearCeilingScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, nearCeilingPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
+					occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -2503,21 +2401,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearFloorScreenY, frame.height);
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearFloorPoint, farFloorPoint, camera, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
@@ -2531,42 +2421,24 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int wallStart = ceilingEnd;
-				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+					camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
+					occlusion, frame);
 
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -2581,16 +2453,21 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -2612,25 +2489,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
 					hit.point.x,
 					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -2685,19 +2554,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, farFloorPoint, camera, frame);
 
-				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
@@ -2730,21 +2592,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				nearFloorPoint.y,
 				farPoint.y);
 
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearFloorScreenY, frame.height);
-			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farFloorScreenY, frame.height);
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
 
 			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.floorID),
-				shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(wallData.floorID), shadingInfo,
+				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -2764,18 +2618,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				nearFloorPoint.y,
 				farPoint.y);
 
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
 
-			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearFloorScreenY, frame.height);
-			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
 				occlusion, frame);
 		}
@@ -2801,21 +2647,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearCeilingScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, nearCeilingPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
+					occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -2825,21 +2663,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearFloorScreenY, frame.height);
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearFloorPoint, farFloorPoint, camera, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+					farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
@@ -2853,43 +2683,24 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int wallStart = ceilingEnd;
-				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+					camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					nearCeilingScreenY, farCeilingScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo,
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
 					occlusion, frame);
 
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					farFloorScreenY, nearFloorScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -2904,16 +2715,21 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -2935,25 +2751,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
 					hit.point.x,
 					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -3060,19 +2868,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ, wallU, 0.0, Constants::JustBelowOne,
+				wallNormal, textures.at(wallData.sideID), shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -3094,18 +2894,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearFloorPoint, farFloorPoint, camera, frame);
 
-				const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearFloorScreenY, frame.height);
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 					farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
 					occlusion, frame);
 			}
@@ -3123,16 +2915,6 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
 			// Draw order depends on the player's Y position relative to the platform.
 			if (camera.eye.y > nearCeilingPoint.y)
 			{
@@ -3142,24 +2924,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = wallStart;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo,
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
 					occlusion, frame);
+
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -3169,30 +2945,28 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
 				// Between top and bottom.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearCeilingPoint, nearFloorPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -3207,16 +2981,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne, 
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -3233,19 +3012,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal, 
-				textures.at(transparentWallData.id), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Edge)
 		{
@@ -3262,25 +3034,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
 					hit.point.x,
 					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -3312,19 +3076,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint.y - chasmDepth,
 					nearPoint.y);
 
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearCeilingPoint, nearFloorPoint, camera, frame);
 
-				const int nearStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int nearEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, nearStart, nearEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, nearU, 0.0, Constants::JustBelowOne, nearNormal,
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, nearU, 0.0,
+					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id),
+					shadingInfo, occlusion, frame);
 			}
 
 			// Far.
@@ -3370,19 +3127,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, farFloorPoint, camera, frame);
 
-				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal,
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
@@ -3406,34 +3156,27 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
 				{
-					const Double3 doorBottomPoint(
-						hit.point.x,
-						voxelYReal,
-						hit.point.y);
 					const Double3 doorTopPoint(
-						doorBottomPoint.x,
-						doorBottomPoint.y + voxelHeight,
-						doorBottomPoint.z);
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
 
-					const double doorTopScreenY = SoftwareRenderer::getProjectedY(
-						doorTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-					const double doorBottomScreenY = SoftwareRenderer::getProjectedY(
-						doorBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
 
-					const int doorStart = SoftwareRenderer::getLowerBoundedPixel(
-						doorTopScreenY, frame.height);
-					const int doorEnd = SoftwareRenderer::getUpperBoundedPixel(
-						doorBottomScreenY, frame.height);
-
-					SoftwareRenderer::drawTransparentPixels(x, doorStart, doorEnd, doorTopScreenY,
-						doorBottomScreenY, nearZ, hit.u, 0.0, Constants::JustBelowOne, hit.normal,
-						textures.at(doorData.id), shadingInfo, occlusion, frame);
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = ((voxelHeight * (1.0 - minVisible)) * percentOpen);
+					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -3444,22 +3187,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						voxelYReal + raisedAmount,
 						doorTopPoint.z);
 
-					const double doorTopScreenY = SoftwareRenderer::getProjectedY(
-						doorTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-					const double doorBottomScreenY = SoftwareRenderer::getProjectedY(
-						doorBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-					const int doorStart = SoftwareRenderer::getLowerBoundedPixel(
-						doorTopScreenY, frame.height);
-					const int doorEnd = SoftwareRenderer::getUpperBoundedPixel(
-						doorBottomScreenY, frame.height);
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
 
 					// The start of the vertical texture coordinate depends on the percent open.
 					const double vStart = raisedAmount / voxelHeight;
 
-					SoftwareRenderer::drawTransparentPixels(x, doorStart, doorEnd, doorTopScreenY,
-						doorBottomScreenY, nearZ, hit.u, vStart, Constants::JustBelowOne,
-						hit.normal, textures.at(doorData.id), shadingInfo, occlusion, frame);
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+						occlusion, frame);
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
 				{
@@ -3496,31 +3232,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-				farCeilingScreenY, frame.height);
-			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallStart = ceilingEnd;
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 
 			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID),
-				shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(wallData.ceilingID), shadingInfo,
+				occlusion, frame);
 
-			// Side.
-			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
+			// Wall.
+			SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), shadingInfo,
+				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -3536,18 +3259,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				farCeilingPoint.y,
 				nearPoint.y);
 
-			const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-				farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
 
-			const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-				farCeilingScreenY, frame.height);
-			const int ceilingEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearCeilingScreenY, frame.height);
-
-			SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-				farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 				nearZ, Double3::UnitY, textures.at(floorData.id), shadingInfo, 
 				occlusion, frame);
 		}
@@ -3568,16 +3283,6 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
 			// Draw order depends on the player's Y position relative to the platform.
 			if (camera.eye.y > nearCeilingPoint.y)
 			{
@@ -3587,24 +3292,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = wallStart;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, 
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
 					occlusion, frame);
+
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -3614,30 +3313,28 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
 				// Between top and bottom.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearCeilingPoint, nearFloorPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -3652,16 +3349,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -3678,19 +3380,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(transparentWallData.id), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Edge)
 		{
@@ -3707,25 +3402,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
 					hit.point.x,
 					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -3757,19 +3444,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint.y - chasmDepth,
 					nearPoint.y);
 
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearCeilingPoint, nearFloorPoint, camera, frame);
 
-				const int nearStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int nearEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, nearStart, nearEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, nearU, 0.0, Constants::JustBelowOne, nearNormal,
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, nearU, 0.0,
+					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id),
+					shadingInfo, occlusion, frame);
 			}
 
 			// Far.
@@ -3815,19 +3495,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					farCeilingPoint.y - chasmDepth,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					farCeilingPoint, farFloorPoint, camera, frame);
 
-				const int farStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int farEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, farStart, farEnd, farCeilingScreenY,
-					farFloorScreenY, farZ, farU, 0.0, Constants::JustBelowOne, farNormal, 
-					textures.at(chasmData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
@@ -3846,19 +3519,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(doorData.id), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(doorData.id), shadingInfo,
+				occlusion, frame);
 		}
 	};
 
@@ -3889,31 +3555,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				nearFloorPoint.y,
 				farPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-			const int floorStart = wallEnd;
-			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farFloorScreenY, frame.height);
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 			
-			// Side.
-			SoftwareRenderer::drawPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(wallData.sideID), shadingInfo, occlusion, frame);
+			// Wall.
+			SoftwareRenderer::drawPixels(x, drawRanges.at(0), nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), shadingInfo,
+				occlusion, frame);
 
 			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.floorID),
-				shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(wallData.floorID), shadingInfo,
+				occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Floor)
 		{
@@ -3933,18 +3586,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				nearFloorPoint.y,
 				farPoint.y);
 
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-				farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
 
-			const int floorStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearFloorScreenY, frame.height);
-			const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-				farFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-				nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.at(ceilingData.id), shadingInfo,
 				occlusion, frame);
 		}
@@ -3961,16 +3606,6 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal + (raisedData.yOffset * voxelHeight),
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
 			// Draw order depends on the player's Y position relative to the platform.
 			if (camera.eye.y > nearCeilingPoint.y)
 			{
@@ -3980,24 +3615,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint.y,
 					farPoint.y);
 
-				const double farCeilingScreenY = SoftwareRenderer::getProjectedY(
-					farCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int ceilingStart = SoftwareRenderer::getLowerBoundedPixel(
-					farCeilingScreenY, frame.height);
-				const int ceilingEnd = wallStart;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 
 				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, ceilingStart, ceilingEnd,
-					farCeilingScreenY, nearCeilingScreenY, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID),
-					shadingInfo, occlusion, frame);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, 
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), shadingInfo,
 					occlusion, frame);
+
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 			else if (camera.eye.y < nearFloorPoint.y)
 			{
@@ -4007,31 +3636,28 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearFloorPoint.y,
 					farPoint.y);
 
-				const double farFloorScreenY = SoftwareRenderer::getProjectedY(
-					farFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 
-				const int floorStart = wallEnd;
-				const int floorEnd = SoftwareRenderer::getUpperBoundedPixel(
-					farFloorScreenY, frame.height);
-
-				// Side.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				// Wall.
+				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 
 				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, floorStart, floorEnd,
-					nearFloorScreenY, farFloorScreenY, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID),
-					shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), shadingInfo,
+					occlusion, frame);
 			}
 			else
 			{
 				// Between top and bottom.
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, raisedData.vTop, raisedData.vBottom,
-					wallNormal, textures.at(raisedData.sideID), shadingInfo,
-					occlusion, frame);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					nearCeilingPoint, nearFloorPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+					raisedData.vTop, raisedData.vBottom, wallNormal,
+					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Diagonal)
@@ -4046,16 +3672,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				double diagTopScreenY, diagBottomScreenY;
-				int diagStart, diagEnd;
+				const Double3 diagTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 diagBottomPoint(
+					diagTopPoint.x,
+					voxelYReal,
+					diagTopPoint.z);
 
-				SoftwareRenderer::diagProjection(voxelYReal, voxelHeight, hit.point,
-					camera.transform, camera.yShear, frame.height, frame.heightReal,
-					diagTopScreenY, diagBottomScreenY, diagStart, diagEnd);
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					diagTopPoint, diagBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, diagStart, diagEnd, diagTopScreenY,
-					diagBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(diagData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), shadingInfo,
+					occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::TransparentWall)
@@ -4072,19 +3703,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(transparentWallData.id), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+				shadingInfo, occlusion, frame);
 		}
 		else if (voxelData.dataType == VoxelDataType::Edge)
 		{
@@ -4101,25 +3725,17 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					hit.point.x,
 					voxelYReal + voxelHeight + edgeData.yOffset,
 					hit.point.y);
-
 				const Double3 edgeBottomPoint(
 					hit.point.x,
 					voxelYReal + edgeData.yOffset,
 					hit.point.y);
 
-				const double edgeTopScreenY = SoftwareRenderer::getProjectedY(
-					edgeTopPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double edgeBottomScreenY = SoftwareRenderer::getProjectedY(
-					edgeBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					edgeTopPoint, edgeBottomPoint, camera, frame);
 
-				const int edgeStart = SoftwareRenderer::getLowerBoundedPixel(
-					edgeTopScreenY, frame.height);
-				const int edgeEnd = SoftwareRenderer::getUpperBoundedPixel(
-					edgeBottomScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, edgeStart, edgeEnd, edgeTopScreenY,
-					edgeBottomScreenY, nearZ + hit.innerZ, hit.u, 0.0, Constants::JustBelowOne,
-					hit.normal, textures.at(edgeData.id), shadingInfo, occlusion, frame);
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+					shadingInfo, occlusion, frame);
 			}
 		}
 		else if (voxelData.dataType == VoxelDataType::Chasm)
@@ -4142,19 +3758,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				voxelYReal,
 				nearPoint.y);
 
-			const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-				nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-			const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-				nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
 
-			const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-				nearCeilingScreenY, frame.height);
-			const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-				nearFloorScreenY, frame.height);
-
-			SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-				nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-				textures.at(doorData.id), shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+				Constants::JustBelowOne, wallNormal, textures.at(doorData.id), shadingInfo,
+				occlusion, frame);
 		}
 	};
 

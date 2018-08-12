@@ -287,35 +287,26 @@ private:
 		double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearU, RayHit &hit);
 
-	// Calculates all the projection data for a diagonal wall after successful intersection
-	// and assigns it to various reference variables. This method assumes that all diagonals
-	// appear only on the main floor.
-	static void diagProjection(double voxelYReal, double voxelHeight, const Double2 &point,
-		const Matrix4d &transform, double yShear, int frameHeight, double heightReal, 
-		double &diagTopScreenY, double &diagBottomScreenY, int &diagStart, int &diagEnd);
-
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
 	// Draws a column of pixels with no perspective or transparency.
-	static void drawPixels(int x, int yStart, int yEnd, double projectedYStart,
-		double projectedYEnd, double depth, double u, double vStart, double vEnd,
-		const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo, 
-		OcclusionData &occlusion, const FrameView &frame);
+	static void drawPixels(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
-	static void drawPerspectivePixels(int x, int yStart, int yEnd, double projectedYStart,
-		double projectedYEnd, const Double2 &startPoint, const Double2 &endPoint,
-		double depthStart, double depthEnd, const Double3 &normal, const VoxelTexture &texture,
-		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+	static void drawPerspectivePixels(int x, const DrawRange &drawRange, const Double2 &startPoint,
+		const Double2 &endPoint, double depthStart, double depthEnd, const Double3 &normal,
+		const VoxelTexture &texture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Draws a column of pixels with transparency but no perspective.
-	static void drawTransparentPixels(int x, int yStart, int yEnd, double projectedYStart,
-		double projectedYEnd, double depth, double u, double vStart, double vEnd,
-		const Double3 &normal, const VoxelTexture &texture, const ShadingInfo &shadingInfo,
-		const OcclusionData &occlusion, const FrameView &frame);
+	static void drawTransparentPixels(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
