@@ -78,6 +78,16 @@ private:
 		Ray(double dirX, double dirZ);
 	};
 
+	// A draw range contains data for the vertical range that two projected vertices
+	// define in screen space.
+	struct DrawRange
+	{
+		double yProjStart, yProjEnd;
+		int yStart, yEnd;
+
+		DrawRange(double yProjStart, double yProjEnd, int yStart, int yEnd);
+	};
+
 	// Occlusion defines a "drawing window" that shrinks as opaque pixels are drawn in each 
 	// column of the screen. Drawing ranges lying within an occluded area are thrown out, 
 	// and partially occluded ranges are clipped. If an entire column is occluded, the ray 
@@ -217,6 +227,22 @@ private:
 	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.
 	static int getLowerBoundedPixel(double projected, int frameDim);
 	static int getUpperBoundedPixel(double projected, int frameDim);
+
+	// Generates a vertical draw range on-screen from two vertices in world space.
+	static DrawRange makeDrawRange(const Double3 &startPoint, const Double3 &endPoint,
+		const Camera &camera, const FrameView &frame);
+
+	// Generates two vertical draw ranges on-screen from three vertices in world space,
+	// sharing some calculations between them and preventing gaps.
+	static std::array<DrawRange, 2> makeDrawRangeTwoPart(const Double3 &startPoint,
+		const Double3 &midPoint, const Double3 &endPoint, const Camera &camera,
+		const FrameView &frame);
+
+	// Generates three vertical draw ranges on-screen from four vertices in world space,
+	// sharing some calculations between them and preventing gaps.
+	static std::array<DrawRange, 3> makeDrawRangeThreePart(const Double3 &startPoint,
+		const Double3 &midPoint1, const Double3 &midPoint2, const Double3 &endPoint,
+		const Camera &camera, const FrameView &frame);
 
 	// Gathers potential intersection data from a voxel containing a "diagonal 1" ID; the 
 	// diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns whether an 

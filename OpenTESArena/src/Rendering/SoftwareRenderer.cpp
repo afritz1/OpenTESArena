@@ -133,6 +133,14 @@ SoftwareRenderer::Ray::Ray(double dirX, double dirZ)
 	this->dirZ = dirZ;
 }
 
+SoftwareRenderer::DrawRange::DrawRange(double yProjStart, double yProjEnd, int yStart, int yEnd)
+{
+	this->yProjStart = yProjStart;
+	this->yProjEnd = yProjEnd;
+	this->yStart = yStart;
+	this->yEnd = yEnd;
+}
+
 SoftwareRenderer::OcclusionData::OcclusionData(int yMin, int yMax)
 {
 	this->yMin = yMin;
@@ -1204,6 +1212,70 @@ int SoftwareRenderer::getUpperBoundedPixel(double projected, int frameDim)
 {
 	return std::min(std::max(0,
 		static_cast<int>(std::floor(projected + 0.50))), frameDim);
+}
+
+SoftwareRenderer::DrawRange SoftwareRenderer::makeDrawRange(const Double3 &startPoint,
+	const Double3 &endPoint, const Camera &camera, const FrameView &frame)
+{
+	const double yProjStart = SoftwareRenderer::getProjectedY(
+		startPoint, camera.transform, camera.yShear) * frame.heightReal;
+	const double yProjEnd = SoftwareRenderer::getProjectedY(
+		endPoint, camera.transform, camera.yShear) * frame.heightReal;
+	const int yStart = SoftwareRenderer::getLowerBoundedPixel(yProjStart, frame.height);
+	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(yProjEnd, frame.height);
+
+	return DrawRange(yProjStart, yProjEnd, yStart, yEnd);
+}
+
+std::array<SoftwareRenderer::DrawRange, 2> SoftwareRenderer::makeDrawRangeTwoPart(
+	const Double3 &startPoint, const Double3 &midPoint, const Double3 &endPoint,
+	const Camera &camera, const FrameView &frame)
+{
+	const double startYProjStart = SoftwareRenderer::getProjectedY(
+		startPoint, camera.transform, camera.yShear) * frame.heightReal;
+	const double startYProjEnd = SoftwareRenderer::getProjectedY(
+		midPoint, camera.transform, camera.yShear) * frame.heightReal;
+	const double endYProjEnd = SoftwareRenderer::getProjectedY(
+		endPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+	const int startYStart = SoftwareRenderer::getLowerBoundedPixel(startYProjStart, frame.height);
+	const int startYEnd = SoftwareRenderer::getUpperBoundedPixel(startYProjEnd, frame.height);
+	const int endYStart = startYEnd;
+	const int endYEnd = SoftwareRenderer::getUpperBoundedPixel(endYProjEnd, frame.height);
+
+	return std::array<DrawRange, 2>
+	{
+		DrawRange(startYProjStart, startYProjEnd, startYStart, startYEnd),
+		DrawRange(startYProjEnd, endYProjEnd, endYStart, endYEnd)
+	};
+}
+
+std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreePart(
+	const Double3 &startPoint, const Double3 &midPoint1, const Double3 &midPoint2,
+	const Double3 &endPoint, const Camera &camera, const FrameView &frame)
+{
+	const double startYProjStart = SoftwareRenderer::getProjectedY(
+		startPoint, camera.transform, camera.yShear) * frame.heightReal;
+	const double startYProjEnd = SoftwareRenderer::getProjectedY(
+		midPoint1, camera.transform, camera.yShear) * frame.heightReal;
+	const double mid1YProjEnd = SoftwareRenderer::getProjectedY(
+		midPoint2, camera.transform, camera.yShear) * frame.heightReal;
+	const double mid2YProjEnd = SoftwareRenderer::getProjectedY(
+		endPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+	const int startYStart = SoftwareRenderer::getLowerBoundedPixel(startYProjStart, frame.height);
+	const int startYEnd = SoftwareRenderer::getUpperBoundedPixel(startYProjEnd, frame.height);
+	const int mid1YStart = startYEnd;
+	const int mid1YEnd = SoftwareRenderer::getUpperBoundedPixel(mid1YProjEnd, frame.height);
+	const int mid2YStart = mid1YEnd;
+	const int mid2YEnd = SoftwareRenderer::getUpperBoundedPixel(mid2YProjEnd, frame.height);
+
+	return std::array<DrawRange, 3>
+	{
+		DrawRange(startYProjStart, startYProjEnd, startYStart, startYEnd),
+		DrawRange(startYProjEnd, mid1YProjEnd, mid1YStart, mid1YEnd),
+		DrawRange(mid1YProjEnd, mid2YProjEnd, mid2YStart, mid2YEnd)
+	};
 }
 
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
