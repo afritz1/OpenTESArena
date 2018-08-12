@@ -210,6 +210,7 @@ const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
+const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
 const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
@@ -1528,7 +1529,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	{
 		// If near U coordinate is within percent closed, it's a hit. At 100% open,
 		// a sliding door is still partially visible.
-		const double minVisible = 0.050;
+		const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
 		const double visibleAmount = 1.0 - ((1.0 - minVisible) * percentOpen);
 		if (visibleAmount > nearU)
 		{
@@ -1558,7 +1559,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	{
 		// If near U coordinate is within percent closed on left or right half, it's a hit.
 		// At 100% open, a splitting door is still partially visible.
-		const double minVisible = 0.050;
+		const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
 		const bool leftHalf = nearU < 0.50;
 		const bool rightHalf = nearU > 0.50;
 		double leftVisAmount, rightVisAmount;
@@ -3327,54 +3328,71 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			{
 				// @todo: implement drawing for each door type.
 
-				/*const Double3 doorBottomPoint(
-					hit.point.x,
-					voxelYReal,
-					hit.point.y);
-				const Double3 doorTopPoint(
-					doorBottomPoint.x,
-					doorBottomPoint.y + voxelHeight,
-					doorBottomPoint.z);*/
-
 				if (doorData.type == VoxelData::DoorData::Type::Swinging)
 				{
 
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
 				{
+					const Double3 doorBottomPoint(
+						hit.point.x,
+						voxelYReal,
+						hit.point.y);
+					const Double3 doorTopPoint(
+						doorBottomPoint.x,
+						doorBottomPoint.y + voxelHeight,
+						doorBottomPoint.z);
 
+					const double doorTopScreenY = SoftwareRenderer::getProjectedY(
+						doorTopPoint, camera.transform, camera.yShear) * frame.heightReal;
+					const double doorBottomScreenY = SoftwareRenderer::getProjectedY(
+						doorBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+					const int doorStart = SoftwareRenderer::getLowerBoundedPixel(
+						doorTopScreenY, frame.height);
+					const int doorEnd = SoftwareRenderer::getUpperBoundedPixel(
+						doorBottomScreenY, frame.height);
+
+					SoftwareRenderer::drawTransparentPixels(x, doorStart, doorEnd, doorTopScreenY,
+						doorBottomScreenY, nearZ, hit.u, 0.0, Constants::JustBelowOne, hit.normal,
+						textures.at(doorData.id), shadingInfo, occlusion, frame);
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Raising)
 				{
+					// Top point is fixed, bottom point depends on percent open.
+					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+					const double raisedAmount = ((voxelHeight * (1.0 - minVisible)) * percentOpen);
 
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal + raisedAmount,
+						doorTopPoint.z);
+
+					const double doorTopScreenY = SoftwareRenderer::getProjectedY(
+						doorTopPoint, camera.transform, camera.yShear) * frame.heightReal;
+					const double doorBottomScreenY = SoftwareRenderer::getProjectedY(
+						doorBottomPoint, camera.transform, camera.yShear) * frame.heightReal;
+
+					const int doorStart = SoftwareRenderer::getLowerBoundedPixel(
+						doorTopScreenY, frame.height);
+					const int doorEnd = SoftwareRenderer::getUpperBoundedPixel(
+						doorBottomScreenY, frame.height);
+
+					// The start of the vertical texture coordinate depends on the percent open.
+					const double vStart = raisedAmount / voxelHeight;
+
+					SoftwareRenderer::drawTransparentPixels(x, doorStart, doorEnd, doorTopScreenY,
+						doorBottomScreenY, nearZ, hit.u, vStart, Constants::JustBelowOne,
+						hit.normal, textures.at(doorData.id), shadingInfo, occlusion, frame);
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
 				{
 
 				}
-
-				/*const Double3 nearCeilingPoint(
-					nearPoint.x,
-					voxelYReal + voxelHeight,
-					nearPoint.y);
-				const Double3 nearFloorPoint(
-					nearPoint.x,
-					voxelYReal,
-					nearPoint.y);
-
-				const double nearCeilingScreenY = SoftwareRenderer::getProjectedY(
-					nearCeilingPoint, camera.transform, camera.yShear) * frame.heightReal;
-				const double nearFloorScreenY = SoftwareRenderer::getProjectedY(
-					nearFloorPoint, camera.transform, camera.yShear) * frame.heightReal;
-
-				const int wallStart = SoftwareRenderer::getLowerBoundedPixel(
-					nearCeilingScreenY, frame.height);
-				const int wallEnd = SoftwareRenderer::getUpperBoundedPixel(
-					nearFloorScreenY, frame.height);
-
-				SoftwareRenderer::drawTransparentPixels(x, wallStart, wallEnd, nearCeilingScreenY,
-					nearFloorScreenY, nearZ, wallU, 0.0, Constants::JustBelowOne, wallNormal,
-					textures.at(doorData.id), shadingInfo, occlusion, frame);*/
 			}
 		}
 	};

@@ -176,6 +176,9 @@ private:
 	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
 	static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
+	// Amount of a sliding/raising door that is visible when fully open.
+	static const double DOOR_MIN_VISIBLE;
+
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
