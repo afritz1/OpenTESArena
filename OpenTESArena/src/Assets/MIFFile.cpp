@@ -111,7 +111,7 @@ MIFFile::MIFFile(const std::string &filename)
 std::string MIFFile::mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID)
 {
 	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
-	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol32(mifID, 5)));
+	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
 	const std::string mifName = std::to_string(mifID) + ".MIF";
 	return mifName;
 }

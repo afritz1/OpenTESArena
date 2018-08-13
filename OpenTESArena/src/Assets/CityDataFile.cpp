@@ -214,7 +214,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 			// be 3 or 5 depending on the city type?
 			const bool isPalace = menuType == VoxelData::WallData::MenuType::Palace;
 			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % 3) :
-				((Bytes::ror16(offset, 4) ^ offset) % 8);
+				((Bytes::ror(offset, 4) ^ offset) % 8);
 		}();
 
 		// Generate .MIF filename.
@@ -448,7 +448,7 @@ uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
 	const Int2 globalPoint = CityDataFile::localPointToGlobal(
 		localPoint, province.getGlobalRect());
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
-	return Bytes::rol32(seed, 16);
+	return Bytes::rol(seed, 16);
 }
 
 uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
@@ -473,7 +473,7 @@ uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
 	}();
 
 	const uint32_t seed = (dungeon.y << 16) + dungeon.x + provinceID;
-	return (~Bytes::rol32(seed, 5)) & 0xFFFFFFFF;
+	return (~Bytes::rol(seed, 5)) & 0xFFFFFFFF;
 }
 
 uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
