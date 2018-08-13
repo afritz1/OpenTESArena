@@ -1,6 +1,7 @@
 #ifndef BYTES_H
 #define BYTES_H
 
+#include <climits>
 #include <cstdint>
 
 // Static class for interacting with bits and bytes.

@@ -1,5 +1,3 @@
-#include <climits>
-
 #include "Bytes.h"
 
 uint16_t Bytes::getLE16(const uint8_t *buf)
