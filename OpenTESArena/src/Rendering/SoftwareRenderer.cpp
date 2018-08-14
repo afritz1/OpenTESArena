@@ -4278,13 +4278,12 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		sunDirection, ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
-	// Lambda for rendering some columns of pixels. The voxel rendering portion uses 2.5D 
-	// ray casting, which is the cheaper form of ray casting (although still not very 
-	// efficient overall), and results in a "fake" 3D scene.
-	auto renderColumns = [this, &camera, ceilingHeight, &voxelGrid, &shadingInfo,
-		widthReal, &forwardComp, &right2D, &frame](int startX, int endX)
+	// Lambda for rendering voxels via 2.5D ray casting.
+	auto renderVoxels = [this, &camera, ceilingHeight, &voxelGrid, &shadingInfo, widthReal,
+		&forwardComp, &right2D, &frame](int startX, int stride)
 	{
-		for (int x = startX; x < endX; x++)
+		// Draw pixel columns with spacing determined by the number of render threads.
+		for (int x = startX; x < frame.width; x += stride)
 		{
 			// X percent across the screen.
 			const double xPercent = (static_cast<double>(x) + 0.50) / widthReal;
@@ -4299,10 +4298,13 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			const Ray ray(direction.x, direction.y);
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, 
+			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight,
 				voxelGrid, this->voxelTextures, this->occlusion.at(x), frame);
 		}
+	};
 
+	auto renderFlats = [this, &camera, &shadingInfo, &forwardComp, &frame](int startX, int endX)
+	{
 		// Iterate through all flats, rendering those visible within the given X range of 
 		// the screen.
 		for (const auto &pair : this->visibleFlats)
@@ -4319,7 +4321,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 			const Double2 eye2D(camera.eye.x, camera.eye.z);
 
-			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped, 
+			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped,
 				eye2D, shadingInfo, texture, frame);
 		}
 	};
@@ -4382,20 +4384,30 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Wait for the sorting thread to finish.
 	sortThread.join();
 
-	// Start rendering the scene with the render threads.
+	// Render the voxel grid with each render thread.
 	for (size_t i = 0; i < renderThreads.size(); i++)
 	{
-		// "blockSize" is the approximate number of columns per thread. Rounding is involved so 
+		const int startX = static_cast<int>(i);
+		const int stride = static_cast<int>(renderThreads.size());
+		renderThreads[i] = std::thread(renderVoxels, startX, stride);
+	}
+
+	// Wait for the render threads to finish rendering.
+	for (auto &thread : renderThreads)
+	{
+		thread.join();
+	}
+
+	// Render flats with each render thread.
+	for (size_t i = 0; i < renderThreads.size(); i++)
+	{
+		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
 		const double blockSize = widthReal / static_cast<double>(renderThreads.size());
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
-		// Make sure the rounding is correct.
-		assert(startX >= 0);
-		assert(endX <= this->width);
-
-		renderThreads[i] = std::thread(renderColumns, startX, endX);
+		renderThreads[i] = std::thread(renderFlats, startX, endX);
 	}
 
 	// Wait for the render threads to finish rendering.
