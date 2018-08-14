@@ -276,9 +276,9 @@ private:
 		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
 
 	// Helper method for findDoorIntersection() for swinging doors.
-	static bool findSwingingDoorIntersection(int voxelX, int voxelZ,
-		VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
-		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
+	static bool findSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,
+		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors

@@ -1581,11 +1581,113 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 }
 
 bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
-	VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
-	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
+	double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+	const Double2 &farPoint, double nearU, RayHit &hit)
 {
-	// @todo.
-	return false;
+	// Check trivial case first: whether the door is closed.
+	const bool isClosed = percentOpen == 0.0;
+
+	if (isClosed)
+	{
+		// Treat like a wall.
+		hit.innerZ = 0.0;
+		hit.u = nearU;
+		hit.point = nearPoint;
+		hit.normal = VoxelData::getNormal(nearFacing);
+		return true;
+	}
+	else
+	{
+		// Decide which corner the door's hinge will be in, and create the line segment
+		// that will be rotated based on percent open.
+		Double2 interpStart;
+		const Double2 pivot = [voxelX, voxelZ, nearFacing, &interpStart]()
+		{
+			const Int2 corner = [voxelX, voxelZ, nearFacing, &interpStart]()
+			{
+				if (nearFacing == VoxelData::Facing::PositiveX)
+				{
+					interpStart = -Double2::UnitX;
+					return Int2(voxelX + 1, voxelZ + 1);
+				}
+				else if (nearFacing == VoxelData::Facing::NegativeX)
+				{
+					interpStart = Double2::UnitX;
+					return Int2(voxelX, voxelZ);
+				}
+				else if (nearFacing == VoxelData::Facing::PositiveZ)
+				{
+					interpStart = -Double2::UnitY;
+					return Int2(voxelX, voxelZ + 1);
+				}
+				else if (nearFacing == VoxelData::Facing::NegativeZ)
+				{
+					interpStart = Double2::UnitY;
+					return Int2(voxelX + 1, voxelZ);
+				}
+				else
+				{
+					throw DebugException("Invalid near facing \"" +
+						std::to_string(static_cast<int>(nearFacing)) + "\".");
+				}
+			}();
+
+			const Double2 cornerReal(
+				static_cast<double>(corner.x),
+				static_cast<double>(corner.y));
+
+			// Bias the pivot towards the voxel center slightly to avoid Z-fighting with
+			// adjacent walls.
+			const Double2 voxelCenter(
+				static_cast<double>(voxelX) + 0.50,
+				static_cast<double>(voxelZ) + 0.50);
+			const Double2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
+			return cornerReal + bias;
+		}();
+
+		// Use the left perpendicular vector of the door's closed position as the 
+		// fully open position.
+		const Double2 interpEnd = interpStart.leftPerp();
+
+		// Actual position of the door in its rotation, represented as a vector.
+		const Double2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
+
+		// Vector cross product in 2D, returns a scalar.
+		auto cross = [](const Double2 &a, const Double2 &b)
+		{
+			return (a.x * b.y) - (b.x * a.y);
+		};
+
+		// Solve line segment intersection between the incoming ray and the door.
+		const Double2 p1 = pivot;
+		const Double2 v1 = doorVec;
+		const Double2 p2 = nearPoint;
+		const Double2 v2 = farPoint - nearPoint;
+
+		// Percent from p1 to (p1 + v1).
+		const double t = cross(p2 - p1, v2) / cross(v1, v2);
+
+		// See if the two line segments intersect.
+		if ((t >= 0.0) && (t < 1.0))
+		{
+			// Hit.
+			hit.point = p1 + (v1 * t);
+			hit.innerZ = (hit.point - nearPoint).length();
+			hit.u = t;
+			hit.normal = [&v1]()
+			{
+				const Double2 norm2D = v1.rightPerp();
+				return Double3(norm2D.x, 0.0, norm2D.y);
+			}();
+
+			return true;
+		}
+		else
+		{
+			// No hit.
+			return false;
+		}
+	}
 }
 
 bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
@@ -1594,8 +1696,8 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 {
 	if (doorType == VoxelData::DoorData::Type::Swinging)
 	{
-		return SoftwareRenderer::findSwingingDoorIntersection(voxelX, voxelZ, doorType,
-			percentOpen, nearFacing, nearPoint, farPoint, nearU, hit);
+		return SoftwareRenderer::findSwingingDoorIntersection(voxelX, voxelZ, percentOpen,
+			nearFacing, nearPoint, farPoint, nearU, hit);
 	}
 	else if (doorType == VoxelData::DoorData::Type::Sliding)
 	{
@@ -1667,11 +1769,11 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 				{
 					if (leftHalf)
 					{
-						return nearU + (0.50 - leftVisAmount);
+						return (nearU + 0.50) - leftVisAmount;
 					}
 					else if (rightHalf)
 					{
-						return nearU - (0.50 + rightVisAmount);
+						return (nearU + 0.50) - rightVisAmount;
 					}
 					else
 					{
@@ -3148,11 +3250,23 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				// @todo: implement drawing for each door type.
-
 				if (doorData.type == VoxelData::DoorData::Type::Swinging)
 				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
 
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
 				{
@@ -3199,7 +3313,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				}
 				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
 				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
 
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
 				}
 			}
 		}
