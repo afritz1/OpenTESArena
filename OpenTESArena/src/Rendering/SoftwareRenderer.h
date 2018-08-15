@@ -10,6 +10,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
+#include "../World/LevelData.h"
 #include "../World/VoxelData.h"
 
 // This class runs the CPU-based 3D rendering for the application.
@@ -219,6 +220,10 @@ private:
 	static VoxelData::Facing getChasmFarFacing(int voxelX, int voxelZ,
 		VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray);
 
+	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
+	static double getDoorPercentOpen(int voxelX, int voxelZ,
+		const std::vector<LevelData::DoorState> &openDoors);
+
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
@@ -312,14 +317,16 @@ private:
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
@@ -334,7 +341,8 @@ private:
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
-		const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid, 
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
 		const FrameView &frame);
 
@@ -402,9 +410,10 @@ public:
 	void resize(int width, int height);
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
-	void render(const Double3 &eye, const Double3 &direction, double fovY, 
+	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double ceilingHeight,
-		const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
+		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+		uint32_t *colorBuffer);
 };
 
 #endif

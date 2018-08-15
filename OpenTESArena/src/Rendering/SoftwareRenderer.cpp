@@ -1186,6 +1186,19 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	}
 }
 
+double SoftwareRenderer::getDoorPercentOpen(int voxelX, int voxelZ,
+	const std::vector<LevelData::DoorState> &openDoors)
+{
+	const Int2 voxel(voxelX, voxelZ);
+	const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+		[&voxel](const LevelData::DoorState &openDoor)
+	{
+		return openDoor.getVoxel() == voxel;
+	});
+
+	return (iter != openDoors.end()) ? iter->getPercentOpen() : 0.0;
+}
+
 double SoftwareRenderer::getProjectedY(const Double3 &point, 
 	const Matrix4d &transform, double yShear)
 {	
@@ -2084,8 +2097,8 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -2899,8 +2912,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -2947,8 +2960,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	const Double3 wallNormal = VoxelData::getNormal(facing);
 
 	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
-		&occlusion, &frame](int voxelY)
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
+		&textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -3240,9 +3253,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
 			const VoxelData::DoorData &doorData = voxelData.door;
-
-			// @todo: get from VoxelGrid (i.e., mapping of Int2 to double; if no mapping, then 0.0).
-			const double percentOpen = 0.75;
+			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+				voxelX, voxelZ, openDoors);
 
 			RayHit hit;
 			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
@@ -3334,8 +3346,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	};
 
 	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
-		&occlusion, &frame](int voxelY)
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
+		&textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -3633,32 +3645,102 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
-
-			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
+			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+				voxelX, voxelZ, openDoors);
 
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
+			RayHit hit;
+			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
 
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
+			if (success)
+			{
+				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
 
-			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(doorData.id), shadingInfo,
-				occlusion, frame);
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				{
+					// Top point is fixed, bottom point depends on percent open.
+					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal + raisedAmount,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					// The start of the vertical texture coordinate depends on the percent open.
+					const double vStart = raisedAmount / voxelHeight;
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+						occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+			}
 		}
 	};
 
 	auto drawVoxelAbove = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, &textures,
-		&occlusion, &frame](int voxelY)
+		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
+		&textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
 			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
@@ -3872,26 +3954,96 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		}
 		else if (voxelData.dataType == VoxelDataType::Door)
 		{
-			// @todo: find intersection via SoftwareRenderer::findDoorIntersection().
-
-			// Just render as transparent wall for now.
 			const VoxelData::DoorData &doorData = voxelData.door;
+			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+				voxelX, voxelZ, openDoors);
 
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
+			RayHit hit;
+			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
 
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
+			if (success)
+			{
+				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
 
-			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(doorData.id), shadingInfo,
-				occlusion, frame);
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				{
+					// Top point is fixed, bottom point depends on percent open.
+					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal + raisedAmount,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					// The start of the vertical texture coordinate depends on the percent open.
+					const double vStart = raisedAmount / voxelHeight;
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+						occlusion, frame);
+				}
+				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				{
+					const Double3 doorTopPoint(
+						hit.point.x,
+						voxelYReal + voxelHeight,
+						hit.point.y);
+					const Double3 doorBottomPoint(
+						doorTopPoint.x,
+						voxelYReal,
+						doorTopPoint.z);
+
+					const auto drawRange = SoftwareRenderer::makeDrawRange(
+						doorTopPoint, doorBottomPoint, camera, frame);
+
+					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+						shadingInfo, occlusion, frame);
+				}
+			}
 		}
 	};
 
@@ -4063,7 +4215,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 }
 
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
-	const ShadingInfo &shadingInfo, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const ShadingInfo &shadingInfo, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
@@ -4156,7 +4309,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
-			zDistance, shadingInfo, ceilingHeight, voxelGrid, textures, occlusion, frame);
+			zDistance, shadingInfo, ceilingHeight, openDoors, voxelGrid, textures, occlusion,
+			frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -4233,12 +4387,13 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
 			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, ceilingHeight, 
-			voxelGrid, textures, occlusion, frame);
+			openDoors, voxelGrid, textures, occlusion, frame);
 	}
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, double ceilingHeight, const VoxelGrid &voxelGrid, 
+	double ambient, double daytimePercent, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 	uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
@@ -4279,8 +4434,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Lambda for rendering voxels via 2.5D ray casting.
-	auto renderVoxels = [this, &camera, ceilingHeight, &voxelGrid, &shadingInfo, widthReal,
-		&forwardComp, &right2D, &frame](int startX, int stride)
+	auto renderVoxels = [this, &camera, ceilingHeight, &openDoors, &voxelGrid, &shadingInfo,
+		widthReal, &forwardComp, &right2D, &frame](int startX, int stride)
 	{
 		// Draw pixel columns with spacing determined by the number of render threads.
 		for (int x = startX; x < frame.width; x += stride)
@@ -4298,7 +4453,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 			const Ray ray(direction.x, direction.y);
 
 			// Cast the 2D ray and fill in the column's pixels with color.
-			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight,
+			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, openDoors,
 				voxelGrid, this->voxelTextures, this->occlusion.at(x), frame);
 		}
 	};

@@ -9,6 +9,7 @@
 #include "SoftwareRenderer.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
+#include "../World/LevelData.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
 
@@ -168,7 +169,7 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
 		double ambient, double daytimePercent, double ceilingHeight, 
-		const VoxelGrid &voxelGrid);
+		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.
