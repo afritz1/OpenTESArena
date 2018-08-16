@@ -88,7 +88,7 @@ public:
 	public:
 		enum class Direction { None, Opening, Closing };
 	private:
-		static constexpr double DEFAULT_SPEED = 1.0 / 5.0; // @todo: currently arbitrary value.
+		static constexpr double DEFAULT_SPEED = 1.30; // @todo: currently arbitrary value.
 
 		Int2 voxel;
 		double percentOpen;

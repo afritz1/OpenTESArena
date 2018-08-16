@@ -1397,6 +1397,67 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 					this->handleWorldTransition(hit, wallData);
 				}
 			}
+			else if (voxelData.dataType == VoxelDataType::Door)
+			{
+				const VoxelData::DoorData &doorData = voxelData.door;
+				const Int2 voxelXZ(voxel.x, voxel.z);
+
+				// If the door is closed, then open it.
+				auto &openDoors = level.getOpenDoors();
+				const bool isClosed = [&openDoors, &voxelXZ]()
+				{
+					const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+						[&voxelXZ](const LevelData::DoorState &openDoor)
+					{
+						return openDoor.getVoxel() == voxelXZ;
+					});
+
+					return iter == openDoors.end();
+				}();
+
+				if (isClosed)
+				{
+					// Add the door to the open doors list.
+					openDoors.push_back(LevelData::DoorState(voxelXZ));
+
+					// Get .INF file index of the sound.
+					const int soundIndex = [&doorData]()
+					{
+						// Mappings of door types to .INF file sound indices.
+						const std::array<std::pair<VoxelData::DoorData::Type, int>, 3> DoorSounds =
+						{
+							{
+								{ VoxelData::DoorData::Type::Swinging, 6 },
+								{ VoxelData::DoorData::Type::Sliding, 14 },
+								{ VoxelData::DoorData::Type::Raising, 15 }
+							}
+						};
+
+						const auto soundIter = std::find_if(DoorSounds.begin(), DoorSounds.end(),
+							[&doorData](const std::pair<VoxelData::DoorData::Type, int> &pair)
+						{
+							return pair.first == doorData.type;
+						});
+
+						// See if the door type has a valid sound index mapping.
+						if (soundIter != DoorSounds.end())
+						{
+							return soundIter->second;
+						}
+						else
+						{
+							DebugWarning("No sound index for door type \"" +
+								std::to_string(static_cast<int>(doorData.type)) + "\".");
+							return 0;
+						}
+					}();
+
+					const auto &infFile = level.getInfFile();
+					const std::string &soundFilename = infFile.getSound(soundIndex);
+					auto &audioManager = game.getAudioManager();
+					audioManager.playSound(soundFilename);
+				}
+			}
 		}
 	}
 }

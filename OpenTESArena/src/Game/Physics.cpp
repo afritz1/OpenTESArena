@@ -117,7 +117,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		// See what kind of door it is.
 		const VoxelData::DoorData::Type doorType = doorData.type;
 
-		// @todo.
+		// @todo: for now, doors won't be clickable when in the same voxel for simplicity's sake,
+		// due to various oddities (some doors have back faces, swinging doors have corner
+		// preferences, etc.).
 		return false;
 	}
 	else
@@ -238,8 +240,40 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		// See what kind of door it is.
 		const VoxelData::DoorData::Type doorType = doorData.type;
 
-		// @todo.
-		return false;
+		// @todo: ideally this method would take any hit on a door into consideration, since
+		// it's the calling code's responsibility to decide what to do based on the door's open
+		// state, but for now it will assume closed doors only, for simplicity.
+
+		// Cheap/incomplete solution: assume closed, treat like a wall, always a hit.
+		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.point = rayStart + (direction * hit.t);
+		hit.voxel = voxel;
+		hit.facing = facing;
+		hit.type = Hit::Type::Voxel;
+		hit.voxelID = voxelID;
+		return true;
+
+		/*if (doorType == VoxelData::DoorData::Type::Swinging)
+		{
+
+		}
+		else if (doorType == VoxelData::DoorData::Type::Sliding)
+		{
+			
+		}
+		else if (doorType == VoxelData::DoorData::Type::Raising)
+		{
+
+		}
+		else if (doorType == VoxelData::DoorData::Type::Splitting)
+		{
+
+		}
+		else
+		{
+			throw DebugException("Invalid door type \"" +
+				std::to_string(static_cast<int>(doorType)) + "\".");
+		}*/
 	}
 	else
 	{
