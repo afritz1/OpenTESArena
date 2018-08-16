@@ -1420,11 +1420,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 					// Add the door to the open doors list.
 					openDoors.push_back(LevelData::DoorState(voxelXZ));
 
-					// Get .INF file index of the sound.
+					// Get .INF file index of the door's opening sound.
 					const int soundIndex = [&doorData]()
 					{
 						// Mappings of door types to .INF file sound indices.
-						const std::array<std::pair<VoxelData::DoorData::Type, int>, 3> DoorSounds =
+						const std::array<std::pair<VoxelData::DoorData::Type, int>, 3> OpenIndices =
 						{
 							{
 								{ VoxelData::DoorData::Type::Swinging, 6 },
@@ -1432,15 +1432,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 								{ VoxelData::DoorData::Type::Raising, 15 }
 							}
 						};
-
-						const auto soundIter = std::find_if(DoorSounds.begin(), DoorSounds.end(),
+						
+						const auto soundIter = std::find_if(OpenIndices.begin(), OpenIndices.end(),
 							[&doorData](const std::pair<VoxelData::DoorData::Type, int> &pair)
 						{
 							return pair.first == doorData.type;
 						});
 
 						// See if the door type has a valid sound index mapping.
-						if (soundIter != DoorSounds.end())
+						if (soundIter != OpenIndices.end())
 						{
 							return soundIter->second;
 						}
@@ -1452,8 +1452,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 						}
 					}();
 
-					const auto &infFile = level.getInfFile();
-					const std::string &soundFilename = infFile.getSound(soundIndex);
+					const auto &inf = level.getInfFile();
+					const std::string &soundFilename = inf.getSound(soundIndex);
 					auto &audioManager = game.getAudioManager();
 					audioManager.playSound(soundFilename);
 				}
@@ -1546,6 +1546,51 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 
 		if (door.isClosed())
 		{
+			// Get the door's voxel data.
+			const auto &voxelGrid = activeLevel.getVoxelGrid();
+			const Int2 &voxel = door.getVoxel();
+			const uint16_t voxelID = voxelGrid.getVoxels()[voxel.x + (1 * voxelGrid.getWidth()) +
+				(voxel.y * voxelGrid.getWidth() * voxelGrid.getHeight())];
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+			const VoxelData::DoorData &doorData = voxelData.door;
+
+			// Get .INF file index of the door's closing sound.
+			const int soundIndex = [&doorData]()
+			{
+				// Mappings of door types to .INF file sound indices.
+				const std::array<std::pair<VoxelData::DoorData::Type, int>, 3> CloseIndices =
+				{
+					{
+						{ VoxelData::DoorData::Type::Swinging, 5 },
+						{ VoxelData::DoorData::Type::Sliding, 14 },
+						{ VoxelData::DoorData::Type::Raising, 15 }
+					}
+				};
+
+				const auto soundIter = std::find_if(CloseIndices.begin(), CloseIndices.end(),
+					[&doorData](const std::pair<VoxelData::DoorData::Type, int> &pair)
+				{
+					return pair.first == doorData.type;
+				});
+
+				// See if the door type has a valid sound index mapping.
+				if (soundIter != CloseIndices.end())
+				{
+					return soundIter->second;
+				}
+				else
+				{
+					DebugWarning("No sound index for door type \"" +
+						std::to_string(static_cast<int>(doorData.type)) + "\".");
+					return 0;
+				}
+			}();
+
+			const auto &inf = activeLevel.getInfFile();
+			const std::string &soundFilename = inf.getSound(soundIndex);
+			auto &audioManager = game.getAudioManager();
+			audioManager.playSound(soundFilename);
+
 			// Convert to forward iterator before erasing.
 			openDoors.erase(std::next(it).base());
 		}
@@ -1554,7 +1599,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			// Auto-close doors that the player is far enough away from.
 			const bool farEnough = [&playerPos, &door]()
 			{
-				const double maxDistance = 3.50; // @todo: arbitrary value.
+				const double maxDistance = 3.0; // @todo: arbitrary value.
 				const double maxDistanceSqr = maxDistance * maxDistance;
 				const Int2 &doorVoxel = door.getVoxel();
 				const Double2 diff(
