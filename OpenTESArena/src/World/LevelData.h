@@ -102,9 +102,12 @@ public:
 		const Int2 &getVoxel() const;
 		double getPercentOpen() const;
 
+		// Returns whether the door's current direction is closing. This is used to make
+		// sure that sounds are only played once when a door begins closing.
+		bool isClosing() const;
+
 		// Removed from open doors list when true. The code that manages open doors should
-		// update the doors before removing closed ones because direction is write-only,
-		// so the caller must assume that "closed" is a function of only the percent open.
+		// update the doors before removing closed ones.
 		bool isClosed() const;
 
 		void setDirection(DoorState::Direction direction);

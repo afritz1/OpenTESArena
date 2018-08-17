@@ -79,6 +79,11 @@ double LevelData::DoorState::getPercentOpen() const
 	return this->percentOpen;
 }
 
+bool LevelData::DoorState::isClosing() const
+{
+	return this->direction == Direction::Closing;
+}
+
 bool LevelData::DoorState::isClosed() const
 {
 	return this->percentOpen == 0.0;
