@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <vector>
@@ -198,22 +199,22 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 {
 	const LevelData &activeLevel = worldData.getActiveLevel();
 
-	auto getVoxel = [&activeLevel](int x, int y, int z) -> VoxelData
+	auto getVoxelData = [&activeLevel](const Int3 &voxel) -> VoxelData
 	{
 		const VoxelGrid &voxelGrid = activeLevel.getVoxelGrid();
 
 		// Voxels outside the world are air.
-		if ((x < 0) || (x >= voxelGrid.getWidth()) ||
-			(y < 0) || (y >= voxelGrid.getHeight()) ||
-			(z < 0) || (z >= voxelGrid.getDepth()))
+		if ((voxel.x < 0) || (voxel.x >= voxelGrid.getWidth()) ||
+			(voxel.y < 0) || (voxel.y >= voxelGrid.getHeight()) ||
+			(voxel.z < 0) || (voxel.z >= voxelGrid.getDepth()))
 		{
 			return VoxelData();
 		}
 		else
 		{
-			return voxelGrid.getVoxelData(voxelGrid.getVoxels()[x +
-				(y * voxelGrid.getWidth()) +
-				(z * voxelGrid.getWidth() * voxelGrid.getHeight())]);
+			return voxelGrid.getVoxelData(voxelGrid.getVoxels()[voxel.x +
+				(voxel.y * voxelGrid.getWidth()) +
+				(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight())]);
 		}
 	};
 
@@ -224,25 +225,29 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 	// Get the voxel data for each voxel the player would touch on each axis.
 	const Int3 playerVoxel = this->getVoxelPosition();
-	const VoxelData &xVoxel = getVoxel(
+	const Int3 xVoxel(
 		static_cast<int>(std::floor(this->camera.position.x + (this->velocity.x * dt))),
 		feetVoxelY,
 		playerVoxel.z);
-	const VoxelData &yVoxel = getVoxel(
+	const Int3 yVoxel(
 		playerVoxel.x,
 		feetVoxelY,
 		playerVoxel.z);
-	const VoxelData &zVoxel = getVoxel(
+	const Int3 zVoxel(
 		playerVoxel.x,
 		feetVoxelY,
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
+
+	const VoxelData &xVoxelData = getVoxelData(xVoxel);
+	const VoxelData &yVoxelData = getVoxelData(yVoxel);
+	const VoxelData &zVoxelData = getVoxelData(zVoxel);
 
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [](const VoxelData &voxelData)
+	auto wouldCollideWithVoxel = [&activeLevel](const Int3 &voxel, const VoxelData &voxelData)
 	{
 		if (voxelData.dataType == VoxelDataType::TransparentWall)
 		{
@@ -261,7 +266,33 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		{
 			// General voxel collision.
 			const bool isEmpty = voxelData.dataType == VoxelDataType::None;
-			const bool isDoor = voxelData.dataType == VoxelDataType::Door;
+			const bool isOpenDoor = [&activeLevel, &voxel, &voxelData]()
+			{
+				if (voxelData.dataType == VoxelDataType::Door)
+				{
+					const auto &openDoors = activeLevel.getOpenDoors();
+					const VoxelData::DoorData &doorData = voxelData.door;
+
+					// Only collide with a door voxel if the door is closed.
+					const bool isClosed = [&voxel, &openDoors]()
+					{
+						const Int2 voxelXZ(voxel.x, voxel.z);
+						const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+							[&voxelXZ](const LevelData::DoorState &openDoor)
+						{
+							return openDoor.getVoxel() == voxelXZ;
+						});
+
+						return iter == openDoors.end();
+					}();
+
+					return !isClosed;
+				}
+				else
+				{
+					return false;
+				}
+			}();
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.			
@@ -279,16 +310,16 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 				}
 			}();
 
-			return !isEmpty && !isDoor && !isLevelUpDown;
+			return !isEmpty && !isOpenDoor && !isLevelUpDown;
 		}
 	};
 
-	if (wouldCollideWithVoxel(xVoxel))
+	if (wouldCollideWithVoxel(xVoxel, xVoxelData))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if (wouldCollideWithVoxel(zVoxel))
+	if (wouldCollideWithVoxel(zVoxel, zVoxelData))
 	{
 		this->velocity.z = 0.0;
 	}
