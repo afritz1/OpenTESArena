@@ -140,6 +140,48 @@ bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
 	}
 }
 
+int VoxelData::DoorData::getOpenSoundIndex() const
+{
+	if (this->type == DoorData::Type::Swinging)
+	{
+		return 6;
+	}
+	else if (this->type == DoorData::Type::Sliding)
+	{
+		return 14;
+	}
+	else if (this->type == DoorData::Type::Raising)
+	{
+		return 15;
+	}
+	else
+	{
+		throw DebugException("Invalid door type \"" +
+			std::to_string(static_cast<int>(this->type)) + "\".");
+	}
+}
+
+VoxelData::DoorData::CloseSoundData VoxelData::DoorData::getCloseSoundData() const
+{
+	if (this->type == DoorData::Type::Swinging)
+	{
+		return { 5, DoorData::CloseSoundType::OnClosed };
+	}
+	else if (this->type == DoorData::Type::Sliding)
+	{
+		return { 14, DoorData::CloseSoundType::OnClosing };
+	}
+	else if (this->type == DoorData::Type::Raising)
+	{
+		return { 15, DoorData::CloseSoundType::OnClosing };
+	}
+	else
+	{
+		throw DebugException("Invalid door type \"" +
+			std::to_string(static_cast<int>(this->type)) + "\".");
+	}
+}
+
 const int VoxelData::TOTAL_IDS = 64;
 
 VoxelData::VoxelData()

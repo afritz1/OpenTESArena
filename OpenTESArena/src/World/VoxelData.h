@@ -130,8 +130,23 @@ public:
 		// Splitting doors are unused in the original game.
 		enum class Type { Swinging, Sliding, Raising, Splitting };
 
+		// Each door has a certain behavior for playing sounds when closing.
+		enum class CloseSoundType { OnClosed, OnClosing };
+
+		struct CloseSoundData
+		{
+			int soundIndex;
+			CloseSoundType type;
+		};
+
 		int id;
 		Type type;
+
+		// Gets the door's open sound index.
+		int getOpenSoundIndex() const;
+
+		// Gets the door's close sound data.
+		CloseSoundData getCloseSoundData() const;
 	};
 
 	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
