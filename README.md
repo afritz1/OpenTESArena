@@ -10,9 +10,9 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 No actual gameplay yet, but all cities, main quest dungeons, random dungeons, interior locations, and a fixed portion of wilderness can be accessed from test options on the main menu.
 
-Fast traveling works and you can go to any city or main quest dungeon on the world map.
+Doors and transition blocks can be interacted with, and you can enter and exit buildings.
 
-Clicking in the game world isn't implemented, so you can't click on things like doors yet.
+Fast traveling works and you can go to any city or main quest dungeon on the world map.
 
 Collision detection is partially implemented (you can't jump or fall yet).
 
@@ -47,7 +47,7 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 
 ## Installation
 
-The engine uses `MidiConfig` and `ArenaPath` from the options file to find where the MIDI config and game files are (see **Options files** below).
+If you would like music played in-game, see **Music setup** below. The engine uses `ArenaPath` and `MidiConfig` from the options file to find where the game files and MIDI config are (see **Options files** below).
 
 ### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
@@ -94,9 +94,10 @@ cd ..
 - Linux: `~/.config/OpenTESArena/options/`
 - macOS: `~/Library/Preferences/OpenTESArena/options/`
 
-### Obtaining a MIDI sound patches library for music:
+### Music setup
+- Arena uses MIDI files for music, and the user must have MIDI sound patches in order to have music play in-game.
 - The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
-- If you would like to use a different sound patches library, simply edit `MidiConfig` in the options file to point to another existing MIDI `.cfg` file.
+- If you would like to use a different sound patches library (like OPL3), simply edit `MidiConfig` in the options file to point to another MIDI `.cfg` file.
 
 ## Building from source
 
