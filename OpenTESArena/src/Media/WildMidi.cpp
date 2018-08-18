@@ -66,9 +66,13 @@ WildMidiDevice::WildMidiDevice(const std::string &midiConfig)
 {
 	sInitState = WildMidi_Init(midiConfig.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
 	if (sInitState < 0)
-		DebugWarning("Failed to init WildMIDI with config \"" + midiConfig + "\".");
+	{
+		DebugWarning("Cannot play music. Invalid/missing WildMIDI config \"" + midiConfig + "\"");
+	}
 	else
+	{
 		WildMidi_MasterVolume(100);
+	}
 }
 
 WildMidiDevice::~WildMidiDevice()
@@ -87,8 +91,8 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 	if (sInitState < 0)
 		return MidiSongPtr(nullptr);
 
-	VFS::IStreamPtr fstream = VFS::Manager::get().open(name.c_str());
-	if (fstream == nullptr)
+	VFS::IStreamPtr stream = VFS::Manager::get().open(name);
+	if (stream == nullptr)
 	{
 		DebugWarning("Failed to open \"" + name + "\".");
 		return MidiSongPtr(nullptr);
@@ -98,12 +102,12 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 	 * that WildMidi can't read from.
 	 */
 	std::vector<char> midiBuffer;
-	while (fstream->good())
+	while (stream->good())
 	{
 		std::array<char, 1024> readBuffer;
-		fstream->read(readBuffer.data(), readBuffer.size());
+		stream->read(readBuffer.data(), readBuffer.size());
 		midiBuffer.insert(midiBuffer.end(), readBuffer.begin(),
-			readBuffer.begin() + fstream->gcount());
+			readBuffer.begin() + stream->gcount());
 	}
 
 	midi *song = WildMidi_OpenBuffer(
