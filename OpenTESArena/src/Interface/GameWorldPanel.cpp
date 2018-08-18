@@ -1381,9 +1381,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 		if (hit.t <= maxSelectionDist)
 		{
 			const Int3 &voxel = hit.voxel;
-			const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
-				(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
-			const uint16_t voxelID = voxelGrid.getVoxels()[voxelIndex];
+			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
 			// @todo: check more cases than just walls.
@@ -1532,8 +1530,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		// Get the door's voxel data and its close sound data for determining how it plays
 		// sounds when closing.
 		const Int2 &voxel = door.getVoxel();
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxel.x + (1 * voxelGrid.getWidth()) +
-			(voxel.y * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const VoxelData::DoorData &doorData = voxelData.door;
 		const auto closeSoundData = doorData.getCloseSoundData();
@@ -1720,15 +1717,10 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	// Get the voxel data associated with the voxel.
 	const auto &voxelData = [&transitionVoxel, &voxelGrid]()
 	{
-		const uint16_t voxelID = [&transitionVoxel, &voxelGrid]()
-		{
-			const int x = transitionVoxel.x;
-			const int y = 1;
-			const int z = transitionVoxel.y;
-			return voxelGrid.getVoxels()[x + (y * voxelGrid.getWidth()) +
-				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-		}();
-
+		const int x = transitionVoxel.x;
+		const int y = 1;
+		const int z = transitionVoxel.y;
+		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
 		return voxelGrid.getVoxelData(voxelID);
 	}();
 

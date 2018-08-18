@@ -2141,8 +2141,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
@@ -2425,8 +2424,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
@@ -2688,8 +2686,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &voxelGrid, 
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
@@ -2963,8 +2960,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
@@ -3349,8 +3345,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
@@ -3742,8 +3737,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &voxelGrid,
 		&textures, &occlusion, &frame](int voxelY)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxels()[voxelX + (voxelY * voxelGrid.getWidth()) +
-			(voxelZ * voxelGrid.getWidth() * voxelGrid.getHeight())];
+		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;

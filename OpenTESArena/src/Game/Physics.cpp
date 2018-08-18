@@ -10,12 +10,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	const Double2 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 	Physics::Hit &hit)
 {
-	const uint16_t voxelID = [&voxel, &voxelGrid]()
-	{
-		const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
-			(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
-		return voxelGrid.getVoxels()[voxelIndex];
-	}();
+	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
 	// Get the voxel data associated with the voxel.
 	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
@@ -133,12 +128,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	const Int3 &voxel, VoxelData::Facing facing, const Double2 &nearPoint,
 	const Double2 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
-	const uint16_t voxelID = [&voxel, &voxelGrid]()
-	{
-		const int voxelIndex = voxel.x + (voxel.y * voxelGrid.getWidth()) +
-			(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight());
-		return voxelGrid.getVoxels()[voxelIndex];
-	}();
+	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
 	// Get the voxel data associated with the voxel.
 	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);

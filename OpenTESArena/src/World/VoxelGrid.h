@@ -19,6 +19,9 @@ private:
 	std::vector<uint16_t> voxels;
 	std::vector<VoxelData> voxelData;
 	int width, height, depth;
+
+	// Converts XYZ coordinate to index.
+	int getIndex(int x, int y, int z) const;
 public:
 	VoxelGrid(int width, int height, int depth);
 
@@ -37,12 +40,18 @@ public:
 	uint16_t *getVoxels();
 	const uint16_t *getVoxels() const;
 
+	// Convenience method for getting a voxel's ID.
+	uint16_t getVoxel(int x, int y, int z) const;
+
 	// Gets the voxel data associated with an ID.
 	VoxelData &getVoxelData(uint16_t id);
 	const VoxelData &getVoxelData(uint16_t id) const;
 
 	// Adds a voxel data object and returns its assigned ID.
 	uint16_t addVoxelData(const VoxelData &voxelData);
+
+	// Convenience method for setting a voxel's ID.
+	void setVoxel(int x, int y, int z, uint16_t id);
 };
 
 #endif

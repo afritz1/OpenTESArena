@@ -12,6 +12,11 @@ VoxelGrid::VoxelGrid(int width, int height, int depth)
 	this->depth = depth;
 }
 
+int VoxelGrid::getIndex(int x, int y, int z) const
+{
+	return x + (y * this->width) + (z * this->width * this->height);
+}
+
 Int2 VoxelGrid::getTransformedCoordinate(const Int2 &voxel, int gridWidth, int gridDepth)
 {
 	// These have a -1 whereas the Double2 version does not since all .MIF start points
@@ -54,6 +59,12 @@ const uint16_t *VoxelGrid::getVoxels() const
 	return this->voxels.data();
 }
 
+uint16_t VoxelGrid::getVoxel(int x, int y, int z) const
+{
+	const int index = this->getIndex(x, y, z);
+	return this->voxels.data()[index];
+}
+
 VoxelData &VoxelGrid::getVoxelData(uint16_t id)
 {
 	return this->voxelData.at(id);
@@ -69,4 +80,10 @@ uint16_t VoxelGrid::addVoxelData(const VoxelData &voxelData)
 	this->voxelData.push_back(voxelData);
 
 	return static_cast<uint16_t>(this->voxelData.size() - 1);
+}
+
+void VoxelGrid::setVoxel(int x, int y, int z, uint16_t id)
+{
+	const int index = this->getIndex(x, y, z);
+	this->voxels.data()[index] = id;
 }

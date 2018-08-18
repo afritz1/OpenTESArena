@@ -143,10 +143,8 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
 		{
-			const uint16_t *voxels = voxelGrid.getVoxels();
-			const uint16_t id = voxels[x + (y * voxelGrid.getWidth()) +
-				(z * voxelGrid.getWidth() * voxelGrid.getHeight())];
-			return voxelGrid.getVoxelData(id);
+			const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
+			return voxelGrid.getVoxelData(voxelID);
 		};
 
 		// For each voxel, start at the lowest Y and walk upwards. The color depends 

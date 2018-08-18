@@ -212,9 +212,8 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 		else
 		{
-			return voxelGrid.getVoxelData(voxelGrid.getVoxels()[voxel.x +
-				(voxel.y * voxelGrid.getWidth()) +
-				(voxel.z * voxelGrid.getWidth() * voxelGrid.getHeight())]);
+			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+			return voxelGrid.getVoxelData(voxelID);
 		}
 	};
 

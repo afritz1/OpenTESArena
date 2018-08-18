@@ -172,10 +172,7 @@ const LevelData::Lock *LevelData::getLock(const Int2 &voxel) const
 
 void LevelData::setVoxel(int x, int y, int z, uint16_t id)
 {
-	uint16_t *voxels = this->voxelGrid.getVoxels();
-	const int index = x + (y * this->voxelGrid.getWidth()) +
-		(z * this->voxelGrid.getWidth() * this->voxelGrid.getHeight());
-	voxels[index] = id;
+	this->voxelGrid.setVoxel(x, y, z, id);
 }
 
 void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth)
