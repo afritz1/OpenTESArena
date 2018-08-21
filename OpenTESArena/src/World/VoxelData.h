@@ -10,9 +10,6 @@
 // A voxel's data is used for multiple things, such as rendering, collision detection,
 // and color-coding on the automap.
 
-// Perhaps, when voxel destruction spells like Passwall are added, more data could be 
-// added here that represents a percentage of "fade".
-
 enum class VoxelDataType;
 
 class VoxelData

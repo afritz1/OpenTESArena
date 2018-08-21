@@ -621,8 +621,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (automapHotkeyPressed)
 	{
-		const bool isAutomap = true;
-		this->mapButton.click(game, isAutomap);
+		const bool goToAutomap = true;
+		this->mapButton.click(game, goToAutomap);
 	}
 	else if (logbookHotkeyPressed)
 	{
@@ -638,8 +638,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (worldMapHotkeyPressed)
 	{
-		const bool isAutomap = false;
-		this->mapButton.click(game, isAutomap);
+		const bool goToAutomap = false;
+		this->mapButton.click(game, goToAutomap);
 	}
 	else if (toggleCompassHotkeyPressed)
 	{
@@ -713,6 +713,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
+		const Rect &centerCursorRegion = this->nativeCursorRegions.at(4);
+
 		if (leftClick)
 		{
 			// Was an interface button clicked?
@@ -726,7 +728,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else if (this->mapButton.contains(originalPosition))
 			{
-				this->mapButton.click(game, true);
+				const bool goToAutomap = true;
+				this->mapButton.click(game, goToAutomap);
 			}
 			else if (this->stealButton.contains(originalPosition))
 			{
@@ -754,11 +757,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			}
 			else
 			{
-				// Check for clicks in the game world.
-				const int centerIndex = 4;
-				if (this->nativeCursorRegions.at(centerIndex).contains(mousePosition))
+				// Check for left clicks in the game world.
+				if (centerCursorRegion.contains(mousePosition))
 				{
-					this->handleClickInWorld(mousePosition);
+					const bool primaryClick = true;
+					this->handleClickInWorld(mousePosition, primaryClick);
 				}
 			}
 		}
@@ -768,22 +771,37 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			{
 				this->mapButton.click(game, false);
 			}
+			else
+			{
+				// Check for right clicks in the game world.
+				if (centerCursorRegion.contains(mousePosition))
+				{
+					const bool primaryClick = false;
+					this->handleClickInWorld(mousePosition, primaryClick);
+				}
+			}
 		}
 	}
 	else
 	{
-		// Check for clicks in the game world in modern mode. Eventually the mouse cursor
-		// will be restricted to the center of the screen, so this implementation just
-		// assumes that's true now.
-
-		// Hardcoded "activate" button.
+		// Check modern mode input events.
 		const bool ePressed = inputManager.keyPressed(e, SDLK_e);
+
+		// Any clicks will be at the center of the window.
+		const Int2 windowDims = renderer.getWindowDimensions();
+		const Int2 nativeCenter = windowDims / 2;
 
 		if (ePressed)
 		{
-			const Int2 windowDims = renderer.getWindowDimensions();
-			const Int2 nativeCenter = windowDims / 2;
-			this->handleClickInWorld(nativeCenter);
+			// Activate (left click in classic mode).
+			const bool primaryClick = true;
+			this->handleClickInWorld(nativeCenter, primaryClick);
+		}
+		else if (leftClick)
+		{
+			// Read (right click in classic mode).
+			const bool primaryClick = false;
+			this->handleClickInWorld(nativeCenter, primaryClick);
 		}
 	}
 }
@@ -1313,7 +1331,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	}	
 }
 
-void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
+void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryClick)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -1335,10 +1353,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 		const double viewAspectRatio = static_cast<double>(viewWidth) /
 			static_cast<double>(viewHeight);
 
-		// Mouse position percents across the screen.
-		const double mouseXPercent = static_cast<double>(nativePoint.x) /
+		// Mouse position percents across the screen. Add 0.50 to sample at the center
+		// of the pixel.
+		const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
 			static_cast<double>(viewWidth);
-		const double mouseYPercent = static_cast<double>(nativePoint.y) /
+		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
 			static_cast<double>(viewHeight);
 
 		// Zoom of the camera, based on vertical field of view.
@@ -1375,55 +1394,106 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint)
 	// See if the ray hit anything.
 	if (success)
 	{
-		// Arbitrary max distance for selection.
-		const double maxSelectionDist = 1.50;
+		const Int3 &voxel = hit.voxel;
+		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
-		if (hit.t <= maxSelectionDist)
+		// Primary click handles selection in the game world. Secondary click handles
+		// reading names of things.
+		if (primaryClick)
 		{
-			const Int3 &voxel = hit.voxel;
-			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+			// Arbitrary max distance for selection.
+			const double maxSelectionDist = 1.50;
 
-			// @todo: check more cases than just walls.
+			if (hit.t <= maxSelectionDist)
+			{
+				if (voxelData.dataType == VoxelDataType::Wall)
+				{
+					const VoxelData::WallData &wallData = voxelData.wall;
+
+					// @todo: check more cases than just *MENU blocks.
+					if (wallData.isMenu())
+					{
+						this->handleWorldTransition(hit, wallData);
+					}
+				}
+				else if (voxelData.dataType == VoxelDataType::Door)
+				{
+					const VoxelData::DoorData &doorData = voxelData.door;
+					const Int2 voxelXZ(voxel.x, voxel.z);
+
+					// If the door is closed, then open it.
+					auto &openDoors = level.getOpenDoors();
+					const bool isClosed = [&openDoors, &voxelXZ]()
+					{
+						const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+							[&voxelXZ](const LevelData::DoorState &openDoor)
+						{
+							return openDoor.getVoxel() == voxelXZ;
+						});
+
+						return iter == openDoors.end();
+					}();
+
+					if (isClosed)
+					{
+						// Add the door to the open doors list.
+						openDoors.push_back(LevelData::DoorState(voxelXZ));
+
+						// Get the door's opening sound index and play it.
+						const int soundIndex = doorData.getOpenSoundIndex();
+						const auto &inf = level.getInfFile();
+						const std::string &soundFilename = inf.getSound(soundIndex);
+						auto &audioManager = game.getAudioManager();
+						audioManager.playSound(soundFilename);
+					}
+				}
+			}
+		}
+		else
+		{
+			// Handle secondary click (i.e., right click).
 			if (voxelData.dataType == VoxelDataType::Wall)
 			{
 				const VoxelData::WallData &wallData = voxelData.wall;
 
-				// @todo: check more cases than just *MENU blocks.
-				if (wallData.isMenu())
+				// Print interior display name if *MENU block is clicked in an exterior.
+				if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 				{
-					this->handleWorldTransition(hit, wallData);
-				}
-			}
-			else if (voxelData.dataType == VoxelDataType::Door)
-			{
-				const VoxelData::DoorData &doorData = voxelData.door;
-				const Int2 voxelXZ(voxel.x, voxel.z);
+					const bool isCity = worldData.getActiveWorldType() == WorldType::City;
+					const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
 
-				// If the door is closed, then open it.
-				auto &openDoors = level.getOpenDoors();
-				const bool isClosed = [&openDoors, &voxelXZ]()
-				{
-					const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-						[&voxelXZ](const LevelData::DoorState &openDoor)
+					if (VoxelData::WallData::menuLeadsToInterior(menuType))
 					{
-						return openDoor.getVoxel() == voxelXZ;
-					});
+						const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+							Int2(voxel.x, voxel.z), voxelGrid.getWidth(), voxelGrid.getDepth());
 
-					return iter == openDoors.end();
-				}();
+						// @todo: get interior name from the clicked voxel.
+						// - Names seem to be a function of the current chunk in the wilderness,
+						//   not their voxel position.
+						const std::string text = "Interior Name";
 
-				if (isClosed)
-				{
-					// Add the door to the open doors list.
-					openDoors.push_back(LevelData::DoorState(voxelXZ));
+						const RichTextString richText(
+							text,
+							FontName::Arena,
+							ActionTextColor,
+							TextAlignment::Center,
+							game.getFontManager());
 
-					// Get the door's opening sound index and play it.
-					const int soundIndex = doorData.getOpenSoundIndex();
-					const auto &inf = level.getInfFile();
-					const std::string &soundFilename = inf.getSound(soundIndex);
-					auto &audioManager = game.getAudioManager();
-					audioManager.playSound(soundFilename);
+						const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+						auto textBox = std::make_unique<TextBox>(
+							Int2(0, 0),
+							richText,
+							&shadowData,
+							game.getRenderer());
+
+						auto &gameData = game.getGameData();
+						auto &actionText = gameData.getActionText();
+						const double duration = std::max(2.25,
+							static_cast<double>(text.size()) * 0.050);
+						actionText = GameData::TimedTextBox(duration, std::move(textBox));
+					}
 				}
 			}
 		}
