@@ -1463,7 +1463,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					const bool isCity = worldData.getActiveWorldType() == WorldType::City;
 					const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
 
-					if (VoxelData::WallData::menuLeadsToInterior(menuType))
+					if (VoxelData::WallData::menuHasDisplayName(menuType))
 					{
 						const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 							Int2(voxel.x, voxel.z), voxelGrid.getWidth(), voxelGrid.getDepth());

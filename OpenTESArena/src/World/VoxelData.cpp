@@ -117,6 +117,14 @@ bool VoxelData::WallData::menuLeadsToInterior(MenuType menuType)
 		(menuType == VoxelData::WallData::MenuType::Tower);
 }
 
+bool VoxelData::WallData::menuHasDisplayName(MenuType menuType)
+{
+	return (menuType == VoxelData::WallData::MenuType::Equipment) ||
+		(menuType == VoxelData::WallData::MenuType::MagesGuild) ||
+		(menuType == VoxelData::WallData::MenuType::Tavern) ||
+		(menuType == VoxelData::WallData::MenuType::Temple);
+}
+
 const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
 	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
 

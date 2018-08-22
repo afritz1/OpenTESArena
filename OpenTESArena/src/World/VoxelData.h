@@ -59,6 +59,9 @@ public:
 		// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
 		// else (like city gates).
 		static bool menuLeadsToInterior(MenuType menuType);
+
+		// Returns whether the menu type displays text on-screen when the player right clicks it.
+		static bool menuHasDisplayName(MenuType menuType);
 	};
 
 	// Floors only have their top rendered.
