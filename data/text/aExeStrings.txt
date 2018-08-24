@@ -49,6 +49,13 @@ CoastalCityList=0x3FEA8
 CityTemplateFilenames=0x3FEE2
 StartingPositions=0x3FF55
 ReservedBlockLists=0x3FF8E
+TavernPrefixes=0x36216
+TavernMarineSuffixes=0x362C6
+TavernSuffixes=0x36366
+TemplePrefixes=0x363E1
+TempleSuffixes=0x3640C
+EquipmentPrefixes=0x364D1
+EquipmentSuffixes=0x3659E
 
 [Entities]
 CreatureNames=0x36BBE

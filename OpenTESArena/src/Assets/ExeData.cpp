@@ -281,6 +281,13 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	const int cityTemplateFilenamesOffset = ExeData::get(section, "CityTemplateFilenames", keyValueMap);
 	const int startingPositionsOffset = ExeData::get(section, "StartingPositions", keyValueMap);
 	const int reservedBlockListsOffset = ExeData::get(section, "ReservedBlockLists", keyValueMap);
+	const int tavernPrefixesOffset = ExeData::get(section, "TavernPrefixes", keyValueMap);
+	const int tavernMarineSuffixesOffset = ExeData::get(section, "TavernMarineSuffixes", keyValueMap);
+	const int tavernSuffixesOffset = ExeData::get(section, "TavernSuffixes", keyValueMap);
+	const int templePrefixesOffset = ExeData::get(section, "TemplePrefixes", keyValueMap);
+	const int templeSuffixesOffset = ExeData::get(section, "TempleSuffixes", keyValueMap);
+	const int equipmentPrefixesOffset = ExeData::get(section, "EquipmentPrefixes", keyValueMap);
+	const int equipmentSuffixesOffset = ExeData::get(section, "EquipmentSuffixes", keyValueMap);
 
 	initInt8Array(this->coastalCityList, data + coastalCityListOffset);
 	initStringArray(this->templateFilenames, data + cityTemplateFilenamesOffset);
@@ -289,6 +296,14 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	const uint8_t blockTerminator = 0;
 	initJaggedInt8Array(this->reservedBlockLists, blockTerminator,
 		data + reservedBlockListsOffset);
+
+	initStringArray(this->tavernPrefixes, data + tavernPrefixesOffset);
+	initStringArray(this->tavernMarineSuffixes, data + tavernMarineSuffixesOffset);
+	initStringArray(this->tavernSuffixes, data + tavernSuffixesOffset);
+	initStringArray(this->templePrefixes, data + templePrefixesOffset);
+	initStringArray(this->templeSuffixes, data + templeSuffixesOffset);
+	initStringArray(this->equipmentPrefixes, data + equipmentPrefixesOffset);
+	initStringArray(this->equipmentSuffixes, data + equipmentSuffixesOffset);
 }
 
 void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)

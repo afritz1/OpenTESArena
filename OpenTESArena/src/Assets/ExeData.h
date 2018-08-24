@@ -101,6 +101,15 @@ public:
 		// Reserved blocks in the city plan.
 		std::array<std::vector<uint8_t>, 8> reservedBlockLists;
 
+		// Prefixes and suffixes for taverns/temples/equipment stores.
+		std::array<std::string, 24> tavernPrefixes;
+		std::array<std::string, 24> tavernMarineSuffixes;
+		std::array<std::string, 21> tavernSuffixes;
+		std::array<std::string, 3> templePrefixes;
+		std::array<std::string, 24> templeSuffixes;
+		std::array<std::string, 20> equipmentPrefixes;
+		std::array<std::string, 10> equipmentSuffixes;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 
