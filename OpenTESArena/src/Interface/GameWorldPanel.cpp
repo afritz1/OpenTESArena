@@ -908,19 +908,16 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		else if (!lCtrl)
 		{
 			// If left control is not held, then turning is permitted.
-			// Use an arbitrary turn speed mixed with the horizontal sensitivity.
-			const double turnSpeed = 0.60;
-
 			if (left)
 			{
 				// Turn left at a fixed angular velocity.
-				player.rotate(-turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
+				player.rotate(-dt, 0.0, options.getInput_HorizontalSensitivity(),
 					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 			}
 			else if (right)
 			{
 				// Turn right at a fixed angular velocity.
-				player.rotate(turnSpeed * dt, 0.0, options.getInput_HorizontalSensitivity(),
+				player.rotate(dt, 0.0, options.getInput_HorizontalSensitivity(),
 					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 			}
 		}
