@@ -50,10 +50,12 @@ CityTemplateFilenames=0x3FEE2
 StartingPositions=0x3FF55
 ReservedBlockLists=0x3FF8E
 TavernPrefixes=0x36216
-TavernMarineSuffixes=0x362C6
-TavernSuffixes=0x36366
+TavernMarineSuffixes=0x362BD
+TavernSuffixes=0x36357
 TemplePrefixes=0x363E1
-TempleSuffixes=0x3640C
+Temple1Suffixes=0x3640C
+Temple2Suffixes=0x36449
+Temple3Suffixes=0x36488
 EquipmentPrefixes=0x364D1
 EquipmentSuffixes=0x3659E
 

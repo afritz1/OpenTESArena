@@ -102,11 +102,13 @@ public:
 		std::array<std::vector<uint8_t>, 8> reservedBlockLists;
 
 		// Prefixes and suffixes for taverns/temples/equipment stores.
-		std::array<std::string, 24> tavernPrefixes;
-		std::array<std::string, 24> tavernMarineSuffixes;
-		std::array<std::string, 21> tavernSuffixes;
+		std::array<std::string, 23> tavernPrefixes;
+		std::array<std::string, 23> tavernMarineSuffixes;
+		std::array<std::string, 23> tavernSuffixes;
 		std::array<std::string, 3> templePrefixes;
-		std::array<std::string, 24> templeSuffixes;
+		std::array<std::string, 5> temple1Suffixes;
+		std::array<std::string, 9> temple2Suffixes;
+		std::array<std::string, 10> temple3Suffixes;
 		std::array<std::string, 20> equipmentPrefixes;
 		std::array<std::string, 10> equipmentSuffixes;
 

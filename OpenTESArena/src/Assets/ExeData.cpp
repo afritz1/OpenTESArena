@@ -285,7 +285,9 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	const int tavernMarineSuffixesOffset = ExeData::get(section, "TavernMarineSuffixes", keyValueMap);
 	const int tavernSuffixesOffset = ExeData::get(section, "TavernSuffixes", keyValueMap);
 	const int templePrefixesOffset = ExeData::get(section, "TemplePrefixes", keyValueMap);
-	const int templeSuffixesOffset = ExeData::get(section, "TempleSuffixes", keyValueMap);
+	const int temple1SuffixesOffset = ExeData::get(section, "Temple1Suffixes", keyValueMap);
+	const int temple2SuffixesOffset = ExeData::get(section, "Temple2Suffixes", keyValueMap);
+	const int temple3SuffixesOffset = ExeData::get(section, "Temple3Suffixes", keyValueMap);
 	const int equipmentPrefixesOffset = ExeData::get(section, "EquipmentPrefixes", keyValueMap);
 	const int equipmentSuffixesOffset = ExeData::get(section, "EquipmentSuffixes", keyValueMap);
 
@@ -301,7 +303,9 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	initStringArray(this->tavernMarineSuffixes, data + tavernMarineSuffixesOffset);
 	initStringArray(this->tavernSuffixes, data + tavernSuffixesOffset);
 	initStringArray(this->templePrefixes, data + templePrefixesOffset);
-	initStringArray(this->templeSuffixes, data + templeSuffixesOffset);
+	initStringArray(this->temple1Suffixes, data + temple1SuffixesOffset);
+	initStringArray(this->temple2Suffixes, data + temple2SuffixesOffset);
+	initStringArray(this->temple3Suffixes, data + temple3SuffixesOffset);
 	initStringArray(this->equipmentPrefixes, data + equipmentPrefixesOffset);
 	initStringArray(this->equipmentSuffixes, data + equipmentSuffixesOffset);
 }
