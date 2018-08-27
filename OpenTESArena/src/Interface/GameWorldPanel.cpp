@@ -1588,10 +1588,11 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		}
 	};
 
-	// Update each open door and remove ones that become closed.
-	for (auto it = openDoors.rbegin(); it != openDoors.rend(); ++it)
+	// Update each open door and remove ones that become closed. A reverse iterator loop
+	// was causing increment issues after erasing.
+	for (int i = static_cast<int>(openDoors.size()) - 1; i >= 0; i--)
 	{
-		auto &door = *it;
+		auto &door = openDoors.at(i);
 		door.update(dt);
 
 		// Get the door's voxel data and its close sound data for determining how it plays
@@ -1607,8 +1608,8 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			// Only some doors play a sound when they become closed.
 			playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosed);
 
-			// Convert to forward iterator before erasing.
-			openDoors.erase(std::next(it).base());
+			// Erase closed door.
+			openDoors.erase(openDoors.begin() + i);
 		}
 		else if (!door.isClosing())
 		{
