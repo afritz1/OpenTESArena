@@ -369,7 +369,7 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 			if (count > 0)
 			{
 				// Read "count" * 2 colors and write them to the output frame.
-				for (int i = 0; (i < count) && (x < this->width); i++)
+				for (int j = 0; (j < count) && (x < this->width); j++)
 				{
 					const uint8_t color1 = *(chunkData + offset);
 					const uint8_t color2 = *(chunkData + offset + 1);
@@ -395,7 +395,7 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 				// Reverse the sign of count so it's positive.
 				const int8_t positiveCount = -count;
 
-				for (int i = 0; (i < positiveCount) && (x < this->width); i++)
+				for (int j = 0; (j < positiveCount) && (x < this->width); j++)
 				{
 					initialFrame.at(x + (y * this->width)) = color1;
 					x++;

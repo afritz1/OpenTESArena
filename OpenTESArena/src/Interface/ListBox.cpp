@@ -36,8 +36,8 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 		// Remove any new lines.
 		std::string trimmedElement = String::trimLines(element);
 
-		const int x = 0;
-		const int y = 0;
+		const int textBoxX = 0;
+		const int textBoxY = 0;
 
 		const RichTextString richText(
 			trimmedElement,
@@ -47,7 +47,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 			fontManager);
 
 		// Store the text box for later.
-		auto textBox = std::make_unique<TextBox>(x, y, richText, renderer);
+		auto textBox = std::make_unique<TextBox>(textBoxX, textBoxY, richText, renderer);
 		this->textBoxes.push_back(std::move(textBox));
 	}
 
