@@ -28,22 +28,24 @@ namespace
 
 	// Convenience function for loading a binary save file and returning the initialized record.
 	template <typename T>
-	T loadBinary(const std::string &filename)
+	std::unique_ptr<T> loadBinary(const std::string &filename)
 	{
 		std::ifstream ifs(filename, std::ios::binary);
 
 		if (ifs.is_open())
 		{
-			std::array<uint8_t, T::SIZE> buffer;
+			// Using heap-allocated objects to avoid stack warnings.
+			std::vector<uint8_t> buffer(T::SIZE);
 			ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 
-			T obj;
-			obj.init(buffer.data());
+			auto obj = std::make_unique<T>();
+			obj->init(buffer.data());
 			return obj;
 		}
 		else
 		{
-			throw DebugException("\"" + filename + "\" not found.");
+			DebugWarning("\"" + filename + "\" not found.");
+			return nullptr;
 		}
 	}
 }
@@ -59,19 +61,20 @@ const std::string ArenaSave::SPELLS_FILENAME = "SPELLS";
 const std::string ArenaSave::SPELLSG_FILENAME = "SPELLSG";
 const std::string ArenaSave::STATE_FILENAME = "STATE";
 
-ArenaTypes::Automap ArenaSave::loadAUTOMAP(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::Automap> ArenaSave::loadAUTOMAP(const std::string &savePath, int index)
 {
 	return loadBinary<ArenaTypes::Automap>(
 		savePath + ArenaSave::AUTOMAP_FILENAME + makeSaveExtension(index));
 }
 
-ArenaTypes::Tavern ArenaSave::loadIN(const std::string &savePath, int number, int index)
+std::unique_ptr<ArenaTypes::Tavern> ArenaSave::loadIN(const std::string &savePath,
+	int number, int index)
 {
 	const std::string innName = ArenaSave::IN_FILENAME + getServiceNumberString(number);
 	return loadBinary<ArenaTypes::Tavern>(savePath + innName + makeSaveExtension(index));
 }
 
-ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::Log> ArenaSave::loadLOG(const std::string &savePath, int index)
 {
 	const std::string filename = savePath +
 		ArenaSave::LOG_FILENAME + makeSaveExtension(index);
@@ -84,40 +87,44 @@ ArenaTypes::Log ArenaSave::loadLOG(const std::string &savePath, int index)
 		ifs.seekg(0, std::ios::beg);
 		ifs.read(&buffer.front(), buffer.size());
 
-		ArenaTypes::Log log;
-		log.init(buffer);
+		auto log = std::make_unique<ArenaTypes::Log>();
+		log->init(buffer);
 		return log;
 	}
 	else
 	{
-		throw DebugException("\"" + filename + "\" not found.");
+		DebugWarning("\"" + filename + "\" not found.");
+		return nullptr;
 	}
 }
 
-ArenaTypes::Names ArenaSave::loadNAMES(const std::string &savePath)
+std::unique_ptr<ArenaTypes::Names> ArenaSave::loadNAMES(const std::string &savePath)
 {
 	return loadBinary<ArenaTypes::Names>(savePath + ArenaSave::NAMES_FILENAME);
 }
 
-ArenaTypes::Repair ArenaSave::loadRE(const std::string &savePath, int number, int index)
+std::unique_ptr<ArenaTypes::Repair> ArenaSave::loadRE(const std::string &savePath,
+	int number, int index)
 {
 	const std::string repairName = ArenaSave::RE_FILENAME + getServiceNumberString(number);
 	return loadBinary<ArenaTypes::Repair>(savePath + repairName + makeSaveExtension(index));
 }
 
-ArenaTypes::SaveEngine ArenaSave::loadSAVEENGN(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::SaveEngine> ArenaSave::loadSAVEENGN(
+	const std::string &savePath, int index)
 {
 	return loadBinary<ArenaTypes::SaveEngine>(
 		savePath + ArenaSave::SAVEENGN_FILENAME + makeSaveExtension(index));
 }
 
-ArenaTypes::SaveGame ArenaSave::loadSAVEGAME(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::SaveGame> ArenaSave::loadSAVEGAME(
+	const std::string &savePath, int index)
 {
 	return loadBinary<ArenaTypes::SaveGame>(
 		savePath + ArenaSave::SAVEGAME_FILENAME + makeSaveExtension(index));
 }
 
-ArenaTypes::Spells ArenaSave::loadSPELLS(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::Spells> ArenaSave::loadSPELLS(const std::string &savePath, int index)
 {
 	const std::string filename = savePath +
 		ArenaSave::SPELLS_FILENAME + makeSaveExtension(index);
@@ -125,25 +132,27 @@ ArenaTypes::Spells ArenaSave::loadSPELLS(const std::string &savePath, int index)
 
 	if (ifs.is_open())
 	{
-		ArenaTypes::Spells spells;
+		// Using heap-allocated objects to avoid stack warnings.
+		auto spells = std::make_unique<ArenaTypes::Spells>();
 
-		std::array<uint8_t, ArenaTypes::SpellData::SIZE * spells.size()> buffer;
+		std::vector<uint8_t> buffer(ArenaTypes::SpellData::SIZE * spells->size());
 		ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 
-		for (size_t i = 0; i < spells.size(); i++)
+		for (size_t i = 0; i < spells->size(); i++)
 		{
-			spells.at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
+			spells->at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
 		}
 
 		return spells;
 	}
 	else
 	{
-		throw DebugException("\"" + filename + "\" not found.");
+		DebugWarning("\"" + filename + "\" not found.");
+		return nullptr;
 	}
 }
 
-ArenaTypes::Spellsg ArenaSave::loadSPELLSG(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::Spellsg> ArenaSave::loadSPELLSG(const std::string &savePath, int index)
 {
 	const std::string filename = savePath +
 		ArenaSave::SPELLSG_FILENAME + makeSaveExtension(index);
@@ -151,25 +160,28 @@ ArenaTypes::Spellsg ArenaSave::loadSPELLSG(const std::string &savePath, int inde
 
 	if (ifs.is_open())
 	{
-		ArenaTypes::Spellsg spellsg;
+		// Using heap-allocated objects to avoid stack warnings.
+		auto spellsg = std::make_unique<ArenaTypes::Spellsg>();
 
-		std::array<uint8_t, ArenaTypes::SpellData::SIZE * spellsg.size()> buffer;
+		std::vector<uint8_t> buffer(ArenaTypes::SpellData::SIZE * spellsg->size());
 		ifs.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 
-		for (size_t i = 0; i < spellsg.size(); i++)
+		for (size_t i = 0; i < spellsg->size(); i++)
 		{
-			spellsg.at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
+			spellsg->at(i).init(buffer.data() + (ArenaTypes::SpellData::SIZE * i));
 		}
 
 		return spellsg;
 	}
 	else
 	{
-		throw DebugException("\"" + filename + "\" not found.");
+		DebugWarning("\"" + filename + "\" not found.");
+		return nullptr;
 	}
 }
 
-ArenaTypes::MQLevelState ArenaSave::loadSTATE(const std::string &savePath, int index)
+std::unique_ptr<ArenaTypes::MQLevelState> ArenaSave::loadSTATE(
+	const std::string &savePath, int index)
 {
 	return loadBinary<ArenaTypes::MQLevelState>(
 		savePath + ArenaSave::STATE_FILENAME + makeSaveExtension(index));

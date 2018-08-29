@@ -217,8 +217,10 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 	const int gridDepth = gridWidth;
 
 	// Copy voxel data into temp buffers. Each floor in the four 64x64 wilderness blocks
-	// is 8192 bytes.
-	std::array<uint16_t, 4096 * 4> tempFlor, tempMap1, tempMap2;
+	// is 8192 bytes. Using vectors here because arrays are too large on the stack.
+	std::vector<uint16_t> tempFlor(RMDFile::ELEMENTS_PER_FLOOR * 4);
+	std::vector<uint16_t> tempMap1(tempFlor.size());
+	std::vector<uint16_t> tempMap2(tempMap1.size());
 	std::copy(level.flor.begin(), level.flor.end(), tempFlor.begin());
 	std::copy(level.map1.begin(), level.map1.end(), tempMap1.begin());
 	std::copy(level.map2.begin(), level.map2.end(), tempMap2.begin());
@@ -241,8 +243,8 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 			const int srcIndex = z * RMDFile::WIDTH;
 			const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
 
-			auto writeRow = [srcIndex, dstIndex](const RMDFile::ArrayType &src,
-				std::array<uint16_t, 4096 * 4> &dst)
+			auto writeRow = [srcIndex, dstIndex](const std::vector<uint16_t> &src,
+				std::vector<uint16_t> &dst)
 			{
 				const auto srcBegin = src.begin() + srcIndex;
 				const auto srcEnd = srcBegin + RMDFile::WIDTH;

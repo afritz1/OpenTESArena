@@ -1,6 +1,7 @@
 #ifndef ARENA_SAVE_H
 #define ARENA_SAVE_H
 
+#include <memory>
 #include <string>
 
 #include "ArenaTypes.h"
@@ -24,16 +25,17 @@ private:
 	ArenaSave() = delete;
 	~ArenaSave() = delete;
 public:
-	static ArenaTypes::Automap loadAUTOMAP(const std::string &savePath, int index);
-	static ArenaTypes::Tavern loadIN(const std::string &savePath, int number, int index);
-	static ArenaTypes::Log loadLOG(const std::string &savePath, int index);
-	static ArenaTypes::Names loadNAMES(const std::string &savePath);
-	static ArenaTypes::Repair loadRE(const std::string &savePath, int number, int index);
-	static ArenaTypes::SaveEngine loadSAVEENGN(const std::string &savePath, int index);
-	static ArenaTypes::SaveGame loadSAVEGAME(const std::string &savePath, int index);
-	static ArenaTypes::Spells loadSPELLS(const std::string &savePath, int index);
-	static ArenaTypes::Spellsg loadSPELLSG(const std::string &savePath, int index);
-	static ArenaTypes::MQLevelState loadSTATE(const std::string &savePath, int index);
+	// Using heap-allocated pointers to avoid stack overflow warnings.
+	static std::unique_ptr<ArenaTypes::Automap> loadAUTOMAP(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::Tavern> loadIN(const std::string &savePath, int number, int index);
+	static std::unique_ptr<ArenaTypes::Log> loadLOG(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::Names> loadNAMES(const std::string &savePath);
+	static std::unique_ptr<ArenaTypes::Repair> loadRE(const std::string &savePath, int number, int index);
+	static std::unique_ptr<ArenaTypes::SaveEngine> loadSAVEENGN(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::SaveGame> loadSAVEGAME(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::Spells> loadSPELLS(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::Spellsg> loadSPELLSG(const std::string &savePath, int index);
+	static std::unique_ptr<ArenaTypes::MQLevelState> loadSTATE(const std::string &savePath, int index);
 	// @todo: load city data.
 	// @todo: load INN.0x.
 	// @todo: load wild 001, 002, 003, 004.

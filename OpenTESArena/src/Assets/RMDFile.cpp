@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <vector>
 
 #include "Compression.h"
 #include "RMDFile.h"
@@ -8,10 +7,14 @@
 
 #include "components/vfs/manager.hpp"
 
+const int RMDFile::BYTES_PER_FLOOR = 8192;
 const int RMDFile::WIDTH = 64;
 const int RMDFile::DEPTH = RMDFile::WIDTH;
+const int RMDFile::ELEMENTS_PER_FLOOR = RMDFile::BYTES_PER_FLOOR / 2;
 
 RMDFile::RMDFile(const std::string &filename)
+	: flor(RMDFile::ELEMENTS_PER_FLOOR), map1(RMDFile::ELEMENTS_PER_FLOOR),
+	map2(RMDFile::ELEMENTS_PER_FLOOR)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
@@ -30,7 +33,7 @@ RMDFile::RMDFile(const std::string &filename)
 	// (64 width * 64 depth * 2 bytes/word * 3 floors). Otherwise, it is compressed.
 	if (uncompLen == 0)
 	{
-		const uint16_t requiredSize = 24576;
+		const uint16_t requiredSize = RMDFile::BYTES_PER_FLOOR * 3;
 		DebugAssert(srcData.size() == requiredSize, "Invalid .RMD file.");
 
 		// Write the uncompressed data into each floor.
@@ -62,17 +65,17 @@ RMDFile::RMDFile(const std::string &filename)
 	}
 }
 
-const RMDFile::ArrayType &RMDFile::getFLOR() const
+const std::vector<uint16_t> &RMDFile::getFLOR() const
 {
 	return this->flor;
 }
 
-const RMDFile::ArrayType &RMDFile::getMAP1() const
+const std::vector<uint16_t> &RMDFile::getMAP1() const
 {
 	return this->map1;
 }
 
-const RMDFile::ArrayType &RMDFile::getMAP2() const
+const std::vector<uint16_t> &RMDFile::getMAP2() const
 {
 	return this->map2;
 }

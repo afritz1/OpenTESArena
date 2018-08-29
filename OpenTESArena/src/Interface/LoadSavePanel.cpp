@@ -44,10 +44,10 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 
 	if (File::exists(savesPath + "NAMES.DAT"))
 	{
-		const ArenaTypes::Names names = ArenaSave::loadNAMES(savesPath);
+		const auto names = ArenaSave::loadNAMES(savesPath);
 		for (int i = 0; i < LoadSavePanel::SlotCount; i++)
 		{
-			const auto &entry = names.entries.at(i);
+			const auto &entry = names->entries.at(i);
 
 			const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 8 + (i * 14));
 			const RichTextString richText(
