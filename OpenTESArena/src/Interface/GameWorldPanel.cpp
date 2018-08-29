@@ -1485,7 +1485,6 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							&shadowData,
 							game.getRenderer());
 
-						auto &gameData = game.getGameData();
 						auto &actionText = gameData.getActionText();
 						const double duration = std::max(2.25,
 							static_cast<double>(text.size()) * 0.050);
@@ -2200,8 +2199,6 @@ void GameWorldPanel::render(Renderer &renderer)
 	if (!modernInterface)
 	{
 		// Draw game world interface.
-		const auto &gameInterface = textureManager.getTexture(
-			TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 		renderer.drawOriginal(gameInterface.get(), 0,
 			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 

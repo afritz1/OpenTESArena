@@ -485,7 +485,7 @@ void MiscAssets::parseQuestionTxt()
 
 	while (std::getline(iss, line))
 	{
-		const char ch = line.at(0);
+		const unsigned char ch = static_cast<unsigned char>(line.at(0));
 
 		if (std::isalpha(ch))
 		{

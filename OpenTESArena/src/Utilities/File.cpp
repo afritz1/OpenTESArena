@@ -44,7 +44,7 @@ bool File::pathIsRelative(const std::string &filename)
 		}
 
 		// Needs a drive letter and a colon to be absolute.
-		return !(std::isalpha(filename.front()) && (filename.at(1) == ':'));
+		return !(std::isalpha(static_cast<unsigned char>(filename.front())) && (filename.at(1) == ':'));
 	}
 	else
 	{
