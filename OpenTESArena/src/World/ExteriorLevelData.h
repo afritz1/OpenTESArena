@@ -2,6 +2,7 @@
 #define EXTERIOR_LEVEL_DATA_H
 
 #include "LevelData.h"
+#include "../Assets/MiscAssets.h"
 
 class ExteriorLevelData : public LevelData
 {
@@ -19,9 +20,10 @@ public:
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
 	// required .MIF chunks.
-	static ExteriorLevelData loadCity(const MIFFile::Level &level, uint32_t citySeed, int cityDim,
-		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-		const std::string &infName, int gridWidth, int gridDepth, const ExeData &exeData);
+	static ExteriorLevelData loadCity(const MIFFile::Level &level, int localCityID,
+		int provinceID, int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
+		const Int2 &startPosition, const std::string &infName, int gridWidth, int gridDepth,
+		const MiscAssets &miscAssets);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.

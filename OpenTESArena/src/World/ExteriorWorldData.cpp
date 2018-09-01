@@ -173,8 +173,8 @@ ExteriorWorldData ExteriorWorldData::loadPremadeCity(const MIFFile &mif, Climate
 }
 
 ExteriorWorldData ExteriorWorldData::loadCity(int localCityID, int provinceID, const MIFFile &mif,
-	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	WeatherType weatherType, const MiscAssets &miscAssets)
+	int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
+	const Int2 &startPosition, WeatherType weatherType, const MiscAssets &miscAssets)
 {
 	// Generate level.
 	const auto &level = mif.getLevels().front();
@@ -183,16 +183,12 @@ ExteriorWorldData ExteriorWorldData::loadCity(int localCityID, int provinceID, c
 	const ClimateType climateType = Location::getCityClimateType(
 		localCityID, provinceID, miscAssets);
 
-	// Get the city seed.
-	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
-
 	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadCity(
-		level, citySeed, cityDim, reservedBlocks, startPosition, infName, mif.getDepth(),
-		mif.getWidth(), miscAssets.getExeData());
+		level, localCityID, provinceID, cityDim, isCoastal, reservedBlocks, startPosition, infName,
+		mif.getDepth(), mif.getWidth(), miscAssets);
 	const bool isCity = true;
 
 	// Generate world data from the level data.

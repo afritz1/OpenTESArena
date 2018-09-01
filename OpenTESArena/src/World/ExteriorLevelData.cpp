@@ -34,9 +34,10 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	return levelData;
 }
 
-ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, uint32_t citySeed,
-	int cityDim, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	const std::string &infName, int gridWidth, int gridDepth, const ExeData &exeData)
+ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int localCityID,
+	int provinceID, int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
+	const Int2 &startPosition, const std::string &infName, int gridWidth, int gridDepth,
+	const MiscAssets &miscAssets)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
@@ -50,6 +51,14 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, uint3
 		Empty, Reserved, Equipment, MagesGuild,
 		NobleHouse, Temple, Tavern, Spacer, Houses
 	};
+
+	// Get the city's seed for random chunk generation. It is modified later during
+	// building name generation.
+	const auto &cityData = miscAssets.getCityDataFile();
+	uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+
+	// Get the city's local X and Y, to be used later for building name generation.
+	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
 
 	const int citySize = cityDim * cityDim;
 	std::vector<BlockType> plan(citySize, BlockType::Empty);
@@ -191,6 +200,136 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, uint3
 			yDim++;
 		}
 	}
+
+	// Generate interior names, with taverns first, then equipment stores, then temples.
+	const auto &exeData = miscAssets.getExeData();
+	auto generateInteriorNames = [localCityID, provinceID, isCoastal, &citySeed, &random,
+		&localCityPoint, &plan, &exeData](BlockType blockType)
+	{
+		if ((blockType == BlockType::Equipment) || (blockType == BlockType::Temple))
+		{
+			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
+			random.srand(citySeed);
+		}
+
+		std::vector<int> seen;
+		auto hashInSeen = [&seen](int hash)
+		{
+			return std::find(seen.begin(), seen.end(), hash) != seen.end();
+		};
+
+		// @todo: this foreach range and the if condition below are most likely the wrong values.
+		for (const BlockType block : plan)
+		{
+			if (block == blockType)
+			{
+				int hash;
+
+				// Get the *MENU block's display name.
+				const std::string name = [isCoastal, &random, block, &exeData,
+					&seen, &hashInSeen, &hash]()
+				{
+					if (block == BlockType::Tavern)
+					{
+						// Tavern.
+						const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+						const auto &tavernSuffixes = isCoastal ?
+							exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
+
+						int m, n;
+						do
+						{
+							m = random.next() % 23;
+							n = random.next() % 23;
+							hash = (m << 8) + n;
+						} while (hashInSeen(hash));
+
+						return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
+					}
+					else if (block == BlockType::Equipment)
+					{
+						// Equipment store.
+						const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
+						const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
+
+						int m, n;
+						do
+						{
+							m = random.next() % 20;
+							n = random.next() % 10;
+							hash = (m << 8) + n;
+						} while (hashInSeen(hash));
+
+						return equipmentPrefixes.at(m) + ' ' + equipmentSuffixes.at(n);
+					}
+					else
+					{
+						// Temple.
+						const auto &templePrefixes = exeData.cityGen.templePrefixes;
+						const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+						const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+						const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+						int model, n;
+						do
+						{
+							model = random.next() % 3;
+							const std::array<int, 3> ModelVars = { 5, 9, 10 };
+							const int vars = ModelVars.at(model);
+							n = random.next() % vars;
+							hash = (model << 8) + n;
+						} while (hashInSeen(hash));
+
+						const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
+							&temple3Suffixes, model, n]() -> const std::string&
+						{
+							if (model == 0)
+							{
+								return temple1Suffixes.at(n);
+							}
+							else if (model == 1)
+							{
+								return temple2Suffixes.at(n);
+							}
+							else
+							{
+								return temple3Suffixes.at(n);
+							}
+						}();
+
+						return templePrefixes.at(model) + ' ' + templeSuffix;
+					}
+				}();
+
+				// @todo: add name and current block position to corresponding list.
+
+				seen.push_back(hash);
+			}
+		}
+
+		// Fix some edge cases presumably caught during Arena's play-testing.
+		const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+		if ((blockType == BlockType::Temple) && (globalCityID == 2) || (globalCityID == 0xE0))
+		{
+			int model, n;
+			if (localCityID == 2)
+			{
+				model = 1;
+				n = 7;
+			}
+			else
+			{
+				model = 2;
+				n = 8;
+			}
+
+			// @todo: generate temple name with values and replace last temple with it.
+		}
+	};
+
+	generateInteriorNames(BlockType::Tavern);
+	generateInteriorNames(BlockType::Equipment);
+	generateInteriorNames(BlockType::Temple);
 
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);

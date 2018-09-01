@@ -484,6 +484,11 @@ uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
 	return (baseSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
+Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
+{
+	return Int2(citySeed >> 16, citySeed & 0xFFFF);
+}
+
 void CityDataFile::init(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);

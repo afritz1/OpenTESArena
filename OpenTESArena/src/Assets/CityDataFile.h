@@ -138,6 +138,9 @@ public:
 	// wilderness block coordinates.
 	uint32_t getWildernessDungeonSeed(int provinceID, int wildBlockX, int wildBlockY) const;
 
+	// Gets the local X and Y coordinates for a city from its seed.
+	static Int2 getLocalCityPoint(uint32_t citySeed);
+
 	void init(const std::string &filename);
 };
 

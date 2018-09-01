@@ -539,7 +539,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Call city WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
-		localCityID, provinceID, mif, cityDim, reservedBlocks, startPosition,
+		localCityID, provinceID, mif, cityDim, isCoastal, reservedBlocks, startPosition,
 		weatherType, miscAssets));
 
 	// Set initial level active in the renderer.
