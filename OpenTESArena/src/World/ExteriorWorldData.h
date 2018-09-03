@@ -46,7 +46,7 @@ public:
 
 	// Loads a premade exterior city (only used by center province).
 	static ExteriorWorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-		WeatherType weatherType, const ExeData &exeData);
+		WeatherType weatherType, const MiscAssets &miscAssets);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static ExteriorWorldData loadCity(int localCityID, int provinceID, const MIFFile &mif,

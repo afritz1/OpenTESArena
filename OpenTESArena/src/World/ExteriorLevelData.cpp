@@ -6,6 +6,11 @@
 #include "WorldType.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Utilities/Debug.h"
+#include "../Utilities/String.h"
+#include "../World/Location.h"
+#include "../World/LocationType.h"
+#include "../World/VoxelDataType.h"
 
 ExteriorLevelData::ExteriorLevelData(int gridWidth, int gridHeight, int gridDepth,
 	const std::string &infName, const std::string &name)
@@ -16,8 +21,242 @@ ExteriorLevelData::~ExteriorLevelData()
 
 }
 
+void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, uint32_t citySeed,
+	ArenaRandom &random, bool isCoastal, bool isCity, int gridWidth, int gridDepth,
+	const MiscAssets &miscAssets)
+{
+	const auto &exeData = miscAssets.getExeData();
+	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+
+	std::vector<int> seen;
+	auto hashInSeen = [&seen](int hash)
+	{
+		return std::find(seen.begin(), seen.end(), hash) != seen.end();
+	};
+
+	auto generateName = [this, localCityID, provinceID, &citySeed, &random, isCoastal, isCity,
+		gridWidth, gridDepth, &miscAssets, &exeData, globalCityID, &seen, &hashInSeen](
+			int x, int z, VoxelData::WallData::MenuType menuType)
+	{
+		if ((menuType == VoxelData::WallData::MenuType::Equipment) ||
+			(menuType == VoxelData::WallData::MenuType::Temple))
+		{
+			// X and Y coordinates are swapped and reversed because the modern coordinate system
+			// is being used here since it's operating on the resulting voxel grid to avoid
+			// decoding voxel bits twice.
+			citySeed = (((gridWidth - 1) - x) << 16) + ((gridDepth - 1) - z);
+			random.srand(citySeed);
+		}
+
+		// Lambdas for creating tavern, equipment store, and temple building names.
+		auto createTavernName = [isCoastal, &exeData](int m, int n)
+		{
+			const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+			const auto &tavernSuffixes = isCoastal ?
+				exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
+			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
+		};
+
+		auto createEquipmentName = [localCityID, provinceID, &random, &miscAssets,
+			&exeData, x, z](int m, int n)
+		{
+			const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
+			const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
+
+			// Equipment store names can have variables in them.
+			std::string str = equipmentPrefixes.at(m) + ' ' + equipmentSuffixes.at(n);
+
+			// Replace %ct with city type string.
+			const std::string &cityTypeStr = [localCityID, &exeData]() -> const std::string&
+			{
+				const int index = [localCityID]()
+				{
+					const LocationType locationType = Location::getCityType(localCityID);
+					if (locationType == LocationType::CityState)
+					{
+						return 0;
+					}
+					else if (locationType == LocationType::Town)
+					{
+						return 1;
+					}
+					else if (locationType == LocationType::Village)
+					{
+						return 2;
+					}
+					else
+					{
+						throw DebugException("Invalid local city ID \"" +
+							std::to_string(localCityID) + "\".");
+					}
+				}();
+
+				return exeData.locations.locationTypes.at(index);
+			}();
+
+			size_t index = str.find("%ct");
+			if (index != std::string::npos)
+			{
+				str.replace(index, 3, cityTypeStr);
+			}
+
+			// Replace %ef with generated male first name from (y<<16)+x seed.
+			random.srand((x << 16) + z);
+			const bool isMale = true;
+			const std::string maleFirstName = [&miscAssets, provinceID, isMale, &random]()
+			{
+				const std::string name = miscAssets.generateNpcName(provinceID, isMale, random);
+				const std::string firstName = String::split(name).front();
+				return firstName;
+			}();
+
+			index = str.find("%ef");
+			if (index != std::string::npos)
+			{
+				str.replace(index, 3, maleFirstName);
+			}
+
+			// Replace %n with generated male name from (x<<16)+y seed.
+			random.srand((z << 16) + x);
+			const std::string maleName = miscAssets.generateNpcName(provinceID, isMale, random);
+			index = str.find("%n");
+			if (index != std::string::npos)
+			{
+				str.replace(index, 2, maleName);
+			}
+
+			return str;
+		};
+
+		auto createTempleName = [&exeData](int model, int n)
+		{
+			const auto &templePrefixes = exeData.cityGen.templePrefixes;
+			const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+			const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+			const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+			const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
+				&temple3Suffixes, model, n]() -> const std::string&
+			{
+				if (model == 0)
+				{
+					return temple1Suffixes.at(n);
+				}
+				else if (model == 1)
+				{
+					return temple2Suffixes.at(n);
+				}
+				else
+				{
+					return temple3Suffixes.at(n);
+				}
+			}();
+
+			// No extra whitespace needed, I think?
+			return templePrefixes.at(model) + templeSuffix;
+		};
+
+		// See if the current voxel is a *MENU block and matches the target menu type.
+		const bool matchesTargetType = [this, isCity, x, z, menuType]()
+		{
+			const auto &voxelGrid = this->getVoxelGrid();
+			const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+			return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
+				(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
+		}();
+
+		if (matchesTargetType)
+		{
+			// Get the *MENU block's display name.
+			int hash;
+			std::string name;
+
+			if (menuType == VoxelData::WallData::MenuType::Tavern)
+			{
+				// Tavern.
+				int m, n;
+				do
+				{
+					m = random.next() % 23;
+					n = random.next() % 23;
+					hash = (m << 8) + n;
+				} while (hashInSeen(hash));
+
+				name = createTavernName(m, n);
+			}
+			else if (menuType == VoxelData::WallData::MenuType::Equipment)
+			{
+				// Equipment store.
+				int m, n;
+				do
+				{
+					m = random.next() % 20;
+					n = random.next() % 10;
+					hash = (m << 8) + n;
+				} while (hashInSeen(hash));
+
+				name = createEquipmentName(m, n);
+			}
+			else
+			{
+				// Temple.
+				int model, n;
+				do
+				{
+					model = random.next() % 3;
+					const std::array<int, 3> ModelVars = { 5, 9, 10 };
+					const int vars = ModelVars.at(model);
+					n = random.next() % vars;
+					hash = (model << 8) + n;
+				} while (hashInSeen(hash));
+
+				name = createTempleName(model, n);
+			}
+
+			this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
+			seen.push_back(hash);
+		}
+
+		// Fix some edge cases presumably caught during Arena's play-testing.
+		if ((menuType == VoxelData::WallData::MenuType::Temple) &&
+			(globalCityID == 2) || (globalCityID == 0xE0))
+		{
+			int model, n;
+			if (globalCityID == 2)
+			{
+				model = 1;
+				n = 7;
+			}
+			else
+			{
+				model = 2;
+				n = 8;
+			}
+
+			this->menuNames.back().second = createTempleName(model, n);
+		}
+	};
+
+	auto doGenerationLoop = [gridWidth, gridDepth, &generateName](
+		VoxelData::WallData::MenuType menuType)
+	{
+		for (int x = gridWidth - 1; x >= 0; x--)
+		{
+			for (int z = gridDepth - 1; z >= 0; z--)
+			{
+				generateName(x, z, menuType);
+			}
+		}
+	};
+
+	doGenerationLoop(VoxelData::WallData::MenuType::Tavern);
+	doGenerationLoop(VoxelData::WallData::MenuType::Equipment);
+	doGenerationLoop(VoxelData::WallData::MenuType::Temple);
+}
+
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
-	const std::string &infName, int gridWidth, int gridDepth, const ExeData &exeData)
+	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets)
 {
 	// Premade exterior level (only used by center province).
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
@@ -26,10 +265,23 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	levelData.getVoxelGrid().addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
+	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
+
+	// Generate building names.
+	// @todo: pass these as arguments to loadPremadeCity() instead of hardcoding them.
+	const auto &cityData = miscAssets.getCityDataFile();
+	const int localCityID = 0;
+	const int provinceID = 8;
+	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+	ArenaRandom random(citySeed);
+	const bool isCoastal = false;
+	const bool isCity = true;
+	levelData.generateBuildingNames(localCityID, provinceID, citySeed, random, isCoastal,
+		isCity, gridWidth, gridDepth, miscAssets);
 
 	return levelData;
 }
@@ -201,136 +453,6 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 		}
 	}
 
-	// Generate interior names, with taverns first, then equipment stores, then temples.
-	const auto &exeData = miscAssets.getExeData();
-	auto generateInteriorNames = [localCityID, provinceID, isCoastal, &citySeed, &random,
-		&localCityPoint, &plan, &exeData](BlockType blockType)
-	{
-		if ((blockType == BlockType::Equipment) || (blockType == BlockType::Temple))
-		{
-			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
-			random.srand(citySeed);
-		}
-
-		std::vector<int> seen;
-		auto hashInSeen = [&seen](int hash)
-		{
-			return std::find(seen.begin(), seen.end(), hash) != seen.end();
-		};
-
-		// @todo: this foreach range and the if condition below are most likely the wrong values.
-		for (const BlockType block : plan)
-		{
-			if (block == blockType)
-			{
-				int hash;
-
-				// Get the *MENU block's display name.
-				const std::string name = [isCoastal, &random, block, &exeData,
-					&seen, &hashInSeen, &hash]()
-				{
-					if (block == BlockType::Tavern)
-					{
-						// Tavern.
-						const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
-						const auto &tavernSuffixes = isCoastal ?
-							exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
-
-						int m, n;
-						do
-						{
-							m = random.next() % 23;
-							n = random.next() % 23;
-							hash = (m << 8) + n;
-						} while (hashInSeen(hash));
-
-						return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
-					}
-					else if (block == BlockType::Equipment)
-					{
-						// Equipment store.
-						const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
-						const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
-
-						int m, n;
-						do
-						{
-							m = random.next() % 20;
-							n = random.next() % 10;
-							hash = (m << 8) + n;
-						} while (hashInSeen(hash));
-
-						return equipmentPrefixes.at(m) + ' ' + equipmentSuffixes.at(n);
-					}
-					else
-					{
-						// Temple.
-						const auto &templePrefixes = exeData.cityGen.templePrefixes;
-						const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
-						const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
-						const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
-
-						int model, n;
-						do
-						{
-							model = random.next() % 3;
-							const std::array<int, 3> ModelVars = { 5, 9, 10 };
-							const int vars = ModelVars.at(model);
-							n = random.next() % vars;
-							hash = (model << 8) + n;
-						} while (hashInSeen(hash));
-
-						const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
-							&temple3Suffixes, model, n]() -> const std::string&
-						{
-							if (model == 0)
-							{
-								return temple1Suffixes.at(n);
-							}
-							else if (model == 1)
-							{
-								return temple2Suffixes.at(n);
-							}
-							else
-							{
-								return temple3Suffixes.at(n);
-							}
-						}();
-
-						return templePrefixes.at(model) + ' ' + templeSuffix;
-					}
-				}();
-
-				// @todo: add name and current block position to corresponding list.
-
-				seen.push_back(hash);
-			}
-		}
-
-		// Fix some edge cases presumably caught during Arena's play-testing.
-		const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
-		if ((blockType == BlockType::Temple) && (globalCityID == 2) || (globalCityID == 0xE0))
-		{
-			int model, n;
-			if (localCityID == 2)
-			{
-				model = 1;
-				n = 7;
-			}
-			else
-			{
-				model = 2;
-				n = 8;
-			}
-
-			// @todo: generate temple name with values and replace last temple with it.
-		}
-	};
-
-	generateInteriorNames(BlockType::Tavern);
-	generateInteriorNames(BlockType::Equipment);
-	generateInteriorNames(BlockType::Temple);
-
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
 
@@ -338,10 +460,16 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	levelData.getVoxelGrid().addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
+	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
+
+	// Generate building names.
+	const bool isCity = true;
+	levelData.generateBuildingNames(localCityID, provinceID, citySeed, random, isCoastal,
+		isCity, gridWidth, gridDepth, miscAssets);
 
 	return levelData;
 }
@@ -418,6 +546,11 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
 	return levelData;
+}
+
+const std::vector<std::pair<Int2, std::string>> &ExteriorLevelData::getMenuNames() const
+{
+	return this->menuNames;
 }
 
 bool ExteriorLevelData::isOutdoorDungeon() const

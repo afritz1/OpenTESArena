@@ -455,7 +455,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 
 	// Call premade city loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
-		mif, climateType, weatherType, miscAssets.getExeData()));
+		mif, climateType, weatherType, miscAssets));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();

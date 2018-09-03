@@ -58,6 +58,7 @@ Temple2Suffixes=0x36449
 Temple3Suffixes=0x36488
 EquipmentPrefixes=0x364D1
 EquipmentSuffixes=0x3659E
+MagesGuildMenuName=0x42567
 
 [Entities]
 CreatureNames=0x36BBE

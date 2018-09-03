@@ -112,6 +112,9 @@ public:
 		std::array<std::string, 20> equipmentPrefixes;
 		std::array<std::string, 10> equipmentSuffixes;
 
+		// The displayed name when a mage's guild *MENU voxel is right-clicked.
+		std::string magesGuildMenuName;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

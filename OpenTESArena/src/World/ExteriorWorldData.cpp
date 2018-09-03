@@ -144,7 +144,7 @@ std::string ExteriorWorldData::generateWildernessInfName(ClimateType climateType
 }
 
 ExteriorWorldData ExteriorWorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-	WeatherType weatherType, const ExeData &exeData)
+	WeatherType weatherType, const MiscAssets &miscAssets)
 {
 	const auto &level = mif.getLevels().front();
 	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
@@ -154,7 +154,7 @@ ExteriorWorldData ExteriorWorldData::loadPremadeCity(const MIFFile &mif, Climate
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadPremadeCity(
-		level, infName, gridWidth, gridDepth, exeData);
+		level, infName, gridWidth, gridDepth, miscAssets);
 	const bool isCity = true;
 
 	// Generate world data from the level data.

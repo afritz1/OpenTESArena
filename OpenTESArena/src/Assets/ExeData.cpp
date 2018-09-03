@@ -290,6 +290,7 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	const int temple3SuffixesOffset = ExeData::get(section, "Temple3Suffixes", keyValueMap);
 	const int equipmentPrefixesOffset = ExeData::get(section, "EquipmentPrefixes", keyValueMap);
 	const int equipmentSuffixesOffset = ExeData::get(section, "EquipmentSuffixes", keyValueMap);
+	const int magesGuildMenuNameOffset = ExeData::get(section, "MagesGuildMenuName", keyValueMap);
 
 	initInt8Array(this->coastalCityList, data + coastalCityListOffset);
 	initStringArray(this->templateFilenames, data + cityTemplateFilenamesOffset);
@@ -308,6 +309,7 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	initStringArray(this->temple3Suffixes, data + temple3SuffixesOffset);
 	initStringArray(this->equipmentPrefixes, data + equipmentPrefixesOffset);
 	initStringArray(this->equipmentSuffixes, data + equipmentSuffixesOffset);
+	this->magesGuildMenuName = ExeData::readString(data + magesGuildMenuNameOffset);
 }
 
 void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)

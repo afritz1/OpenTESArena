@@ -1462,16 +1462,45 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 					if (VoxelData::WallData::menuHasDisplayName(menuType))
 					{
-						const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-							Int2(voxel.x, voxel.z), voxelGrid.getWidth(), voxelGrid.getDepth());
+						const auto &exterior = static_cast<ExteriorLevelData&>(level);
+						const Int2 voxelXZ(voxel.x, voxel.z);
 
-						// @todo: get interior name from the clicked voxel.
-						// - Names seem to be a function of the current chunk in the wilderness,
-						//   not their voxel position.
-						const std::string text = "Interior Name";
+						// Get interior name from the clicked voxel.
+						// @todo: probably need to handle wilderness coordinates differently.
+						const auto &menuNames = exterior.getMenuNames();
+						const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+							[&voxelXZ](const std::pair<Int2, std::string> &pair)
+						{
+							return pair.first == voxelXZ;
+						});
+
+						std::string menuName;
+						const bool foundName = iter != menuNames.end();
+
+						if (foundName)
+						{
+							menuName = iter->second;
+						}
+						else
+						{
+							// If no menu name was generated, then see if it's a mage's guild.
+							if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+							{
+								const auto &miscAssets = game.getMiscAssets();
+								const auto &exeData = miscAssets.getExeData();
+								menuName = exeData.cityGen.magesGuildMenuName;
+							}
+							else
+							{
+								// This should only happen if the player created a new *MENU voxel,
+								// which shouldn't occur in regular play.
+								DebugWarning("No *MENU name at (" + std::to_string(voxel.x) +
+									", " + std::to_string(voxel.y) + ").");
+							}
+						}
 
 						const RichTextString richText(
-							text,
+							menuName,
 							FontName::Arena,
 							ActionTextColor,
 							TextAlignment::Center,
@@ -1487,7 +1516,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 						auto &actionText = gameData.getActionText();
 						const double duration = std::max(2.25,
-							static_cast<double>(text.size()) * 0.050);
+							static_cast<double>(richText.getText().size()) * 0.050);
 						actionText = GameData::TimedTextBox(duration, std::move(textBox));
 					}
 				}
