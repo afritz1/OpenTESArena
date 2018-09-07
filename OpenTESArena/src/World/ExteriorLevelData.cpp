@@ -220,7 +220,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 
 		// Fix some edge cases presumably caught during Arena's play-testing.
 		if ((menuType == VoxelData::WallData::MenuType::Temple) &&
-			(globalCityID == 2) || (globalCityID == 0xE0))
+			((globalCityID == 2) || (globalCityID == 0xE0)))
 		{
 			int model, n;
 			if (globalCityID == 2)
