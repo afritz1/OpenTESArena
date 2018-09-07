@@ -27,26 +27,26 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 {
 	const auto &exeData = miscAssets.getExeData();
 	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
 
-	std::vector<int> seen;
-	auto hashInSeen = [&seen](int hash)
-	{
-		return std::find(seen.begin(), seen.end(), hash) != seen.end();
-	};
-
-	auto generateName = [this, localCityID, provinceID, &citySeed, &random, isCoastal, isCity,
-		gridWidth, gridDepth, &miscAssets, &exeData, globalCityID, &seen, &hashInSeen](
-			int x, int z, VoxelData::WallData::MenuType menuType)
+	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
+	// match the given menu type.
+	auto generateNames = [this, localCityID, provinceID, &citySeed, &random, isCoastal, isCity,
+		gridWidth, gridDepth, &miscAssets, &exeData, globalCityID, &localCityPoint](
+			VoxelData::WallData::MenuType menuType)
 	{
 		if ((menuType == VoxelData::WallData::MenuType::Equipment) ||
 			(menuType == VoxelData::WallData::MenuType::Temple))
 		{
-			// X and Y coordinates are swapped and reversed because the modern coordinate system
-			// is being used here since it's operating on the resulting voxel grid to avoid
-			// decoding voxel bits twice.
-			citySeed = (((gridWidth - 1) - x) << 16) + ((gridDepth - 1) - z);
+			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 			random.srand(citySeed);
 		}
+
+		std::vector<int> seen;
+		auto hashInSeen = [&seen](int hash)
+		{
+			return std::find(seen.begin(), seen.end(), hash) != seen.end();
+		};
 
 		// Lambdas for creating tavern, equipment store, and temple building names.
 		auto createTavernName = [isCoastal, &exeData](int m, int n)
@@ -57,8 +57,8 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
 		};
 
-		auto createEquipmentName = [localCityID, provinceID, &random, &miscAssets,
-			&exeData, x, z](int m, int n)
+		auto createEquipmentName = [localCityID, provinceID, &random, gridWidth, gridDepth,
+			&miscAssets, &exeData](int m, int n, int x, int z)
 		{
 			const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
 			const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
@@ -100,28 +100,33 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 				str.replace(index, 3, cityTypeStr);
 			}
 
-			// Replace %ef with generated male first name from (y<<16)+x seed.
-			random.srand((x << 16) + z);
-			const bool isMale = true;
-			const std::string maleFirstName = [&miscAssets, provinceID, isMale, &random]()
-			{
-				const std::string name = miscAssets.generateNpcName(provinceID, isMale, random);
-				const std::string firstName = String::split(name).front();
-				return firstName;
-			}();
-
+			// Replace %ef with generated male first name from (y<<16)+x seed. Use a local RNG for
+			// modifications to building names. Swap and reverse the XZ dimensions so they fit the
+			// original XY values in Arena.
 			index = str.find("%ef");
 			if (index != std::string::npos)
 			{
+				ArenaRandom nameRandom((((gridWidth - 1) - x) << 16) + ((gridDepth - 1) - z));
+				const bool isMale = true;
+				const std::string maleFirstName = [&miscAssets, provinceID, isMale, &nameRandom]()
+				{
+					const std::string name = miscAssets.generateNpcName(
+						provinceID, isMale, nameRandom);
+					const std::string firstName = String::split(name).front();
+					return firstName;
+				}();
+
 				str.replace(index, 3, maleFirstName);
 			}
 
 			// Replace %n with generated male name from (x<<16)+y seed.
-			random.srand((z << 16) + x);
-			const std::string maleName = miscAssets.generateNpcName(provinceID, isMale, random);
 			index = str.find("%n");
 			if (index != std::string::npos)
 			{
+				ArenaRandom nameRandom((((gridDepth - 1) - z) << 16) + ((gridWidth - 1) - x));
+				const bool isMale = true;
+				const std::string maleName = miscAssets.generateNpcName(
+					provinceID, isMale, nameRandom);
 				str.replace(index, 2, maleName);
 			}
 
@@ -156,103 +161,110 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 			return templePrefixes.at(model) + templeSuffix;
 		};
 
-		// See if the current voxel is a *MENU block and matches the target menu type.
-		const bool matchesTargetType = [this, isCity, x, z, menuType]()
+		// The lambda called for each main-floor voxel in the area.
+		auto tryGenerateBlockName = [this, isCity, menuType, &random, globalCityID, &seen,
+			&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](int x, int z)
 		{
-			const auto &voxelGrid = this->getVoxelGrid();
-			const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
-			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-			return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
-				(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
-		}();
+			// See if the current voxel is a *MENU block and matches the target menu type.
+			const bool matchesTargetType = [this, isCity, x, z, menuType]()
+			{
+				const auto &voxelGrid = this->getVoxelGrid();
+				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
+				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+				return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
+					(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
+			}();
 
-		if (matchesTargetType)
+			if (matchesTargetType)
+			{
+				// Get the *MENU block's display name.
+				int hash;
+				std::string name;
+
+				if (menuType == VoxelData::WallData::MenuType::Tavern)
+				{
+					// Tavern.
+					int m, n;
+					do
+					{
+						m = random.next() % 23;
+						n = random.next() % 23;
+						hash = (m << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createTavernName(m, n);
+				}
+				else if (menuType == VoxelData::WallData::MenuType::Equipment)
+				{
+					// Equipment store.
+					int m, n;
+					do
+					{
+						m = random.next() % 20;
+						n = random.next() % 10;
+						hash = (m << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createEquipmentName(m, n, x, z);
+				}
+				else
+				{
+					// Temple.
+					int model, n;
+					do
+					{
+						model = random.next() % 3;
+						const std::array<int, 3> ModelVars = { 5, 9, 10 };
+						const int vars = ModelVars.at(model);
+						n = random.next() % vars;
+						hash = (model << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createTempleName(model, n);
+				}
+
+				this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
+				seen.push_back(hash);
+			}
+		};
+
+		// Start at the top-right corner of the map, running right to left and top to bottom.
+		for (int x = gridWidth - 1; x >= 0; x--)
 		{
-			// Get the *MENU block's display name.
-			int hash;
-			std::string name;
-
-			if (menuType == VoxelData::WallData::MenuType::Tavern)
+			for (int z = gridDepth - 1; z >= 0; z--)
 			{
-				// Tavern.
-				int m, n;
-				do
-				{
-					m = random.next() % 23;
-					n = random.next() % 23;
-					hash = (m << 8) + n;
-				} while (hashInSeen(hash));
-
-				name = createTavernName(m, n);
+				tryGenerateBlockName(x, z);
 			}
-			else if (menuType == VoxelData::WallData::MenuType::Equipment)
-			{
-				// Equipment store.
-				int m, n;
-				do
-				{
-					m = random.next() % 20;
-					n = random.next() % 10;
-					hash = (m << 8) + n;
-				} while (hashInSeen(hash));
-
-				name = createEquipmentName(m, n);
-			}
-			else
-			{
-				// Temple.
-				int model, n;
-				do
-				{
-					model = random.next() % 3;
-					const std::array<int, 3> ModelVars = { 5, 9, 10 };
-					const int vars = ModelVars.at(model);
-					n = random.next() % vars;
-					hash = (model << 8) + n;
-				} while (hashInSeen(hash));
-
-				name = createTempleName(model, n);
-			}
-
-			this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
-			seen.push_back(hash);
 		}
 
-		// Fix some edge cases presumably caught during Arena's play-testing.
+		// Fix some edge cases presumably caught during Arena's play-testing. From the looks
+		// of it, these aren't bugs or anything, but were changed just because?
 		if ((menuType == VoxelData::WallData::MenuType::Temple) &&
 			((globalCityID == 2) || (globalCityID == 0xE0)))
 		{
-			int model, n;
+			// Added an index variable since Arena apparently stores its menu names in a way
+			// other than with a vector like this solution is using.
+			int model, n, index;
 			if (globalCityID == 2)
 			{
 				model = 1;
 				n = 7;
+				index = 23;
 			}
 			else
 			{
 				model = 2;
 				n = 8;
+				index = 32;
 			}
 
-			this->menuNames.back().second = createTempleName(model, n);
+			this->menuNames.at(index).second = createTempleName(model, n);
 		}
 	};
 
-	auto doGenerationLoop = [gridWidth, gridDepth, &generateName](
-		VoxelData::WallData::MenuType menuType)
-	{
-		for (int x = gridWidth - 1; x >= 0; x--)
-		{
-			for (int z = gridDepth - 1; z >= 0; z--)
-			{
-				generateName(x, z, menuType);
-			}
-		}
-	};
-
-	doGenerationLoop(VoxelData::WallData::MenuType::Tavern);
-	doGenerationLoop(VoxelData::WallData::MenuType::Equipment);
-	doGenerationLoop(VoxelData::WallData::MenuType::Temple);
+	generateNames(VoxelData::WallData::MenuType::Tavern);
+	generateNames(VoxelData::WallData::MenuType::Equipment);
+	generateNames(VoxelData::WallData::MenuType::Temple);
 }
 
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
