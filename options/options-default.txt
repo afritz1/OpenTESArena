@@ -38,8 +38,8 @@ ModernInterface=false
 RenderThreadsMode=3
 
 [Audio]
-MusicVolume=0.30
-SoundVolume=0.25
+MusicVolume=0.50
+SoundVolume=0.50
 
 # Change "MidiConfig" to your desired .cfg file.
 MidiConfig=data/eawpats/timidity.cfg
@@ -57,7 +57,7 @@ VerticalSensitivity=8.0
 
 # The camera pitch limit determines in degrees how high or low the camera
 # can look relative to the horizon in modern mode. Must be less than 90.
-CameraPitchLimit=45.0
+CameraPitchLimit=30.0
 
 [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
