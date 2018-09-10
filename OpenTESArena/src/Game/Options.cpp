@@ -52,7 +52,8 @@ namespace
 		{ "Collision", OptionType::Bool },
 		{ "SkipIntro", OptionType::Bool },
 		{ "ShowDebug", OptionType::Bool },
-		{ "ShowCompass", OptionType::Bool }
+		{ "ShowCompass", OptionType::Bool },
+		{ "TimeScale", OptionType::Double }
 	};
 }
 
@@ -88,6 +89,8 @@ const double Options::MAX_CAMERA_PITCH_LIMIT = 85.0;
 const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
+const double Options::MIN_TIME_SCALE = 0.50;
+const double Options::MAX_TIME_SCALE = 1.0;
 
 void Options::load(const std::string &filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
@@ -552,6 +555,16 @@ void Options::checkInput_CameraPitchLimit(double value) const
 	DebugAssert(value <= Options::MAX_CAMERA_PITCH_LIMIT,
 		"Camera pitch limit cannot be greater than " +
 		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
+}
+
+void Options::checkMisc_TimeScale(double value) const
+{
+	DebugAssert(value >= Options::MIN_TIME_SCALE,
+		"Time scale cannot be less than " +
+		String::fixedPrecision(Options::MIN_TIME_SCALE, 1) + ".");
+	DebugAssert(value <= Options::MAX_TIME_SCALE,
+		"Time scale cannot be greater than " +
+		String::fixedPrecision(Options::MAX_TIME_SCALE, 1) + ".");
 }
 
 void Options::loadDefaults(const std::string &filename)

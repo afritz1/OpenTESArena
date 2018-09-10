@@ -459,7 +459,11 @@ void Game::loop()
 		// Animate the current game state by delta time.
 		try
 		{
-			this->tick(dt);
+			// Multiply delta time by the time scale. I settled on having the effects of this
+			// be application-wide rather than just in the game world since it's intended to
+			// simulate lower DOSBox cycles.
+			const double timeScaledDt = dt * this->options.getMisc_TimeScale();
+			this->tick(timeScaledDt);
 		}
 		catch (const std::exception &e)
 		{

@@ -77,6 +77,8 @@ public:
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
 	static const int RESAMPLING_OPTION_COUNT;
+	static const double MIN_TIME_SCALE;
+	static const double MAX_TIME_SCALE;
 
 #define OPTION_BOOL(section, name) \
 bool get##section##_##name() const \
@@ -154,6 +156,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Misc, SkipIntro)
 	OPTION_BOOL(Misc, ShowDebug)
 	OPTION_BOOL(Misc, ShowCompass)
+	OPTION_DOUBLE(Misc, TimeScale)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);
