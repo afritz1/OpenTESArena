@@ -1875,6 +1875,9 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		auto switchToLevel = [&game, &interior, &player, &destinationXZ,
 			&dirToNewVoxel](int levelIndex)
 		{
+			// Close all doors in the level the player is switching away from.
+			interior.getActiveLevel().getOpenDoors().clear();
+
 			// Select the new level.
 			interior.setLevelIndex(levelIndex);
 
