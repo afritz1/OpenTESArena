@@ -237,8 +237,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 			}
 		}
 
-		// Fix some edge cases presumably caught during Arena's play-testing. From the looks
-		// of it, these aren't bugs or anything, but were changed just because?
+		// Fix some edge cases used with the main quest.
 		if ((menuType == VoxelData::WallData::MenuType::Temple) &&
 			((globalCityID == 2) || (globalCityID == 0xE0)))
 		{
