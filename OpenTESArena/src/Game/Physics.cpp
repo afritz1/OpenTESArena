@@ -182,8 +182,14 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	}
 	else if (voxelDataType == VoxelDataType::TransparentWall)
 	{
-		// Always invisible (no back face).
-		return false;
+		// Transparent walls are hit when the camera is outside of their voxel.
+		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.point = rayStart + (direction * hit.t);
+		hit.voxel = voxel;
+		hit.facing = facing;
+		hit.type = Hit::Type::Voxel;
+		hit.voxelID = voxelID;
+		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
 	{
