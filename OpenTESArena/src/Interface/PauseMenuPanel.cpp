@@ -18,6 +18,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Math/Constants.h"
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
@@ -198,7 +199,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setAudio_MusicVolume(std::max(options.getAudio_MusicVolume() - 0.050, 0.0));
+			const double newVolume = [&options]()
+			{
+				const double volume = std::max(options.getAudio_MusicVolume() - 0.050, 0.0);
+
+				// Clamp very small values to zero to avoid precision issues with tiny numbers.
+				return volume < Constants::Epsilon ? 0.0 : volume;
+			}();
+
+			options.setAudio_MusicVolume(newVolume);
 			audioManager.setMusicVolume(options.getAudio_MusicVolume());
 
 			// Update the music volume text.
@@ -230,7 +239,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		auto function = [](Options &options, AudioManager &audioManager,
 			PauseMenuPanel &panel)
 		{
-			options.setAudio_SoundVolume(std::max(options.getAudio_SoundVolume() - 0.050, 0.0));
+			const double newVolume = [&options]()
+			{
+				const double volume = std::max(options.getAudio_SoundVolume() - 0.050, 0.0);
+
+				// Clamp very small values to zero to avoid precision issues with tiny numbers.
+				return volume < Constants::Epsilon ? 0.0 : volume;
+			}();
+
+			options.setAudio_SoundVolume(newVolume);
 			audioManager.setSoundVolume(options.getAudio_SoundVolume());
 
 			// Update the sound volume text.
