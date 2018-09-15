@@ -7,6 +7,8 @@
 MonthNames=0x3E894
 TimesOfDay=0x40529
 WeekdayNames=0x3E92A
+HolidayNames=0x3E95D
+HolidayDates=0x3EAA9
 
 [CharacterClasses]
 AllowedArmors=0x36204

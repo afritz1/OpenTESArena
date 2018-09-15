@@ -24,6 +24,8 @@ public:
 		std::array<std::string, 12> monthNames;
 		std::array<std::string, 7> timesOfDay;
 		std::array<std::string, 7> weekdayNames;
+		std::array<std::string, 15> holidayNames;
+		std::array<uint16_t, 15> holidayDates;
 
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};

@@ -180,10 +180,14 @@ void ExeData::Calendar::init(const char *data, const KeyValueMap &keyValueMap)
 	const int monthNamesOffset = ExeData::get(section, "MonthNames", keyValueMap);
 	const int timesOfDayOffset = ExeData::get(section, "TimesOfDay", keyValueMap);
 	const int weekdayNamesOffset = ExeData::get(section, "WeekdayNames", keyValueMap);
+	const int holidayNamesOffset = ExeData::get(section, "HolidayNames", keyValueMap);
+	const int holidayDatesOffset = ExeData::get(section, "HolidayDates", keyValueMap);
 
 	initStringArray(this->monthNames, data + monthNamesOffset);
 	initStringArray(this->timesOfDay, data + timesOfDayOffset);
 	initStringArray(this->weekdayNames, data + weekdayNamesOffset);
+	initStringArray(this->holidayNames, data + holidayNamesOffset);
+	initInt16Array(this->holidayDates, data + holidayDatesOffset);
 }
 
 void ExeData::CharacterClasses::init(const char *data, const KeyValueMap &keyValueMap)
