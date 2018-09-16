@@ -88,6 +88,7 @@ const double Options::MIN_CAMERA_PITCH_LIMIT = 0.0;
 const double Options::MAX_CAMERA_PITCH_LIMIT = 85.0;
 const double Options::MIN_VOLUME = 0.0;
 const double Options::MAX_VOLUME = 1.0;
+const int Options::MIN_SOUND_CHANNELS = 1;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
 const double Options::MIN_TIME_SCALE = 0.50;
 const double Options::MAX_TIME_SCALE = 1.0;
@@ -516,7 +517,8 @@ void Options::checkAudio_SoundVolume(double value) const
 
 void Options::checkAudio_SoundChannels(int value) const
 {
-	DebugAssert(value >= 1, "Sound channel count must be positive.");
+	DebugAssert(value >= Options::MIN_SOUND_CHANNELS, "Sound channel count cannot be less than " +
+		std::to_string(Options::MIN_SOUND_CHANNELS) + ".");
 }
 
 void Options::checkAudio_SoundResampling(int value) const

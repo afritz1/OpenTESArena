@@ -229,6 +229,7 @@ const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
 const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
 
 // Audio.
+const std::string OptionsPanel::SOUND_CHANNELS_NAME = "Sound Channels";
 const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
 
 // Input.
@@ -489,9 +490,23 @@ OptionsPanel::OptionsPanel(Game &game)
 	this->graphicsOptions.push_back(std::move(renderThreadsModeOption));
 
 	// Create audio options.
+	this->audioOptions.push_back(std::make_unique<IntOption>(
+		OptionsPanel::SOUND_CHANNELS_NAME,
+		"Determines max number of concurrent sounds (including music).\nChanges are applied on next program start.",
+		options.getAudio_SoundChannels(),
+		1,
+		Options::MIN_SOUND_CHANNELS,
+		std::numeric_limits<int>::max(),
+		[this](int value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setAudio_SoundChannels(value);
+	}));
+
 	auto soundResamplingOption = std::make_unique<IntOption>(
 		OptionsPanel::SOUND_RESAMPLING_NAME,
-		"Affects quality of sounds. Results may vary depending on\nOpenAL version.",
+		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
 		0,

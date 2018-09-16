@@ -140,6 +140,7 @@ private:
 	static const std::string VERTICAL_FOV_NAME;
 
 	// Audio.
+	static const std::string SOUND_CHANNELS_NAME;
 	static const std::string SOUND_RESAMPLING_NAME;
 
 	// Input.

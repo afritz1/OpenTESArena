@@ -76,6 +76,7 @@ public:
 	static const double MAX_CAMERA_PITCH_LIMIT;
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
+	static const int MIN_SOUND_CHANNELS;
 	static const int RESAMPLING_OPTION_COUNT;
 	static const double MIN_TIME_SCALE;
 	static const double MAX_TIME_SCALE;
