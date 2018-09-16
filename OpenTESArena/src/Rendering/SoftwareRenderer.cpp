@@ -1626,39 +1626,52 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(int voxelX, int voxel
 	// Actual position of the door in its rotation, represented as a vector.
 	const Double2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
 
-	// Vector cross product in 2D, returns a scalar.
-	auto cross = [](const Double2 &a, const Double2 &b)
+	// Use back-face culling with swinging doors so it's not obstructing the player's
+	// view as much when it's opening.
+	const Double2 eye2D(camera.eye.x, camera.eye.z);
+	const bool isFrontFace = (eye2D - pivot).normalized().dot(doorVec.leftPerp()) > 0.0;
+
+	if (isFrontFace)
 	{
-		return (a.x * b.y) - (b.x * a.y);
-	};
-
-	// Solve line segment intersection between the incoming ray and the door.
-	const Double2 p1 = pivot;
-	const Double2 v1 = doorVec;
-	const Double2 p2 = nearPoint;
-	const Double2 v2 = farPoint - nearPoint;
-
-	// Percent from p1 to (p1 + v1).
-	const double t = cross(p2 - p1, v2) / cross(v1, v2);
-
-	// See if the two line segments intersect.
-	if ((t >= 0.0) && (t < 1.0))
-	{
-		// Hit.
-		hit.point = p1 + (v1 * t);
-		hit.innerZ = (hit.point - nearPoint).length();
-		hit.u = t;
-		hit.normal = [&v1]()
+		// Vector cross product in 2D, returns a scalar.
+		auto cross = [](const Double2 &a, const Double2 &b)
 		{
-			const Double2 norm2D = v1.rightPerp();
-			return Double3(norm2D.x, 0.0, norm2D.y);
-		}();
+			return (a.x * b.y) - (b.x * a.y);
+		};
 
-		return true;
+		// Solve line segment intersection between the incoming ray and the door.
+		const Double2 p1 = pivot;
+		const Double2 v1 = doorVec;
+		const Double2 p2 = nearPoint;
+		const Double2 v2 = farPoint - nearPoint;
+
+		// Percent from p1 to (p1 + v1).
+		const double t = cross(p2 - p1, v2) / cross(v1, v2);
+
+		// See if the two line segments intersect.
+		if ((t >= 0.0) && (t < 1.0))
+		{
+			// Hit.
+			hit.point = p1 + (v1 * t);
+			hit.innerZ = (hit.point - nearPoint).length();
+			hit.u = t;
+			hit.normal = [&v1]()
+			{
+				const Double2 norm2D = v1.rightPerp();
+				return Double3(norm2D.x, 0.0, norm2D.y);
+			}();
+
+			return true;
+		}
+		else
+		{
+			// No hit.
+			return false;
+		}
 	}
 	else
 	{
-		// No hit.
+		// Cull back face.
 		return false;
 	}
 }
