@@ -1764,16 +1764,26 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 					return hit.voxel + delta;
 				}();
 
-				// Enter the interior location.
-				// @todo: I think dungeons can't use enterInterior(). They need an enterDungeon() method.
-				const MIFFile mif(mifName);
-				gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
-					exeData, game.getTextureManager(), game.getRenderer());
+				// Enter the interior location if the .MIF name is valid.
+				if (mifName.size() > 0)
+				{
+					// @todo: I think dungeons can't use enterInterior(). They need an enterDungeon() method.
+					const MIFFile mif(mifName);
+					gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
+						exeData, game.getTextureManager(), game.getRenderer());
 
-				// Change to interior music.
-				Random random;
-				const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
-				game.setMusic(musicName);
+					// Change to interior music.
+					Random random;
+					const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
+					game.setMusic(musicName);
+				}
+				else
+				{
+					// @todo: handle wilderness dungeon .MIF names differently than just with
+					// an empty string?
+					DebugWarning("Empty .MIF name at voxel (" + std::to_string(voxel.x) + ", " +
+						std::to_string(voxel.y) + ").");
+				}
 			}
 			else
 			{
