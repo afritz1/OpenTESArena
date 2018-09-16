@@ -273,12 +273,18 @@ private:
 	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
 		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
+
+	// Helper method for findInitialDoorIntersection() for swinging doors.
+	static bool findInitialSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,
+		const Double2 &nearPoint, const Double2 &farPoint, bool xAxis, const Camera &camera,
+		const Ray &ray, RayHit &hit);
 	
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
 	static bool findInitialDoorIntersection(int voxelX, int voxelZ,
-		VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
-		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
+		VoxelData::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
+		const Double2 &farPoint, const Camera &camera, const Ray &ray, const VoxelGrid &voxelGrid,
+		RayHit &hit);
 
 	// Helper method for findDoorIntersection() for swinging doors.
 	static bool findSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,
