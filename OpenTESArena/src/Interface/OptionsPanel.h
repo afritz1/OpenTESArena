@@ -35,6 +35,7 @@ private:
 	public:
 		Option(const std::string &name, std::string &&tooltip, Type type);
 		Option(const std::string &name, Type type);
+		virtual ~Option() = default;
 
 		const std::string &getName() const;
 		const std::string &getTooltip() const;
@@ -53,6 +54,7 @@ private:
 		BoolOption(const std::string &name, std::string &&tooltip, bool value,
 			Callback &&callback);
 		BoolOption(const std::string &name, bool value, Callback &&callback);
+		virtual ~BoolOption() = default;
 
 		virtual std::string getDisplayedValue() const override;
 
@@ -72,6 +74,7 @@ private:
 			int min, int max, Callback &&callback);
 		IntOption(const std::string &name, int value, int delta, int min, int max,
 			Callback &&callback);
+		virtual ~IntOption() = default;
 
 		int getNext() const; // Adds delta to current value, clamped between [min, max].
 		int getPrev() const; // Subtracts delta from current value, clamped between [min, max].
@@ -94,6 +97,7 @@ private:
 			double min, double max, int precision, Callback &&callback);
 		DoubleOption(const std::string &name, double value, double delta, double min,
 			double max, int precision, Callback &&callback);
+		virtual ~DoubleOption() = default;
 
 		double getNext() const; // Adds delta to current value, clamped between [min, max].
 		double getPrev() const; // Subtracts delta from current value, clamped between [min, max].
@@ -113,6 +117,7 @@ private:
 		StringOption(const std::string &name, std::string &&tooltip, std::string &&value,
 			Callback &&callback);
 		StringOption(const std::string &name, std::string &&value, Callback &&callback);
+		virtual ~StringOption() = default;
 
 		virtual std::string getDisplayedValue() const override;
 
