@@ -75,7 +75,7 @@ If you would like music played in-game, see **Music setup** below. The engine us
   - The app will start. In the future, you can just double-click on the app without having to go through these steps.
 
 ### Linux (Ubuntu 16.04)
-Substitute `<version>` with the current version number (i.e., `0.7.0`), and `<arch>` with the desired architecture (`32` or `64`).
+Substitute `<version>` with the current version number (`0.#.0`), and `<arch>` with the desired architecture (`32` or `64`).
 ```bash
 sudo apt-get install wget unzip rar
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
