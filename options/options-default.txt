@@ -51,9 +51,9 @@ SoundChannels=32
 SoundResampling=0
 
 [Input]
-# Look sensitivity is normally between 5.0 and 15.0.
-HorizontalSensitivity=8.0
-VerticalSensitivity=8.0
+# Look sensitivity is normally between 3.0 and 10.0.
+HorizontalSensitivity=5.0
+VerticalSensitivity=5.0
 
 # The camera pitch limit determines in degrees how high or low the camera
 # can look relative to the horizon in modern mode. Must be less than 90.
