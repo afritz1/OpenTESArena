@@ -19,8 +19,8 @@ SoftwareRenderer::VoxelTexel::VoxelTexel()
 	this->r = 0.0;
 	this->g = 0.0;
 	this->b = 0.0;
-	this->a = 0.0;
 	this->emission = 0.0;
+	this->transparent = false;
 }
 
 SoftwareRenderer::FlatTexel::FlatTexel()
@@ -311,7 +311,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 			dstTexel.r = srcTexel.x;
 			dstTexel.g = srcTexel.y;
 			dstTexel.b = srcTexel.z;
-			dstTexel.a = srcTexel.w;
+			dstTexel.transparent = srcTexel.w == 0.0;
 
 			// If it's a white texel, it's used with night lights (i.e., yellow at night).
 			const bool isWhite = (srcTexel.x == 1.0) && (srcTexel.y == 1.0) && (srcTexel.z == 1.0);
@@ -423,7 +423,7 @@ void SoftwareRenderer::setNightLightsActive(bool active)
 			texel.r = texelColor.x;
 			texel.g = texelColor.y;
 			texel.b = texelColor.z;
-			texel.a = texelColor.w;
+			texel.transparent = texelColor.w == 0.0;
 			texel.emission = texelEmission;
 		}
 	}
@@ -2344,7 +2344,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
 			const VoxelTexel &texel = texture.texels[textureIndex];
 			
-			if (texel.a > 0.0)
+			if (!texel.transparent)
 			{
 				// Texture color with shading.
 				const double shadingMax = 1.0;

@@ -22,7 +22,8 @@ class SoftwareRenderer
 private:
 	struct VoxelTexel
 	{
-		double r, g, b, a, emission;
+		double r, g, b, emission;
+		bool transparent; // Voxel texels only support alpha testing, not alpha blending.
 
 		VoxelTexel();
 	};
