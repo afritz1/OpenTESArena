@@ -88,7 +88,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 
 	this->optionsTextBox = [&game]()
 	{
-		const Int2 center(234, 96);
+		const Int2 center(234, 95);
 
 		const RichTextString richText(
 			"OPTIONS",
@@ -168,12 +168,12 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 	this->optionsButton = []()
 	{
 		const int x = 162;
-		const int y = 89;
+		const int y = 88;
 		auto function = [](Game &game)
 		{
 			game.setPanel<OptionsPanel>(game);
 		};
-		return Button<Game&>(x, y, 145, 14, function);
+		return Button<Game&>(x, y, 145, 15, function);
 	}();
 
 	this->musicUpButton = []()
