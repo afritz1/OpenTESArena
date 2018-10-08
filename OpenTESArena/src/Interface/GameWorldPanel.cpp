@@ -1719,17 +1719,19 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 				// wilderness.
 				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+				const Location &location = gameData.getLocation();
 
-				const uint32_t rulerSeed = [&gameData]()
+				const uint32_t rulerSeed = [&gameData, &location]()
 				{
-					const Location &location = gameData.getLocation();
 					const CityDataFile &cityData = gameData.getCityDataFile();
 					return cityData.getRulerSeed(location.localCityID, location.provinceID);
 				}();
 
 				const auto &exeData = game.getMiscAssets().getExeData();
+				const LocationType locationType = Location::getCityType(location.localCityID);
 				const std::string mifName = CityDataFile::getDoorVoxelMifName(
-					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity, exeData);
+					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity,
+					locationType, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
