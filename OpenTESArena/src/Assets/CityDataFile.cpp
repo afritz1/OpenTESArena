@@ -125,7 +125,7 @@ uint16_t CityDataFile::getDoorVoxelOffset(int x, int y)
 }
 
 std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
-	uint32_t rulerSeed, bool isCity, const ExeData &exeData)
+	uint32_t rulerSeed, bool isCity, LocationType locationType, const ExeData &exeData)
 {
 	// Offset is based on X and Y position in world; used with variant calculation.
 	const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
@@ -135,9 +135,9 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 		VoxelData::WallData::getMenuType(menuID, isCity);
 
 	// Get the prefix associated with the menu type.
-	const std::string menuName = [&exeData, menuType]()
+	const std::string menuName = [&exeData, locationType, menuType]()
 	{
-		const std::string name = [&exeData, menuType]() -> std::string
+		const std::string name = [&exeData, locationType, menuType]() -> std::string
 		{
 			// Mappings of menu types to menu .MIF prefix indices. Menus that have no .MIF
 			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
@@ -170,13 +170,42 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 
 			if (iter != MenuMifMappings.end())
 			{
-				const int menuMifIndex = iter->second;
+				const int index = iter->second;
 
-				if (menuMifIndex != NO_INDEX)
+				if (index != NO_INDEX)
 				{
-					// Get the menu's .MIF prefix.
+					// Get the menu's .MIF prefix index. If it's a palace, then decide which palace
+					// prefix to use based on the location type.
+					const int menuMifIndex = [locationType, menuType, index]()
+					{
+						if (menuType == VoxelData::WallData::MenuType::Palace)
+						{
+							if (locationType == LocationType::CityState)
+							{
+								return 0;
+							}
+							else if (locationType == LocationType::Town)
+							{
+								return 8;
+							}
+							else if (locationType == LocationType::Village)
+							{
+								return 9;
+							}
+							else
+							{
+								throw DebugException("Invalid location type \"" +
+									std::to_string(static_cast<int>(locationType)) + "\".");
+							}
+						}
+						else
+						{
+							return index;
+						}
+					}();
+
 					const auto &prefixes = exeData.locations.menuMifPrefixes;
-					return prefixes.at(menuMifIndex);
+					return prefixes.at(index);
 				}
 				else
 				{
@@ -209,11 +238,11 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 		const int variantID = [rulerSeed, offset, menuType]()
 		{
 			// Palaces have fewer .MIF files to choose from, and their variant depends
-			// on the ruler seed.
-			// @todo: city-states have five palace variants, right? Should the modulo
-			// be 3 or 5 depending on the city type?
+			// on the ruler seed. Although there are five city-state palace .MIF files,
+			// only three of them are used.
 			const bool isPalace = menuType == VoxelData::WallData::MenuType::Palace;
-			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % 3) :
+			const int palaceCount = 3;
+			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % palaceCount) :
 				((Bytes::ror(offset, 4) ^ offset) % 8);
 		}();
 
