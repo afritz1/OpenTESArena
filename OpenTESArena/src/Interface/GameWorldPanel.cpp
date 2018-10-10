@@ -220,7 +220,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					const std::string &timeOfDayString =
 						exeData.calendar.timesOfDay.at(timeOfDayIndex);
 
-					return clockTimeString + " " + timeOfDayString;
+					return clockTimeString + ' ' + timeOfDayString;
 				}();
 
 				// Get the base status text.
@@ -238,8 +238,9 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				const std::string dateString = GameData::getDateString(
+				std::string dateString = GameData::getDateString(
 					gameData.getDate(), exeData);
+				dateString.back() = '\n'; // Replace \r with \n.
 
 				index = baseText.find("%s", index);
 				baseText.replace(index, 2, dateString);

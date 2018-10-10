@@ -38,6 +38,38 @@ public:
 			offerRefusedStrs, barterFailureStrs, counterOfferStrs;
 	};
 
+	// TEMPLATE.DAT stores various strings for in-game text and conversations.
+	// Strings #0000 through #0004 have three copies in the file, one for each tileset.
+	class TemplateDat
+	{
+	public:
+		struct Entry
+		{
+			static const int NO_KEY = -1;
+			static const char NO_LETTER = -1;
+
+			// Value after the '#' character, excluding any letter at the end of the line.
+			int key;
+
+			// Strings #0000-#0004 and #0014 have a letter to further divide each series
+			// by the current season + weather. -1 if unused.
+			char letter;
+
+			// Ampersand-separated strings.
+			std::vector<std::string> values;
+		};
+	private:
+		// One vector for each tileset. Most entries are independent of the current
+		// season/weather.
+		std::vector<std::vector<Entry>> entryLists;
+	public:
+		const Entry &getEntry(int key) const;
+		const Entry &getEntry(int key, char letter) const;
+		const Entry &getTilesetEntry(int tileset, int key, char letter) const;
+
+		void init();
+	};
+
 	// Each trade text file (EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, TAVERN.DAT) is an array
 	// of 75 null-terminated strings. Each function array wraps conversation behaviors
 	// (introduction, price agreement, etc.). Each personality array wraps personalities.
@@ -85,7 +117,7 @@ public:
 	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
-	std::unordered_map<std::string, std::string> templateDat;
+	TemplateDat templateDat;
 	std::vector<CharacterQuestion> questionTxt;
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
@@ -103,7 +135,7 @@ private:
 	// for the floppy version or ACD.EXE for the CD version).
 	void parseExecutableData();
 
-	// Load TEMPLATE.DAT, grouping blocks of text by their #ID.
+	// Load TEMPLATE.DAT, grouping blocks of text by their ID.
 	void parseTemplateDat();
 
 	// Load QUESTION.TXT and separate each question by its number.
@@ -140,8 +172,8 @@ public:
 	// on the Arena path in the options).
 	const ExeData &getExeData() const;
 
-	// Finds the text in TEMPLATE.DAT given a key (i.e., "#0000a").
-	const std::string &getTemplateDatText(const std::string &key) const;
+	// Gets the TEMPLATE.DAT object for accessing strings by their ID and optional letter.
+	const TemplateDat &getTemplateDat() const;
 
 	// Returns all of the questions in QUESTION.TXT.
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;

@@ -83,6 +83,14 @@ std::string String::trimFront(const std::string &str)
 	return trimmed;
 }
 
+void String::trimFrontInPlace(std::string &str)
+{
+	while ((str.size() > 0) && (str.front() == ' '))
+	{
+		str.erase(str.begin());
+	}
+}
+
 std::string String::trimBack(const std::string &str)
 {
 	const char space = ' ';
@@ -96,6 +104,14 @@ std::string String::trimBack(const std::string &str)
 	}
 
 	return trimmed;
+}
+
+void String::trimBackInPlace(std::string &str)
+{
+	while ((str.size() > 0) && (str.back() == ' '))
+	{
+		str.pop_back();
+	}
 }
 
 std::string String::trimLines(const std::string &str)
@@ -138,6 +154,39 @@ std::string String::trimExtra(const std::string &str)
 	}
 
 	return trimmed;
+}
+
+std::string String::distributeNewlines(const std::string &str, int charLimit)
+{
+	const int NO_SPACE = -1;
+	std::string newStr = str;
+	int mostRecentSpace = NO_SPACE;
+	int currentLineLength = 0;
+
+	for (int i = 0; i < newStr.size(); i++, currentLineLength++)
+	{
+		if (newStr.at(i) == ' ')
+		{
+			mostRecentSpace = i;
+		}
+
+		if (currentLineLength == charLimit)
+		{
+			if (mostRecentSpace == NO_SPACE)
+			{
+				newStr.insert(newStr.begin() + i + 1, '\n');
+			}
+			else
+			{
+				newStr.at(mostRecentSpace) = '\n';
+				mostRecentSpace = NO_SPACE;
+			}
+			
+			currentLineLength = 0;
+		}
+	}
+
+	return newStr;
 }
 
 std::string String::getExtension(const std::string &str)

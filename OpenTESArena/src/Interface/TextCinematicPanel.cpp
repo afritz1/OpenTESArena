@@ -36,11 +36,15 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 			Renderer::ORIGINAL_WIDTH / 2, 
 			Renderer::ORIGINAL_HEIGHT - 11);
 
+		// Re-distribute newlines.
+		const std::string newText = String::distributeNewlines(text, 60);
+
 		// Count new lines.
-		const int newLineCount = static_cast<int>(std::count(text.begin(), text.end(), '\n'));
+		const int newLineCount = static_cast<int>(
+			std::count(newText.begin(), newText.end(), '\n'));
 
 		// Split text into lines.
-		const std::vector<std::string> textLines = String::split(text, '\n');
+		const std::vector<std::string> textLines = String::split(newText, '\n');
 
 		// Group up to three text lines per text box.
 		std::vector<std::unique_ptr<TextBox>> textBoxes;

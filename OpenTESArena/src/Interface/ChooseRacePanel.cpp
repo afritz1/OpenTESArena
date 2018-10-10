@@ -249,14 +249,17 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						segment = String::replace(segment, '\r', '\n');
 
 						// Get race description from TEMPLATE.DAT.
-						const std::array<std::string, 8> raceTemplateNames =
+						const std::array<int, 8> raceTemplateIDs =
 						{
-							"#1409", "#1410", "#1411", "#1412",
-							"#1413", "#1414", "#1415", "#1416"
+							1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
 						};
 
-						std::string raceDescription = game.getMiscAssets().getTemplateDatText(
-							raceTemplateNames.at(raceID));
+						const auto &templateDat = game.getMiscAssets().getTemplateDat();
+						const auto &entry = templateDat.getEntry(raceTemplateIDs.at(raceID));
+						std::string raceDescription = entry.values.front();
+
+						// Re-distribute newlines at 40 character limit.
+						raceDescription = String::distributeNewlines(raceDescription, 40);
 
 						// Append race description to text segment.
 						segment += "\n" + raceDescription;

@@ -36,6 +36,9 @@ private:
 	Texture texture;
 	int x, y;
 public:
+	// Default number of characters per line before a newline occurs.
+	static const int DEFAULT_TEXT_WRAP = 60;
+
 	TextBox(int x, int y, const RichTextString &richText, const ShadowData *shadow,
 		Renderer &renderer);
 	TextBox(const Int2 &center, const RichTextString &richText, const ShadowData *shadow,

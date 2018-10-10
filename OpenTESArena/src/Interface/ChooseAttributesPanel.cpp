@@ -292,7 +292,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						// text for every subsequent screen forward by a little bit.
 
 						// Read cinematic text from TEMPLATE.DAT.
-						std::string cinematicText = game.getMiscAssets().getTemplateDatText("#1400");
+						const auto &templateDat = game.getMiscAssets().getTemplateDat();
+						const auto &entry = templateDat.getEntry(1400);
+						std::string cinematicText = entry.values.front();
 						cinematicText.append("\n");
 
 						// Replace all instances of %pcf with the player's first name.

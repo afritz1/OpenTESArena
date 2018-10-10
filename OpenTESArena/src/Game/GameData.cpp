@@ -147,10 +147,7 @@ GameData::~GameData()
 std::string GameData::getDateString(const Date &date, const ExeData &exeData)
 {
 	std::string text = exeData.status.date;
-
-	// Replace carriage returns with newlines.
-	text = String::replace(text, '\r', '\n');
-
+	
 	// Replace first %s with weekday.
 	const std::string &weekdayString =
 		exeData.calendar.weekdayNames.at(date.getWeekday());

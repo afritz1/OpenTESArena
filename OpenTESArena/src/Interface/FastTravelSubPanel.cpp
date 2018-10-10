@@ -114,9 +114,6 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 				index = text.find("%s", index);
 				text.replace(index, 2, provinceData.name);
 
-				// Replace carriage returns with newlines.
-				text = String::replace(text, '\r', '\n');
-
 				return exeData.travel.arrivalPopUpLocation + text;
 			}
 			else
@@ -153,33 +150,28 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text
 			// directly.
-			std::string description = [&gameData, &exeData, &cityData, provinceID, localCityID,
-				&locationData, locationType, &miscAssets]()
+			const std::string description = [&gameData, &exeData, &cityData, provinceID,
+				localCityID, &locationData, locationType, &miscAssets]()
 			{
 				// City descriptions start at #0600. The three town descriptions are at #1422,
 				// and the three village descriptions are at #1423.
-				const std::string &templateDatText = [provinceID, localCityID,
+				const std::vector<std::string> &templateDatTexts = [provinceID, localCityID,
 					locationType, &miscAssets]()
 				{
 					// Get the key that maps into TEMPLATE.DAT.
-					// - @todo: use an integer instead.
-					const std::string key = [provinceID, localCityID,
-						locationType]() -> std::string
+					const int key = [provinceID, localCityID, locationType]()
 					{
 						if (locationType == LocationType::CityState)
 						{
-							std::stringstream ss;
-							ss << std::setfill('0') << std::setw(2) <<
-								std::to_string(localCityID + (8 * provinceID));
-							return "#06" + ss.str();
+							return 600 + localCityID + (8 * provinceID);
 						}
 						else if (locationType == LocationType::Town)
 						{
-							return "#1422";
+							return 1422;
 						}
 						else if (locationType == LocationType::Village)
 						{
-							return "#1423";
+							return 1423;
 						}
 						else
 						{
@@ -188,20 +180,21 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 						}
 					}();
 
-					return miscAssets.getTemplateDatText(key);
+					const auto &templateDat = miscAssets.getTemplateDat();
+					const auto &entry = templateDat.getEntry(key);
+					return entry.values;
 				}();
 
 				if (locationType == LocationType::CityState)
 				{
-					return templateDatText;
+					return templateDatTexts.front();
 				}
 				else
 				{
 					ArenaRandom &random = gameData.getRandom();
-					std::string description = [&random, &templateDatText]()
+					std::string description = [&random, &templateDatTexts]()
 					{
-						std::vector<std::string> strings = String::split(templateDatText, '&');
-						return strings.at(random.next() % strings.size());
+						return templateDatTexts.at(random.next() % templateDatTexts.size());
 					}();
 
 					// Replace %cn with city name.
@@ -239,31 +232,41 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 						description.replace(index, 3, rulerFirstName);
 					}
 
-					// Remove erroneous carriage returns and newlines at the beginning.
-					// - @todo: don't do clean-up on templateDat construction.
-					while ((description.front() == '\r') || (description.front() == '\n'))
-					{
-						description.erase(description.begin());
-					}
-
 					return description;
 				}
 			}();
 
-			// Remove erroneous carriage returns and newlines at the end (if any).
-			if ((description.back() == '\r') || (description.back() == '\n'))
-			{
-				description.pop_back();
-			}
-
 			return description;
 		}();
 
-		// @todo: re-distribute newlines based on max text box width.
 		std::string fullText = locationString + dateString +
-			daysString + '\n' + locationDescriptionString;
+			daysString + locationDescriptionString;
 
-		fullText = String::replace(fullText, '\r', '\n');
+		// Replace all line breaks with spaces and compress spaces into one.
+		std::string trimmedText = [&fullText]()
+		{
+			std::string str;
+			char prev = -1;
+			for (char c : fullText)
+			{
+				if (c == '\r')
+				{
+					c = ' ';
+				}
+
+				if (prev != ' ' || c != ' ')
+				{
+					str += c;
+				}
+
+				prev = c;
+			}
+
+			return str;
+		}();
+
+		// Re-distribute newlines.
+		fullText = String::distributeNewlines(trimmedText, 50);
 
 		return fullText;
 	}();

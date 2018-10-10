@@ -28,15 +28,20 @@ public:
 
 	// Removes leading whitespace from a string.
 	static std::string trimFront(const std::string &str);
+	static void trimFrontInPlace(std::string &str);
 
 	// Removes trailing whitespace from a string.
 	static std::string trimBack(const std::string &str);
+	static void trimBackInPlace(std::string &str);
 
 	// Removes new line characters from a string.
 	static std::string trimLines(const std::string &str);
 
 	// Removes extra whitespace from a string.
 	static std::string trimExtra(const std::string &str);
+
+	// Replaces spaces with newlines relative to the given character limit per line.
+	static std::string distributeNewlines(const std::string &str, int charLimit);
 
 	// Gets the right-most extension from a string, i.e., ".txt".
 	static std::string getExtension(const std::string &str);

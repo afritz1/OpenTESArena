@@ -199,6 +199,319 @@ namespace
 	};
 }
 
+const MiscAssets::TemplateDat::Entry &MiscAssets::TemplateDat::getEntry(int key) const
+{
+	// Use first vector for non-tileset entry requests.
+	const auto &entryList = this->entryLists.at(0);
+
+	const auto iter = std::lower_bound(entryList.begin(), entryList.end(), key,
+		[](const Entry &a, int key)
+	{
+		return a.key < key;
+	});
+
+	if (iter == entryList.end())
+	{
+		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(key) + "\".");
+	}
+
+	return *iter;
+}
+
+const MiscAssets::TemplateDat::Entry &MiscAssets::TemplateDat::getEntry(int key, char letter) const
+{
+	// Use first vector for non-tileset entry requests.
+	const auto &entryList = this->entryLists.at(0);
+
+	// The requested entry has a letter in its key, so need to find the range of
+	// equal values for 'key' via binary search.
+	const auto lowerIter = std::lower_bound(entryList.begin(), entryList.end(), key,
+		[](const Entry &a, int key)
+	{
+		return a.key < key;
+	});
+
+	const auto upperIter = std::upper_bound(lowerIter, entryList.end(), key,
+		[](int key, const Entry &b)
+	{
+		return key < b.key;
+	});
+
+	// Find 'letter' in the range of equal key values.
+	const auto iter = std::lower_bound(lowerIter, upperIter, letter,
+		[](const Entry &a, char letter)
+	{
+		return a.letter < letter;
+	});
+
+	if (iter == upperIter)
+	{
+		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(key) + ", " +
+			std::to_string(static_cast<int>(letter)) + "\".");
+	}
+
+	return *iter;
+}
+
+const MiscAssets::TemplateDat::Entry &MiscAssets::TemplateDat::getTilesetEntry(
+	int tileset, int key, char letter) const
+{
+	const auto &entryList = this->entryLists.at(tileset);
+
+	// Do binary search in the tileset vector to find the equal range for 'key'.
+	const auto lowerIter = std::lower_bound(entryList.begin(), entryList.end(), key,
+		[](const Entry &a, int key)
+	{
+		return a.key < key;
+	});
+
+	const auto upperIter = std::upper_bound(lowerIter, entryList.end(), key,
+		[](int key, const Entry &b)
+	{
+		return key < b.key;
+	});
+
+	// Find 'letter' in the range of equal key values.
+	const auto iter = std::lower_bound(lowerIter, upperIter, letter,
+		[](const Entry &a, char letter)
+	{
+		return a.letter < letter;
+	});
+
+	if (iter == upperIter)
+	{
+		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(tileset) + ", " +
+			std::to_string(key) + ", " + std::to_string(static_cast<int>(letter)) + "\".");
+	}
+
+	return *iter;
+}
+
+void MiscAssets::TemplateDat::init()
+{
+	const std::string filename = "TEMPLATE.DAT";
+
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+
+	// Read TEMPLATE.DAT into a string.
+	stream->seekg(0, std::ios::end);
+	std::string srcText(stream->tellg(), '\0');
+	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(&srcText.front()), srcText.size());
+
+	// Step line by line through the text, inserting keys and values into the proper lists.
+	std::istringstream iss(srcText);
+	std::string line, value;
+	int key = Entry::NO_KEY;
+	char letter = Entry::NO_LETTER;
+
+	enum Mode { None, Key, Section };
+	Mode mode = Mode::None;
+
+	auto parseKeyLine = [&key, &letter](const std::string &line)
+	{
+		// All keys are 4 digits, padded with zeroes. A letter at the end is optional.
+		// See if the line has a letter at the end.
+		const bool hasLetter = [&line]()
+		{
+			// Reverse iterate until a non-whitespace character is hit.
+			for (auto it = line.rbegin(); it != line.rend(); ++it)
+			{
+				const char c = *it;
+
+				// If it's a number, we've gone too far and there is no letter.
+				if (std::isdigit(c))
+				{
+					return false;
+				}
+				// If it's a letter, success.
+				else if (std::isalpha(c))
+				{
+					return true;
+				}
+			}
+
+			// No letter found.
+			return false;
+		}();
+
+		// Write out the key string as an integer.
+		key = [&line]()
+		{
+			const int keyOffset = 1;
+			const std::string keyStr = line.substr(keyOffset, 4);
+			return std::stoi(keyStr);
+		}();
+
+		// If there's a letter at the end, write that out too.
+		if (hasLetter)
+		{
+			const int letterIndex = 5;
+			letter = line.at(letterIndex);
+		}
+	};
+
+	auto flushState = [this, &value, &key, &letter]()
+	{
+		// If no entries yet, create a new vector.
+		if (this->entryLists.size() == 0)
+		{
+			this->entryLists.push_back(std::vector<Entry>());
+		}
+
+		// While the current vector contains the given key and optional letter pair, add
+		// a new vector to keep tileset-specific strings separate.
+		auto containsEntry = [this, key, letter](int i)
+		{
+			const auto &entryList = this->entryLists.at(i);
+
+			// The entry list might be big (>500 entries) but a linear search shouldn't be
+			// very slow when comparing integers. Keeping it sorted during initialization
+			// would be too expensive for a std::vector.
+			const auto iter = std::find_if(entryList.begin(), entryList.end(),
+				[key, letter](const Entry &entry)
+			{
+				return (entry.key == key) &&
+					((letter == Entry::NO_LETTER) || entry.letter == letter);
+			});
+
+			return iter != entryList.end();
+		};
+
+		int index = 0;
+		while (containsEntry(index))
+		{
+			index++;
+
+			// Create a new vector if necessary.
+			if (this->entryLists.size() == index)
+			{
+				this->entryLists.push_back(std::vector<Entry>());
+			}
+		}
+
+		// Replace all line breaks with spaces and compress spaces into one.
+		std::string trimmedValue = [&value]()
+		{
+			std::string str;
+			char prev = -1;
+			for (char c : value)
+			{
+				if (c == '\r')
+				{
+					c = ' ';
+				}
+
+				if (prev != ' ' || c != ' ')
+				{
+					str += c;
+				}
+
+				prev = c;
+			}
+
+			return str;
+		}();
+
+		// Trim front and back.
+		String::trimFrontInPlace(trimmedValue);
+		String::trimBackInPlace(trimmedValue);
+
+		Entry entry;
+		entry.key = key;
+		entry.letter = letter;
+		entry.values = String::split(trimmedValue, '&');
+
+		// Remove unused text after the last ampersand.
+		entry.values.pop_back();
+
+		// Add entry to the entry list.
+		this->entryLists.at(index).push_back(std::move(entry));
+
+		// Reset key, letter, and value string.
+		key = Entry::NO_KEY;
+		letter = Entry::NO_LETTER;
+		value.clear();
+	};
+
+	while (std::getline(iss, line))
+	{
+		// Skip empty lines (only for cases where TEMPLATE.DAT is modified to not have '\r'
+		// characters, like on Unix, perhaps?).
+		if (line.size() == 0)
+		{
+			continue;
+		}
+
+		// See if the line is a key for a section, or if it's a comment.
+		const bool isKeyLine = line.at(0) == '#';
+		const bool isComment = line.at(0) == ';';
+
+		if (isKeyLine)
+		{
+			if (mode != Mode::None)
+			{
+				// The previous line was either a key line or part of a section, so flush it.
+				flushState();
+			}
+
+			// Read the new key line into the key and optional letter variables.
+			parseKeyLine(line);
+			mode = Mode::Key;
+		}
+		else if (isComment)
+		{
+			// A comment line indicates that the line is skipped and the previous section should
+			// be flushed. There's only one comment line in TEMPLATE.DAT at the very end.
+			flushState();
+			mode = Mode::None;
+			continue;
+		}
+		else if ((mode == Mode::Key) || (mode == Mode::Section))
+		{
+			// Append the current line onto the value string.
+			value.append(line);
+
+			if (mode != Mode::Section)
+			{
+				mode = Mode::Section;
+			}
+		}
+	}
+
+	// Now that all entry lists have been constructed, sort each one by key, then sort each
+	// equal-key sub-group by letter.
+	for (auto &entryList : this->entryLists)
+	{
+		std::sort(entryList.begin(), entryList.end(),
+			[](const Entry &a, const Entry &b)
+		{
+			return a.key < b.key;
+		});
+
+		// Find where each equal-key sub-group begins and ends and sort them by letter. In the
+		// worst case, the sub-group size will be ~14 entries, so linear search is fine.
+		auto beginIter = entryList.begin();
+		while (beginIter != entryList.end())
+		{
+			const auto endIter = std::find_if_not(beginIter, entryList.end(),
+				[beginIter](const Entry &entry)
+			{
+				return entry.key == beginIter->key;
+			});
+
+			std::sort(beginIter, endIter,
+				[](const Entry &a, const Entry &b)
+			{
+				return a.letter < b.letter;
+			});
+
+			beginIter = endIter;
+		}
+	}
+}
+
 ClimateType MiscAssets::WorldMapTerrain::toClimateType(uint8_t index)
 {
 	if ((index == WorldMapTerrain::TEMPERATE1) ||
@@ -322,7 +635,7 @@ void MiscAssets::init()
 	this->parseExecutableData();
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
-	this->parseTemplateDat();
+	this->templateDat.init();
 
 	// Read in QUESTION.TXT and create character question objects.
 	this->parseQuestionTxt();
@@ -363,66 +676,6 @@ void MiscAssets::parseExecutableData()
 	// For now, just read the floppy disk executable.
 	const bool floppyVersion = true;
 	this->exeData.init(floppyVersion);
-}
-
-void MiscAssets::parseTemplateDat()
-{
-	const std::string filename = "TEMPLATE.DAT";
-
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
-
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
-
-	// Read TEMPLATE.DAT into a string.
-	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
-
-	// Step line by line through the text, inserting keys and values into the map.
-	std::istringstream iss(text);
-	std::string line, key, value;
-
-	while (std::getline(iss, line))
-	{
-		const char poundSign = '#';
-		if (line.at(0) == poundSign)
-		{
-			// Add the previous key/value pair into the map. There are multiple copies of 
-			// some texts in TEMPLATE.DAT, so it's important to skip existing ones.
-			if (this->templateDat.find(key) == this->templateDat.end())
-			{
-				// Clean up the text first so the caller has to do less.
-				value = String::replace(value, '\r', '\n');
-
-				while ((value.size() > 0) && (value.back() == '\n'))
-				{
-					value.pop_back();
-				}
-
-				// Remove the annoying ampersand at the end of most texts.
-				if ((value.size() > 0) && (value.back() == '&'))
-				{
-					value.pop_back();
-				}
-
-				this->templateDat.insert(std::make_pair(key, value));
-			}
-
-			// Reset the key and value for the next paragraph(s) of text.
-			key = String::trim(String::trimLines(line));
-			value = "";
-		}
-		else
-		{
-			// Add the current line of text onto the value.
-			value.append(line);
-		}
-	}
-
-	// Remove the one empty string added at the start (when key is "").
-	this->templateDat.erase("");
 }
 
 void MiscAssets::parseQuestionTxt()
@@ -958,7 +1211,7 @@ void MiscAssets::parseSpellMakerDescriptions()
 	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
 
 	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
-	
+
 	struct State
 	{
 		int index;
@@ -1070,14 +1323,9 @@ const ExeData &MiscAssets::getExeData() const
 	return this->exeData;
 }
 
-const std::string &MiscAssets::getTemplateDatText(const std::string &key) const
+const MiscAssets::TemplateDat &MiscAssets::getTemplateDat() const
 {
-	const auto iter = this->templateDat.find(key);
-	DebugAssert(iter != this->templateDat.end(), "TEMPLATE.DAT key \"" +
-		key + "\" not found.");
-
-	const std::string &value = iter->second;
-	return value;
+	return this->templateDat;
 }
 
 const std::vector<CharacterQuestion> &MiscAssets::getQuestionTxtQuestions() const
