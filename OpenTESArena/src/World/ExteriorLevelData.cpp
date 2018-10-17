@@ -6,6 +6,7 @@
 #include "WorldType.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/Location.h"
@@ -266,9 +267,196 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 	generateNames(VoxelData::WallData::MenuType::Temple);
 }
 
+void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth)
+{
+	// Lambda for obtaining a two-byte MAP1 voxel.
+	auto getMap1Voxel = [&map1, gridWidth, gridDepth](int x, int z)
+	{
+		// Read voxel data in reverse order.
+		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
+		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map1.data()) + index);
+		return voxel;
+	};
+
+	auto setMap1Voxel = [&map1, gridWidth, gridDepth](int x, int z, uint16_t voxel)
+	{
+		// Set voxel data in reverse order.
+		const int index = ((gridDepth - 1) - z) + (((gridWidth - 1) - x) * gridDepth);
+		map1.at(index) = voxel;
+	};
+
+	struct SearchResult
+	{
+		enum class Side { None, North, South, East, West };
+
+		Side side;
+
+		// Distance from the associated origin dimension, where (0, 0) is at the bottom left.
+		int offset;
+
+		SearchResult(Side side, int offset)
+		{
+			this->side = side;
+			this->offset = offset;
+		}
+	};
+
+	// Find one of the palace graphic blocks, then extrapolate the positions of
+	// the other palace graphic and the gates.
+	const SearchResult result = [gridWidth, gridDepth, &getMap1Voxel]()
+	{
+		auto isPalaceBlock = [&getMap1Voxel](int x, int z)
+		{
+			const uint16_t voxel = getMap1Voxel(x, z);
+			const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
+			return mostSigNibble == 0x9;
+		};
+
+		// North (top edge) and south (bottom edge), search left to right.
+		for (int z = 1; z < (gridDepth - 1); z++)
+		{
+			const int northX = gridWidth - 1;
+			const int southX = 0;
+			if (isPalaceBlock(northX, z))
+			{
+				return SearchResult(SearchResult::Side::North, z);
+			}
+			else if (isPalaceBlock(southX, z))
+			{
+				return SearchResult(SearchResult::Side::South, z);
+			}
+		}
+
+		// East (right edge) and west (left edge), search bottom to top.
+		for (int x = 1; x < (gridWidth - 1); x++)
+		{
+			const int eastZ = gridDepth - 1;
+			const int westZ = 0;
+			if (isPalaceBlock(x, eastZ))
+			{
+				return SearchResult(SearchResult::Side::East, x);
+			}
+			else if (isPalaceBlock(x, westZ))
+			{
+				return SearchResult(SearchResult::Side::West, x);
+			}
+		}
+
+		// No palace gate found. This should never happen because every city/town/village
+		// in the original game has a palace gate somewhere.
+		return SearchResult(SearchResult::Side::None, 0);
+	}();
+
+	// Decide how to extrapolate the search results.
+	if (result.side != SearchResult::Side::None)
+	{
+		// The direction to step from a palace voxel to the other palace voxel.
+		const Int2 northSouthPalaceStep(0, 1);
+		const Int2 eastWestPalaceStep(1, 0);
+
+		// Gets the distance in voxels from a palace voxel to its gate, or -1 if no gate exists.
+		const int NO_GATE = -1;
+		auto getGateDistance = [&getMap1Voxel, NO_GATE](const Int2 &palaceVoxel, const Int2 &dir)
+		{
+			auto isGateBlock = [&getMap1Voxel](int x, int z)
+			{
+				const uint16_t voxel = getMap1Voxel(x, z);
+				const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
+				return mostSigNibble == 0xA;
+			};
+
+			// Gates should usually be within a couple blocks of their castle graphic. If not,
+			// then no gate exists.
+			const int MAX_GATE_DIST = 8;
+
+			int i = 0;
+			Int2 position = palaceVoxel;
+			while ((i < MAX_GATE_DIST) && !isGateBlock(position.x, position.y))
+			{
+				position = position + dir;
+				i++;
+			}
+
+			return (i < MAX_GATE_DIST) ? i : NO_GATE;
+		};
+
+		// Set the positions of the two palace voxels and the two gate voxels.
+		Int2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
+		uint16_t firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
+		int gateDist;
+		if (result.side == SearchResult::Side::North)
+		{
+			firstPalaceVoxel = Int2(gridWidth - 1, result.offset);
+			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
+			const Int2 gateDir = Int2(-1, 0);
+			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
+			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
+			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
+			firstPalaceVoxelID = 0xA5B4;
+			secondPalaceVoxelID = 0xA5B5;
+			gateVoxelID = 0xA1B3;
+		}
+		else if (result.side == SearchResult::Side::South)
+		{
+			firstPalaceVoxel = Int2(0, result.offset);
+			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
+			const Int2 gateDir = Int2(1, 0);
+			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
+			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
+			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
+			firstPalaceVoxelID = 0xA535;
+			secondPalaceVoxelID = 0xA534;
+			gateVoxelID = 0xA133;
+		}
+		else if (result.side == SearchResult::Side::East)
+		{
+			firstPalaceVoxel = Int2(result.offset, gridDepth - 1);
+			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
+			const Int2 gateDir = Int2(0, -1);
+			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
+			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
+			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
+			firstPalaceVoxelID = 0xA575;
+			secondPalaceVoxelID = 0xA574;
+			gateVoxelID = 0xA173;
+		}
+		else if (result.side == SearchResult::Side::West)
+		{
+			firstPalaceVoxel = Int2(result.offset, 0);
+			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
+			const Int2 gateDir = Int2(0, 1);
+			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
+			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
+			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
+			firstPalaceVoxelID = 0xA5F4;
+			secondPalaceVoxelID = 0xA5F5;
+			gateVoxelID = 0xA1F3;
+		}
+
+		// Set the voxel IDs to their new values.
+		setMap1Voxel(firstPalaceVoxel.x, firstPalaceVoxel.y, firstPalaceVoxelID);
+		setMap1Voxel(secondPalaceVoxel.x, secondPalaceVoxel.y, secondPalaceVoxelID);
+
+		if (gateDist != NO_GATE)
+		{
+			setMap1Voxel(firstGateVoxel.x, firstGateVoxel.y, gateVoxelID);
+			setMap1Voxel(secondGateVoxel.x, secondGateVoxel.y, gateVoxelID);
+		}
+	}
+	else
+	{
+		// The search did not find any palace graphics block.
+		DebugWarning("No palace graphics found to revise.");
+	}
+}
+
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
 	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets)
 {
+	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
+	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
+	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
+
 	// Premade exterior level (only used by center province).
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
 
@@ -279,7 +467,7 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
+	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
 	// Generate building names.
@@ -463,6 +651,9 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 			yDim++;
 		}
 	}
+
+	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
+	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
 
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);

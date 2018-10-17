@@ -1,6 +1,7 @@
 #ifndef EXTERIOR_LEVEL_DATA_H
 #define EXTERIOR_LEVEL_DATA_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,10 @@ private:
 	void generateBuildingNames(int localCityID, int provinceID, uint32_t citySeed,
 		ArenaRandom &random, bool isCoastal, bool isCity, int gridWidth, int gridDepth,
 		const MiscAssets &miscAssets);
+
+	// This algorithm runs over the perimeter of a city map and changes palace graphics and
+	// their gates to the actual ones used in-game.
+	static void revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
