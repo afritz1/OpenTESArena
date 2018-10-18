@@ -89,8 +89,8 @@ public:
 	static uint16_t getDoorVoxelOffset(int x, int y);
 
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
-	static std::string getDoorVoxelMifName(int x, int y, int menuID,
-		uint32_t rulerSeed, bool isCity, LocationType locationType, const ExeData &exeData);
+	std::string getDoorVoxelMifName(int x, int y, int menuID, int localCityID, int provinceID,
+		bool isCity, const ExeData &exeData) const;
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);

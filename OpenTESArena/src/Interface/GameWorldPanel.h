@@ -64,7 +64,7 @@ private:
 
 	// Handles the behavior for when the player activates a *MENU block and transitions
 	// from one world to another (i.e., from an interior to an exterior).
-	void handleWorldTransition(const Physics::Hit &hit, const VoxelData::WallData &wallData);
+	void handleWorldTransition(const Physics::Hit &hit, int menuID);
 
 	// Checks the given voxel to see if it's a transition voxel (i.e., level up/down),
 	// and changes the current level if it is.

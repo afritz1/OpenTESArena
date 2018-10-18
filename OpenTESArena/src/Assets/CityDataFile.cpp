@@ -125,18 +125,25 @@ uint16_t CityDataFile::getDoorVoxelOffset(int x, int y)
 }
 
 std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
-	uint32_t rulerSeed, bool isCity, LocationType locationType, const ExeData &exeData)
+	int localCityID, int provinceID, bool isCity, const ExeData &exeData) const
 {
-	// Offset is based on X and Y position in world; used with variant calculation.
-	const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
-
 	// Get the menu type associated with the *MENU ID.
 	const VoxelData::WallData::MenuType menuType =
 		VoxelData::WallData::getMenuType(menuID, isCity);
 
-	// Get the prefix associated with the menu type.
-	const std::string menuName = [&exeData, locationType, menuType]()
+	// Check special case first: if it's a palace block in the center province's city,
+	// the .MIF name is hardcoded.
+	if ((menuType == VoxelData::WallData::MenuType::Palace) &&
+		(provinceID == 8) && (localCityID == 0))
 	{
+		return String::toUppercase(exeData.locations.finalDungeonMifName);
+	}
+
+	// Get the prefix associated with the menu type.
+	const std::string menuName = [localCityID, &exeData, menuType]()
+	{
+		const LocationType locationType = Location::getCityType(localCityID);
+
 		const std::string name = [&exeData, locationType, menuType]() -> std::string
 		{
 			// Mappings of menu types to menu .MIF prefix indices. Menus that have no .MIF
@@ -205,7 +212,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 					}();
 
 					const auto &prefixes = exeData.locations.menuMifPrefixes;
-					return prefixes.at(index);
+					return prefixes.at(menuMifIndex);
 				}
 				else
 				{
@@ -234,6 +241,10 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	}
 	else
 	{
+		// Offset is based on X and Y position in world; used with variant calculation.
+		const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
+		const uint32_t rulerSeed = this->getRulerSeed(localCityID, provinceID);
+
 		// Decide which variant of the interior to use.
 		const int variantID = [rulerSeed, offset, menuType]()
 		{

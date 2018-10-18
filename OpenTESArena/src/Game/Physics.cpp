@@ -77,8 +77,14 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		if (edgeFacing == facing)
 		{
 			// See if the Y offset brings the ray within the face's area.
-			// @todo: ceiling height, voxel Y, etc..
-			return false;
+			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
+			hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+			hit.point = rayStart + (direction * hit.t);
+			hit.voxel = voxel;
+			hit.facing = facing;
+			hit.type = Hit::Type::Voxel;
+			hit.voxelID = voxelID;
+			return true;
 		}
 		else
 		{
@@ -201,8 +207,14 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		if (edgeFacing == facing)
 		{
 			// See if the Y offset brings the ray within the face's area.
-			// @todo: ceiling height, voxel Y, etc..
-			return false;
+			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
+			hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+			hit.point = rayStart + (direction * hit.t);
+			hit.voxel = voxel;
+			hit.facing = facing;
+			hit.type = Hit::Type::Voxel;
+			hit.voxelID = voxelID;
+			return true;
 		}
 		else
 		{

@@ -24,7 +24,7 @@ public:
 	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
 	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
-	// can be inferred by the renderer on the main floor.
+	// can be inferred by the renderer.
 	struct WallData
 	{
 		enum class Type { Solid, LevelUp, LevelDown, Menu };

@@ -1409,10 +1409,21 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				{
 					const VoxelData::WallData &wallData = voxelData.wall;
 
-					// @todo: check more cases than just *MENU blocks.
 					if (wallData.isMenu())
 					{
-						this->handleWorldTransition(hit, wallData);
+						this->handleWorldTransition(hit, wallData.menuID);
+					}
+				}
+				else if (voxelData.dataType == VoxelDataType::Edge)
+				{
+					const VoxelData::EdgeData &edgeData = voxelData.edge;
+
+					if (edgeData.collider)
+					{
+						// The only collidable edges in cities should be palace voxels. Not sure
+						// how the original game handles the menu ID since it's a type 0xA voxel.
+						const int menuID = 11;
+						this->handleWorldTransition(hit, menuID);
 					}
 				}
 				else if (voxelData.dataType == VoxelDataType::Door)
@@ -1666,8 +1677,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 	}
 }
 
-void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
-	const VoxelData::WallData &wallData)
+void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -1704,7 +1714,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
 		const bool isCity = activeWorldType == WorldType::City;
 		const VoxelData::WallData::MenuType menuType =
-			VoxelData::WallData::getMenuType(wallData.menuID, isCity);
+			VoxelData::WallData::getMenuType(menuID, isCity);
 		const bool isTransitionVoxel = menuType != VoxelData::WallData::MenuType::None;
 
 		// Make sure the voxel will actually lead somewhere first.
@@ -1720,19 +1730,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit,
 				// wilderness.
 				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+				const auto &cityDataFile = gameData.getCityDataFile();
 				const Location &location = gameData.getLocation();
-
-				const uint32_t rulerSeed = [&gameData, &location]()
-				{
-					const CityDataFile &cityData = gameData.getCityDataFile();
-					return cityData.getRulerSeed(location.localCityID, location.provinceID);
-				}();
-
 				const auto &exeData = game.getMiscAssets().getExeData();
-				const LocationType locationType = Location::getCityType(location.localCityID);
-				const std::string mifName = CityDataFile::getDoorVoxelMifName(
-					originalVoxel.x, originalVoxel.y, wallData.menuID, rulerSeed, isCity,
-					locationType, exeData);
+				const std::string mifName = cityDataFile.getDoorVoxelMifName(
+					originalVoxel.x, originalVoxel.y, menuID, location.localCityID,
+					location.provinceID, isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
