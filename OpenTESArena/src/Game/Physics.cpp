@@ -71,10 +71,11 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	{
 		const VoxelData::EdgeData &edgeData = voxelData.edge;
 
-		// See if the intersected facing and the edge's facing are the same.
+		// See if the intersected facing and the edge's facing are the same, and only
+		// consider edges with collision.
 		const VoxelData::Facing edgeFacing = edgeData.facing;
 
-		if (edgeFacing == facing)
+		if ((edgeFacing == facing) && edgeData.collider)
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
@@ -201,10 +202,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	{
 		const VoxelData::EdgeData &edgeData = voxelData.edge;
 
-		// See if the intersected facing and the edge's facing are the same.
+		// See if the intersected facing and the edge's facing are the same, and only
+		// consider edges with collision.
 		const VoxelData::Facing edgeFacing = edgeData.facing;
 
-		if (edgeFacing == facing)
+		if ((edgeFacing == facing) && edgeData.collider)
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
