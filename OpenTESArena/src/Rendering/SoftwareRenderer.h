@@ -265,15 +265,15 @@ private:
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
 	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-		const Double2 &nearPoint, const Double2 &farPoint, const Camera &camera,
+		bool flipped, const Double2 &nearPoint, const Double2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
 	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
-		double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
+		bool flipped, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
 	static bool findInitialSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,

@@ -628,6 +628,12 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 							const bool collider = (map1Voxel & 0x0100) != 0;
 
+							// "Flipped" is not present in the original game, but has been added
+							// here so that all edge voxel texture coordinates (i.e., palace
+							// graphics, store signs) can be correct. Currently only palace
+							// graphics and gates are type 0xA colliders, I believe.
+							const bool flipped = collider;
+
 							const VoxelData::Facing facing = [map1Voxel]()
 							{
 								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
@@ -651,7 +657,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 							}();
 
-							return VoxelData::makeEdge(textureIndex, yOffset, collider, facing);
+							return VoxelData::makeEdge(
+								textureIndex, yOffset, collider, flipped, facing);
 						});
 
 						this->setVoxel(x, 1, z, dataIndex);

@@ -340,7 +340,7 @@ VoxelData VoxelData::makeTransparentWall(int id, bool collider)
 	return data;
 }
 
-VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, Facing facing)
+VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, bool flipped, Facing facing)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
@@ -354,6 +354,7 @@ VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, Facing faci
 	edge.id = id % VoxelData::TOTAL_IDS;
 	edge.yOffset = yOffset;
 	edge.collider = collider;
+	edge.flipped = flipped;
 	edge.facing = facing;
 
 	return data;

@@ -1475,7 +1475,7 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 }
 
 bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ, 
-	VoxelData::Facing edgeFacing, const Double2 &nearPoint, const Double2 &farPoint,
+	VoxelData::Facing edgeFacing, bool flipped, const Double2 &nearPoint, const Double2 &farPoint,
 	const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// Reuse the chasm facing code to find which face is intersected.
@@ -1486,7 +1486,7 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 	if (edgeFacing == farFacing)
 	{
 		hit.innerZ = (farPoint - nearPoint).length();
-		hit.u = [&farPoint, farFacing]()
+		hit.u = [flipped, &farPoint, farFacing]()
 		{
 			const double uVal = [&farPoint, farFacing]()
 			{
@@ -1508,7 +1508,9 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 				}
 			}();
 
-			return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+			// Account for the possibility of the texture being flipped horizontally.
+			return std::max(std::min(!flipped ? uVal : (Constants::JustBelowOne - uVal),
+				Constants::JustBelowOne), 0.0);
 		}();
 
 		hit.point = farPoint;
@@ -1523,14 +1525,15 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 }
 
 bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-	VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint, double nearU,
-	const Camera &camera, const Ray &ray, RayHit &hit)
+	bool flipped, VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+	double nearU, const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// If the edge facing and near facing match, the intersection is trivial.
 	if (edgeFacing == nearFacing)
 	{
 		hit.innerZ = 0.0;
-		hit.u = nearU;
+		hit.u = !flipped ? nearU : std::max(std::min(
+			(Constants::JustBelowOne - nearU), Constants::JustBelowOne), 0.0);
 		hit.point = nearPoint;
 		hit.normal = VoxelData::getNormal(nearFacing);
 		return true;
@@ -1546,7 +1549,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 		if (edgeFacing == farFacing)
 		{
 			hit.innerZ = (farPoint - nearPoint).length();
-			hit.u = [&farPoint, farFacing]()
+			hit.u = [flipped, &farPoint, farFacing]()
 			{
 				const double uVal = [&farPoint, farFacing]()
 				{
@@ -1568,7 +1571,9 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 					}
 				}();
 
-				return std::max(std::min(uVal, Constants::JustBelowOne), 0.0);
+				// Account for the possibility of the texture being flipped horizontally.
+				return std::max(std::min(!flipped ? uVal : (Constants::JustBelowOne - uVal),
+					Constants::JustBelowOne), 0.0);
 			}();
 
 			hit.point = farPoint;
@@ -2614,7 +2619,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
+				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+				camera, ray, hit);
 
 			if (success)
 			{
@@ -2964,7 +2970,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
+				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+				camera, ray, hit);
 
 			if (success)
 			{
@@ -3313,7 +3320,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, nearPoint, farPoint, camera, ray, hit);
+				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+				camera, ray, hit);
 
 			if (success)
 			{
@@ -3683,7 +3691,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
+				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+				camera, ray, hit);
 
 			if (success)
 			{
@@ -4075,7 +4084,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
+				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+				camera, ray, hit);
 
 			if (success)
 			{
@@ -4467,7 +4477,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Find intersection.
 			RayHit hit;
 			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, facing, nearPoint, farPoint, wallU, camera, ray, hit);
+				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+				camera, ray, hit);
 
 			if (success)
 			{
