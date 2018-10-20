@@ -170,7 +170,8 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 			mostRecentSpace = i;
 		}
 
-		if (currentLineLength == charLimit)
+		// Only try to add a newline if it's not the last character.
+		if ((currentLineLength == charLimit) && (i != static_cast<int>(newStr.size() - 1)))
 		{
 			if (mostRecentSpace == NO_SPACE)
 			{
