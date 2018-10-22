@@ -457,9 +457,7 @@ void Options::checkGraphics_TargetFPS(int value) const
 
 void Options::checkGraphics_ResolutionScale(double value) const
 {
-	DebugAssert(value >= Options::MIN_RESOLUTION_SCALE,
-		"Resolution scale cannot be less than " +
-		String::fixedPrecision(Options::MIN_RESOLUTION_SCALE, 2) + ".");
+	DebugAssert(value > 0.0, "Resolution scale must be positive.");
 	DebugAssert(value <= Options::MAX_RESOLUTION_SCALE,
 		"Resolution scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
