@@ -175,6 +175,10 @@ public:
 	double getFogDistance() const;
 	WeatherType getWeatherType() const;
 
+	// Returns a filtered version of the given weather so that, i.e., deserts can't
+	// have snow.
+	static WeatherType getFilteredWeatherType(WeatherType weatherType, ClimateType climateType);
+
 	// Gets the current ambient light percent, based on the current clock time and 
 	// the player's location (interior/exterior). This function is intended to match
 	// the actual calculation done in Arena.

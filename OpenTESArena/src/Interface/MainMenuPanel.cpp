@@ -291,10 +291,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}();
 
 					const int provinceID = random.next(8);
+					const ClimateType climateType = Location::getCityClimateType(
+						localCityID, provinceID, miscAssets);
+					const WeatherType filteredWeatherType =
+						GameData::getFilteredWeatherType(weatherType, climateType);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadCity(localCityID, provinceID, weatherType, miscAssets,
-						game.getTextureManager(), renderer);
+					gameData->loadCity(localCityID, provinceID, filteredWeatherType,
+						miscAssets, game.getTextureManager(), renderer);
 				}
 			}
 			else if (worldType == WorldType::Interior)
@@ -375,9 +379,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					"- Bottom right: " + std::to_string(rmdBR) + "\n" +
 					"- Bottom left: " + std::to_string(rmdBL));
 
+				const ClimateType climateType = Location::getCityClimateType(
+					localCityID, provinceID, miscAssets);
+				const WeatherType filteredWeatherType =
+					GameData::getFilteredWeatherType(weatherType, climateType);
+
 				// Load wilderness into game data. Location data is loaded, too.
 				gameData->loadWilderness(localCityID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
-					weatherType, miscAssets, game.getTextureManager(), renderer);
+					filteredWeatherType, miscAssets, game.getTextureManager(), renderer);
 			}
 			else
 			{
@@ -390,7 +399,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			clock = Clock(5, 45, 0);
 
 			// Get the music that should be active on start.
-			const MusicName musicName = [&mifName, worldType, weatherType, &random, &clock]()
+			const MusicName musicName = [&mifName, worldType, &gameData, &random, &clock]()
 			{
 				const bool isExterior = (worldType == WorldType::City) ||
 					(worldType == WorldType::Wilderness);
@@ -399,6 +408,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// on the current location's .MIF name (if any).
 				if (isExterior)
 				{
+					// Make sure to get updated weather type from game data and not
+					// local variable so it gets the filtered weather type.
+					const WeatherType weatherType = gameData->getWeatherType();
 					return clock.nightMusicIsActive() ?
 						MusicName::Night : GameData::getExteriorMusicName(weatherType);
 				}

@@ -1702,8 +1702,13 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
+		const auto &location = gameData.getLocation();
+		const ClimateType climateType = Location::getCityClimateType(
+			location.localCityID, location.provinceID, game.getMiscAssets());
+		const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+			gameData.getWeatherType(), climateType);
 		const MusicName musicName = !clock.nightMusicIsActive() ?
-			GameData::getExteriorMusicName(gameData.getWeatherType()) :
+			GameData::getExteriorMusicName(filteredWeatherType) :
 			MusicName::Night;
 
 		game.setMusic(musicName);
@@ -2116,7 +2121,13 @@ void GameWorldPanel::tick(double dt)
 
 		if (changeToDayMusic)
 		{
-			const MusicName musicName = GameData::getExteriorMusicName(gameData.getWeatherType());
+			const auto &location = gameData.getLocation();
+			const ClimateType climateType = Location::getCityClimateType(
+				location.localCityID, location.provinceID, game.getMiscAssets());
+			const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+				gameData.getWeatherType(), climateType);
+
+			const MusicName musicName = GameData::getExteriorMusicName(filteredWeatherType);
 			game.setMusic(musicName);
 		}
 		else if (changeToNightMusic)

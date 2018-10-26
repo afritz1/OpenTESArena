@@ -675,6 +675,17 @@ WeatherType GameData::getWeatherType() const
 	return this->weatherType;
 }
 
+WeatherType GameData::getFilteredWeatherType(WeatherType weatherType,
+	ClimateType climateType)
+{
+	// Snow in deserts is replaced by rain.
+	const bool isSnow = (weatherType == WeatherType::Snow) ||
+		(weatherType == WeatherType::SnowOvercast) ||
+		(weatherType == WeatherType::SnowOvercast2);
+	return ((climateType == ClimateType::Desert) && isSnow) ?
+		WeatherType::Rain : weatherType;
+}
+
 double GameData::getAmbientPercent() const
 {
 	if (this->worldData->getActiveWorldType() == WorldType::Interior)

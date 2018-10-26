@@ -360,7 +360,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	if (this->travelData.locationID < 32)
 	{
 		// Get weather type from game data.
-		const WeatherType weatherType = [this, &gameData]()
+		const WeatherType weatherType = [this, &game, &gameData]()
 		{
 			const auto &cityData = gameData.getCityDataFile();
 			const auto &provinceData = cityData.getProvinceData(this->travelData.provinceID);
@@ -369,7 +369,10 @@ void FastTravelSubPanel::switchToNextPanel()
 			const Int2 globalPoint = CityDataFile::localPointToGlobal(
 				localPoint, provinceData.getGlobalRect());
 			const int globalQuarter = cityData.getGlobalQuarter(globalPoint);
-			return gameData.getWeathersArray().at(globalQuarter);
+			const WeatherType type = gameData.getWeathersArray().at(globalQuarter);
+			const ClimateType climateType = Location::getCityClimateType(
+				this->travelData.locationID, this->travelData.provinceID, game.getMiscAssets());
+			return GameData::getFilteredWeatherType(type, climateType);
 		}();
 
 		// Load the destination city. For the center province, use the specialized method.
