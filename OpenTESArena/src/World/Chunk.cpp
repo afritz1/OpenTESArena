@@ -45,3 +45,7 @@ void Chunk<T>::set(int x, int y, int z, uint16_t value)
 	const int index = this->getIndex(x, y, z);
 	this->voxels.at(index) = value;
 }
+
+// Template instantiations.
+template class Chunk<3>;
+template class Chunk<6>;

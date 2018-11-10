@@ -30,6 +30,8 @@ public:
 	void set(int x, int y, int z, uint16_t value);
 };
 
+// Template instantiations at end of .cpp file.
+
 // Interior chunks are always three voxels high (ground, main floor, ceiling). Exteriors are
 // higher to allow for tall buildings.
 using InteriorChunk = Chunk<3>;
