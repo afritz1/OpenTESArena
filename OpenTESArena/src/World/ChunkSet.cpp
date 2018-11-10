@@ -26,7 +26,7 @@ auto ChunkSet<T>::getIter(const Int2 &point, const ChunkList &chunks) const
 	return iter;
 }
 
-template<typename T>
+template <typename T>
 int ChunkSet<T>::getCount() const
 {
 	return static_cast<int>(this->chunks.size());
@@ -47,13 +47,13 @@ const T *ChunkSet<T>::get(const Int2 &point) const
 }
 
 template <typename T>
-typename ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index)
+ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index)
 {
 	return (index < this->getCount()) ? &this->chunks.at(index) : nullptr;
 }
 
 template <typename T>
-typename const ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index) const
+const ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index) const
 {
 	return (index < this->getCount()) ? &this->chunks.at(index) : nullptr;
 }
@@ -94,7 +94,7 @@ void ChunkSet<T>::set(const Int2 &point, T &&chunk)
 	}
 }
 
-template<typename T>
+template <typename T>
 void ChunkSet<T>::remove(const Int2 &point)
 {
 	const auto iter = this->getIter(point, this->chunks);
