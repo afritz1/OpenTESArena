@@ -15,11 +15,8 @@
 template <typename T>
 class ChunkSet
 {
-public:
-	// 'typename' is required for templated typedefs.
-	using PairType = typename std::pair<Int2, T>;
 private:
-	using ChunkList = std::vector<PairType>;
+	using ChunkList = std::vector<std::pair<Int2, T>>;
 
 	// Chunks with their associated chunk coordinate.
 	ChunkList chunks;
@@ -37,8 +34,8 @@ public:
 	const T *get(const Int2 &point) const;
 
 	// Functions for iterating over all chunks in the set. Returns null once the end is reached.
-	PairType *getAt(int index);
-	const PairType *getAt(int index) const;
+	std::pair<Int2, T> *getAt(int index);
+	const std::pair<Int2, T> *getAt(int index) const;
 
 	// Adds a chunk at the given coordinate, overwriting any existing one.
 	void set(const Int2 &point, const T &chunk);
