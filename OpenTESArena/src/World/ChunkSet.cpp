@@ -47,13 +47,13 @@ const T *ChunkSet<T>::get(const Int2 &point) const
 }
 
 template <typename T>
-typename ChunkSet<T>::PairType *ChunkSet<T>::getIndex(int index)
+typename ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index)
 {
 	return (index < this->getCount()) ? &this->chunks.at(index) : nullptr;
 }
 
 template <typename T>
-typename const ChunkSet<T>::PairType *ChunkSet<T>::getIndex(int index) const
+typename const ChunkSet<T>::PairType *ChunkSet<T>::getAt(int index) const
 {
 	return (index < this->getCount()) ? &this->chunks.at(index) : nullptr;
 }
