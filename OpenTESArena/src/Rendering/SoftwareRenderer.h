@@ -125,6 +125,7 @@ private:
 	struct ShadingInfo
 	{
 		// Sky colors for the horizon and zenith to interpolate between. Also used for fog.
+		// @todo: replace with current 5-7ish color array for interpolation.
 		Double3 horizonSkyColor, zenithSkyColor;
 
 		// Light and direction of the sun.
@@ -214,6 +215,9 @@ private:
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	static double fullAtan2(double y, double x);
+
+	// Refreshes the list of flats to be drawn.
+	void updateVisibleFlats(const Camera &camera);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -353,8 +357,22 @@ private:
 		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
 		const FrameView &frame);
 
-	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera);
+	// Draws a portion of the sky. The start and end Y are based on current threading settings.
+	static void drawSky(int startY, int endY, const Camera &camera,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
+
+	// Handles drawing all voxels for the current frame.
+	static void drawVoxels(int startX, int stride, const Double2 &forwardComp,
+		const Double2 &right2D, const Camera &camera, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
+
+	// Handles drawing all flats for the current frame.
+	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
+		const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
+		const std::vector<FlatTexture> &flatTextures, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
 public:
 	SoftwareRenderer();
 

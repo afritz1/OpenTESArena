@@ -496,7 +496,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 		// Scaled axes based on flat dimensions.
 		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
 		const Double3 flatUpScaled = flatUp * flat.height;
-		
+
 		// Calculate each corner of the flat in world space.
 		Flat::Frame flatFrame;
 		flatFrame.bottomStart = flat.position + flatRightScaled;
@@ -4942,6 +4942,77 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	}
 }
 
+void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	const int startIndex = startY * frame.width;
+	const int endIndex = endY * frame.width;
+
+	uint32_t *colorPtr = frame.colorBuffer;
+	double *depthPtr = frame.depthBuffer;
+
+	const uint32_t colorValue = shadingInfo.horizonSkyColor.toRGB();
+	const double depthValue = std::numeric_limits<double>::infinity();
+
+	// Clear the color and depth of some rows.
+	for (int i = startIndex; i < endIndex; i++)
+	{
+		colorPtr[i] = colorValue;
+		depthPtr[i] = depthValue;
+	}
+}
+
+void SoftwareRenderer::drawVoxels(int startX, int stride, const Double2 &forwardComp,
+	const Double2 &right2D, const Camera &camera, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	// Draw pixel columns with spacing determined by the number of render threads.
+	for (int x = startX; x < frame.width; x += stride)
+	{
+		// X percent across the screen.
+		const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
+
+		// "Right" component of the ray direction, based on current screen X.
+		const Double2 rightComp = right2D * ((2.0 * xPercent) - 1.0);
+
+		// Calculate the ray direction through the pixel.
+		// - If un-normalized, it uses the Z distance, but the insides of voxels
+		//   don't look right then.
+		const Double2 direction = (forwardComp + rightComp).normalized();
+		const Ray ray(direction.x, direction.y);
+
+		// Cast the 2D ray and fill in the column's pixels with color.
+		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, openDoors,
+			voxelGrid, voxelTextures, occlusion.at(x), frame);
+	}
+}
+
+void SoftwareRenderer::drawFlats(int startX, int endX,
+	const Camera &camera, const Double3 &flatNormal,
+	const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
+	const std::vector<FlatTexture> &flatTextures,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	// Iterate through all flats, rendering those visible within the given X range of 
+	// the screen.
+	for (const auto &pair : visibleFlats)
+	{
+		const Flat &flat = *pair.first;
+		const Flat::Frame &flatFrame = pair.second;
+
+		// Texture of the flat. It might be flipped horizontally as well, given by
+		// the "flat.flipped" value.
+		const FlatTexture &texture = flatTextures.at(flat.textureID);
+
+		const Double2 eye2D(camera.eye.x, camera.eye.z);
+
+		SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped,
+			eye2D, shadingInfo, texture, frame);
+	}
+}
+
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
@@ -4964,6 +5035,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const Double2 right2D = 
 		Double2(camera.rightX, camera.rightZ).normalized() * camera.aspect;
 
+	// Normal of all flats (always facing the camera).
+	const Double3 flatNormal = Double3(-forwardComp.x, 0.0, -forwardComp.y).normalized();
+
 	// Calculate shading information.
 	const Double3 horizonFogColor = this->getFogColor(daytimePercent);
 	const Double3 zenithFogColor = horizonFogColor * 0.85; // Temp.
@@ -4984,74 +5058,6 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		sunDirection, ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
-	// Lambda for rendering voxels via 2.5D ray casting.
-	auto renderVoxels = [this, &camera, ceilingHeight, &openDoors, &voxelGrid, &shadingInfo,
-		widthReal, &forwardComp, &right2D, &frame](int startX, int stride)
-	{
-		// Draw pixel columns with spacing determined by the number of render threads.
-		for (int x = startX; x < frame.width; x += stride)
-		{
-			// X percent across the screen.
-			const double xPercent = (static_cast<double>(x) + 0.50) / widthReal;
-
-			// "Right" component of the ray direction, based on current screen X.
-			const Double2 rightComp = right2D * ((2.0 * xPercent) - 1.0);
-
-			// Calculate the ray direction through the pixel.
-			// - If un-normalized, it uses the Z distance, but the insides of voxels
-			//   don't look right then.
-			const Double2 direction = (forwardComp + rightComp).normalized();
-			const Ray ray(direction.x, direction.y);
-
-			// Cast the 2D ray and fill in the column's pixels with color.
-			this->rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, openDoors,
-				voxelGrid, this->voxelTextures, this->occlusion.at(x), frame);
-		}
-	};
-
-	auto renderFlats = [this, &camera, &shadingInfo, &forwardComp, &frame](int startX, int endX)
-	{
-		// Iterate through all flats, rendering those visible within the given X range of 
-		// the screen.
-		for (const auto &pair : this->visibleFlats)
-		{
-			const Flat &flat = *pair.first;
-			const Flat::Frame &flatFrame = pair.second;
-
-			// Normal of the flat (always facing the camera).
-			const Double3 flatNormal = Double3(-forwardComp.x, 0.0, -forwardComp.y).normalized();
-
-			// Texture of the flat. It might be flipped horizontally as well, given by
-			// the "flat.flipped" value.
-			const FlatTexture &texture = this->flatTextures[flat.textureID];
-
-			const Double2 eye2D(camera.eye.x, camera.eye.z);
-
-			SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped,
-				eye2D, shadingInfo, texture, frame);
-		}
-	};
-
-	// Lambda for clearing some rows on the frame buffer quickly.
-	auto clearRows = [this, colorBuffer, &horizonFogColor, &zenithFogColor](int startY, int endY)
-	{
-		const int startIndex = startY * this->width;
-		const int endIndex = endY * this->width;
-
-		uint32_t *colorPtr = colorBuffer;
-		double *depthPtr = this->depthBuffer.data();
-
-		const uint32_t colorValue = horizonFogColor.toRGB();
-		const double depthValue = std::numeric_limits<double>::infinity();
-
-		// Clear the color and depth of some rows.
-		for (int i = startIndex; i < endIndex; i++)
-		{
-			colorPtr[i] = colorValue;
-			depthPtr[i] = depthValue;
-		}
-	};
-
 	// Start a thread for refreshing the visible flats. This should erase the old list,
 	// calculate a new list, and sort it by depth.
 	std::thread sortThread([this, &camera] { this->updateVisibleFlats(camera); });
@@ -5061,7 +5067,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	std::vector<std::thread> renderThreads(
 		SoftwareRenderer::getRenderThreadsFromMode(this->renderThreadsMode));
 
-	// Start clearing the frame buffer with the render threads.
+	// Draw the sky with the render threads.
 	for (size_t i = 0; i < renderThreads.size(); i++)
 	{
 		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
@@ -5074,14 +5080,15 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		assert(startY >= 0);
 		assert(endY <= this->height);
 
-		renderThreads[i] = std::thread(clearRows, startY, endY);
+		// Must use std::ref/cref to pass thread arguments by reference.
+		renderThreads[i] = std::thread(SoftwareRenderer::drawSky, startY, endY,
+			std::cref(camera), std::cref(shadingInfo), std::cref(frame));
 	}
 
 	// Reset occlusion.
-	std::fill(this->occlusion.begin(), this->occlusion.end(), 
-		OcclusionData(0, this->height));
+	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
-	// Wait for the render threads to finish clearing.
+	// Wait for the render threads to finish the sky.
 	for (auto &thread : renderThreads)
 	{
 		thread.join();
@@ -5095,7 +5102,10 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	{
 		const int startX = static_cast<int>(i);
 		const int stride = static_cast<int>(renderThreads.size());
-		renderThreads[i] = std::thread(renderVoxels, startX, stride);
+		renderThreads[i] = std::thread(SoftwareRenderer::drawVoxels, startX, stride,
+			std::cref(forwardComp), std::cref(right2D), std::cref(camera), ceilingHeight,
+			std::cref(openDoors), std::cref(voxelGrid), std::cref(this->voxelTextures),
+			std::ref(this->occlusion), std::cref(shadingInfo), std::cref(frame));
 	}
 
 	// Wait for the render threads to finish rendering.
@@ -5105,7 +5115,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	}
 
 	// Render flats with each render thread.
-	for (size_t i = 0; i < renderThreads.size(); i++)
+	// @todo: flat rendering.
+	/*for (size_t i = 0; i < renderThreads.size(); i++)
 	{
 		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
 		// the start and stop coordinates are correct for all resolutions.
@@ -5113,12 +5124,13 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
 
-		renderThreads[i] = std::thread(renderFlats, startX, endX);
+		renderThreads[i] = std::thread(SoftwareRenderer::drawFlats, startX, endX,
+			camera, flatNormal, this->visibleFlats, this->flatTextures, shadingInfo, frame);
 	}
 
 	// Wait for the render threads to finish rendering.
 	for (auto &thread : renderThreads)
 	{
 		thread.join();
-	}
+	}*/
 }
