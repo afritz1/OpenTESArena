@@ -2,7 +2,10 @@
 #define SOFTWARE_RENDERER_H
 
 #include <array>
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -181,6 +184,63 @@ private:
 		};
 	};
 
+	// Data owned by the main thread that is referenced by render threads.
+	struct RenderThreadData
+	{
+		struct Sky
+		{
+			std::atomic<int> threadsDone;
+
+			void init();
+		};
+
+		struct Voxels
+		{
+			std::atomic<int> threadsDone;
+			const std::vector<LevelData::DoorState> *openDoors;
+			const VoxelGrid *voxelGrid;
+			const std::vector<VoxelTexture> *voxelTextures;
+			std::vector<OcclusionData> *occlusion;
+			double ceilingHeight;
+
+			void init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+				const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &voxelTextures,
+				std::vector<OcclusionData> &occlusion);
+		};
+
+		struct Flats
+		{
+			std::atomic<int> threadsDone;
+			const Double3 *flatNormal;
+			const std::vector<std::pair<const Flat*, Flat::Frame>> *visibleFlats;
+			const std::vector<FlatTexture> *flatTextures;
+			bool doneSorting; // True when render threads can start rendering flats.
+
+			void init(const Double3 &flatNormal,
+				const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
+				const std::vector<FlatTexture> &flatTextures);
+		};
+
+		Sky sky;
+		Voxels voxels;
+		Flats flats;
+		const Camera *camera;
+		const ShadingInfo *shadingInfo;
+		const FrameView *frame;
+		const Double2 *forwardComp, *right2D; // Camera directions (function of FOV and aspect).
+
+		std::condition_variable condVar;
+		std::mutex mutex;
+		int totalThreads;
+		bool go; // Initial go signal to start work each frame.
+		bool isDestructing; // Helps shut down threads in the renderer destructor.
+
+		RenderThreadData();
+
+		void init(int totalThreads, const Double2 &forwardComp, const Double2 &right2D,
+			const Camera &camera, const ShadingInfo &shadingInfo, const FrameView &frame);
+	};
+
 	// Clipping planes for Z coordinates.
 	static const double NEAR_PLANE;
 	static const double FAR_PLANE;
@@ -199,6 +259,8 @@ private:
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
+	std::vector<std::thread> renderThreads; // Threads used for rendering the world.
+	RenderThreadData threadData; // Managed by main thread, used by render threads.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadsMode; // Determines number of threads to use for rendering.
@@ -215,6 +277,10 @@ private:
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	static double fullAtan2(double y, double x);
+
+	// Initializes render threads that run in the background for the duration of the renderer's
+	// lifetime. This can also be used to reset threads after a screen resize.
+	void initRenderThreads(int width, int height, int threadCount);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -373,8 +439,16 @@ private:
 		const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
 		const std::vector<FlatTexture> &flatTextures, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
+
+	// Thread loop for each render thread. All threads are initialized in the constructor and
+	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
+	// then each render thread still gets a go signal, but they immediately leave their loop
+	// and terminate. Non-thread-data parameters are for start/end column/row for each thread.
+	static void renderThreadLoop(RenderThreadData &threadData, int startX, int endX,
+		int startY, int endY);
 public:
 	SoftwareRenderer();
+	~SoftwareRenderer();
 
 	// Height ratio between normal pixels and tall pixels.
 	static const double TALL_PIXEL_RATIO;

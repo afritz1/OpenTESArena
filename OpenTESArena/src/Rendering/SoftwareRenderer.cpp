@@ -214,6 +214,61 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->heightReal = static_cast<double>(height);
 }
 
+void SoftwareRenderer::RenderThreadData::Sky::init()
+{
+	this->threadsDone = 0;
+}
+
+void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion)
+{
+	this->threadsDone = 0;
+	this->ceilingHeight = ceilingHeight;
+	this->openDoors = &openDoors;
+	this->voxelGrid = &voxelGrid;
+	this->voxelTextures = &voxelTextures;
+	this->occlusion = &occlusion;
+}
+
+void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
+	const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
+	const std::vector<FlatTexture> &flatTextures)
+{
+	this->threadsDone = 0;
+	this->flatNormal = &flatNormal;
+	this->visibleFlats = &visibleFlats;
+	this->flatTextures = &flatTextures;
+	this->doneSorting = false;
+}
+
+SoftwareRenderer::RenderThreadData::RenderThreadData()
+{
+	// Make sure 'go' is initialized to false.
+	this->totalThreads = 0;
+	this->go = false;
+	this->isDestructing = false;
+	this->camera = nullptr;
+	this->shadingInfo = nullptr;
+	this->frame = nullptr;
+	this->forwardComp = nullptr;
+	this->right2D = nullptr;
+}
+
+void SoftwareRenderer::RenderThreadData::init(int totalThreads, const Double2 &forwardComp,
+	const Double2 &right2D, const Camera &camera, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
+{
+	this->totalThreads = totalThreads;
+	this->forwardComp = &forwardComp;
+	this->right2D = &right2D;
+	this->camera = &camera;
+	this->shadingInfo = &shadingInfo;
+	this->frame = &frame;
+	this->go = false;
+	this->isDestructing = false;
+}
+
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
@@ -228,6 +283,21 @@ SoftwareRenderer::SoftwareRenderer()
 	this->height = 0;
 	this->renderThreadsMode = 0;
 	this->fogDistance = 0.0;
+}
+
+SoftwareRenderer::~SoftwareRenderer()
+{
+	// Notify each render thread that it needs to terminate.
+	this->threadData.isDestructing = true;
+	this->threadData.condVar.notify_all();
+
+	for (auto &thread : this->renderThreads)
+	{
+		if (thread.joinable())
+		{
+			thread.join();
+		}
+	}
 }
 
 bool SoftwareRenderer::isInited() const
@@ -256,6 +326,10 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 
 	// Fog distance is zero by default.
 	this->fogDistance = 0.0;
+
+	// Initialize render threads.
+	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(renderThreadsMode);
+	this->initRenderThreads(width, height, threadCount);
 }
 
 void SoftwareRenderer::setRenderThreadsMode(int mode)
@@ -472,6 +546,39 @@ void SoftwareRenderer::resize(int width, int height)
 
 	this->width = width;
 	this->height = height;
+
+	// Restart render threads with new dimensions.
+	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(this->renderThreadsMode);
+	this->initRenderThreads(width, height, threadCount);
+}
+
+void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
+{
+	this->renderThreads = std::vector<std::thread>(threadCount);
+
+	// Block width and height are the approximate number of columns and rows per thread,
+	// respectively.
+	const double blockWidth = static_cast<double>(width) / static_cast<double>(threadCount);
+	const double blockHeight = static_cast<double>(height) / static_cast<double>(threadCount);
+
+	// Start thread loop for each render thread. Rounding is involved so the start and stop
+	// coordinates are correct for all resolutions.
+	for (size_t i = 0; i < this->renderThreads.size(); i++)
+	{
+		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockWidth));
+		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockWidth));
+		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockHeight));
+		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockHeight));
+
+		// Make sure the rounding is correct.
+		assert(startX >= 0);
+		assert(endX <= width);
+		assert(startY >= 0);
+		assert(endY <= height);
+
+		this->renderThreads.at(i) = std::thread(SoftwareRenderer::renderThreadLoop,
+			std::ref(this->threadData), startX, endX, startY, endY);
+	}
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
@@ -5013,6 +5120,99 @@ void SoftwareRenderer::drawFlats(int startX, int endX,
 	}
 }
 
+void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX, int endX,
+	int startY, int endY)
+{
+	// Number of columns to skip per ray cast (for interleaved ray casting as a means of
+	// load-balancing).
+	const int strideX = threadData.totalThreads;
+
+	std::unique_lock<std::mutex> lk(threadData.mutex);
+
+	while (true)
+	{
+		// Initial wait condition.
+		threadData.condVar.wait(lk, [&threadData]() { return threadData.go; });
+		// @todo: need to unlock after finished waiting?
+
+		// Received a go signal. Check if the renderer is being destroyed before doing anything.
+		if (threadData.isDestructing)
+		{
+			break;
+		}
+
+		// Draw this thread's portion of the sky.
+		RenderThreadData::Sky &sky = threadData.sky;
+		SoftwareRenderer::drawSky(startY, endY, *threadData.camera, *threadData.shadingInfo,
+			*threadData.frame);
+
+		// This thread is done with the sky.
+		sky.threadsDone++;
+
+		// If this was the last thread on the sky, notify all to continue.
+		if (sky.threadsDone == threadData.totalThreads)
+		{
+			threadData.condVar.notify_all();
+		}
+		else
+		{
+			// Wait for other threads to finish.
+			threadData.condVar.wait(lk, [&threadData, &sky]()
+			{
+				return sky.threadsDone == threadData.totalThreads;
+			});
+		}
+
+		// Draw this thread's portion of voxels.
+		RenderThreadData::Voxels &voxels = threadData.voxels;
+		SoftwareRenderer::drawVoxels(startX, strideX, *threadData.forwardComp, *threadData.right2D,
+			*threadData.camera, voxels.ceilingHeight, *voxels.openDoors, *voxels.voxelGrid,
+			*voxels.voxelTextures, *voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
+
+		// This thread is done with voxels.
+		voxels.threadsDone++;
+
+		// If this was the last thread on voxels, notify all to continue.
+		if (voxels.threadsDone == threadData.totalThreads)
+		{
+			threadData.condVar.notify_all();
+		}
+		else
+		{
+			// Wait for other threads to finish.
+			threadData.condVar.wait(lk, [&threadData, &voxels]()
+			{
+				return voxels.threadsDone == threadData.totalThreads;
+			});
+		}
+
+		// Wait for the visible flat sorting to finish.
+		RenderThreadData::Flats &flats = threadData.flats;
+		threadData.condVar.wait(lk, [&flats]() { return flats.doneSorting; });
+
+		// Draw this thread's portion of flats.
+		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal,
+			*flats.visibleFlats, *flats.flatTextures, *threadData.shadingInfo, *threadData.frame);
+
+		// This thread is done with flats.
+		flats.threadsDone++;
+
+		// If this was the last thread on flats, notify all to continue.
+		if (flats.threadsDone == threadData.totalThreads)
+		{
+			threadData.condVar.notify_all();
+		}
+		else
+		{
+			// Wait for other threads to finish.
+			threadData.condVar.wait(lk, [&threadData, &flats]()
+			{
+				return flats.threadsDone == threadData.totalThreads;
+			});
+		}
+	}
+}
+
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
@@ -5058,79 +5258,44 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		sunDirection, ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
-	// Start a thread for refreshing the visible flats. This should erase the old list,
-	// calculate a new list, and sort it by depth.
-	std::thread sortThread([this, &camera] { this->updateVisibleFlats(camera); });
+	// Set all the render-thread-specific shared data for this frame.
+	this->threadData.init(static_cast<int>(this->renderThreads.size()), forwardComp,
+		right2D, camera, shadingInfo, frame);
+	this->threadData.sky.init();
+	this->threadData.voxels.init(ceilingHeight, openDoors, voxelGrid,
+		this->voxelTextures, this->occlusion);
+	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextures);
 
-	// Prepare render threads, obtaining the number of threads to use from the render threads
-	// mode. These are used for clearing the frame buffer and rendering.
-	std::vector<std::thread> renderThreads(
-		SoftwareRenderer::getRenderThreadsFromMode(this->renderThreadsMode));
-
-	// Draw the sky with the render threads.
-	for (size_t i = 0; i < renderThreads.size(); i++)
-	{
-		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
-		// the start and stop coordinates are correct for all resolutions.
-		const double blockSize = heightReal / static_cast<double>(renderThreads.size());
-		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
-		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
-
-		// Make sure the rounding is correct.
-		assert(startY >= 0);
-		assert(endY <= this->height);
-
-		// Must use std::ref/cref to pass thread arguments by reference.
-		renderThreads[i] = std::thread(SoftwareRenderer::drawSky, startY, endY,
-			std::cref(camera), std::cref(shadingInfo), std::cref(frame));
-	}
+	// Give the render threads the go signal. They can work on the sky and voxels while this thread
+	// does things like resetting occlusion and doing visible flat determination.
+	std::unique_lock<std::mutex> lk(this->threadData.mutex);
+	this->threadData.go = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
 
 	// Reset occlusion.
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
-	// Wait for the render threads to finish the sky.
-	for (auto &thread : renderThreads)
+	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
+	// it by depth.
+	this->updateVisibleFlats(camera);
+
+	// Keep render threads from looping again until the next frame.
+	this->threadData.go = false;
+
+	this->threadData.condVar.wait(lk, [this]()
 	{
-		thread.join();
-	}
+		return this->threadData.voxels.threadsDone == this->threadData.totalThreads;
+	});
 
-	// Wait for the sorting thread to finish.
-	sortThread.join();
+	lk.lock();
+	this->threadData.flats.doneSorting = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
 
-	// Render the voxel grid with each render thread.
-	for (size_t i = 0; i < renderThreads.size(); i++)
+	// Wait until render threads are done drawing flats.
+	this->threadData.condVar.wait(lk, [this]()
 	{
-		const int startX = static_cast<int>(i);
-		const int stride = static_cast<int>(renderThreads.size());
-		renderThreads[i] = std::thread(SoftwareRenderer::drawVoxels, startX, stride,
-			std::cref(forwardComp), std::cref(right2D), std::cref(camera), ceilingHeight,
-			std::cref(openDoors), std::cref(voxelGrid), std::cref(this->voxelTextures),
-			std::ref(this->occlusion), std::cref(shadingInfo), std::cref(frame));
-	}
-
-	// Wait for the render threads to finish rendering.
-	for (auto &thread : renderThreads)
-	{
-		thread.join();
-	}
-
-	// Render flats with each render thread.
-	// @todo: flat rendering.
-	/*for (size_t i = 0; i < renderThreads.size(); i++)
-	{
-		// "blockSize" is the approximate number of rows per thread. Rounding is involved so 
-		// the start and stop coordinates are correct for all resolutions.
-		const double blockSize = widthReal / static_cast<double>(renderThreads.size());
-		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockSize));
-		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockSize));
-
-		renderThreads[i] = std::thread(SoftwareRenderer::drawFlats, startX, endX,
-			camera, flatNormal, this->visibleFlats, this->flatTextures, shadingInfo, frame);
-	}
-
-	// Wait for the render threads to finish rendering.
-	for (auto &thread : renderThreads)
-	{
-		thread.join();
-	}*/
+		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
+	});
 }
