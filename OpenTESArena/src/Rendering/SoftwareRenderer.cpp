@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
-#include <thread>
 
 #include "SoftwareRenderer.h"
 #include "../Math/Constants.h"
@@ -193,12 +192,70 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 	}
 }
 
-SoftwareRenderer::ShadingInfo::ShadingInfo(const Double3 &horizonSkyColor, 
-	const Double3 &zenithSkyColor, const Double3 &sunColor, 
-	const Double3 &sunDirection, double ambient, double fogDistance)
-	: horizonSkyColor(horizonSkyColor), zenithSkyColor(zenithSkyColor),
-	sunColor(sunColor), sunDirection(sunDirection)
+SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
+	double daytimePercent, double ambient, double fogDistance)
 {
+	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
+	// and forwards in the PM (horizon is earliest in the palette).
+	this->isAM = daytimePercent < 0.50;
+	const int slideDirection = this->isAM ? -1 : 1;
+
+	// Get the real index (not the integer index) of the color for the current time as a
+	// reference point so each sky color can be interpolated between two samples via 'percent'.
+	const double realIndex = static_cast<double>(skyPalette.size()) * daytimePercent;
+	const double percent = realIndex - std::floor(realIndex);
+
+	// Lambda for keeping the given index within the palette range.
+	auto wrapIndex = [&skyPalette](int index)
+	{
+		const int paletteCount = static_cast<int>(skyPalette.size());
+
+		while (index >= paletteCount)
+		{
+			index -= paletteCount;
+		}
+
+		while (index < 0)
+		{
+			index += paletteCount;
+		}
+
+		return index;
+	};
+
+	// Calculate sky colors based on the time of day.
+	for (int i = 0; i < static_cast<int>(this->skyColors.size()); i++)
+	{
+		const int indexDiff = slideDirection * i;
+		const int index = wrapIndex(static_cast<int>(realIndex) + indexDiff);
+		const int nextIndex = wrapIndex(index + slideDirection);
+		const Double3 &color = skyPalette.at(index);
+		const Double3 &nextColor = skyPalette.at(nextIndex);
+
+		this->skyColors.at(i) = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
+	}
+
+	// The fog color is the same as the horizon color.
+	this->fogColor = this->skyColors.front();
+
+	// The sun rises in the east (+Z) and sets in the west (-Z).
+	this->sunDirection = [daytimePercent]()
+	{
+		const double radians = daytimePercent * (2.0 * Constants::Pi);
+		return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
+	}();
+	
+	this->sunColor = [this]()
+	{
+		const Double3 baseSunColor(0.90, 0.875, 0.85);
+
+		// Darken the sun color if it's below the horizon so wall faces aren't lit 
+		// as much during the night. This is just an artistic value to compensate
+		// for the lack of shadows.
+		return (this->sunDirection.y >= 0.0) ? baseSunColor :
+			(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
+	}();
+
 	this->ambient = ambient;
 	this->fogDistance = fogDistance;
 }
@@ -858,29 +915,6 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 		return this->fogColor;
 	}
 }*/
-
-Double3 SoftwareRenderer::getFogColor(double daytimePercent) const
-{
-	// Get the real index (not the integer index), so the color can be interpolated
-	// between two samples.
-	const double realIndex = static_cast<double>(this->skyPalette.size()) * daytimePercent;
-
-	const size_t index = static_cast<size_t>(realIndex);
-	const size_t nextIndex = (index + 1) % this->skyPalette.size();
-
-	const Double3 &color = this->skyPalette[index];
-	const Double3 &nextColor = this->skyPalette[nextIndex];
-
-	const double percent = realIndex - std::floor(realIndex);
-	return color.lerp(nextColor, percent);
-}
-
-Double3 SoftwareRenderer::getSunDirection(double daytimePercent) const
-{
-	// The sun rises in the east (+Z) and sets in the west (-Z).
-	const double radians = daytimePercent * (2.0 * Constants::Pi);
-	return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
-}
 
 int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 {
@@ -2117,7 +2151,7 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
-	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+	const Double3 &fogColor = shadingInfo.fogColor;
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 	// Contribution from the sun.
@@ -2201,7 +2235,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 	int yEnd = drawRange.yEnd;
 
 	// Fog color to interpolate with.
-	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+	const Double3 &fogColor = shadingInfo.fogColor;
 
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -2308,7 +2342,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
-	const Double3 &fogColor = shadingInfo.horizonSkyColor;
+	const Double3 &fogColor = shadingInfo.fogColor;
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 	// Contribution from the sun.
@@ -4707,7 +4741,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 		const double depth = (Double2(topPoint.x, topPoint.z) - eye).length();
 
 		// Linearly interpolated fog.
-		const Double3 &fogColor = shadingInfo.horizonSkyColor;
+		const Double3 &fogColor = shadingInfo.fogColor;
 		const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 		for (int y = yStart; y < yEnd; y++)
@@ -4945,20 +4979,44 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	const int startIndex = startY * frame.width;
-	const int endIndex = endY * frame.width;
-
 	uint32_t *colorPtr = frame.colorBuffer;
 	double *depthPtr = frame.depthBuffer;
 
-	const uint32_t colorValue = shadingInfo.horizonSkyColor.toRGB();
-	const double depthValue = std::numeric_limits<double>::infinity();
-
-	// Clear the color and depth of some rows.
-	for (int i = startIndex; i < endIndex; i++)
+	// Lambda for drawing one row of colors and depth in the frame buffer.
+	auto drawSkyRow = [&frame, colorPtr, depthPtr](int y, const Double3 &color)
 	{
-		colorPtr[i] = colorValue;
-		depthPtr[i] = depthValue;
+		const int startIndex = y * frame.width;
+		const int endIndex = (y + 1) * frame.width;
+		const uint32_t colorValue = color.toRGB();
+		constexpr double depthValue = std::numeric_limits<double>::infinity();
+
+		// Clear the color and depth of one row.
+		for (int i = startIndex; i < endIndex; i++)
+		{
+			colorPtr[i] = colorValue;
+			depthPtr[i] = depthValue;
+		}
+	};
+
+	for (int y = startY; y < endY; y++)
+	{
+		// Determine how far across the sky the Y value is. The horizon is 0, and the
+		// point where the last gradient stops going up is 1.
+		const double yPercent = Constants::JustBelowOne - std::min(std::max(
+			(static_cast<double>(y) / (static_cast<double>(frame.height) * 0.50)), 0.0),
+			Constants::JustBelowOne);
+
+		// Determine which sky color index the percent falls into, and how much of that
+		// color to interpolate with the next one.
+		const auto &skyColors = shadingInfo.skyColors;
+		const int skyColorCount = static_cast<int>(skyColors.size());
+		const double realIndex = yPercent * static_cast<double>(skyColorCount);
+		const double percent = realIndex - std::floor(realIndex);
+		const int index = static_cast<int>(realIndex);
+		const int nextIndex = std::min(std::max(index + 1, 0), skyColorCount - 1);
+		const Double3 color = skyColors.at(index).lerp(skyColors.at(nextIndex), percent);
+
+		drawSkyRow(y, color);
 	}
 }
 
@@ -5038,24 +5096,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Normal of all flats (always facing the camera).
 	const Double3 flatNormal = Double3(-forwardComp.x, 0.0, -forwardComp.y).normalized();
 
-	// Calculate shading information.
-	const Double3 horizonFogColor = this->getFogColor(daytimePercent);
-	const Double3 zenithFogColor = horizonFogColor * 0.85; // Temp.
-	const Double3 sunDirection = this->getSunDirection(daytimePercent);
-	const Double3 sunColor = [&sunDirection]()
-	{
-		const Double3 baseColor(0.90, 0.875, 0.85);
-
-		// Darken the sun color if it's below the horizon so wall faces aren't lit 
-		// as much during the night. This is just an artistic value to compensate
-		// for the lack of shadows.
-		return (sunDirection.y >= 0.0) ? baseColor :
-			(baseColor * (1.0 - (5.0 * std::abs(sunDirection.y)))).clamped();
-	}();
-
-	// Create some helper structs to keep similar values together.
-	const ShadingInfo shadingInfo(horizonFogColor, zenithFogColor, sunColor, 
-		sunDirection, ambient, this->fogDistance);
+	// Calculate shading information for this frame. Create some helper structs to keep similar
+	// values together.
+	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Start a thread for refreshing the visible flats. This should erase the old list,

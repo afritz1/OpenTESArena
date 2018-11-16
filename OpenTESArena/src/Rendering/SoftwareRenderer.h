@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -124,9 +125,13 @@ private:
 	// computed once per frame.
 	struct ShadingInfo
 	{
-		// Sky colors for the horizon and zenith to interpolate between. Also used for fog.
-		// @todo: replace with current 5-7ish color array for interpolation.
-		Double3 horizonSkyColor, zenithSkyColor;
+		static constexpr int SKY_COLOR_COUNT = 5;
+
+		// Sky colors for the horizon and zenith to interpolate between. Index 0 is the
+		// horizon color. For interiors, every color in the array is the same.
+		std::array<Double3, SKY_COLOR_COUNT> skyColors;
+
+		Double3 fogColor;
 
 		// Light and direction of the sun.
 		Double3 sunColor, sunDirection;
@@ -137,9 +142,11 @@ private:
 		// Distance at which fog is maximum.
 		double fogDistance;
 
-		ShadingInfo(const Double3 &horizonSkyColor, const Double3 &zenithSkyColor,
-			const Double3 &sunColor, const Double3 &sunDirection, double ambient,
-			double fogDistance);
+		// Returns whether the current clock time is before noon.
+		bool isAM;
+
+		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent,
+			double ambient, double fogDistance);
 	};
 
 	// Helper struct for values related to the frame buffer. The pointers are owned
@@ -202,13 +209,6 @@ private:
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadsMode; // Determines number of threads to use for rendering.
-
-	// Gets the fog color (based on the time of day). It returns a value instead of
-	// a reference because it interpolates between two colors for a smoother transition.
-	Double3 getFogColor(double daytimePercent) const;
-
-	// Gets the current sun direction based on the time of day.
-	Double3 getSunDirection(double daytimePercent) const;
 
 	// Gets the number of render threads to use based on the given mode.
 	static int getRenderThreadsFromMode(int mode);
@@ -358,7 +358,7 @@ private:
 		const FrameView &frame);
 
 	// Draws a portion of the sky. The start and end Y are based on current threading settings.
-	static void drawSky(int startY, int endY, const Camera &camera,
+	static void drawSky(int startY, int endY, const Camera &camera, 
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
