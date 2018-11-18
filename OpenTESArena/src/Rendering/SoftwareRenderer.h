@@ -196,14 +196,14 @@ private:
 	{
 		struct Sky
 		{
-			std::atomic<int> threadsDone;
+			int threadsDone;
 
 			void init();
 		};
 
 		struct Voxels
 		{
-			std::atomic<int> threadsDone;
+			int threadsDone;
 			const std::vector<LevelData::DoorState> *openDoors;
 			const VoxelGrid *voxelGrid;
 			const std::vector<VoxelTexture> *voxelTextures;
@@ -217,7 +217,7 @@ private:
 
 		struct Flats
 		{
-			std::atomic<int> threadsDone;
+			int threadsDone;
 			const Double3 *flatNormal;
 			const std::vector<std::pair<const Flat*, Flat::Frame>> *visibleFlats;
 			const std::vector<FlatTexture> *flatTextures;
@@ -281,6 +281,10 @@ private:
 	// Initializes render threads that run in the background for the duration of the renderer's
 	// lifetime. This can also be used to reset threads after a screen resize.
 	void initRenderThreads(int width, int height, int threadCount);
+
+	// Turns off each thread in the render threads list peacefully. The render threads are expected
+	// to be at their initial wait condition before being given the go + destruct signals.
+	void resetRenderThreads();
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -444,8 +448,8 @@ private:
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
 	// then each render thread still gets a go signal, but they immediately leave their loop
 	// and terminate. Non-thread-data parameters are for start/end column/row for each thread.
-	static void renderThreadLoop(RenderThreadData &threadData, int startX, int endX,
-		int startY, int endY);
+	static void renderThreadLoop(RenderThreadData &threadData, int threadIndex, int startX,
+		int endX, int startY, int endY);
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer();

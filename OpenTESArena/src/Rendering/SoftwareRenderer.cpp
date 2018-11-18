@@ -344,17 +344,7 @@ SoftwareRenderer::SoftwareRenderer()
 
 SoftwareRenderer::~SoftwareRenderer()
 {
-	// Notify each render thread that it needs to terminate.
-	this->threadData.isDestructing = true;
-	this->threadData.condVar.notify_all();
-
-	for (auto &thread : this->renderThreads)
-	{
-		if (thread.joinable())
-		{
-			thread.join();
-		}
-	}
+	this->resetRenderThreads();
 }
 
 bool SoftwareRenderer::isInited() const
@@ -392,6 +382,10 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 void SoftwareRenderer::setRenderThreadsMode(int mode)
 {
 	this->renderThreadsMode = mode;
+
+	// Re-initialize render threads.
+	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(renderThreadsMode);
+	this->initRenderThreads(this->width, this->height, threadCount);
 }
 
 void SoftwareRenderer::addFlat(int id, const Double3 &position, double width, 
@@ -611,7 +605,17 @@ void SoftwareRenderer::resize(int width, int height)
 
 void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 {
-	this->renderThreads = std::vector<std::thread>(threadCount);
+	// If there are existing threads, reset them.
+	if (this->renderThreads.size() > 0)
+	{
+		this->resetRenderThreads();
+	}
+
+	// If more or fewer threads are requested, re-allocate the render thread list.
+	if (this->renderThreads.size() != threadCount)
+	{
+		this->renderThreads.resize(threadCount);
+	}
 
 	// Block width and height are the approximate number of columns and rows per thread,
 	// respectively.
@@ -622,6 +626,7 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 	// coordinates are correct for all resolutions.
 	for (size_t i = 0; i < this->renderThreads.size(); i++)
 	{
+		const int threadIndex = static_cast<int>(i);
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockWidth));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockWidth));
 		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockHeight));
@@ -634,8 +639,30 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 		assert(endY <= height);
 
 		this->renderThreads.at(i) = std::thread(SoftwareRenderer::renderThreadLoop,
-			std::ref(this->threadData), startX, endX, startY, endY);
+			std::ref(this->threadData), threadIndex, startX, endX, startY, endY);
 	}
+}
+
+void SoftwareRenderer::resetRenderThreads()
+{
+	// Tell each render thread it needs to terminate.
+	std::unique_lock<std::mutex> lk(this->threadData.mutex);
+	this->threadData.go = true;
+	this->threadData.isDestructing = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
+
+	for (auto &thread : this->renderThreads)
+	{
+		if (thread.joinable())
+		{
+			thread.join();
+		}
+	}
+
+	// Set signal variables back to defaults, in case the render threads are used again.
+	this->threadData.go = false;
+	this->threadData.isDestructing = false;
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
@@ -5178,20 +5205,16 @@ void SoftwareRenderer::drawFlats(int startX, int endX,
 	}
 }
 
-void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX, int endX,
-	int startY, int endY)
+void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int threadIndex, int startX,
+	int endX, int startY, int endY)
 {
-	// Number of columns to skip per ray cast (for interleaved ray casting as a means of
-	// load-balancing).
-	const int strideX = threadData.totalThreads;
-
-	std::unique_lock<std::mutex> lk(threadData.mutex);
-
 	while (true)
 	{
-		// Initial wait condition.
+		// Initial wait condition. The lock must be unlocked after wait() so other threads can
+		// lock it.
+		std::unique_lock<std::mutex> lk(threadData.mutex);
 		threadData.condVar.wait(lk, [&threadData]() { return threadData.go; });
-		// @todo: need to unlock after finished waiting?
+		lk.unlock();
 
 		// Received a go signal. Check if the renderer is being destroyed before doing anything.
 		if (threadData.isDestructing)
@@ -5205,11 +5228,13 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX
 			*threadData.frame);
 
 		// This thread is done with the sky.
+		lk.lock();
 		sky.threadsDone++;
 
 		// If this was the last thread on the sky, notify all to continue.
 		if (sky.threadsDone == threadData.totalThreads)
 		{
+			lk.unlock();
 			threadData.condVar.notify_all();
 		}
 		else
@@ -5219,20 +5244,28 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX
 			{
 				return sky.threadsDone == threadData.totalThreads;
 			});
+
+			lk.unlock();
 		}
+
+		// Number of columns to skip per ray cast (for interleaved ray casting as a means of
+		// load-balancing).
+		const int strideX = threadData.totalThreads;
 
 		// Draw this thread's portion of voxels.
 		RenderThreadData::Voxels &voxels = threadData.voxels;
-		SoftwareRenderer::drawVoxels(startX, strideX, *threadData.forwardComp, *threadData.right2D,
+		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.forwardComp, *threadData.right2D,
 			*threadData.camera, voxels.ceilingHeight, *voxels.openDoors, *voxels.voxelGrid,
 			*voxels.voxelTextures, *voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with voxels.
+		lk.lock();
 		voxels.threadsDone++;
 
 		// If this was the last thread on voxels, notify all to continue.
 		if (voxels.threadsDone == threadData.totalThreads)
 		{
+			lk.unlock();
 			threadData.condVar.notify_all();
 		}
 		else
@@ -5242,22 +5275,28 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX
 			{
 				return voxels.threadsDone == threadData.totalThreads;
 			});
+
+			lk.unlock();
 		}
 
 		// Wait for the visible flat sorting to finish.
 		RenderThreadData::Flats &flats = threadData.flats;
+		lk.lock();
 		threadData.condVar.wait(lk, [&flats]() { return flats.doneSorting; });
+		lk.unlock();
 
 		// Draw this thread's portion of flats.
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal,
 			*flats.visibleFlats, *flats.flatTextures, *threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with flats.
+		lk.lock();
 		flats.threadsDone++;
 
 		// If this was the last thread on flats, notify all to continue.
 		if (flats.threadsDone == threadData.totalThreads)
 		{
+			lk.unlock();
 			threadData.condVar.notify_all();
 		}
 		else
@@ -5267,6 +5306,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int startX
 			{
 				return flats.threadsDone == threadData.totalThreads;
 			});
+
+			lk.unlock();
 		}
 	}
 }
@@ -5311,6 +5352,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.
+	// - Note about locks: they must always be locked before wait(), and stay locked after wait().
 	std::unique_lock<std::mutex> lk(this->threadData.mutex);
 	this->threadData.go = true;
 	lk.unlock();
@@ -5323,22 +5365,26 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// it by depth.
 	this->updateVisibleFlats(camera);
 
-	// Keep render threads from looping again until the next frame.
-	this->threadData.go = false;
-
+	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
 	{
 		return this->threadData.voxels.threadsDone == this->threadData.totalThreads;
 	});
 
-	lk.lock();
+	// Keep the render threads from getting the go signal again before the next frame.
+	this->threadData.go = false;
+
+	// Let the render threads know that they can start drawing flats.
 	this->threadData.flats.doneSorting = true;
+
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
 	// Wait until render threads are done drawing flats.
+	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
 	{
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
 }
+ 

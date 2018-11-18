@@ -35,7 +35,7 @@ ModernInterface=false
 # The render threads mode determines how many CPU threads are used for
 # rendering. The actual number of threads depends on your CPU.
 # 0: low, 1: medium, 2: high, 3: max
-RenderThreadsMode=3
+RenderThreadsMode=2
 
 [Audio]
 MusicVolume=0.50
