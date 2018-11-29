@@ -187,7 +187,9 @@ public:
 			uint16_t hp, maxHP, stamina;
 			std::array<uint8_t, 7> misc;
 			uint16_t spellPoints, maxSpellPoints;
-			std::array<uint8_t, 4> misc2;
+			uint8_t misc2;
+			uint8_t face; // Face index in appropriate CIF file.
+			std::array<uint8_t, 2> misc3;
 			std::array<InventoryItem, 40> inventory;
 			uint8_t knownSpellCount;
 			std::array<uint8_t, 160> knownSpellIDs;
