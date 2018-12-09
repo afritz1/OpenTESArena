@@ -38,7 +38,7 @@ SoftwareRenderer::FlatTexture::FlatTexture()
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	double fovY, double aspect, double projectionModifier)
-	: eye(eye)
+	: eye(eye), direction(direction)
 {
 	// Variations of eye position for certain voxel calculations.
 	this->eyeVoxelReal = Double3(
@@ -80,45 +80,43 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 
 	this->aspect = aspect;
 
+	// Vertical angle of the camera relative to the horizon.
+	this->yAngleRadians = [&direction]()
+	{
+		// Get the length of the direction vector's projection onto the XZ plane.
+		const double xzProjection = std::sqrt(
+			(direction.x * direction.x) + (direction.z * direction.z));
+
+		if (direction.y > 0.0)
+		{
+			// Above the horizon.
+			return std::acos(xzProjection);
+		}
+		else if (direction.y < 0.0)
+		{
+			// Below the horizon.
+			return -std::acos(xzProjection);
+		}
+		else
+		{
+			// At the horizon.
+			return 0.0;
+		}
+	}();
+
 	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
 	// player's 3D direction and field of view. First get the player's angle relative to the 
 	// horizon, then get the tangent of that angle. The Y component of the player's direction
 	// must be clamped less than 1 because 1 would imply they are looking straight up or down, 
 	// which is impossible in 2.5D rendering (the vertical line segment of the view frustum 
 	// would be infinitely high or low). The camera code should take care of the clamping for us.
-	this->yShear = [this, &direction]()
-	{
-		// Get the vertical angle of the player's direction.
-		const double angleRadians = [&direction]()
-		{
-			// Get the length of the direction vector's projection onto the XZ plane.
-			const double xzProjection = std::sqrt(
-				(direction.x * direction.x) + (direction.z * direction.z));
 
-			if (direction.y > 0.0)
-			{
-				// Above the horizon.
-				return std::acos(xzProjection);
-			}
-			else if (direction.y < 0.0)
-			{
-				// Below the horizon.
-				return -std::acos(xzProjection);
-			}
-			else
-			{
-				// At the horizon.
-				return 0.0;
-			}
-		}();
-
-		// Get the number of screen heights to translate all projected Y coordinates by, 
-		// relative to the current zoom. As a reference, this should be some value roughly 
-		// between -1.0 and 1.0 for "acceptable skewing" at a vertical FOV of 90.0. If the 
-		// camera is not clamped, this could theoretically be between -infinity and infinity, 
-		// but it would result in far too much skewing.
-		return std::tan(angleRadians) * this->zoom;
-	}();
+	// Get the number of screen heights to translate all projected Y coordinates by, relative to
+	// the current zoom. As a reference, this should be some value roughly between -1.0 and 1.0
+	// for "acceptable skewing" at a vertical FOV of 90.0. If the camera is not clamped, this
+	// could theoretically be between -infinity and infinity, but it would result in far too much
+	// skewing.
+	this->yShear = std::tan(this->yAngleRadians) * this->zoom;
 }
 
 int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
@@ -5132,19 +5130,55 @@ void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
 		}
 	};
 
+	// Get two points some arbitrary distance away from the camera to use as the top
+	// and bottom reference points of the sky gradient.
+	const Double3 forward = Double3(camera.forwardX, 0.0, camera.forwardZ).normalized();
+
+	// Determine the sky gradient's position on-screen by getting the projected Y percentages for
+	// the start and end. If these values are less than 0 or greater than 1, they are off-screen.
+	const double gradientTopYPercent = [&camera, &forward]()
+	{
+		const Double3 gradientTopPoint = [&camera, &forward]()
+		{
+			// Top of the sky gradient is 30 degrees above the horizon.
+			constexpr double gradientAngleRadians = 30.0 * Constants::DegToRad;
+
+			// Height of the gradient's triangle with width of 1 and angle of 30 degrees.
+			const double upPercent = std::tan(gradientAngleRadians);
+			const Double3 up = Double3::UnitY;
+
+			// Direction from camera eye to the top of the sky gradient.
+			const Double3 gradientTopDir = (forward + (up * upPercent)).normalized();
+
+			return camera.eye + gradientTopDir;
+		}();
+
+		return SoftwareRenderer::getProjectedY(
+			gradientTopPoint, camera.transform, camera.yShear);
+	}();
+
+	const double gradientBottomYPercent = [&camera, &forward]()
+	{
+		const Double3 gradientBottomPoint = camera.eye + forward;
+		return SoftwareRenderer::getProjectedY(
+			gradientBottomPoint, camera.transform, camera.yShear);
+	}();
+
 	for (int y = startY; y < endY; y++)
 	{
-		// Determine how far across the sky the Y value is. The horizon is 0, and the
-		// point where the last gradient stops going up is 1.
-		const double yPercent = Constants::JustBelowOne - std::min(std::max(
-			(static_cast<double>(y) / (static_cast<double>(frame.height) * 0.50)), 0.0),
-			Constants::JustBelowOne);
+		// Y percent across the screen.
+		const double yPercent = (static_cast<double>(y) + 0.50) / frame.heightReal;
+
+		// Y percent relative to the sky gradient.
+		const double gradientPercent = Constants::JustBelowOne - std::min(std::max(
+			(yPercent - gradientTopYPercent) / (gradientBottomYPercent - gradientTopYPercent),
+			0.0), Constants::JustBelowOne);
 
 		// Determine which sky color index the percent falls into, and how much of that
 		// color to interpolate with the next one.
 		const auto &skyColors = shadingInfo.skyColors;
 		const int skyColorCount = static_cast<int>(skyColors.size());
-		const double realIndex = yPercent * static_cast<double>(skyColorCount);
+		const double realIndex = gradientPercent * static_cast<double>(skyColorCount);
 		const double percent = realIndex - std::floor(realIndex);
 		const int index = static_cast<int>(realIndex);
 		const int nextIndex = std::min(std::max(index + 1, 0), skyColorCount - 1);

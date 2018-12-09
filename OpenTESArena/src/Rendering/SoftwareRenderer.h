@@ -62,11 +62,13 @@ private:
 	{
 		Double3 eye; // Camera position.
 		Double3 eyeVoxelReal; // 'eye' with each component floored.
+		Double3 direction; // 3D direction the camera is facing.
 		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
 		Matrix4d transform; // Perspective transformation matrix.
 		double forwardX, forwardZ; // Forward components.
 		double rightX, rightZ; // Right components.
 		double fovY, zoom, aspect;
+		double yAngleRadians; // Angle of the camera above or below the horizon.
 		double yShear; // Projected Y-coordinate translation.
 
 		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,

@@ -6,10 +6,10 @@
 // Math constants.
 namespace Constants
 {
-	const double Epsilon = 1.0e-5;
-	const double Pi = 3.1415926535897932;
-	const double DegToRad = Pi / 180.0;
-	const double RadToDeg = 180.0 / Pi;
+	constexpr double Epsilon = 1.0e-5;
+	constexpr double Pi = 3.1415926535897932;
+	constexpr double DegToRad = Pi / 180.0;
+	constexpr double RadToDeg = 180.0 / Pi;
 	const double JustBelowOne = std::nextafter(1.0, 0.0);
 }
 
