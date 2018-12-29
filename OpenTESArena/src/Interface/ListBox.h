@@ -7,6 +7,7 @@
 
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Rendering/Surface.h"
 
 // This class defines a list of displayed text boxes. The index of a clicked text 
 // box can be obtained, and the list can be scrolled up and down. A list box is
@@ -21,7 +22,6 @@ class TextBox;
 
 enum class FontName;
 
-struct SDL_Surface;
 struct SDL_Texture;
 
 class ListBox
@@ -31,7 +31,7 @@ private:
 	Color textColor;
 	Int2 point;
 	FontName fontName;
-	SDL_Surface *clearSurface; // For clearing the texture upon updating.
+	Surface clearSurface; // For clearing the texture upon updating.
 	SDL_Texture *texture;
 	int scrollIndex;
 	int characterHeight;

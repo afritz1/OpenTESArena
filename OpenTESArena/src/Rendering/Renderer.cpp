@@ -182,19 +182,18 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 Surface Renderer::getScreenshot() const
 {
 	const Int2 dimensions = this->getWindowDimensions();
-	SDL_Surface *screenshot = Surface::createWithFormat(
-		dimensions.x, dimensions.y,
+	Surface screenshot = Surface::createWithFormat(dimensions.x, dimensions.y,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	const int status = SDL_RenderReadPixels(this->renderer, nullptr,
-		screenshot->format->format, screenshot->pixels, screenshot->pitch);
+		screenshot.get()->format->format, screenshot.get()->pixels, screenshot.get()->pitch);
 
 	if (status != 0)
 	{
 		DebugCrash("Couldn't take screenshot, " + std::string(SDL_GetError()));
 	}
 
-	return Surface(screenshot);
+	return screenshot;
 }
 
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const

@@ -789,13 +789,13 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 				// Make a copy of the staff dungeon icon with changes based on which
 				// pixels should be highlighted.
-				SDL_Surface *surface = Surface::createWithFormat(
-					cifWidth, cifHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+				Surface surface = Surface::createWithFormat(cifWidth, cifHeight,
+					Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-				auto getColorFromIndex = [this, highlightType, surface](int paletteIndex)
+				auto getColorFromIndex = [this, highlightType, &surface](int paletteIndex)
 				{
 					const Color &color = this->provinceMapPalette.get().at(paletteIndex);
-					return SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a);
+					return SDL_MapRGBA(surface.get()->format, color.r, color.g, color.b, color.a);
 				};
 
 				const uint32_t highlightColor = getColorFromIndex(
@@ -805,8 +805,8 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 				// Convert each palette index to its equivalent 32-bit color, changing 
 				// background indices to highlight indices as they are found.
 				const uint8_t *srcPixels = iconCif.getPixels(this->provinceID);
-				uint32_t *dstPixels = static_cast<uint32_t*>(surface->pixels);
-				const int pixelCount = surface->w * surface->h;
+				uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
+				const int pixelCount = surface.getWidth() * surface.getHeight();
 				std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
 					[&getColorFromIndex, highlightColor](uint8_t srcPixel)
 				{
@@ -814,8 +814,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 						highlightColor : getColorFromIndex(srcPixel);
 				});
 
-				Texture texture(renderer.createTextureFromSurface(surface));
-				SDL_FreeSurface(surface);
+				Texture texture(renderer.createTextureFromSurface(surface.get()));
 				return texture;
 			}();
 

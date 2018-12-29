@@ -122,23 +122,23 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		// is (0, 0), left to right is the Z axis, and up and down is the X axis, because 
 		// north is +X in-game. It is scaled by 3 so that all directions of the player's 
 		// arrow are representable.
-		SDL_Surface *surface = Surface::createWithFormat(
+		Surface surface = Surface::createWithFormat(
 			voxelGrid.getDepth() * 3, voxelGrid.getWidth() * 3, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 
 		// Fill with transparent color first (used by floor voxels).
-		SDL_FillRect(surface, nullptr, AutomapFloor.toARGB());
+		SDL_FillRect(surface.get(), nullptr, AutomapFloor.toARGB());
 
 		// Lambda for filling in a square in the map surface.
-		auto drawSquare = [surface](int x, int z, const Color &color)
+		auto drawSquare = [&surface](int x, int z, const Color &color)
 		{
 			SDL_Rect rect;
 			rect.x = z * 3;
-			rect.y = surface->h - 3 - (x * 3);
+			rect.y = surface.getHeight() - 3 - (x * 3);
 			rect.w = 3;
 			rect.h = 3;
 
-			SDL_FillRect(surface, &rect, color.toARGB());
+			SDL_FillRect(surface.get(), &rect, color.toARGB());
 		};
 
 		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
@@ -168,22 +168,22 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 		// Lambda for drawing the player's arrow in the automap. It's drawn differently 
 		// depending on their direction.
-		auto drawPlayer = [surface](int x, int z, const Double2 &direction)
+		auto drawPlayer = [&surface](int x, int z, const Double2 &direction)
 		{
 			const CardinalDirectionName cardinalDirection =
 				CardinalDirection::getDirectionName(direction);
 
 			const int surfaceX = z * 3;
-			const int surfaceY = surface->h - 3 - (x * 3);
+			const int surfaceY = surface.getHeight() - 3 - (x * 3);
 
-			uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
+			uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
 
 			// Draw the player's arrow within the 3x3 map pixel.
 			const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
 			for (const auto &offset : offsets)
 			{
 				const int index = (surfaceX + offset.x) +
-					((surfaceY + offset.y) * surface->w);
+					((surfaceY + offset.y) * surface.getWidth());
 				pixels[index] = AutomapPlayer.toARGB();
 			}
 		};
@@ -200,8 +200,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		}
 
 		auto &renderer = this->getGame().getRenderer();
-		Texture texture(renderer.createTextureFromSurface(surface));
-		SDL_FreeSurface(surface);
+		Texture texture(renderer.createTextureFromSurface(surface.get()));
 
 		return texture;
 	}();

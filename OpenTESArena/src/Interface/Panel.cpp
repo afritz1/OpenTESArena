@@ -54,11 +54,11 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 
 	// Create background. Make it a little bigger than the text box.
 	const int padding = 4;
-	SDL_Surface *background = Surface::createWithFormat(
+	Surface background = Surface::createWithFormat(
 		textSurface->w + padding, textSurface->h + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	SDL_FillRect(background, nullptr, SDL_MapRGBA(background->format, backColor.r,
-		backColor.g, backColor.b, backColor.a));
+	SDL_FillRect(background.get(), nullptr, SDL_MapRGBA(background.get()->format,
+		backColor.r, backColor.g, backColor.b, backColor.a));
 
 	// Offset the text from the top left corner by a bit so it isn't against the side 
 	// of the tooltip (for aesthetic purposes).
@@ -69,11 +69,10 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 	rect.h = textSurface->h;
 
 	// Draw the text onto the background.
-	SDL_BlitSurface(textSurface, nullptr, background, &rect);
+	SDL_BlitSurface(textSurface, nullptr, background.get(), &rect);
 
 	// Create a hardware texture for the tooltip.
-	SDL_Texture *tooltip = renderer.createTextureFromSurface(background);
-	SDL_FreeSurface(background);
+	SDL_Texture *tooltip = renderer.createTextureFromSurface(background.get());
 
 	return tooltip;
 }

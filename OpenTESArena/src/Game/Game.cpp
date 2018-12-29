@@ -93,13 +93,13 @@ Game::Game()
 	const Surface icon = [this]()
 	{
 		const std::string iconPath = this->basePath + "data/icon.bmp";
-		SDL_Surface *surface = Surface::loadBMP(iconPath, Renderer::DEFAULT_PIXELFORMAT);
+		Surface surface = Surface::loadBMP(iconPath, Renderer::DEFAULT_PIXELFORMAT);
 
 		// Treat black as transparent.
-		const uint32_t black = SDL_MapRGBA(surface->format, 0, 0, 0, 255);
-		SDL_SetColorKey(surface, SDL_TRUE, black);
+		const uint32_t black = SDL_MapRGBA(surface.get()->format, 0, 0, 0, 255);
+		SDL_SetColorKey(surface.get(), SDL_TRUE, black);
 
-		return Surface(surface);
+		return surface;
 	}();
 
 	this->renderer.setWindowIcon(icon.get());

@@ -61,18 +61,18 @@ Font::Font(FontName fontName)
 		const int elementWidth = fontFile.getWidth(c);
 		const uint32_t *elementPixels = fontFile.getPixels(c);
 
-		SDL_Surface *surface = Surface::createWithFormat(elementWidth,
-			elementHeight, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		Surface surface = Surface::createWithFormat(elementWidth, elementHeight,
+			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-		uint32_t *pixels = static_cast<uint32_t*>(surface->pixels);
-		const int pixelCount = surface->w * surface->h;
+		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
+		const int pixelCount = surface.getWidth() * surface.getHeight();
 
 		for (int index = 0; index < pixelCount; index++)
 		{
 			pixels[index] = elementPixels[index];
 		}
 
-		this->characters.at(i) = surface;
+		this->characters.at(i) = std::move(surface);
 	}
 }
 
@@ -81,14 +81,6 @@ Font::Font(Font &&font)
 	this->characters = std::move(font.characters);
 	this->characterHeight = font.characterHeight;
 	this->fontName = font.fontName;
-}
-
-Font::~Font()
-{
-	for (auto *surface : this->characters)
-	{
-		SDL_FreeSurface(surface);
-	}
 }
 
 const std::string &Font::fromName(FontName fontName)
@@ -115,10 +107,10 @@ SDL_Surface *Font::getSurface(char c) const
 	{
 		DebugWarning("Character value \"" + std::to_string(c) +
 			"\" out of range (must be ASCII 32-127).");
-		return this->characters.at(0);
+		return this->characters.at(0).get();
 	}
 
 	// Space (ASCII 32) is at index 0.
-	SDL_Surface *surface = this->characters.at(c - 32);
+	SDL_Surface *surface = this->characters.at(c - 32).get();
 	return surface;
 }

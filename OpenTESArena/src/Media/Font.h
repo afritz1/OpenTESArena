@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "../Rendering/Surface.h"
+
 // Redesigned for use with Arena assets.
 
 enum class FontName;
@@ -14,14 +16,13 @@ class Font
 {
 private:
 	// ASCII character-indexed surfaces, where space (ASCII 32) is index 0.
-	std::vector<SDL_Surface*> characters;
+	std::vector<Surface> characters;
 	FontName fontName;
 	int characterHeight;
 public:
 	// Constructs a group of characters using an image of bits from a font file.
 	Font(FontName fontName);
 	Font(Font &&font);
-	~Font();
 
 	Font &operator=(const Font &font) = delete;
 	Font &operator=(Font &&font) = delete;

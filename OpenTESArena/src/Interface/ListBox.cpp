@@ -13,7 +13,6 @@
 #include "../Media/Font.h"
 #include "../Media/FontManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
@@ -77,8 +76,8 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	// allocation each time the update method is called).
 	this->clearSurface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	SDL_FillRect(this->clearSurface, nullptr, 
-		SDL_MapRGBA(clearSurface->format, 0, 0, 0, 0));
+	SDL_FillRect(this->clearSurface.get(), nullptr, 
+		SDL_MapRGBA(this->clearSurface.get()->format, 0, 0, 0, 0));
 
 	// Create the visible texture. This will be updated when scrolling the list box.
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
@@ -91,7 +90,6 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 
 ListBox::~ListBox()
 {
-	SDL_FreeSurface(this->clearSurface);
 	SDL_DestroyTexture(this->texture);
 }
 
@@ -148,7 +146,8 @@ int ListBox::getClickedIndex(const Int2 &point) const
 void ListBox::updateDisplay()
 {
 	// Clear the display texture. Otherwise, remnants of previous text might be left over.
-	SDL_UpdateTexture(this->texture, nullptr, clearSurface->pixels, clearSurface->pitch);
+	SDL_UpdateTexture(this->texture, nullptr,
+		this->clearSurface.get()->pixels, this->clearSurface.get()->pitch);
 
 	// Prepare the range of text boxes that will be displayed.
 	const int totalElements = static_cast<int>(this->textBoxes.size());

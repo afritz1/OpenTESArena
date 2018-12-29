@@ -37,7 +37,7 @@ Surface &Surface::operator=(Surface &&surface)
 	return *this;
 }
 
-SDL_Surface *Surface::loadBMP(const std::string &filename, uint32_t format)
+Surface Surface::loadBMP(const std::string &filename, uint32_t format)
 {
 	SDL_Surface *surface = SDL_LoadBMP(filename.c_str());
 	DebugAssert(surface != nullptr, "Could not find \"" + filename + "\".");
@@ -46,13 +46,13 @@ SDL_Surface *Surface::loadBMP(const std::string &filename, uint32_t format)
 	SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, format, 0);
 	SDL_FreeSurface(surface);
 
-	return optimizedSurface;
+	return Surface(optimizedSurface);
 }
 
-SDL_Surface *Surface::createWithFormat(int width, int height, int depth, uint32_t format)
+Surface Surface::createWithFormat(int width, int height, int depth, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)
-	return SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format);
+	return Surface(SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format));
 #else
 	SDL_Surface *unoptSurface = SDL_CreateRGBSurface(0, width, height,
 		depth, 0, 0, 0, 0);
@@ -65,19 +65,19 @@ SDL_Surface *Surface::createWithFormat(int width, int height, int depth, uint32_
 		SDL_SetSurfaceBlendMode(optSurface, SDL_BLENDMODE_BLEND);
 	}
 
-	return optSurface;
+	return Surface(optSurface);
 #endif
 }
 
-SDL_Surface *Surface::createWithFormatFrom(void *pixels, int width, int height,
+Surface Surface::createWithFormatFrom(void *pixels, int width, int height,
 	int depth, int pitch, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)
-	return SDL_CreateRGBSurfaceWithFormatFrom(pixels, width, height,
-		depth, pitch, format);
+	return Surface(SDL_CreateRGBSurfaceWithFormatFrom(pixels, width, height,
+		depth, pitch, format));
 #else
-	SDL_Surface *surface = Surface::createWithFormat(width, height, depth, format);
-	SDL_memcpy(surface->pixels, pixels, height * pitch);
+	Surface surface = Surface::createWithFormat(width, height, depth, format);
+	SDL_memcpy(surface.get()->pixels, pixels, height * pitch);
 	return surface;
 #endif
 }
