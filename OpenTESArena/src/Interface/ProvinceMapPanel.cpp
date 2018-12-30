@@ -618,9 +618,9 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 	// Parchment minimum height is 40 pixels.
 	const int parchmentHeight = std::max(richText.getDimensions().y + 16, 40);
 
-	Texture texture(Texture::generate(Texture::PatternType::Parchment,
+	Texture texture = Texture::generate(Texture::PatternType::Parchment,
 		richText.getDimensions().x + 20, parchmentHeight,
-		game.getTextureManager(), game.getRenderer()));
+		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
 		(Renderer::ORIGINAL_WIDTH / 2) - 1,

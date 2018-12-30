@@ -96,8 +96,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			{
 				const int width = messageBoxTitle.textBox->getRect().getWidth() + 22;
 				const int height = 60;
-				return Texture(Texture::generate(
-					Texture::PatternType::Parchment, width, height, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Parchment, width, height,
+					textureManager, renderer);
 			}();
 
 			messageBoxTitle.textureX = (Renderer::ORIGINAL_WIDTH / 2) -
@@ -125,8 +125,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
 			{
 				const int width = messageBoxTitle.texture.getWidth();
-				return Texture(Texture::generate(Texture::PatternType::Parchment,
-					width, 40, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Parchment, width, 40,
+					textureManager, renderer);
 			}();
 
 			messageBoxYes.function = [&charClass, &name, gender, raceID](Game &game)
@@ -169,9 +169,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						game.getFontManager());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
-					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = Texture::generate(Texture::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
-						game.getTextureManager(), game.getRenderer()));
+						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
@@ -221,9 +221,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						game.getFontManager());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
-					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = Texture::generate(Texture::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
-						game.getTextureManager(), game.getRenderer()));
+						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
@@ -278,9 +278,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						game.getFontManager());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
-					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = Texture::generate(Texture::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
-						game.getTextureManager(), game.getRenderer()));
+						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
@@ -345,9 +345,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						game.getFontManager());
 
 					const int textureHeight = std::max(richText.getDimensions().y, 40);
-					Texture texture(Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = Texture::generate(Texture::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
-						game.getTextureManager(), game.getRenderer()));
+						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
 						(Renderer::ORIGINAL_WIDTH / 2) - 1,
@@ -385,8 +385,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			{
 				const int width = messageBoxYes.texture.getWidth();
 				const int height = messageBoxYes.texture.getHeight();
-				return Texture(Texture::generate(Texture::PatternType::Parchment,
-					width, height, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Parchment, width, height,
+					textureManager, renderer);
 			}();
 
 			messageBoxNo.function = [&charClass, &name](Game &game)
@@ -462,9 +462,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
 		lineSpacing,
 		game.getFontManager());
 
-	Texture texture(Texture::generate(
-		Texture::PatternType::Parchment, 240, 60, game.getTextureManager(),
-		game.getRenderer()));
+	Texture texture = Texture::generate(Texture::PatternType::Parchment, 240, 60,
+		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
 		(Renderer::ORIGINAL_WIDTH / 2) - 1,

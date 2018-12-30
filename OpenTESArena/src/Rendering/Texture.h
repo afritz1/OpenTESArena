@@ -31,7 +31,7 @@ public:
 	Texture &operator=(Texture &&texture);
 
 	// Generates a new texture from a pattern.
-	static SDL_Texture *generate(Texture::PatternType type, int width, int height,
+	static Texture generate(Texture::PatternType type, int width, int height,
 		TextureManager &textureManager, Renderer &renderer);
 
 	int getWidth() const;

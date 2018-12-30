@@ -143,8 +143,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			{
 				const int width = messageBoxTitle.textBox->getRect().getWidth() + 12;
 				const int height = 24;
-				return Texture(Texture::generate(Texture::PatternType::Dark,
-					width, height, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer);
 			}();
 
 			messageBoxTitle.textureX = (Renderer::ORIGINAL_WIDTH / 2) -
@@ -182,8 +182,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			{
 				const int width = messageBoxTitle.texture.getWidth();
 				const int height = messageBoxTitle.texture.getHeight();
-				return Texture(Texture::generate(Texture::PatternType::Dark,
-					width, height, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer);
 			}();
 
 			messageBoxSave.function = [this, charClass, name, gender, raceID](Game &game)
@@ -213,9 +213,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					lineSpacing,
 					game.getFontManager());
 
-				Texture texture(Texture::generate(Texture::PatternType::Dark,
+				Texture texture = Texture::generate(Texture::PatternType::Dark,
 					richText.getDimensions().x + 10, richText.getDimensions().y + 12,
-					game.getTextureManager(), game.getRenderer()));
+					game.getTextureManager(), game.getRenderer());
 
 				const Int2 textureCenter(
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
@@ -423,8 +423,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			{
 				const int width = messageBoxSave.texture.getWidth();
 				const int height = messageBoxSave.texture.getHeight();
-				return Texture(Texture::generate(Texture::PatternType::Dark,
-					width, height, textureManager, renderer));
+				return Texture::generate(Texture::PatternType::Dark,
+					width, height, textureManager, renderer);
 			}();
 
 			messageBoxReroll.function = [](Game &game)
@@ -518,9 +518,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 			lineSpacing,
 			game.getFontManager());
 
-		Texture texture(Texture::generate(
-			Texture::PatternType::Dark, 183, 42, game.getTextureManager(),
-			game.getRenderer()));
+		Texture texture = Texture::generate(Texture::PatternType::Dark, 183, 42,
+			game.getTextureManager(), game.getRenderer());
 
 		const Int2 textureCenter(
 			(Renderer::ORIGINAL_WIDTH / 2) - 1,

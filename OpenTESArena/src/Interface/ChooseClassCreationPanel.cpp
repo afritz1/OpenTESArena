@@ -30,9 +30,8 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 180, 40, game.getTextureManager(), 
-		game.getRenderer()));
+	this->parchment = Texture::generate(Texture::PatternType::Parchment, 180, 40,
+		game.getTextureManager(), game.getRenderer());
 
 	this->titleTextBox = [&game]()
 	{

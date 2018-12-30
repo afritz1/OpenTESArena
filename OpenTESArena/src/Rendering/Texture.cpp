@@ -42,7 +42,7 @@ Texture &Texture::operator=(Texture &&texture)
 	return *this;
 }
 
-SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
+Texture Texture::generate(Texture::PatternType type, int width, int height,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
@@ -253,7 +253,7 @@ SDL_Texture *Texture::generate(Texture::PatternType type, int width, int height,
 		DebugCrash("Unrecognized pattern type.");
 	}
 
-	SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
+	Texture texture(renderer.createTextureFromSurface(surface.get()));
 	return texture;
 }
 

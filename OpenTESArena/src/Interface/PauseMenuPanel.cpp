@@ -418,9 +418,9 @@ void PauseMenuPanel::render(Renderer &renderer)
 	}
 
 	// Cover up the detail slider with a new options background.
-	Texture optionsBackground(Texture::generate(Texture::PatternType::Custom1,
+	Texture optionsBackground = Texture::generate(Texture::PatternType::Custom1,
 		this->optionsButton.getWidth(), this->optionsButton.getHeight(),
-		textureManager, renderer));
+		textureManager, renderer);
 	renderer.drawOriginal(optionsBackground.get(), this->optionsButton.getX(),
 		this->optionsButton.getY());
 

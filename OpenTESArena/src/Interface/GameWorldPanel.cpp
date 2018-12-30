@@ -289,8 +289,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const Int2 &richTextDimensions = richText.getDimensions();
 
-			Texture texture(Texture::generate(Texture::PatternType::Dark, 
-				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer));
+			Texture texture = Texture::generate(Texture::PatternType::Dark, 
+				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer);
 
 			const Int2 textureCenter = center;
 

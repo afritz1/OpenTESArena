@@ -899,8 +899,8 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.clearOriginal(backgroundColor);
 
 	// Draw return button and tabs.
-	Texture tabBackground(Texture::generate(Texture::PatternType::Custom1,
-		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer));
+	Texture tabBackground = Texture::generate(Texture::PatternType::Custom1,
+		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
 	for (int i = 0; i < 5; i++)
 	{
 		renderer.drawOriginal(tabBackground.get(),
@@ -908,9 +908,9 @@ void OptionsPanel::render(Renderer &renderer)
 			GraphicsTabRect.getTop() + (tabBackground.getHeight() * i));
 	}
 
-	Texture returnBackground(Texture::generate(Texture::PatternType::Custom1,
+	Texture returnBackground = Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
-		textureManager, renderer));
+		textureManager, renderer);
 	renderer.drawOriginal(returnBackground.get(), this->backToPauseMenuButton.getX(),
 		this->backToPauseMenuButton.getY());
 

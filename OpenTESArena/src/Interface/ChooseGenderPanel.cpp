@@ -30,9 +30,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 	const std::string &name)
 	: Panel(game), charClass(charClass), name(name)
 {
-	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 180, 40, game.getTextureManager(),
-		game.getRenderer()));
+	this->parchment = Texture::generate(Texture::PatternType::Parchment, 180, 40,
+		game.getTextureManager(), game.getRenderer());
 
 	this->genderTextBox = [&game]()
 	{

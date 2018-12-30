@@ -33,9 +33,8 @@ const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	: Panel(game), charClass(charClass)
 {
-	this->parchment = Texture(Texture::generate(
-		Texture::PatternType::Parchment, 300, 60, game.getTextureManager(),
-		game.getRenderer()));
+	this->parchment = Texture::generate(Texture::PatternType::Parchment, 300, 60,
+		game.getTextureManager(), game.getRenderer());
 
 	this->titleTextBox = [&game, &charClass]()
 	{
