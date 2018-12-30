@@ -272,6 +272,22 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->heightReal = static_cast<double>(height);
 }
 
+SoftwareRenderer::VisibleFlat::VisibleFlat(const Flat &flat, Flat::Frame &&frame)
+{
+	this->flat = &flat;
+	this->frame = std::move(frame);
+}
+
+const SoftwareRenderer::Flat &SoftwareRenderer::VisibleFlat::getFlat() const
+{
+	return *this->flat;
+}
+
+const SoftwareRenderer::Flat::Frame &SoftwareRenderer::VisibleFlat::getFrame() const
+{
+	return this->frame;
+}
+
 void SoftwareRenderer::RenderThreadData::Sky::init()
 {
 	this->threadsDone = 0;
@@ -290,8 +306,7 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
 }
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
-	const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
-	const std::vector<FlatTexture> &flatTextures)
+	const std::vector<VisibleFlat> &visibleFlats, const std::vector<FlatTexture> &flatTextures)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
@@ -727,17 +742,16 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 			if (inPlanes)
 			{
 				// Add the flat data to the draw list.
-				this->visibleFlats.push_back(std::make_pair(&flat, std::move(flatFrame)));
+				this->visibleFlats.push_back(VisibleFlat(flat, std::move(flatFrame)));
 			}
 		}
 	}
 
 	// Sort the visible flats farthest to nearest (relevant for transparencies).
 	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
-		[](const std::pair<const Flat*, Flat::Frame> &a,
-			const std::pair<const Flat*, Flat::Frame> &b)
+		[](const VisibleFlat &a, const VisibleFlat &b)
 	{
-		return a.second.z > b.second.z;
+		return a.getFrame().z > b.getFrame().z;
 	});
 }
 
@@ -5218,18 +5232,17 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Double2 &forward
 	}
 }
 
-void SoftwareRenderer::drawFlats(int startX, int endX,
-	const Camera &camera, const Double3 &flatNormal,
-	const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
-	const std::vector<FlatTexture> &flatTextures,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
+	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
+	const std::vector<FlatTexture> &flatTextures, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
 {
 	// Iterate through all flats, rendering those visible within the given X range of 
 	// the screen.
-	for (const auto &pair : visibleFlats)
+	for (const auto &visibleFlat : visibleFlats)
 	{
-		const Flat &flat = *pair.first;
-		const Flat::Frame &flatFrame = pair.second;
+		const Flat &flat = visibleFlat.getFlat();
+		const Flat::Frame &flatFrame = visibleFlat.getFrame();
 
 		// Texture of the flat. It might be flipped horizontally as well, given by
 		// the "flat.flipped" value.
@@ -5424,4 +5437,3 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
 }
- 

@@ -193,6 +193,19 @@ private:
 		};
 	};
 
+	// Helper class for visible flat data.
+	class VisibleFlat
+	{
+	private:
+		const Flat *flat;
+		Flat::Frame frame;
+	public:
+		VisibleFlat(const Flat &flat, Flat::Frame &&frame);
+
+		const Flat &getFlat() const;
+		const Flat::Frame &getFrame() const;
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -221,12 +234,11 @@ private:
 		{
 			int threadsDone;
 			const Double3 *flatNormal;
-			const std::vector<std::pair<const Flat*, Flat::Frame>> *visibleFlats;
+			const std::vector<VisibleFlat> *visibleFlats;
 			const std::vector<FlatTexture> *flatTextures;
 			bool doneSorting; // True when render threads can start rendering flats.
 
-			void init(const Double3 &flatNormal,
-				const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
+			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 				const std::vector<FlatTexture> &flatTextures);
 		};
 
@@ -264,7 +276,7 @@ private:
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
-	std::vector<std::pair<const Flat*, Flat::Frame>> visibleFlats; // Flats to be drawn.
+	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
@@ -442,9 +454,8 @@ private:
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
-		const std::vector<std::pair<const Flat*, Flat::Frame>> &visibleFlats,
-		const std::vector<FlatTexture> &flatTextures, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+		const std::vector<VisibleFlat> &visibleFlats, const std::vector<FlatTexture> &flatTextures,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
