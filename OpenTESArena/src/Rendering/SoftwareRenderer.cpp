@@ -233,9 +233,6 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		this->skyColors.at(i) = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
 	}
 
-	// The fog color is the same as the horizon color.
-	this->fogColor = this->skyColors.front();
-
 	// The sun rises in the east (+Z) and sets in the west (-Z).
 	this->sunDirection = [daytimePercent]()
 	{
@@ -256,6 +253,12 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 
 	this->ambient = ambient;
 	this->fogDistance = fogDistance;
+}
+
+const Double3 &SoftwareRenderer::ShadingInfo::getFogColor() const
+{
+	// The fog color is the same as the horizon color.
+	return this->skyColors.front();
 }
 
 SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffer, 
@@ -2283,7 +2286,7 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
-	const Double3 &fogColor = shadingInfo.fogColor;
+	const Double3 &fogColor = shadingInfo.getFogColor();
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 	// Contribution from the sun.
@@ -2367,7 +2370,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 	int yEnd = drawRange.yEnd;
 
 	// Fog color to interpolate with.
-	const Double3 &fogColor = shadingInfo.fogColor;
+	const Double3 &fogColor = shadingInfo.getFogColor();
 
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -2474,7 +2477,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
-	const Double3 &fogColor = shadingInfo.fogColor;
+	const Double3 &fogColor = shadingInfo.getFogColor();
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 	// Contribution from the sun.
@@ -4873,7 +4876,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 		const double depth = (Double2(topPoint.x, topPoint.z) - eye).length();
 
 		// Linearly interpolated fog.
-		const Double3 &fogColor = shadingInfo.fogColor;
+		const Double3 &fogColor = shadingInfo.getFogColor();
 		const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 		for (int y = yStart; y < yEnd; y++)

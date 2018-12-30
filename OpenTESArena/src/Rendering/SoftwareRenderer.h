@@ -136,8 +136,6 @@ private:
 		// horizon color. For interiors, every color in the array is the same.
 		std::array<Double3, SKY_COLOR_COUNT> skyColors;
 
-		Double3 fogColor;
-
 		// Light and direction of the sun.
 		Double3 sunColor, sunDirection;
 
@@ -152,6 +150,8 @@ private:
 
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent,
 			double ambient, double fogDistance);
+
+		const Double3 &getFogColor() const;
 	};
 
 	// Helper struct for values related to the frame buffer. The pointers are owned
