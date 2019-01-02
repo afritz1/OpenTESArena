@@ -2,7 +2,6 @@
 #define SOFTWARE_RENDERER_H
 
 #include <array>
-#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
