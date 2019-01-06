@@ -6,6 +6,7 @@
 #include "WorldType.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Rendering/Renderer.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
@@ -451,7 +452,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 }
 
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
-	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets)
+	WeatherType weatherType, int currentDay, const std::string &infName, int gridWidth,
+	int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
 	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
@@ -482,13 +484,18 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	levelData.generateBuildingNames(localCityID, provinceID, citySeed, random, isCoastal,
 		isCity, gridWidth, gridDepth, miscAssets);
 
+	// Generate distant sky.
+	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
+		miscAssets, textureManager);
+
 	return levelData;
 }
 
 ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int localCityID,
-	int provinceID, int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
-	const Int2 &startPosition, const std::string &infName, int gridWidth, int gridDepth,
-	const MiscAssets &miscAssets)
+	int provinceID, WeatherType weatherType, int currentDay, int cityDim, bool isCoastal,
+	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
+	TextureManager &textureManager)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
@@ -673,11 +680,16 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	levelData.generateBuildingNames(localCityID, provinceID, citySeed, random, isCoastal,
 		isCity, gridWidth, gridDepth, miscAssets);
 
+	// Generate distant sky.
+	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
+		miscAssets, textureManager);
+
 	return levelData;
 }
 
 ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-	const std::string &infName, const ExeData &exeData)
+	WeatherType weatherType, int currentDay, const std::string &infName,
+	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Load WILD.MIF (blank slate, to be filled in by four .RMD files).
 	const MIFFile mif("WILD.MIF");
@@ -741,11 +753,19 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 	levelData.getVoxelGrid().addVoxelData(VoxelData());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
+	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
+
+	// Generate random distant sky since this wilderness isn't anywhere in particular.
+	Random random;
+	const int localCityID = random.next() % 32;
+	const int provinceID = random.next() % 9;
+	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
+		miscAssets, textureManager);
 
 	return levelData;
 }
@@ -758,4 +778,12 @@ const std::vector<std::pair<Int2, std::string>> &ExteriorLevelData::getMenuNames
 bool ExteriorLevelData::isOutdoorDungeon() const
 {
 	return false;
+}
+
+void ExteriorLevelData::setActive(TextureManager &textureManager, Renderer &renderer)
+{
+	LevelData::setActive(textureManager, renderer);
+
+	// Give distant sky data to the renderer.
+	renderer.setDistantSky(this->distantSky);
 }

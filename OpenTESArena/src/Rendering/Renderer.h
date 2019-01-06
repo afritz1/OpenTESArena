@@ -16,6 +16,7 @@
 // The format for all textures is ARGB8888.
 
 class Color;
+class DistantSky;
 class Rect;
 class Surface;
 class VoxelGrid;
@@ -144,6 +145,7 @@ public:
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint32_t *srcTexels);
 	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
+	void setDistantSky(const DistantSky &distantSky);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
 	void removeFlat(int id);

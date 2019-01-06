@@ -452,7 +452,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 
 	// Call premade city loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
-		mif, climateType, weatherType, miscAssets));
+		mif, climateType, weatherType, this->date.getDay(), miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
@@ -537,7 +537,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	// Call city WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
 		localCityID, provinceID, mif, cityDim, isCoastal, reservedBlocks, startPosition,
-		weatherType, miscAssets));
+		weatherType, this->date.getDay(), miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
@@ -575,7 +575,8 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
-		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, miscAssets.getExeData()));
+		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, this->date.getDay(),
+		miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();

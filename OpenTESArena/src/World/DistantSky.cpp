@@ -141,7 +141,57 @@ const Double3 &DistantSky::SpaceObject::getDirection() const
 	return this->direction;
 }
 
-DistantSky::DistantSky(int localCityID, int provinceID, WeatherType weatherType,
+DistantSky::DistantSky()
+{
+	this->sunSurface = nullptr;
+}
+
+int DistantSky::getLandObjectCount() const
+{
+	return static_cast<int>(this->landObjects.size());
+}
+
+int DistantSky::getAnimatedLandObjectCount() const
+{
+	return static_cast<int>(this->animLandObjects.size());
+}
+
+int DistantSky::getAirObjectCount() const
+{
+	return static_cast<int>(this->airObjects.size());
+}
+
+int DistantSky::getSpaceObjectCount() const
+{
+	return static_cast<int>(this->spaceObjects.size());
+}
+
+const DistantSky::LandObject &DistantSky::getLandObject(int index) const
+{
+	return this->landObjects.at(index);
+}
+
+const DistantSky::AnimatedLandObject &DistantSky::getAnimatedLandObject(int index) const
+{
+	return this->animLandObjects.at(index);
+}
+
+const DistantSky::AirObject &DistantSky::getAirObject(int index) const
+{
+	return this->airObjects.at(index);
+}
+
+const DistantSky::SpaceObject &DistantSky::getSpaceObject(int index) const
+{
+	return this->spaceObjects.at(index);
+}
+
+const Surface &DistantSky::getSunSurface() const
+{
+	return *this->sunSurface;
+}
+
+void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	int currentDay, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Add mountains and clouds first. Get the climate type of the city.
@@ -268,51 +318,6 @@ DistantSky::DistantSky(int localCityID, int provinceID, WeatherType weatherType,
 	// @todo
 
 	this->sunSurface = &textureManager.getSurface("SUN.IMG");
-}
-
-int DistantSky::getLandObjectCount() const
-{
-	return static_cast<int>(this->landObjects.size());
-}
-
-int DistantSky::getAnimatedLandObjectCount() const
-{
-	return static_cast<int>(this->animLandObjects.size());
-}
-
-int DistantSky::getAirObjectCount() const
-{
-	return static_cast<int>(this->airObjects.size());
-}
-
-int DistantSky::getSpaceObjectCount() const
-{
-	return static_cast<int>(this->spaceObjects.size());
-}
-
-const DistantSky::LandObject &DistantSky::getLandObject(int index) const
-{
-	return this->landObjects.at(index);
-}
-
-const DistantSky::AnimatedLandObject &DistantSky::getAnimatedLandObject(int index) const
-{
-	return this->animLandObjects.at(index);
-}
-
-const DistantSky::AirObject &DistantSky::getAirObject(int index) const
-{
-	return this->airObjects.at(index);
-}
-
-const DistantSky::SpaceObject &DistantSky::getSpaceObject(int index) const
-{
-	return this->spaceObjects.at(index);
-}
-
-const Surface &DistantSky::getSunSurface() const
-{
-	return *this->sunSurface;
 }
 
 void DistantSky::update(double dt)

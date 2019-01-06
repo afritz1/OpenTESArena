@@ -92,8 +92,7 @@ private:
 	// The sun's position is a function of time of day.
 	const Surface *sunSurface;
 public:
-	DistantSky(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+	DistantSky();
 
 	int getLandObjectCount() const;
 	int getAnimatedLandObjectCount() const;
@@ -105,6 +104,9 @@ public:
 	const AirObject &getAirObject(int index) const;
 	const SpaceObject &getSpaceObject(int index) const;
 	const Surface &getSunSurface() const;
+
+	void init(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
+		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	void update(double dt);
 };

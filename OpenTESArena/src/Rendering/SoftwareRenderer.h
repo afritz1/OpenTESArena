@@ -13,6 +13,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
+#include "../World/DistantSky.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelData.h"
 
@@ -38,6 +39,15 @@ private:
 		FlatTexel();
 	};
 
+	// For distant sky objects (mountains, clouds, etc.).
+	struct SkyTexel
+	{
+		double r, g, b;
+		bool transparent;
+
+		SkyTexel();
+	};
+
 	struct VoxelTexture
 	{
 		static const int WIDTH = 64;
@@ -54,6 +64,14 @@ private:
 		int width, height;
 
 		FlatTexture();
+	};
+
+	struct SkyTexture
+	{
+		std::vector<SkyTexel> texels;
+		int width, height;
+
+		SkyTexture();
 	};
 
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
@@ -205,14 +223,37 @@ private:
 		const Flat::Frame &getFrame() const;
 	};
 
+	// Pairs together a distant sky object with its render texture index. If it's an animation,
+	// then the index points to the start of its textures.
+	struct DistantObject
+	{
+		enum class Type { Land, AnimatedLand, Air, Space };
+
+		int textureIndex;
+		DistantObject::Type type;
+		
+		union
+		{
+			const DistantSky::LandObject *land;
+			const DistantSky::AnimatedLandObject *animLand;
+			const DistantSky::AirObject *air;
+			const DistantSky::SpaceObject *space;
+		};
+
+		DistantObject(int textureIndex, DistantObject::Type type, const void *obj);
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
 		struct Sky
 		{
 			int threadsDone;
+			const std::vector<DistantObject> *distantObjects;
+			const std::vector<SkyTexture> *skyTextures;
 
-			void init();
+			void init(const std::vector<DistantObject> &distantObjects,
+				const std::vector<SkyTexture> &skyTextures);
 		};
 
 		struct Voxels
@@ -272,16 +313,22 @@ private:
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
 
+	// Default index if no sun exists in the world.
+	static const int NO_SUN;
+
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
+	std::vector<DistantObject> distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
+	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	std::vector<std::thread> renderThreads; // Threads used for rendering the world.
 	RenderThreadData threadData; // Managed by main thread, used by render threads.
 	double fogDistance; // Distance at which fog is maximum.
+	int sunTextureIndex; // Points into skyTextures if the sun exists, or -1 if it doesn't.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadsMode; // Determines number of threads to use for rendering.
 
@@ -493,6 +540,9 @@ public:
 	// Sets the distance at which the fog is maximum.
 	void setFogDistance(double fogDistance);
 
+	// Sets textures for the distant sky (mountains, clouds, etc.).
+	void setDistantSky(const DistantSky &distantSky);
+
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
@@ -500,7 +550,7 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint32_t *srcTexels);
 
-	// Overwrites the selected flat texture's data with the given set of texels and dimensions.
+	// Overwrites the selected flat texture's data with the given texels and dimensions.
 	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
@@ -514,7 +564,7 @@ public:
 	// Removes a light. Causes an error if no ID matches.
 	void removeLight(int id);
 
-	// Zeroes out all voxel and flat textures.
+	// Zeroes out all renderer textures.
 	void clearTextures();
 
 	// Initializes software renderer with the given frame buffer dimensions. This can be called

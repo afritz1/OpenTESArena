@@ -4,12 +4,12 @@
 #include <limits>
 
 #include "SoftwareRenderer.h"
+#include "Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
-#include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
 
@@ -30,7 +30,21 @@ SoftwareRenderer::FlatTexel::FlatTexel()
 	this->a = 0.0;
 }
 
+SoftwareRenderer::SkyTexel::SkyTexel()
+{
+	this->r = 0.0;
+	this->g = 0.0;
+	this->b = 0.0;
+	this->transparent = false;
+}
+
 SoftwareRenderer::FlatTexture::FlatTexture()
+{
+	this->width = 0;
+	this->height = 0;
+}
+
+SoftwareRenderer::SkyTexture::SkyTexture()
 {
 	this->width = 0;
 	this->height = 0;
@@ -288,9 +302,41 @@ const SoftwareRenderer::Flat::Frame &SoftwareRenderer::VisibleFlat::getFrame() c
 	return this->frame;
 }
 
-void SoftwareRenderer::RenderThreadData::Sky::init()
+SoftwareRenderer::DistantObject::DistantObject(int textureIndex, DistantObject::Type type, const void *obj)
+{
+	this->textureIndex = textureIndex;
+	this->type = type;
+
+	// Assign based on the object type.
+	if (type == DistantObject::Type::Land)
+	{
+		this->land = static_cast<const DistantSky::LandObject*>(obj);
+	}
+	else if (type == DistantObject::Type::AnimatedLand)
+	{
+		this->animLand = static_cast<const DistantSky::AnimatedLandObject*>(obj);
+	}
+	else if (type == DistantObject::Type::Air)
+	{
+		this->air = static_cast<const DistantSky::AirObject*>(obj);
+	}
+	else if (type == DistantObject::Type::Space)
+	{
+		this->space = static_cast<const DistantSky::SpaceObject*>(obj);
+	}
+	else
+	{
+		throw DebugException("Invalid distant object type \"" +
+			std::to_string(static_cast<int>(type)) + "\".");
+	}
+}
+
+void SoftwareRenderer::RenderThreadData::Sky::init(const std::vector<DistantObject> &distantObjects,
+	const std::vector<SkyTexture> &skyTextures)
 {
 	this->threadsDone = 0;
+	this->distantObjects = &distantObjects;
+	this->skyTextures = &skyTextures;
 }
 
 void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
@@ -347,6 +393,7 @@ const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
+const int SoftwareRenderer::NO_SUN = -1;
 const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
@@ -355,6 +402,7 @@ SoftwareRenderer::SoftwareRenderer()
 	this->width = 0;
 	this->height = 0;
 	this->renderThreadsMode = 0;
+	this->sunTextureIndex = SoftwareRenderer::NO_SUN;
 	this->fogDistance = 0.0;
 }
 
@@ -533,6 +581,88 @@ void SoftwareRenderer::setFogDistance(double fogDistance)
 	this->fogDistance = fogDistance;
 }
 
+void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
+{
+	// Clear old distant sky data.
+	this->distantObjects.clear();
+	this->skyTextures.clear();
+
+	// Creates a render texture from the given surface, adds it to the sky textures list, and
+	// returns its index in the sky textures list.
+	auto addSkyTexture = [this](const Surface &surface)
+	{
+		const int width = surface.getWidth();
+		const int height = surface.getHeight();
+		const uint32_t *texels = static_cast<const uint32_t*>(surface.getPixels());
+		const int texelCount = width * height;
+
+		this->skyTextures.push_back(SkyTexture());
+		SkyTexture &texture = this->skyTextures.back();
+		texture.texels = std::vector<SkyTexel>(texelCount);
+		texture.width = width;
+		texture.height = height;
+
+		for (int i = 0; i < texelCount; i++)
+		{
+			const Double4 srcTexel = Double4::fromARGB(texels[i]);
+			SkyTexel &dstTexel = texture.texels[i];
+			dstTexel.r = srcTexel.x;
+			dstTexel.g = srcTexel.y;
+			dstTexel.b = srcTexel.z;
+			dstTexel.transparent = srcTexel.w == 0.0;
+		}
+
+		return static_cast<int>(this->skyTextures.size()) - 1;
+	};
+
+	// Iterate through each distant object type in the distant sky, creating associations between
+	// the distant sky object and its render texture.
+	for (int i = 0; i < distantSky.getLandObjectCount(); i++)
+	{
+		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
+		const int textureIndex = addSkyTexture(landObject.getSurface());
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::Land, &landObject));
+	}
+
+	for (int i = 0; i < distantSky.getAnimatedLandObjectCount(); i++)
+	{
+		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
+
+		// Add first texture to get the start index of the animated textures.
+		const int textureIndex = addSkyTexture(animLandObject.getSurface(0));
+
+		for (int j = 1; j < animLandObject.getSurfaceCount(); j++)
+		{
+			addSkyTexture(animLandObject.getSurface(j));
+		}
+
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::AnimatedLand, &animLandObject));
+	}
+
+	for (int i = 0; i < distantSky.getAirObjectCount(); i++)
+	{
+		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
+		const int textureIndex = addSkyTexture(airObject.getSurface());
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::Air, &airObject));
+	}
+
+	for (int i = 0; i < distantSky.getSpaceObjectCount(); i++)
+	{
+		const DistantSky::SpaceObject &spaceObject = distantSky.getSpaceObject(i);
+		const int textureIndex = addSkyTexture(spaceObject.getSurface());
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::Space, &spaceObject));
+	}
+
+	// Add the sun to the sky textures and assign its texture index. It isn't added to
+	// the list of distant objects because its position is a function of time of day,
+	// and that's handled in the render method.
+	this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+}
+
 void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 {
 	this->skyPalette = std::vector<Double3>(count);
@@ -599,6 +729,9 @@ void SoftwareRenderer::clearTextures()
 		texture.width = 0;
 		texture.height = 0;
 	}
+
+	// Distant sky textures are cleared because the vector size is managed internally.
+	this->skyTextures.clear();
 }
 
 void SoftwareRenderer::resize(int width, int height)
@@ -5395,7 +5528,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Set all the render-thread-specific shared data for this frame.
 	this->threadData.init(static_cast<int>(this->renderThreads.size()), forwardComp,
 		right2D, camera, shadingInfo, frame);
-	this->threadData.sky.init();
+	this->threadData.sky.init(this->distantObjects, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, voxelGrid,
 		this->voxelTextures, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextures);

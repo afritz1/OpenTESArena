@@ -489,6 +489,12 @@ void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int 
 	this->softwareRenderer.setFlatTexture(id, srcTexels, width, height);
 }
 
+void Renderer::setDistantSky(const DistantSky &distantSky)
+{
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setDistantSky(distantSky);
+}
+
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
 {
 	assert(this->softwareRenderer.isInited());
