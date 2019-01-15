@@ -316,6 +316,9 @@ private:
 	// Default index if no sun exists in the world.
 	static const int NO_SUN;
 
+	// Angle of the sky gradient above the horizon, in degrees.
+	static const double SKY_GRADIENT_ANGLE;
+
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
@@ -487,9 +490,16 @@ private:
 		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
 		const FrameView &frame);
 
-	// Draws a portion of the sky. The start and end Y are based on current threading settings.
-	static void drawSky(int startY, int endY, const Camera &camera, 
+	// Draws a portion of the sky gradient. The start and end Y are determined from current
+	// threading settings.
+	static void drawSkyGradient(int startY, int endY, const Camera &camera, 
 		const ShadingInfo &shadingInfo, const FrameView &frame);
+
+	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
+	// are determined from current threading settings.
+	static void drawDistantSky(int startX, int endX, bool parallax,
+		const std::vector<DistantObject> &distantObjects, const Camera &camera,
+		const std::vector<SkyTexture> &skyTextures, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Double2 &forwardComp,

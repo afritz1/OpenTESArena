@@ -394,6 +394,7 @@ const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
 const int SoftwareRenderer::NO_SUN = -1;
+const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
 const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
@@ -5258,15 +5259,14 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	}
 }
 
-void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
+void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camera,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	uint32_t *colorPtr = frame.colorBuffer;
-	double *depthPtr = frame.depthBuffer;
-
 	// Lambda for drawing one row of colors and depth in the frame buffer.
-	auto drawSkyRow = [&frame, colorPtr, depthPtr](int y, const Double3 &color)
+	auto drawSkyRow = [&frame](int y, const Double3 &color)
 	{
+		uint32_t *colorPtr = frame.colorBuffer;
+		double *depthPtr = frame.depthBuffer;
 		const int startIndex = y * frame.width;
 		const int endIndex = (y + 1) * frame.width;
 		const uint32_t colorValue = color.toRGB();
@@ -5290,8 +5290,9 @@ void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
 	{
 		const Double3 gradientTopPoint = [&camera, &forward]()
 		{
-			// Top of the sky gradient is 30 degrees above the horizon.
-			constexpr double gradientAngleRadians = 30.0 * Constants::DegToRad;
+			// Top of the sky gradient is some angle above the horizon.
+			const double gradientAngleRadians =
+				SoftwareRenderer::SKY_GRADIENT_ANGLE * Constants::DegToRad;
 
 			// Height of the gradient's triangle with width of 1 and angle of 30 degrees.
 			const double upPercent = std::tan(gradientAngleRadians);
@@ -5335,6 +5336,78 @@ void SoftwareRenderer::drawSky(int startY, int endY, const Camera &camera,
 		const Double3 color = skyColors.at(index).lerp(skyColors.at(nextIndex), percent);
 
 		drawSkyRow(y, color);
+	}
+}
+
+void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallax,
+	const std::vector<DistantObject> &distantObjects, const Camera &camera,
+	const std::vector<SkyTexture> &skyTextures, const FrameView &frame)
+{
+	// For each distant object, if it is on-screen and at least partially within the start and
+	// end X, then draw.
+	for (const auto &obj : distantObjects)
+	{
+		double xAngleRadians;
+		double heightPercent; // 0 is at horizon, 1 is at top of sky gradient.
+		const SkyTexture *texture;
+
+		if (obj.type == DistantObject::Type::Land)
+		{
+			const DistantSky::LandObject &land = *obj.land;
+			xAngleRadians = land.getAngleRadians();
+			heightPercent = 0.0;
+			texture = &skyTextures.at(obj.textureIndex);
+		}
+		else if (obj.type == DistantObject::Type::AnimatedLand)
+		{
+			const DistantSky::AnimatedLandObject &animLand = *obj.animLand;
+			xAngleRadians = animLand.getAngleRadians();
+			heightPercent = 0.0;
+			texture = &skyTextures.at(obj.textureIndex + animLand.getIndex());
+		}
+		else if (obj.type == DistantObject::Type::Air)
+		{
+			const DistantSky::AirObject &air = *obj.air;
+			xAngleRadians = air.getAngleRadians();
+			heightPercent = air.getHeight();
+			texture = &skyTextures.at(obj.textureIndex);
+		}
+		else if (obj.type == DistantObject::Type::Space)
+		{
+			const DistantSky::SpaceObject &space = *obj.space;
+			DebugNotImplemented();
+		}
+		else
+		{
+			throw DebugException("Invalid distant object type \"" +
+				std::to_string(static_cast<int>(obj.type)) + "\".");
+		}
+
+		// Determine on-screen position. Get 3D vector from angles.
+		const double yAngleRadians = heightPercent *
+			(SoftwareRenderer::SKY_GRADIENT_ANGLE * Constants::DegToRad);
+		
+		// Direction toward the distant object.
+		const Double3 direction = Double3(
+			std::cos(xAngleRadians),
+			std::sin(yAngleRadians),
+			std::sin(xAngleRadians)).normalized();
+
+		// In front of the camera?
+		// @todo: check left and right edges of shape, not center.
+		// @todo: project top left and bottom right points of texture.
+		if (direction.dot(camera.direction) > 0.0)
+		{
+			// Project point an arbitrary distance out.
+			const Double3 point = camera.eye + direction;
+			const Double4 projPoint = camera.transform * Double4(point, 1.0);
+			const double projX = projPoint.x / projPoint.w;
+			const double projY = projPoint.y / projPoint.w;			
+			const double projYScreen = (0.50 + camera.yShear) - (projY * 0.50);
+
+			DebugMention("Point: " + std::to_string(projX) + ", " + std::to_string(projY));
+			return;
+		}
 	}
 }
 
@@ -5407,8 +5480,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of the sky.
 		RenderThreadData::Sky &sky = threadData.sky;
-		SoftwareRenderer::drawSky(startY, endY, *threadData.camera, *threadData.shadingInfo,
-			*threadData.frame);
+		SoftwareRenderer::drawSkyGradient(startY, endY, *threadData.camera,
+			*threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with the sky.
 		lk.lock();
