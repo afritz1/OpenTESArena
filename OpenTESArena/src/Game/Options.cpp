@@ -23,6 +23,7 @@ namespace
 		{ "TargetFPS", OptionType::Int },
 		{ "ResolutionScale", OptionType::Double },
 		{ "VerticalFOV", OptionType::Double },
+		{ "ParallaxSky", OptionType::Bool },
 		{ "LetterboxMode", OptionType::Int },
 		{ "CursorScale", OptionType::Double },
 		{ "ModernInterface", OptionType::Bool },

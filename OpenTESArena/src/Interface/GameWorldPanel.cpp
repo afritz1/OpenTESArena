@@ -2241,7 +2241,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
-		level.getCeilingHeight(), level.getOpenDoors(), level.getVoxelGrid());
+		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(), level.getVoxelGrid());
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

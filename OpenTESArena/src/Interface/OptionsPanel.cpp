@@ -40,7 +40,7 @@ namespace
 	const Int2 ListDimensions(254, TabsDimensions.y * 5);
 	const Int2 DescriptionOrigin(
 		TabsOrigin.x + 2,
-		TabsOrigin.y + (TabsDimensions.y * 5) + 3);
+		TabsOrigin.y + (TabsDimensions.y * 5) + 4);
 
 	const Rect GraphicsTabRect(
 		TabsOrigin.x,
@@ -224,6 +224,7 @@ const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
 const std::string OptionsPanel::FULLSCREEN_NAME = "Fullscreen";
 const std::string OptionsPanel::LETTERBOX_MODE_NAME = "Letterbox Mode";
 const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
+const std::string OptionsPanel::PARALLAX_SKY_NAME = "Parallax Sky";
 const std::string OptionsPanel::RENDER_THREADS_MODE_NAME = "Render Threads Mode";
 const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
 const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
@@ -405,6 +406,17 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		options.setGraphics_VerticalFOV(value);
+	}));
+
+	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::PARALLAX_SKY_NAME,
+		"Determines how distant sky objects (mountains, clouds, etc.) are\ndrawn. Set to false for classic behavior.",
+		options.getGraphics_ParallaxSky(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setGraphics_ParallaxSky(value);
 	}));
 
 	auto letterboxModeOption = std::make_unique<IntOption>(
