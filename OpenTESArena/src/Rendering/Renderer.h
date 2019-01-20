@@ -170,7 +170,7 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
-		double ambient, double daytimePercent, double ceilingHeight, 
+		double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight, 
 		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 

@@ -83,7 +83,11 @@ private:
 		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
 		Matrix4d transform; // Perspective transformation matrix.
 		double forwardX, forwardZ; // Forward components.
+		double forwardZoomedX, forwardZoomedZ; // Forward * zoom components.
 		double rightX, rightZ; // Right components.
+		double rightAspectedX, rightAspectedZ; // Right * aspect components.
+		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
+		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
 		double fovY, zoom, aspect;
 		double yAngleRadians; // Angle of the camera above or below the horizon.
 		double yShear; // Projected Y-coordinate translation.
@@ -246,13 +250,21 @@ private:
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
-		struct Sky
+		struct SkyGradient
+		{
+			int threadsDone;
+
+			void init();
+		};
+
+		struct DistantSky
 		{
 			int threadsDone;
 			const std::vector<DistantObject> *distantObjects;
 			const std::vector<SkyTexture> *skyTextures;
+			bool parallaxSky;
 
-			void init(const std::vector<DistantObject> &distantObjects,
+			void init(bool parallaxSky, const std::vector<DistantObject> &distantObjects,
 				const std::vector<SkyTexture> &skyTextures);
 		};
 
@@ -282,13 +294,13 @@ private:
 				const std::vector<FlatTexture> &flatTextures);
 		};
 
-		Sky sky;
+		SkyGradient skyGradient;
+		DistantSky distantSky;
 		Voxels voxels;
 		Flats flats;
 		const Camera *camera;
 		const ShadingInfo *shadingInfo;
 		const FrameView *frame;
-		const Double2 *forwardComp, *right2D; // Camera directions (function of FOV and aspect).
 
 		std::condition_variable condVar;
 		std::mutex mutex;
@@ -298,8 +310,8 @@ private:
 
 		RenderThreadData();
 
-		void init(int totalThreads, const Double2 &forwardComp, const Double2 &right2D,
-			const Camera &camera, const ShadingInfo &shadingInfo, const FrameView &frame);
+		void init(int totalThreads, const Camera &camera, const ShadingInfo &shadingInfo,
+			const FrameView &frame);
 	};
 
 	// Clipping planes for Z coordinates.
@@ -497,13 +509,12 @@ private:
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
-	static void drawDistantSky(int startX, int endX, bool parallax,
+	static void drawDistantSky(int startX, int endX, bool parallaxSky,
 		const std::vector<DistantObject> &distantObjects, const Camera &camera,
 		const std::vector<SkyTexture> &skyTextures, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
-	static void drawVoxels(int startX, int stride, const Double2 &forwardComp,
-		const Double2 &right2D, const Camera &camera, double ceilingHeight,
+	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
@@ -586,7 +597,7 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
-		double ambient, double daytimePercent, double ceilingHeight,
+		double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 		uint32_t *colorBuffer);
 };

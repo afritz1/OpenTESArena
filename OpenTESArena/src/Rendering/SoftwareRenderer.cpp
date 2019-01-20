@@ -91,8 +91,26 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 
 	// Zoom of the camera, based on vertical field of view.
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
-
 	this->aspect = aspect;
+
+	// Forward and right modifiers, for interpolating 3D vectors across the screen and
+	// so vertical FOV and aspect ratio are taken into consideration.
+	this->forwardZoomedX = this->forwardX * this->zoom;
+	this->forwardZoomedZ = this->forwardZ * this->zoom;
+	this->rightAspectedX = this->rightX * this->aspect;
+	this->rightAspectedZ = this->rightZ * this->aspect;
+
+	// Left and right 2D vectors of the view frustum (at left and right edges of the screen).
+	const Double2 frustumLeft = Double2(
+		this->forwardZoomedX - this->rightAspectedX,
+		this->forwardZoomedZ - this->rightAspectedZ).normalized();
+	const Double2 frustumRight = Double2(
+		this->forwardZoomedX + this->rightAspectedX,
+		this->forwardZoomedZ + this->rightAspectedZ).normalized();
+	this->frustumLeftX = frustumLeft.x;
+	this->frustumLeftZ = frustumLeft.y;
+	this->frustumRightX = frustumRight.x;
+	this->frustumRightZ = frustumRight.y;
 
 	// Vertical angle of the camera relative to the horizon.
 	this->yAngleRadians = [&direction]()
@@ -331,12 +349,18 @@ SoftwareRenderer::DistantObject::DistantObject(int textureIndex, DistantObject::
 	}
 }
 
-void SoftwareRenderer::RenderThreadData::Sky::init(const std::vector<DistantObject> &distantObjects,
-	const std::vector<SkyTexture> &skyTextures)
+void SoftwareRenderer::RenderThreadData::SkyGradient::init()
+{
+	this->threadsDone = 0;
+}
+
+void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
+	const std::vector<DistantObject> &distantObjects, const std::vector<SkyTexture> &skyTextures)
 {
 	this->threadsDone = 0;
 	this->distantObjects = &distantObjects;
 	this->skyTextures = &skyTextures;
+	this->parallaxSky = parallaxSky;
 }
 
 void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
@@ -370,17 +394,12 @@ SoftwareRenderer::RenderThreadData::RenderThreadData()
 	this->camera = nullptr;
 	this->shadingInfo = nullptr;
 	this->frame = nullptr;
-	this->forwardComp = nullptr;
-	this->right2D = nullptr;
 }
 
-void SoftwareRenderer::RenderThreadData::init(int totalThreads, const Double2 &forwardComp,
-	const Double2 &right2D, const Camera &camera, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+void SoftwareRenderer::RenderThreadData::init(int totalThreads, const Camera &camera,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	this->totalThreads = totalThreads;
-	this->forwardComp = &forwardComp;
-	this->right2D = &right2D;
 	this->camera = &camera;
 	this->shadingInfo = &shadingInfo;
 	this->frame = &frame;
@@ -5339,7 +5358,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camer
 	}
 }
 
-void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallax,
+void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	const std::vector<DistantObject> &distantObjects, const Camera &camera,
 	const std::vector<SkyTexture> &skyTextures, const FrameView &frame)
 {
@@ -5411,12 +5430,14 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallax,
 	}
 }
 
-void SoftwareRenderer::drawVoxels(int startX, int stride, const Double2 &forwardComp,
-	const Double2 &right2D, const Camera &camera, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &voxelTextures,
+	std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
+	const Double2 forwardZoomed(camera.forwardZoomedX, camera.forwardZoomedZ);
+	const Double2 rightAspected(camera.rightAspectedX, camera.rightAspectedZ);
+
 	// Draw pixel columns with spacing determined by the number of render threads.
 	for (int x = startX; x < frame.width; x += stride)
 	{
@@ -5424,12 +5445,12 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Double2 &forward
 		const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
 
 		// "Right" component of the ray direction, based on current screen X.
-		const Double2 rightComp = right2D * ((2.0 * xPercent) - 1.0);
+		const Double2 rightComp = rightAspected * ((2.0 * xPercent) - 1.0);
 
 		// Calculate the ray direction through the pixel.
 		// - If un-normalized, it uses the Z distance, but the insides of voxels
 		//   don't look right then.
-		const Double2 direction = (forwardComp + rightComp).normalized();
+		const Double2 direction = (forwardZoomed + rightComp).normalized();
 		const Ray ray(direction.x, direction.y);
 
 		// Cast the 2D ray and fill in the column's pixels with color.
@@ -5478,17 +5499,17 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 			break;
 		}
 
-		// Draw this thread's portion of the sky.
-		RenderThreadData::Sky &sky = threadData.sky;
+		// Draw this thread's portion of the sky gradient.
+		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
 		SoftwareRenderer::drawSkyGradient(startY, endY, *threadData.camera,
 			*threadData.shadingInfo, *threadData.frame);
 
-		// This thread is done with the sky.
+		// This thread is done with the sky gradient.
 		lk.lock();
-		sky.threadsDone++;
+		skyGradient.threadsDone++;
 
-		// If this was the last thread on the sky, notify all to continue.
-		if (sky.threadsDone == threadData.totalThreads)
+		// If this was the last thread on the sky gradient, notify all to continue.
+		if (skyGradient.threadsDone == threadData.totalThreads)
 		{
 			lk.unlock();
 			threadData.condVar.notify_all();
@@ -5496,9 +5517,36 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		else
 		{
 			// Wait for other threads to finish.
-			threadData.condVar.wait(lk, [&threadData, &sky]()
+			threadData.condVar.wait(lk, [&threadData, &skyGradient]()
 			{
-				return sky.threadsDone == threadData.totalThreads;
+				return skyGradient.threadsDone == threadData.totalThreads;
+			});
+
+			lk.unlock();
+		}
+
+		// Draw this thread's portion of distant sky objects.
+		RenderThreadData::DistantSky &distantSky = threadData.distantSky;
+		SoftwareRenderer::drawDistantSky(startX, endX, distantSky.parallaxSky,
+			*distantSky.distantObjects, *threadData.camera, *distantSky.skyTextures,
+			*threadData.frame);
+
+		// This thread is done with distant sky objects.
+		lk.lock();
+		distantSky.threadsDone++;
+
+		// If this was the last thread on distant sky, notify all to continue.
+		if (distantSky.threadsDone == threadData.totalThreads)
+		{
+			lk.unlock();
+			threadData.condVar.notify_all();
+		}
+		else
+		{
+			// Wait for other threads to finish.
+			threadData.condVar.wait(lk, [&threadData, &distantSky]()
+			{
+				return distantSky.threadsDone == threadData.totalThreads;
 			});
 
 			lk.unlock();
@@ -5510,9 +5558,9 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of voxels.
 		RenderThreadData::Voxels &voxels = threadData.voxels;
-		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.forwardComp, *threadData.right2D,
-			*threadData.camera, voxels.ceilingHeight, *voxels.openDoors, *voxels.voxelGrid,
-			*voxels.voxelTextures, *voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
+		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera,
+			voxels.ceilingHeight, *voxels.openDoors, *voxels.voxelGrid, *voxels.voxelTextures,
+			*voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with voxels.
 		lk.lock();
@@ -5569,7 +5617,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, double ceilingHeight,
+	double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 	uint32_t *colorBuffer)
 {
@@ -5584,14 +5632,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// 2.5D camera definition.
 	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
 
-	// Camera values for generating 2D rays with.
-	const Double2 forwardComp = 
-		Double2(camera.forwardX, camera.forwardZ).normalized() * camera.zoom;
-	const Double2 right2D = 
-		Double2(camera.rightX, camera.rightZ).normalized() * camera.aspect;
-
 	// Normal of all flats (always facing the camera).
-	const Double3 flatNormal = Double3(-forwardComp.x, 0.0, -forwardComp.y).normalized();
+	const Double3 flatNormal = Double3(-camera.forwardX, 0.0, -camera.forwardZ).normalized();
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
@@ -5599,9 +5641,10 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Set all the render-thread-specific shared data for this frame.
-	this->threadData.init(static_cast<int>(this->renderThreads.size()), forwardComp,
-		right2D, camera, shadingInfo, frame);
-	this->threadData.sky.init(this->distantObjects, this->skyTextures);
+	this->threadData.init(static_cast<int>(this->renderThreads.size()),
+		camera, shadingInfo, frame);
+	this->threadData.skyGradient.init();
+	this->threadData.distantSky.init(parallaxSky, this->distantObjects, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, voxelGrid,
 		this->voxelTextures, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextures);
