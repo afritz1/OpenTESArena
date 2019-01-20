@@ -588,6 +588,9 @@ public:
 	// Zeroes out all renderer textures.
 	void clearTextures();
 
+	// Removes all distant sky objects.
+	void clearDistantSky();
+
 	// Initializes software renderer with the given frame buffer dimensions. This can be called
 	// on first start or to reset the software renderer.
 	void init(int width, int height, int renderThreadsMode);

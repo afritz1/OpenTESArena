@@ -752,6 +752,12 @@ void SoftwareRenderer::clearTextures()
 
 	// Distant sky textures are cleared because the vector size is managed internally.
 	this->skyTextures.clear();
+	this->sunTextureIndex = SoftwareRenderer::NO_SUN;
+}
+
+void SoftwareRenderer::clearDistantSky()
+{
+	this->distantObjects.clear();
 }
 
 void SoftwareRenderer::resize(int width, int height)

@@ -151,6 +151,7 @@ public:
 	void removeFlat(int id);
 	void removeLight(int id);
 	void clearTextures();
+	void clearDistantSky();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);

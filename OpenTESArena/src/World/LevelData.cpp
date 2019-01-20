@@ -844,8 +844,9 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		this->entityManager.remove(entity->getID());
 	}*/
 
-	// Clear renderer textures.
+	// Clear renderer textures and distant sky.
 	renderer.clearTextures();
+	renderer.clearDistantSky();
 
 	// Load .INF voxel textures into the renderer.
 	const int voxelTextureCount = static_cast<int>(this->inf.getVoxelTextures().size());

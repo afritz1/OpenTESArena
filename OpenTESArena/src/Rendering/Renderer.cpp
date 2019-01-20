@@ -525,6 +525,12 @@ void Renderer::clearTextures()
 	this->softwareRenderer.clearTextures();
 }
 
+void Renderer::clearDistantSky()
+{
+	assert(this->softwareRenderer.isInited());
+	this->softwareRenderer.clearDistantSky();
+}
+
 void Renderer::clear(const Color &color)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
