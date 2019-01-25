@@ -163,6 +163,9 @@ private:
 		// Global ambient light percent.
 		double ambient;
 
+		// Ambient light percent used with distant sky objects.
+		double distantAmbient;
+
 		// Distance at which fog is maximum.
 		double fogDistance;
 
@@ -469,6 +472,12 @@ private:
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
 		const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame);
 
+	// Draws a column of pixels for a distant sky object (mountain, cloud, etc.). The 'emissive'
+	// parameter is for animated objects like volcanoes.
+	static void drawDistantPixels(int x, const DrawRange &drawRange, double u, double vStart,
+		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
+
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
@@ -511,7 +520,8 @@ private:
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
 		const std::vector<DistantObject> &distantObjects, const Camera &camera,
-		const std::vector<SkyTexture> &skyTextures, const FrameView &frame);
+		const std::vector<SkyTexture> &skyTextures, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
