@@ -5490,30 +5490,52 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				std::to_string(static_cast<int>(obj.type)) + "\".");
 		}
 
-		// The size of textures in world space is based on 320px being 1 unit.
+		// The size of textures in world space is based on 320px being 1 unit, and a 320px
+		// wide texture spans a screen's worth of horizontal FOV.
 		constexpr double identityDim = 320.0;
+		constexpr double identityAngleRadians = 90.0 * Constants::DegToRad;
 		const double objWidth = static_cast<double>(texture->width) / identityDim;
 		const double objHeight = static_cast<double>(texture->height) / identityDim;
 		const double objHalfWidth = objWidth * 0.50;
+
+		// Y position on-screen is the same regardless of parallax.
+		const DrawRange drawRange = [yAngleRadians, identityAngleRadians,
+			objHeight, &camera, &frame]()
+		{
+			const double yDeltaRadians = objHeight * identityAngleRadians;
+			const double yAngleRadiansTop = yAngleRadians + yDeltaRadians;
+
+			const Double3 objDirTop = Double3(
+				camera.forwardX,
+				std::sin(yAngleRadiansTop),
+				camera.forwardZ).normalized();
+			const Double3 objDirBottom = Double3(
+				camera.forwardX,
+				std::sin(yAngleRadians),
+				camera.forwardZ).normalized();
+
+			const Double3 objPointTop = camera.eye + objDirTop;
+			const Double3 objPointBottom = camera.eye + objDirBottom;
+
+			return SoftwareRenderer::makeDrawRange(
+				objPointTop, objPointBottom, camera, frame);
+		}();
 
 		// The position of the object's left and right edges depends on whether
 		// parallax is enabled.
 		if (parallaxSky)
 		{
-			// Get X angles for left and right edges based on object half width. Use the
-			// identity that a 320px wide texture in the original game spans a screen's
-			// worth of degrees of horizontal FOV.
-			constexpr double identityAngleRadians = 90.0 * Constants::DegToRad;
+			// Get X angles for left and right edges based on object half width.
 			const double xDeltaRadians = objHalfWidth * identityAngleRadians;
 			const double xAngleRadiansLeft = xAngleRadians - xDeltaRadians;
 			const double xAngleRadiansRight = xAngleRadians + xDeltaRadians;
 
 			const Double2 objDirLeft2D(
-				std::cos(xAngleRadiansLeft),
-				std::sin(xAngleRadiansLeft));
+				std::cos(xAngleRadiansLeft + Constants::Pi),
+				std::sin(xAngleRadiansLeft + Constants::Pi));
 			const Double2 objDirRight2D(
-				std::cos(xAngleRadiansRight),
-				std::sin(xAngleRadiansRight));
+				std::cos(xAngleRadiansRight + Constants::Pi),
+				std::sin(xAngleRadiansRight + Constants::Pi));
 
 			// Determine if the object is at least partially on-screen by checking that the left
 			// direction is not outside the right side and the right direction is not outside the
@@ -5524,41 +5546,18 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 
 			if (onScreen)
 			{
-				// Project corner points and then render columns.
-				const double yDeltaRadians = objHeight * identityAngleRadians;
-				const double yAngleRadiansTop = yAngleRadians + yDeltaRadians;
+				// Project vertical edges and then render columns.
+				const Double3 objDirLeft(objDirLeft2D.x, 0.0, objDirLeft2D.y);
+				const Double3 objDirRight(objDirRight2D.x, 0.0, objDirRight2D.y);
 
-				// @todo: don't want this. Want Y positions to be based as if the camera is looking
-				// straight at the object (i.e., no perspective distortion) so that Y coordinates
-				// relative to horizon stay constant for all X angles.
-				const Double3 objDirTopLeft = Double3(
-					objDirLeft2D.x,
-					std::sin(yAngleRadiansTop),
-					objDirLeft2D.y).normalized();
-				const Double3 objDirBottomLeft = Double3(
-					objDirRight2D.x,
-					std::sin(yAngleRadians),
-					objDirRight2D.y).normalized();
-				const Double3 objDirBottomRight = Double3(
-					objDirRight2D.x,
-					objDirBottomLeft.y,
-					objDirRight2D.y).normalized();
+				const Double3 objPointLeft = camera.eye + objDirLeft;
+				const Double3 objPointRight = camera.eye + objDirRight;
 
-				const Double3 objPointTopLeft = camera.eye + objDirTopLeft;
-				const Double3 objPointBottomLeft = camera.eye + objDirBottomLeft;
-				const Double3 objPointBottomRight = camera.eye + objDirBottomRight;
+				const Double4 objProjPointLeft = camera.transform * Double4(objPointLeft, 1.0);
+				const Double4 objProjPointRight = camera.transform * Double4(objPointRight, 1.0);
 
-				// Make a single vertical draw range to reuse for all columns.
-				const DrawRange drawRange = SoftwareRenderer::makeDrawRange(
-					objDirTopLeft, objPointBottomLeft, camera, frame);
-
-				const Double4 objProjPointTopLeft =
-					camera.transform * Double4(objPointTopLeft, 1.0);
-				const Double4 objProjPointBottomRight =
-					camera.transform * Double4(objPointBottomRight, 1.0);
-
-				const double xProjStart = 0.50 + ((objProjPointTopLeft.x / objProjPointTopLeft.w) * 0.50);
-				const double xProjEnd = 0.50 + ((objProjPointBottomRight.x / objProjPointBottomRight.w) * 0.50);
+				const double xProjStart = 0.50 + ((objProjPointLeft.x / objProjPointLeft.w) * 0.50);
+				const double xProjEnd = 0.50 + ((objProjPointRight.x / objProjPointRight.w) * 0.50);
 
 				const int xScreenStart = static_cast<int>(xProjStart * frame.widthReal);
 				const int xScreenEnd = static_cast<int>(xProjEnd * frame.widthReal);
@@ -5587,15 +5586,16 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 		else
 		{
 			// Classic rendering. Render the object based on its midpoint.
-
-			// Determine on-screen position. Get 3D vector towards the object from angles.
-			const Double3 objDir = Double3(
-				std::cos(xAngleRadians),
-				std::sin(yAngleRadians),
-				std::sin(xAngleRadians)).normalized();
+			const Double3 objDir(
+				std::cos(xAngleRadians + Constants::Pi),
+				0.0,
+				std::sin(xAngleRadians + Constants::Pi));
 
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;
+
+			// Project the point. Instead of getting left and right angles, get left and right
+			// X screen coordinates to determine if it's on-screen.
 
 			DebugNotImplemented();
 		}
