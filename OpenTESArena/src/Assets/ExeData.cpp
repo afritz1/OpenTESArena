@@ -713,7 +713,7 @@ int ExeData::get(const std::string &section, const std::string &key,
 	const std::string &valueStr = keyValueMap.getString(section, key);
 
 	// Make sure the value only has an offset and isn't an offset + length pair.
-	DebugAssert(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string::npos,
+	DebugAssertMsg(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string::npos,
 		"\"" + key + "\" (section \"" + section + "\") should only have an offset.");
 
 	int offset;
@@ -731,7 +731,7 @@ std::pair<int, int> ExeData::getPair(const std::string &section, const std::stri
 
 	// Make sure the value has a comma-separated offset + length pair.
 	const std::vector<std::string> tokens = String::split(valueStr, ExeData::PAIR_SEPARATOR);
-	DebugAssert(tokens.size() == 2, "\"" + key + "\" (section \"" + section +
+	DebugAssertMsg(tokens.size() == 2, "\"" + key + "\" (section \"" + section +
 		"\") should have an offset and length.");
 
 	const std::string &offsetStr = tokens.front();

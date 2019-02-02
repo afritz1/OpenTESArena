@@ -13,7 +13,7 @@ HeapView::HeapView()
 size_t HeapView::allocate(size_t size)
 {
 	// Allocation request must be at least 1 byte.
-	DebugAssert(size > 0, "Allocation size must be positive.");
+	DebugAssertMsg(size > 0, "Allocation size must be positive.");
 
 	// Offset in bytes to a suitable free block.
 	size_t offset = 0;
@@ -56,7 +56,7 @@ void HeapView::deallocate(size_t offset)
 {
 	// See if an allocation exists at the given offset.
 	const auto sizeIter = this->sizes.find(offset);
-	DebugAssert(sizeIter != this->sizes.end(),
+	DebugAssertMsg(sizeIter != this->sizes.end(),
 		"Invalid index for deallocation (" + std::to_string(offset) + ").");
 
 	// Get size of block at offset.

@@ -277,7 +277,7 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 
 	// Do not use a built-in palette for surface sets.
-	DebugAssert(!Palette::isBuiltIn(paletteName), 
+	DebugAssertMsg(!Palette::isBuiltIn(paletteName),
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.
@@ -406,7 +406,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 
 	// Do not use a built-in palette for texture sets.
-	DebugAssert(!Palette::isBuiltIn(paletteName), 
+	DebugAssertMsg(!Palette::isBuiltIn(paletteName),
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.

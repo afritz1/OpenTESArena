@@ -47,7 +47,8 @@ public:
 #define DebugMention(message) Debug::mention(__FILE__, __LINE__, message)
 #define DebugWarning(message) Debug::warning(__FILE__, __LINE__, message)
 #define DebugCrash(message) Debug::crash(__FILE__, __LINE__, message)
-#define DebugAssert(condition, message) Debug::check(condition, __FILE__, __LINE__, message)
+#define DebugAssert(condition) Debug::check(condition, __FILE__, __LINE__, "Assertion failed.")
+#define DebugAssertMsg(condition, message) Debug::check(condition, __FILE__, __LINE__, message)
 #define DebugException(message) std::runtime_error(std::string(message) + " (" + \
 	Debug::getShorterPath(__FILE__) + "(" + std::to_string(__LINE__) + "))")
 #define DebugNotImplemented() Debug::crash(__FILE__, __LINE__, "Not implemented.")

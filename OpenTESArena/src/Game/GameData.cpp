@@ -367,7 +367,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
-	DebugAssert(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
+	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
 		"\" must not be for main quest dungeon.");
 
 	// Generate dungeon seed.
@@ -404,9 +404,9 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	Renderer &renderer)
 {
 	// Verify that the wilderness block coordinates are valid (0..63).
-	DebugAssert((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
+	DebugAssertMsg((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
 		"Wild block X \"" + std::to_string(wildBlockX) + "\" out of range.");
-	DebugAssert((wildBlockY >= 0) && (wildBlockY < RMDFile::DEPTH),
+	DebugAssertMsg((wildBlockY >= 0) && (wildBlockY < RMDFile::DEPTH),
 		"Wild block Y \"" + std::to_string(wildBlockY) + "\" out of range.");
 
 	// Generate wilderness dungeon seed.
@@ -487,9 +487,9 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
 	// loadPremadeCity() should be called instead for that case.
-	DebugAssert(provinceID != Location::CENTER_PROVINCE_ID,
+	DebugAssertMsg(provinceID != Location::CENTER_PROVINCE_ID,
 		"Use loadPremadeCity() instead for center province.");
-	DebugAssert((globalCityID >= 0) && (globalCityID < 256),
+	DebugAssertMsg((globalCityID >= 0) && (globalCityID < 256),
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
 
 	// Determine city traits from the given city ID.

@@ -40,7 +40,7 @@ Surface &Surface::operator=(Surface &&surface)
 Surface Surface::loadBMP(const std::string &filename, uint32_t format)
 {
 	SDL_Surface *surface = SDL_LoadBMP(filename.c_str());
-	DebugAssert(surface != nullptr, "Could not find \"" + filename + "\".");
+	DebugAssertMsg(surface != nullptr, "Could not find \"" + filename + "\".");
 
 	// Convert to the given pixel format.
 	SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, format, 0);

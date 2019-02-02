@@ -480,7 +480,7 @@ void SoftwareRenderer::addFlat(int id, const Double3 &position, double width,
 	double height, int textureID)
 {
 	// Verify that the ID is not already in use.
-	DebugAssert(this->flats.find(id) == this->flats.end(), 
+	DebugAssertMsg(this->flats.find(id) == this->flats.end(),
 		"Flat ID \"" + std::to_string(id) + "\" already taken.");
 
 	SoftwareRenderer::Flat flat;
@@ -562,7 +562,7 @@ void SoftwareRenderer::updateFlat(int id, const Double3 *position, const double 
 	const double *height, const int *textureID, const bool *flipped)
 {
 	const auto flatIter = this->flats.find(id);
-	DebugAssert(flatIter != this->flats.end(), 
+	DebugAssertMsg(flatIter != this->flats.end(),
 		"Cannot update a non-existent flat (" + std::to_string(id) + ").");
 
 	SoftwareRenderer::Flat &flat = flatIter->second;
@@ -728,7 +728,7 @@ void SoftwareRenderer::removeFlat(int id)
 {
 	// Make sure the flat exists before removing it.
 	const auto flatIter = this->flats.find(id);
-	DebugAssert(flatIter != this->flats.end(), 
+	DebugAssertMsg(flatIter != this->flats.end(),
 		"Cannot remove a non-existent flat (" + std::to_string(id) + ").");
 
 	this->flats.erase(flatIter);

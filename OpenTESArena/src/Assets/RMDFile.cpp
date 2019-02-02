@@ -17,7 +17,7 @@ RMDFile::RMDFile(const std::string &filename)
 	map2(RMDFile::ELEMENTS_PER_FLOOR)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -34,7 +34,7 @@ RMDFile::RMDFile(const std::string &filename)
 	if (uncompLen == 0)
 	{
 		const uint16_t requiredSize = RMDFile::BYTES_PER_FLOOR * 3;
-		DebugAssert(srcData.size() == requiredSize, "Invalid .RMD file.");
+		DebugAssertMsg(srcData.size() == requiredSize, "Invalid .RMD file.");
 
 		// Write the uncompressed data into each floor.
 		const auto florStart = srcData.begin();

@@ -20,7 +20,7 @@ namespace
 	std::string getServiceNumberString(int number)
 	{
 		const std::string numberStr = std::to_string(number);
-		DebugAssert(numberStr.size() > 2, "Number string \"" + numberStr + "\" too small.");
+		DebugAssertMsg(numberStr.size() > 2, "Number string \"" + numberStr + "\" too small.");
 
 		const size_t offset = 2;
 		return numberStr.substr(offset);

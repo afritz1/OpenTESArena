@@ -47,7 +47,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(
 		window, bestDriver, SDL_RENDERER_ACCELERATED);
-	DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer");
+	DebugAssertMsg(rendererContext != nullptr, "SDL_CreateRenderer");
 
 	// Set pixel interpolation hint.
 	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
@@ -70,12 +70,12 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 		SDL_DestroyRenderer(rendererContext);
 
 		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
-		DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer software");
+		DebugAssertMsg(rendererContext != nullptr, "SDL_CreateRenderer software");
 
 		nativeSurface = SDL_GetWindowSurface(window);
 	}
 
-	DebugAssert(nativeSurface != nullptr, "SDL_GetWindowSurface");
+	DebugAssertMsg(nativeSurface != nullptr, "SDL_GetWindowSurface");
 
 	// Set the device-independent resolution for rendering (i.e., the 
 	// "behind-the-scenes" resolution).
@@ -310,7 +310,7 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
 	}();
 
-	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
+	DebugAssertMsg(this->window != nullptr, "SDL_CreateWindow");
 
 	// Initialize renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
@@ -322,7 +322,7 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 	// Initialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	DebugAssert(this->nativeTexture != nullptr,
+	DebugAssertMsg(this->nativeTexture != nullptr,
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
@@ -334,8 +334,8 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 {
 	// The window's dimensions are resized automatically. The renderer's are not.
 	const auto *nativeSurface = this->getWindowSurface();
-	DebugAssert(nativeSurface->w == width, "Mismatched resize widths.");
-	DebugAssert(nativeSurface->h == height, "Mismatched resize heights.");
+	DebugAssertMsg(nativeSurface->w == width, "Mismatched resize widths.");
+	DebugAssertMsg(nativeSurface->h == height, "Mismatched resize heights.");
 
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
@@ -343,7 +343,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	SDL_DestroyTexture(this->nativeTexture);
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, width, height);
-	DebugAssert(this->nativeTexture != nullptr, 
+	DebugAssertMsg(this->nativeTexture != nullptr,
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
 
 	this->fullGameWindow = fullGameWindow;
@@ -363,7 +363,7 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		SDL_DestroyTexture(this->gameWorldTexture);
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 			SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-		DebugAssert(this->gameWorldTexture != nullptr, 
+		DebugAssertMsg(this->gameWorldTexture != nullptr,
 			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
 
 		// Resize 3D renderer.
@@ -431,7 +431,7 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	// Initialize a new game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-	DebugAssert(this->gameWorldTexture != nullptr, 
+	DebugAssertMsg(this->gameWorldTexture != nullptr,
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering.
@@ -622,7 +622,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	int gameWorldPitch;
 	int status = SDL_LockTexture(this->gameWorldTexture, nullptr, 
 		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
-	DebugAssert(status == 0, "Couldn't lock game world texture, " +
+	DebugAssertMsg(status == 0, "Couldn't lock game world texture, " +
 		std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.

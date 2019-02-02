@@ -292,7 +292,7 @@ void MiscAssets::TemplateDat::init()
 	const std::string filename = "TEMPLATE.DAT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read TEMPLATE.DAT into a string.
 	stream->seekg(0, std::ios::end);
@@ -615,7 +615,7 @@ void MiscAssets::WorldMapTerrain::init()
 	const std::string filename("TERRAIN.IMG");
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Skip the .IMG header.
 	stream->seekg(12);
@@ -683,7 +683,7 @@ void MiscAssets::parseQuestionTxt()
 	const std::string filename = "QUESTION.TXT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -805,7 +805,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 	const std::string filename = "CLASSES.DAT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -1017,7 +1017,7 @@ void MiscAssets::parseDungeonTxt()
 	const std::string filename = "DUNGEON.TXT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -1080,7 +1080,7 @@ void MiscAssets::parseArtifactText()
 		std::array<MiscAssets::ArtifactTavernText, 16> &artifactTavernText)
 	{
 		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-		DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+		DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 		stream->seekg(0, std::ios::end);
 		std::vector<uint8_t> srcData(stream->tellg());
@@ -1118,7 +1118,7 @@ void MiscAssets::parseTradeText()
 		MiscAssets::TradeText::FunctionArray &functionArr)
 	{
 		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-		DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+		DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 		stream->seekg(0, std::ios::end);
 		std::vector<uint8_t> srcData(stream->tellg());
@@ -1151,7 +1151,7 @@ void MiscAssets::parseNameChunks()
 	const std::string filename("NAMECHNK.DAT");
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -1188,7 +1188,7 @@ void MiscAssets::parseStandardSpells()
 	const std::string filename = "SPELLSG.65";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -1203,7 +1203,7 @@ void MiscAssets::parseSpellMakerDescriptions()
 	const std::string filename = "SPELLMKR.TXT";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -1269,7 +1269,7 @@ void MiscAssets::parseWorldMapMasks()
 	const std::string filename = "TAMRIEL.MNU";
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());

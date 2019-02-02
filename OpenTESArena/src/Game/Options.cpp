@@ -442,128 +442,128 @@ void Options::setString(const std::string &section, const std::string &key,
 
 void Options::checkGraphics_ScreenWidth(int value) const
 {
-	DebugAssert(value > 0, "Screen width must be positive.");
+	DebugAssertMsg(value > 0, "Screen width must be positive.");
 }
 
 void Options::checkGraphics_ScreenHeight(int value) const
 {
-	DebugAssert(value > 0, "Screen height must be positive.");
+	DebugAssertMsg(value > 0, "Screen height must be positive.");
 }
 
 void Options::checkGraphics_TargetFPS(int value) const
 {
-	DebugAssert(value >= Options::MIN_FPS, "Target FPS cannot be less than " +
+	DebugAssertMsg(value >= Options::MIN_FPS, "Target FPS cannot be less than " +
 		std::to_string(Options::MIN_FPS) + ".");
 }
 
 void Options::checkGraphics_ResolutionScale(double value) const
 {
-	DebugAssert(value > 0.0, "Resolution scale must be positive.");
-	DebugAssert(value <= Options::MAX_RESOLUTION_SCALE,
+	DebugAssertMsg(value > 0.0, "Resolution scale must be positive.");
+	DebugAssertMsg(value <= Options::MAX_RESOLUTION_SCALE,
 		"Resolution scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
 }
 
 void Options::checkGraphics_VerticalFOV(double value) const
 {
-	DebugAssert(value >= Options::MIN_VERTICAL_FOV, "Vertical FOV cannot be less than " +
+	DebugAssertMsg(value >= Options::MIN_VERTICAL_FOV, "Vertical FOV cannot be less than " +
 		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + ".");
-	DebugAssert(value <= Options::MAX_VERTICAL_FOV, "Vertical FOV cannot be greater than " +
+	DebugAssertMsg(value <= Options::MAX_VERTICAL_FOV, "Vertical FOV cannot be greater than " +
 		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
 }
 
 void Options::checkGraphics_LetterboxMode(int value) const
 {
-	DebugAssert(value >= Options::MIN_LETTERBOX_MODE, "Letterbox mode cannot be less than " +
+	DebugAssertMsg(value >= Options::MIN_LETTERBOX_MODE, "Letterbox mode cannot be less than " +
 		std::to_string(Options::MIN_LETTERBOX_MODE) + ".");
-	DebugAssert(value <= Options::MAX_LETTERBOX_MODE, "Letterbox mode cannot be greater than " +
+	DebugAssertMsg(value <= Options::MAX_LETTERBOX_MODE, "Letterbox mode cannot be greater than " +
 		std::to_string(Options::MAX_LETTERBOX_MODE) + ".");
 }
 
 void Options::checkGraphics_CursorScale(double value) const
 {
-	DebugAssert(value >= Options::MIN_CURSOR_SCALE,
+	DebugAssertMsg(value >= Options::MIN_CURSOR_SCALE,
 		"Cursor scale cannot be less than " +
 		String::fixedPrecision(Options::MIN_CURSOR_SCALE, 1) + ".");
-	DebugAssert(value <= Options::MAX_CURSOR_SCALE,
+	DebugAssertMsg(value <= Options::MAX_CURSOR_SCALE,
 		"Cursor scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
 }
 
 void Options::checkGraphics_RenderThreadsMode(int value) const
 {
-	DebugAssert(value >= Options::MIN_RENDER_THREADS_MODE,
+	DebugAssertMsg(value >= Options::MIN_RENDER_THREADS_MODE,
 		"Render threads mode cannot be less than " +
 		std::to_string(Options::MIN_RENDER_THREADS_MODE) + ".");
-	DebugAssert(value <= Options::MAX_RENDER_THREADS_MODE,
+	DebugAssertMsg(value <= Options::MAX_RENDER_THREADS_MODE,
 		"Render threads mode cannot be greater than " +
 		std::to_string(Options::MAX_RENDER_THREADS_MODE) + ".");
 }
 
 void Options::checkAudio_MusicVolume(double value) const
 {
-	DebugAssert(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
-	DebugAssert(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
+	DebugAssertMsg(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
+	DebugAssertMsg(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
 		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
 }
 
 void Options::checkAudio_SoundVolume(double value) const
 {
-	DebugAssert(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
-	DebugAssert(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
+	DebugAssertMsg(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
+	DebugAssertMsg(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
 		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
 }
 
 void Options::checkAudio_SoundChannels(int value) const
 {
-	DebugAssert(value >= Options::MIN_SOUND_CHANNELS, "Sound channel count cannot be less than " +
+	DebugAssertMsg(value >= Options::MIN_SOUND_CHANNELS, "Sound channel count cannot be less than " +
 		std::to_string(Options::MIN_SOUND_CHANNELS) + ".");
 }
 
 void Options::checkAudio_SoundResampling(int value) const
 {
-	DebugAssert(value >= 0, "Sound resampling value cannot be negative.");
-	DebugAssert(value < Options::RESAMPLING_OPTION_COUNT,
+	DebugAssertMsg(value >= 0, "Sound resampling value cannot be negative.");
+	DebugAssertMsg(value < Options::RESAMPLING_OPTION_COUNT,
 		"Sound resampling value cannot be greater than " +
 		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
 }
 
 void Options::checkInput_HorizontalSensitivity(double value) const
 {
-	DebugAssert(value >= Options::MIN_HORIZONTAL_SENSITIVITY,
+	DebugAssertMsg(value >= Options::MIN_HORIZONTAL_SENSITIVITY,
 		"Horizontal sensitivity cannot be less than " +
 		String::fixedPrecision(Options::MIN_HORIZONTAL_SENSITIVITY, 1) + ".");
-	DebugAssert(value <= Options::MAX_HORIZONTAL_SENSITIVITY,
+	DebugAssertMsg(value <= Options::MAX_HORIZONTAL_SENSITIVITY,
 		"Horizontal sensitivity cannot be greater than " +
 		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
 }
 
 void Options::checkInput_VerticalSensitivity(double value) const
 {
-	DebugAssert(value >= Options::MIN_VERTICAL_SENSITIVITY,
+	DebugAssertMsg(value >= Options::MIN_VERTICAL_SENSITIVITY,
 		"Vertical sensitivity cannot be less than " +
 		String::fixedPrecision(Options::MIN_VERTICAL_SENSITIVITY, 1) + ".");
-	DebugAssert(value <= Options::MAX_VERTICAL_SENSITIVITY,
+	DebugAssertMsg(value <= Options::MAX_VERTICAL_SENSITIVITY,
 		"Vertical sensitivity cannot be greater than " +
 		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
 }
 
 void Options::checkInput_CameraPitchLimit(double value) const
 {
-	DebugAssert(value >= Options::MIN_CAMERA_PITCH_LIMIT,
+	DebugAssertMsg(value >= Options::MIN_CAMERA_PITCH_LIMIT,
 		"Camera pitch limit cannot be less than " +
 		String::fixedPrecision(Options::MIN_CAMERA_PITCH_LIMIT, 1) + ".");
-	DebugAssert(value <= Options::MAX_CAMERA_PITCH_LIMIT,
+	DebugAssertMsg(value <= Options::MAX_CAMERA_PITCH_LIMIT,
 		"Camera pitch limit cannot be greater than " +
 		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
 }
 
 void Options::checkMisc_TimeScale(double value) const
 {
-	DebugAssert(value >= Options::MIN_TIME_SCALE,
+	DebugAssertMsg(value >= Options::MIN_TIME_SCALE,
 		"Time scale cannot be less than " +
 		String::fixedPrecision(Options::MIN_TIME_SCALE, 1) + ".");
-	DebugAssert(value <= Options::MAX_TIME_SCALE,
+	DebugAssertMsg(value <= Options::MAX_TIME_SCALE,
 		"Time scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_TIME_SCALE, 1) + ".");
 }

@@ -155,7 +155,7 @@ INFFile::INFFile(const std::string &filename)
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
 	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename, inGlobalBSA);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -950,7 +950,7 @@ INFFile::INFFile(const std::string &filename)
 
 			// See which token the section is.
 			const auto sectionIter = Sections.find(line);
-			DebugAssert(sectionIter != Sections.end(),
+			DebugAssertMsg(sectionIter != Sections.end(),
 				"Unrecognized .INF section \"" + line + "\".");
 
 			// Flush any existing state.

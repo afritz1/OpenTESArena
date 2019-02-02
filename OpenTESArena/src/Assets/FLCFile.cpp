@@ -91,7 +91,7 @@ struct ChunkHeader
 FLCFile::FLCFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -111,7 +111,7 @@ FLCFile::FLCFile(const std::string &filename)
 	header.speed = Bytes::getLE32(srcData.data() + 16);
 
 	// This class will only support the format used by Arena (0xAF12) for now.
-	DebugAssert(header.type == static_cast<int>(FileType::FLC_TYPE),
+	DebugAssertMsg(header.type == static_cast<int>(FileType::FLC_TYPE),
 		"Unsupported file type \"" + std::to_string(header.type) + "\".");
 
 	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
@@ -201,7 +201,7 @@ Palette FLCFile::readPalette(const uint8_t *chunkData)
 {
 	// The number of elements (i.e., "groups" of pixels) should be one.
 	const uint16_t numberOfElements = Bytes::getLE16(chunkData);
-	DebugAssert(numberOfElements == 1, "Unusual palette element count \"" +
+	DebugAssertMsg(numberOfElements == 1, "Unusual palette element count \"" +
 		std::to_string(numberOfElements) + "\".");
 
 	// Skip count and color count should both be ignored (one byte each).

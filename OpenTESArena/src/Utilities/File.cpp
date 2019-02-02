@@ -10,7 +10,7 @@ std::string File::readAllText(const std::string &filename)
 {
 	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
 
-	DebugAssert(ifs.is_open(), "Could not open \"" + filename + "\".");
+	DebugAssertMsg(ifs.is_open(), "Could not open \"" + filename + "\".");
 
 	ifs.seekg(0, std::ios::end);
 	std::string text(ifs.tellg(), '\0');
@@ -30,7 +30,7 @@ bool File::exists(const std::string &filename)
 
 bool File::pathIsRelative(const std::string &filename)
 {
-	DebugAssert(filename.size() > 0, "Path cannot be empty.");
+	DebugAssertMsg(filename.size() > 0, "Path cannot be empty.");
 
 	// See which platform we're running on by comparing with names provided by SDL.
 	const std::string platformName = Platform::getPlatform();
@@ -58,7 +58,7 @@ void File::copy(const std::string &srcFilename, const std::string &dstFilename)
 	std::ifstream ifs(srcFilename, std::ios::binary);
 	std::ofstream ofs(dstFilename, std::ios::binary);
 
-	DebugAssert(ifs.is_open(), "Cannot open \"" + srcFilename + "\" for copying.");
+	DebugAssertMsg(ifs.is_open(), "Cannot open \"" + srcFilename + "\" for copying.");
 
 	// Copy the source file to the destination.
 	ofs << ifs.rdbuf();

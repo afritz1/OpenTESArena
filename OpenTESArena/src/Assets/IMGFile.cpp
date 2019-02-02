@@ -54,7 +54,7 @@ IMGFile::IMGFile(const std::string &filename)
 	}
 
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -217,7 +217,7 @@ Palette IMGFile::readPalette(const uint8_t *paletteData)
 Palette IMGFile::extractPalette(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -233,7 +233,7 @@ Palette IMGFile::extractPalette(const std::string &filename)
 	const int headerSize = 12;
 
 	// Don't try to read a built-in palette is there isn't one.
-	DebugAssert((flags & 0x0100) != 0, "\"" + filename +
+	DebugAssertMsg((flags & 0x0100) != 0, "\"" + filename +
 		"\" has no built-in palette to extract.");
 
 	// Get the palette.

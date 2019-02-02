@@ -25,7 +25,7 @@ enum class BlockType : uint8_t
 VOCFile::VOCFile(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -39,8 +39,8 @@ VOCFile::VOCFile(const std::string &filename)
 	const uint16_t versionNumber = Bytes::getLE16(srcData.data() + 22);
 	const uint16_t checksum = Bytes::getLE16(srcData.data() + 24);
 
-	DebugAssert(eofByte == 0x1A, "Invalid EOF byte \"" + std::to_string(eofByte) + "\".");
-	DebugAssert(checksum == (~versionNumber + 0x1234), 
+	DebugAssertMsg(eofByte == 0x1A, "Invalid EOF byte \"" + std::to_string(eofByte) + "\".");
+	DebugAssertMsg(checksum == (~versionNumber + 0x1234),
 		"Invalid checksum \"" + std::to_string(checksum) + "\".");
 
 	// Set the default sample rate to 0. Assume that a .VOC file has the same sample rate

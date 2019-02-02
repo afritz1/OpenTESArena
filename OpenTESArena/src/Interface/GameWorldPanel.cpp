@@ -213,7 +213,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 							return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
 						});
 
-						DebugAssert(pairIter != clocksAndIndices.rend(), "No valid time of day.");
+						DebugAssertMsg(pairIter != clocksAndIndices.rend(), "No valid time of day.");
 						return pairIter->second;
 					}();
 

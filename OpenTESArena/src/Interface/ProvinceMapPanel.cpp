@@ -380,7 +380,7 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 		}
 	}
 
-	DebugAssert(closestID >= 0, "No closest location ID found.");
+	DebugAssertMsg(closestID >= 0, "No closest location ID found.");
 	return closestID;
 }
 

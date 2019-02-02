@@ -199,7 +199,7 @@ bool KeyValueMap::getBoolean(const std::string &section, const std::string &key)
 {
 	const std::string &value = this->getValue(section, key);
 	const auto iter = BooleanStrings.find(value);
-	DebugAssert(iter != BooleanStrings.end(), "\"" + key + "\" value \"" +
+	DebugAssertMsg(iter != BooleanStrings.end(), "\"" + key + "\" value \"" +
 		value + "\" in " + this->filename + " must be true or false.");
 
 	return iter->second;

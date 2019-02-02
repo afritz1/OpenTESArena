@@ -203,7 +203,7 @@ namespace
 ExeUnpacker::ExeUnpacker(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
@@ -237,7 +237,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);
-	DebugAssert(lastCompWord == 0xFFFF, "Invalid last compressed word \"" + 
+	DebugAssertMsg(lastCompWord == 0xFFFF, "Invalid last compressed word \"" +
 		String::toHexString(lastCompWord) + "\".");
 
 	// Calculate length of decompressed data -- more precise method (for A.EXE).

@@ -43,7 +43,7 @@ const CharacterClassGeneration::ClassData &CharacterClassGeneration::getClassDat
 			return (choice.a == a) && (choice.b == b) && (choice.c == c);
 		});
 
-		DebugAssert(iter != this->choices.end(), "No class mapping found (a:" +
+		DebugAssertMsg(iter != this->choices.end(), "No class mapping found (a:" +
 			std::to_string(a) + ", b:" + std::to_string(b) + ", c:" + std::to_string(c) + ").");
 		return static_cast<int>(std::distance(this->choices.begin(), iter));
 	}();

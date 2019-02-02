@@ -55,14 +55,14 @@ Game::Game()
 	}();
 
 	const std::string globalBsaPath = fullArenaPath + "GLOBAL.BSA";
-	DebugAssert(File::exists(globalBsaPath),
+	DebugAssertMsg(File::exists(globalBsaPath),
 		"\"" + this->options.getMisc_ArenaPath() + "\" not a valid ARENA path.");
 
 	// Verify that the floppy version's executable exists. If not, it's probably the CD version,
 	// which is not currently supported.
 	const std::string exeName = "A.EXE";
 	const std::string exePath = fullArenaPath + exeName;
-	DebugAssert(File::exists(exePath), exeName + " not found in \"" + fullArenaPath +
+	DebugAssertMsg(File::exists(exePath), exeName + " not found in \"" + fullArenaPath +
 		"\". The CD version is not supported. Please use the floppy version.");
 
 	// Initialize virtual file system using the Arena path in the options file.
@@ -196,11 +196,11 @@ void Game::popSubPanel()
 {
 	// The active sub-panel must not pop more than one sub-panel, because it may 
 	// have unintended side effects for other panels below it.
-	DebugAssert(!this->requestedSubPanelPop, "Already scheduled to pop sub-panel.");
+	DebugAssertMsg(!this->requestedSubPanelPop, "Already scheduled to pop sub-panel.");
 
 	// If there are no sub-panels, then there is only the main panel, and panels 
 	// should never have any sub-panels to pop.
-	DebugAssert(this->subPanels.size() > 0, "No sub-panels to pop.");
+	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
 
 	this->requestedSubPanelPop = true;
 }

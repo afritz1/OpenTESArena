@@ -367,7 +367,7 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 		return provinceRect.containsInclusive(globalPoint);
 	});
 
-	DebugAssert(iter != this->provinces.end(), "No matching province for global point (" +
+	DebugAssertMsg(iter != this->provinces.end(), "No matching province for global point (" +
 		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
 
 	const Int2 localPoint = CityDataFile::globalPointToLocal(globalPoint, provinceRect);
@@ -533,7 +533,7 @@ Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
 void CityDataFile::init(const std::string &filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssert(stream != nullptr, "Could not open \"" + filename + "\".");
+	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	stream->seekg(0, std::ios::end);
 	std::vector<uint8_t> srcData(stream->tellg());
