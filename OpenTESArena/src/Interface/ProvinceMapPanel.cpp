@@ -24,6 +24,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
 #include "../Media/FontManager.h"
@@ -889,10 +890,10 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, renderer);
 
 	// Clamp to screen edges, with some extra space on the left and right.
-	const int x = std::max(std::min(textBox.getX(),
-		Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2), 2);
-	const int y = std::max(std::min(textBox.getY(),
-		Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2), 2);
+	const int x = MathUtils::clamp(textBox.getX(),
+		2, Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2);
+	const int y = MathUtils::clamp(textBox.getY(),
+		2, Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2);
 
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }

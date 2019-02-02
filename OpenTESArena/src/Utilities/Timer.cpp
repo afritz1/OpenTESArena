@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "Timer.h"
+#include "../Math/MathUtils.h"
 
 Timer::Timer(double targetSeconds)
 {
@@ -21,7 +22,7 @@ double Timer::getTargetSeconds() const
 double Timer::getPercent() const
 {
 	const double percent = this->currentSeconds / this->targetSeconds;
-	return std::min(std::max(percent, 0.0), 1.0);
+	return MathUtils::clamp(percent, 0.0, 1.0);
 }
 
 bool Timer::isDone() const

@@ -4,6 +4,7 @@
 #include "CityDataFile.h"
 #include "ExeData.h"
 #include "MiscAssets.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Utilities/Bytes.h"
 #include "../Utilities/Debug.h"
@@ -458,7 +459,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 	{
 		const int minDays = 1;
 		const int maxDays = 2000;
-		int days = std::min(std::max(totalTime / 100, minDays), maxDays);
+		int days = MathUtils::clamp(totalTime / 100, minDays, maxDays);
 
 		if (days > 20)
 		{

@@ -2361,8 +2361,8 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		{
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
-			const int weaponHeight = std::max(std::min(weaponTexture.getHeight() + 1,
-				(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) - weaponOffset.y), 0);
+			const int weaponHeight = MathUtils::clamp(weaponTexture.getHeight() + 1,
+				0, (Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) - weaponOffset.y);
 			renderer.drawOriginal(weaponTexture.get(),
 				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
 		}
