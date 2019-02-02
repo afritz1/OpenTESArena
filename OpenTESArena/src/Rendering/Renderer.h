@@ -43,7 +43,7 @@ private:
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
 	// Helper method for making a renderer context.
-	SDL_Renderer *createRenderer();
+	static SDL_Renderer *createRenderer(SDL_Window *window);
 
 	// For use with window dimensions, etc.. No longer used for rendering.
 	SDL_Surface *getWindowSurface() const;

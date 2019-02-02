@@ -40,13 +40,13 @@ Renderer::~Renderer()
 	SDL_DestroyRenderer(this->renderer);
 }
 
-SDL_Renderer *Renderer::createRenderer()
+SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 {
 	// Automatically choose the best driver.
 	const int bestDriver = -1;
 
 	SDL_Renderer *rendererContext = SDL_CreateRenderer(
-		this->window, bestDriver, SDL_RENDERER_ACCELERATED);
+		window, bestDriver, SDL_RENDERER_ACCELERATED);
 	DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer");
 
 	// Set pixel interpolation hint.
@@ -59,7 +59,7 @@ SDL_Renderer *Renderer::createRenderer()
 
 	// Set the size of the render texture to be the size of the whole screen
 	// (it automatically scales otherwise).
-	auto *nativeSurface = this->getWindowSurface();
+	SDL_Surface *nativeSurface = SDL_GetWindowSurface(window);
 
 	// If this fails, we might not support hardware accelerated renderers for some reason
 	// (such as with Linux), so we retry with software.
@@ -69,10 +69,10 @@ SDL_Renderer *Renderer::createRenderer()
 
 		SDL_DestroyRenderer(rendererContext);
 
-		rendererContext = SDL_CreateRenderer(this->window, bestDriver, SDL_RENDERER_SOFTWARE);
+		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
 		DebugAssert(rendererContext != nullptr, "SDL_CreateRenderer software");
 
-		nativeSurface = this->getWindowSurface();
+		nativeSurface = SDL_GetWindowSurface(window);
 	}
 
 	DebugAssert(nativeSurface != nullptr, "SDL_GetWindowSurface");
@@ -313,7 +313,7 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 	DebugAssert(this->window != nullptr, "SDL_CreateWindow");
 
 	// Initialize renderer context.
-	this->renderer = this->createRenderer();
+	this->renderer = Renderer::createRenderer(this->window);
 
 	// Use window dimensions, just in case it's fullscreen and the given width and
 	// height are ignored.
