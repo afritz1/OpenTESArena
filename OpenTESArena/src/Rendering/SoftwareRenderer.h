@@ -334,6 +334,9 @@ private:
 	// Angle of the sky gradient above the horizon, in degrees.
 	static const double SKY_GRADIENT_ANGLE;
 
+	// Max angle of distant clouds above the horizon, in degrees.
+	static const double DISTANT_CLOUDS_MAX_ANGLE;
+
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.

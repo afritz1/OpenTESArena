@@ -418,6 +418,7 @@ const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
 const int SoftwareRenderer::NO_SUN = -1;
 const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
+const double SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE = 25.0;
 const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
@@ -5472,10 +5473,10 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 			const DistantSky::AirObject &air = *obj.air;
 			xAngleRadians = air.getAngleRadians();
 
-			// 0 is at horizon, 1 is at top of sky gradient.
+			// 0 is at horizon, 1 is at top of distant cloud height limit.
 			const double gradientPercent = air.getHeight();
 			yAngleRadians = gradientPercent *
-				(SoftwareRenderer::SKY_GRADIENT_ANGLE * Constants::DegToRad);
+				(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
 
 			texture = &skyTextures.at(obj.textureIndex);
 		}
@@ -5521,6 +5522,9 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				objPointTop, objPointBottom, camera, frame);
 		}();
 
+		// The object's shading depends on whether it's an animated land (i.e., volcano).
+		const bool emissive = obj.type == DistantObject::Type::AnimatedLand;
+
 		// The position of the object's left and right edges depends on whether
 		// parallax is enabled.
 		if (parallaxSky)
@@ -5540,9 +5544,13 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 			// Determine if the object is at least partially on-screen by checking that the left
 			// direction is not outside the right side and the right direction is not outside the
 			// left.
-			const bool leftDirGood = frustumRightPerp.dot(objDirLeft2D) >= 0.0;
-			const bool rightDirGood = frustumLeftPerp.dot(objDirRight2D) >= 0.0;
-			const bool onScreen = leftDirGood && rightDirGood;
+			const bool onScreen = [&frustumLeftPerp, &frustumRightPerp,
+				&objDirLeft2D, &objDirRight2D]()
+			{
+				const bool leftDirGood = frustumRightPerp.dot(objDirLeft2D) >= 0.0;
+				const bool rightDirGood = frustumLeftPerp.dot(objDirRight2D) >= 0.0;
+				return leftDirGood && rightDirGood;
+			}();
 
 			if (onScreen)
 			{
@@ -5563,8 +5571,6 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				const int xScreenEnd = static_cast<int>(xProjEnd * frame.widthReal);
 				const int xDrawStart = std::max(xScreenStart, startX);
 				const int xDrawEnd = std::min(xScreenEnd, endX);
-
-				const bool emissive = obj.type == DistantObject::Type::AnimatedLand;
 
 				for (int x = xDrawStart; x < xDrawEnd; x++)
 				{
@@ -5596,10 +5602,48 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;
 
-			// Project the point. Instead of getting left and right angles, get left and right
-			// X screen coordinates to determine if it's on-screen.
+			// Project the center point on-screen and get its projected X coordinate.
+			const Double4 objProjPoint = camera.transform * Double4(objPoint, 1.0);
+			const double xProjCenter = 0.50 + ((objProjPoint.x / objProjPoint.w) * 0.50);
 
-			DebugNotImplemented();
+			// Calculate the projected width of the object so we can get the left and right X
+			// coordinates on-screen.
+			const double objProjWidth = objWidth * (camera.zoom / camera.aspect);
+			const double objProjHalfWidth = objProjWidth * 0.50;
+			
+			// Left and right coordinates of the object in screen space.
+			const double xProjStart = xProjCenter - objProjHalfWidth;
+			const double xProjEnd = xProjCenter + objProjHalfWidth;
+
+			const Double2 objDir2D(objDir.x, objDir.z);
+			const bool onScreen = (objDir2D.dot(forward) > 0.0) &&
+				(xProjStart <= 1.0) && (xProjEnd >= 0.0);
+
+			if (onScreen)
+			{
+				// Get the start and end X pixel coordinates and then render columns.
+				const int xScreenStart = static_cast<int>(xProjStart * frame.widthReal);
+				const int xScreenEnd = static_cast<int>(xProjEnd * frame.widthReal);
+				const int xDrawStart = std::max(xScreenStart, startX);
+				const int xDrawEnd = std::min(xScreenEnd, endX);
+
+				for (int x = xDrawStart; x < xDrawEnd; x++)
+				{
+					// Percent X across the screen.
+					const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
+
+					// Percentage across the horizontal span of the object in screen space.
+					const double widthPercent = MathUtils::clamp(
+						(xPercent - xProjStart) / (xProjEnd - xProjStart),
+						0.0, Constants::JustBelowOne);
+
+					// Horizontal texture coordinate, not accounting for parallax.
+					const double u = widthPercent;
+
+					SoftwareRenderer::drawDistantPixels(x, drawRange, u, 0.0,
+						Constants::JustBelowOne, *texture, emissive, shadingInfo, frame);
+				}
+			}
 		}
 	}
 }
