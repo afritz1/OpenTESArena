@@ -250,6 +250,25 @@ private:
 		DistantObject(int textureIndex, DistantObject::Type type, const void *obj);
 	};
 
+	// A distant object that has been projected on-screen and is at least partially visible.
+	struct VisDistantObject
+	{
+		const SkyTexture *texture;
+		DrawRange drawRange;
+		double xAngleStart, xAngleEnd; // For parallax texture coordinates.
+		double xProjStart, xProjEnd; // Projected screen coordinates.
+		int xStart, xEnd; // Pixel coordinates.
+		bool emissive; // Only animated lands (i.e., volcanoes) are emissive.
+
+		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, double xAngleStart,
+			double xAngleEnd, double xProjStart, double xProjEnd, int xStart, int xEnd,
+			bool emissive);
+
+		// Constructor for non-parallax visible distant object.
+		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, double xProjStart,
+			double xProjEnd, int xStart, int xEnd, bool emissive);
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -263,11 +282,12 @@ private:
 		struct DistantSky
 		{
 			int threadsDone;
-			const std::vector<DistantObject> *distantObjects;
+			const std::vector<VisDistantObject> *visDistantObjs;
 			const std::vector<SkyTexture> *skyTextures;
 			bool parallaxSky;
+			bool doneVisTesting; // True when render threads can start rendering distant sky.
 
-			void init(bool parallaxSky, const std::vector<DistantObject> &distantObjects,
+			void init(bool parallaxSky, const std::vector<VisDistantObject> &visDistantObjs,
 				const std::vector<SkyTexture> &skyTextures);
 		};
 
@@ -342,6 +362,7 @@ private:
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	std::vector<DistantObject> distantObjects; // Distant sky objects (mountains, clouds, etc.).
+	std::vector<VisDistantObject> visDistantObjs; // Visible distant sky objects.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
@@ -366,6 +387,10 @@ private:
 	// Turns off each thread in the render threads list peacefully. The render threads are expected
 	// to be at their initial wait condition before being given the go + destruct signals.
 	void resetRenderThreads();
+
+	// Refreshes the list of distant objects to be drawn.
+	void updateVisibleDistantObjects(bool parallaxSky, const Camera &camera,
+		const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -522,7 +547,7 @@ private:
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
-		const std::vector<DistantObject> &distantObjects, const Camera &camera,
+		const std::vector<VisDistantObject> &visDistantObjs, const Camera &camera,
 		const std::vector<SkyTexture> &skyTextures, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
 
