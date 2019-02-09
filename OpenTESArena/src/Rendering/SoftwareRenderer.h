@@ -389,8 +389,8 @@ private:
 	void resetRenderThreads();
 
 	// Refreshes the list of distant objects to be drawn.
-	void updateVisibleDistantObjects(bool parallaxSky, const Camera &camera,
-		const FrameView &frame);
+	void updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
+		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);

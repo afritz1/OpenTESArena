@@ -113,28 +113,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->frustumRightZ = frustumRight.y;
 
 	// Vertical angle of the camera relative to the horizon.
-	this->yAngleRadians = [&direction]()
-	{
-		// Get the length of the direction vector's projection onto the XZ plane.
-		const double xzProjection = std::sqrt(
-			(direction.x * direction.x) + (direction.z * direction.z));
-
-		if (direction.y > 0.0)
-		{
-			// Above the horizon.
-			return std::acos(xzProjection);
-		}
-		else if (direction.y < 0.0)
-		{
-			// Below the horizon.
-			return -std::acos(xzProjection);
-		}
-		else
-		{
-			// At the horizon.
-			return 0.0;
-		}
-	}();
+	this->yAngleRadians = MathUtils::getYAngleRadians(direction.x, direction.y, direction.z);
 
 	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
 	// player's 3D direction and field of view. First get the player's angle relative to the 
@@ -867,8 +846,8 @@ void SoftwareRenderer::resetRenderThreads()
 	this->threadData.isDestructing = false;
 }
 
-void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camera &camera,
-	const FrameView &frame)
+void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
+	const Camera &camera, const FrameView &frame)
 {
 	this->visDistantObjs.clear();
 
@@ -882,60 +861,18 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camer
 	const Double2 frustumLeftPerp = frustumLeft.rightPerp();
 	const Double2 frustumRightPerp = frustumRight.leftPerp();
 
-	for (const auto &obj : this->distantObjects)
+	// Lambda for checking if the given object properties make it appear on-screen, and if
+	// so, adding it to the visible objects list.
+	auto tryAddObject = [this, parallaxSky, &camera, &frame, &forward, &frustumLeftPerp,
+		&frustumRightPerp](const SkyTexture &texture, double xAngleRadians,
+			double yAngleRadians, bool emissive)
 	{
-		const SkyTexture *texture = nullptr;
-		double xAngleRadians, yAngleRadians;
-		bool emissive;
-
-		if (obj.type == DistantObject::Type::Land)
-		{
-			const DistantSky::LandObject &land = *obj.land;
-			texture = &skyTextures.at(obj.textureIndex);
-			xAngleRadians = land.getAngleRadians();
-			yAngleRadians = 0.0;
-			emissive = false;
-		}
-		else if (obj.type == DistantObject::Type::AnimatedLand)
-		{
-			const DistantSky::AnimatedLandObject &animLand = *obj.animLand;
-			texture = &skyTextures.at(obj.textureIndex + animLand.getIndex());
-			xAngleRadians = animLand.getAngleRadians();
-			yAngleRadians = 0.0;
-			emissive = true;
-		}
-		else if (obj.type == DistantObject::Type::Air)
-		{
-			const DistantSky::AirObject &air = *obj.air;
-			texture = &skyTextures.at(obj.textureIndex);
-			xAngleRadians = air.getAngleRadians();
-			yAngleRadians = [&air]()
-			{
-				// 0 is at horizon, 1 is at top of distant cloud height limit.
-				const double gradientPercent = air.getHeight();
-				return gradientPercent *
-					(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
-			}();
-
-			emissive = false;
-		}
-		else if (obj.type == DistantObject::Type::Space)
-		{
-			const DistantSky::SpaceObject &space = *obj.space;
-			DebugNotImplemented();
-		}
-		else
-		{
-			throw DebugException("Invalid distant object type \"" +
-				std::to_string(static_cast<int>(obj.type)) + "\".");
-		}
-
 		// The size of textures in world space is based on 320px being 1 unit, and a 320px
 		// wide texture spans a screen's worth of horizontal FOV.
 		constexpr double identityDim = 320.0;
 		constexpr double identityAngleRadians = 90.0 * Constants::DegToRad;
-		const double objWidth = static_cast<double>(texture->width) / identityDim;
-		const double objHeight = static_cast<double>(texture->height) / identityDim;
+		const double objWidth = static_cast<double>(texture.width) / identityDim;
+		const double objHeight = static_cast<double>(texture.height) / identityDim;
 		const double objHalfWidth = objWidth * 0.50;
 
 		// Y position on-screen is the same regardless of parallax.
@@ -957,6 +894,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camer
 			const Double3 objPointTop = camera.eye + objDirTop;
 			const Double3 objPointBottom = camera.eye + objDirBottom;
 
+			// @todo: replace with manual Y projection so the sun doesn't get squished the
+			// higher it is.
 			return SoftwareRenderer::makeDrawRange(
 				objPointTop, objPointBottom, camera, frame);
 		}();
@@ -1010,7 +949,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camer
 					xProjEnd * frame.widthReal, frame.width);
 
 				this->visDistantObjs.push_back(VisDistantObject(
-					*texture, std::move(drawRange), xAngleRadiansLeft, xAngleRadiansRight,
+					texture, std::move(drawRange), xAngleRadiansLeft, xAngleRadiansRight,
 					xProjStart, xProjEnd, xDrawStart, xDrawEnd, emissive));
 			}
 		}
@@ -1018,9 +957,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camer
 		{
 			// Classic rendering. Render the object based on its midpoint.
 			const Double3 objDir(
-				std::cos(xAngleRadians + Constants::Pi),
+				std::cos(xAngleRadians),
 				0.0,
-				std::sin(xAngleRadians + Constants::Pi));
+				std::sin(xAngleRadians));
 
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;
@@ -1051,9 +990,79 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Camer
 					xProjEnd * frame.widthReal, frame.width);
 
 				this->visDistantObjs.push_back(VisDistantObject(
-					*texture, std::move(drawRange), xProjStart, xProjEnd, xDrawStart,
+					texture, std::move(drawRange), xProjStart, xProjEnd, xDrawStart,
 					xDrawEnd, emissive));
 			}
+		}
+	};
+
+	// Iterate all distant objects and gather up the visible ones.
+	for (const auto &obj : this->distantObjects)
+	{
+		const SkyTexture *texture = nullptr;
+		double xAngleRadians, yAngleRadians;
+		bool emissive;
+
+		if (obj.type == DistantObject::Type::Land)
+		{
+			const DistantSky::LandObject &land = *obj.land;
+			texture = &skyTextures.at(obj.textureIndex);
+			xAngleRadians = land.getAngleRadians();
+			yAngleRadians = 0.0;
+			emissive = false;
+		}
+		else if (obj.type == DistantObject::Type::AnimatedLand)
+		{
+			const DistantSky::AnimatedLandObject &animLand = *obj.animLand;
+			texture = &skyTextures.at(obj.textureIndex + animLand.getIndex());
+			xAngleRadians = animLand.getAngleRadians();
+			yAngleRadians = 0.0;
+			emissive = true;
+		}
+		else if (obj.type == DistantObject::Type::Air)
+		{
+			const DistantSky::AirObject &air = *obj.air;
+			texture = &skyTextures.at(obj.textureIndex);
+			xAngleRadians = air.getAngleRadians();
+			yAngleRadians = [&air]()
+			{
+				// 0 is at horizon, 1 is at top of distant cloud height limit.
+				const double gradientPercent = air.getHeight();
+				return gradientPercent *
+					(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
+			}();
+
+			emissive = false;
+		}
+		else if (obj.type == DistantObject::Type::Space)
+		{
+			const DistantSky::SpaceObject &space = *obj.space;
+			DebugNotImplemented();
+		}
+		else
+		{
+			throw DebugException("Invalid distant object type \"" +
+				std::to_string(static_cast<int>(obj.type)) + "\".");
+		}
+
+		tryAddObject(*texture, xAngleRadians, yAngleRadians, emissive);
+	}
+
+	// Try to add the sun to the visible distant objects.
+	if (this->sunTextureIndex != SoftwareRenderer::NO_SUN)
+	{
+		const SkyTexture &sunTexture = this->skyTextures.at(this->sunTextureIndex);
+		const double sunXAngleRadians = SoftwareRenderer::fullAtan2(
+			sunDirection.z, sunDirection.x);
+
+		// When the sun is directly above or below, it might cause the X angle to be undefined.
+		// We want to filter this out before we try projecting it on-screen.
+		if (std::isfinite(sunXAngleRadians))
+		{
+			const double sunYAngleRadians = MathUtils::getYAngleRadians(
+				sunDirection.x, sunDirection.y, sunDirection.z);
+			const bool sunEmissive = true;
+			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians, sunEmissive);
 		}
 	}
 }
@@ -5946,7 +5955,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.
-	this->updateVisibleDistantObjects(parallaxSky, camera, frame);
+	this->updateVisibleDistantObjects(parallaxSky, shadingInfo.sunDirection, camera, frame);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
