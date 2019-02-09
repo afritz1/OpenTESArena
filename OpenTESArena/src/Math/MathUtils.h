@@ -11,6 +11,9 @@ namespace MathUtils
 		return std::min(std::max(value, low), high);
 	}
 
+	// Gets Y angle of a direction relative to the horizon.
+	double getYAngleRadians(double x, double y, double z);
+
 	// Converts vertical field of view to camera zoom (where 90 degrees = 1.0 zoom).
 	double verticalFovToZoom(double fovY);
 
