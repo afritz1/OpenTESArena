@@ -876,28 +876,32 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const double objHalfWidth = objWidth * 0.50;
 
 		// Y position on-screen is the same regardless of parallax.
-		DrawRange drawRange = [yAngleRadians, identityAngleRadians,
-			objHeight, &camera, &frame]()
+		DrawRange drawRange = [yAngleRadians, identityAngleRadians, objHeight, &camera, &frame]()
 		{
-			const double yDeltaRadians = objHeight * identityAngleRadians;
-			const double yAngleRadiansTop = yAngleRadians + yDeltaRadians;
-
-			const Double3 objDirTop = Double3(
-				camera.forwardX,
-				std::sin(yAngleRadiansTop),
-				camera.forwardZ).normalized();
+			// Project the bottom first then add the object's height above it in screen-space
+			// to get the top. This keeps objects from appearing squished the higher they are
+			// in the sky. Don't need to worry about cases when the Y angle is at an extreme;
+			// the start and end projections will both be off-screen (i.e., +inf or -inf).
 			const Double3 objDirBottom = Double3(
 				camera.forwardX,
-				std::sin(yAngleRadians),
+				std::tan(yAngleRadians),
 				camera.forwardZ).normalized();
 
-			const Double3 objPointTop = camera.eye + objDirTop;
 			const Double3 objPointBottom = camera.eye + objDirBottom;
 
-			// @todo: replace with manual Y projection so the sun doesn't get squished the
-			// higher it is.
-			return SoftwareRenderer::makeDrawRange(
-				objPointTop, objPointBottom, camera, frame);
+			const double yProjEnd = SoftwareRenderer::getProjectedY(
+				objPointBottom, camera.transform, camera.yShear);
+			const double yProjStart = yProjEnd - (objHeight * camera.zoom);
+
+			const double yProjScreenStart = yProjStart * frame.heightReal;
+			const double yProjScreenEnd = yProjEnd * frame.heightReal;
+
+			const int yStart = SoftwareRenderer::getLowerBoundedPixel(
+				yProjScreenStart, frame.height);
+			const int yEnd = SoftwareRenderer::getUpperBoundedPixel(
+				yProjScreenEnd, frame.height);
+
+			return DrawRange(yProjScreenStart, yProjScreenEnd, yStart, yEnd);
 		}();
 
 		// The position of the object's left and right edges depends on whether parallax
@@ -970,7 +974,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 			// Calculate the projected width of the object so we can get the left and right X
 			// coordinates on-screen.
-			const double objProjWidth = objWidth * (camera.zoom / camera.aspect);
+			const double objProjWidth = (objWidth * camera.zoom) /
+				(camera.aspect * SoftwareRenderer::TALL_PIXEL_RATIO);
 			const double objProjHalfWidth = objProjWidth * 0.50;
 
 			// Left and right coordinates of the object in screen space.
