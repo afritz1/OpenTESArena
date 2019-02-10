@@ -164,6 +164,11 @@ WeatherTable=0x3EC60
 ClimateSpeedTables=0x3EB96
 WeatherSpeedTables=0x3EBEA
 RulerTitles=0x3EAC7
+DistantMountainFilenames=0x3F9A4
+CloudFilename=0x3F9C8
+SunFilename=0x48EDB
+MoonFilenames=0x48EE3
+StarFilename=0x48F02
 
 [Logbook]
 IsEmpty=0x42F45

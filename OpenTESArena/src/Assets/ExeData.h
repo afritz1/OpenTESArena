@@ -323,6 +323,21 @@ public:
 		// Ruler titles for cities.
 		std::array<std::string, 14> rulerTitles;
 
+		// Filenames for mountains drawn on the horizon.
+		std::array<std::string, 3> distantMountainFilenames;
+
+		// Base filename for distant clouds.
+		std::string cloudFilename;
+
+		// Filename for the sun.
+		std::string sunFilename;
+
+		// Filenames for the moons.
+		std::array<std::string, 2> moonFilenames;
+
+		// Base filename for distant stars.
+		std::string starFilename;
+
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 

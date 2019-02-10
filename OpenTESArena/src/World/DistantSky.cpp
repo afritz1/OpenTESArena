@@ -5,6 +5,7 @@
 #include "Location.h"
 #include "WeatherType.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -198,6 +199,9 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	const ClimateType climateType = Location::getCityClimateType(
 		localCityID, provinceID, miscAssets);
 
+	const auto &exeData = miscAssets.getExeData();
+	const auto &distantMountainFilenames = exeData.locations.distantMountainFilenames;
+
 	std::string baseFilename;
 	int pos;
 	int var;
@@ -206,21 +210,21 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	// Decide the base image filename, etc. based on which climate the city is in.
 	if (climateType == ClimateType::Temperate)
 	{
-		baseFilename = "temp00.img";
+		baseFilename = distantMountainFilenames.at(2);
 		pos = 4;
 		var = 10;
 		maxDigits = 2;
 	}
 	else if (climateType == ClimateType::Desert)
 	{
-		baseFilename = "desert0.img";
+		baseFilename = distantMountainFilenames.at(1);
 		pos = 6;
 		var = 4;
 		maxDigits = 1;
 	}
 	else if (climateType == ClimateType::Mountain)
 	{
-		baseFilename = "mount000.img";
+		baseFilename = distantMountainFilenames.at(0);
 		pos = 6;
 		var = 11;
 		maxDigits = 2;
@@ -308,16 +312,18 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		random.srand(cloudSeed);
 
 		const int cloudCount = 7;
+		const std::string &cloudFilename = exeData.locations.cloudFilename;
 		const int cloudPos = 5;
 		const int cloudVar = 17;
 		const int cloudMaxDigits = 2;
-		placeStaticObjects(cloudCount, "cloud00.img", cloudPos, cloudVar, cloudMaxDigits, true);
+		placeStaticObjects(cloudCount, cloudFilename, cloudPos, cloudVar, cloudMaxDigits, true);
 	}
 
 	// Other initializations (animated land, stars).
 	// @todo
 
-	this->sunSurface = &textureManager.getSurface("SUN.IMG");
+	const std::string &sunFilename = exeData.locations.sunFilename;
+	this->sunSurface = &textureManager.getSurface(String::toUppercase(sunFilename));
 }
 
 void DistantSky::update(double dt)

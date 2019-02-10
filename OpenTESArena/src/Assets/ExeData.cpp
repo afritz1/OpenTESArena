@@ -510,6 +510,11 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int climateSpeedTablesOffset = ExeData::get(section, "ClimateSpeedTables", keyValueMap);
 	const int weatherSpeedTablesOffset = ExeData::get(section, "WeatherSpeedTables", keyValueMap);
 	const int rulerTitlesOffset = ExeData::get(section, "RulerTitles", keyValueMap);
+	const int distantMountainFilenamesOffset = ExeData::get(section, "DistantMountainFilenames", keyValueMap);
+	const int cloudFilenameOffset = ExeData::get(section, "CloudFilename", keyValueMap);
+	const int sunFilenameOffset = ExeData::get(section, "SunFilename", keyValueMap);
+	const int moonFilenamesOffset = ExeData::get(section, "MoonFilenames", keyValueMap);
+	const int starFilenameOffset = ExeData::get(section, "StarFilename", keyValueMap);
 
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < this->provinceNames.size(); i++)
@@ -531,6 +536,11 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	init2DInt8Array(this->climateSpeedTables, data + climateSpeedTablesOffset);
 	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
 	initStringArray(this->rulerTitles, data + rulerTitlesOffset);
+	initStringArray(this->distantMountainFilenames, data + distantMountainFilenamesOffset);
+	this->cloudFilename = ExeData::readString(data + cloudFilenameOffset);
+	this->sunFilename = ExeData::readString(data + sunFilenameOffset);
+	initStringArray(this->moonFilenames, data + moonFilenamesOffset);
+	this->starFilename = ExeData::readString(data + starFilenameOffset);
 }
 
 void ExeData::Logbook::init(const char *data, const KeyValueMap &keyValueMap)
