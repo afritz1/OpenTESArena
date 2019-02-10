@@ -511,6 +511,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	const int weatherSpeedTablesOffset = ExeData::get(section, "WeatherSpeedTables", keyValueMap);
 	const int rulerTitlesOffset = ExeData::get(section, "RulerTitles", keyValueMap);
 	const int distantMountainFilenamesOffset = ExeData::get(section, "DistantMountainFilenames", keyValueMap);
+	const int animDistantMountainFilenamesOffset = ExeData::get(section, "AnimDistantMountainFilenames", keyValueMap);
 	const int cloudFilenameOffset = ExeData::get(section, "CloudFilename", keyValueMap);
 	const int sunFilenameOffset = ExeData::get(section, "SunFilename", keyValueMap);
 	const int moonFilenamesOffset = ExeData::get(section, "MoonFilenames", keyValueMap);
@@ -537,6 +538,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
 	initStringArray(this->rulerTitles, data + rulerTitlesOffset);
 	initStringArray(this->distantMountainFilenames, data + distantMountainFilenamesOffset);
+	initStringArray(this->animDistantMountainFilenames, data + animDistantMountainFilenamesOffset);
 	this->cloudFilename = ExeData::readString(data + cloudFilenameOffset);
 	this->sunFilename = ExeData::readString(data + sunFilenameOffset);
 	initStringArray(this->moonFilenames, data + moonFilenamesOffset);

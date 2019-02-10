@@ -913,12 +913,13 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			const double xAngleRadiansLeft = xAngleRadians - xDeltaRadians;
 			const double xAngleRadiansRight = xAngleRadians + xDeltaRadians;
 
+			const double angleBias = Constants::Pi;
 			const Double2 objDirLeft2D(
-				std::cos(xAngleRadiansLeft + Constants::Pi),
-				std::sin(xAngleRadiansLeft + Constants::Pi));
+				std::cos(xAngleRadiansLeft + angleBias),
+				std::sin(xAngleRadiansLeft + angleBias));
 			const Double2 objDirRight2D(
-				std::cos(xAngleRadiansRight + Constants::Pi),
-				std::sin(xAngleRadiansRight + Constants::Pi));
+				std::cos(xAngleRadiansRight + angleBias),
+				std::sin(xAngleRadiansRight + angleBias));
 
 			// Determine if the object is at least partially on-screen by checking that the left
 			// direction is not outside the right side and the right direction is not outside the
@@ -960,10 +961,11 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		else
 		{
 			// Classic rendering. Render the object based on its midpoint.
+			const double angleBias = 0.0;
 			const Double3 objDir(
-				std::cos(xAngleRadians),
+				std::cos(xAngleRadians + angleBias),
 				0.0,
-				std::sin(xAngleRadians));
+				std::sin(xAngleRadians + angleBias));
 
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;

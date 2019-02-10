@@ -35,7 +35,7 @@ public:
 	class AnimatedLandObject
 	{
 	private:
-		static constexpr double DEFAULT_FRAME_TIME = 1.0 / 12.0;
+		static constexpr double DEFAULT_FRAME_TIME = 1.0 / 18.0;
 
 		std::vector<const Surface*> surfaces;
 		double angleRadians, targetFrameTime, currentFrameTime;
@@ -84,6 +84,9 @@ public:
 		const Double3 &getDirection() const;
 	};
 private:
+	// Number of unique directions in 360 degrees.
+	static const int UNIQUE_ANGLES;
+
 	std::vector<LandObject> landObjects;
 	std::vector<AnimatedLandObject> animLandObjects;
 	std::vector<AirObject> airObjects;
@@ -108,7 +111,7 @@ public:
 	void init(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
-	void update(double dt);
+	void tick(double dt);
 };
 
 #endif

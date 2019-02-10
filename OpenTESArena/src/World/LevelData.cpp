@@ -926,3 +926,9 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		}
 	}*/
 }
+
+void LevelData::tick(double dt)
+{
+	// Do nothing by default.
+	static_cast<void>(dt);
+}

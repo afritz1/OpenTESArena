@@ -787,3 +787,8 @@ void ExteriorLevelData::setActive(TextureManager &textureManager, Renderer &rend
 	// Give distant sky data to the renderer.
 	renderer.setDistantSky(this->distantSky);
 }
+
+void ExteriorLevelData::tick(double dt)
+{
+	this->distantSky.tick(dt);
+}

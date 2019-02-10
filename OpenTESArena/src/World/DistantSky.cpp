@@ -142,6 +142,8 @@ const Double3 &DistantSky::SpaceObject::getDirection() const
 	return this->direction;
 }
 
+const int DistantSky::UNIQUE_ANGLES = 512;
+
 DistantSky::DistantSky()
 {
 	this->sunSurface = nullptr;
@@ -240,8 +242,15 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	ArenaRandom random(citySeed);
 	const int count = (random.next() % 4) + 2;
 
+	// Converts an Arena angle to an actual angle in radians.
+	auto arenaAngleToRadians = [](int angle)
+	{
+		return (Constants::Pi * 2.0) * (static_cast<double>(angle) /
+			static_cast<double>(DistantSky::UNIQUE_ANGLES));
+	};
+
 	// Lambda for creating images with certain sky parameters.
-	auto placeStaticObjects = [this, &textureManager, &random](int count,
+	auto placeStaticObjects = [this, &textureManager, &random, &arenaAngleToRadians](int count,
 		const std::string &baseFilename, int pos, int var, int maxDigits, bool randomHeight)
 	{
 		for (int i = 0; i < count; i++)
@@ -280,10 +289,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			const int yPos = randomHeight ? (random.next() % yPosLimit) : 0;
 
 			// Convert from Arena units to radians.
-			constexpr int arenaAngleLimit = 512;
-			const int arenaAngle = random.next() % arenaAngleLimit;
-			const double angleRadians = (Constants::Pi * 2.0) *
-				(static_cast<double>(arenaAngle) / static_cast<double>(arenaAngleLimit));
+			const int arenaAngle = random.next() % DistantSky::UNIQUE_ANGLES;
+			const double angleRadians = arenaAngleToRadians(arenaAngle);
 
 			// The object is either land or a cloud, currently determined by 'randomHeight' as
 			// a shortcut. Land objects have no height. I'm doing it this way because LandObject
@@ -319,14 +326,75 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		placeStaticObjects(cloudCount, cloudFilename, cloudPos, cloudVar, cloudMaxDigits, true);
 	}
 
-	// Other initializations (animated land, stars).
+	// Initialize animated lands (if any).
+	const bool hasAnimLand = provinceID == 3;
+	if (hasAnimLand)
+	{
+		// Position of animated land on province map; determines where it is on the horizon
+		// for each location.
+		const Int2 animLandGlobalPos(132, 52);
+		const Int2 locationGlobalPos = cityDataFile.getLocalCityPoint(citySeed);
+
+		// Distance on province map from current location to the animated land.
+		const int dist = CityDataFile::getDistance(locationGlobalPos, animLandGlobalPos);
+
+		// Position of the animated land on the horizon.
+		const double angle = std::atan2(
+			static_cast<double>(animLandGlobalPos.y - locationGlobalPos.y),
+			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
+
+		// Use different animations based on the map distance.
+		const int animIndex = [dist]()
+		{
+			if (dist < 80)
+			{
+				return 0;
+			}
+			else if (dist < 150)
+			{
+				return 1;
+			}
+			else
+			{
+				return 2;
+			}
+		}();
+
+		const auto &animFilenames = exeData.locations.animDistantMountainFilenames;
+		const std::string animFilename = String::toUppercase(animFilenames.at(animIndex));
+
+		// .DFAs have multiple frames, .IMGs do not.
+		const bool hasMultipleFrames = animFilename.find(".DFA") != std::string::npos;
+
+		AnimatedLandObject animLandObj(angle);
+
+		// Determine which frames the animation will have.
+		if (hasMultipleFrames)
+		{
+			const auto &animSurfaces = textureManager.getSurfaces(animFilename);
+			for (auto &surface : animSurfaces)
+			{
+				animLandObj.addSurface(surface);
+			}
+		}
+		else
+		{
+			const auto &surface = textureManager.getSurface(animFilename);
+			animLandObj.addSurface(surface);
+		}
+
+		this->animLandObjects.push_back(std::move(animLandObj));
+	}
+
+	// Other initializations (stars).
 	// @todo
 
+	// Initialize sun texture.
 	const std::string &sunFilename = exeData.locations.sunFilename;
 	this->sunSurface = &textureManager.getSurface(String::toUppercase(sunFilename));
 }
 
-void DistantSky::update(double dt)
+void DistantSky::tick(double dt)
 {
 	// Only animated distant land needs updating.
 	for (auto &anim : this->animLandObjects)

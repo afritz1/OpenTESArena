@@ -62,6 +62,9 @@ public:
 
 	// Calls the base level data method then does some exterior-specific work.
 	virtual void setActive(TextureManager &textureManager, Renderer &renderer) override;
+
+	// Updates data exclusive to exterior level data (such as animated distant land).
+	virtual void tick(double dt) override;
 };
 
 #endif

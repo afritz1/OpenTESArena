@@ -2136,6 +2136,10 @@ void GameWorldPanel::tick(double dt)
 		}
 	}
 
+	// Tick level data. Currently this only affects animated distant land.
+	auto &levelData = worldData.getActiveLevel();
+	levelData.tick(dt);
+
 	// Tick text timers if their remaining duration is positive.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();

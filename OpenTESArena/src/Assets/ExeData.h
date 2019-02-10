@@ -326,6 +326,9 @@ public:
 		// Filenames for mountains drawn on the horizon.
 		std::array<std::string, 3> distantMountainFilenames;
 
+		// Filenames for animated mountains (i.e., volcanoes).
+		std::array<std::string, 3> animDistantMountainFilenames;
+
 		// Base filename for distant clouds.
 		std::string cloudFilename;
 
