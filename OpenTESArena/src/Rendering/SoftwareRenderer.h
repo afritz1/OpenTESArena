@@ -95,6 +95,9 @@ private:
 		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
 			double projectionModifier);
 
+		// Gets the angle of the camera's 2D forward vector. 0 is +Z, pi/2 is +X.
+		double getXZAngleRadians() const;
+
 		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
 		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};

@@ -130,6 +130,11 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->yShear = std::tan(this->yAngleRadians) * this->zoom;
 }
 
+double SoftwareRenderer::Camera::getXZAngleRadians() const
+{
+	return SoftwareRenderer::fullAtan2(this->forwardX, this->forwardZ);
+}
+
 int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
 {
 	return static_cast<int>(this->eye.y / ceilingHeight);
