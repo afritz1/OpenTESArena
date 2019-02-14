@@ -247,7 +247,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	// The sun rises in the east (+Z) and sets in the west (-Z).
 	this->sunDirection = [daytimePercent]()
 	{
-		const double radians = daytimePercent * (2.0 * Constants::Pi);
+		const double radians = daytimePercent * Constants::TwoPi;
 		return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
 	}();
 	
@@ -1490,7 +1490,7 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 double SoftwareRenderer::fullAtan2(double y, double x)
 {
 	const double angle = std::atan2(y, x);
-	return (angle >= 0.0) ? angle : ((2.0 * Constants::Pi) + angle);
+	return (angle >= 0.0) ? angle : (Constants::TwoPi + angle);
 }
 
 VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
