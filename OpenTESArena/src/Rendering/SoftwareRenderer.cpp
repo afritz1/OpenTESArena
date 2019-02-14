@@ -244,11 +244,11 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		this->skyColors.at(i) = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
 	}
 
-	// The sun rises in the east (+Z) and sets in the west (-Z).
+	// The sun rises in the west (-Z) and sets in the east (+Z).
 	this->sunDirection = [daytimePercent]()
 	{
 		const double radians = daytimePercent * Constants::TwoPi;
-		return Double3(0.0, -std::cos(radians), std::sin(radians)).normalized();
+		return Double3(0.0, -std::cos(radians), -std::sin(radians)).normalized();
 	}();
 	
 	this->sunColor = [this]()
