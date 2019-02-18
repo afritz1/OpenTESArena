@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "SoftwareRenderer.h"
+#include "HardwareRenderer.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/LevelData.h"
@@ -36,12 +37,14 @@ private:
 	static const std::string DEFAULT_TITLE;
 
 	SDL_Window *window;
+	void* context = 0;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	SoftwareRenderer softwareRenderer; // Game world renderer.
+	HardwareRenderer hardwareRenderer; //Testing OpenGL rendering
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
-
+	bool opengl = true;
 	// Helper method for making a renderer context.
 	static SDL_Renderer *createRenderer(SDL_Window *window);
 
@@ -172,7 +175,7 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
 		double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight, 
-		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid);
+		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid, bool hard=false);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

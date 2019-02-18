@@ -615,6 +615,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	const bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
 	const bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
 	const bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
+	const bool renderMethodHotkeyPressed = inputManager.keyPressed(e, SDLK_BACKSPACE);
 
 	if (drawWeaponHotkeyPressed)
 	{
@@ -646,6 +647,9 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Toggle compass display.
 		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
+	}
+	else if (renderMethodHotkeyPressed) {
+		this->getGame().getGameData().hardware = !this->getGame().getGameData().hardware;//Toggle hardware rendering
 	}
 
 	// Player's XY coordinate hotkey.
@@ -2241,7 +2245,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
-		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(), level.getVoxelGrid());
+		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(), level.getVoxelGrid(), gameData.hardware);
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

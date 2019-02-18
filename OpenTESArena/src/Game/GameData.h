@@ -101,6 +101,9 @@ public:
 	GameData(GameData&&) = default;
 	~GameData();
 
+	//Keep track of if we want to use opengl, for testing purposes
+	bool hardware = false;
+
 	// Gets the date string for a given date, using strings from the executable data.
 	static std::string getDateString(const Date &date, const ExeData &exeData);
 
