@@ -109,6 +109,31 @@ Vector3f<T>::Vector3f()
 	this->z = static_cast<T>(0.0);
 }
 
+
+Vector3f<float>::Vector3f(const Vector3f<double>& old) {
+	this->x = static_cast<float>(old.x);
+	this->y = static_cast<float>(old.y);
+	this->z = static_cast<float>(old.z);
+}
+
+Vector3f<double>::Vector3f(const Vector3f<float>& old) {
+	this->x = static_cast<double>(old.x);
+	this->y = static_cast<double>(old.y);
+	this->z = static_cast<double>(old.z);
+}
+
+Vector3f<double>::Vector3f(const Vector3f<double>& old) {
+	this->x = old.x;
+	this->y = old.y;
+	this->z = old.z;
+}
+
+Vector3f<float>::Vector3f(const Vector3f<float>& old) {
+	this->x = old.x;
+	this->y = old.y;
+	this->z = old.z;
+}
+
 template <class T>
 Vector3f<T> Vector3f<T>::randomDirection(Random &random)
 {

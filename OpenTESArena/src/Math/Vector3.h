@@ -57,6 +57,8 @@ public:
 
 	Vector3f(T x, T y, T z);
 	Vector3f();
+	Vector3f(const Vector3f<double>& old);
+	Vector3f(const Vector3f<float>& old);
 
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);

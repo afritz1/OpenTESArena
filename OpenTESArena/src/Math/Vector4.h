@@ -58,6 +58,8 @@ public:
 	Vector4f(T x, T y, T z, T w);
 	Vector4f(const Vector3f<T> &xyz, T w);
 	Vector4f();
+	Vector4f(const Vector4f<float>& old);
+	Vector4f(const Vector4f<double>& old);
 
 	static Vector4f<T> fromARGB(uint32_t argb);
 	static Vector4f<T> fromRGBA(uint32_t rgba);
