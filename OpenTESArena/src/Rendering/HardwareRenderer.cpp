@@ -14,41 +14,42 @@ using namespace gl;
 //Voxel vetices
 GLfloat vertices[] = {
 	// positions          // normals           // texture coords
+	//Back
 	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
 	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
 	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
 	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
 	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
 	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-
+	//Front
 	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
+	 0.5f,	0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
 	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
 	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
 	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+	-0.5f,	0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
+	//Left
+	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+	-0.5f,	0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
+	-0.5f,	0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
+	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+	//Right
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
 	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
 	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
+	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
+	 //Bottom
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
+	//Top
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
 	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
 	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
@@ -91,7 +92,7 @@ void main(){
 }
 )glsl";
 
-HardwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
+HardwareRenderer::Camera::Camera(const Double3& eye, const Double3& direction,
 	double fovY, double aspect, double projectionModifier)
 	: eye(eye), direction(direction)
 {
@@ -195,13 +196,84 @@ int HardwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
 	return static_cast<int>(this->eye.y / ceilingHeight);
 }
 
+HardwareRenderer::VoxelTexel::VoxelTexel()
+{
+	this->r = 0.0;
+	this->g = 0.0;
+	this->b = 0.0;
+	this->emission = 0.0;
+	this->transparent = false;
+}
+
 HardwareRenderer::HardwareRenderer()
 {
 	frameBuffer = frameVAO = frameVBO = colourBuffer = renderBuffer = width = height = 0;
 }
 
+GLuint texelTexture(int width, int height, const uint32_t* srcTexels) {
+	GLuint ID = 0;
+
+	glGenTextures(1, &ID);
+	glBindTexture(GLenum::GL_TEXTURE_2D, ID);
+
+	glTexImage2D(GLenum::GL_TEXTURE_2D, 0, GLenum::GL_RGBA, width, height, 0, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, srcTexels);
+	// Set Texture wrap and filter modes
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_REPEAT);
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_REPEAT);
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_NEAREST);
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_NEAREST);
+	// Unbind texture
+	glBindTexture(GLenum::GL_TEXTURE_2D, 0);
+
+	return ID;
+}
+
+//Private helper to convert a SDL_Surface to OpenGL texture
+GLuint convertTexture(SDL_Surface* texture)
+{
+	return texelTexture(texture->w, texture->h, (uint32_t*)texture->pixels);
+}
+
+void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
+{
+	// Clear the selected texture.
+	VoxelTexture& texture = this->voxelTextures.at(id);
+	std::fill(texture.texels.begin(), texture.texels.end(), VoxelTexel());
+	texture.lightTexels.clear();
+
+	for (int y = 0; y < VoxelTexture::HEIGHT; y++)
+	{
+		for (int x = 0; x < VoxelTexture::WIDTH; x++)
+		{
+			// @todo: change this calculation for rotated textures. Make sure to have a 
+			// source index and destination index.
+			// - "dstX" and "dstY" should be calculated, and also used with lightTexels.
+			const int index = x + (y * VoxelTexture::WIDTH);
+
+			// Convert ARGB color from integer to double-precision format. This does waste
+			// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
+			// for Arena's textures (eight textures is a megabyte).
+			const Double4 srcTexel = Double4::fromARGB(srcTexels[index]);
+			VoxelTexel& dstTexel = texture.texels[index];
+			dstTexel.r = srcTexel.x;
+			dstTexel.g = srcTexel.y;
+			dstTexel.b = srcTexel.z;
+			dstTexel.transparent = srcTexel.w == 0.0;
+
+			// If it's a white texel, it's used with night lights (i.e., yellow at night).
+			const bool isWhite = (srcTexel.x == 1.0) && (srcTexel.y == 1.0) && (srcTexel.z == 1.0);
+
+			if (isWhite)
+			{
+				texture.lightTexels.push_back(Int2(x, y));
+			}
+		}
+	}
+	texture.ID = texelTexture(VoxelTexture::WIDTH, VoxelTexture::HEIGHT,srcTexels);
+}
+
 //Private Helper to check the shaders for errors
-void checkErrors(GLuint index, const std::string& type) {
+void checkErrors(GLuint index, const std::string & type) {
 	GLint success;
 	GLchar log[1024];
 
@@ -254,30 +326,11 @@ GLuint compileShader(const char* vertexSource, const char* fragmentSource)
 	return ID;
 }
 
-//Private helper to convert a SDL_Surface to OpenGL texture
-GLuint convertTexture(SDL_Surface* texture)
-{
-	GLuint ID = 0;
-
-	glGenTextures(1, &ID);
-	glBindTexture(GLenum::GL_TEXTURE_2D, ID);
-
-	glTexImage2D(GLenum::GL_TEXTURE_2D, 0, GLenum::GL_RGBA, texture->w, texture->h, 0, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, texture->pixels);
-	// Set Texture wrap and filter modes
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_REPEAT);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_REPEAT);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_LINEAR);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_LINEAR);
-	// Unbind texture
-	glBindTexture(GLenum::GL_TEXTURE_2D, 0);
-
-	return ID;
-}
-
 void HardwareRenderer::init(int width, int height)
 {
 	this->width = width;
 	this->height = height;
+	this->voxelTextures = std::vector<VoxelTexture>(64);
 	//set the size of the render viewport
 	glViewport(0, 0, width, height);
 
@@ -327,10 +380,10 @@ void HardwareRenderer::init(int width, int height)
 	glEnableVertexAttribArray(2);
 
 	//Compile shader program
-	shaderID = compileShader(cubeVert,cubeFrag);
+	shaderID = compileShader(cubeVert, cubeFrag);
 }
 
-void HardwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY, double ceilingHeight, const VoxelGrid &voxelGrid, uint32_t* colourBuffer) {
+void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, double fovY, double ceilingHeight, const VoxelGrid & voxelGrid, uint32_t * colourBuffer) {
 	//From SoftwareRenderer
 	const double widthReal = static_cast<double>(this->width);
 	const double heightReal = static_cast<double>(this->height);
@@ -345,25 +398,49 @@ void HardwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(ClearBufferMask::GL_COLOR_BUFFER_BIT | ClearBufferMask::GL_DEPTH_BUFFER_BIT);
 	glEnable(GLenum::GL_DEPTH_TEST);
+	//Only render faces we are looking at
+	glEnable(GLenum::GL_CULL_FACE);
+	glFrontFace(GLenum::GL_CW);
 	glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
 	//Draw Calls
-	glUseProgram(shaderID);	
+	glUseProgram(shaderID);
 	//Set the transform value in the shader to the values in camera.transform
 	glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
 	glBindVertexArray(frameVAO);//Use the voxel vertices
 	//Probably a better way to iterate over voxels, but keeping it simple for the moment
-	for (int x = 0; x < voxelGrid.getWidth(); x++) {
-		for (int z = 0; z < voxelGrid.getDepth(); z++) {
-			auto voxel = voxelGrid.getVoxel(x, adjustedVoxelY, z);
-			auto voxelData = voxelGrid.getVoxelData(voxel);
-			if (voxel != 0) {
-				//Trial and error to get the voxel position (mostly y) to match the software renderer
-				Matrix4f model = Matrix4f::translation(x + 0.5f, adjustedVoxelY+0.34f, z + 0.5f) *Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
-				glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, &model.x[0]);
-				glDrawArrays(GLenum::GL_TRIANGLES, 0, 36);
+	float fogDistance = 15;
+	int amount = voxelGrid.getWidth() * voxelGrid.getHeight() * voxelGrid.getDepth();
+	Matrix4f* models = new Matrix4f[amount];
+	GLuint currentTexture = 0;
+	for (int x = (camera.eyeVoxel.x > 0) ? camera.eyeVoxel.x - fogDistance : camera.eyeVoxel.x + fogDistance; (x > 0) ? x < camera.eyeVoxel.x + fogDistance : x>camera.eyeVoxel.x - fogDistance; (x > 0) ? x++ : x--) {
+		for (int y = voxelGrid.getHeight(); y > 0; y--) {
+			for (int z = (camera.eyeVoxel.z > 0) ? camera.eyeVoxel.z - fogDistance : camera.eyeVoxel.z + fogDistance; (z > 0) ? z < camera.eyeVoxel.z + fogDistance : z>camera.eyeVoxel.z - fogDistance; (z > 0) ? z++ : z--) {
+				bool voxelIsValid =
+					(x >= 0) &&
+					(y >= 0) &&
+					(z >= 0) &&
+					(x < voxelGrid.getWidth()) &&
+					(y < voxelGrid.getHeight()) &&
+					(z < voxelGrid.getDepth());
+				if (!voxelIsValid) continue;
+				auto voxel = voxelGrid.getVoxel(x, y, z);
+				auto voxelData = voxelGrid.getVoxelData(voxel);
+
+				if (voxelData.dataType != VoxelDataType::None) {
+					/*if (voxelData.dataType == VoxelDataType::Wall) {
+						glActiveTexture(GLenum::GL_TEXTURE0 + (currentTexture++));
+						glBindTexture(GLenum::GL_TEXTURE_2D, voxelTextures.at(voxelData.wall.sideID).ID);
+					}*/
+					//Trial and error to get the voxel y position to match the software renderer
+					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedVoxelY + 0.34f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
+					models[currentTexture++] = model;
+					/*glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, &model.x[0]);
+					glDrawArrays(GLenum::GL_TRIANGLES, 0, 36);*/
+				}
 			}
 		}
+	}
 	}
 	//Read colour buffer to the SDL renderer
 	glReadPixels(0, 0, width, height, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, colourBuffer);
@@ -372,4 +449,6 @@ void HardwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 HardwareRenderer::~HardwareRenderer()
 {
+	glDeleteVertexArrays(1, &frameVAO);
+	glDeleteBuffers(1, &frameVBO);
 }

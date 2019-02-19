@@ -489,6 +489,7 @@ void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
 	assert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setVoxelTexture(id, srcTexels);
+	this->hardwareRenderer.setVoxelTexture(id, srcTexels);
 }
 
 void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)

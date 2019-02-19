@@ -5,12 +5,31 @@
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelDataType.h"
+#include "SoftwareRenderer.h"
 
 typedef unsigned int GLuint;
 
 class HardwareRenderer
 {
 public:
+	struct VoxelTexel
+	{
+		double r, g, b, emission;
+		bool transparent; // Voxel texels only support alpha testing, not alpha blending.
+
+		VoxelTexel();
+	};
+	struct VoxelTexture
+	{
+		static const int WIDTH = 64;
+		static const int HEIGHT = VoxelTexture::WIDTH;
+		static const int TEXEL_COUNT = VoxelTexture::WIDTH * VoxelTexture::HEIGHT;
+
+		GLuint ID;
+		std::array<VoxelTexel, VoxelTexture::TEXEL_COUNT> texels;
+		std::vector<Int2> lightTexels; // Black during the day, yellow at night.
+	};
 	//(Near) Duplicate of SoftwareRenderer::Camera
 	struct Camera
 	{
@@ -42,9 +61,11 @@ public:
 	void init(int width, int height);
 	//Render to internal framebuffer and read into colourBuffer
 	void render(const Double3 &eye, const Double3 &direction, double fovY, double ceilingHeight, const VoxelGrid &voxelGrid, uint32_t* colourBuffer);
+	void setVoxelTexture(int id, const uint32_t* srcTexels);
 private:
 	//OpenGL ID's for various objects
 	GLuint frameBuffer, colourBuffer, renderBuffer, frameVAO, frameVBO, shaderID;
 	int width, height;
+	std::vector<VoxelTexture> voxelTextures;
 };
 
