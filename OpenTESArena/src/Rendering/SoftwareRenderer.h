@@ -256,18 +256,29 @@ private:
 	// A distant object that has been projected on-screen and is at least partially visible.
 	struct VisDistantObject
 	{
+		struct ParallaxData
+		{
+			// Visible angles (in radians) are the object's angle range clamped within the camera's
+			// angle range.
+			double xVisAngleStart, xVisAngleEnd;
+			double uStart, uEnd;
+
+			ParallaxData();
+			ParallaxData(double xVisAngleStart, double xVisAngleEnd, double uStart, double uEnd);
+		};
+
 		const SkyTexture *texture;
 		DrawRange drawRange;
-		double xAngleStart, xAngleEnd; // For parallax texture coordinates.
+		ParallaxData parallax;
 		double xProjStart, xProjEnd; // Projected screen coordinates.
 		int xStart, xEnd; // Pixel coordinates.
 		bool emissive; // Only animated lands (i.e., volcanoes) are emissive.
 
-		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, double xAngleStart,
-			double xAngleEnd, double xProjStart, double xProjEnd, int xStart, int xEnd,
-			bool emissive);
+		// Parallax constructor.
+		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, ParallaxData &&parallax,
+			double xProjStart, double xProjEnd, int xStart, int xEnd, bool emissive);
 
-		// Constructor for non-parallax visible distant object.
+		// Non-parallax constructor.
 		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, double xProjStart,
 			double xProjEnd, int xStart, int xEnd, bool emissive);
 	};

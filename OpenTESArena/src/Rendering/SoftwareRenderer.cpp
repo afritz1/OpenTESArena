@@ -337,14 +337,29 @@ SoftwareRenderer::DistantObject::DistantObject(int textureIndex, DistantObject::
 	}
 }
 
+SoftwareRenderer::VisDistantObject::ParallaxData::ParallaxData()
+{
+	this->xVisAngleStart = 0.0;
+	this->xVisAngleEnd = 0.0;
+	this->uStart = 0.0;
+	this->uEnd = 0.0;
+}
+
+SoftwareRenderer::VisDistantObject::ParallaxData::ParallaxData(double xVisAngleStart,
+	double xVisAngleEnd, double uStart, double uEnd)
+{
+	this->xVisAngleStart = xVisAngleStart;
+	this->xVisAngleEnd = xVisAngleEnd;
+	this->uStart = uStart;
+	this->uEnd = uEnd;
+}
+
 SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture,
-	DrawRange &&drawRange, double xAngleStart, double xAngleEnd, double xProjStart,
-	double xProjEnd, int xStart, int xEnd, bool emissive)
-	: drawRange(std::move(drawRange))
+	DrawRange &&drawRange, ParallaxData &&parallax, double xProjStart, double xProjEnd,
+	int xStart, int xEnd, bool emissive)
+	: drawRange(std::move(drawRange)), parallax(std::move(parallax))
 {
 	this->texture = &texture;
-	this->xAngleStart = xAngleStart;
-	this->xAngleEnd = xAngleEnd;
 	this->xProjStart = xProjStart;
 	this->xProjEnd = xProjEnd;
 	this->xStart = xStart;
@@ -354,7 +369,7 @@ SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture,
 
 SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture,
 	DrawRange &&drawRange, double xProjStart, double xProjEnd, int xStart, int xEnd, bool emissive)
-	: VisDistantObject(texture, std::move(drawRange), 0.0, 0.0, xProjStart, xProjEnd,
+	: VisDistantObject(texture, std::move(drawRange), ParallaxData(), xProjStart, xProjEnd,
 		xStart, xEnd, emissive) { }
 
 void SoftwareRenderer::RenderThreadData::SkyGradient::init()
@@ -869,8 +884,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	// Lambda for checking if the given object properties make it appear on-screen, and if
 	// so, adding it to the visible objects list.
 	auto tryAddObject = [this, parallaxSky, &camera, &frame, &forward, &frustumLeftPerp,
-		&frustumRightPerp](const SkyTexture &texture, double xAngleRadians,
-			double yAngleRadians, bool emissive)
+		&frustumRightPerp](const SkyTexture &texture, double xAngleRadians, double yAngleRadians,
+			bool emissive)
 	{
 		// The size of textures in world space is based on 320px being 1 unit, and a 320px
 		// wide texture spans a screen's worth of horizontal FOV.
@@ -881,7 +896,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const double objHalfWidth = objWidth * 0.50;
 
 		// Y position on-screen is the same regardless of parallax.
-		DrawRange drawRange = [yAngleRadians, identityAngleRadians, objHeight, &camera, &frame]()
+		DrawRange drawRange = [yAngleRadians, objHeight, &camera, &frame]()
 		{
 			// Project the bottom first then add the object's height above it in screen-space
 			// to get the top. This keeps objects from appearing squished the higher they are
@@ -915,30 +930,79 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		{
 			// Get X angles for left and right edges based on object half width.
 			const double xDeltaRadians = objHalfWidth * identityAngleRadians;
-			const double xAngleRadiansLeft = xAngleRadians - xDeltaRadians;
-			const double xAngleRadiansRight = xAngleRadians + xDeltaRadians;
+			const double xAngleRadiansLeft = xAngleRadians + xDeltaRadians;
+			const double xAngleRadiansRight = xAngleRadians - xDeltaRadians;
+			
+			// Camera's horizontal field of view.
+			const double cameraHFov = MathUtils::verticalFovToHorizontalFov(
+				camera.fovY, camera.aspect);
+			const double halfCameraHFovRadians = (cameraHFov * 0.50) * Constants::DegToRad;
 
-			const double angleBias = Constants::Pi;
-			const Double2 objDirLeft2D(
-				std::cos(xAngleRadiansLeft + angleBias),
-				std::sin(xAngleRadiansLeft + angleBias));
-			const Double2 objDirRight2D(
-				std::cos(xAngleRadiansRight + angleBias),
-				std::sin(xAngleRadiansRight + angleBias));
+			// Angles of the camera's forward vector and frustum edges.
+			const double cameraAngleRadians = camera.getXZAngleRadians();
+			const double cameraAngleLeft = cameraAngleRadians + halfCameraHFovRadians;
+			const double cameraAngleRight = cameraAngleRadians - halfCameraHFovRadians;
 
-			// Determine if the object is at least partially on-screen by checking that the left
-			// direction is not outside the right side and the right direction is not outside the
-			// left.
-			const bool onScreen = [&frustumLeftPerp, &frustumRightPerp,
-				&objDirLeft2D, &objDirRight2D]()
+			// Distant object visible angle range and texture coordinates, set by onScreen.
+			double xVisAngleLeft, xVisAngleRight;
+			double uStart, uEnd;
+
+			// Determine if the object is at least partially on-screen. The angle range of the
+			// object must be at least partially within the angle range of the camera.
+			const bool onScreen = [&camera, xAngleRadiansLeft, xAngleRadiansRight, cameraAngleLeft,
+				cameraAngleRight, &xVisAngleLeft, &xVisAngleRight, &uStart, &uEnd]()
 			{
-				const bool leftDirGood = frustumRightPerp.dot(objDirLeft2D) >= 0.0;
-				const bool rightDirGood = frustumLeftPerp.dot(objDirRight2D) >= 0.0;
-				return leftDirGood && rightDirGood;
+				// Need to handle special cases where the angle ranges span 0.
+				const bool cameraIsGeneralCase = cameraAngleLeft < Constants::TwoPi;
+				const bool objectIsGeneralCase = xAngleRadiansLeft < Constants::TwoPi;
+
+				if (cameraIsGeneralCase == objectIsGeneralCase)
+				{
+					// Both are either general case or special case; no extra behavior necessary.
+					xVisAngleLeft = std::min(xAngleRadiansLeft, cameraAngleLeft);
+					xVisAngleRight = std::max(xAngleRadiansRight, cameraAngleRight);
+				}
+				else if (!cameraIsGeneralCase)
+				{
+					// Camera special case.
+					// @todo: cut into two parts?
+					xVisAngleLeft = std::min(
+						xAngleRadiansLeft, (cameraAngleLeft - Constants::TwoPi));
+					xVisAngleRight = std::max(
+						xAngleRadiansRight, (cameraAngleRight - Constants::TwoPi));
+				}
+				else
+				{
+					// Object special case.
+					// @todo: cut into two parts?
+					xVisAngleLeft = std::min(
+						(xAngleRadiansLeft - Constants::TwoPi), cameraAngleLeft);
+					xVisAngleRight = std::max(
+						(xAngleRadiansRight - Constants::TwoPi), cameraAngleRight);
+				}
+
+				uStart = 1.0 - ((xVisAngleLeft - xAngleRadiansRight) /
+					(xAngleRadiansLeft - xAngleRadiansRight));
+				uEnd = Constants::JustBelowOne - ((xAngleRadiansRight - xVisAngleRight) /
+					(xAngleRadiansRight - xAngleRadiansLeft));
+
+				return (xAngleRadiansLeft >= cameraAngleRight) &&
+					(xAngleRadiansRight <= cameraAngleLeft);
 			}();
 
 			if (onScreen)
 			{
+				// Data for parallax texture sampling.
+				VisDistantObject::ParallaxData parallax(
+					xVisAngleLeft, xVisAngleRight, uStart, uEnd);
+
+				const Double2 objDirLeft2D(
+					std::sin(xAngleRadiansLeft),
+					std::cos(xAngleRadiansLeft));
+				const Double2 objDirRight2D(
+					std::sin(xAngleRadiansRight),
+					std::cos(xAngleRadiansRight));
+
 				// Project vertical edges.
 				const Double3 objDirLeft(objDirLeft2D.x, 0.0, objDirLeft2D.y);
 				const Double3 objDirRight(objDirRight2D.x, 0.0, objDirRight2D.y);
@@ -959,18 +1023,17 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 					xProjEnd * frame.widthReal, frame.width);
 
 				this->visDistantObjs.push_back(VisDistantObject(
-					texture, std::move(drawRange), xAngleRadiansLeft, xAngleRadiansRight,
-					xProjStart, xProjEnd, xDrawStart, xDrawEnd, emissive));
+					texture, std::move(drawRange), std::move(parallax), xProjStart, xProjEnd,
+					xDrawStart, xDrawEnd, emissive));
 			}
 		}
 		else
 		{
 			// Classic rendering. Render the object based on its midpoint.
-			const double angleBias = 0.0;
 			const Double3 objDir(
-				std::cos(xAngleRadians + angleBias),
+				std::sin(xAngleRadians),
 				0.0,
-				std::sin(xAngleRadians + angleBias));
+				std::cos(xAngleRadians));
 
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;
