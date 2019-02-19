@@ -1128,7 +1128,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	{
 		const SkyTexture &sunTexture = this->skyTextures.at(this->sunTextureIndex);
 		const double sunXAngleRadians = SoftwareRenderer::fullAtan2(
-			sunDirection.z, sunDirection.x);
+			sunDirection.x, sunDirection.z);
 
 		// When the sun is directly above or below, it might cause the X angle to be undefined.
 		// We want to filter this out before we try projecting it on-screen.
