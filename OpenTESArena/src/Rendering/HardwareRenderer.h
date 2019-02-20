@@ -55,6 +55,15 @@ public:
 		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};
 
+	struct Voxel {
+		Matrix4f model;
+		VoxelTexture texture;
+		int x,y,z;
+		GLuint vbo, vao, shaderID;
+		Voxel();
+		~Voxel();
+	};
+
 	HardwareRenderer();
 	~HardwareRenderer();
 	//Initialise the renderer
@@ -62,10 +71,13 @@ public:
 	//Render to internal framebuffer and read into colourBuffer
 	void render(const Double3 &eye, const Double3 &direction, double fovY, double ceilingHeight, const VoxelGrid &voxelGrid, uint32_t* colourBuffer);
 	void setVoxelTexture(int id, const uint32_t* srcTexels);
+	void createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight);
 private:
 	//OpenGL ID's for various objects
-	GLuint frameBuffer, colourBuffer, renderBuffer, frameVAO, frameVBO, shaderID;
+	GLuint frameBuffer, colourBuffer, renderBuffer, frameVAO, frameVBO, shaderID, instanceVBO;
 	int width, height;
 	std::vector<VoxelTexture> voxelTextures;
+	std::vector<std::unique_ptr<Voxel>> map;
+	bool firstrun = true;
 };
 

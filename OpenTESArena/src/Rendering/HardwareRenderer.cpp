@@ -4,7 +4,7 @@
 #include <glbinding/gl/gl.h>
 #include <sstream>
 #include <iostream>
-#include <SDL.h>
+//#include <SDL.h>
 #include "../Utilities/Debug.h"
 #include "../Math/MathUtils.h"
 #include "HardwareRenderer.h"
@@ -58,9 +58,29 @@ GLfloat vertices[] = {
 	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
 };
 
+/*GLfloat voxelPoints[]{
+	0.0f, 0.0f, -1.0f,//Back
+	0.0, 0.0, 1.0f,//Front
+	-1.0f, 0.0f, 0.0f,//Left
+	1.0f, 0.0f, 0.0f,//Right
+	0.0f, -1.0f, 0.0f,//Bottom
+	0.0f, 1.0f, 0.0f//Top
+};*/
+
+GLfloat voxelPoints[]{
+	 1, 0, 0,
+	-1, 0, 0,
+	0, 1, 0,
+	0,-1, 0,
+	0, 0, 1,
+	0, 0,-1
+};
+
+GLint voxelFaces[] = {5,4,1,0,3,2};
+
 //Local Shaders, perhaps can be moved, but are fine here while testing
 const char* cubeVert = R"glsl(
-#version 330 core
+#version 410
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aTexCoords;
@@ -77,7 +97,6 @@ void main()
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal;  
     TexCoords = aTexCoords;
-    
     gl_Position = transform * vec4(FragPos, 1.0);
 }
 )glsl";
@@ -88,9 +107,75 @@ in vec2 TexCoords;
 out vec4 FragColour;
 uniform sampler2D tex;
 void main(){
-	FragColour = vec4(0.1,0.5,0.25,1.0);//texture(tex, TexCoords);
+	FragColour = texture(tex, TexCoords);//vec4(0.1,0.5,0.25,1.0);
 }
 )glsl";
+
+//Private Helper to check the shaders for errors
+void checkErrors(GLuint index, const std::string& type) {
+	GLint success;
+	GLchar log[1024];
+
+	std::stringstream logger;
+	logger << "Error: " << type;
+
+	if (type == "Program") {
+		glGetProgramiv(index, GLenum::GL_LINK_STATUS, &success);
+		if (!success) {
+			glGetProgramInfoLog(index, 1024, nullptr, log);
+			logger << "Link Error - " << log;
+		}
+	}
+	else {
+		logger << " Shader ";
+		glGetShaderiv(index, GL_COMPILE_STATUS, &success);
+		if (!success) {
+			glGetShaderInfoLog(index, 1024, NULL, log);
+			logger << "Compile Error - " << log;
+		}
+	}
+	if (!success)
+		DebugException(logger.str());
+}
+
+//Private helper to compile t
+GLuint compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource = nullptr)
+{
+	GLuint sVertex, sFragment, gShader, ID;
+	// Vertex Shader
+	sVertex = glCreateShader(GLenum::GL_VERTEX_SHADER);
+	glShaderSource(sVertex, 1, &vertexSource, nullptr);
+	glCompileShader(sVertex);
+	checkErrors(sVertex, "Vertex");
+	// Fragment Shader
+	sFragment = glCreateShader(GLenum::GL_FRAGMENT_SHADER);
+	glShaderSource(sFragment, 1, &fragmentSource, nullptr);
+	glCompileShader(sFragment);
+	checkErrors(sFragment, "Fragment");
+	if (geometrySource != nullptr)
+	{
+		gShader = glCreateShader(GLenum::GL_GEOMETRY_SHADER);
+		glShaderSource(gShader, 1, &geometrySource, NULL);
+		glCompileShader(gShader);
+		checkErrors(gShader, "Geometry");
+	}
+	// Shader Program
+	ID = glCreateProgram();
+	glAttachShader(ID, sVertex);
+	glAttachShader(ID, sFragment);
+	if (geometrySource != nullptr)
+		glAttachShader(ID, gShader);
+	glLinkProgram(ID);
+	checkErrors(ID, "Program");
+	// Delete shaders as they are now part of the program
+	glDeleteShader(sVertex);
+	glDeleteShader(sFragment);
+	if (geometrySource != nullptr)
+		glDeleteShader(gShader);
+
+	return ID;
+}
+
 
 HardwareRenderer::Camera::Camera(const Double3& eye, const Double3& direction,
 	double fovY, double aspect, double projectionModifier)
@@ -205,6 +290,31 @@ HardwareRenderer::VoxelTexel::VoxelTexel()
 	this->transparent = false;
 }
 
+HardwareRenderer::Voxel::Voxel() {
+	//Generate the vertex array for a voxel
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	//Generate vertex buffer object for a voxel
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GLenum::GL_ARRAY_BUFFER, vbo);
+	//Give vbo the vertex data
+	glBufferData(GLenum::GL_ARRAY_BUFFER, sizeof(vertices), vertices, GLenum::GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);//First three are local space position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));//Second three are local normal vector
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));//Texture coords
+	glEnableVertexAttribArray(2);
+
+	//Compile shader program
+	shaderID = compileShader(cubeVert, cubeFrag);
+}
+
+HardwareRenderer::Voxel::~Voxel() {
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+}
+
 HardwareRenderer::HardwareRenderer()
 {
 	frameBuffer = frameVAO = frameVBO = colourBuffer = renderBuffer = width = height = 0;
@@ -226,12 +336,6 @@ GLuint texelTexture(int width, int height, const uint32_t* srcTexels) {
 	glBindTexture(GLenum::GL_TEXTURE_2D, 0);
 
 	return ID;
-}
-
-//Private helper to convert a SDL_Surface to OpenGL texture
-GLuint convertTexture(SDL_Surface* texture)
-{
-	return texelTexture(texture->w, texture->h, (uint32_t*)texture->pixels);
 }
 
 void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
@@ -271,61 +375,6 @@ void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
 	}
 	texture.ID = texelTexture(VoxelTexture::WIDTH, VoxelTexture::HEIGHT,srcTexels);
 }
-
-//Private Helper to check the shaders for errors
-void checkErrors(GLuint index, const std::string & type) {
-	GLint success;
-	GLchar log[1024];
-
-	std::stringstream logger;
-	logger << "Error: " << type;
-
-	if (type == "Program") {
-		glGetProgramiv(index, GLenum::GL_LINK_STATUS, &success);
-		if (!success) {
-			glGetProgramInfoLog(index, 1024, nullptr, log);
-			logger << "Link Error - " << log;
-		}
-	}
-	else {
-		logger << " Shader ";
-		glGetShaderiv(index, GL_COMPILE_STATUS, &success);
-		if (!success) {
-			glGetShaderInfoLog(index, 1024, NULL, log);
-			logger << "Compile Error - " << log;
-		}
-	}
-	if (!success)
-		DebugException(logger.str());
-}
-
-//Private helper to compile t
-GLuint compileShader(const char* vertexSource, const char* fragmentSource)
-{
-	GLuint sVertex, sFragment, ID;
-	// Vertex Shader
-	sVertex = glCreateShader(GLenum::GL_VERTEX_SHADER);
-	glShaderSource(sVertex, 1, &vertexSource, nullptr);
-	glCompileShader(sVertex);
-	checkErrors(sVertex, "Vertex");
-	// Fragment Shader
-	sFragment = glCreateShader(GLenum::GL_FRAGMENT_SHADER);
-	glShaderSource(sFragment, 1, &fragmentSource, nullptr);
-	glCompileShader(sFragment);
-	checkErrors(sFragment, "Fragment");
-	// Shader Program
-	ID = glCreateProgram();
-	glAttachShader(ID, sVertex);
-	glAttachShader(ID, sFragment);
-	glLinkProgram(ID);
-	checkErrors(ID, "Program");
-	// Delete shaders as they are now part of the program
-	glDeleteShader(sVertex);
-	glDeleteShader(sFragment);
-
-	return ID;
-}
-
 void HardwareRenderer::init(int width, int height)
 {
 	this->width = width;
@@ -333,7 +382,6 @@ void HardwareRenderer::init(int width, int height)
 	this->voxelTextures = std::vector<VoxelTexture>(64);
 	//set the size of the render viewport
 	glViewport(0, 0, width, height);
-
 	//Create and bind to the frame buffer object
 	glGenFramebuffers(1, &frameBuffer);
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, frameBuffer);
@@ -363,24 +411,41 @@ void HardwareRenderer::init(int width, int height)
 		DebugException("Error: Framebuffer not Complete");
 	}
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0); //Unbind
+}
 
-	//Generate the vertex array for a voxel
-	glGenVertexArrays(1, &frameVAO);
-	glBindVertexArray(frameVAO);
-	//Generate vertex buffer object for a voxel
-	glGenBuffers(1, &frameVBO);
-	glBindBuffer(GLenum::GL_ARRAY_BUFFER, frameVBO);
-	//Give vbo the vertex data
-	glBufferData(GLenum::GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);//First three are local space position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));//Second three are local normal vector
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));//Texture coords
-	glEnableVertexAttribArray(2);
+void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight) {
+	for (int x = 0; x < voxelGrid.getWidth(); x++) {
+		for (int y = voxelGrid.getHeight(); y > 0; y--) {
+			for (int z = 0; z < voxelGrid.getDepth(); z++) {
+				bool voxelIsValid =
+					(x >= 0) &&
+					(y >= 0) &&
+					(z >= 0) &&
+					(x < voxelGrid.getWidth()) &&
+					(y < voxelGrid.getHeight()) &&
+					(z < voxelGrid.getDepth());
+				if (!voxelIsValid) continue;
+				auto voxel = voxelGrid.getVoxel(x, y, z);
+				auto voxelData = voxelGrid.getVoxelData(voxel);
 
-	//Compile shader program
-	shaderID = compileShader(cubeVert, cubeFrag);
+				if (voxelData.dataType != VoxelDataType::None) {
+					//Trial and error to get the voxel y position to match the software renderer
+					auto v = std::make_unique<Voxel>();
+					v->model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.33f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
+					v->x = x;
+					v->y = y;
+					v->z = z;
+					if (voxelData.dataType == VoxelDataType::Wall) {
+						v->texture = voxelTextures.at(voxelData.wall.sideID);
+					}
+					else if (voxelData.dataType == VoxelDataType::Ceiling) {
+						v->texture = voxelTextures.at(voxelData.ceiling.id);
+					}
+					map.push_back(std::move(v));
+				}
+			}
+		}
+	}
 }
 
 void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, double fovY, double ceilingHeight, const VoxelGrid & voxelGrid, uint32_t * colourBuffer) {
@@ -401,47 +466,34 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 	//Only render faces we are looking at
 	glEnable(GLenum::GL_CULL_FACE);
 	glFrontFace(GLenum::GL_CW);
-	glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
+	//glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
 	//Draw Calls
-	glUseProgram(shaderID);
+	//glUseProgram(shaderID);
 	//Set the transform value in the shader to the values in camera.transform
-	glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
+	//glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
-	glBindVertexArray(frameVAO);//Use the voxel vertices
 	//Probably a better way to iterate over voxels, but keeping it simple for the moment
 	float fogDistance = 15;
-	int amount = voxelGrid.getWidth() * voxelGrid.getHeight() * voxelGrid.getDepth();
-	Matrix4f* models = new Matrix4f[amount];
-	GLuint currentTexture = 0;
-	for (int x = (camera.eyeVoxel.x > 0) ? camera.eyeVoxel.x - fogDistance : camera.eyeVoxel.x + fogDistance; (x > 0) ? x < camera.eyeVoxel.x + fogDistance : x>camera.eyeVoxel.x - fogDistance; (x > 0) ? x++ : x--) {
-		for (int y = voxelGrid.getHeight(); y > 0; y--) {
-			for (int z = (camera.eyeVoxel.z > 0) ? camera.eyeVoxel.z - fogDistance : camera.eyeVoxel.z + fogDistance; (z > 0) ? z < camera.eyeVoxel.z + fogDistance : z>camera.eyeVoxel.z - fogDistance; (z > 0) ? z++ : z--) {
-				bool voxelIsValid =
-					(x >= 0) &&
-					(y >= 0) &&
-					(z >= 0) &&
-					(x < voxelGrid.getWidth()) &&
-					(y < voxelGrid.getHeight()) &&
-					(z < voxelGrid.getDepth());
-				if (!voxelIsValid) continue;
-				auto voxel = voxelGrid.getVoxel(x, y, z);
-				auto voxelData = voxelGrid.getVoxelData(voxel);
+	
+	if (firstrun) {
+		createMap(voxelGrid, adjustedVoxelY, ceilingHeight);
+		firstrun = false;
+	}
 
-				if (voxelData.dataType != VoxelDataType::None) {
-					/*if (voxelData.dataType == VoxelDataType::Wall) {
-						glActiveTexture(GLenum::GL_TEXTURE0 + (currentTexture++));
-						glBindTexture(GLenum::GL_TEXTURE_2D, voxelTextures.at(voxelData.wall.sideID).ID);
-					}*/
-					//Trial and error to get the voxel y position to match the software renderer
-					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedVoxelY + 0.34f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
-					models[currentTexture++] = model;
-					/*glUniformMatrix4fv(glGetUniformLocation(shaderID, "model"), 1, GL_FALSE, &model.x[0]);
-					glDrawArrays(GLenum::GL_TRIANGLES, 0, 36);*/
-				}
-			}
+
+	GLuint currentTexture = 0;
+	for (auto& voxel : map) {
+		if (voxel->x > camera.eyeVoxel.x - fogDistance && voxel->x< camera.eyeVoxel.x + fogDistance && voxel->z> camera.eyeVoxel.z - fogDistance && voxel->z < camera.eyeVoxel.z + fogDistance) {
+			glBindVertexArray(voxel->vao);
+			glUseProgram(voxel->shaderID);
+			glUniformMatrix4fv(glGetUniformLocation(voxel->shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
+			glActiveTexture(GLenum::GL_TEXTURE0 + (currentTexture++));
+			glBindTexture(GLenum::GL_TEXTURE_2D, voxel->texture.ID);
+			glUniformMatrix4fv(glGetUniformLocation(voxel->shaderID, "model"), 1, GL_FALSE, &voxel->model.x[0]);
+			glDrawArrays(GLenum::GL_TRIANGLES, 0, 36);
 		}
 	}
-	}
+
 	//Read colour buffer to the SDL renderer
 	glReadPixels(0, 0, width, height, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, colourBuffer);
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0);
@@ -449,6 +501,6 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 
 HardwareRenderer::~HardwareRenderer()
 {
-	glDeleteVertexArrays(1, &frameVAO);
-	glDeleteBuffers(1, &frameVBO);
+	glDeleteBuffers(1, &colourBuffer);
+	glDeleteBuffers(1, &renderBuffer);
 }
