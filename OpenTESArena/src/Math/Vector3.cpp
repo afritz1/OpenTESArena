@@ -232,6 +232,29 @@ uint32_t Vector3f<T>::toRGB() const
 }
 
 template <class T>
+double Vector3f<T>::getYAngleRadians() const
+{
+	// Get the length of the direction vector's projection onto the XZ plane.
+	const double xzProjection = std::sqrt((this->x * this->x) + (this->z * this->z));
+
+	if (this->y > 0.0)
+	{
+		// Above the horizon.
+		return std::acos(xzProjection);
+	}
+	else if (this->y < 0.0)
+	{
+		// Below the horizon.
+		return -std::acos(xzProjection);
+	}
+	else
+	{
+		// At the horizon.
+		return 0.0;
+	}
+}
+
+template <class T>
 T Vector3f<T>::lengthSquared() const
 {
 	return (this->x * this->x) + (this->y * this->y) + (this->z * this->z);

@@ -113,7 +113,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->frustumRightZ = frustumRight.y;
 
 	// Vertical angle of the camera relative to the horizon.
-	this->yAngleRadians = MathUtils::getYAngleRadians(direction.x, direction.y, direction.z);
+	this->yAngleRadians = direction.getYAngleRadians();
 
 	// Y-shearing is the distance that projected Y coordinates are translated by based on the 
 	// player's 3D direction and field of view. First get the player's angle relative to the 
@@ -1134,8 +1134,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		// We want to filter this out before we try projecting it on-screen.
 		if (std::isfinite(sunXAngleRadians))
 		{
-			const double sunYAngleRadians = MathUtils::getYAngleRadians(
-				sunDirection.x, sunDirection.y, sunDirection.z);
+			const double sunYAngleRadians = sunDirection.getYAngleRadians();
 			const bool sunEmissive = true;
 			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians, sunEmissive);
 		}
