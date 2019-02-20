@@ -5734,9 +5734,10 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	const FrameView &frame)
 {
 	// For each visible distant object, if it is at least partially within the start and end
-	// X, then draw.
-	for (const auto &obj : visDistantObjs)
+	// X, then draw. Reverse iterate so objects are drawn far to near.
+	for (auto it = visDistantObjs.rbegin(); it != visDistantObjs.rend(); ++it)
 	{
+		const VisDistantObject &obj = *it;
 		const SkyTexture &texture = *obj.texture;
 		const DrawRange &drawRange = obj.drawRange;
 		const double xProjStart = obj.xProjStart;
