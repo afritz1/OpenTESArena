@@ -4,7 +4,6 @@
 #include <glbinding/gl/gl.h>
 #include <sstream>
 #include <iostream>
-//#include <SDL.h>
 #include "../Utilities/Debug.h"
 #include "../Math/MathUtils.h"
 #include "HardwareRenderer.h"
@@ -12,102 +11,50 @@
 using namespace gl;
 
 //Voxel vetices
-GLfloat vertices[] = {
-	// positions          // normals           // texture coords
-	//Back
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-	//Front
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-	 0.5f,	0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-	-0.5f,	0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-	//Left
-	-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f,	0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f,	0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-	//Right
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-	 //Bottom
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-	//Top
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-	 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-	 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
+std::vector<gl::GLfloat> voxelVertices = {
+	-0.5f, -0.5f, -0.5f,//0
+	 0.5f, -0.5f, -0.5f,//1
+	 0.5f,  0.5f, -0.5f,//2
+	-0.5f,  0.5f, -0.5f,//3
+	-0.5f, -0.5f,  0.5f,//4
+	 0.5f, -0.5f,  0.5f,//5
+	 0.5f,  0.5f,  0.5f,//6
+	-0.5f,  0.5f,  0.5f,//7
 };
-
-/*GLfloat voxelPoints[]{
-	0.0f, 0.0f, -1.0f,//Back
-	0.0, 0.0, 1.0f,//Front
-	-1.0f, 0.0f, 0.0f,//Left
-	1.0f, 0.0f, 0.0f,//Right
-	0.0f, -1.0f, 0.0f,//Bottom
-	0.0f, 1.0f, 0.0f//Top
-};*/
-
-GLfloat voxelPoints[]{
-	 1, 0, 0,
-	-1, 0, 0,
-	0, 1, 0,
-	0,-1, 0,
-	0, 0, 1,
-	0, 0,-1
+//Indices, allow us to only define 8 vertices and re-use them
+std::vector<gl::GLuint> voxelIndices = {
+	0,2,1,2,0,3,//Back
+	4,5,6,6,7,4,//Front
+	7,3,0,0,4,7,//Left
+	6,1,2,1,6,5,//Right
+	0,1,5,5,4,0,//Bottom
+	3,6,2,6,3,7 //Top
 };
-
-GLint voxelFaces[] = {5,4,1,0,3,2};
 
 //Local Shaders, perhaps can be moved, but are fine here while testing
 const char* cubeVert = R"glsl(
-#version 410
+#version 330 core
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aTexCoords;
+layout (location = 1) in mat4 model;
+layout (location = 5) in vec3 colour;
 
-out vec3 FragPos;
-out vec3 Normal;
-out vec2 TexCoords;
-
-uniform mat4 model;
 uniform mat4 transform;
+
+out vec3 OutColor;
 
 void main()
 {
-    FragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;  
-    TexCoords = aTexCoords;
-    gl_Position = transform * vec4(FragPos, 1.0);
+	OutColor = colour;
+    gl_Position = transform * model * vec4(aPos, 1.0);
 }
 )glsl";
 
 const char* cubeFrag = R"glsl(
 #version 330 core
-in vec2 TexCoords;
+in vec3 OutColor;
 out vec4 FragColour;
-uniform sampler2D tex;
 void main(){
-	FragColour = texture(tex, TexCoords);//vec4(0.1,0.5,0.25,1.0);
+	FragColour = vec4(OutColor,1.0);
 }
 )glsl";
 
@@ -175,7 +122,6 @@ GLuint compileShader(const char* vertexSource, const char* fragmentSource, const
 
 	return ID;
 }
-
 
 HardwareRenderer::Camera::Camera(const Double3& eye, const Double3& direction,
 	double fovY, double aspect, double projectionModifier)
@@ -290,31 +236,6 @@ HardwareRenderer::VoxelTexel::VoxelTexel()
 	this->transparent = false;
 }
 
-HardwareRenderer::Voxel::Voxel() {
-	//Generate the vertex array for a voxel
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-	//Generate vertex buffer object for a voxel
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GLenum::GL_ARRAY_BUFFER, vbo);
-	//Give vbo the vertex data
-	glBufferData(GLenum::GL_ARRAY_BUFFER, sizeof(vertices), vertices, GLenum::GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);//First three are local space position
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));//Second three are local normal vector
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GLenum::GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));//Texture coords
-	glEnableVertexAttribArray(2);
-
-	//Compile shader program
-	shaderID = compileShader(cubeVert, cubeFrag);
-}
-
-HardwareRenderer::Voxel::~Voxel() {
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-}
-
 HardwareRenderer::HardwareRenderer()
 {
 	frameBuffer = frameVAO = frameVBO = colourBuffer = renderBuffer = width = height = 0;
@@ -410,13 +331,15 @@ void HardwareRenderer::init(int width, int height)
 	if (glCheckFramebufferStatus(GLenum::GL_FRAMEBUFFER) != GLenum::GL_FRAMEBUFFER_COMPLETE) {
 		DebugException("Error: Framebuffer not Complete");
 	}
+	
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0); //Unbind
 }
 
 void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight) {
-	for (int x = 0; x < voxelGrid.getWidth(); x++) {
-		for (int y = voxelGrid.getHeight(); y > 0; y--) {
-			for (int z = 0; z < voxelGrid.getDepth(); z++) {
+	std::vector<Matrix4f> modelMatrices;//the position matrices of every voxel
+	for (int x = 0; x <= voxelGrid.getWidth(); x++) {
+		for (int y = voxelGrid.getHeight(); y >= 0; y--) {
+			for (int z = 0; z <= voxelGrid.getDepth(); z++) {
 				bool voxelIsValid =
 					(x >= 0) &&
 					(y >= 0) &&
@@ -430,22 +353,65 @@ void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, doub
 
 				if (voxelData.dataType != VoxelDataType::None) {
 					//Trial and error to get the voxel y position to match the software renderer
-					auto v = std::make_unique<Voxel>();
-					v->model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.33f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
-					v->x = x;
-					v->y = y;
-					v->z = z;
-					if (voxelData.dataType == VoxelDataType::Wall) {
-						v->texture = voxelTextures.at(voxelData.wall.sideID);
-					}
-					else if (voxelData.dataType == VoxelDataType::Ceiling) {
-						v->texture = voxelTextures.at(voxelData.ceiling.id);
-					}
-					map.push_back(std::move(v));
+					//auto v = std::make_unique<Voxel>();
+					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.33f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
+					modelMatrices.push_back(model);
 				}
 			}
 		}
 	}
+	amount = modelMatrices.size();//arbitrary colours based on index
+	std::vector<Float3> colours;
+	for (unsigned int i = 0; i < amount; i++)
+	{
+		Float3 colour(0.1*i, 0.2*i, 0.5*i);
+		colours.push_back(colour);
+	}
+	//Create and bind to the vertex buffer object
+	gl::glGenBuffers(1, &voxelVBO);
+	gl::glBindBuffer(gl::GLenum::GL_ARRAY_BUFFER, voxelVBO);
+	//Batch the buffer data, create empty buffer -> fill with vertex information -> fill with model information -> fill with colour information
+	gl::glBufferData(gl::GLenum::GL_ARRAY_BUFFER, (sizeof(gl::GLfloat) * voxelVertices.size()) + (amount * 16 * sizeof(float)) + (amount * 3 * sizeof(float)), nullptr, gl::GLenum::GL_STATIC_DRAW);
+	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, 0, sizeof(gl::GLfloat) * voxelVertices.size(), &voxelVertices[0]);
+	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, sizeof(gl::GLfloat) * voxelVertices.size(), amount * 16 * sizeof(float), &modelMatrices[0]);
+	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, sizeof(gl::GLfloat) * voxelVertices.size() + amount * 16 * sizeof(float), amount * 3 * sizeof(float), &colours[0]);
+
+	//Create the vertex array
+	gl::glGenVertexArrays(1, &voxelVAO);
+	gl::glBindVertexArray(voxelVAO);
+	//Tell opengl where the vertices are
+	gl::glVertexAttribPointer(0, 3, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 3 * sizeof(float), 0);
+	gl::glEnableVertexAttribArray(0);
+
+	//Offsets of the model matrix
+	GLsizei vec4Size = 4 * sizeof(float);
+	gl::glEnableVertexAttribArray(1);
+	gl::glVertexAttribPointer(1, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size()));
+	gl::glEnableVertexAttribArray(2);
+	gl::glVertexAttribPointer(2, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + vec4Size));
+	gl::glEnableVertexAttribArray(3);
+	gl::glVertexAttribPointer(3, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + (2 * vec4Size)));
+	gl::glEnableVertexAttribArray(4);
+	gl::glVertexAttribPointer(4, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + (3 * vec4Size)));
+
+	//Divide the matrix so when we instance the voxel, we change which model matrix to use
+	gl::glVertexAttribDivisor(1, 1);
+	gl::glVertexAttribDivisor(2, 1);
+	gl::glVertexAttribDivisor(3, 1);
+	gl::glVertexAttribDivisor(4, 1);
+	//Same with colour
+	gl::glEnableVertexAttribArray(5);
+	gl::glVertexAttribPointer(5, 3, gl::GLenum::GL_FLOAT, gl::GL_FALSE, sizeof(Float3), (void*)((sizeof(gl::GLfloat) * voxelVertices.size()) + (amount * sizeof(Matrix4f)) + sizeof(Float3)));
+	gl::glVertexAttribDivisor(5, 1);
+
+	//Create element buffer
+	gl::glGenBuffers(1, &voxelEBO);
+	gl::glBindBuffer(gl::GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
+	//Give it the indices
+	gl::glBufferData(gl::GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelIndices.size() * sizeof(gl::GLuint), &voxelIndices[0], gl::GLenum::GL_STATIC_DRAW);
+
+	//Compile the voxels shader program
+	shaderID = compileShader(cubeVert, cubeFrag);
 }
 
 void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, double fovY, double ceilingHeight, const VoxelGrid & voxelGrid, uint32_t * colourBuffer) {
@@ -465,34 +431,24 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 	glEnable(GLenum::GL_DEPTH_TEST);
 	//Only render faces we are looking at
 	glEnable(GLenum::GL_CULL_FACE);
-	glFrontFace(GLenum::GL_CW);
-	//glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
+	glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
 	//Draw Calls
-	//glUseProgram(shaderID);
-	//Set the transform value in the shader to the values in camera.transform
-	//glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
-	//Probably a better way to iterate over voxels, but keeping it simple for the moment
-	float fogDistance = 15;
-	
+	float fogDistance = 20;
+	//On first run, generate the voxel grid (will need to update when a new level is loaded)
 	if (firstrun) {
 		createMap(voxelGrid, adjustedVoxelY, ceilingHeight);
-		firstrun = false;
+		firstrun = false;		
 	}
 
-
-	GLuint currentTexture = 0;
-	for (auto& voxel : map) {
-		if (voxel->x > camera.eyeVoxel.x - fogDistance && voxel->x< camera.eyeVoxel.x + fogDistance && voxel->z> camera.eyeVoxel.z - fogDistance && voxel->z < camera.eyeVoxel.z + fogDistance) {
-			glBindVertexArray(voxel->vao);
-			glUseProgram(voxel->shaderID);
-			glUniformMatrix4fv(glGetUniformLocation(voxel->shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
-			glActiveTexture(GLenum::GL_TEXTURE0 + (currentTexture++));
-			glBindTexture(GLenum::GL_TEXTURE_2D, voxel->texture.ID);
-			glUniformMatrix4fv(glGetUniformLocation(voxel->shaderID, "model"), 1, GL_FALSE, &voxel->model.x[0]);
-			glDrawArrays(GLenum::GL_TRIANGLES, 0, 36);
-		}
-	}
+	//Use the voxel shader program
+	glUseProgram(shaderID);
+	//bind to the voxel vertex array
+	glBindVertexArray(voxelVAO);
+	//Set the transform value in the shader to the values in camera.transform
+	glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
+	//Draw 'amount' instances of the voxel
+	gl::glDrawElementsInstanced(gl::GLenum::GL_TRIANGLES, voxelIndices.size(), gl::GLenum::GL_UNSIGNED_INT, 0, amount);
 
 	//Read colour buffer to the SDL renderer
 	glReadPixels(0, 0, width, height, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, colourBuffer);
@@ -501,6 +457,10 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 
 HardwareRenderer::~HardwareRenderer()
 {
+	glDeleteVertexArrays(1, &voxelVAO);
+	glDeleteBuffers(1, &voxelEBO);
+	glDeleteBuffers(1, &voxelVBO);
 	glDeleteBuffers(1, &colourBuffer);
 	glDeleteBuffers(1, &renderBuffer);
+	glDeleteProgram(shaderID);
 }
