@@ -391,9 +391,6 @@ private:
 	// Gets the number of render threads to use based on the given mode.
 	static int getRenderThreadsFromMode(int mode);
 
-	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
-	static double fullAtan2(double y, double x);
-
 	// Initializes render threads that run in the background for the duration of the renderer's
 	// lifetime. This can also be used to reset threads after a screen resize.
 	void initRenderThreads(int width, int height, int threadCount);

@@ -132,7 +132,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 
 double SoftwareRenderer::Camera::getXZAngleRadians() const
 {
-	return SoftwareRenderer::fullAtan2(this->forwardX, this->forwardZ);
+	return MathUtils::fullAtan2(this->forwardX, this->forwardZ);
 }
 
 int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
@@ -1127,8 +1127,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	if (this->sunTextureIndex != SoftwareRenderer::NO_SUN)
 	{
 		const SkyTexture &sunTexture = this->skyTextures.at(this->sunTextureIndex);
-		const double sunXAngleRadians = SoftwareRenderer::fullAtan2(
-			sunDirection.x, sunDirection.z);
+		const double sunXAngleRadians = MathUtils::fullAtan2(sunDirection.x, sunDirection.z);
 
 		// When the sun is directly above or below, it might cause the X angle to be undefined.
 		// We want to filter this out before we try projecting it on-screen.
@@ -1554,17 +1553,11 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 	}
 }
 
-double SoftwareRenderer::fullAtan2(double y, double x)
-{
-	const double angle = std::atan2(y, x);
-	return (angle >= 0.0) ? angle : (Constants::TwoPi + angle);
-}
-
 VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 &eye, const Ray &ray)
 {
 	// Angle of the ray from the camera eye.
-	const double angle = SoftwareRenderer::fullAtan2(ray.dirX, ray.dirZ);
+	const double angle = MathUtils::fullAtan2(ray.dirX, ray.dirZ);
 
 	// Corners in world space.
 	const Double2 bottomLeftCorner(
@@ -1584,10 +1577,10 @@ VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int vox
 	const Double2 upRight = (topRightCorner - eye).normalized();
 	const Double2 downLeft = (bottomLeftCorner - eye).normalized();
 	const Double2 downRight = (bottomRightCorner - eye).normalized();
-	const double upLeftAngle = SoftwareRenderer::fullAtan2(upLeft.x, upLeft.y);
-	const double upRightAngle = SoftwareRenderer::fullAtan2(upRight.x, upRight.y);
-	const double downLeftAngle = SoftwareRenderer::fullAtan2(downLeft.x, downLeft.y);
-	const double downRightAngle = SoftwareRenderer::fullAtan2(downRight.x, downRight.y);
+	const double upLeftAngle = MathUtils::fullAtan2(upLeft.x, upLeft.y);
+	const double upRightAngle = MathUtils::fullAtan2(upRight.x, upRight.y);
+	const double downLeftAngle = MathUtils::fullAtan2(downLeft.x, downLeft.y);
+	const double downRightAngle = MathUtils::fullAtan2(downRight.x, downRight.y);
 
 	// Find which range the ray's angle lies within.
 	if ((angle < upRightAngle) || (angle > downRightAngle))
@@ -1614,7 +1607,7 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	
 	// Angle of the ray from the camera eye.
-	const double angle = SoftwareRenderer::fullAtan2(ray.dirX, ray.dirZ);
+	const double angle = MathUtils::fullAtan2(ray.dirX, ray.dirZ);
 
 	// Corners in world space.
 	const Double2 bottomLeftCorner(
@@ -1634,10 +1627,10 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 upRight = (topRightCorner - eye2D).normalized();
 	const Double2 downLeft = (bottomLeftCorner - eye2D).normalized();
 	const Double2 downRight = (bottomRightCorner - eye2D).normalized();
-	const double upLeftAngle = SoftwareRenderer::fullAtan2(upLeft.x, upLeft.y);
-	const double upRightAngle = SoftwareRenderer::fullAtan2(upRight.x, upRight.y);
-	const double downLeftAngle = SoftwareRenderer::fullAtan2(downLeft.x, downLeft.y);
-	const double downRightAngle = SoftwareRenderer::fullAtan2(downRight.x, downRight.y);
+	const double upLeftAngle = MathUtils::fullAtan2(upLeft.x, upLeft.y);
+	const double upRightAngle = MathUtils::fullAtan2(upRight.x, upRight.y);
+	const double downLeftAngle = MathUtils::fullAtan2(downLeft.x, downLeft.y);
+	const double downRightAngle = MathUtils::fullAtan2(downRight.x, downRight.y);
 
 	// Find which side it starts on, then do some checks against line angles.
 	// When the ray origin is at a diagonal to the voxel, ignore the corner
