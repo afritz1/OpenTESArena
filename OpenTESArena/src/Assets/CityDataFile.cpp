@@ -482,14 +482,16 @@ uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 
 uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
 {
-	const auto &province = this->getProvinceData(provinceID);
-	const int locationID = Location::cityToLocationID(localCityID);
-	const auto &location = province.getLocationData(locationID);
-	const Int2 localPoint(location.x, location.y);
-	const Int2 globalPoint = CityDataFile::localPointToGlobal(
-		localPoint, province.getGlobalRect());
+	const Int2 globalPoint = this->getGlobalPoint(localCityID, provinceID);
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
 	return Bytes::rol(seed, 16);
+}
+
+uint32_t CityDataFile::getDistantSkySeed(int localCityID, int provinceID) const
+{
+	const Int2 globalPoint = this->getGlobalPoint(localCityID, provinceID);
+	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
+	return seed * provinceID;
 }
 
 uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
@@ -523,6 +525,17 @@ uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
 	const auto &province = this->provinces.at(provinceID);
 	const uint32_t baseSeed = ((province.globalX << 16) + province.globalY) * provinceID;
 	return (baseSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
+}
+
+Int2 CityDataFile::getGlobalPoint(int localCityID, int provinceID) const
+{
+	const auto &province = this->getProvinceData(provinceID);
+	const int locationID = Location::cityToLocationID(localCityID);
+	const auto &location = province.getLocationData(locationID);
+	const Int2 localPoint(location.x, location.y);
+	const Int2 globalPoint = CityDataFile::localPointToGlobal(
+		localPoint, province.getGlobalRect());
+	return globalPoint;
 }
 
 Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)

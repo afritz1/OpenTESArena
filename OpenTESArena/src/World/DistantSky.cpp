@@ -8,6 +8,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Surface.h"
@@ -238,15 +239,19 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	}
 
 	const auto &cityDataFile = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityDataFile.getCitySeed(localCityID, provinceID);
-	ArenaRandom random(citySeed);
+	const uint32_t skySeed = cityDataFile.getDistantSkySeed(localCityID, provinceID);
+	ArenaRandom random(skySeed);
 	const int count = (random.next() % 4) + 2;
 
 	// Converts an Arena angle to an actual angle in radians.
 	auto arenaAngleToRadians = [](int angle)
 	{
-		return (Constants::Pi * 2.0) * (static_cast<double>(angle) /
-			static_cast<double>(DistantSky::UNIQUE_ANGLES));
+		// Arena angles: 0 = south, 128 = west, 256 = north, 384 = east.
+		// Change from clockwise to counter-clockwise and move 0 to east.
+		const double arenaRadians = Constants::TwoPi *
+			(static_cast<double>(angle) / static_cast<double>(DistantSky::UNIQUE_ANGLES));
+		const double flippedArenaRadians = Constants::TwoPi - arenaRadians;
+		return flippedArenaRadians - Constants::HalfPi;
 	};
 
 	// Lambda for creating images with certain sky parameters.
@@ -330,6 +335,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	const bool hasAnimLand = provinceID == 3;
 	if (hasAnimLand)
 	{
+		const uint32_t citySeed = cityDataFile.getCitySeed(localCityID, provinceID);
+
 		// Position of animated land on province map; determines where it is on the horizon
 		// for each location.
 		const Int2 animLandGlobalPos(132, 52);
@@ -340,7 +347,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 
 		// Position of the animated land on the horizon.
 		const double angle = std::atan2(
-			static_cast<double>(animLandGlobalPos.y - locationGlobalPos.y),
+			static_cast<double>(locationGlobalPos.y - animLandGlobalPos.y),
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
 		// Use different animations based on the map distance.
