@@ -1,5 +1,5 @@
-//Ideally I would use SDL's opengl bindings, but I'm lazy and didn't recomplie SDL with opengl, 
-//so I used glBinding, which was already configured, instead.
+//Ideally I would use SDL's opengl bindings, but the default OpenGL library is lacking,
+//so I used glBinding to access the 'extension' functions.
 #include <glbinding/Binding.h>
 #include <glbinding/gl/gl.h>
 #include <sstream>
@@ -11,7 +11,7 @@
 using namespace gl;
 
 //Voxel vetices
-std::vector<gl::GLfloat> voxelVertices = {
+std::vector<GLfloat> voxelVertices = {
 	-0.5f, -0.5f, -0.5f,//0
 	 0.5f, -0.5f, -0.5f,//1
 	 0.5f,  0.5f, -0.5f,//2
@@ -22,7 +22,7 @@ std::vector<gl::GLfloat> voxelVertices = {
 	-0.5f,  0.5f,  0.5f,//7
 };
 //Indices, allow us to only define 8 vertices and re-use them
-std::vector<gl::GLuint> voxelIndices = {
+std::vector<GLuint> voxelIndices = {
 	0,2,1,2,0,3,//Back
 	4,5,6,6,7,4,//Front
 	7,3,0,0,4,7,//Left
@@ -33,28 +33,34 @@ std::vector<gl::GLuint> voxelIndices = {
 
 //Local Shaders, perhaps can be moved, but are fine here while testing
 const char* cubeVert = R"glsl(
-#version 330 core
+#version 400 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in mat4 model;
-layout (location = 5) in vec3 colour;
+layout (location = 5) in float texIdx;
 
 uniform mat4 transform;
 
-out vec3 OutColor;
+out vec3 TexCoords;
+out float TexIdx;
 
 void main()
 {
-	OutColor = colour;
+	//Reversing the position fixes walls and floors, but not ceilings
+	TexCoords = -aPos;
+	TexIdx = texIdx;
     gl_Position = transform * model * vec4(aPos, 1.0);
 }
 )glsl";
 
 const char* cubeFrag = R"glsl(
-#version 330 core
-in vec3 OutColor;
+#version 400 core
+in vec3 TexCoords;
+in float TexIdx;
 out vec4 FragColour;
+uniform samplerCubeArray tex;
 void main(){
-	FragColour = vec4(OutColor,1.0);
+	vec4 result = texture(tex, vec4(TexCoords,TexIdx));//vec4(TexCoords,1.0);
+	FragColour = result.bgra;
 }
 )glsl";
 
@@ -85,7 +91,7 @@ void checkErrors(GLuint index, const std::string& type) {
 		DebugException(logger.str());
 }
 
-//Private helper to compile t
+//Private helper to compile shaders
 GLuint compileShader(const char* vertexSource, const char* fragmentSource, const char* geometrySource = nullptr)
 {
 	GLuint sVertex, sFragment, gShader, ID;
@@ -259,6 +265,16 @@ GLuint texelTexture(int width, int height, const uint32_t* srcTexels) {
 	return ID;
 }
 
+void HardwareRenderer::generateCubeMap(int index, int width, int height, const uint32_t* srcTexels) {
+	//Bind to cubemap array texture
+	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
+
+	//give each layer-face the same value 
+	for (unsigned int i = 0; i < 6; i++) {
+		glTexSubImage3D(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, i + (6 * index), width, height, 1, GLenum::GL_BGRA, GLenum::GL_UNSIGNED_INT_8_8_8_8_REV, srcTexels);
+	}
+}
+
 void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
 {
 	// Clear the selected texture.
@@ -284,6 +300,7 @@ void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
 			dstTexel.g = srcTexel.y;
 			dstTexel.b = srcTexel.z;
 			dstTexel.transparent = srcTexel.w == 0.0;
+			if (dstTexel.transparent) texture.hasAlpha = true;
 
 			// If it's a white texel, it's used with night lights (i.e., yellow at night).
 			const bool isWhite = (srcTexel.x == 1.0) && (srcTexel.y == 1.0) && (srcTexel.z == 1.0);
@@ -294,15 +311,27 @@ void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
 			}
 		}
 	}
-	texture.ID = texelTexture(VoxelTexture::WIDTH, VoxelTexture::HEIGHT,srcTexels);
+	generateCubeMap(id, VoxelTexture::WIDTH, VoxelTexture::HEIGHT, srcTexels);
 }
+
 void HardwareRenderer::init(int width, int height)
 {
+
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
+	{
+		pRENDERDOC_GetAPI RENDERDOC_GetAPI =
+			(pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
+		int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)& rdoc_api);
+		assert(ret == 1);
+	}
+
 	this->width = width;
 	this->height = height;
 	this->voxelTextures = std::vector<VoxelTexture>(64);
 	//set the size of the render viewport
 	glViewport(0, 0, width, height);
+	gl::glEnable(gl::GLenum::GL_BLEND);
+	gl::glBlendFunc(gl::GLenum::GL_SRC_ALPHA, gl::GLenum::GL_ONE_MINUS_SRC_ALPHA);
 	//Create and bind to the frame buffer object
 	glGenFramebuffers(1, &frameBuffer);
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, frameBuffer);
@@ -333,10 +362,22 @@ void HardwareRenderer::init(int width, int height)
 	}
 	
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0); //Unbind
+	
+	glGenTextures(1, &cubemapArray);
+
+	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
+	glTexStorage3D(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, 1,GLenum::GL_RGBA8, VoxelTexture::WIDTH, VoxelTexture::HEIGHT, 6*64);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_NEAREST);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_NEAREST);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_CLAMP_TO_EDGE);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_CLAMP_TO_EDGE);
 }
 
 void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight) {
 	std::vector<Matrix4f> modelMatrices;//the position matrices of every voxel
+	std::vector<GLuint> textureIndices;//texture index for each voxel
+	std::vector<Matrix4f> transparentModels;//store transparent voxels
+	std::vector<GLuint> transparentTextures;//store transparent textures
 	for (int x = 0; x <= voxelGrid.getWidth(); x++) {
 		for (int y = voxelGrid.getHeight(); y >= 0; y--) {
 			for (int z = 0; z <= voxelGrid.getDepth(); z++) {
@@ -352,69 +393,101 @@ void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, doub
 				auto voxelData = voxelGrid.getVoxelData(voxel);
 
 				if (voxelData.dataType != VoxelDataType::None) {
+					
+					int id=0;
+
+					if (voxelData.dataType == VoxelDataType::Ceiling) {
+						id  = voxelData.ceiling.id;
+					}
+					else if (voxelData.dataType == VoxelDataType::Floor) {
+						id = voxelData.floor.id;
+					}
+					else if (voxelData.dataType == VoxelDataType::Wall) {
+						id = voxelData.wall.sideID;
+					}
+					else if (voxelData.dataType == VoxelDataType::Chasm) {
+						id = voxelData.chasm.id;
+					}
+					else if (voxelData.dataType == VoxelDataType::Door) {
+						id = voxelData.door.id;
+					}
+					else if (voxelData.dataType == VoxelDataType::Raised) {
+						id = voxelData.raised.sideID;
+					}
+
 					//Trial and error to get the voxel y position to match the software renderer
-					//auto v = std::make_unique<Voxel>();
-					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.33f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
-					modelMatrices.push_back(model);
+					//There has to be a way to work this out mathematically, because the value is 'good enough' but there is 
+					//a tiny bit of noticable movement I can't fix by eye
+					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.32815f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
+
+					if (voxelTextures.at(id).hasAlpha) {
+						transparentTextures.push_back(id);
+						transparentModels.push_back(model);
+					}
+					else {
+						textureIndices.push_back(id);
+						modelMatrices.push_back(model);
+					}
 				}
 			}
 		}
 	}
-	amount = modelMatrices.size();//arbitrary colours based on index
-	std::vector<Float3> colours;
-	for (unsigned int i = 0; i < amount; i++)
-	{
-		Float3 colour(0.1*i, 0.2*i, 0.5*i);
-		colours.push_back(colour);
-	}
+
+	//Concatenate opaque and transparent voxels so blending occurs correctly
+	modelMatrices.insert(modelMatrices.end(), std::make_move_iterator(transparentModels.begin()), std::make_move_iterator(transparentModels.end()));
+	textureIndices.insert(textureIndices.end(), std::make_move_iterator(transparentTextures.begin()), std::make_move_iterator(transparentTextures.end()));
+
+	amount = modelMatrices.size();
+
 	//Create and bind to the vertex buffer object
-	gl::glGenBuffers(1, &voxelVBO);
-	gl::glBindBuffer(gl::GLenum::GL_ARRAY_BUFFER, voxelVBO);
-	//Batch the buffer data, create empty buffer -> fill with vertex information -> fill with model information -> fill with colour information
-	gl::glBufferData(gl::GLenum::GL_ARRAY_BUFFER, (sizeof(gl::GLfloat) * voxelVertices.size()) + (amount * 16 * sizeof(float)) + (amount * 3 * sizeof(float)), nullptr, gl::GLenum::GL_STATIC_DRAW);
-	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, 0, sizeof(gl::GLfloat) * voxelVertices.size(), &voxelVertices[0]);
-	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, sizeof(gl::GLfloat) * voxelVertices.size(), amount * 16 * sizeof(float), &modelMatrices[0]);
-	gl::glBufferSubData(gl::GLenum::GL_ARRAY_BUFFER, sizeof(gl::GLfloat) * voxelVertices.size() + amount * 16 * sizeof(float), amount * 3 * sizeof(float), &colours[0]);
+	glGenBuffers(1, &voxelVBO);
+	glBindBuffer(GLenum::GL_ARRAY_BUFFER, voxelVBO);
+	//Batch the buffer data, create empty buffer -> fill with vertex information -> fill with model information -> fill with texture information
+	glBufferData(GLenum::GL_ARRAY_BUFFER, (sizeof(GLfloat) * voxelVertices.size()) + (amount * sizeof(Matrix4f)) + (amount * sizeof(GLuint)), nullptr, GLenum::GL_STATIC_DRAW);
+	glBufferSubData(GLenum::GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * voxelVertices.size(), &voxelVertices[0]);
+	glBufferSubData(GLenum::GL_ARRAY_BUFFER, sizeof(GLfloat) * voxelVertices.size(), amount * sizeof(Matrix4f), &modelMatrices[0]);
+	glBufferSubData(GLenum::GL_ARRAY_BUFFER, sizeof(GLfloat) * voxelVertices.size() + amount * sizeof(Matrix4f), amount * sizeof(GLuint), &textureIndices[0]);
 
 	//Create the vertex array
-	gl::glGenVertexArrays(1, &voxelVAO);
-	gl::glBindVertexArray(voxelVAO);
+	glGenVertexArrays(1, &voxelVAO);
+	glBindVertexArray(voxelVAO);
 	//Tell opengl where the vertices are
-	gl::glVertexAttribPointer(0, 3, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 3 * sizeof(float), 0);
-	gl::glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GLenum::GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glEnableVertexAttribArray(0);
 
 	//Offsets of the model matrix
 	GLsizei vec4Size = 4 * sizeof(float);
-	gl::glEnableVertexAttribArray(1);
-	gl::glVertexAttribPointer(1, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size()));
-	gl::glEnableVertexAttribArray(2);
-	gl::glVertexAttribPointer(2, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + vec4Size));
-	gl::glEnableVertexAttribArray(3);
-	gl::glVertexAttribPointer(3, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + (2 * vec4Size)));
-	gl::glEnableVertexAttribArray(4);
-	gl::glVertexAttribPointer(4, 4, gl::GLenum::GL_FLOAT, gl::GL_FALSE, 4 * vec4Size, (void*)(sizeof(gl::GLfloat) * voxelVertices.size() + (3 * vec4Size)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GLenum::GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(sizeof(GLfloat) * voxelVertices.size()));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GLenum::GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(sizeof(GLfloat) * voxelVertices.size() + vec4Size));
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 4, GLenum::GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(sizeof(GLfloat) * voxelVertices.size() + (2 * vec4Size)));
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 4, GLenum::GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(sizeof(GLfloat) * voxelVertices.size() + (3 * vec4Size)));
 
 	//Divide the matrix so when we instance the voxel, we change which model matrix to use
-	gl::glVertexAttribDivisor(1, 1);
-	gl::glVertexAttribDivisor(2, 1);
-	gl::glVertexAttribDivisor(3, 1);
-	gl::glVertexAttribDivisor(4, 1);
-	//Same with colour
-	gl::glEnableVertexAttribArray(5);
-	gl::glVertexAttribPointer(5, 3, gl::GLenum::GL_FLOAT, gl::GL_FALSE, sizeof(Float3), (void*)((sizeof(gl::GLfloat) * voxelVertices.size()) + (amount * sizeof(Matrix4f)) + sizeof(Float3)));
-	gl::glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(1, 1);
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+
+	//Same for textures
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 1, GLenum::GL_UNSIGNED_INT, GL_FALSE, sizeof(GLint), (void*)((sizeof(GLfloat) * voxelVertices.size()) + (amount * sizeof(Matrix4f))));
+	glVertexAttribDivisor(5, 1);
 
 	//Create element buffer
-	gl::glGenBuffers(1, &voxelEBO);
-	gl::glBindBuffer(gl::GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
+	glGenBuffers(1, &voxelEBO);
+	glBindBuffer(GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelEBO);
 	//Give it the indices
-	gl::glBufferData(gl::GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelIndices.size() * sizeof(gl::GLuint), &voxelIndices[0], gl::GLenum::GL_STATIC_DRAW);
+	glBufferData(GLenum::GL_ELEMENT_ARRAY_BUFFER, voxelIndices.size() * sizeof(GLuint), &voxelIndices[0], GLenum::GL_STATIC_DRAW);
 
 	//Compile the voxels shader program
 	shaderID = compileShader(cubeVert, cubeFrag);
 }
 
-void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, double fovY, double ceilingHeight, const VoxelGrid & voxelGrid, uint32_t * colourBuffer) {
+void HardwareRenderer::render(const Double3& eye, const Double3& direction, double fovY, double ceilingHeight, const VoxelGrid& voxelGrid, uint32_t* colourBuffer) {
 	//From SoftwareRenderer
 	const double widthReal = static_cast<double>(this->width);
 	const double heightReal = static_cast<double>(this->height);
@@ -423,7 +496,7 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 	const double projectionModifier = 1.20;
 	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
 
-	//Use our fbo
+	//Use our framebuffer
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, frameBuffer);
 	//Clear the colour and depth buffers
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -431,28 +504,32 @@ void HardwareRenderer::render(const Double3 & eye, const Double3 & direction, do
 	glEnable(GLenum::GL_DEPTH_TEST);
 	//Only render faces we are looking at
 	glEnable(GLenum::GL_CULL_FACE);
-	glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
+	//glPolygonMode(GLenum::GL_FRONT_AND_BACK, GLenum::GL_LINE);//Wireframe for testing
 	//Draw Calls
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
 	float fogDistance = 20;
 	//On first run, generate the voxel grid (will need to update when a new level is loaded)
 	if (firstrun) {
 		createMap(voxelGrid, adjustedVoxelY, ceilingHeight);
-		firstrun = false;		
 	}
 
 	//Use the voxel shader program
 	glUseProgram(shaderID);
 	//bind to the voxel vertex array
 	glBindVertexArray(voxelVAO);
+	//Bind to the cubemap array texture
+	glActiveTexture(GLenum::GL_TEXTURE0);
+	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
 	//Set the transform value in the shader to the values in camera.transform
 	glUniformMatrix4fv(glGetUniformLocation(shaderID, "transform"), 1, GL_FALSE, &camera.transform.x[0]);
 	//Draw 'amount' instances of the voxel
-	gl::glDrawElementsInstanced(gl::GLenum::GL_TRIANGLES, voxelIndices.size(), gl::GLenum::GL_UNSIGNED_INT, 0, amount);
+	glDrawElementsInstanced(GLenum::GL_TRIANGLES, voxelIndices.size(), GLenum::GL_UNSIGNED_INT, 0, amount);
 
 	//Read colour buffer to the SDL renderer
 	glReadPixels(0, 0, width, height, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, colourBuffer);
 	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0);
+	if (firstrun)
+		firstrun = false;
 }
 
 HardwareRenderer::~HardwareRenderer()

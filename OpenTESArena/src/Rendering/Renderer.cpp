@@ -307,9 +307,10 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
 		const uint32_t flags = SDL_WINDOW_RESIZABLE |
 			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) | (opengl ? SDL_WINDOW_OPENGL : 0);
-
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		if (opengl) {
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		}
 		// If fullscreen is true, then width and height are ignored. They are stored
 		// behind the scenes for when the user changes to windowed mode, however.
 		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
@@ -317,11 +318,12 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 
 	DebugAssertMsg(this->window != nullptr, "SDL_CreateWindow");
 
-	if (opengl)
+	if (opengl) {
 		this->context = SDL_GL_CreateContext(window);
+		glbinding::Binding::initialize();
+	}
 	// Initialize renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
-	glbinding::Binding::initialize();
 	// Use window dimensions, just in case it's fullscreen and the given width and
 	// height are ignored.
 	Int2 windowDimensions = this->getWindowDimensions();

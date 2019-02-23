@@ -44,7 +44,13 @@ private:
 	HardwareRenderer hardwareRenderer; //Testing OpenGL rendering
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
-	bool opengl = true;
+	bool opengl
+#if defined(HAVE_OPENGL) && defined(HAVE_GLBINDING)
+		= true;
+#else
+		= false;
+#endif //only enable opengl if we have the requrirements
+
 	// Helper method for making a renderer context.
 	static SDL_Renderer *createRenderer(SDL_Window *window);
 

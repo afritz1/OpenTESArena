@@ -27,6 +27,7 @@ public:
 		static const int TEXEL_COUNT = VoxelTexture::WIDTH * VoxelTexture::HEIGHT;
 
 		GLuint ID;
+		bool hasAlpha = false;
 		std::array<VoxelTexel, VoxelTexture::TEXEL_COUNT> texels;
 		std::vector<Int2> lightTexels; // Black during the day, yellow at night.
 	};
@@ -66,10 +67,10 @@ public:
 private:
 	//OpenGL ID's for various objects
 	GLuint frameBuffer, colourBuffer, renderBuffer, frameVAO, frameVBO, shaderID, instanceVBO;
-	GLuint voxelVAO, voxelVBO, voxelEBO;
+	GLuint voxelVAO, voxelVBO, voxelEBO, cubemapArray;
 	int width, height;
 	std::vector<VoxelTexture> voxelTextures;
-	std::vector<std::unique_ptr<Voxel>> map;
 	bool firstrun = true;
 	int amount = 0;
+	void generateCubeMap(int index, int width, int height, const uint32_t* srcTexels);
 };
