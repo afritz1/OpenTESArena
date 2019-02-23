@@ -661,9 +661,9 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 		return static_cast<int>(this->skyTextures.size()) - 1;
 	};
 
-	// Iterate through each distant object type in the distant sky, creating associations between
-	// the distant sky object and its render texture.
-	for (int i = 0; i < distantSky.getLandObjectCount(); i++)
+	// Reverse iterate through each distant object type in the distant sky, creating associations
+	// between the distant sky object and its render texture.
+	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
 		const int textureIndex = addSkyTexture(landObject.getSurface());
@@ -671,7 +671,7 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 			textureIndex, DistantObject::Type::Land, &landObject));
 	}
 
-	for (int i = 0; i < distantSky.getAnimatedLandObjectCount(); i++)
+	for (int i = distantSky.getAnimatedLandObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
 
@@ -687,7 +687,7 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 			textureIndex, DistantObject::Type::AnimatedLand, &animLandObject));
 	}
 
-	for (int i = 0; i < distantSky.getAirObjectCount(); i++)
+	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
 		const int textureIndex = addSkyTexture(airObject.getSurface());
@@ -695,7 +695,7 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 			textureIndex, DistantObject::Type::Air, &airObject));
 	}
 
-	for (int i = 0; i < distantSky.getSpaceObjectCount(); i++)
+	for (int i = distantSky.getSpaceObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::SpaceObject &spaceObject = distantSky.getSpaceObject(i);
 		const int textureIndex = addSkyTexture(spaceObject.getSurface());
