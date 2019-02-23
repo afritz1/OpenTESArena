@@ -648,9 +648,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Toggle compass display.
 		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
 	}
+#if defined(HAVE_OPENGL) && defined(HAVE_GLBINDING)
 	else if (renderMethodHotkeyPressed) {
 		this->getGame().getGameData().hardware = !this->getGame().getGameData().hardware;//Toggle hardware rendering
 	}
+#endif
 
 	// Player's XY coordinate hotkey.
 	const bool f2Pressed = inputManager.keyPressed(e, SDLK_F2);

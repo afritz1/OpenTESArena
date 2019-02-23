@@ -491,7 +491,8 @@ void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
 	assert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setVoxelTexture(id, srcTexels);
-	this->hardwareRenderer.setVoxelTexture(id, srcTexels);
+	if(opengl)
+		this->hardwareRenderer.setVoxelTexture(id, srcTexels);
 }
 
 void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
@@ -638,11 +639,12 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 
 	// Render the game world to the game world frame buffer.
 	switch (hard) {//Change render method
-	case false:
-		this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
-		break;
 	case true:
 		this->hardwareRenderer.render(eye, forward, fovY, ceilingHeight, voxelGrid, gameWorldPixels);
+		if (opengl)
+			break;
+	case false:
+		this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
 		break;
 	}
 	// Update the game world texture with the new ARGB8888 pixels.
