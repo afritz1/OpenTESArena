@@ -1,3 +1,4 @@
+#ifdef HAVE_OPENGL
 #include <iostream>
 #include <sstream>
 //Ideally I would use SDL's opengl bindings, but the default OpenGL library is lacking,
@@ -539,3 +540,4 @@ HardwareRenderer::~HardwareRenderer()
 	glDeleteBuffers(1, &renderBuffer);
 	glDeleteProgram(shaderID);
 }
+#endif

@@ -41,11 +41,13 @@ private:
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	SoftwareRenderer softwareRenderer; // Game world renderer.
+#ifdef HAVE_OPENGL
 	HardwareRenderer hardwareRenderer; //Testing OpenGL rendering
+#endif
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 	bool opengl
-#if defined(HAVE_OPENGL) && defined(HAVE_GLBINDING)
+#ifdef HAVE_OPENGL
 		= true;
 #else
 		= false;

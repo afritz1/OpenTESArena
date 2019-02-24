@@ -1,5 +1,5 @@
 #pragma once
-
+#ifdef HAVE_OPENGL
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -79,3 +79,4 @@ public:
 	void setVoxelTexture(int id, const uint32_t* srcTexels);
 	void createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight);
 };
+#endif

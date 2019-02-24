@@ -444,7 +444,9 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 
 	// Initialize 3D rendering.
 	this->softwareRenderer.init(renderWidth, renderHeight, renderThreadsMode);
+#ifdef HAVE_OPENGL
 	this->hardwareRenderer.init(renderWidth, renderHeight);
+#endif
 }
 
 void Renderer::setRenderThreadsMode(int mode)
@@ -490,8 +492,9 @@ void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
 	assert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setVoxelTexture(id, srcTexels);
-	if(opengl)
-		this->hardwareRenderer.setVoxelTexture(id, srcTexels);
+#ifdef HAVE_OPENGL
+	this->hardwareRenderer.setVoxelTexture(id, srcTexels);
+#endif
 }
 
 void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
@@ -639,9 +642,10 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	// Render the game world to the game world frame buffer.
 	switch (hard) {//Change render method
 	case true:
+#ifdef HAVE_OPENGL
 		this->hardwareRenderer.render(eye, forward, fovY, ceilingHeight, voxelGrid, gameWorldPixels);
-		if (opengl)
-			break;
+		break;
+#endif
 	case false:
 		this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
 		break;

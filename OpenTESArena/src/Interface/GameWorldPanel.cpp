@@ -648,7 +648,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Toggle compass display.
 		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
 	}
-#if defined(HAVE_OPENGL) && defined(HAVE_GLBINDING)
+#ifdef HAVE_OPENGL
 	else if (renderMethodHotkeyPressed) {
 		this->getGame().getGameData().hardware = !this->getGame().getGameData().hardware;//Toggle hardware rendering
 	}
