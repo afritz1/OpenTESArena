@@ -117,6 +117,7 @@ Vector4f<T>::Vector4f(const Vector3f<T> &xyz, T w)
 	this->w = w;
 }
 
+template<>
 Vector4f<double>::Vector4f(const Vector4f<float>& old)
 {
 	this->x = old.x;
@@ -125,6 +126,7 @@ Vector4f<double>::Vector4f(const Vector4f<float>& old)
 	this->w = old.w;
 }
 
+template<>
 Vector4f<float>::Vector4f(const Vector4f<double>& old)
 {
 	this->x = old.x;
@@ -133,6 +135,7 @@ Vector4f<float>::Vector4f(const Vector4f<double>& old)
 	this->w = old.w;
 }
 
+template<>
 Vector4f<float>::Vector4f(const Vector4f<float>& old)
 {
 	this->x = old.x;
@@ -141,6 +144,7 @@ Vector4f<float>::Vector4f(const Vector4f<float>& old)
 	this->w = old.w;
 }
 
+template<>
 Vector4f<double>::Vector4f(const Vector4f<double>& old)
 {
 	this->x = old.x;

@@ -5,7 +5,7 @@
 //so I used glBinding to access the 'extension' functions.
 #include "glbinding/Binding.h"
 #include "glbinding/gl/gl.h"
-#include <sstream>
+#include "renderdoc_app.h"
 
 #include "HardwareRenderer.h"
 #include "../Utilities/Debug.h"
