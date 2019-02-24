@@ -1,4 +1,6 @@
+#include <array>
 #include <cassert>
+#include <type_traits>
 
 #include "ClimateType.h"
 #include "DistantSky.h"
@@ -317,8 +319,9 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	// Initial set of statics based on the climate.
 	placeStaticObjects(count, baseFilename, pos, var, maxDigits, false);
 
-	// If the weather is clear, add clouds.
-	if (weatherType == WeatherType::Clear)
+	// Add clouds if the weather conditions are permitting.
+	const bool hasClouds = weatherType == WeatherType::Clear;
+	if (hasClouds)
 	{
 		const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
 		random.srand(cloudSeed);
@@ -393,8 +396,84 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		this->animLandObjects.push_back(std::move(animLandObj));
 	}
 
-	// Other initializations (stars).
-	// @todo
+	// Initialize stars.
+	struct SubStar
+	{
+		int16_t dx, dy;
+		uint8_t color;
+	};
+
+	struct Star
+	{
+		int16_t x, y, z;
+		std::vector<SubStar> subList;
+		int8_t type;
+	};
+
+	auto getRndCoord = [&random]()
+	{
+		const int16_t d = (0x800 + random.next()) & 0x0FFF;
+		return ((d & 2) == 0) ? d : -d;
+	};
+
+	std::vector<Star> stars;
+	std::array<bool, 3> planets = { false, false, false };
+
+	random.srand(0x12345679);
+
+	const int starCount = 40;
+	for (int i = 0; i < starCount; i++)
+	{
+		Star star;
+		star.x = getRndCoord();
+		star.y = getRndCoord();
+		star.z = getRndCoord();
+		star.type = -1;
+
+		const uint8_t selection = random.next() % 4;
+		if (selection != 0)
+		{
+			// Constellation.
+			std::vector<SubStar> starList;
+			const int n = 2 + (random.next() % 4);
+
+			for (int j = 0; j < n; j++)
+			{
+				// Must use arithmetic right shift, not logical right shift.
+				// C++ only does arithmetic right shift when the value is signed.
+				static_assert(std::is_signed<decltype(random.next())>::value, "Value not signed.");
+
+				SubStar subStar;
+				subStar.dx = random.next() >> 9;
+				subStar.dy = random.next() >> 9;
+				subStar.color = (random.next() % 10) + 64;
+				starList.push_back(std::move(subStar));
+			}
+
+			star.subList = std::move(starList);
+		}
+		else
+		{
+			// Large star.
+			int8_t value;
+			do
+			{
+				value = random.next() % 8;
+			} while ((value >= 5) && planets.at(value - 5));
+
+			if (value >= 5)
+			{
+				planets.at(value - 5) = true;
+			}
+
+			star.type = value;
+		}
+
+		stars.push_back(std::move(star));
+	}
+
+	// @todo: convert stars to modern representation.
+	// @todo: moons
 
 	// Initialize sun texture.
 	const std::string &sunFilename = exeData.locations.sunFilename;
