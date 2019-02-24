@@ -1,15 +1,19 @@
+#include <iostream>
+#include <sstream>
 //Ideally I would use SDL's opengl bindings, but the default OpenGL library is lacking,
 //so I used glBinding to access the 'extension' functions.
-#include <glbinding/Binding.h>
-#include <glbinding/gl/gl.h>
+#include "glbinding/Binding.h"
+#include "glbinding/gl/gl.h"
 #include <sstream>
-#include <iostream>
+
+#include "HardwareRenderer.h"
 #include "../Utilities/Debug.h"
 #include "../Math/MathUtils.h"
-#include "HardwareRenderer.h"
 
 using namespace gl;
 
+namespace
+{
 //Voxel vetices
 std::vector<GLfloat> voxelVertices = {
 	-0.5f, -0.5f, -0.5f,//0
@@ -72,17 +76,21 @@ void checkErrors(GLuint index, const std::string& type) {
 	std::stringstream logger;
 	logger << "Error: " << type;
 
-	if (type == "Program") {
+	if (type == "Program")
+	{
 		glGetProgramiv(index, GLenum::GL_LINK_STATUS, &success);
-		if (!success) {
+		if (!success)
+		{
 			glGetProgramInfoLog(index, 1024, nullptr, log);
 			logger << "Link Error - " << log;
 		}
 	}
-	else {
+	else
+	{
 		logger << " Shader ";
 		glGetShaderiv(index, GL_COMPILE_STATUS, &success);
-		if (!success) {
+		if (!success) 
+		{
 			glGetShaderInfoLog(index, 1024, NULL, log);
 			logger << "Compile Error - " << log;
 		}
@@ -127,6 +135,7 @@ GLuint compileShader(const char* vertexSource, const char* fragmentSource, const
 		glDeleteShader(gShader);
 
 	return ID;
+}
 }
 
 HardwareRenderer::Camera::Camera(const Double3& eye, const Double3& direction,
@@ -244,33 +253,67 @@ HardwareRenderer::VoxelTexel::VoxelTexel()
 
 HardwareRenderer::HardwareRenderer()
 {
-	frameBuffer = frameVAO = frameVBO = colourBuffer = renderBuffer = width = height = 0;
+	frameBuffer = voxelVAO = voxelVBO = cubemapArray = shaderID = colourBuffer = renderBuffer = width = height = 0;
 }
 
-GLuint texelTexture(int width, int height, const uint32_t* srcTexels) {
-	GLuint ID = 0;
+void HardwareRenderer::init(int width, int height)
+{
+	this->width = width;
+	this->height = height;
+	this->voxelTextures = std::vector<VoxelTexture>(64);
+	//set the size of the render viewport
+	glViewport(0, 0, width, height);
+	gl::glEnable(gl::GLenum::GL_BLEND);
+	gl::glBlendFunc(gl::GLenum::GL_SRC_ALPHA, gl::GLenum::GL_ONE_MINUS_SRC_ALPHA);
+	//Create and bind to the frame buffer object
+	glGenFramebuffers(1, &frameBuffer);
+	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, frameBuffer);
 
-	glGenTextures(1, &ID);
-	glBindTexture(GLenum::GL_TEXTURE_2D, ID);
-
-	glTexImage2D(GLenum::GL_TEXTURE_2D, 0, GLenum::GL_RGBA, width, height, 0, GLenum::GL_RGBA, GLenum::GL_UNSIGNED_BYTE, srcTexels);
-	// Set Texture wrap and filter modes
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_REPEAT);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_REPEAT);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_NEAREST);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_NEAREST);
-	// Unbind texture
+	//Create the empty colour buffer texture
+	glGenTextures(1, &colourBuffer);
+	glBindTexture(GLenum::GL_TEXTURE_2D, colourBuffer);
+	glTexImage2D(GLenum::GL_TEXTURE_2D, 0, GLenum::GL_RGB, width, height, 0, GLenum::GL_RGB, GLenum::GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_LINEAR);
+	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_LINEAR);
 	glBindTexture(GLenum::GL_TEXTURE_2D, 0);
 
-	return ID;
+	//Attach to the fbo
+	glFramebufferTexture2D(GLenum::GL_FRAMEBUFFER, GLenum::GL_COLOR_ATTACHMENT0, GLenum::GL_TEXTURE_2D, colourBuffer, 0);
+
+	//Create render buffer object for depth and stencil buffers
+	glGenRenderbuffers(1, &renderBuffer);
+	glBindRenderbuffer(GLenum::GL_RENDERBUFFER, renderBuffer);
+	glRenderbufferStorage(GLenum::GL_RENDERBUFFER, GLenum::GL_DEPTH24_STENCIL8, width, height);
+	glBindRenderbuffer(GLenum::GL_RENDERBUFFER, 0);
+
+	//Attach
+	glFramebufferRenderbuffer(GLenum::GL_FRAMEBUFFER, GLenum::GL_DEPTH_STENCIL_ATTACHMENT, GLenum::GL_RENDERBUFFER, renderBuffer);
+
+	//Make sure the the frame buffer is 'complete' so we can use it
+	if (glCheckFramebufferStatus(GLenum::GL_FRAMEBUFFER) != GLenum::GL_FRAMEBUFFER_COMPLETE) {
+		DebugException("Error: Framebuffer not Complete");
+	}
+
+	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0); //Unbind
+
+	glGenTextures(1, &cubemapArray);
+
+	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
+	glTexStorage3D(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, 1, GLenum::GL_RGBA8, VoxelTexture::WIDTH, VoxelTexture::HEIGHT, 6 * 64);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_NEAREST);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_NEAREST);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_CLAMP_TO_EDGE);
+	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_CLAMP_TO_EDGE);
 }
 
-void HardwareRenderer::generateCubeMap(int index, int width, int height, const uint32_t* srcTexels) {
+void HardwareRenderer::generateCubeMap(int index, int width, int height, const uint32_t* srcTexels)
+{
 	//Bind to cubemap array texture
 	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
 
 	//give each layer-face the same value 
-	for (unsigned int i = 0; i < 6; i++) {
+	for (unsigned int i = 0; i < 6; i++) 
+	{
 		glTexSubImage3D(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, i + (6 * index), width, height, 1, GLenum::GL_BGRA, GLenum::GL_UNSIGNED_INT_8_8_8_8_REV, srcTexels);
 	}
 }
@@ -314,73 +357,18 @@ void HardwareRenderer::setVoxelTexture(int id, const uint32_t* srcTexels)
 	generateCubeMap(id, VoxelTexture::WIDTH, VoxelTexture::HEIGHT, srcTexels);
 }
 
-void HardwareRenderer::init(int width, int height)
+void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight)
 {
-
-	if (HMODULE mod = GetModuleHandleA("renderdoc.dll"))
-	{
-		pRENDERDOC_GetAPI RENDERDOC_GetAPI =
-			(pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
-		int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void**)& rdoc_api);
-		assert(ret == 1);
-	}
-
-	this->width = width;
-	this->height = height;
-	this->voxelTextures = std::vector<VoxelTexture>(64);
-	//set the size of the render viewport
-	glViewport(0, 0, width, height);
-	gl::glEnable(gl::GLenum::GL_BLEND);
-	gl::glBlendFunc(gl::GLenum::GL_SRC_ALPHA, gl::GLenum::GL_ONE_MINUS_SRC_ALPHA);
-	//Create and bind to the frame buffer object
-	glGenFramebuffers(1, &frameBuffer);
-	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, frameBuffer);
-
-	//Create the empty colour buffer texture
-	glGenTextures(1, &colourBuffer);
-	glBindTexture(GLenum::GL_TEXTURE_2D, colourBuffer);
-	glTexImage2D(GLenum::GL_TEXTURE_2D, 0, GLenum::GL_RGB, width, height, 0, GLenum::GL_RGB, GLenum::GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_LINEAR);
-	glTexParameteri(GLenum::GL_TEXTURE_2D, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_LINEAR);
-	glBindTexture(GLenum::GL_TEXTURE_2D, 0);
-	
-	//Attach to the fbo
-	glFramebufferTexture2D(GLenum::GL_FRAMEBUFFER, GLenum::GL_COLOR_ATTACHMENT0, GLenum::GL_TEXTURE_2D, colourBuffer, 0);
-
-	//Create render buffer object for depth and stencil buffers
-	glGenRenderbuffers(1, &renderBuffer);
-	glBindRenderbuffer(GLenum::GL_RENDERBUFFER, renderBuffer);
-	glRenderbufferStorage(GLenum::GL_RENDERBUFFER, GLenum::GL_DEPTH24_STENCIL8, width, height);
-	glBindRenderbuffer(GLenum::GL_RENDERBUFFER, 0);
-
-	//Attach
-	glFramebufferRenderbuffer(GLenum::GL_FRAMEBUFFER, GLenum::GL_DEPTH_STENCIL_ATTACHMENT, GLenum::GL_RENDERBUFFER, renderBuffer);
-
-	//Make sure the the frame buffer is 'complete' so we can use it
-	if (glCheckFramebufferStatus(GLenum::GL_FRAMEBUFFER) != GLenum::GL_FRAMEBUFFER_COMPLETE) {
-		DebugException("Error: Framebuffer not Complete");
-	}
-	
-	glBindFramebuffer(GLenum::GL_FRAMEBUFFER, 0); //Unbind
-	
-	glGenTextures(1, &cubemapArray);
-
-	glBindTexture(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, cubemapArray);
-	glTexStorage3D(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, 1,GLenum::GL_RGBA8, VoxelTexture::WIDTH, VoxelTexture::HEIGHT, 6*64);
-	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MIN_FILTER, GLenum::GL_NEAREST);
-	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_MAG_FILTER, GLenum::GL_NEAREST);
-	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_S, GLenum::GL_CLAMP_TO_EDGE);
-	glTexParameteri(GLenum::GL_TEXTURE_CUBE_MAP_ARRAY, GLenum::GL_TEXTURE_WRAP_T, GLenum::GL_CLAMP_TO_EDGE);
-}
-
-void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, double ceilingHeight) {
 	std::vector<Matrix4f> modelMatrices;//the position matrices of every voxel
 	std::vector<GLuint> textureIndices;//texture index for each voxel
 	std::vector<Matrix4f> transparentModels;//store transparent voxels
 	std::vector<GLuint> transparentTextures;//store transparent textures
-	for (int x = 0; x <= voxelGrid.getWidth(); x++) {
-		for (int y = voxelGrid.getHeight(); y >= 0; y--) {
-			for (int z = 0; z <= voxelGrid.getDepth(); z++) {
+	for (int x = 0; x <= voxelGrid.getWidth(); x++)
+	{
+		for (int y = voxelGrid.getHeight(); y >= 0; y--)
+		{
+			for (int z = 0; z <= voxelGrid.getDepth(); z++)
+			{
 				bool voxelIsValid =
 					(x >= 0) &&
 					(y >= 0) &&
@@ -392,26 +380,33 @@ void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, doub
 				auto voxel = voxelGrid.getVoxel(x, y, z);
 				auto voxelData = voxelGrid.getVoxelData(voxel);
 
-				if (voxelData.dataType != VoxelDataType::None) {
+				if (voxelData.dataType != VoxelDataType::None)
+				{
 					
 					int id=0;
 
-					if (voxelData.dataType == VoxelDataType::Ceiling) {
+					if (voxelData.dataType == VoxelDataType::Ceiling)
+					{
 						id  = voxelData.ceiling.id;
 					}
-					else if (voxelData.dataType == VoxelDataType::Floor) {
+					else if (voxelData.dataType == VoxelDataType::Floor)
+					{
 						id = voxelData.floor.id;
 					}
-					else if (voxelData.dataType == VoxelDataType::Wall) {
+					else if (voxelData.dataType == VoxelDataType::Wall)
+					{
 						id = voxelData.wall.sideID;
 					}
-					else if (voxelData.dataType == VoxelDataType::Chasm) {
+					else if (voxelData.dataType == VoxelDataType::Chasm)
+					{
 						id = voxelData.chasm.id;
 					}
-					else if (voxelData.dataType == VoxelDataType::Door) {
+					else if (voxelData.dataType == VoxelDataType::Door)
+					{
 						id = voxelData.door.id;
 					}
-					else if (voxelData.dataType == VoxelDataType::Raised) {
+					else if (voxelData.dataType == VoxelDataType::Raised)
+					{
 						id = voxelData.raised.sideID;
 					}
 
@@ -420,11 +415,13 @@ void HardwareRenderer::createMap(const VoxelGrid& voxelGrid, int adjustedY, doub
 					//a tiny bit of noticable movement I can't fix by eye
 					Matrix4f model = Matrix4f::translation(x + 0.5f, (adjustedY + 0.32815f) - ((y - 1.0f) * ceilingHeight), z + 0.5f) * Matrix4f::scale(1.0f, ceilingHeight, 1.0f);
 
-					if (voxelTextures.at(id).hasAlpha) {
+					if (voxelTextures.at(id).hasAlpha)
+					{
 						transparentTextures.push_back(id);
 						transparentModels.push_back(model);
 					}
-					else {
+					else
+					{
 						textureIndices.push_back(id);
 						modelMatrices.push_back(model);
 					}
@@ -509,7 +506,8 @@ void HardwareRenderer::render(const Double3& eye, const Double3& direction, doub
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
 	float fogDistance = 20;
 	//On first run, generate the voxel grid (will need to update when a new level is loaded)
-	if (firstrun) {
+	if (firstrun)
+	{
 		createMap(voxelGrid, adjustedVoxelY, ceilingHeight);
 	}
 

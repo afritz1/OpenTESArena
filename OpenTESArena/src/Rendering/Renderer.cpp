@@ -2,9 +2,8 @@
 #include <cassert>
 #include <cmath>
 
-#include <glbinding/gl/gl.h>
-#include <glbinding/binding.h>
-
+#include "glbinding/binding.h"
+#include "glbinding/gl/gl.h"
 #include "SDL.h"
 #include "SDL_opengl.h"
 
