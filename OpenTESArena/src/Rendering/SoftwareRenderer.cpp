@@ -881,11 +881,16 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	const Double2 frustumLeftPerp = frustumLeft.rightPerp();
 	const Double2 frustumRightPerp = frustumRight.leftPerp();
 
+	// Determines the vertical offset of the rendered object's origin on-screen. Most
+	// objects have their origin at the bottom, but the sun has its origin at the top so
+	// that when it's 6am or 6pm, its top edge will be at the horizon.
+	enum class Orientation { Top, Bottom };
+
 	// Lambda for checking if the given object properties make it appear on-screen, and if
 	// so, adding it to the visible objects list.
 	auto tryAddObject = [this, parallaxSky, &camera, &frame, &forward, &frustumLeftPerp,
 		&frustumRightPerp](const SkyTexture &texture, double xAngleRadians, double yAngleRadians,
-			bool emissive)
+			bool emissive, Orientation orientation)
 	{
 		// The size of textures in world space is based on 320px being 1 unit, and a 320px
 		// wide texture spans a screen's worth of horizontal FOV.
@@ -896,7 +901,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const double objHalfWidth = objWidth * 0.50;
 
 		// Y position on-screen is the same regardless of parallax.
-		DrawRange drawRange = [yAngleRadians, objHeight, &camera, &frame]()
+		DrawRange drawRange = [yAngleRadians, orientation, objHeight, &camera, &frame]()
 		{
 			// Project the bottom first then add the object's height above it in screen-space
 			// to get the top. This keeps objects from appearing squished the higher they are
@@ -913,8 +918,11 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 				objPointBottom, camera.transform, camera.yShear);
 			const double yProjStart = yProjEnd - (objHeight * camera.zoom);
 
-			const double yProjScreenStart = yProjStart * frame.heightReal;
-			const double yProjScreenEnd = yProjEnd * frame.heightReal;
+			const double yProjBias = (orientation == Orientation::Top) ?
+				(yProjEnd - yProjStart) : 0.0;
+
+			const double yProjScreenStart = (yProjStart + yProjBias) * frame.heightReal;
+			const double yProjScreenEnd = (yProjEnd + yProjBias) * frame.heightReal;
 
 			const int yStart = SoftwareRenderer::getLowerBoundedPixel(
 				yProjScreenStart, frame.height);
@@ -1077,6 +1085,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const SkyTexture *texture = nullptr;
 		double xAngleRadians, yAngleRadians;
 		bool emissive;
+		Orientation orientation;
 
 		if (obj.type == DistantObject::Type::Land)
 		{
@@ -1085,6 +1094,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			xAngleRadians = land.getAngleRadians();
 			yAngleRadians = 0.0;
 			emissive = false;
+			orientation = Orientation::Bottom;
 		}
 		else if (obj.type == DistantObject::Type::AnimatedLand)
 		{
@@ -1093,6 +1103,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			xAngleRadians = animLand.getAngleRadians();
 			yAngleRadians = 0.0;
 			emissive = true;
+			orientation = Orientation::Bottom;
 		}
 		else if (obj.type == DistantObject::Type::Air)
 		{
@@ -1108,6 +1119,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			}();
 
 			emissive = false;
+			orientation = Orientation::Bottom;
 		}
 		else if (obj.type == DistantObject::Type::Space)
 		{
@@ -1120,7 +1132,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 				std::to_string(static_cast<int>(obj.type)) + "\".");
 		}
 
-		tryAddObject(*texture, xAngleRadians, yAngleRadians, emissive);
+		tryAddObject(*texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
 
 	// Try to add the sun to the visible distant objects.
@@ -1135,7 +1147,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		{
 			const double sunYAngleRadians = sunDirection.getYAngleRadians();
 			const bool sunEmissive = true;
-			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians, sunEmissive);
+			const Orientation sunOrientation = Orientation::Top;
+			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians,
+				sunEmissive, sunOrientation);
 		}
 	}
 }
