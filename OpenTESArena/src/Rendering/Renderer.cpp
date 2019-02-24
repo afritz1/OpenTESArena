@@ -2,8 +2,10 @@
 #include <cassert>
 #include <cmath>
 
+#ifdef HAVE_OPENGL
 #include "glbinding/binding.h"
 #include "glbinding/gl/gl.h"
+#endif
 #include "SDL.h"
 #include "SDL_opengl.h"
 
@@ -319,7 +321,9 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 
 	if (opengl) {
 		this->context = SDL_GL_CreateContext(window);
+#ifdef HAVE_OPENGL
 		glbinding::Binding::initialize();
+#endif
 	}
 	// Initialize renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
