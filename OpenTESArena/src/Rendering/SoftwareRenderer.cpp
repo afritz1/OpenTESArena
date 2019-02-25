@@ -671,8 +671,8 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 		this->skyTextures.push_back(SkyTexture());
 		SkyTexture &texture = this->skyTextures.back();
 		texture.texels = std::vector<SkyTexel>(1);
-		texture.width = width;
-		texture.height = height;
+		texture.width = 1;
+		texture.height = 1;
 
 		const Double4 srcColor = Double4::fromARGB(color);
 		SkyTexel &dstTexel = texture.texels.front();
