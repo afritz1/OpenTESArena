@@ -237,7 +237,7 @@ private:
 	// then the index points to the start of its textures.
 	struct DistantObject
 	{
-		enum class Type { Land, AnimatedLand, Air, Space };
+		enum class Type { Land, AnimatedLand, Air, Star, Moon };
 
 		int textureIndex;
 		DistantObject::Type type;
@@ -247,7 +247,8 @@ private:
 			const DistantSky::LandObject *land;
 			const DistantSky::AnimatedLandObject *animLand;
 			const DistantSky::AirObject *air;
-			const DistantSky::SpaceObject *space;
+			const DistantSky::StarObject *star;
+			const DistantSky::MoonObject *moon;
 		};
 
 		DistantObject(int textureIndex, DistantObject::Type type, const void *obj);

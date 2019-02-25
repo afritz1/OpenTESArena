@@ -326,9 +326,13 @@ SoftwareRenderer::DistantObject::DistantObject(int textureIndex, DistantObject::
 	{
 		this->air = static_cast<const DistantSky::AirObject*>(obj);
 	}
-	else if (type == DistantObject::Type::Space)
+	else if (type == DistantObject::Type::Star)
 	{
-		this->space = static_cast<const DistantSky::SpaceObject*>(obj);
+		this->star = static_cast<const DistantSky::StarObject*>(obj);
+	}
+	else if (type == DistantObject::Type::Moon)
+	{
+		this->moon = static_cast<const DistantSky::MoonObject*>(obj);
 	}
 	else
 	{
@@ -661,6 +665,25 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 		return static_cast<int>(this->skyTextures.size()) - 1;
 	};
 
+	// Creates a render texture with a single texel for small stars.
+	auto addSmallStarTexture = [this](uint32_t color)
+	{
+		this->skyTextures.push_back(SkyTexture());
+		SkyTexture &texture = this->skyTextures.back();
+		texture.texels = std::vector<SkyTexel>(1);
+		texture.width = width;
+		texture.height = height;
+
+		const Double4 srcColor = Double4::fromARGB(color);
+		SkyTexel &dstTexel = texture.texels.front();
+		dstTexel.r = srcColor.x;
+		dstTexel.g = srcColor.y;
+		dstTexel.b = srcColor.z;
+		dstTexel.transparent = false;
+
+		return static_cast<int>(this->skyTextures.size()) - 1;
+	};
+
 	// Reverse iterate through each distant object type in the distant sky, creating associations
 	// between the distant sky object and its render texture.
 	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
@@ -695,12 +718,38 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 			textureIndex, DistantObject::Type::Air, &airObject));
 	}
 
-	for (int i = distantSky.getSpaceObjectCount() - 1; i >= 0; i--)
+	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
 	{
-		const DistantSky::SpaceObject &spaceObject = distantSky.getSpaceObject(i);
-		const int textureIndex = addSkyTexture(spaceObject.getSurface());
+		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
+		const int textureIndex = [&addSkyTexture, &addSmallStarTexture, &starObject]()
+		{
+			if (starObject.getType() == DistantSky::StarObject::Type::Small)
+			{
+				const DistantSky::StarObject::SmallStar &smallStar = starObject.getSmallStar();
+				return addSmallStarTexture(smallStar.color);
+			}
+			else if (starObject.getType() == DistantSky::StarObject::Type::Large)
+			{
+				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
+				return addSkyTexture(*largeStar.surface);
+			}
+			else
+			{
+				throw DebugException("Invalid star type \"" +
+					std::to_string(static_cast<int>(starObject.getType())) + "\".");
+			}
+		}();
+
 		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Space, &spaceObject));
+			textureIndex, DistantObject::Type::Star, &starObject));
+	}
+
+	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
+	{
+		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
+		const int textureIndex = addSkyTexture(moonObject.getSurface());
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::Moon, &moonObject));
 	}
 
 	// Add the sun to the sky textures and assign its texture index. It isn't added to
@@ -1121,10 +1170,46 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			emissive = false;
 			orientation = Orientation::Bottom;
 		}
-		else if (obj.type == DistantObject::Type::Space)
+		else if (obj.type == DistantObject::Type::Star)
 		{
-			const DistantSky::SpaceObject &space = *obj.space;
-			DebugNotImplemented();
+			const DistantSky::StarObject &star = *obj.star;
+			texture = &skyTextures.at(obj.textureIndex);
+
+			const Double3 &direction = star.getDirection();
+			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
+			yAngleRadians = direction.getYAngleRadians();
+			emissive = true;
+			orientation = Orientation::Bottom;
+		}
+		else if (obj.type == DistantObject::Type::Moon)
+		{
+			const DistantSky::MoonObject &moon = *obj.moon;
+			texture = &skyTextures.at(obj.textureIndex);
+
+			// @todo: determine moon directions (maybe put in shadingInfo with sunDirection?).
+			const Double3 direction = [&moon]()
+			{
+				const DistantSky::MoonObject::Type type = moon.getType();
+
+				if (type == DistantSky::MoonObject::Type::First)
+				{
+					return Double3(0.3, 0.2, 0.3).normalized();
+				}
+				else if (type == DistantSky::MoonObject::Type::Second)
+				{
+					return Double3(-0.3, 0.2, -0.3).normalized();
+				}
+				else
+				{
+					throw DebugException("Invalid moon type \"" +
+						std::to_string(static_cast<int>(type)) + "\".");
+				}
+			}();
+
+			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
+			yAngleRadians = direction.getYAngleRadians();
+			emissive = true;
+			orientation = Orientation::Top;
 		}
 		else
 		{
