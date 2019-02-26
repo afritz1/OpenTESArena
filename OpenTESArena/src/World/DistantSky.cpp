@@ -561,7 +561,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	// Palette used to obtain colors for small stars in constellations.
 	const Palette palette = []()
 	{
-		const COLFile colFile(PaletteFile::fromName(PaletteName::Daytime));
+		const COLFile colFile(PaletteFile::fromName(PaletteName::Default));
 		return colFile.getPalette();
 	}();
 
