@@ -1,6 +1,5 @@
 #include <array>
 #include <cassert>
-#include <type_traits>
 
 #include "ClimateType.h"
 #include "DistantSky.h"
@@ -495,13 +494,10 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 
 			for (int j = 0; j < n; j++)
 			{
-				// Must use arithmetic right shift, not logical right shift.
-				// C++ only does arithmetic right shift when the value is signed.
-				static_assert(std::is_signed<decltype(random.next())>::value, "Value not signed.");
-
+				// Must convert to short for arithmetic right shift (to preserve sign bit).
 				SubStar subStar;
-				subStar.dx = random.next() >> 9;
-				subStar.dy = random.next() >> 9;
+				subStar.dx = static_cast<int16_t>(random.next()) >> 9;
+				subStar.dy = static_cast<int16_t>(random.next()) >> 9;
 				subStar.color = (random.next() % 10) + 64;
 				starList.push_back(std::move(subStar));
 			}
