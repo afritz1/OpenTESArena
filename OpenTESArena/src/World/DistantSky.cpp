@@ -128,6 +128,22 @@ double DistantSky::AirObject::getHeight() const
 	return this->height;
 }
 
+DistantSky::MoonObject::MoonObject(const Surface &surface, DistantSky::MoonObject::Type type)
+{
+	this->surface = &surface;
+	this->type = type;
+}
+
+const Surface &DistantSky::MoonObject::getSurface() const
+{
+	return *this->surface;
+}
+
+DistantSky::MoonObject::Type DistantSky::MoonObject::getType() const
+{
+	return this->type;
+}
+
 DistantSky::StarObject DistantSky::StarObject::makeSmall(uint32_t color, const Double3 &direction)
 {
 	StarObject star;
@@ -174,22 +190,6 @@ const Double3 &DistantSky::StarObject::getDirection() const
 	return this->direction;
 }
 
-DistantSky::MoonObject::MoonObject(const Surface &surface, DistantSky::MoonObject::Type type)
-{
-	this->surface = &surface;
-	this->type = type;
-}
-
-const Surface &DistantSky::MoonObject::getSurface() const
-{
-	return *this->surface;
-}
-
-DistantSky::MoonObject::Type DistantSky::MoonObject::getType() const
-{
-	return this->type;
-}
-
 const int DistantSky::UNIQUE_ANGLES = 512;
 
 DistantSky::DistantSky()
@@ -212,14 +212,14 @@ int DistantSky::getAirObjectCount() const
 	return static_cast<int>(this->airObjects.size());
 }
 
-int DistantSky::getStarObjectCount() const
-{
-	return static_cast<int>(this->starObjects.size());
-}
-
 int DistantSky::getMoonObjectCount() const
 {
 	return static_cast<int>(this->moonObjects.size());
+}
+
+int DistantSky::getStarObjectCount() const
+{
+	return static_cast<int>(this->starObjects.size());
 }
 
 const DistantSky::LandObject &DistantSky::getLandObject(int index) const
@@ -237,14 +237,14 @@ const DistantSky::AirObject &DistantSky::getAirObject(int index) const
 	return this->airObjects.at(index);
 }
 
-const DistantSky::StarObject &DistantSky::getStarObject(int index) const
-{
-	return this->starObjects.at(index);
-}
-
 const DistantSky::MoonObject &DistantSky::getMoonObject(int index) const
 {
 	return this->moonObjects.at(index);
+}
+
+const DistantSky::StarObject &DistantSky::getStarObject(int index) const
+{
+	return this->starObjects.at(index);
 }
 
 const Surface &DistantSky::getSunSurface() const
@@ -451,6 +451,37 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		this->animLandObjects.push_back(std::move(animLandObj));
 	}
 
+	// Initialize moons.
+	auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
+	{
+		const int phaseIndex = [currentDay, type]()
+		{
+			if (type == MoonObject::Type::First)
+			{
+				return currentDay % 32;
+			}
+			else if (type == MoonObject::Type::Second)
+			{
+				return (currentDay + 14) % 32;
+			}
+			else
+			{
+				throw DebugException("Invalid moon type \"" +
+					std::to_string(static_cast<int>(type)) + "\".");
+			}
+		}();
+
+		const int moonIndex = static_cast<int>(type);
+		const std::string filename = String::toUppercase(
+			exeData.locations.moonFilenames.at(moonIndex));
+		const auto &surfaces = textureManager.getSurfaces(filename);
+		const auto &surface = surfaces.at(phaseIndex);
+		return MoonObject(surface, type);
+	};
+
+	this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
+	this->moonObjects.push_back(makeMoon(MoonObject::Type::Second));
+
 	// Initialize stars.
 	struct SubStar
 	{
@@ -524,38 +555,35 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		stars.push_back(std::move(star));
 	}
 
-	// @todo: convert stars to modern representation.
-
-	// Initialize moons.
-	auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
+	// Convert stars to modern representation.
+	for (const auto &star : stars)
 	{
-		const int phaseIndex = [currentDay, type]()
+		const Double3 direction = Double3(
+			static_cast<double>(star.x),
+			static_cast<double>(star.y),
+			static_cast<double>(star.z)).normalized();
+
+		const bool isSmallStar = star.type == -1;
+		if (isSmallStar)
 		{
-			if (type == MoonObject::Type::First)
+			const uint32_t color = 0x007766AA;
+			this->starObjects.push_back(StarObject::makeSmall(color, direction));
+		}
+		else
+		{
+			const std::string starFilename = [&exeData, &star]()
 			{
-				return currentDay % 32;
-			}
-			else if (type == MoonObject::Type::Second)
-			{
-				return (currentDay + 14) % 32;
-			}
-			else
-			{
-				throw DebugException("Invalid moon type \"" +
-					std::to_string(static_cast<int>(type)) + "\".");
-			}
-		}();
-
-		const int moonIndex = static_cast<int>(type);
-		const std::string filename = String::toUppercase(
-			exeData.locations.moonFilenames.at(moonIndex));
-		const auto &surfaces = textureManager.getSurfaces(filename);
-		const auto &surface = surfaces.at(phaseIndex);
-		return MoonObject(surface, type);
-	};
-
-	this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
-	this->moonObjects.push_back(makeMoon(MoonObject::Type::Second));
+				const std::string typeStr = std::to_string(star.type + 1);
+				std::string filename = exeData.locations.starFilename;
+				const size_t index = filename.find('1');
+				filename.replace(index, 1, typeStr);
+				return String::toUppercase(filename);
+			}();
+			
+			const Surface &surface = textureManager.getSurface(starFilename);
+			this->starObjects.push_back(StarObject::makeLarge(surface, direction));
+		}
+	}
 
 	// Initialize sun texture.
 	const std::string &sunFilename = exeData.locations.sunFilename;

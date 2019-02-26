@@ -685,7 +685,7 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 	};
 
 	// Reverse iterate through each distant object type in the distant sky, creating associations
-	// between the distant sky object and its render texture.
+	// between the distant sky object and its render texture. Order of insertion matters.
 	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
@@ -718,6 +718,14 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 			textureIndex, DistantObject::Type::Air, &airObject));
 	}
 
+	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
+	{
+		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
+		const int textureIndex = addSkyTexture(moonObject.getSurface());
+		this->distantObjects.push_back(DistantObject(
+			textureIndex, DistantObject::Type::Moon, &moonObject));
+	}
+
 	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
@@ -742,14 +750,6 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 
 		this->distantObjects.push_back(DistantObject(
 			textureIndex, DistantObject::Type::Star, &starObject));
-	}
-
-	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
-		const int textureIndex = addSkyTexture(moonObject.getSurface());
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Moon, &moonObject));
 	}
 
 	// Add the sun to the sky textures and assign its texture index. It isn't added to
@@ -1170,17 +1170,6 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			emissive = false;
 			orientation = Orientation::Bottom;
 		}
-		else if (obj.type == DistantObject::Type::Star)
-		{
-			const DistantSky::StarObject &star = *obj.star;
-			texture = &skyTextures.at(obj.textureIndex);
-
-			const Double3 &direction = star.getDirection();
-			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
-			yAngleRadians = direction.getYAngleRadians();
-			emissive = true;
-			orientation = Orientation::Bottom;
-		}
 		else if (obj.type == DistantObject::Type::Moon)
 		{
 			const DistantSky::MoonObject &moon = *obj.moon;
@@ -1210,6 +1199,17 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			yAngleRadians = direction.getYAngleRadians();
 			emissive = true;
 			orientation = Orientation::Top;
+		}
+		else if (obj.type == DistantObject::Type::Star)
+		{
+			const DistantSky::StarObject &star = *obj.star;
+			texture = &skyTextures.at(obj.textureIndex);
+
+			const Double3 &direction = star.getDirection();
+			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
+			yAngleRadians = direction.getYAngleRadians();
+			emissive = true;
+			orientation = Orientation::Bottom;
 		}
 		else
 		{

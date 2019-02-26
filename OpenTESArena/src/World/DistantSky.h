@@ -71,6 +71,22 @@ public:
 		double getHeight() const;
 	};
 
+	// A moon object in space. Moons have phases, and the current one is selected based
+	// on the day given to the distant sky initializer.
+	class MoonObject
+	{
+	public:
+		enum class Type { First, Second };
+	private:
+		const Surface* surface;
+		Type type;
+	public:
+		MoonObject(const Surface &surface, Type type);
+
+		const Surface &getSurface() const;
+		Type getType() const;
+	};
+
 	// A star object in space. Small stars are single points, large stars have images.
 	class StarObject
 	{
@@ -107,22 +123,6 @@ public:
 		const LargeStar &getLargeStar() const;
 		const Double3 &getDirection() const;
 	};
-
-	// A moon object in space. Moons have phases, and the current one is selected based
-	// on the day given to the distant sky initializer.
-	class MoonObject
-	{
-	public:
-		enum class Type { First, Second };
-	private:
-		const Surface* surface;
-		Type type;
-	public:
-		MoonObject(const Surface &surface, Type type);
-
-		const Surface &getSurface() const;
-		Type getType() const;
-	};
 private:
 	// Number of unique directions in 360 degrees.
 	static const int UNIQUE_ANGLES;
@@ -130,8 +130,8 @@ private:
 	std::vector<LandObject> landObjects;
 	std::vector<AnimatedLandObject> animLandObjects;
 	std::vector<AirObject> airObjects;
-	std::vector<StarObject> starObjects;
 	std::vector<MoonObject> moonObjects;
+	std::vector<StarObject> starObjects;
 
 	// The sun's position is a function of time of day.
 	const Surface *sunSurface;
@@ -141,14 +141,14 @@ public:
 	int getLandObjectCount() const;
 	int getAnimatedLandObjectCount() const;
 	int getAirObjectCount() const;
-	int getStarObjectCount() const;
 	int getMoonObjectCount() const;
+	int getStarObjectCount() const;
 
 	const LandObject &getLandObject(int index) const;
 	const AnimatedLandObject &getAnimatedLandObject(int index) const;
 	const AirObject &getAirObject(int index) const;
-	const StarObject &getStarObject(int index) const;
 	const MoonObject &getMoonObject(int index) const;
+	const StarObject &getStarObject(int index) const;
 	const Surface &getSunSurface() const;
 
 	void init(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
