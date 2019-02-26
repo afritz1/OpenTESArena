@@ -6,11 +6,14 @@
 #include "Location.h"
 #include "WeatherType.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/COLFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
+#include "../Media/PaletteFile.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
@@ -555,6 +558,13 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		stars.push_back(std::move(star));
 	}
 
+	// Palette used to obtain colors for small stars in constellations.
+	const Palette palette = []()
+	{
+		const COLFile colFile(PaletteFile::fromName(PaletteName::Daytime));
+		return colFile.getPalette();
+	}();
+
 	// Convert stars to modern representation.
 	for (const auto &star : stars)
 	{
@@ -566,8 +576,19 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		const bool isSmallStar = star.type == -1;
 		if (isSmallStar)
 		{
-			const uint32_t color = 0x007766AA;
-			this->starObjects.push_back(StarObject::makeSmall(color, direction));
+			for (const auto &subStar : star.subList)
+			{
+				const uint32_t color = [&palette, &subStar]()
+				{
+					const Color &paletteColor = palette.get().at(subStar.color);
+					return paletteColor.toARGB();
+				}();
+
+				// @todo: figure out how dx and dy affect base direction.
+				const Double3 subDirection = direction;
+
+				this->starObjects.push_back(StarObject::makeSmall(color, direction));
+			}
 		}
 		else
 		{
@@ -576,6 +597,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 				const std::string typeStr = std::to_string(star.type + 1);
 				std::string filename = exeData.locations.starFilename;
 				const size_t index = filename.find('1');
+				assert(index != std::string::npos);
+
 				filename.replace(index, 1, typeStr);
 				return String::toUppercase(filename);
 			}();
