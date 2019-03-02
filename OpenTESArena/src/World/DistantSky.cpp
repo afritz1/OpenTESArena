@@ -12,6 +12,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
+#include "../Math/Matrix4.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -299,7 +300,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	// Get the mountain traits associated with the given climate type.
 	const DistantMountainTraits &mtnTraits = [climateType]()
 	{
-		const auto iter = std::find_if(MountainTraits.begin(), MountainTraits.end(), 
+		const auto iter = std::find_if(MountainTraits.begin(), MountainTraits.end(),
 			[climateType](const auto &pair)
 		{
 			return pair.first == climateType;
@@ -599,10 +600,28 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 					return paletteColor.toARGB();
 				}();
 
-				// @todo: figure out how dx and dy affect base direction.
-				const Double3 subDirection = direction;
+				// Delta X and Y are applied after world-to-pixel projection of the base direction
+				// in the original game, but we're doing angle calculations here instead for the
+				// sake of keeping all the star generation code in one place.
+				const Double3 subDirection = [&direction, &subStar]()
+				{
+					// Convert delta X and Y to percentages of the identity dimension (320px).
+					const double dxPercent = static_cast<double>(subStar.dx) / DistantSky::IDENTITY_DIM;
+					const double dyPercent = static_cast<double>(subStar.dy) / DistantSky::IDENTITY_DIM;
 
-				this->starObjects.push_back(StarObject::makeSmall(color, direction));
+					// Convert percentages to radians. Positive X is counter-clockwise, positive Y is up.
+					const double dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
+					const double dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
+					
+					// Apply rotations to base direction.
+					const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);
+					const Matrix4d yRotation = Matrix4d::yRotation(dyRadians);
+					const Double4 newDir = yRotation * (xRotation * Double4(direction, 0.0));
+
+					return Double3(newDir.x, newDir.y, newDir.z);
+				}();
+
+				this->starObjects.push_back(StarObject::makeSmall(color, subDirection));
 			}
 		}
 		else
@@ -617,7 +636,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 				filename.replace(index, 1, typeStr);
 				return String::toUppercase(filename);
 			}();
-			
+
 			const Surface &surface = textureManager.getSurface(starFilename);
 			this->starObjects.push_back(StarObject::makeLarge(surface, direction));
 		}
