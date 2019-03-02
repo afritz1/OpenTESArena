@@ -37,6 +37,11 @@ namespace
 			std::unique_ptr<int> value;
 			std::unique_ptr<Node> left;
 			std::unique_ptr<Node> right;
+
+			bool isLeaf() const
+			{
+				return (this->left.get() == nullptr) && (this->right.get() == nullptr);
+			}
 		};
 
 		BitTree::Node root;
@@ -102,7 +107,7 @@ namespace
 					assert(right != nullptr);
 
 					// Check if it's a leaf.
-					if ((right->left.get() == nullptr) && (right->right.get() == nullptr))
+					if (right->isLeaf())
 					{
 						value = right->value.get();
 					}
@@ -116,7 +121,7 @@ namespace
 					assert(left != nullptr);
 
 					// Check if it's a leaf.
-					if ((left->left.get() == nullptr) && (left->right.get() == nullptr))
+					if (left->isLeaf())
 					{
 						value = left->value.get();
 					}
