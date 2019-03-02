@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cassert>
 
@@ -18,6 +19,34 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+
+namespace
+{
+	struct DistantMountainTraits
+	{
+		int filenameIndex; // Index into ExeData mountain filenames.
+		int position;
+		int variation;
+		int maxDigits; // Max number of digits in the filename for the variation.
+
+		DistantMountainTraits(int filenameIndex, int position, int variation, int maxDigits)
+		{
+			this->filenameIndex = filenameIndex;
+			this->position = position;
+			this->variation = variation;
+			this->maxDigits = maxDigits;
+		}
+	};
+
+	const std::array<std::pair<ClimateType, DistantMountainTraits>, 3> MountainTraits =
+	{
+		{
+			{ ClimateType::Temperate, DistantMountainTraits(2, 4, 10, 2) },
+			{ ClimateType::Desert, DistantMountainTraits(1, 6, 4, 1) },
+			{ ClimateType::Mountain, DistantMountainTraits(0, 6, 11, 2) }
+		}
+	};
+}
 
 DistantSky::LandObject::LandObject(const Surface &surface, double angleRadians)
 {
@@ -265,39 +294,22 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	const auto &exeData = miscAssets.getExeData();
 	const auto &distantMountainFilenames = exeData.locations.distantMountainFilenames;
 
-	std::string baseFilename;
-	int pos;
-	int var;
-	int maxDigits;
+	// Get the mountain traits associated with the given climate type.
+	const DistantMountainTraits &mtnTraits = [climateType]()
+	{
+		const auto iter = std::find_if(MountainTraits.begin(), MountainTraits.end(), 
+			[climateType](const auto &pair)
+		{
+			return pair.first == climateType;
+		});
 
-	// Decide the base image filename, etc. based on which climate the city is in.
-	if (climateType == ClimateType::Temperate)
-	{
-		baseFilename = distantMountainFilenames.at(2);
-		pos = 4;
-		var = 10;
-		maxDigits = 2;
-	}
-	else if (climateType == ClimateType::Desert)
-	{
-		baseFilename = distantMountainFilenames.at(1);
-		pos = 6;
-		var = 4;
-		maxDigits = 1;
-	}
-	else if (climateType == ClimateType::Mountain)
-	{
-		baseFilename = distantMountainFilenames.at(0);
-		pos = 6;
-		var = 11;
-		maxDigits = 2;
-	}
-	else
-	{
-		throw DebugException("Invalid climate type \"" +
+		DebugAssertMsg(iter != MountainTraits.end(), "Invalid climate type \"" +
 			std::to_string(static_cast<int>(climateType)) + "\".");
-	}
 
+		return iter->second;
+	}();
+
+	const std::string &baseFilename = distantMountainFilenames.at(mtnTraits.filenameIndex);
 	const auto &cityDataFile = miscAssets.getCityDataFile();
 	const uint32_t skySeed = cityDataFile.getDistantSkySeed(localCityID, provinceID);
 	ArenaRandom random(skySeed);
@@ -375,7 +387,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	};
 
 	// Initial set of statics based on the climate.
-	placeStaticObjects(count, baseFilename, pos, var, maxDigits, false);
+	placeStaticObjects(count, baseFilename, mtnTraits.position, mtnTraits.variation,
+		mtnTraits.maxDigits, false);
 
 	// Add clouds if the weather conditions are permitting.
 	const bool hasClouds = weatherType == WeatherType::Clear;
