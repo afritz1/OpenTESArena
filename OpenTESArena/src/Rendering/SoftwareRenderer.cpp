@@ -941,12 +941,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		&frustumRightPerp](const SkyTexture &texture, double xAngleRadians, double yAngleRadians,
 			bool emissive, Orientation orientation)
 	{
-		// The size of textures in world space is based on 320px being 1 unit, and a 320px
-		// wide texture spans a screen's worth of horizontal FOV.
-		constexpr double identityDim = 320.0;
-		constexpr double identityAngleRadians = 90.0 * Constants::DegToRad;
-		const double objWidth = static_cast<double>(texture.width) / identityDim;
-		const double objHeight = static_cast<double>(texture.height) / identityDim;
+		const double objWidth = static_cast<double>(texture.width) / DistantSky::IDENTITY_DIM;
+		const double objHeight = static_cast<double>(texture.height) / DistantSky::IDENTITY_DIM;
 		const double objHalfWidth = objWidth * 0.50;
 
 		// Y position on-screen is the same regardless of parallax.
@@ -986,7 +982,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		if (parallaxSky)
 		{
 			// Get X angles for left and right edges based on object half width.
-			const double xDeltaRadians = objHalfWidth * identityAngleRadians;
+			const double xDeltaRadians = objHalfWidth * DistantSky::IDENTITY_ANGLE_RADIANS;
 			const double xAngleRadiansLeft = xAngleRadians + xDeltaRadians;
 			const double xAngleRadiansRight = xAngleRadians - xDeltaRadians;
 			

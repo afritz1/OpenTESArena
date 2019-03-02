@@ -136,6 +136,11 @@ private:
 	// The sun's position is a function of time of day.
 	const Surface *sunSurface;
 public:
+	// The size of textures in world space is based on 320px being 1 unit, and a 320px
+	// wide texture spans a screen's worth of horizontal FOV in the original game.
+	static const double IDENTITY_DIM;
+	static const double IDENTITY_ANGLE_RADIANS;
+
 	DistantSky();
 
 	int getLandObjectCount() const;

@@ -223,6 +223,8 @@ const Double3 &DistantSky::StarObject::getDirection() const
 }
 
 const int DistantSky::UNIQUE_ANGLES = 512;
+const double DistantSky::IDENTITY_DIM = 320.0;
+const double DistantSky::IDENTITY_ANGLE_RADIANS = 90.0 * Constants::DegToRad;
 
 DistantSky::DistantSky()
 {
