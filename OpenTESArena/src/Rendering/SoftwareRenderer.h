@@ -235,23 +235,32 @@ private:
 
 	// Pairs together a distant sky object with its render texture index. If it's an animation,
 	// then the index points to the start of its textures.
+	template <typename T>
 	struct DistantObject
 	{
-		enum class Type { Land, AnimatedLand, Air, Moon, Star };
-
+		const T &obj;
 		int textureIndex;
-		DistantObject::Type type;
-		
-		union
-		{
-			const DistantSky::LandObject *land;
-			const DistantSky::AnimatedLandObject *animLand;
-			const DistantSky::AirObject *air;
-			const DistantSky::MoonObject *moon;
-			const DistantSky::StarObject *star;
-		};
 
-		DistantObject(int textureIndex, DistantObject::Type type, const void *obj);
+		DistantObject(const T &obj, int textureIndex);
+	};
+
+	// Collection of all distant objects.
+	struct DistantObjects
+	{
+		// Default index if no sun exists in the world.
+		static const int NO_SUN;
+
+		std::vector<DistantObject<DistantSky::LandObject>> lands;
+		std::vector<DistantObject<DistantSky::AnimatedLandObject>> animLands;
+		std::vector<DistantObject<DistantSky::AirObject>> airs;
+		std::vector<DistantObject<DistantSky::MoonObject>> moons;
+		std::vector<DistantObject<DistantSky::StarObject>> stars;
+		int sunTextureIndex; // Points into skyTextures if the sun exists, or NO_SUN if it doesn't.
+
+		DistantObjects();
+
+		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures);
+		void clear();
 	};
 
 	// A distant object that has been projected on-screen and is at least partially visible.
@@ -363,9 +372,6 @@ private:
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
 
-	// Default index if no sun exists in the world.
-	static const int NO_SUN;
-
 	// Angle of the sky gradient above the horizon, in degrees.
 	static const double SKY_GRADIENT_ANGLE;
 
@@ -376,7 +382,7 @@ private:
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
-	std::vector<DistantObject> distantObjects; // Distant sky objects (mountains, clouds, etc.).
+	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	std::vector<VisDistantObject> visDistantObjs; // Visible distant sky objects.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
@@ -385,7 +391,6 @@ private:
 	std::vector<std::thread> renderThreads; // Threads used for rendering the world.
 	RenderThreadData threadData; // Managed by main thread, used by render threads.
 	double fogDistance; // Distance at which fog is maximum.
-	int sunTextureIndex; // Points into skyTextures if the sun exists, or -1 if it doesn't.
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadsMode; // Determines number of threads to use for rendering.
 

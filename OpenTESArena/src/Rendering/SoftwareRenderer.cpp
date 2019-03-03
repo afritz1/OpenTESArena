@@ -308,37 +308,152 @@ const SoftwareRenderer::Flat::Frame &SoftwareRenderer::VisibleFlat::getFrame() c
 	return this->frame;
 }
 
-SoftwareRenderer::DistantObject::DistantObject(int textureIndex, DistantObject::Type type, const void *obj)
+template <typename T>
+SoftwareRenderer::DistantObject<T>::DistantObject(const T &obj, int textureIndex)
+	: obj(obj)
 {
 	this->textureIndex = textureIndex;
-	this->type = type;
+}
 
-	// Assign based on the object type.
-	if (type == DistantObject::Type::Land)
+const int SoftwareRenderer::DistantObjects::NO_SUN = -1;
+
+SoftwareRenderer::DistantObjects::DistantObjects()
+{
+	this->sunTextureIndex = DistantObjects::NO_SUN;
+}
+
+void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
+	std::vector<SkyTexture> &skyTextures)
+{
+	assert(skyTextures.size() == 0);
+
+	// Creates a render texture from the given surface, adds it to the sky textures list, and
+	// returns its index in the sky textures list.
+	auto addSkyTexture = [&skyTextures](const Surface &surface)
 	{
-		this->land = static_cast<const DistantSky::LandObject*>(obj);
-	}
-	else if (type == DistantObject::Type::AnimatedLand)
+		const int width = surface.getWidth();
+		const int height = surface.getHeight();
+		const uint32_t *texels = static_cast<const uint32_t*>(surface.getPixels());
+		const int texelCount = width * height;
+
+		skyTextures.push_back(SkyTexture());
+		SkyTexture &texture = skyTextures.back();
+		texture.texels = std::vector<SkyTexel>(texelCount);
+		texture.width = width;
+		texture.height = height;
+
+		for (int i = 0; i < texelCount; i++)
+		{
+			const Double4 srcTexel = Double4::fromARGB(texels[i]);
+			SkyTexel &dstTexel = texture.texels[i];
+			dstTexel.r = srcTexel.x;
+			dstTexel.g = srcTexel.y;
+			dstTexel.b = srcTexel.z;
+			dstTexel.transparent = srcTexel.w == 0.0;
+		}
+
+		return static_cast<int>(skyTextures.size()) - 1;
+	};
+
+	// Creates a render texture with a single texel for small stars.
+	auto addSmallStarTexture = [&skyTextures](uint32_t color)
 	{
-		this->animLand = static_cast<const DistantSky::AnimatedLandObject*>(obj);
-	}
-	else if (type == DistantObject::Type::Air)
+		skyTextures.push_back(SkyTexture());
+		SkyTexture &texture = skyTextures.back();
+		texture.texels = std::vector<SkyTexel>(1);
+		texture.width = 1;
+		texture.height = 1;
+
+		const Double4 srcColor = Double4::fromARGB(color);
+		SkyTexel &dstTexel = texture.texels.front();
+		dstTexel.r = srcColor.x;
+		dstTexel.g = srcColor.y;
+		dstTexel.b = srcColor.z;
+		dstTexel.transparent = false;
+
+		return static_cast<int>(skyTextures.size()) - 1;
+	};
+
+	// Reverse iterate through each distant object type in the distant sky, creating associations
+	// between the distant sky object and its render texture. Order of insertion matters.
+	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
 	{
-		this->air = static_cast<const DistantSky::AirObject*>(obj);
+		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
+		const int textureIndex = addSkyTexture(landObject.getSurface());
+		this->lands.push_back(DistantObject<DistantSky::LandObject>(
+			landObject, textureIndex));
 	}
-	else if (type == DistantObject::Type::Star)
+
+	for (int i = distantSky.getAnimatedLandObjectCount() - 1; i >= 0; i--)
 	{
-		this->star = static_cast<const DistantSky::StarObject*>(obj);
+		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
+
+		// Add first texture to get the start index of the animated textures.
+		const int textureIndex = addSkyTexture(animLandObject.getSurface(0));
+
+		for (int j = 1; j < animLandObject.getSurfaceCount(); j++)
+		{
+			addSkyTexture(animLandObject.getSurface(j));
+		}
+
+		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(
+			animLandObject, textureIndex));
 	}
-	else if (type == DistantObject::Type::Moon)
+
+	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
 	{
-		this->moon = static_cast<const DistantSky::MoonObject*>(obj);
+		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
+		const int textureIndex = addSkyTexture(airObject.getSurface());
+		this->airs.push_back(DistantObject<DistantSky::AirObject>(
+			airObject, textureIndex));
 	}
-	else
+
+	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
 	{
-		throw DebugException("Invalid distant object type \"" +
-			std::to_string(static_cast<int>(type)) + "\".");
+		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
+		const int textureIndex = addSkyTexture(moonObject.getSurface());
+		this->moons.push_back(DistantObject<DistantSky::MoonObject>(
+			moonObject, textureIndex));
 	}
+
+	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
+	{
+		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
+		const int textureIndex = [&addSkyTexture, &addSmallStarTexture, &starObject]()
+		{
+			if (starObject.getType() == DistantSky::StarObject::Type::Small)
+			{
+				const DistantSky::StarObject::SmallStar &smallStar = starObject.getSmallStar();
+				return addSmallStarTexture(smallStar.color);
+			}
+			else if (starObject.getType() == DistantSky::StarObject::Type::Large)
+			{
+				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
+				return addSkyTexture(*largeStar.surface);
+			}
+			else
+			{
+				throw DebugException("Invalid star type \"" +
+					std::to_string(static_cast<int>(starObject.getType())) + "\".");
+			}
+		}();
+
+		this->stars.push_back(DistantObject<DistantSky::StarObject>(
+			starObject, textureIndex));
+	}
+
+	// Add the sun to the sky textures and assign its texture index.
+	this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+}
+
+void SoftwareRenderer::DistantObjects::clear()
+{
+	this->lands.clear();
+	this->animLands.clear();
+	this->airs.clear();
+	this->moons.clear();
+	this->stars.clear();
+	this->sunTextureIndex = DistantObjects::NO_SUN;
 }
 
 SoftwareRenderer::VisDistantObject::ParallaxData::ParallaxData()
@@ -441,7 +556,6 @@ const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
-const int SoftwareRenderer::NO_SUN = -1;
 const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
 const double SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE = 25.0;
 const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
@@ -452,7 +566,6 @@ SoftwareRenderer::SoftwareRenderer()
 	this->width = 0;
 	this->height = 0;
 	this->renderThreadsMode = 0;
-	this->sunTextureIndex = SoftwareRenderer::NO_SUN;
 	this->fogDistance = 0.0;
 }
 
@@ -637,125 +750,8 @@ void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
 	this->distantObjects.clear();
 	this->skyTextures.clear();
 
-	// Creates a render texture from the given surface, adds it to the sky textures list, and
-	// returns its index in the sky textures list.
-	auto addSkyTexture = [this](const Surface &surface)
-	{
-		const int width = surface.getWidth();
-		const int height = surface.getHeight();
-		const uint32_t *texels = static_cast<const uint32_t*>(surface.getPixels());
-		const int texelCount = width * height;
-
-		this->skyTextures.push_back(SkyTexture());
-		SkyTexture &texture = this->skyTextures.back();
-		texture.texels = std::vector<SkyTexel>(texelCount);
-		texture.width = width;
-		texture.height = height;
-
-		for (int i = 0; i < texelCount; i++)
-		{
-			const Double4 srcTexel = Double4::fromARGB(texels[i]);
-			SkyTexel &dstTexel = texture.texels[i];
-			dstTexel.r = srcTexel.x;
-			dstTexel.g = srcTexel.y;
-			dstTexel.b = srcTexel.z;
-			dstTexel.transparent = srcTexel.w == 0.0;
-		}
-
-		return static_cast<int>(this->skyTextures.size()) - 1;
-	};
-
-	// Creates a render texture with a single texel for small stars.
-	auto addSmallStarTexture = [this](uint32_t color)
-	{
-		this->skyTextures.push_back(SkyTexture());
-		SkyTexture &texture = this->skyTextures.back();
-		texture.texels = std::vector<SkyTexel>(1);
-		texture.width = 1;
-		texture.height = 1;
-
-		const Double4 srcColor = Double4::fromARGB(color);
-		SkyTexel &dstTexel = texture.texels.front();
-		dstTexel.r = srcColor.x;
-		dstTexel.g = srcColor.y;
-		dstTexel.b = srcColor.z;
-		dstTexel.transparent = false;
-
-		return static_cast<int>(this->skyTextures.size()) - 1;
-	};
-
-	// Reverse iterate through each distant object type in the distant sky, creating associations
-	// between the distant sky object and its render texture. Order of insertion matters.
-	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
-		const int textureIndex = addSkyTexture(landObject.getSurface());
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Land, &landObject));
-	}
-
-	for (int i = distantSky.getAnimatedLandObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
-
-		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(animLandObject.getSurface(0));
-
-		for (int j = 1; j < animLandObject.getSurfaceCount(); j++)
-		{
-			addSkyTexture(animLandObject.getSurface(j));
-		}
-
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::AnimatedLand, &animLandObject));
-	}
-
-	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
-		const int textureIndex = addSkyTexture(airObject.getSurface());
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Air, &airObject));
-	}
-
-	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
-		const int textureIndex = addSkyTexture(moonObject.getSurface());
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Moon, &moonObject));
-	}
-
-	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
-	{
-		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
-		const int textureIndex = [&addSkyTexture, &addSmallStarTexture, &starObject]()
-		{
-			if (starObject.getType() == DistantSky::StarObject::Type::Small)
-			{
-				const DistantSky::StarObject::SmallStar &smallStar = starObject.getSmallStar();
-				return addSmallStarTexture(smallStar.color);
-			}
-			else if (starObject.getType() == DistantSky::StarObject::Type::Large)
-			{
-				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
-				return addSkyTexture(*largeStar.surface);
-			}
-			else
-			{
-				throw DebugException("Invalid star type \"" +
-					std::to_string(static_cast<int>(starObject.getType())) + "\".");
-			}
-		}();
-
-		this->distantObjects.push_back(DistantObject(
-			textureIndex, DistantObject::Type::Star, &starObject));
-	}
-
-	// Add the sun to the sky textures and assign its texture index. It isn't added to
-	// the list of distant objects because its position is a function of time of day,
-	// and that's handled in the render method.
-	this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+	// Create distant objects and set the sky textures.
+	this->distantObjects.init(distantSky, this->skyTextures);
 }
 
 void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
@@ -827,7 +823,7 @@ void SoftwareRenderer::clearTextures()
 
 	// Distant sky textures are cleared because the vector size is managed internally.
 	this->skyTextures.clear();
-	this->sunTextureIndex = SoftwareRenderer::NO_SUN;
+	this->distantObjects.sunTextureIndex = SoftwareRenderer::DistantObjects::NO_SUN;
 }
 
 void SoftwareRenderer::clearDistantSky()
@@ -1125,101 +1121,83 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	};
 
 	// Iterate all distant objects and gather up the visible ones.
-	for (const auto &obj : this->distantObjects)
+	for (const auto &land : this->distantObjects.lands)
 	{
-		const SkyTexture *texture = nullptr;
-		double xAngleRadians, yAngleRadians;
-		bool emissive;
-		Orientation orientation;
+		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
+		const double xAngleRadians = land.obj.getAngleRadians();
+		const double yAngleRadians = 0.0;
+		const bool emissive = false;
+		const Orientation orientation = Orientation::Bottom;
 
-		if (obj.type == DistantObject::Type::Land)
+		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+	}
+
+	for (const auto &animLand : this->distantObjects.animLands)
+	{
+		const SkyTexture &texture = this->skyTextures.at(
+			animLand.textureIndex + animLand.obj.getIndex());
+		const double xAngleRadians = animLand.obj.getAngleRadians();
+		const double yAngleRadians = 0.0;
+		const bool emissive = true;
+		const Orientation orientation = Orientation::Bottom;
+
+		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+	}
+
+	for (const auto &air : this->distantObjects.airs)
+	{
+		const SkyTexture &texture = skyTextures.at(air.textureIndex);
+		const double xAngleRadians = air.obj.getAngleRadians();
+		const double yAngleRadians = [&air]()
 		{
-			const DistantSky::LandObject &land = *obj.land;
-			texture = &skyTextures.at(obj.textureIndex);
-			xAngleRadians = land.getAngleRadians();
-			yAngleRadians = 0.0;
-			emissive = false;
-			orientation = Orientation::Bottom;
-		}
-		else if (obj.type == DistantObject::Type::AnimatedLand)
+			// 0 is at horizon, 1 is at top of distant cloud height limit.
+			const double gradientPercent = air.obj.getHeight();
+			return gradientPercent *
+				(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
+		}();
+
+		const bool emissive = false;
+		const Orientation orientation = Orientation::Bottom;
+
+		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+	}
+
+	for (const auto &moon : this->distantObjects.moons)
+	{
+		const SkyTexture &texture = skyTextures.at(moon.textureIndex);
+
+		// @todo: determine moon directions (maybe put in shadingInfo with sunDirection?).
+		const Double3 direction = [&moon]()
 		{
-			const DistantSky::AnimatedLandObject &animLand = *obj.animLand;
-			texture = &skyTextures.at(obj.textureIndex + animLand.getIndex());
-			xAngleRadians = animLand.getAngleRadians();
-			yAngleRadians = 0.0;
-			emissive = true;
-			orientation = Orientation::Bottom;
-		}
-		else if (obj.type == DistantObject::Type::Air)
-		{
-			const DistantSky::AirObject &air = *obj.air;
-			texture = &skyTextures.at(obj.textureIndex);
-			xAngleRadians = air.getAngleRadians();
-			yAngleRadians = [&air]()
+			const DistantSky::MoonObject::Type type = moon.obj.getType();
+
+			if (type == DistantSky::MoonObject::Type::First)
 			{
-				// 0 is at horizon, 1 is at top of distant cloud height limit.
-				const double gradientPercent = air.getHeight();
-				return gradientPercent *
-					(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
-			}();
-
-			emissive = false;
-			orientation = Orientation::Bottom;
-		}
-		else if (obj.type == DistantObject::Type::Moon)
-		{
-			const DistantSky::MoonObject &moon = *obj.moon;
-			texture = &skyTextures.at(obj.textureIndex);
-
-			// @todo: determine moon directions (maybe put in shadingInfo with sunDirection?).
-			const Double3 direction = [&moon]()
+				return Double3(0.3, 0.2, 0.3).normalized();
+			}
+			else if (type == DistantSky::MoonObject::Type::Second)
 			{
-				const DistantSky::MoonObject::Type type = moon.getType();
+				return Double3(-0.3, 0.2, -0.3).normalized();
+			}
+			else
+			{
+				throw DebugException("Invalid moon type \"" +
+					std::to_string(static_cast<int>(type)) + "\".");
+			}
+		}();
 
-				if (type == DistantSky::MoonObject::Type::First)
-				{
-					return Double3(0.3, 0.2, 0.3).normalized();
-				}
-				else if (type == DistantSky::MoonObject::Type::Second)
-				{
-					return Double3(-0.3, 0.2, -0.3).normalized();
-				}
-				else
-				{
-					throw DebugException("Invalid moon type \"" +
-						std::to_string(static_cast<int>(type)) + "\".");
-				}
-			}();
+		const double xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
+		const double yAngleRadians = direction.getYAngleRadians();
+		const bool emissive = true;
+		const Orientation orientation = Orientation::Top;
 
-			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
-			yAngleRadians = direction.getYAngleRadians();
-			emissive = true;
-			orientation = Orientation::Top;
-		}
-		else if (obj.type == DistantObject::Type::Star)
-		{
-			const DistantSky::StarObject &star = *obj.star;
-			texture = &skyTextures.at(obj.textureIndex);
-
-			const Double3 &direction = star.getDirection();
-			xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
-			yAngleRadians = direction.getYAngleRadians();
-			emissive = true;
-			orientation = Orientation::Bottom;
-		}
-		else
-		{
-			throw DebugException("Invalid distant object type \"" +
-				std::to_string(static_cast<int>(obj.type)) + "\".");
-		}
-
-		tryAddObject(*texture, xAngleRadians, yAngleRadians, emissive, orientation);
+		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
 
 	// Try to add the sun to the visible distant objects.
-	if (this->sunTextureIndex != SoftwareRenderer::NO_SUN)
+	if (this->distantObjects.sunTextureIndex != SoftwareRenderer::DistantObjects::NO_SUN)
 	{
-		const SkyTexture &sunTexture = this->skyTextures.at(this->sunTextureIndex);
+		const SkyTexture &sunTexture = this->skyTextures.at(this->distantObjects.sunTextureIndex);
 		const double sunXAngleRadians = MathUtils::fullAtan2(sunDirection.x, sunDirection.z);
 
 		// When the sun is directly above or below, it might cause the X angle to be undefined.
@@ -1232,6 +1210,19 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians,
 				sunEmissive, sunOrientation);
 		}
+	}
+
+	for (const auto &star : this->distantObjects.stars)
+	{
+		const SkyTexture &texture = skyTextures.at(star.textureIndex);
+
+		const Double3 &direction = star.obj.getDirection();
+		const double xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
+		const double yAngleRadians = direction.getYAngleRadians();
+		const bool emissive = true;
+		const Orientation orientation = Orientation::Bottom;
+
+		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
 }
 
