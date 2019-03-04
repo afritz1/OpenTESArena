@@ -2011,6 +2011,70 @@ std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreeP
 	};
 }
 
+void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, double &projectedYTop,
+	double &projectedYBottom)
+{
+	// Get two points some arbitrary distance away from the camera to use as the top
+	// and bottom reference points of the sky gradient.
+	const Double3 forward = Double3(camera.forwardX, 0.0, camera.forwardZ).normalized();
+
+	// Determine the sky gradient's position on-screen by getting the projected Y percentages for
+	// the start and end. If these values are less than 0 or greater than 1, they are off-screen.
+	projectedYTop = [&camera, &forward]()
+	{
+		const Double3 gradientTopPoint = [&camera, &forward]()
+		{
+			// Top of the sky gradient is some angle above the horizon.
+			const double gradientAngleRadians =
+				SoftwareRenderer::SKY_GRADIENT_ANGLE * Constants::DegToRad;
+
+			// Height of the gradient's triangle with width of 1 and angle of 30 degrees.
+			const double upPercent = std::tan(gradientAngleRadians);
+			const Double3 up = Double3::UnitY;
+
+			// Direction from camera eye to the top of the sky gradient.
+			const Double3 gradientTopDir = (forward + (up * upPercent)).normalized();
+
+			return camera.eye + gradientTopDir;
+		}();
+
+		return SoftwareRenderer::getProjectedY(
+			gradientTopPoint, camera.transform, camera.yShear);
+	}();
+
+	projectedYBottom = [&camera, &forward]()
+	{
+		const Double3 gradientBottomPoint = camera.eye + forward;
+		return SoftwareRenderer::getProjectedY(
+			gradientBottomPoint, camera.transform, camera.yShear);
+	}();
+}
+
+double SoftwareRenderer::getSkyGradientPercent(double projectedY, double projectedYTop,
+	double projectedYBottom)
+{
+	// The sky gradient percent is 0 at the horizon and just below 1 at the top (for sky texture
+	// coordinates).
+	return Constants::JustBelowOne - MathUtils::clamp(
+		(projectedY - projectedYTop) / (projectedYBottom - projectedYTop),
+		0.0, Constants::JustBelowOne);
+}
+
+Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const ShadingInfo &shadingInfo)
+{
+	// Determine which sky color index the percent falls into, and how much of that
+	// color to interpolate with the next one.
+	const auto &skyColors = shadingInfo.skyColors;
+	const int skyColorCount = static_cast<int>(skyColors.size());
+	const double realIndex = gradientPercent * static_cast<double>(skyColorCount);
+	const double percent = realIndex - std::floor(realIndex);
+	const int index = static_cast<int>(realIndex);
+	const int nextIndex = MathUtils::clamp(index + 1, 0, skyColorCount - 1);
+	const Double3 &color = skyColors.at(index);
+	const Double3 &nextColor = skyColors.at(nextIndex);
+	return color.lerp(nextColor, percent);
+}
+
 bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
 	const Double2 &farPoint, RayHit &hit)
 {
@@ -5747,60 +5811,23 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camer
 		}
 	};
 
-	// Get two points some arbitrary distance away from the camera to use as the top
-	// and bottom reference points of the sky gradient.
-	const Double3 forward = Double3(camera.forwardX, 0.0, camera.forwardZ).normalized();
-
-	// Determine the sky gradient's position on-screen by getting the projected Y percentages for
-	// the start and end. If these values are less than 0 or greater than 1, they are off-screen.
-	const double gradientTopYPercent = [&camera, &forward]()
-	{
-		const Double3 gradientTopPoint = [&camera, &forward]()
-		{
-			// Top of the sky gradient is some angle above the horizon.
-			const double gradientAngleRadians =
-				SoftwareRenderer::SKY_GRADIENT_ANGLE * Constants::DegToRad;
-
-			// Height of the gradient's triangle with width of 1 and angle of 30 degrees.
-			const double upPercent = std::tan(gradientAngleRadians);
-			const Double3 up = Double3::UnitY;
-
-			// Direction from camera eye to the top of the sky gradient.
-			const Double3 gradientTopDir = (forward + (up * upPercent)).normalized();
-
-			return camera.eye + gradientTopDir;
-		}();
-
-		return SoftwareRenderer::getProjectedY(
-			gradientTopPoint, camera.transform, camera.yShear);
-	}();
-
-	const double gradientBottomYPercent = [&camera, &forward]()
-	{
-		const Double3 gradientBottomPoint = camera.eye + forward;
-		return SoftwareRenderer::getProjectedY(
-			gradientBottomPoint, camera.transform, camera.yShear);
-	}();
+	// Calculate the top and bottom projected Y coordinates of the sky gradient.
+	double gradientProjectedYTop, gradientProjectedYBottom;
+	SoftwareRenderer::getSkyGradientProjectedYRange(
+		camera, gradientProjectedYTop, gradientProjectedYBottom);
 
 	for (int y = startY; y < endY; y++)
 	{
 		// Y percent across the screen.
 		const double yPercent = (static_cast<double>(y) + 0.50) / frame.heightReal;
 
-		// Y percent relative to the sky gradient.
-		const double gradientPercent = Constants::JustBelowOne - MathUtils::clamp(
-			(yPercent - gradientTopYPercent) / (gradientBottomYPercent - gradientTopYPercent),
-			0.0, Constants::JustBelowOne);
+		// Y percent within the sky gradient.
+		const double gradientPercent = SoftwareRenderer::getSkyGradientPercent(
+			yPercent, gradientProjectedYTop, gradientProjectedYBottom);
 
-		// Determine which sky color index the percent falls into, and how much of that
-		// color to interpolate with the next one.
-		const auto &skyColors = shadingInfo.skyColors;
-		const int skyColorCount = static_cast<int>(skyColors.size());
-		const double realIndex = gradientPercent * static_cast<double>(skyColorCount);
-		const double percent = realIndex - std::floor(realIndex);
-		const int index = static_cast<int>(realIndex);
-		const int nextIndex = MathUtils::clamp(index + 1, 0, skyColorCount - 1);
-		const Double3 color = skyColors.at(index).lerp(skyColors.at(nextIndex), percent);
+		// Color of the sky gradient at the given percentage.
+		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(
+			gradientPercent, shadingInfo);
 
 		drawSkyRow(y, color);
 	}

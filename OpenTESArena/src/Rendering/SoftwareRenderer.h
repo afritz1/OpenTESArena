@@ -447,6 +447,19 @@ private:
 		const Double3 &midPoint1, const Double3 &midPoint2, const Double3 &endPoint,
 		const Camera &camera, const FrameView &frame);
 
+	// Fills in the two reference parameters with the projected top and bottom Y percent of the sky
+	// gradient.
+	static void getSkyGradientProjectedYRange(const Camera &camera, double &projectedYTop,
+		double &projectedYBottom);
+
+	// Gets the percent of the given projected Y between the top and bottom projected Y values
+	// of the sky gradient.
+	static double getSkyGradientPercent(double projectedY, double projectedYTop,
+		double projectedYBottom);
+
+	// Gets the color of a row in the sky gradient at some percent between the top and bottom.
+	static Double3 getSkyGradientRowColor(double gradientPercent, const ShadingInfo &shadingInfo);
+
 	// Gathers potential intersection data from a voxel containing a "diagonal 1" ID; the 
 	// diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns whether an 
 	// intersection occurred within the voxel.
