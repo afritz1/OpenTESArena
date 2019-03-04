@@ -491,9 +491,12 @@ SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture,
 	: VisDistantObject(texture, std::move(drawRange), ParallaxData(), xProjStart, xProjEnd,
 		xStart, xEnd, emissive) { }
 
-void SoftwareRenderer::RenderThreadData::SkyGradient::init()
+void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
+	double projectedYBottom)
 {
 	this->threadsDone = 0;
+	this->projectedYTop = projectedYTop;
+	this->projectedYBottom = projectedYBottom;
 }
 
 void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
@@ -5790,8 +5793,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	}
 }
 
-void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camera,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProjYTop,
+	double gradientProjYBottom, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Lambda for drawing one row of colors and depth in the frame buffer.
 	auto drawSkyRow = [&frame](int y, const Double3 &color)
@@ -5811,11 +5814,6 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camer
 		}
 	};
 
-	// Calculate the top and bottom projected Y coordinates of the sky gradient.
-	double gradientProjectedYTop, gradientProjectedYBottom;
-	SoftwareRenderer::getSkyGradientProjectedYRange(
-		camera, gradientProjectedYTop, gradientProjectedYBottom);
-
 	for (int y = startY; y < endY; y++)
 	{
 		// Y percent across the screen.
@@ -5823,7 +5821,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, const Camera &camer
 
 		// Y percent within the sky gradient.
 		const double gradientPercent = SoftwareRenderer::getSkyGradientPercent(
-			yPercent, gradientProjectedYTop, gradientProjectedYBottom);
+			yPercent, gradientProjYTop, gradientProjYBottom);
 
 		// Color of the sky gradient at the given percentage.
 		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(
@@ -5971,8 +5969,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of the sky gradient.
 		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
-		SoftwareRenderer::drawSkyGradient(startY, endY, *threadData.camera,
-			*threadData.shadingInfo, *threadData.frame);
+		SoftwareRenderer::drawSkyGradient(startY, endY, skyGradient.projectedYTop,
+			skyGradient.projectedYBottom, *threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with the sky gradient.
 		lk.lock();
@@ -6115,10 +6113,14 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
+	// Projected Y range of the sky gradient.
+	double gradientProjYTop, gradientProjYBottom;
+	SoftwareRenderer::getSkyGradientProjectedYRange(camera, gradientProjYTop, gradientProjYBottom);
+
 	// Set all the render-thread-specific shared data for this frame.
 	this->threadData.init(static_cast<int>(this->renderThreads.size()),
 		camera, shadingInfo, frame);
-	this->threadData.skyGradient.init();
+	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, voxelGrid,
 		this->voxelTextures, this->occlusion);

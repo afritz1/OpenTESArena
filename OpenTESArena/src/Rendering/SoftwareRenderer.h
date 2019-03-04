@@ -299,8 +299,9 @@ private:
 		struct SkyGradient
 		{
 			int threadsDone;
+			double projectedYTop, projectedYBottom; // Projected Y range of sky gradient.
 
-			void init();
+			void init(double projectedYTop, double projectedYBottom);
 		};
 
 		struct DistantSky
@@ -571,8 +572,8 @@ private:
 
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
-	static void drawSkyGradient(int startY, int endY, const Camera &camera, 
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+	static void drawSkyGradient(int startY, int endY, double gradientProjYTop,
+		double gradientProjYBottom, const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
