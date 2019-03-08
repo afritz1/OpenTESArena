@@ -484,7 +484,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	auto renderThreadsModeOption = std::make_unique<IntOption>(
 		OptionsPanel::RENDER_THREADS_MODE_NAME,
-		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nLow: one, Medium: half, High: all but one, Max: all",
+		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
 		Options::MIN_RENDER_THREADS_MODE,
@@ -498,7 +498,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		renderer.setRenderThreadsMode(value);
 	});
 
-	renderThreadsModeOption->setDisplayOverrides({ "Low", "Medium", "High", "Max" });
+	renderThreadsModeOption->setDisplayOverrides({ "Very Low", "Low", "Medium", "High", "Very High", "Max" });
 	this->graphicsOptions.push_back(std::move(renderThreadsModeOption));
 
 	// Create audio options.

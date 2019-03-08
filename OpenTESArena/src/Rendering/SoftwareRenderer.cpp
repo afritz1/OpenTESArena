@@ -1617,20 +1617,30 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 {
 	if (mode == 0)
 	{
-		// Low.
+		// Very low.
 		return 1;
 	}
 	else if (mode == 1)
 	{
-		// Medium.
-		return std::max(Platform::getThreadCount() / 2, 1);
+		// Low.
+		return std::max(Platform::getThreadCount() / 4, 1);
 	}
 	else if (mode == 2)
 	{
-		// High.
-		return std::max(Platform::getThreadCount() - 1, 1);
+		// Medium.
+		return std::max(Platform::getThreadCount() / 2, 1);
 	}
 	else if (mode == 3)
+	{
+		// High.
+		return std::max((3 * Platform::getThreadCount()) / 4, 1);
+	}
+	else if (mode == 4)
+	{
+		// Very high.
+		return std::max(Platform::getThreadCount() - 1, 1);
+	}
+	else if (mode == 5)
 	{
 		// Max.
 		return Platform::getThreadCount();
