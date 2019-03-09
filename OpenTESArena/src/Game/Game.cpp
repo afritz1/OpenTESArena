@@ -408,8 +408,16 @@ void Game::render()
 
 void Game::loop()
 {
-	// Longest allowed frame time in microseconds.
-	const std::chrono::duration<int64_t, std::micro> maximumMS(1000000 / Options::MIN_FPS);
+	// Nanoseconds per second. Only using this much precision because it's what
+	// high_resolution_clock gives back. Microseconds would be fine too.
+	constexpr int64_t timeUnits = 1000000000;
+
+	// Longest allowed frame time.
+	const std::chrono::duration<int64_t, std::nano> maxFrameTime(timeUnits / Options::MIN_FPS);
+
+	// On some platforms, thread sleeping takes longer than it should, so include a value to
+	// help compensate.
+	std::chrono::nanoseconds sleepBias(0);
 
 	auto thisTime = std::chrono::high_resolution_clock::now();
 
@@ -420,22 +428,34 @@ void Game::loop()
 		const auto lastTime = thisTime;
 		thisTime = std::chrono::high_resolution_clock::now();
 
-		// Fastest allowed frame time in microseconds.
-		const std::chrono::duration<int64_t, std::micro> minimumMS(
-			1000000 / this->options.getGraphics_TargetFPS());
+		// Shortest allowed frame time.
+		const std::chrono::duration<int64_t, std::nano> minFrameTime(
+			timeUnits / this->options.getGraphics_TargetFPS());
 
 		// Delay the current frame if the previous one was too fast.
-		auto frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);
-		if (frameTime < minimumMS)
+		auto frameTime = thisTime - lastTime;
+		if (frameTime < minFrameTime)
 		{
-			const auto sleepTime = minimumMS - frameTime;
+			const auto sleepTime = minFrameTime - frameTime + sleepBias;
+
 			std::this_thread::sleep_for(sleepTime);
-			thisTime = std::chrono::high_resolution_clock::now();
-			frameTime = std::chrono::duration_cast<std::chrono::microseconds>(thisTime - lastTime);
+
+			// Compensate for sleeping too long. Thread sleeping has questionable accuracy.
+			const auto tempTime = std::chrono::high_resolution_clock::now();
+			const auto unnecessarySleepTime = [thisTime, sleepTime, tempTime]()
+			{
+				const auto tempFrameTime = tempTime - thisTime;
+				return tempFrameTime - sleepTime;
+			}();
+
+			sleepBias = -unnecessarySleepTime;
+			thisTime = tempTime;
+			frameTime = thisTime - lastTime;
 		}
 
 		// Clamp the delta time to at most the maximum frame time.
-		const double dt = std::fmin(frameTime.count(), maximumMS.count()) / 1000000.0;
+		const double dt = std::fmin(frameTime.count(), maxFrameTime.count()) /
+			static_cast<double>(timeUnits);
 
 		// Update the input manager's state.
 		this->inputManager.update();
