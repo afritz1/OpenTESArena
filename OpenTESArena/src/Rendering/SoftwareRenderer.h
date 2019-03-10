@@ -293,6 +293,20 @@ private:
 			double xProjEnd, int xStart, int xEnd, bool emissive);
 	};
 
+	struct VisDistantObjects
+	{
+		std::vector<VisDistantObject> objs;
+
+		// Need to store start and end indices for each range so we can call different 
+		// shading methods on some of them. End indices are exclusive.
+		int landStart, landEnd, animLandStart, animLandEnd, airStart, airEnd, moonStart, moonEnd,
+			sunStart, sunEnd, starStart, starEnd;
+
+		VisDistantObjects();
+
+		void clear();
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -307,12 +321,12 @@ private:
 		struct DistantSky
 		{
 			int threadsDone;
-			const std::vector<VisDistantObject> *visDistantObjs;
+			const VisDistantObjects *visDistantObjs;
 			const std::vector<SkyTexture> *skyTextures;
 			bool parallaxSky;
 			bool doneVisTesting; // True when render threads can start rendering distant sky.
 
-			void init(bool parallaxSky, const std::vector<VisDistantObject> &visDistantObjs,
+			void init(bool parallaxSky, const VisDistantObjects &visDistantObjs,
 				const std::vector<SkyTexture> &skyTextures);
 		};
 
@@ -384,7 +398,7 @@ private:
 	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
-	std::vector<VisDistantObject> visDistantObjs; // Visible distant sky objects.
+	VisDistantObjects visDistantObjs; // Visible distant sky objects.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
@@ -537,6 +551,13 @@ private:
 		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
 
+	// Draws a column of pixels for a moon. This is its own pixel-rendering method because of
+	// the unique method of shading required for moons. The emissive parameter is a dummy
+	// parameter here for the sake of code reuse.
+	static void drawMoonPixels(int x, const DrawRange &drawRange, double u, double vStart,
+		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
+
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
@@ -578,9 +599,8 @@ private:
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
-		const std::vector<VisDistantObject> &visDistantObjs, const Camera &camera,
-		const std::vector<SkyTexture> &skyTextures, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+		const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,

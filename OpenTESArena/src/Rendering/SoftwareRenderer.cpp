@@ -491,6 +491,39 @@ SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture,
 	: VisDistantObject(texture, std::move(drawRange), ParallaxData(), xProjStart, xProjEnd,
 		xStart, xEnd, emissive) { }
 
+SoftwareRenderer::VisDistantObjects::VisDistantObjects()
+{
+	this->landStart = 0;
+	this->landEnd = 0;
+	this->animLandStart = 0;
+	this->animLandEnd = 0;
+	this->airStart = 0;
+	this->airEnd = 0;
+	this->moonStart = 0;
+	this->moonEnd = 0;
+	this->sunStart = 0;
+	this->sunEnd = 0;
+	this->starStart = 0;
+	this->starEnd = 0;
+}
+
+void SoftwareRenderer::VisDistantObjects::clear()
+{
+	this->objs.clear();
+	this->landStart = 0;
+	this->landEnd = 0;
+	this->animLandStart = 0;
+	this->animLandEnd = 0;
+	this->airStart = 0;
+	this->airEnd = 0;
+	this->moonStart = 0;
+	this->moonEnd = 0;
+	this->sunStart = 0;
+	this->sunEnd = 0;
+	this->starStart = 0;
+	this->starEnd = 0;
+}
+
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
 	double projectedYBottom)
 {
@@ -500,7 +533,7 @@ void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
 }
 
 void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
-	const std::vector<VisDistantObject> &visDistantObjs,
+	const VisDistantObjects &visDistantObjs,
 	const std::vector<SkyTexture> &skyTextures)
 {
 	this->threadsDone = 0;
@@ -1074,7 +1107,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 				const int xDrawEnd = SoftwareRenderer::getUpperBoundedPixel(
 					xProjEnd * frame.widthReal, frame.width);
 
-				this->visDistantObjs.push_back(VisDistantObject(
+				this->visDistantObjs.objs.push_back(VisDistantObject(
 					texture, std::move(drawRange), std::move(parallax), xProjStart, xProjEnd,
 					xDrawStart, xDrawEnd, emissive));
 			}
@@ -1116,14 +1149,18 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 				const int xDrawEnd = SoftwareRenderer::getUpperBoundedPixel(
 					xProjEnd * frame.widthReal, frame.width);
 
-				this->visDistantObjs.push_back(VisDistantObject(
+				this->visDistantObjs.objs.push_back(VisDistantObject(
 					texture, std::move(drawRange), xProjStart, xProjEnd, xDrawStart,
 					xDrawEnd, emissive));
 			}
 		}
 	};
 
-	// Iterate all distant objects and gather up the visible ones.
+	// Iterate all distant objects and gather up the visible ones. Set the start
+	// and end ranges for each object type to be used during rendering for
+	// different types of shading.
+	this->visDistantObjs.landStart = 0;
+
 	for (const auto &land : this->distantObjects.lands)
 	{
 		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
@@ -1134,6 +1171,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
+
+	this->visDistantObjs.landEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.animLandStart = this->visDistantObjs.landEnd;
 
 	for (const auto &animLand : this->distantObjects.animLands)
 	{
@@ -1146,6 +1186,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
+
+	this->visDistantObjs.animLandEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.airStart = this->visDistantObjs.animLandEnd;
 
 	for (const auto &air : this->distantObjects.airs)
 	{
@@ -1164,6 +1207,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
+
+	this->visDistantObjs.airEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
 	for (const auto &moon : this->distantObjects.moons)
 	{
@@ -1197,6 +1243,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
 
+	this->visDistantObjs.moonEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.sunStart = this->visDistantObjs.moonEnd;
+
 	// Try to add the sun to the visible distant objects.
 	if (this->distantObjects.sunTextureIndex != SoftwareRenderer::DistantObjects::NO_SUN)
 	{
@@ -1215,6 +1264,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		}
 	}
 
+	this->visDistantObjs.sunEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.starStart = this->visDistantObjs.sunEnd;
+
 	for (const auto &star : this->distantObjects.stars)
 	{
 		const SkyTexture &texture = skyTextures.at(star.textureIndex);
@@ -1227,6 +1279,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
 	}
+
+	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
@@ -3221,6 +3275,97 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 			double colorR = texel.r * shading;
 			double colorG = texel.g * shading;
 			double colorB = texel.b * shading;
+
+			// @todo: determine if distant objects should be affected by fog using some
+			// arbitrary range in the new engine, just for aesthetic purposes.
+
+			// Clamp maximum (don't worry about negative values).
+			const double high = 1.0;
+			colorR = (colorR > high) ? high : colorR;
+			colorG = (colorG > high) ? high : colorG;
+			colorB = (colorB > high) ? high : colorB;
+
+			// Convert floats to integers.
+			const uint32_t colorRGB = static_cast<uint32_t>(
+				((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+				((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+				((static_cast<uint8_t>(colorB * 255.0))));
+
+			frame.colorBuffer[index] = colorRGB;
+		}
+	}
+}
+
+void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double u, double vStart,
+	double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
+{
+	// 'emissive' is unused, only passed for the sake of code reuse with other distant sky
+	// drawing methods.
+	static_cast<void>(emissive);
+
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	const int yStart = drawRange.yStart;
+	const int yEnd = drawRange.yEnd;
+
+	// Horizontal offset in texture.
+	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+
+	// The gradient color is used for "unlit" texels on the moon's texture.
+	constexpr double gradientPercent = 0.80;
+	const Double3 gradientColor = SoftwareRenderer::getSkyGradientRowColor(
+		gradientPercent, shadingInfo);
+
+	// The 'signal' color used in the original game to denote moon texels that should
+	// use the gradient color behind the moon instead.
+	const Double3 unlitColor(170.0 / 255.0, 0.0, 0.0);
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frame.width);
+
+		// Percent stepped from beginning to end on the column.
+		const double yPercent =
+			((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
+
+		// Vertical texture coordinate.
+		const double v = vStart + ((vEnd - vStart) * yPercent);
+
+		// Y position in texture.
+		const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+		// Alpha is checked in this loop, and transparent texels are not drawn.
+		const int textureIndex = textureX + (textureY * texture.width);
+		const SkyTexel &texel = texture.texels[textureIndex];
+
+		if (!texel.transparent)
+		{
+			// Determine how the pixel should be shaded based on the moon texel. Should be
+			// safe to do floating-point comparisons here with no error.
+			const bool texelIsLit = (texel.r != unlitColor.x) && (texel.g != unlitColor.y) &&
+				(texel.b != unlitColor.z);
+
+			double colorR;
+			double colorG;
+			double colorB;
+
+			if (texelIsLit)
+			{
+				// Use the moon texel.
+				colorR = texel.r;
+				colorG = texel.g;
+				colorB = texel.b;
+			}
+			else
+			{
+				// Use the gradient color.
+				colorR = gradientColor.x;
+				colorG = gradientColor.y;
+				colorB = gradientColor.z;
+			}
 
 			// @todo: determine if distant objects should be affected by fog using some
 			// arbitrary range in the new engine, just for aesthetic purposes.
@@ -5842,15 +5987,14 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 }
 
 void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
-	const std::vector<VisDistantObject> &visDistantObjs, const Camera &camera,
-	const std::vector<SkyTexture> &skyTextures, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+	const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// For each visible distant object, if it is at least partially within the start and end
-	// X, then draw. Reverse iterate so objects are drawn far to near.
-	for (auto it = visDistantObjs.rbegin(); it != visDistantObjs.rend(); ++it)
+	// X, then draw.
+	auto drawDistantObj = [startX, endX, parallaxSky, &skyTextures, &shadingInfo, &frame](
+		const VisDistantObject &obj, const auto &pixelFunc)
 	{
-		const VisDistantObject &obj = *it;
 		const SkyTexture &texture = *obj.texture;
 		const DrawRange &drawRange = obj.drawRange;
 		const double xProjStart = obj.xProjStart;
@@ -5881,8 +6025,8 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				// @todo: incorporate angle/field of view/delta angle from center of view into this.
 				const double u = widthPercent;
 
-				SoftwareRenderer::drawDistantPixels(x, drawRange, u, 0.0,
-					Constants::JustBelowOne, texture, emissive, shadingInfo, frame);
+				pixelFunc(x, drawRange, u, 0.0, Constants::JustBelowOne, texture, emissive,
+					shadingInfo, frame);
 			}
 		}
 		else
@@ -5901,10 +6045,71 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				// Horizontal texture coordinate, not accounting for parallax.
 				const double u = widthPercent;
 
-				SoftwareRenderer::drawDistantPixels(x, drawRange, u, 0.0,
-					Constants::JustBelowOne, texture, emissive, shadingInfo, frame);
+				pixelFunc(x, drawRange, u, 0.0, Constants::JustBelowOne, texture, emissive,
+					shadingInfo, frame);
 			}
 		}
+	};
+
+	// Reverse iterate so objects are drawn far to near.
+	const auto landRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.landEnd);
+	const auto landREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.landStart);
+
+	const auto animLandRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.animLandEnd);
+	const auto animLandREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.animLandStart);
+
+	const auto airRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.airEnd);
+	const auto airREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.airStart);
+
+	const auto moonRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.moonEnd);
+	const auto moonREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.moonStart);
+
+	const auto sunRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.sunEnd);
+	const auto sunREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.sunStart);
+
+	const auto starRBegin = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.starEnd);
+	const auto starREnd = std::make_reverse_iterator(
+		visDistantObjs.objs.begin() + visDistantObjs.starStart);
+
+	for (auto it = starRBegin; it != starREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+	}
+
+	for (auto it = sunRBegin; it != sunREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+	}
+
+	for (auto it = moonRBegin; it != moonREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawMoonPixels);
+	}
+
+	for (auto it = airRBegin; it != airREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+	}
+
+	for (auto it = animLandRBegin; it != animLandREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+	}
+
+	for (auto it = landRBegin; it != landREnd; ++it)
+	{
+		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
 	}
 }
 
@@ -6011,8 +6216,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of distant sky objects.
 		SoftwareRenderer::drawDistantSky(startX, endX, distantSky.parallaxSky,
-			*distantSky.visDistantObjs, *threadData.camera, *distantSky.skyTextures,
-			*threadData.shadingInfo, *threadData.frame);
+			*distantSky.visDistantObjs, *distantSky.skyTextures, *threadData.shadingInfo,
+			*threadData.frame);
 
 		// This thread is done with distant sky objects.
 		lk.lock();
