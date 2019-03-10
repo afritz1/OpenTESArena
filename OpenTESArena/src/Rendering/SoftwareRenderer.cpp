@@ -6052,35 +6052,29 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	};
 
 	// Reverse iterate so objects are drawn far to near.
-	const auto landRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.landEnd);
-	const auto landREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.landStart);
+	auto makeReverseIterator = [&visDistantObjs](int index)
+	{
+		return std::reverse_iterator<decltype(visDistantObjs.objs.begin())>(
+			visDistantObjs.objs.begin() + index);
+	};
 
-	const auto animLandRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.animLandEnd);
-	const auto animLandREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.animLandStart);
+	const auto landRBegin = makeReverseIterator(visDistantObjs.landEnd);
+	const auto landREnd = makeReverseIterator(visDistantObjs.landStart);
 
-	const auto airRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.airEnd);
-	const auto airREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.airStart);
+	const auto animLandRBegin = makeReverseIterator(visDistantObjs.animLandEnd);
+	const auto animLandREnd = makeReverseIterator(visDistantObjs.animLandStart);
 
-	const auto moonRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.moonEnd);
-	const auto moonREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.moonStart);
+	const auto airRBegin = makeReverseIterator(visDistantObjs.airEnd);
+	const auto airREnd = makeReverseIterator(visDistantObjs.airStart);
 
-	const auto sunRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.sunEnd);
-	const auto sunREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.sunStart);
+	const auto moonRBegin = makeReverseIterator(visDistantObjs.moonEnd);
+	const auto moonREnd = makeReverseIterator(visDistantObjs.moonStart);
 
-	const auto starRBegin = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.starEnd);
-	const auto starREnd = std::make_reverse_iterator(
-		visDistantObjs.objs.begin() + visDistantObjs.starStart);
+	const auto sunRBegin = makeReverseIterator(visDistantObjs.sunEnd);
+	const auto sunREnd = makeReverseIterator(visDistantObjs.sunStart);
+
+	const auto starRBegin = makeReverseIterator(visDistantObjs.starEnd);
+	const auto starREnd = makeReverseIterator(visDistantObjs.starStart);
 
 	for (auto it = starRBegin; it != starREnd; ++it)
 	{
