@@ -13,6 +13,13 @@
 #include "../Utilities/Debug.h"
 #include "../World/VoxelGrid.h"
 
+Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
+{
+	this->width = width;
+	this->height = height;
+	this->refreshRate = refreshRate;
+}
+
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const std::string Renderer::DEFAULT_TITLE = "OpenTESArena";
 const int Renderer::ORIGINAL_WIDTH = 320;
@@ -118,6 +125,11 @@ Int2 Renderer::getWindowDimensions() const
 {
 	const SDL_Surface *nativeSurface = this->getWindowSurface();
 	return Int2(nativeSurface->w, nativeSurface->h);
+}
+
+const std::vector<Renderer::DisplayMode> &Renderer::getDisplayModes() const
+{
+	return this->displayModes;
 }
 
 int Renderer::getViewHeight() const
@@ -314,6 +326,24 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 
 	// Initialize renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
+
+	// Initialize display modes list for the current window.
+	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
+	const int displayModeCount = SDL_GetNumDisplayModes(displayIndex);
+	for (int i = 0; i < displayModeCount; i++)
+	{
+		// Convert SDL display mode to our display mode.
+		SDL_DisplayMode mode;
+		if (SDL_GetDisplayMode(displayIndex, i, &mode) == 0)
+		{
+			// Filter away non-24-bit displays. Perhaps this could be handled better, but I don't
+			// know how to do that for all possible displays out there.
+			if (mode.format == SDL_PIXELFORMAT_RGB888)
+			{
+				this->displayModes.push_back(DisplayMode(mode.w, mode.h, mode.refresh_rate));
+			}
+		}
+	}
 
 	// Use window dimensions, just in case it's fullscreen and the given width and
 	// height are ignored.

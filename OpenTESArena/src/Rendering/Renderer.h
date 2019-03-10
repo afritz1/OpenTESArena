@@ -31,10 +31,18 @@ struct SDL_Window;
 
 class Renderer
 {
+public:
+	struct DisplayMode
+	{
+		int width, height, refreshRate;
+
+		DisplayMode(int width, int height, int refreshRate);
+	};
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const std::string DEFAULT_TITLE;
 
+	std::vector<DisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
@@ -67,6 +75,9 @@ public:
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
+
+	// Gets a list of supported fullscreen display modes.
+	const std::vector<DisplayMode> &getDisplayModes() const;
 
 	// The "view height" is the height in pixels for the visible game world. This 
 	// depends on whether the whole screen is rendered or just the portion above 
