@@ -525,9 +525,10 @@ void SoftwareRenderer::VisDistantObjects::clear()
 }
 
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
-	double projectedYBottom)
+	double projectedYBottom, std::vector<Double3> &skyGradientRowCache)
 {
 	this->threadsDone = 0;
+	this->skyGradientRowCache = &skyGradientRowCache;
 	this->projectedYTop = projectedYTop;
 	this->projectedYBottom = projectedYBottom;
 }
@@ -625,6 +626,9 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 
 	// Initialize occlusion columns.
 	this->occlusion = std::vector<OcclusionData>(width, OcclusionData(0, height));
+
+	// Initialize sky gradient cache.
+	this->skyGradientRowCache = std::vector<Double3>(height, Double3::Zero);
 
 	// Initialize texture vectors to default sizes.
 	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
@@ -876,6 +880,9 @@ void SoftwareRenderer::resize(int width, int height)
 
 	this->occlusion.resize(width);
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, height));
+
+	this->skyGradientRowCache.resize(height);
+	std::fill(this->skyGradientRowCache.begin(), this->skyGradientRowCache.end(), Double3::Zero);
 
 	this->width = width;
 	this->height = height;
@@ -3276,9 +3283,6 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 			double colorG = texel.g * shading;
 			double colorB = texel.b * shading;
 
-			// @todo: determine if distant objects should be affected by fog using some
-			// arbitrary range in the new engine, just for aesthetic purposes.
-
 			// Clamp maximum (don't worry about negative values).
 			const double high = 1.0;
 			colorR = (colorR > high) ? high : colorR;
@@ -3297,13 +3301,8 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 }
 
 void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double u, double vStart,
-	double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+	double vEnd, const SkyTexture &texture, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	// 'emissive' is unused, only passed for the sake of code reuse with other distant sky
-	// drawing methods.
-	static_cast<void>(emissive);
-
 	// Draw range values.
 	const double yProjStart = drawRange.yProjStart;
 	const double yProjEnd = drawRange.yProjEnd;
@@ -3367,9 +3366,6 @@ void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double 
 				colorB = gradientColor.z;
 			}
 
-			// @todo: determine if distant objects should be affected by fog using some
-			// arbitrary range in the new engine, just for aesthetic purposes.
-
 			// Clamp maximum (don't worry about negative values).
 			const double high = 1.0;
 			colorR = (colorR > high) ? high : colorR;
@@ -3383,6 +3379,88 @@ void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double 
 				((static_cast<uint8_t>(colorB * 255.0))));
 
 			frame.colorBuffer[index] = colorRGB;
+		}
+	}
+}
+
+void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double u, double vStart,
+	double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	const int yStart = drawRange.yStart;
+	const int yEnd = drawRange.yEnd;
+
+	// Horizontal offset in texture.
+	const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frame.width);
+
+		// Percent stepped from beginning to end on the column.
+		const double yPercent =
+			((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
+
+		// Vertical texture coordinate.
+		const double v = vStart + ((vEnd - vStart) * yPercent);
+
+		// Y position in texture.
+		const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
+
+		// Alpha is checked in this loop, and transparent texels are not drawn.
+		const int textureIndex = textureX + (textureY * texture.width);
+		const SkyTexel &texel = texture.texels[textureIndex];
+
+		if (!texel.transparent)
+		{
+			// Get gradient color from sky gradient row cache.
+			const Double3 &gradientColor = skyGradientRowCache[y];
+
+			// If the gradient color behind the star is dark enough, then draw. Interpolate with a
+			// range of intensities so stars don't immediately blink on/off when the gradient is a
+			// certain color. Stars are generally small so I think it's okay to do more expensive
+			// per-pixel operations here.
+			constexpr double visThreshold = 64.0 / 255.0; // Stars are becoming visible.
+			constexpr double brightestThreshold = 32.0 / 255.0; // Stars are brightest.
+
+			const double brightestComponent = std::max(
+				std::max(gradientColor.x, gradientColor.y), gradientColor.z);
+			const bool isDarkEnough = brightestComponent <= visThreshold;
+
+			if (isDarkEnough)
+			{
+				const double gradientVisPercent = MathUtils::clamp(
+					(brightestComponent - brightestThreshold) / (visThreshold - brightestThreshold),
+					0.0, 1.0);
+
+				// Texture color with shading.
+				double colorR = texel.r;
+				double colorG = texel.g;
+				double colorB = texel.b;
+
+				// Lerp with sky gradient for smoother transition between day and night.
+				colorR += (gradientColor.x - colorR) * gradientVisPercent;
+				colorG += (gradientColor.y - colorG) * gradientVisPercent;
+				colorB += (gradientColor.z - colorB) * gradientVisPercent;
+
+				// Clamp maximum (don't worry about negative values).
+				const double high = 1.0;
+				colorR = (colorR > high) ? high : colorR;
+				colorG = (colorG > high) ? high : colorG;
+				colorB = (colorB > high) ? high : colorB;
+
+				// Convert floats to integers.
+				const uint32_t colorRGB = static_cast<uint32_t>(
+					((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+					((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+					((static_cast<uint8_t>(colorB * 255.0))));
+
+				frame.colorBuffer[index] = colorRGB;
+			}
 		}
 	}
 }
@@ -5949,7 +6027,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 }
 
 void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProjYTop,
-	double gradientProjYBottom, const ShadingInfo &shadingInfo, const FrameView &frame)
+	double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Lambda for drawing one row of colors and depth in the frame buffer.
 	auto drawSkyRow = [&frame](int y, const Double3 &color)
@@ -5982,18 +6061,24 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(
 			gradientPercent, shadingInfo);
 
+		// Cache row color for star rendering.
+		skyGradientRowCache.at(y) = color;
+
 		drawSkyRow(y, color);
 	}
 }
 
 void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+	const std::vector<Double3> &skyGradientRowCache, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
 {
+	enum class DistantRenderType { General, Moon, Star };
+
 	// For each visible distant object, if it is at least partially within the start and end
 	// X, then draw.
-	auto drawDistantObj = [startX, endX, parallaxSky, &skyTextures, &shadingInfo, &frame](
-		const VisDistantObject &obj, const auto &pixelFunc)
+	auto drawDistantObj = [startX, endX, parallaxSky, &skyTextures, &skyGradientRowCache,
+		&shadingInfo, &frame](const VisDistantObject &obj, DistantRenderType renderType)
 	{
 		const SkyTexture &texture = *obj.texture;
 		const DrawRange &drawRange = obj.drawRange;
@@ -6025,8 +6110,21 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				// @todo: incorporate angle/field of view/delta angle from center of view into this.
 				const double u = widthPercent;
 
-				pixelFunc(x, drawRange, u, 0.0, Constants::JustBelowOne, texture, emissive,
-					shadingInfo, frame);
+				if (renderType == DistantRenderType::General)
+				{
+					SoftwareRenderer::drawDistantPixels(x, drawRange, u, 0.0,
+						Constants::JustBelowOne, texture, emissive, shadingInfo, frame);
+				}
+				else if (renderType == DistantRenderType::Moon)
+				{
+					SoftwareRenderer::drawMoonPixels(x, drawRange, u, 0.0, Constants::JustBelowOne,
+						texture, shadingInfo, frame);
+				}
+				else if (renderType == DistantRenderType::Star)
+				{
+					SoftwareRenderer::drawStarPixels(x, drawRange, u, 0.0, Constants::JustBelowOne,
+						texture, skyGradientRowCache, shadingInfo, frame);
+				}
 			}
 		}
 		else
@@ -6045,8 +6143,21 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				// Horizontal texture coordinate, not accounting for parallax.
 				const double u = widthPercent;
 
-				pixelFunc(x, drawRange, u, 0.0, Constants::JustBelowOne, texture, emissive,
-					shadingInfo, frame);
+				if (renderType == DistantRenderType::General)
+				{
+					SoftwareRenderer::drawDistantPixels(x, drawRange, u, 0.0,
+						Constants::JustBelowOne, texture, emissive, shadingInfo, frame);
+				}
+				else if (renderType == DistantRenderType::Moon)
+				{
+					SoftwareRenderer::drawMoonPixels(x, drawRange, u, 0.0, Constants::JustBelowOne,
+						texture, shadingInfo, frame);
+				}
+				else if (renderType == DistantRenderType::Star)
+				{
+					SoftwareRenderer::drawStarPixels(x, drawRange, u, 0.0, Constants::JustBelowOne,
+						texture, skyGradientRowCache, shadingInfo, frame);
+				}
 			}
 		}
 	};
@@ -6078,32 +6189,32 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 
 	for (auto it = starRBegin; it != starREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+		drawDistantObj(*it, DistantRenderType::Star);
 	}
 
 	for (auto it = sunRBegin; it != sunREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+		drawDistantObj(*it, DistantRenderType::General);
 	}
 
 	for (auto it = moonRBegin; it != moonREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawMoonPixels);
+		drawDistantObj(*it, DistantRenderType::Moon);
 	}
 
 	for (auto it = airRBegin; it != airREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+		drawDistantObj(*it, DistantRenderType::General);
 	}
 
 	for (auto it = animLandRBegin; it != animLandREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+		drawDistantObj(*it, DistantRenderType::General);
 	}
 
 	for (auto it = landRBegin; it != landREnd; ++it)
 	{
-		drawDistantObj(*it, SoftwareRenderer::drawDistantPixels);
+		drawDistantObj(*it, DistantRenderType::General);
 	}
 }
 
@@ -6179,7 +6290,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of the sky gradient.
 		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
 		SoftwareRenderer::drawSkyGradient(startY, endY, skyGradient.projectedYTop,
-			skyGradient.projectedYBottom, *threadData.shadingInfo, *threadData.frame);
+			skyGradient.projectedYBottom, *skyGradient.skyGradientRowCache,
+			*threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with the sky gradient.
 		lk.lock();
@@ -6210,8 +6322,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of distant sky objects.
 		SoftwareRenderer::drawDistantSky(startX, endX, distantSky.parallaxSky,
-			*distantSky.visDistantObjs, *distantSky.skyTextures, *threadData.shadingInfo,
-			*threadData.frame);
+			*distantSky.visDistantObjs, *distantSky.skyTextures, *skyGradient.skyGradientRowCache,
+			*threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with distant sky objects.
 		lk.lock();
@@ -6329,7 +6441,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Set all the render-thread-specific shared data for this frame.
 	this->threadData.init(static_cast<int>(this->renderThreads.size()),
 		camera, shadingInfo, frame);
-	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom);
+	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom,
+		this->skyGradientRowCache);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, voxelGrid,
 		this->voxelTextures, this->occlusion);
@@ -6343,7 +6456,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
-	// Reset occlusion.
+	// Reset occlusion. Don't need to reset sky gradient row cache because it is written to before
+	// it is read.
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.

@@ -313,9 +313,11 @@ private:
 		struct SkyGradient
 		{
 			int threadsDone;
+			std::vector<Double3> *skyGradientRowCache;
 			double projectedYTop, projectedYBottom; // Projected Y range of sky gradient.
 
-			void init(double projectedYTop, double projectedYBottom);
+			void init(double projectedYTop, double projectedYBottom,
+				std::vector<Double3> &skyGradientRowCache);
 		};
 
 		struct DistantSky
@@ -403,6 +405,7 @@ private:
 	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
+	std::vector<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
 	std::vector<std::thread> renderThreads; // Threads used for rendering the world.
 	RenderThreadData threadData; // Managed by main thread, used by render threads.
 	double fogDistance; // Distance at which fog is maximum.
@@ -552,11 +555,16 @@ private:
 		const FrameView &frame);
 
 	// Draws a column of pixels for a moon. This is its own pixel-rendering method because of
-	// the unique method of shading required for moons. The emissive parameter is a dummy
-	// parameter here for the sake of code reuse.
+	// the unique method of shading required for moons.
 	static void drawMoonPixels(int x, const DrawRange &drawRange, double u, double vStart,
-		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
+		double vEnd, const SkyTexture &texture, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
+
+	// Draws a column of pixels for a star. This is its own pixel-rendering method because of
+	// the unique method of shading required for stars.
+	static void drawStarPixels(int x, const DrawRange &drawRange, double u, double vStart,
+		double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
@@ -594,13 +602,15 @@ private:
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
 	static void drawSkyGradient(int startY, int endY, double gradientProjYTop,
-		double gradientProjYBottom, const ShadingInfo &shadingInfo, const FrameView &frame);
+		double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
 		const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const std::vector<Double3> &skyGradientRowCache, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
