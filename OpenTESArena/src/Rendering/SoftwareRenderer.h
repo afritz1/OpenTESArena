@@ -313,11 +313,11 @@ private:
 		struct SkyGradient
 		{
 			int threadsDone;
-			std::vector<Double3> *skyGradientRowCache;
+			std::vector<Double3> *rowCache;
 			double projectedYTop, projectedYBottom; // Projected Y range of sky gradient.
 
 			void init(double projectedYTop, double projectedYBottom,
-				std::vector<Double3> &skyGradientRowCache);
+				std::vector<Double3> &rowCache);
 		};
 
 		struct DistantSky

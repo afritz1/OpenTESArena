@@ -525,10 +525,10 @@ void SoftwareRenderer::VisDistantObjects::clear()
 }
 
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
-	double projectedYBottom, std::vector<Double3> &skyGradientRowCache)
+	double projectedYBottom, std::vector<Double3> &rowCache)
 {
 	this->threadsDone = 0;
-	this->skyGradientRowCache = &skyGradientRowCache;
+	this->rowCache = &rowCache;
 	this->projectedYTop = projectedYTop;
 	this->projectedYBottom = projectedYBottom;
 }
@@ -6290,8 +6290,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of the sky gradient.
 		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
 		SoftwareRenderer::drawSkyGradient(startY, endY, skyGradient.projectedYTop,
-			skyGradient.projectedYBottom, *skyGradient.skyGradientRowCache,
-			*threadData.shadingInfo, *threadData.frame);
+			skyGradient.projectedYBottom, *skyGradient.rowCache, *threadData.shadingInfo,
+			*threadData.frame);
 
 		// This thread is done with the sky gradient.
 		lk.lock();
@@ -6322,7 +6322,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of distant sky objects.
 		SoftwareRenderer::drawDistantSky(startX, endX, distantSky.parallaxSky,
-			*distantSky.visDistantObjs, *distantSky.skyTextures, *skyGradient.skyGradientRowCache,
+			*distantSky.visDistantObjs, *distantSky.skyTextures, *skyGradient.rowCache,
 			*threadData.shadingInfo, *threadData.frame);
 
 		// This thread is done with distant sky objects.
