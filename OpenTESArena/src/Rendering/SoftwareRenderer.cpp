@@ -6287,32 +6287,39 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 			break;
 		}
 
+		// Lambda for making a thread wait until others are finished rendering something. The last
+		// thread to call this calls notify on all others.
+		auto threadBarrier = [&threadData, &lk](auto &data)
+		{
+			lk.lock();
+			data.threadsDone++;
+
+			// If this was the last thread, notify all to continue.
+			if (data.threadsDone == threadData.totalThreads)
+			{
+				lk.unlock();
+				threadData.condVar.notify_all();
+			}
+			else
+			{
+				// Wait for other threads to finish.
+				threadData.condVar.wait(lk, [&threadData, &data]()
+				{
+					return data.threadsDone == threadData.totalThreads;
+				});
+
+				lk.unlock();
+			}
+		};
+
 		// Draw this thread's portion of the sky gradient.
 		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
 		SoftwareRenderer::drawSkyGradient(startY, endY, skyGradient.projectedYTop,
 			skyGradient.projectedYBottom, *skyGradient.rowCache, *threadData.shadingInfo,
 			*threadData.frame);
 
-		// This thread is done with the sky gradient.
-		lk.lock();
-		skyGradient.threadsDone++;
-
-		// If this was the last thread on the sky gradient, notify all to continue.
-		if (skyGradient.threadsDone == threadData.totalThreads)
-		{
-			lk.unlock();
-			threadData.condVar.notify_all();
-		}
-		else
-		{
-			// Wait for other threads to finish.
-			threadData.condVar.wait(lk, [&threadData, &skyGradient]()
-			{
-				return skyGradient.threadsDone == threadData.totalThreads;
-			});
-
-			lk.unlock();
-		}
+		// Wait for other threads to finish the sky gradient.
+		threadBarrier(skyGradient);
 
 		// Wait for the visible distant object testing to finish.
 		RenderThreadData::DistantSky &distantSky = threadData.distantSky;
@@ -6325,26 +6332,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 			*distantSky.visDistantObjs, *distantSky.skyTextures, *skyGradient.rowCache,
 			*threadData.shadingInfo, *threadData.frame);
 
-		// This thread is done with distant sky objects.
-		lk.lock();
-		distantSky.threadsDone++;
-
-		// If this was the last thread on distant sky, notify all to continue.
-		if (distantSky.threadsDone == threadData.totalThreads)
-		{
-			lk.unlock();
-			threadData.condVar.notify_all();
-		}
-		else
-		{
-			// Wait for other threads to finish.
-			threadData.condVar.wait(lk, [&threadData, &distantSky]()
-			{
-				return distantSky.threadsDone == threadData.totalThreads;
-			});
-
-			lk.unlock();
-		}
+		// Wait for other threads to finish distant sky objects.
+		threadBarrier(distantSky);
 
 		// Number of columns to skip per ray cast (for interleaved ray casting as a means of
 		// load-balancing).
@@ -6356,26 +6345,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 			voxels.ceilingHeight, *voxels.openDoors, *voxels.voxelGrid, *voxels.voxelTextures,
 			*voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
 
-		// This thread is done with voxels.
-		lk.lock();
-		voxels.threadsDone++;
-
-		// If this was the last thread on voxels, notify all to continue.
-		if (voxels.threadsDone == threadData.totalThreads)
-		{
-			lk.unlock();
-			threadData.condVar.notify_all();
-		}
-		else
-		{
-			// Wait for other threads to finish.
-			threadData.condVar.wait(lk, [&threadData, &voxels]()
-			{
-				return voxels.threadsDone == threadData.totalThreads;
-			});
-
-			lk.unlock();
-		}
+		// Wait for other threads to finish voxels.
+		threadBarrier(voxels);
 
 		// Wait for the visible flat sorting to finish.
 		RenderThreadData::Flats &flats = threadData.flats;
@@ -6387,26 +6358,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal,
 			*flats.visibleFlats, *flats.flatTextures, *threadData.shadingInfo, *threadData.frame);
 
-		// This thread is done with flats.
-		lk.lock();
-		flats.threadsDone++;
-
-		// If this was the last thread on flats, notify all to continue.
-		if (flats.threadsDone == threadData.totalThreads)
-		{
-			lk.unlock();
-			threadData.condVar.notify_all();
-		}
-		else
-		{
-			// Wait for other threads to finish.
-			threadData.condVar.wait(lk, [&threadData, &flats]()
-			{
-				return flats.threadsDone == threadData.totalThreads;
-			});
-
-			lk.unlock();
-		}
+		// Wait for other threads to finish flats.
+		threadBarrier(flats);
 	}
 }
 
