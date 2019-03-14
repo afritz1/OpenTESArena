@@ -67,6 +67,10 @@ public:
 	// and the status pop-up. Some locations (like named/wild dungeons) do not show their name
 	// on the automap.
 	const std::string &getName(const CityDataFile &cityData, const ExeData &exeData) const;
+
+	// Gets the latitude of a location in normalized [-1.0, 1.0] Arena angle units. 0 at the
+	// equator, 1.0 at the north pole, and -1.0 at the south pole.
+	double getLatitude(const CityDataFile &cityData) const;
 };
 
 #endif
