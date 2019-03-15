@@ -2242,10 +2242,17 @@ void GameWorldPanel::render(Renderer &renderer)
 			return gameData.getAmbientPercent();
 		}
 	}();
+	
+	const double latitude = [&gameData]()
+	{
+		const Location &location = gameData.getLocation();
+		return location.getLatitude(gameData.getCityDataFile());
+	}();
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), 
-		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(), level.getVoxelGrid());
+		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), latitude,
+		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(),
+		level.getVoxelGrid());
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

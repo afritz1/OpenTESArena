@@ -955,7 +955,7 @@ void SoftwareRenderer::resetRenderThreads()
 }
 
 void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
-	const Camera &camera, const FrameView &frame)
+	double daytimePercent, double latitude, const Camera &camera, const FrameView &frame)
 {
 	this->visDistantObjs.clear();
 
@@ -1218,6 +1218,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	this->visDistantObjs.airEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
+	// Objects in space have their position modified by latitude and time of day.
+	auto getSpaceCorrectedAngles = [latitude, daytimePercent](double xAngleRadians,
+		double yAngleRadians, double &newXAngleRadians, double &newYAngleRadians)
+	{
+		// @todo
+		newXAngleRadians = xAngleRadians;
+		newYAngleRadians = yAngleRadians;
+	};
+
 	for (const auto &moon : this->distantObjects.moons)
 	{
 		const SkyTexture &texture = skyTextures.at(moon.textureIndex);
@@ -1247,7 +1256,11 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Top;
 
-		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+		// Modify angle based on latitude and time of day.
+		double newXAngleRadians, newYAngleRadians;
+		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
+
+		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
 	}
 
 	this->visDistantObjs.moonEnd = static_cast<int>(this->visDistantObjs.objs.size());
@@ -1266,7 +1279,13 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			const double sunYAngleRadians = sunDirection.getYAngleRadians();
 			const bool sunEmissive = true;
 			const Orientation sunOrientation = Orientation::Top;
-			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians,
+
+			// Modify angle based on latitude and time of day.
+			double newSunXAngleRadians, newSunYAngleRadians;
+			getSpaceCorrectedAngles(sunXAngleRadians, sunYAngleRadians, newSunXAngleRadians,
+				newSunYAngleRadians);
+
+			tryAddObject(sunTexture, newSunXAngleRadians, newSunYAngleRadians,
 				sunEmissive, sunOrientation);
 		}
 	}
@@ -1284,7 +1303,11 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Bottom;
 
-		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+		// Modify angle based on latitude and time of day.
+		double newXAngleRadians, newYAngleRadians;
+		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
+
+		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
 	}
 
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
@@ -6364,7 +6387,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight,
+	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
 	uint32_t *colorBuffer)
 {
@@ -6414,7 +6437,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.
-	this->updateVisibleDistantObjects(parallaxSky, shadingInfo.sunDirection, camera, frame);
+	this->updateVisibleDistantObjects(parallaxSky, shadingInfo.sunDirection, daytimePercent,
+		latitude, camera, frame);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

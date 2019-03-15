@@ -425,7 +425,7 @@ private:
 
 	// Refreshes the list of distant objects to be drawn.
 	void updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
-		const Camera &camera, const FrameView &frame);
+		double daytimePercent, double latitude, const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -699,9 +699,9 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
-		double ambient, double daytimePercent, bool parallaxSky, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
-		uint32_t *colorBuffer);
+		double ambient, double daytimePercent, double latitude, bool parallaxSky,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
 };
 
 #endif
