@@ -161,15 +161,22 @@ double DistantSky::AirObject::getHeight() const
 	return this->height;
 }
 
-DistantSky::MoonObject::MoonObject(const Surface &surface, DistantSky::MoonObject::Type type)
+DistantSky::MoonObject::MoonObject(const Surface &surface, double phasePercent,
+	DistantSky::MoonObject::Type type)
 {
 	this->surface = &surface;
+	this->phasePercent = phasePercent;
 	this->type = type;
 }
 
 const Surface &DistantSky::MoonObject::getSurface() const
 {
 	return *this->surface;
+}
+
+double DistantSky::MoonObject::getPhasePercent() const
+{
+	return this->phasePercent;
 }
 
 DistantSky::MoonObject::Type DistantSky::MoonObject::getType() const
@@ -473,15 +480,16 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	// Initialize moons.
 	auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
 	{
-		const int phaseIndex = [currentDay, type]()
+		const int phaseCount = 32;
+		const int phaseIndex = [currentDay, type, phaseCount]()
 		{
 			if (type == MoonObject::Type::First)
 			{
-				return currentDay % 32;
+				return currentDay % phaseCount;
 			}
 			else if (type == MoonObject::Type::Second)
 			{
-				return (currentDay + 14) % 32;
+				return (currentDay + 14) % phaseCount;
 			}
 			else
 			{
@@ -495,7 +503,9 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			exeData.locations.moonFilenames.at(moonIndex));
 		const auto &surfaces = textureManager.getSurfaces(filename);
 		const auto &surface = surfaces.at(phaseIndex);
-		return MoonObject(surface, type);
+		const double phasePercent = static_cast<double>(phaseIndex) /
+			static_cast<double>(phaseCount);
+		return MoonObject(surface, phasePercent, type);
 	};
 
 	this->moonObjects.push_back(makeMoon(MoonObject::Type::First));

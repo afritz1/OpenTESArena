@@ -79,11 +79,13 @@ public:
 		enum class Type { First, Second };
 	private:
 		const Surface* surface;
+		double phasePercent; // [0, 1) of the moon's orbit.
 		Type type;
 	public:
-		MoonObject(const Surface &surface, Type type);
+		MoonObject(const Surface &surface, double phasePercent, Type type);
 
 		const Surface &getSurface() const;
+		double getPhasePercent() const;
 		Type getType() const;
 	};
 
