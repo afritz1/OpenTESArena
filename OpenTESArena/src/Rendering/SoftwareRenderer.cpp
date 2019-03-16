@@ -442,8 +442,11 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			starObject, textureIndex));
 	}
 
-	// Add the sun to the sky textures and assign its texture index.
-	this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+	if (distantSky.hasSun())
+	{
+		// Add the sun to the sky textures and assign its texture index.
+		this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+	}
 }
 
 void SoftwareRenderer::DistantObjects::clear()

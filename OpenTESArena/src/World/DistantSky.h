@@ -150,6 +150,7 @@ public:
 	int getAirObjectCount() const;
 	int getMoonObjectCount() const;
 	int getStarObjectCount() const;
+	bool hasSun() const;
 
 	const LandObject &getLandObject(int index) const;
 	const AnimatedLandObject &getAnimatedLandObject(int index) const;

@@ -264,6 +264,11 @@ int DistantSky::getStarObjectCount() const
 	return static_cast<int>(this->starObjects.size());
 }
 
+bool DistantSky::hasSun() const
+{
+	return this->sunSurface != nullptr;
+}
+
 const DistantSky::LandObject &DistantSky::getLandObject(int index) const
 {
 	return this->landObjects.at(index);
@@ -477,184 +482,191 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		this->animLandObjects.push_back(std::move(animLandObj));
 	}
 
-	// Initialize moons.
-	auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
+	// Add space objects if the weather conditions are permitting.
+	const bool hasSpaceObjects = weatherType == WeatherType::Clear;
+
+	if (hasSpaceObjects)
 	{
-		const int phaseCount = 32;
-		const int phaseIndex = [currentDay, type, phaseCount]()
+		// Initialize moons.
+		auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
 		{
-			if (type == MoonObject::Type::First)
+			const int phaseCount = 32;
+			const int phaseIndex = [currentDay, type, phaseCount]()
 			{
-				return currentDay % phaseCount;
-			}
-			else if (type == MoonObject::Type::Second)
+				if (type == MoonObject::Type::First)
+				{
+					return currentDay % phaseCount;
+				}
+				else if (type == MoonObject::Type::Second)
+				{
+					return (currentDay + 14) % phaseCount;
+				}
+				else
+				{
+					throw DebugException("Invalid moon type \"" +
+						std::to_string(static_cast<int>(type)) + "\".");
+				}
+			}();
+
+			const int moonIndex = static_cast<int>(type);
+			const std::string filename = String::toUppercase(
+				exeData.locations.moonFilenames.at(moonIndex));
+			const auto &surfaces = textureManager.getSurfaces(filename);
+			const auto &surface = surfaces.at(phaseIndex);
+			const double phasePercent = static_cast<double>(phaseIndex) /
+				static_cast<double>(phaseCount);
+			return MoonObject(surface, phasePercent, type);
+		};
+
+		this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
+		this->moonObjects.push_back(makeMoon(MoonObject::Type::Second));
+
+		// Initialize stars.
+		struct SubStar
+		{
+			int8_t dx, dy;
+			uint8_t color;
+		};
+
+		struct Star
+		{
+			int16_t x, y, z;
+			std::vector<SubStar> subList;
+			int8_t type;
+		};
+
+		auto getRndCoord = [&random]()
+		{
+			const int16_t d = (0x800 + random.next()) & 0x0FFF;
+			return ((d & 2) == 0) ? d : -d;
+		};
+
+		std::vector<Star> stars;
+		std::array<bool, 3> planets = { false, false, false };
+
+		random.srand(0x12345679);
+
+		const int starCount = 40;
+		for (int i = 0; i < starCount; i++)
+		{
+			Star star;
+			star.x = getRndCoord();
+			star.y = getRndCoord();
+			star.z = getRndCoord();
+			star.type = -1;
+
+			const uint8_t selection = random.next() % 4;
+			if (selection != 0)
 			{
-				return (currentDay + 14) % phaseCount;
+				// Constellation.
+				std::vector<SubStar> starList;
+				const int n = 2 + (random.next() % 4);
+
+				for (int j = 0; j < n; j++)
+				{
+					// Must convert to short for arithmetic right shift (to preserve sign bit).
+					SubStar subStar;
+					subStar.dx = static_cast<int16_t>(random.next()) >> 9;
+					subStar.dy = static_cast<int16_t>(random.next()) >> 9;
+					subStar.color = (random.next() % 10) + 64;
+					starList.push_back(std::move(subStar));
+				}
+
+				star.subList = std::move(starList);
 			}
 			else
 			{
-				throw DebugException("Invalid moon type \"" +
-					std::to_string(static_cast<int>(type)) + "\".");
+				// Large star.
+				int8_t value;
+				do
+				{
+					value = random.next() % 8;
+				} while ((value >= 5) && planets.at(value - 5));
+
+				if (value >= 5)
+				{
+					planets.at(value - 5) = true;
+				}
+
+				star.type = value;
 			}
+
+			stars.push_back(std::move(star));
+		}
+
+		// Palette used to obtain colors for small stars in constellations.
+		const Palette palette = []()
+		{
+			const COLFile colFile(PaletteFile::fromName(PaletteName::Default));
+			return colFile.getPalette();
 		}();
 
-		const int moonIndex = static_cast<int>(type);
-		const std::string filename = String::toUppercase(
-			exeData.locations.moonFilenames.at(moonIndex));
-		const auto &surfaces = textureManager.getSurfaces(filename);
-		const auto &surface = surfaces.at(phaseIndex);
-		const double phasePercent = static_cast<double>(phaseIndex) /
-			static_cast<double>(phaseCount);
-		return MoonObject(surface, phasePercent, type);
-	};
-
-	this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
-	this->moonObjects.push_back(makeMoon(MoonObject::Type::Second));
-
-	// Initialize stars.
-	struct SubStar
-	{
-		int8_t dx, dy;
-		uint8_t color;
-	};
-
-	struct Star
-	{
-		int16_t x, y, z;
-		std::vector<SubStar> subList;
-		int8_t type;
-	};
-
-	auto getRndCoord = [&random]()
-	{
-		const int16_t d = (0x800 + random.next()) & 0x0FFF;
-		return ((d & 2) == 0) ? d : -d;
-	};
-
-	std::vector<Star> stars;
-	std::array<bool, 3> planets = { false, false, false };
-
-	random.srand(0x12345679);
-
-	const int starCount = 40;
-	for (int i = 0; i < starCount; i++)
-	{
-		Star star;
-		star.x = getRndCoord();
-		star.y = getRndCoord();
-		star.z = getRndCoord();
-		star.type = -1;
-
-		const uint8_t selection = random.next() % 4;
-		if (selection != 0)
+		// Convert stars to modern representation.
+		for (const auto &star : stars)
 		{
-			// Constellation.
-			std::vector<SubStar> starList;
-			const int n = 2 + (random.next() % 4);
+			const Double3 direction = Double3(
+				static_cast<double>(star.x),
+				static_cast<double>(star.y),
+				static_cast<double>(star.z)).normalized();
 
-			for (int j = 0; j < n; j++)
+			const bool isSmallStar = star.type == -1;
+			if (isSmallStar)
 			{
-				// Must convert to short for arithmetic right shift (to preserve sign bit).
-				SubStar subStar;
-				subStar.dx = static_cast<int16_t>(random.next()) >> 9;
-				subStar.dy = static_cast<int16_t>(random.next()) >> 9;
-				subStar.color = (random.next() % 10) + 64;
-				starList.push_back(std::move(subStar));
-			}
-
-			star.subList = std::move(starList);
-		}
-		else
-		{
-			// Large star.
-			int8_t value;
-			do
-			{
-				value = random.next() % 8;
-			} while ((value >= 5) && planets.at(value - 5));
-
-			if (value >= 5)
-			{
-				planets.at(value - 5) = true;
-			}
-
-			star.type = value;
-		}
-
-		stars.push_back(std::move(star));
-	}
-
-	// Palette used to obtain colors for small stars in constellations.
-	const Palette palette = []()
-	{
-		const COLFile colFile(PaletteFile::fromName(PaletteName::Default));
-		return colFile.getPalette();
-	}();
-
-	// Convert stars to modern representation.
-	for (const auto &star : stars)
-	{
-		const Double3 direction = Double3(
-			static_cast<double>(star.x),
-			static_cast<double>(star.y),
-			static_cast<double>(star.z)).normalized();
-
-		const bool isSmallStar = star.type == -1;
-		if (isSmallStar)
-		{
-			for (const auto &subStar : star.subList)
-			{
-				const uint32_t color = [&palette, &subStar]()
+				for (const auto &subStar : star.subList)
 				{
-					const Color &paletteColor = palette.get().at(subStar.color);
-					return paletteColor.toARGB();
+					const uint32_t color = [&palette, &subStar]()
+					{
+						const Color &paletteColor = palette.get().at(subStar.color);
+						return paletteColor.toARGB();
+					}();
+
+					// Delta X and Y are applied after world-to-pixel projection of the base
+					// direction in the original game, but we're doing angle calculations here
+					// instead for the sake of keeping all the star generation code in one place.
+					const Double3 subDirection = [&direction, &subStar]()
+					{
+						// Convert delta X and Y to percentages of the identity dimension (320px).
+						const double dxPercent = static_cast<double>(subStar.dx) / DistantSky::IDENTITY_DIM;
+						const double dyPercent = static_cast<double>(subStar.dy) / DistantSky::IDENTITY_DIM;
+
+						// Convert percentages to radians. Positive X is counter-clockwise, positive
+						// Y is up.
+						const double dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
+						const double dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
+
+						// Apply rotations to base direction.
+						const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);
+						const Matrix4d yRotation = Matrix4d::yRotation(dyRadians);
+						const Double4 newDir = yRotation * (xRotation * Double4(direction, 0.0));
+
+						return Double3(newDir.x, newDir.y, newDir.z);
+					}();
+
+					this->starObjects.push_back(StarObject::makeSmall(color, subDirection));
+				}
+			}
+			else
+			{
+				const std::string starFilename = [&exeData, &star]()
+				{
+					const std::string typeStr = std::to_string(star.type + 1);
+					std::string filename = exeData.locations.starFilename;
+					const size_t index = filename.find('1');
+					assert(index != std::string::npos);
+
+					filename.replace(index, 1, typeStr);
+					return String::toUppercase(filename);
 				}();
 
-				// Delta X and Y are applied after world-to-pixel projection of the base direction
-				// in the original game, but we're doing angle calculations here instead for the
-				// sake of keeping all the star generation code in one place.
-				const Double3 subDirection = [&direction, &subStar]()
-				{
-					// Convert delta X and Y to percentages of the identity dimension (320px).
-					const double dxPercent = static_cast<double>(subStar.dx) / DistantSky::IDENTITY_DIM;
-					const double dyPercent = static_cast<double>(subStar.dy) / DistantSky::IDENTITY_DIM;
-
-					// Convert percentages to radians. Positive X is counter-clockwise, positive Y is up.
-					const double dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
-					const double dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
-					
-					// Apply rotations to base direction.
-					const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);
-					const Matrix4d yRotation = Matrix4d::yRotation(dyRadians);
-					const Double4 newDir = yRotation * (xRotation * Double4(direction, 0.0));
-
-					return Double3(newDir.x, newDir.y, newDir.z);
-				}();
-
-				this->starObjects.push_back(StarObject::makeSmall(color, subDirection));
+				const Surface &surface = textureManager.getSurface(starFilename);
+				this->starObjects.push_back(StarObject::makeLarge(surface, direction));
 			}
 		}
-		else
-		{
-			const std::string starFilename = [&exeData, &star]()
-			{
-				const std::string typeStr = std::to_string(star.type + 1);
-				std::string filename = exeData.locations.starFilename;
-				const size_t index = filename.find('1');
-				assert(index != std::string::npos);
 
-				filename.replace(index, 1, typeStr);
-				return String::toUppercase(filename);
-			}();
-
-			const Surface &surface = textureManager.getSurface(starFilename);
-			this->starObjects.push_back(StarObject::makeLarge(surface, direction));
-		}
+		// Initialize sun texture.
+		const std::string &sunFilename = exeData.locations.sunFilename;
+		this->sunSurface = &textureManager.getSurface(String::toUppercase(sunFilename));
 	}
-
-	// Initialize sun texture.
-	const std::string &sunFilename = exeData.locations.sunFilename;
-	this->sunSurface = &textureManager.getSurface(String::toUppercase(sunFilename));
 }
 
 void DistantSky::tick(double dt)
