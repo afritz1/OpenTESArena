@@ -1222,12 +1222,23 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
 	// Objects in space have their position modified by latitude and time of day.
-	auto getSpaceCorrectedAngles = [latitude, daytimePercent](double xAngleRadians,
+	// My quaternions are broken or something, so use matrix multiplication instead.
+	const Matrix4d timeRotation = Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
+	const Matrix4d latitudeRotation = Matrix4d::zRotation(latitude * Constants::HalfPi);
+
+	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](double xAngleRadians,
 		double yAngleRadians, double &newXAngleRadians, double &newYAngleRadians)
 	{
-		// @todo
-		newXAngleRadians = xAngleRadians;
-		newYAngleRadians = yAngleRadians;
+		// Direction towards the space object.
+		const Double3 direction = Double3(
+			std::sin(xAngleRadians),
+			std::tan(yAngleRadians),
+			std::cos(xAngleRadians)).normalized();
+
+		// Rotate the direction based on latitude and time of day.
+		const Double4 dir = latitudeRotation * (timeRotation * Double4(direction, 0.0));
+		newXAngleRadians = std::atan2(dir.x, dir.z);
+		newYAngleRadians = std::asin(dir.y);
 	};
 
 	for (const auto &moon : this->distantObjects.moons)
