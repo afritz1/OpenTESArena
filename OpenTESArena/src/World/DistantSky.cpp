@@ -535,6 +535,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			int8_t type;
 		};
 
+		const int8_t NO_STAR_TYPE = -1;
+
 		auto getRndCoord = [&random]()
 		{
 			const int16_t d = (0x800 + random.next()) & 0x0FFF;
@@ -553,7 +555,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			star.x = getRndCoord();
 			star.y = getRndCoord();
 			star.z = getRndCoord();
-			star.type = -1;
+			star.type = NO_STAR_TYPE;
 
 			const uint8_t selection = random.next() % 4;
 			if (selection != 0)
@@ -593,6 +595,12 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 
 			stars.push_back(std::move(star));
 		}
+
+		// Sort stars so large ones appear in front when rendered (it looks a bit better that way).
+		std::sort(stars.begin(), stars.end(), [](const Star &a, const Star &b)
+		{
+			return a.type < b.type;
+		});
 
 		// Palette used to obtain colors for small stars in constellations.
 		const Palette palette = []()
