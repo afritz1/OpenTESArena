@@ -156,6 +156,9 @@ private:
 	{
 		static constexpr int SKY_COLOR_COUNT = 5;
 
+		// Rotation matrices for distant space objects.
+		Matrix4d timeRotation, latitudeRotation;
+
 		// Sky colors for the horizon and zenith to interpolate between. Index 0 is the
 		// horizon color. For interiors, every color in the array is the same.
 		std::array<Double3, SKY_COLOR_COUNT> skyColors;
@@ -175,7 +178,7 @@ private:
 		// Returns whether the current clock time is before noon.
 		bool isAM;
 
-		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent,
+		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
 			double ambient, double fogDistance);
 
 		const Double3 &getFogColor() const;
@@ -424,8 +427,8 @@ private:
 	void resetRenderThreads();
 
 	// Refreshes the list of distant objects to be drawn.
-	void updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
-		double daytimePercent, double latitude, const Camera &camera, const FrameView &frame);
+	void updateVisibleDistantObjects(bool parallaxSky, const ShadingInfo &shadingInfo,
+		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera);
@@ -464,6 +467,12 @@ private:
 	static std::array<DrawRange, 3> makeDrawRangeThreePart(const Double3 &startPoint,
 		const Double3 &midPoint1, const Double3 &midPoint2, const Double3 &endPoint,
 		const Camera &camera, const FrameView &frame);
+
+	// Creates a rotation matrix for drawing latitude-correct distant space objects.
+	static Matrix4d getLatitudeRotation(double latitude);
+
+	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
+	static Matrix4d getTimeOfDayRotation(double daytimePercent);
 
 	// Fills in the two reference parameters with the projected top and bottom Y percent of the sky
 	// gradient.

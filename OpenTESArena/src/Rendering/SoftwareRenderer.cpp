@@ -207,8 +207,11 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
-	double daytimePercent, double ambient, double fogDistance)
+	double daytimePercent, double latitude, double ambient, double fogDistance)
 {
+	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
+	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
+
 	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
 	// and forwards in the PM (horizon is earliest in the palette).
 	this->isAM = daytimePercent < 0.50;
@@ -250,10 +253,14 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	}
 
 	// The sun rises in the west (-Z) and sets in the east (+Z).
-	this->sunDirection = [daytimePercent]()
+	this->sunDirection = [this, latitude]()
 	{
-		const double radians = daytimePercent * Constants::TwoPi;
-		return Double3(0.0, -std::cos(radians), -std::sin(radians)).normalized();
+		// The sun gets a bonus to latitude. Arena angle units are 0->100.
+		const double sunLatitude = latitude - (15.0 / 100.0);
+		const Matrix4d sunRotation = SoftwareRenderer::getLatitudeRotation(sunLatitude);
+		const Double3 baseDir = -Double3::UnitY;
+		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
+		return Double3(dir.x, dir.y, dir.z).normalized();
 	}();
 	
 	this->sunColor = [this]()
@@ -957,8 +964,8 @@ void SoftwareRenderer::resetRenderThreads()
 	this->threadData.isDestructing = false;
 }
 
-void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Double3 &sunDirection,
-	double daytimePercent, double latitude, const Camera &camera, const FrameView &frame)
+void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
+	const ShadingInfo &shadingInfo, const Camera &camera, const FrameView &frame)
 {
 	this->visDistantObjs.clear();
 
@@ -1223,8 +1230,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 
 	// Objects in space have their position modified by latitude and time of day.
 	// My quaternions are broken or something, so use matrix multiplication instead.
-	const Matrix4d timeRotation = Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
-	const Matrix4d latitudeRotation = Matrix4d::zRotation(latitude * Constants::HalfPi);
+	const Matrix4d &timeRotation = shadingInfo.timeRotation;
+	const Matrix4d &latitudeRotation = shadingInfo.latitudeRotation;
 
 	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](double xAngleRadians,
 		double yAngleRadians, double &newXAngleRadians, double &newYAngleRadians)
@@ -1284,6 +1291,10 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 	if (this->distantObjects.sunTextureIndex != SoftwareRenderer::DistantObjects::NO_SUN)
 	{
 		const SkyTexture &sunTexture = this->skyTextures.at(this->distantObjects.sunTextureIndex);
+
+		// The sun direction is already corrected for latitude and time of day since the same
+		// variable is reused with shading.
+		const Double3 &sunDirection = shadingInfo.sunDirection;
 		const double sunXAngleRadians = MathUtils::fullAtan2(sunDirection.x, sunDirection.z);
 
 		// When the sun is directly above or below, it might cause the X angle to be undefined.
@@ -1294,12 +1305,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky, const Doubl
 			const bool sunEmissive = true;
 			const Orientation sunOrientation = Orientation::Top;
 
-			// Modify angle based on latitude and time of day.
-			double newSunXAngleRadians, newSunYAngleRadians;
-			getSpaceCorrectedAngles(sunXAngleRadians, sunYAngleRadians, newSunXAngleRadians,
-				newSunYAngleRadians);
-
-			tryAddObject(sunTexture, newSunXAngleRadians, newSunYAngleRadians,
+			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians,
 				sunEmissive, sunOrientation);
 		}
 	}
@@ -2120,6 +2126,16 @@ std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreeP
 		DrawRange(startYProjEnd, mid1YProjEnd, mid1YStart, mid1YEnd),
 		DrawRange(mid1YProjEnd, mid2YProjEnd, mid2YStart, mid2YEnd)
 	};
+}
+
+Matrix4d SoftwareRenderer::getLatitudeRotation(double latitude)
+{
+	return Matrix4d::zRotation(latitude * Constants::HalfPi);
+}
+
+Matrix4d SoftwareRenderer::getTimeOfDayRotation(double daytimePercent)
+{
+	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }
 
 void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, double &projectedYTop,
@@ -6421,7 +6437,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
-	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, ambient, this->fogDistance);
+	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
+		ambient, this->fogDistance);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.
@@ -6451,8 +6468,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.
-	this->updateVisibleDistantObjects(parallaxSky, shadingInfo.sunDirection, daytimePercent,
-		latitude, camera, frame);
+	this->updateVisibleDistantObjects(parallaxSky, shadingInfo, camera, frame);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
