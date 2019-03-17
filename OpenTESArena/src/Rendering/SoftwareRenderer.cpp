@@ -256,7 +256,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	this->sunDirection = [this, latitude]()
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
-		const double sunLatitude = latitude - (15.0 / 100.0);
+		const double sunLatitude = latitude - (13.0 / 100.0);
 		const Matrix4d sunRotation = SoftwareRenderer::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
 		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
@@ -1252,24 +1252,36 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	{
 		const SkyTexture &texture = skyTextures.at(moon.textureIndex);
 
-		// @todo: determine moon directions (maybe put in shadingInfo with sunDirection?).
+		// These moon directions are roughly correct, based on the original game.
 		const Double3 direction = [&moon]()
 		{
 			const DistantSky::MoonObject::Type type = moon.obj.getType();
 
-			if (type == DistantSky::MoonObject::Type::First)
+			double bonusLatitude;
+			const Double3 baseDir = [type, &bonusLatitude]()
 			{
-				return Double3(0.3, 0.2, 0.3).normalized();
-			}
-			else if (type == DistantSky::MoonObject::Type::Second)
-			{
-				return Double3(-0.3, 0.2, -0.3).normalized();
-			}
-			else
-			{
-				throw DebugException("Invalid moon type \"" +
-					std::to_string(static_cast<int>(type)) + "\".");
-			}
+				if (type == DistantSky::MoonObject::Type::First)
+				{
+					bonusLatitude = -15.0 / 100.0;
+					return Double3(0.0, -57536.0, 0.0).normalized();
+				}
+				else if (type == DistantSky::MoonObject::Type::Second)
+				{
+					bonusLatitude = -30.0 / 100.0;
+					return Double3(-3000.0, -53536.0, 0.0).normalized();
+				}
+				else
+				{
+					throw DebugException("Invalid moon type \"" +
+						std::to_string(static_cast<int>(type)) + "\".");
+				}
+			}();
+
+			// The moon's position in the sky is modified by its current phase.
+			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
+			const Matrix4d moonRotation = SoftwareRenderer::getLatitudeRotation(phaseModifier);
+			const Double4 dir = moonRotation * Double4(baseDir, 0.0);
+			return Double3(dir.x, dir.y, dir.z).normalized();
 		}();
 
 		const double xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
