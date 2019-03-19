@@ -256,7 +256,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	this->sunDirection = [this, latitude]()
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
-		const double sunLatitude = -latitude + (13.0 / 100.0);
+		const double sunLatitude = -(latitude + (13.0 / 100.0));
 		const Matrix4d sunRotation = SoftwareRenderer::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
 		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
