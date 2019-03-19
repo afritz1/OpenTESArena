@@ -251,6 +251,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
 				miscAssets.getClassDefinitions(), miscAssets.getExeData()), miscAssets);
 
+			const int starCount = DistantSky::getStarCountFromDensity(
+				options.getMisc_StarDensity());
+
 			Random random;
 
 			// Load the selected level based on world type (writing into active game data).
@@ -263,7 +266,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const MIFFile mif(mifName);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadPremadeCity(mif, weatherType, miscAssets,
+					gameData->loadPremadeCity(mif, weatherType, starCount, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 				else
@@ -297,7 +300,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						GameData::getFilteredWeatherType(weatherType, climateType);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadCity(localCityID, provinceID, filteredWeatherType,
+					gameData->loadCity(localCityID, provinceID, filteredWeatherType, starCount,
 						miscAssets, game.getTextureManager(), renderer);
 				}
 			}
@@ -386,7 +389,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 				// Load wilderness into game data. Location data is loaded, too.
 				gameData->loadWilderness(localCityID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
-					filteredWeatherType, miscAssets, game.getTextureManager(), renderer);
+					filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer);
 			}
 			else
 			{

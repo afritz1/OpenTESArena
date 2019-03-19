@@ -83,3 +83,7 @@ ShowCompass=true
 # Affects speed of gameplay by simulating the speed of lower cycles.
 # Accepted values are between 0.50 and 1.0.
 TimeScale=1.0
+
+# Affects number of stars in the night sky.
+# 0: classic, 1: moderate, 2: high
+StarDensity=0

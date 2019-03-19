@@ -342,8 +342,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 										static_cast<int>(Weathers.size())));
 								}();
 
+								const int starCount = DistantSky::getStarCountFromDensity(
+									game.getOptions().getMisc_StarDensity());
+
 								auto &renderer = game.getRenderer();
-								gameData.loadCity(localCityID, provinceID, weatherType,
+								gameData.loadCity(localCityID, provinceID, weatherType, starCount,
 									game.getMiscAssets(), game.getTextureManager(), renderer);
 
 								// Set music based on weather and time.

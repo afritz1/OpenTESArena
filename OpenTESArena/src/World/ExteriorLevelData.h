@@ -36,22 +36,22 @@ public:
 
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
 	static ExteriorLevelData loadPremadeCity(const MIFFile::Level &level, WeatherType weatherType,
-		int currentDay, const std::string &infName, int gridWidth, int gridDepth,
+		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
 	// required .MIF chunks.
 	static ExteriorLevelData loadCity(const MIFFile::Level &level, int localCityID,
-		int provinceID, WeatherType weatherType, int currentDay, int cityDim, bool isCoastal,
-		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
+		int provinceID, WeatherType weatherType, int currentDay, int starCount, int cityDim,
+		bool isCoastal, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
 		const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
 		TextureManager &textureManager);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.
 	static ExteriorLevelData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		WeatherType weatherType, int currentDay, const std::string &infName,
+		WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.

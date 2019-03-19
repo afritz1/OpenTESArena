@@ -80,6 +80,8 @@ public:
 	static const int RESAMPLING_OPTION_COUNT;
 	static const double MIN_TIME_SCALE;
 	static const double MAX_TIME_SCALE;
+	static const int MIN_STAR_DENSITY_MODE;
+	static const int MAX_STAR_DENSITY_MODE;
 
 #define OPTION_BOOL(section, name) \
 bool get##section##_##name() const \
@@ -159,6 +161,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Misc, ShowDebug)
 	OPTION_BOOL(Misc, ShowCompass)
 	OPTION_DOUBLE(Misc, TimeScale)
+	OPTION_INT(Misc, StarDensity)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);

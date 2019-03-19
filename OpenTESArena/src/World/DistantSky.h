@@ -159,8 +159,11 @@ public:
 	const StarObject &getStarObject(int index) const;
 	const Surface &getSunSurface() const;
 
+	// Added in the new engine for fun. Gets the number of stars for some density.
+	static int getStarCountFromDensity(int starDensity);
+
 	void init(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	void tick(double dt);
 };

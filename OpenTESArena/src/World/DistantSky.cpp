@@ -299,8 +299,31 @@ const Surface &DistantSky::getSunSurface() const
 	return *this->sunSurface;
 }
 
+int DistantSky::getStarCountFromDensity(int starDensity)
+{
+	if (starDensity == 0)
+	{
+		// Classic.
+		return 40;
+	}
+	else if (starDensity == 1)
+	{
+		// Moderate.
+		return 1000;
+	}
+	else if (starDensity == 2)
+	{
+		// High.
+		return 8000;
+	}
+	else
+	{
+		throw DebugException("Invalid star density \"" + std::to_string(starDensity) + "\".");
+	}
+}
+
 void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
-	int currentDay, const MiscAssets &miscAssets, TextureManager &textureManager)
+	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Add mountains and clouds first. Get the climate type of the city.
 	const ClimateType climateType = Location::getCityClimateType(
@@ -548,7 +571,8 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 
 		random.srand(0x12345679);
 
-		const int starCount = 40;
+		// The original game is hardcoded to 40 stars but it doesn't seem like very many, so
+		// it is now a variable.
 		for (int i = 0; i < starCount; i++)
 		{
 			Star star;

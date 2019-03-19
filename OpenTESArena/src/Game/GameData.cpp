@@ -441,7 +441,7 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
+void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Climate for center province.
@@ -452,7 +452,8 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 
 	// Call premade city loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
-		mif, climateType, weatherType, this->date.getDay(), miscAssets, textureManager));
+		mif, climateType, weatherType, this->date.getDay(), starCount,
+		miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
@@ -480,7 +481,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType,
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType,
+void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
@@ -537,7 +538,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	// Call city WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
 		localCityID, provinceID, mif, cityDim, isCoastal, reservedBlocks, startPosition,
-		weatherType, this->date.getDay(), miscAssets, textureManager));
+		weatherType, this->date.getDay(), starCount, miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
@@ -566,7 +567,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 }
 
 void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-	int rmdBL, WeatherType weatherType, const MiscAssets &miscAssets,
+	int rmdBL, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Get the location's climate type.
@@ -575,7 +576,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rm
 
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
-		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, this->date.getDay(),
+		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
 	// Set initial level active in the renderer.

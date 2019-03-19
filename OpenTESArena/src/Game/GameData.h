@@ -141,17 +141,17 @@ public:
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).
-	void loadPremadeCity(const MIFFile &mif, WeatherType weatherType, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int starCount,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game
 	// data. The local ID is the 0-31 location index within a province.
-	void loadCity(int localCityID, int provinceID, WeatherType weatherType,
+	void loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
 	void loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-		int rmdBL, WeatherType weatherType, const MiscAssets &miscAssets,
+		int rmdBL, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	TimedTextBox &getTriggerText();

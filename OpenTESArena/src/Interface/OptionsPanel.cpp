@@ -242,6 +242,7 @@ const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
 const std::string OptionsPanel::SKIP_INTRO_NAME = "Skip Intro";
 const std::string OptionsPanel::TIME_SCALE_NAME = "Time Scale";
+const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
 
 // Dev.
 const std::string OptionsPanel::COLLISION_NAME = "Collision";
@@ -628,6 +629,23 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &options = game.getOptions();
 		options.setMisc_TimeScale(value);
 	}));
+
+	auto starDensityOption = std::make_unique<IntOption>(
+		OptionsPanel::STAR_DENSITY_NAME,
+		"Determines number of stars in the sky. Changes take effect the next\ntime stars are generated.",
+		options.getMisc_StarDensity(),
+		1,
+		Options::MIN_STAR_DENSITY_MODE,
+		Options::MAX_STAR_DENSITY_MODE,
+		[this](int value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_StarDensity(value);
+	});
+
+	starDensityOption->setDisplayOverrides({ "Classic", "Moderate", "High" });
+	this->miscOptions.push_back(std::move(starDensityOption));
 
 	// Create developer options.
 	this->devOptions.push_back(std::make_unique<BoolOption>(

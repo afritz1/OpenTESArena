@@ -54,7 +54,8 @@ namespace
 		{ "SkipIntro", OptionType::Bool },
 		{ "ShowDebug", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
-		{ "TimeScale", OptionType::Double }
+		{ "TimeScale", OptionType::Double },
+		{ "StarDensity", OptionType::Int }
 	};
 }
 
@@ -93,6 +94,8 @@ const int Options::MIN_SOUND_CHANNELS = 1;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
 const double Options::MIN_TIME_SCALE = 0.50;
 const double Options::MAX_TIME_SCALE = 1.0;
+const int Options::MIN_STAR_DENSITY_MODE = 0;
+const int Options::MAX_STAR_DENSITY_MODE = 2;
 
 void Options::load(const std::string &filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
@@ -566,6 +569,16 @@ void Options::checkMisc_TimeScale(double value) const
 	DebugAssertMsg(value <= Options::MAX_TIME_SCALE,
 		"Time scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_TIME_SCALE, 1) + ".");
+}
+
+void Options::checkMisc_StarDensity(int value) const
+{
+	DebugAssertMsg(value >= Options::MIN_STAR_DENSITY_MODE,
+		"Star density cannot be less than " +
+		std::to_string(Options::MIN_STAR_DENSITY_MODE) + ".");
+	DebugAssertMsg(value <= Options::MAX_STAR_DENSITY_MODE,
+		"Star density cannot be greater than " +
+		std::to_string(Options::MAX_STAR_DENSITY_MODE) + ".");
 }
 
 void Options::loadDefaults(const std::string &filename)

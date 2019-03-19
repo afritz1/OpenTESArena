@@ -375,18 +375,21 @@ void FastTravelSubPanel::switchToNextPanel()
 			return GameData::getFilteredWeatherType(type, climateType);
 		}();
 
+		const int starCount = DistantSky::getStarCountFromDensity(
+			game.getOptions().getMisc_StarDensity());
+
 		// Load the destination city. For the center province, use the specialized method.
 		if (this->travelData.provinceID != Location::CENTER_PROVINCE_ID)
 		{
 			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID,
-				weatherType, game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
+				weatherType, starCount, game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
 		}
 		else
 		{
 			const std::string mifName = String::toUppercase(
 				exeData.locations.centerProvinceCityMifName);
 			const MIFFile mif(mifName);
-			gameData.loadPremadeCity(mif, weatherType, game.getMiscAssets(),
+			gameData.loadPremadeCity(mif, weatherType, starCount, game.getMiscAssets(),
 				game.getTextureManager(), game.getRenderer());
 		}
 

@@ -46,18 +46,18 @@ public:
 
 	// Loads a premade exterior city (only used by center province).
 	static ExteriorWorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-		WeatherType weatherType, int currentDay, const MiscAssets &miscAssets,
+		WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static ExteriorWorldData loadCity(int localCityID, int provinceID, const MIFFile &mif,
 		int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
-		const Int2 &startPosition, WeatherType weatherType, int currentDay,
+		const Int2 &startPosition, WeatherType weatherType, int currentDay, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Loads some wilderness blocks.
 	static ExteriorWorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		ClimateType climateType, WeatherType weatherType, int currentDay,
+		ClimateType climateType, WeatherType weatherType, int currentDay, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Returns the current active interior (if any).
