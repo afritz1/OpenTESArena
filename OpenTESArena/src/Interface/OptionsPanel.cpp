@@ -411,7 +411,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
 		OptionsPanel::PARALLAX_SKY_NAME,
-		"Determines how distant sky objects (mountains, clouds, etc.) are\ndrawn. Set to false for classic behavior.",
+		"Determines how distant sky objects (mountains, clouds, etc.) are\ndrawn. Set to false for classic behavior.\n\n(Parallax is not fully implemented yet)",
 		options.getGraphics_ParallaxSky(),
 		[this](bool value)
 	{
