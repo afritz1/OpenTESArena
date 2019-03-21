@@ -6227,60 +6227,27 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 		}
 	};
 
-	// Reverse iterate so objects are drawn far to near.
-	auto makeReverseIterator = [&visDistantObjs](int index)
+	// Lambda for drawing a group of distant objects with some render type.
+	auto drawDistantObjRange = [&visDistantObjs, &drawDistantObj](int start, int end,
+		DistantRenderType renderType)
 	{
-		return std::reverse_iterator<decltype(visDistantObjs.objs.begin())>(
-			visDistantObjs.objs.begin() + index);
+		assert(start >= 0);
+		assert(end <= visDistantObjs.objs.size());
+
+		// Reverse iterate so objects are drawn far to near.
+		const VisDistantObject *objs = visDistantObjs.objs.data();
+		for (int i = end - 1; i >= start; i--)
+		{
+			drawDistantObj(objs[i], renderType);
+		}
 	};
 
-	const auto landRBegin = makeReverseIterator(visDistantObjs.landEnd);
-	const auto landREnd = makeReverseIterator(visDistantObjs.landStart);
-
-	const auto animLandRBegin = makeReverseIterator(visDistantObjs.animLandEnd);
-	const auto animLandREnd = makeReverseIterator(visDistantObjs.animLandStart);
-
-	const auto airRBegin = makeReverseIterator(visDistantObjs.airEnd);
-	const auto airREnd = makeReverseIterator(visDistantObjs.airStart);
-
-	const auto moonRBegin = makeReverseIterator(visDistantObjs.moonEnd);
-	const auto moonREnd = makeReverseIterator(visDistantObjs.moonStart);
-
-	const auto sunRBegin = makeReverseIterator(visDistantObjs.sunEnd);
-	const auto sunREnd = makeReverseIterator(visDistantObjs.sunStart);
-
-	const auto starRBegin = makeReverseIterator(visDistantObjs.starEnd);
-	const auto starREnd = makeReverseIterator(visDistantObjs.starStart);
-
-	for (auto it = starRBegin; it != starREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::Star);
-	}
-
-	for (auto it = sunRBegin; it != sunREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::General);
-	}
-
-	for (auto it = moonRBegin; it != moonREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::Moon);
-	}
-
-	for (auto it = airRBegin; it != airREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::General);
-	}
-
-	for (auto it = animLandRBegin; it != animLandREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::General);
-	}
-
-	for (auto it = landRBegin; it != landREnd; ++it)
-	{
-		drawDistantObj(*it, DistantRenderType::General);
-	}
+	drawDistantObjRange(visDistantObjs.starStart, visDistantObjs.starEnd, DistantRenderType::Star);
+	drawDistantObjRange(visDistantObjs.sunStart, visDistantObjs.sunEnd, DistantRenderType::General);
+	drawDistantObjRange(visDistantObjs.moonStart, visDistantObjs.moonEnd, DistantRenderType::Moon);
+	drawDistantObjRange(visDistantObjs.airStart, visDistantObjs.airEnd, DistantRenderType::General);
+	drawDistantObjRange(visDistantObjs.animLandStart, visDistantObjs.animLandEnd, DistantRenderType::General);
+	drawDistantObjRange(visDistantObjs.landStart, visDistantObjs.landEnd, DistantRenderType::General);
 }
 
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
