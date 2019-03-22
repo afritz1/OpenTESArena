@@ -541,6 +541,7 @@ void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
 	this->rowCache = &rowCache;
 	this->projectedYTop = projectedYTop;
 	this->projectedYBottom = projectedYBottom;
+	this->shouldDrawStars = false;
 }
 
 void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
@@ -3489,7 +3490,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 			// range of intensities so stars don't immediately blink on/off when the gradient is a
 			// certain color. Stars are generally small so I think it's okay to do more expensive
 			// per-pixel operations here.
-			constexpr double visThreshold = 64.0 / 255.0; // Stars are becoming visible.
+			constexpr double visThreshold = ShadingInfo::STAR_VIS_THRESHOLD; // Stars are becoming visible.
 			constexpr double brightestThreshold = 32.0 / 255.0; // Stars are brightest.
 
 			const double brightestComponent = std::max(
@@ -6093,7 +6094,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 
 void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProjYTop,
 	double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+	std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Lambda for drawing one row of colors and depth in the frame buffer.
 	auto drawSkyRow = [&frame](int y, const Double3 &color)
@@ -6113,6 +6114,9 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 		}
 	};
 
+	// While drawing the sky gradient, determine if it is dark enough for stars to be visible.
+	bool isDarkEnough = false;
+
 	for (int y = startY; y < endY; y++)
 	{
 		// Y percent across the screen.
@@ -6129,14 +6133,23 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 		// Cache row color for star rendering.
 		skyGradientRowCache.at(y) = color;
 
+		// Update star visibility.
+		const double maxComp = std::max(std::max(color.x, color.y), color.z);
+		isDarkEnough |= maxComp <= ShadingInfo::STAR_VIS_THRESHOLD;
+
 		drawSkyRow(y, color);
+	}
+
+	if (isDarkEnough)
+	{
+		shouldDrawStars = true;
 	}
 }
 
-void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
+void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky, 
 	const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-	const std::vector<Double3> &skyGradientRowCache, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+	const std::vector<Double3> &skyGradientRowCache, bool shouldDrawStars,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	enum class DistantRenderType { General, Moon, Star };
 
@@ -6242,7 +6255,13 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 		}
 	};
 
-	drawDistantObjRange(visDistantObjs.starStart, visDistantObjs.starEnd, DistantRenderType::Star);
+	// Stars are only drawn when the sky gradient is dark enough. This saves on performance during
+	// the daytime.
+	if (shouldDrawStars)
+	{
+		drawDistantObjRange(visDistantObjs.starStart, visDistantObjs.starEnd, DistantRenderType::Star);
+	}
+
 	drawDistantObjRange(visDistantObjs.sunStart, visDistantObjs.sunEnd, DistantRenderType::General);
 	drawDistantObjRange(visDistantObjs.moonStart, visDistantObjs.moonEnd, DistantRenderType::Moon);
 	drawDistantObjRange(visDistantObjs.airStart, visDistantObjs.airEnd, DistantRenderType::General);
@@ -6347,8 +6366,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of the sky gradient.
 		RenderThreadData::SkyGradient &skyGradient = threadData.skyGradient;
 		SoftwareRenderer::drawSkyGradient(startY, endY, skyGradient.projectedYTop,
-			skyGradient.projectedYBottom, *skyGradient.rowCache, *threadData.shadingInfo,
-			*threadData.frame);
+			skyGradient.projectedYBottom, *skyGradient.rowCache, skyGradient.shouldDrawStars,
+			*threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish the sky gradient.
 		threadBarrier(skyGradient);
@@ -6362,7 +6381,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of distant sky objects.
 		SoftwareRenderer::drawDistantSky(startX, endX, distantSky.parallaxSky,
 			*distantSky.visDistantObjs, *distantSky.skyTextures, *skyGradient.rowCache,
-			*threadData.shadingInfo, *threadData.frame);
+			skyGradient.shouldDrawStars, *threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish distant sky objects.
 		threadBarrier(distantSky);

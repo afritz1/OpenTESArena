@@ -2,6 +2,7 @@
 #define SOFTWARE_RENDERER_H
 
 #include <array>
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
@@ -155,6 +156,9 @@ private:
 	struct ShadingInfo
 	{
 		static constexpr int SKY_COLOR_COUNT = 5;
+
+		// Sky gradient brightness when stars become visible.
+		static constexpr double STAR_VIS_THRESHOLD = 64.0 / 255.0;
 
 		// Rotation matrices for distant space objects.
 		Matrix4d timeRotation, latitudeRotation;
@@ -318,6 +322,7 @@ private:
 			int threadsDone;
 			std::vector<Double3> *rowCache;
 			double projectedYTop, projectedYBottom; // Projected Y range of sky gradient.
+			std::atomic<bool> shouldDrawStars; // True if the sky is dark enough.
 
 			void init(double projectedYTop, double projectedYBottom,
 				std::vector<Double3> &rowCache);
@@ -612,14 +617,15 @@ private:
 	// threading settings.
 	static void drawSkyGradient(int startY, int endY, double gradientProjYTop,
 		double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo,
+		const FrameView &frame);
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
 		const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-		const std::vector<Double3> &skyGradientRowCache, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+		const std::vector<Double3> &skyGradientRowCache, bool shouldDrawStars,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
