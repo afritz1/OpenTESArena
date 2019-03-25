@@ -2370,10 +2370,15 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		}
 		else
 		{
+			// Clamp the max weapon height non-negative since some weapon animations like the
+			// morning star can cause it to become -1.
+			const int maxWeaponHeight = std::max(
+				(Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) - weaponOffset.y, 0);
+
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
-			const int weaponHeight = MathUtils::clamp(weaponTexture.getHeight() + 1,
-				0, (Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight()) - weaponOffset.y);
+			const int weaponHeight = MathUtils::clamp(
+				weaponTexture.getHeight() + 1, 0, maxWeaponHeight);
 			renderer.drawOriginal(weaponTexture.get(),
 				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
 		}
