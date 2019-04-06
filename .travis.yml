@@ -33,7 +33,9 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - ./CI/before_install.${TRAVIS_OS_NAME}.sh
 
-install: ./CI/install.${TRAVIS_OS_NAME}.sh
+install:
+  - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++17 -stdlib=libc++"; fi
+  - ./CI/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - mkdir build
