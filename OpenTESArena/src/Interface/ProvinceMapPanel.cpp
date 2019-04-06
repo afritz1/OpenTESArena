@@ -890,9 +890,9 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, renderer);
 
 	// Clamp to screen edges, with some extra space on the left and right.
-	const int x = MathUtils::clamp(textBox.getX(),
+	const int x = std::clamp(textBox.getX(),
 		2, Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2);
-	const int y = MathUtils::clamp(textBox.getY(),
+	const int y = std::clamp(textBox.getY(),
 		2, Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2);
 
 	renderer.drawOriginal(textBox.getTexture(), x, y);

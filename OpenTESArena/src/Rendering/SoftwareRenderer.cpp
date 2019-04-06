@@ -277,7 +277,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	this->ambient = ambient;
 
 	// At their darkest, distant objects are ~1/4 of their intensity.
-	this->distantAmbient = MathUtils::clamp(ambient, 0.25, 1.0);
+	this->distantAmbient = std::clamp(ambient, 0.25, 1.0);
 
 	this->fogDistance = fogDistance;
 }
@@ -2069,12 +2069,12 @@ double SoftwareRenderer::getProjectedY(const Double3 &point,
 
 int SoftwareRenderer::getLowerBoundedPixel(double projected, int frameDim)
 {
-	return MathUtils::clamp(static_cast<int>(std::ceil(projected - 0.50)), 0, frameDim);
+	return std::clamp(static_cast<int>(std::ceil(projected - 0.50)), 0, frameDim);
 }
 
 int SoftwareRenderer::getUpperBoundedPixel(double projected, int frameDim)
 {
-	return MathUtils::clamp(static_cast<int>(std::floor(projected + 0.50)), 0, frameDim);
+	return std::clamp(static_cast<int>(std::floor(projected + 0.50)), 0, frameDim);
 }
 
 SoftwareRenderer::DrawRange SoftwareRenderer::makeDrawRange(const Double3 &startPoint,
@@ -2195,7 +2195,7 @@ double SoftwareRenderer::getSkyGradientPercent(double projectedY, double project
 {
 	// The sky gradient percent is 0 at the horizon and just below 1 at the top (for sky texture
 	// coordinates).
-	return Constants::JustBelowOne - MathUtils::clamp(
+	return Constants::JustBelowOne - std::clamp(
 		(projectedY - projectedYTop) / (projectedYBottom - projectedYTop),
 		0.0, Constants::JustBelowOne);
 }
@@ -2209,7 +2209,7 @@ Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const S
 	const double realIndex = gradientPercent * static_cast<double>(skyColorCount);
 	const double percent = realIndex - std::floor(realIndex);
 	const int index = static_cast<int>(realIndex);
-	const int nextIndex = MathUtils::clamp(index + 1, 0, skyColorCount - 1);
+	const int nextIndex = std::clamp(index + 1, 0, skyColorCount - 1);
 	const Double3 &color = skyColors.at(index);
 	const Double3 &nextColor = skyColors.at(nextIndex);
 	return color.lerp(nextColor, percent);
@@ -2289,7 +2289,7 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 		}();
 
 		// Set the hit data.
-		hit.u = MathUtils::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
+		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
 		hit.point = Double2(
 			static_cast<double>(voxelX) + hit.u,
 			static_cast<double>(voxelZ) + hit.u);
@@ -2382,7 +2382,7 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 		}();
 
 		// Set the hit data.
-		hit.u = MathUtils::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
+		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
 		hit.point = Double2(
 			static_cast<double>(voxelX) + (Constants::JustBelowOne - hit.u),
 			static_cast<double>(voxelZ) + hit.u);
@@ -2433,7 +2433,7 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 			}();
 
 			// Account for the possibility of the texture being flipped horizontally.
-			return MathUtils::clamp(!flipped ? uVal : (Constants::JustBelowOne - uVal),
+			return std::clamp(!flipped ? uVal : (Constants::JustBelowOne - uVal),
 				0.0, Constants::JustBelowOne);
 		}();
 
@@ -2456,7 +2456,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 	if (edgeFacing == nearFacing)
 	{
 		hit.innerZ = 0.0;
-		hit.u = !flipped ? nearU : MathUtils::clamp(
+		hit.u = !flipped ? nearU : std::clamp(
 			Constants::JustBelowOne - nearU, 0.0, Constants::JustBelowOne);
 		hit.point = nearPoint;
 		hit.normal = VoxelData::getNormal(nearFacing);
@@ -2496,7 +2496,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 				}();
 
 				// Account for the possibility of the texture being flipped horizontally.
-				return MathUtils::clamp(!flipped ? uVal : (Constants::JustBelowOne - uVal),
+				return std::clamp(!flipped ? uVal : (Constants::JustBelowOne - uVal),
 					0.0, Constants::JustBelowOne);
 			}();
 
@@ -2674,7 +2674,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 					}
 				}();
 
-				return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 			}();
 
 			if (doorType == VoxelData::DoorData::Type::Swinging)
@@ -2695,7 +2695,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 				if (visibleAmount > farU)
 				{
 					hit.innerZ = (farPoint - nearPoint).length();
-					hit.u = MathUtils::clamp(
+					hit.u = std::clamp(
 						farU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 					hit.point = farPoint;
 					hit.normal = -VoxelData::getNormal(farFacing);
@@ -2769,7 +2769,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 							}
 						}();
 
-						return MathUtils::clamp(u, 0.0, Constants::JustBelowOne);
+						return std::clamp(u, 0.0, Constants::JustBelowOne);
 					}();
 
 					hit.point = farPoint;
@@ -2932,7 +2932,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 		if (visibleAmount > nearU)
 		{
 			hit.innerZ = 0.0;
-			hit.u = MathUtils::clamp(
+			hit.u = std::clamp(
 				nearU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 			hit.point = nearPoint;
 			hit.normal = VoxelData::getNormal(nearFacing);
@@ -3006,7 +3006,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 					}
 				}();
 				
-				return MathUtils::clamp(u, 0.0, Constants::JustBelowOne);
+				return std::clamp(u, 0.0, Constants::JustBelowOne);
 			}();
 
 			hit.point = nearPoint;
@@ -3176,10 +3176,10 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 			const double currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
 			// Texture coordinates.
-			const double u = MathUtils::clamp(
+			const double u = std::clamp(
 				Constants::JustBelowOne - (currentPointX - std::floor(currentPointX)),
 				0.0, Constants::JustBelowOne);
-			const double v = MathUtils::clamp(
+			const double v = std::clamp(
 				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY)),
 				0.0, Constants::JustBelowOne);
 
@@ -3499,7 +3499,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 
 			if (isDarkEnough)
 			{
-				const double gradientVisPercent = MathUtils::clamp(
+				const double gradientVisPercent = std::clamp(
 					(brightestComponent - brightestThreshold) / (visThreshold - brightestThreshold),
 					0.0, 1.0);
 
@@ -3567,7 +3567,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			}
 		}();
 
-		return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+		return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 	}();
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
@@ -3825,7 +3825,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						}
 					}();
 
-					return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
 				const Double3 farNormal = -VoxelData::getNormal(farFacing);
@@ -4176,7 +4176,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						}
 					}();
 
-					return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
 				const Double3 farNormal = -VoxelData::getNormal(farFacing);
@@ -4653,7 +4653,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			}
 		}();
 
-		return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+		return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 	}();
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
@@ -4925,7 +4925,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						}
 					}();
 
-					return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
 				const Double3 farNormal = -VoxelData::getNormal(farFacing);
@@ -5318,7 +5318,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						}
 					}();
 
-					return MathUtils::clamp(uVal, 0.0, Constants::JustBelowOne);
+					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
 				const Double3 farNormal = -VoxelData::getNormal(farFacing);
@@ -5797,9 +5797,9 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// Get the min and max X range of coordinates in screen-space. This range is completely 
 	// contained within the flat.
-	const double clampedStartXPercent = MathUtils::clamp(
+	const double clampedStartXPercent = std::clamp(
 		startXPercent, flatFrame.startX, flatFrame.endX);
-	const double clampedEndXPercent = MathUtils::clamp(
+	const double clampedEndXPercent = std::clamp(
 		endXPercent, flatFrame.startX, flatFrame.endX);
 
 	// The percentages from start to end within the flat.
@@ -5814,8 +5814,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// Horizontal texture coordinates in the flat. Although the flat percent can be
 	// equal to 1.0, the texture coordinate needs to be less than 1.0.
-	const double startU = MathUtils::clamp(startFlatPercent, 0.0, Constants::JustBelowOne);
-	const double endU = MathUtils::clamp(endFlatPercent, 0.0, Constants::JustBelowOne);
+	const double startU = std::clamp(startFlatPercent, 0.0, Constants::JustBelowOne);
+	const double endU = std::clamp(endFlatPercent, 0.0, Constants::JustBelowOne);
 
 	// Get the start and end coordinates of the projected points (Y values potentially
 	// outside the screen).
@@ -6180,7 +6180,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
 
 				// Percentage across the horizontal span of the object in screen space.
-				const double widthPercent = MathUtils::clamp(
+				const double widthPercent = std::clamp(
 					(xPercent - xProjStart) / (xProjEnd - xProjStart),
 					0.0, Constants::JustBelowOne);
 
@@ -6214,7 +6214,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 				const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
 
 				// Percentage across the horizontal span of the object in screen space.
-				const double widthPercent = MathUtils::clamp(
+				const double widthPercent = std::clamp(
 					(xPercent - xProjStart) / (xProjEnd - xProjStart),
 					0.0, Constants::JustBelowOne);
 
