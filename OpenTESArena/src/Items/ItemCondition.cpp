@@ -10,19 +10,6 @@
 #include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<ItemConditionName>
-	{
-		size_t operator()(const ItemConditionName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 // It doesn't look like item condition values are visible anywhere, like in
 // the manual for instance, so I'm remaking them anew with reasonable values.
 // They are of course placeholders.

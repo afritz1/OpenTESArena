@@ -45,19 +45,6 @@
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<WeatherType>
-	{
-		size_t operator()(const WeatherType &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	const int MaxTestTypes = 5;

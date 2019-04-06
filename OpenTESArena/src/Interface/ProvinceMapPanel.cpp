@@ -44,19 +44,6 @@
 #include "../World/LocationDataType.h"
 #include "../World/WeatherType.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<ProvinceButtonName>
-	{
-		size_t operator()(const ProvinceButtonName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	// .CIF palette indices for staff dungeon outlines.

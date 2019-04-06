@@ -3,19 +3,6 @@
 #include "SoundFile.h"
 #include "SoundName.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<SoundName>
-	{
-		size_t operator()(const SoundName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	// Each SoundName has a corresponding filename. A number of them have

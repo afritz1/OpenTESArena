@@ -4,19 +4,6 @@
 #include "Metal.h"
 #include "MetalType.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<MetalType>
-	{
-		size_t operator()(const MetalType &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 const std::unordered_map<MetalType, std::string> MetalTypeDisplayNames =
 {
 	{ MetalType::Iron, "Iron" },

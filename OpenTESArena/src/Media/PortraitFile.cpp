@@ -8,16 +8,6 @@
 
 namespace std
 {
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<GenderName>
-	{
-		size_t operator()(const GenderName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-
 	// Hash specializations for std::pair.
 	template <>
 	struct hash<std::pair<GenderName, int>>

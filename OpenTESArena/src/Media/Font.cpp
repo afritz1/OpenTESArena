@@ -10,19 +10,6 @@
 #include "../Rendering/Surface.h"
 #include "../Utilities/Debug.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<FontName>
-	{
-		size_t operator()(const FontName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 namespace
 {
 	const std::unordered_map<FontName, std::string> FontFilenames =

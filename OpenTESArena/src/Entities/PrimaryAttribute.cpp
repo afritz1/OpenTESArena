@@ -5,19 +5,6 @@
 #include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
 
-namespace std
-{
-	// Hash specialization, required until GCC 6.1.
-	template <>
-	struct hash<PrimaryAttributeName>
-	{
-		size_t operator()(const PrimaryAttributeName &x) const
-		{
-			return static_cast<size_t>(x);
-		}
-	};
-}
-
 const std::unordered_map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
 {
 	{ PrimaryAttributeName::Strength, "Strength" },
