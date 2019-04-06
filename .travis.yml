@@ -12,19 +12,6 @@ matrix:
             - g++-7
       env:
         - MATRIX_EVAL="export CC=gcc-7 && export CXX=g++-7"
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-      env:
-        - MATRIX_EVAL="export CC=clang-5.0 && export CXX=clang++-5.0"
-    - os: osx
-      env:
-        - MATRIX_EVAL="export CC=gcc && export CXX=g++"
     - os: osx
       env:
         - MATRIX_EVAL="export CC=clang && export CXX=clang++"
@@ -33,9 +20,7 @@ before_install:
   - eval "${MATRIX_EVAL}"
   - ./CI/before_install.${TRAVIS_OS_NAME}.sh
 
-install:
-  - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++17 -stdlib=libc++"; fi
-  - ./CI/install.${TRAVIS_OS_NAME}.sh
+install: ./CI/install.${TRAVIS_OS_NAME}.sh
 
 script:
   - mkdir build
