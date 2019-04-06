@@ -9,22 +9,9 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-5
+            - g++-7
       env:
-        - MATRIX_EVAL="export CC=gcc-5 && export CXX=g++-5"
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-      env:
-        - MATRIX_EVAL="export CC=clang-3.6 && export CXX=clang++-3.6"
-    - os: osx
-      env:
-        - MATRIX_EVAL="export CC=gcc && export CXX=g++"
+        - MATRIX_EVAL="export CC=gcc-7 && export CXX=g++-7"
     - os: osx
       env:
         - MATRIX_EVAL="export CC=clang && export CXX=clang++"

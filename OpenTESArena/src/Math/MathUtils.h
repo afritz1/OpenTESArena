@@ -8,7 +8,7 @@ namespace MathUtils
 	template <typename T>
 	const T &clamp(const T &value, const T &low, const T &high)
 	{
-		return std::min(std::max(value, low), high);
+		return std::clamp(value, low, high);
 	}
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
