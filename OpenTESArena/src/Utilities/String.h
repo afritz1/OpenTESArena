@@ -66,7 +66,7 @@ public:
 	template <typename T>
 	static std::string toHexString(T value)
 	{
-		static_assert(std::is_integral<T>::value, "String::toHexString given non-integral type.");
+		static_assert(std::is_integral<T>::value);
 
 		std::stringstream ss;
 		ss << std::hex << value;
@@ -77,8 +77,7 @@ public:
 	template <typename T>
 	static std::string fixedPrecision(T value, int precision)
 	{
-		static_assert(std::is_floating_point<T>::value,
-			"String::fixedPrecision given non-floating-point type.");
+		static_assert(std::is_floating_point<T>::value);
 
 		std::stringstream ss;
 		ss << std::fixed << std::setprecision(precision) << value;

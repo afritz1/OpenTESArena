@@ -15,7 +15,7 @@ namespace
 	template <typename T, size_t U>
 	void initInt8Array(std::array<T, U> &arr, const char *data)
 	{
-		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
+		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
@@ -27,7 +27,7 @@ namespace
 	template <typename T, size_t U>
 	void initInt8PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
 	{
-		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
+		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
@@ -41,7 +41,7 @@ namespace
 	template <typename T, size_t U>
 	void initJaggedInt8Array(std::array<std::vector<T>, U> &arr, T terminator, const char *data)
 	{
-		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
+		static_assert(sizeof(T) == 1);
 
 		size_t offset = 0;
 		for (std::vector<T> &vec : arr)
@@ -73,7 +73,7 @@ namespace
 	template <typename T, size_t U, size_t V>
 	void init2DInt8Array(std::array<std::array<T, U>, V> &arrs, const char *data)
 	{
-		static_assert(sizeof(T) == 1, "sizeof(T) != 1.");
+		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < arrs.size(); i++)
 		{
@@ -85,7 +85,7 @@ namespace
 	template <typename T, size_t U>
 	void initInt16Array(std::array<T, U> &arr, const char *data)
 	{
-		static_assert(sizeof(T) == 2, "sizeof(T) != 2.");
+		static_assert(sizeof(T) == 2);
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
@@ -98,7 +98,7 @@ namespace
 	template <typename T, size_t U>
 	void initInt16PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
 	{
-		static_assert(sizeof(T) == 2, "sizeof(T) != 2.");
+		static_assert(sizeof(T) == 2);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
 
 		for (size_t i = 0; i < arr.size(); i++)
@@ -113,7 +113,7 @@ namespace
 	template <typename T, size_t U>
 	void initInt32Array(std::array<T, U> &arr, const char *data)
 	{
-		static_assert(sizeof(T) == 4, "sizeof(T) != 4.");
+		static_assert(sizeof(T) == 4);
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{

@@ -11,7 +11,7 @@ template <typename T>
 class Matrix4
 {
 public:
-	static_assert(std::is_floating_point<T>::value, "Matrix4<T> must be floating point.");
+	static_assert(std::is_floating_point<T>::value);
 
 	// Column vectors.
 	Vector4f<T> x;

@@ -14,7 +14,7 @@ template <class T>
 class Vector2i
 {
 public:
-	static_assert(std::is_integral<T>::value, "Vector2i<T> must be integral type.");
+	static_assert(std::is_integral<T>::value);
 
 	T x, y;
 
@@ -92,7 +92,7 @@ template <class T>
 class Vector2f
 {
 public:
-	static_assert(std::is_floating_point<T>::value, "Vector2f<T> must be floating-point type.");
+	static_assert(std::is_floating_point<T>::value);
 
 	static const Vector2f<T> Zero;
 	static const Vector2f<T> UnitX;
