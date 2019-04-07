@@ -3,10 +3,11 @@
 
 #include <array>
 #include <memory>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include "../Utilities/Optional.h" // Required for std::optional on Clang.
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
 // are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
@@ -18,7 +19,7 @@ public:
 	struct VoxelTextureData
 	{
 		std::string filename;
-		std::optional<int> setIndex; // Index into .SET file texture (if any).
+		stdx::optional<int> setIndex; // Index into .SET file texture (if any).
 
 		VoxelTextureData(const std::string &filename, int setIndex);
 		VoxelTextureData(const std::string &filename);
@@ -39,7 +40,7 @@ public:
 	{
 		static constexpr int DEFAULT_HEIGHT = 100;
 
-		std::optional<int> textureIndex; // Index into textures vector (if any).
+		stdx::optional<int> textureIndex; // Index into textures vector (if any).
 
 		// Size of ceiling (first *CEILING number). Determines wall and dry chasm height.
 		int height;
@@ -47,7 +48,7 @@ public:
 		// Main floor box scale (second *CEILING number). Formula: (Y * boxScale) / 256.
 		// If missing and in wilderness, then use 192. Else if missing and not in wilderness,
 		// then box values are unchanged.
-		std::optional<int> boxScale;
+		stdx::optional<int> boxScale;
 
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
 
@@ -74,10 +75,10 @@ public:
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
 		std::string nextFlat;
-		std::optional<int> deathEffect;
+		stdx::optional<int> deathEffect;
 
 		// Used with S:#, where '#' is light intensity (for candles, etc.).
-		std::optional<int> lightIntensity;
+		stdx::optional<int> lightIntensity;
 
 		FlatData();
 	};
@@ -113,7 +114,7 @@ private:
 	std::vector<FlatTextureData> flatTextures;
 
 	// References to texture names in the textures vector (if any).
-	std::array<std::optional<int>, 16> boxCaps, boxSides, menus;
+	std::array<stdx::optional<int>, 16> boxCaps, boxSides, menus;
 
 	// Flat data in the order they are discovered. Each record holds various data for a flat 
 	// (i.e., texture index, etc.).
@@ -122,7 +123,7 @@ private:
 	// Indices into the flats vector for flats paired with an *ITEM index. The highest *ITEM 
 	// number is 95, although those past 63 might not be used (character class names, lore 
 	// names, etc.).
-	std::array<std::optional<int>, 96> items;
+	std::array<stdx::optional<int>, 96> items;
 
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
@@ -139,7 +140,7 @@ private:
 	std::string name;
 
 	// References into the textures vector (if any).
-	std::optional<int> dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
+	stdx::optional<int> dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
 
 	// Ceiling data (height, box scale(?), etc.).
 	CeilingData ceiling;

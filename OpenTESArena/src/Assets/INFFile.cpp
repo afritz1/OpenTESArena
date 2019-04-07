@@ -19,10 +19,10 @@ namespace
 	{
 		enum class Mode { None, BoxCap, Ceiling };
 
-		std::optional<INFFile::CeilingData> ceilingData;
+		stdx::optional<INFFile::CeilingData> ceilingData;
 		std::string_view textureName;
 		FloorState::Mode mode;
-		std::optional<int> boxCapID;
+		stdx::optional<int> boxCapID;
 
 		FloorState()
 		{
@@ -41,7 +41,7 @@ namespace
 		std::vector<int> boxCapIDs, boxSideIDs;
 		std::string_view textureName;
 		WallState::Mode mode;
-		std::optional<int> menuID;
+		stdx::optional<int> menuID;
 		bool dryChasm, lavaChasm, wetChasm;
 		// *TRANS, *TRANSWALKTHRU, and *WALKTHRU are unused (set by voxel data instead).
 
@@ -59,7 +59,7 @@ namespace
 		enum class Mode { None, Item };
 
 		FlatState::Mode mode;
-		std::optional<int> itemID;
+		stdx::optional<int> itemID;
 
 		FlatState()
 		{
@@ -85,9 +85,9 @@ namespace
 			}
 		};
 
-		std::optional<INFFile::KeyData> keyData;
-		std::optional<RiddleState> riddleState;
-		std::optional<INFFile::TextData> textData;
+		stdx::optional<INFFile::KeyData> keyData;
+		stdx::optional<RiddleState> riddleState;
+		stdx::optional<INFFile::TextData> textData;
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
@@ -198,10 +198,10 @@ INFFile::INFFile(const std::string &filename)
 	// Initialize loop states to empty (they are non-empty when in use by the loop).
 	// I tried re-organizing them into virtual classes, but this way seems to be the
 	// most practical for now.
-	std::optional<FloorState> floorState;
-	std::optional<WallState> wallState;
-	std::optional<FlatState> flatState;
-	std::optional<TextState> textState;
+	stdx::optional<FloorState> floorState;
+	stdx::optional<WallState> wallState;
+	stdx::optional<FlatState> flatState;
+	stdx::optional<TextState> textState;
 
 	// Lambda for flushing state to the INFFile. This is useful during the parse loop,
 	// but it's also sometimes necessary at the end of the file because the last element 
