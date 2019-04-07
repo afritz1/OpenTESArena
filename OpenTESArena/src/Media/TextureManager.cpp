@@ -19,6 +19,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../Utilities/StringView.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -45,7 +46,7 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	assert(this->palettes.find(paletteName) == this->palettes.end());
 
 	// Get file extension of the palette name.
-	const std::string extension = String::getExtension(paletteName);
+	const std::string_view extension = StringView::getExtension(paletteName);
 	const bool isCOL = extension == "COL";
 	const bool isIMG = extension == "IMG";
 	const bool isMNU = extension == "MNU";
@@ -116,7 +117,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
-	const std::string extension = String::getExtension(filename);
+	const std::string_view extension = StringView::getExtension(filename);
 	const bool isCOL = extension == "COL";
 	const bool isIMG = extension == "IMG";
 	const bool isMNU = extension == "MNU";
@@ -205,7 +206,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 
 	// The image hasn't been loaded with the palette yet, so make a new entry.
 	// Check what kind of file extension the filename has.
-	const std::string extension = String::getExtension(filename);
+	const std::string_view extension = StringView::getExtension(filename);
 	const bool isIMG = extension == "IMG";
 	const bool isMNU = extension == "MNU";
 
@@ -293,7 +294,7 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	std::vector<Surface> &surfaceSet = iter->second;
 	const Palette &palette = this->palettes.at(paletteName);
 
-	const std::string extension = String::getExtension(filename);
+	const std::string_view extension = StringView::getExtension(filename);
 	const bool isCFA = extension == "CFA";
 	const bool isCIF = extension == "CIF";
 	const bool isCEL = extension == "CEL";
@@ -422,7 +423,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	std::vector<Texture> &textureSet = iter->second;
 	const Palette &palette = this->palettes.at(paletteName);
 
-	const std::string extension = String::getExtension(filename);
+	const std::string_view extension = StringView::getExtension(filename);
 	const bool isCFA = extension == "CFA";
 	const bool isCIF = extension == "CIF";
 	const bool isCEL = extension == "CEL";
