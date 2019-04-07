@@ -10,7 +10,7 @@
 
 class Random;
 
-template <class T>
+template <typename T>
 class Vector2i
 {
 public:
@@ -23,7 +23,7 @@ public:
 
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line (due to the error calculation).
-	template <class C = T>
+	template <typename C = T>
 	static typename std::enable_if<std::is_signed<C>::value, std::vector<Vector2i<T>>>::type
 		bresenhamLine(const Vector2i<T> &p1, const Vector2i<T> &p2)
 	{
@@ -73,7 +73,7 @@ public:
 	Vector2i<T> operator+(const Vector2i<T> &v) const;
 	
 	// Only signed integers can use negation.
-	template <class C = T>
+	template <typename C = T>
 	typename std::enable_if<std::is_signed<C>::value, Vector2i<T>>::type operator-() const
 	{
 		return Vector2i<T>(-this->x, -this->y);
@@ -88,7 +88,7 @@ public:
 	std::string toString() const;
 };
 
-template <class T>
+template <typename T>
 class Vector2f
 {
 public:
@@ -133,13 +133,13 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
-template <class T>
+template <typename T>
 const Vector2f<T> Vector2f<T>::Zero(static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector2f<T> Vector2f<T>::UnitX(static_cast<T>(1.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector2f<T> Vector2f<T>::UnitY(static_cast<T>(0.0), static_cast<T>(1.0));
 
 // The template instantiations are at the end of the .cpp file.

@@ -8,7 +8,7 @@
 
 #include "Vector3.h"
 
-template <class T>
+template <typename T>
 class Vector4i
 {
 public:
@@ -26,7 +26,7 @@ public:
 	Vector4i<T> operator+(const Vector4i<T> &v) const;
 
 	// Only signed integers can use negation.
-	template <class C = T>
+	template <typename C = T>
 	typename std::enable_if<std::is_signed<C>::value, Vector4i<T>>::type operator-() const
 	{
 		return Vector4i<T>(-this->x, -this->y, -this->z, -this->w);
@@ -41,7 +41,7 @@ public:
 	std::string toString() const;
 };
 
-template <class T>
+template <typename T>
 class Vector4f
 {
 public:
@@ -85,23 +85,23 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
-template <class T>
+template <typename T>
 const Vector4f<T> Vector4f<T>::Zero(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector4f<T> Vector4f<T>::UnitX(
 	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector4f<T> Vector4f<T>::UnitY(
 	static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector4f<T> Vector4f<T>::UnitZ(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector4f<T> Vector4f<T>::UnitW(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
 

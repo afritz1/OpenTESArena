@@ -9,7 +9,7 @@
 
 class Random;
 
-template <class T>
+template <typename T>
 class Vector3i
 {
 public:
@@ -27,7 +27,7 @@ public:
 	Vector3i<T> operator+(const Vector3i<T> &v) const;
 
 	// Only signed integers can use negation.
-	template <class C = T>
+	template <typename C = T>
 	typename std::enable_if<std::is_signed<C>::value, Vector3i<T>>::type operator-() const
 	{
 		return Vector3i<T>(-this->x, -this->y, -this->z);
@@ -42,7 +42,7 @@ public:
 	std::string toString() const;
 };
 
-template <class T>
+template <typename T>
 class Vector3f
 {
 public:
@@ -95,19 +95,19 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
-template <class T>
+template <typename T>
 const Vector3f<T> Vector3f<T>::Zero(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector3f<T> Vector3f<T>::UnitX(
 	static_cast<T>(1.0), static_cast<T>(0.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector3f<T> Vector3f<T>::UnitY(
 	static_cast<T>(0.0), static_cast<T>(1.0), static_cast<T>(0.0));
 
-template <class T>
+template <typename T>
 const Vector3f<T> Vector3f<T>::UnitZ(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
 
