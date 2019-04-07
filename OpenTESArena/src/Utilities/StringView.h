@@ -10,6 +10,10 @@ private:
 	StringView() = delete;
 	~StringView() = delete;
 public:
+	// Returns a substring of a string view. Intended for use with strings, since
+	// std::string::substr() returns a new string which is bad for string_view.
+	static std::string_view substr(const std::string_view &str, size_t offset, size_t count);
+
 	// Splits a string view on the given character.
 	static std::vector<std::string_view> split(const std::string_view &str, char separator);
 

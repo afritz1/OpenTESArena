@@ -1,5 +1,10 @@
 #include "StringView.h"
 
+std::string_view StringView::substr(const std::string_view &str, size_t offset, size_t count)
+{
+	return str.substr(offset, count);
+}
+
 std::vector<std::string_view> StringView::split(const std::string_view &str, char separator)
 {
 	std::vector<std::string_view> strings;

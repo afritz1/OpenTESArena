@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <string_view>
 #include <unordered_set>
 
 #include "INFFile.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
+#include "../Utilities/StringView.h"
 
 #include "components/vfs/manager.hpp"
 
@@ -18,7 +20,7 @@ namespace
 		enum class Mode { None, BoxCap, Ceiling };
 
 		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
-		std::string textureName;
+		std::string_view textureName;
 		FloorState::Mode mode;
 		int boxCapID;
 
@@ -38,7 +40,7 @@ namespace
 		};
 
 		std::vector<int> boxCapIDs, boxSideIDs;
-		std::string textureName;
+		std::string_view textureName;
 		WallState::Mode mode;
 		int menuID;
 		bool dryChasm, lavaChasm, wetChasm;
@@ -288,14 +290,14 @@ INFFile::INFFile(const std::string &filename)
 			const std::string TOP_STR = "TOP"; // Only occurs in LABRNTH{1,2}.INF.
 
 			// See what the type in the line is.
-			const std::vector<std::string> tokens = String::split(line);
-			const std::string firstToken = tokens.at(0);
-			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+			const std::vector<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens.at(0);
+			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == BOXCAP_STR)
 			{
 				// Write the *BOXCAP's ID to the floor state.
-				floorState->boxCapID = std::stoi(tokens.at(1));
+				floorState->boxCapID = std::stoi(std::string(tokens.at(1)));
 				floorState->mode = FloorState::Mode::BoxCap;
 			}
 			else if (firstTokenType == CEILING_STR)
@@ -308,13 +310,13 @@ INFFile::INFFile(const std::string &filename)
 				// and indoor/outdoor dungeon boolean. Sometimes there are no numbers.
 				if (tokens.size() >= 2)
 				{
-					floorState->ceilingData->height = std::stoi(tokens.at(1));
+					floorState->ceilingData->height = std::stoi(std::string(tokens.at(1)));
 				}
 
 				if (tokens.size() >= 3)
 				{
 					floorState->ceilingData->boxScale =
-						std::make_unique<int>(std::stoi(tokens.at(2)));
+						std::make_unique<int>(std::stoi(std::string(tokens.at(2))));
 				}
 
 				if (tokens.size() == 4)
@@ -329,14 +331,14 @@ INFFile::INFFile(const std::string &filename)
 			}
 			else
 			{
-				DebugCrash("Unrecognized @FLOOR section \"" + tokens.at(0) + "\".");
+				DebugCrash("Unrecognized @FLOOR section \"" + std::string(tokens.at(0)) + "\".");
 			}
 		}
 		else if (floorState.get() == nullptr)
 		{
 			// No current floor state, so the current line is a loose texture filename
 			// (found in some city .INFs).
-			const std::vector<std::string> tokens = String::split(line, '#');
+			const std::vector<std::string_view> tokens = StringView::split(line, '#');
 
 			if (tokens.size() == 1)
 			{
@@ -346,12 +348,12 @@ INFFile::INFFile(const std::string &filename)
 			else
 			{
 				// A .SET filename. Expand it for each of the .SET indices.
-				const std::string textureName = String::trimBack(tokens.at(0));
-				const int setSize = std::stoi(tokens.at(1));
+				const std::string_view textureName = StringView::trimBack(tokens.at(0));
+				const int setSize = std::stoi(std::string(tokens.at(1)));
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.push_back(VoxelTextureData(textureName, i));
+					this->voxelTextures.push_back(VoxelTextureData(std::string(textureName), i));
 				}
 			}
 		}
@@ -362,7 +364,7 @@ INFFile::INFFile(const std::string &filename)
 			const int currentIndex = [this, &floorState, &line]()
 			{
 				// If the line contains a '#', it's a .SET file.
-				const std::vector<std::string> tokens = String::split(line, '#');
+				const std::vector<std::string_view> tokens = StringView::split(line, '#');
 
 				// Assign texture data depending on whether the line is for a .SET file.
 				if (tokens.size() == 1)
@@ -370,19 +372,20 @@ INFFile::INFFile(const std::string &filename)
 					// Just a regular texture (like an .IMG).
 					floorState->textureName = line;
 
-					this->voxelTextures.push_back(VoxelTextureData(floorState->textureName));
+					this->voxelTextures.push_back(
+						VoxelTextureData(std::string(floorState->textureName)));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					floorState->textureName = String::trimBack(tokens.at(0));
-					const int setSize = std::stoi(tokens.at(1));
+					floorState->textureName = StringView::trimBack(tokens.at(0));
+					const int setSize = std::stoi(std::string(tokens.at(1)));
 
 					for (int i = 0; i < setSize; i++)
 					{
 						this->voxelTextures.push_back(
-							VoxelTextureData(floorState->textureName, i));
+							VoxelTextureData(std::string(floorState->textureName), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -440,19 +443,19 @@ INFFile::INFFile(const std::string &filename)
 			const std::string WETCHASM_STR = "WETCHASM";
 
 			// See what the type in the line is.
-			const std::vector<std::string> tokens = String::split(line);
-			const std::string firstToken = tokens.at(0);
-			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+			const std::vector<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens.at(0);
+			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == BOXCAP_STR)
 			{
 				wallState->mode = WallState::Mode::BoxCap;
-				wallState->boxCapIDs.push_back(std::stoi(tokens.at(1)));
+				wallState->boxCapIDs.push_back(std::stoi(std::string(tokens.at(1))));
 			}
 			else if (firstTokenType == BOXSIDE_STR)
 			{
 				wallState->mode = WallState::Mode::BoxSide;
-				wallState->boxSideIDs.push_back(std::stoi(tokens.at(1)));
+				wallState->boxSideIDs.push_back(std::stoi(std::string(tokens.at(1))));
 			}
 			else if (firstTokenType == DOOR_STR)
 			{
@@ -480,7 +483,7 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == MENU_STR)
 			{
 				wallState->mode = WallState::Mode::Menu;
-				wallState->menuID = std::stoi(tokens.at(1));
+				wallState->menuID = std::stoi(std::string(tokens.at(1)));
 			}
 			else if (firstTokenType == TRANS_STR)
 			{
@@ -504,13 +507,13 @@ INFFile::INFFile(const std::string &filename)
 			}
 			else
 			{
-				DebugCrash("Unrecognized @WALLS section \"" + firstTokenType + "\".");
+				DebugCrash("Unrecognized @WALLS section \"" + std::string(firstTokenType) + "\".");
 			}
 		}
 		else if (wallState.get() == nullptr)
 		{
 			// No existing wall state, so this line contains a "loose" texture name.
-			const std::vector<std::string> tokens = String::split(line, '#');
+			const std::vector<std::string_view> tokens = StringView::split(line, '#');
 
 			if (tokens.size() == 1)
 			{
@@ -520,12 +523,12 @@ INFFile::INFFile(const std::string &filename)
 			else
 			{
 				// A .SET filename. Expand it for each of the .SET indices.
-				const std::string textureName = String::trimBack(tokens.at(0));
-				const int setSize = std::stoi(tokens.at(1));
+				const std::string_view textureName = StringView::trimBack(tokens.at(0));
+				const int setSize = std::stoi(std::string(tokens.at(1)));
 
 				for (int i = 0; i < setSize; i++)
 				{
-					this->voxelTextures.push_back(VoxelTextureData(textureName, i));
+					this->voxelTextures.push_back(VoxelTextureData(std::string(textureName), i));
 				}
 			}
 		}
@@ -536,7 +539,7 @@ INFFile::INFFile(const std::string &filename)
 			const int currentIndex = [this, &wallState, &line]()
 			{
 				// If the line contains a '#', it's a .SET file.
-				const std::vector<std::string> tokens = String::split(line, '#');
+				const std::vector<std::string_view> tokens = StringView::split(line, '#');
 
 				// Assign texture data depending on whether the line is for a .SET file.
 				if (tokens.size() == 1)
@@ -544,18 +547,20 @@ INFFile::INFFile(const std::string &filename)
 					// Just a regular texture (like an .IMG).
 					wallState->textureName = line;
 
-					this->voxelTextures.push_back(VoxelTextureData(wallState->textureName));
+					this->voxelTextures.push_back(
+						VoxelTextureData(std::string(wallState->textureName)));
 					return static_cast<int>(this->voxelTextures.size()) - 1;
 				}
 				else
 				{
 					// Left side is the filename, right side is the .SET size.
-					wallState->textureName = String::trimBack(tokens.at(0));
-					const int setSize = std::stoi(tokens.at(1));
+					wallState->textureName = StringView::trimBack(tokens.at(0));
+					const int setSize = std::stoi(std::string(tokens.at(1)));
 
 					for (int i = 0; i < setSize; i++)
 					{
-						this->voxelTextures.push_back(VoxelTextureData(wallState->textureName, i));
+						this->voxelTextures.push_back(
+							VoxelTextureData(std::string(wallState->textureName), i));
 					}
 
 					return static_cast<int>(this->voxelTextures.size()) - setSize;
@@ -625,18 +630,18 @@ INFFile::INFFile(const std::string &filename)
 			const std::string ITEM_STR = "ITEM";
 
 			// See what the type in the line is.
-			const std::vector<std::string> tokens = String::split(line);
-			const std::string firstToken = tokens.at(0);
-			const std::string firstTokenType = firstToken.substr(1, firstToken.size() - 1);
+			const std::vector<std::string_view> tokens = StringView::split(line);
+			const std::string_view firstToken = tokens.at(0);
+			const std::string_view firstTokenType = firstToken.substr(1, firstToken.size() - 1);
 
 			if (firstTokenType == ITEM_STR)
 			{
 				flatState->mode = FlatState::Mode::Item;
-				flatState->itemID = std::stoi(tokens.at(1));
+				flatState->itemID = std::stoi(std::string(tokens.at(1)));
 			}
 			else
 			{
-				DebugCrash("Unrecognized @FLATS section \"" + firstTokenType + "\".");
+				DebugCrash("Unrecognized @FLATS section \"" + std::string(firstTokenType) + "\".");
 			}
 		}
 		else
@@ -724,13 +729,13 @@ INFFile::INFFile(const std::string &filename)
 					const char LIGHT_MODIFIER = 'S';
 					const char Y_OFFSET_MODIFIER = 'Y';
 
-					const std::string &modifierStr = tokens.at(i);
+					const std::string_view modifierStr = tokens.at(i);
 					const char modifierType = std::toupper(modifierStr.at(0));
 
 					// The modifier value comes after the modifier separator.
-					const std::vector<std::string> modifierTokens =
-						String::split(modifierStr, MODIFIER_SEPARATOR);
-					const int modifierValue = std::stoi(modifierTokens.at(1));
+					const std::vector<std::string_view> modifierTokens =
+						StringView::split(modifierStr, MODIFIER_SEPARATOR);
+					const int modifierValue = std::stoi(std::string(modifierTokens.at(1)));
 
 					if (modifierType == FLAT_PROPERTIES_MODIFIER)
 					{
@@ -768,9 +773,9 @@ INFFile::INFFile(const std::string &filename)
 	auto parseSoundLine = [this](const std::string &line)
 	{
 		// Split into the filename and ID. Make sure the filename is all caps.
-		const std::vector<std::string> tokens = String::split(line);
-		const std::string vocFilename = String::toUppercase(tokens.front());
-		const int vocID = std::stoi(tokens.at(1));
+		const std::vector<std::string_view> tokens = StringView::split(line);
+		const std::string vocFilename = String::toUppercase(std::string(tokens.front()));
+		const int vocID = std::stoi(std::string(tokens.at(1)));
 
 		this->sounds.insert(std::make_pair(vocID, vocFilename));
 	};
@@ -787,10 +792,10 @@ INFFile::INFFile(const std::string &filename)
 		// Otherwise, parse the line based on the current mode.
 		if (line.front() == TEXT_CHAR)
 		{
-			const std::vector<std::string> tokens = String::split(line);
+			const std::vector<std::string_view> tokens = StringView::split(line);
 
 			// Get the ID after *TEXT.
-			const int textID = std::stoi(tokens.at(1));
+			const int textID = std::stoi(std::string(tokens.at(1)));
 
 			// If there is existing text state present, save it.
 			if (textState.get() != nullptr)
@@ -804,8 +809,8 @@ INFFile::INFFile(const std::string &filename)
 		else if (line.front() == KEY_INDEX_CHAR)
 		{
 			// Get key number. No need for a key section here since it's only one line.
-			const std::string keyStr = line.substr(1, line.size() - 1);
-			const int keyNumber = std::stoi(keyStr);
+			const std::string_view keyStr = StringView::substr(line, 1, line.size() - 1);
+			const int keyNumber = std::stoi(std::string(keyStr));
 
 			textState->mode = TextState::Mode::Key;
 			textState->keyData = std::make_unique<KeyData>(keyNumber);
@@ -813,10 +818,10 @@ INFFile::INFFile(const std::string &filename)
 		else if (line.front() == RIDDLE_CHAR)
 		{
 			// Get riddle numbers.
-			const std::string numbers = line.substr(1, line.size() - 1);
-			const std::vector<std::string> tokens = String::split(numbers);
-			const int firstNumber = std::stoi(tokens.at(0));
-			const int secondNumber = std::stoi(tokens.at(1));
+			const std::string_view numbers = StringView::substr(line, 1, line.size() - 1);
+			const std::vector<std::string_view> tokens = StringView::split(numbers);
+			const int firstNumber = std::stoi(std::string(tokens.at(0)));
+			const int secondNumber = std::stoi(std::string(tokens.at(1)));
 
 			textState->mode = TextState::Mode::Riddle;
 			textState->riddleState = std::make_unique<TextState::RiddleState>(
@@ -840,15 +845,15 @@ INFFile::INFFile(const std::string &filename)
 			if (line.front() == ANSWER_CHAR)
 			{
 				// Add the answer to the answers data.
-				const std::string answer = line.substr(1, line.size() - 1);
-				textState->riddleState->data.answers.push_back(answer);
+				const std::string_view answer = StringView::substr(line, 1, line.size() - 1);
+				textState->riddleState->data.answers.push_back(std::string(answer));
 			}
 			else if (line.front() == RESPONSE_SECTION_CHAR)
 			{
 				// Change riddle mode based on the response section.
 				const std::string CORRECT_STR = "CORRECT";
 				const std::string WRONG_STR = "WRONG";
-				const std::string responseSection = line.substr(1, line.size() - 1);
+				const std::string_view responseSection = StringView::substr(line, 1, line.size() - 1);
 
 				if (responseSection == CORRECT_STR)
 				{
@@ -946,7 +951,8 @@ INFFile::INFFile(const std::string &filename)
 			};
 
 			// Separate the '@' token from other things in the line (like @FLATS NOSHOW).
-			line = String::split(line).front();
+			const std::vector<std::string_view> tokens = StringView::split(line);
+			line = std::string(tokens.front());
 
 			// See which token the section is.
 			const auto sectionIter = Sections.find(line);
