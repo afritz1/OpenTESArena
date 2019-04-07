@@ -13,9 +13,9 @@ matrix:
       env:
         - MATRIX_EVAL="export CC=gcc-7 && export CXX=g++-7"
     - os: osx
-      osx_image: xcode10.1
       env:
         - MATRIX_EVAL="export CC=clang && export CXX=clang++"
+        - CXX_FLAGS="${CXX_FLAGS} -std=c++17 -stdlib=libc++"
 
 before_install:
   - eval "${MATRIX_EVAL}"
