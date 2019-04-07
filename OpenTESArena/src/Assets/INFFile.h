@@ -3,6 +3,7 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +18,7 @@ public:
 	struct VoxelTextureData
 	{
 		std::string filename;
-		int setIndex; // -1 when texture is not a .SET file; index into the .SET otherwise.
+		std::optional<int> setIndex; // Index into .SET file texture (if any).
 
 		VoxelTextureData(const std::string &filename, int setIndex);
 		VoxelTextureData(const std::string &filename);
@@ -38,7 +39,7 @@ public:
 	{
 		static constexpr int DEFAULT_HEIGHT = 100;
 
-		int textureIndex; // Index into textures vector.
+		std::optional<int> textureIndex; // Index into textures vector (if any).
 
 		// Size of ceiling (first *CEILING number). Determines wall and dry chasm height.
 		int height;
@@ -46,7 +47,7 @@ public:
 		// Main floor box scale (second *CEILING number). Formula: (Y * boxScale) / 256.
 		// If missing and in wilderness, then use 192. Else if missing and not in wilderness,
 		// then box values are unchanged.
-		std::unique_ptr<int> boxScale;
+		std::optional<int> boxScale;
 
 		bool outdoorDungeon; // True when third *CEILING number is 1 (for main quest dungeons?).
 
@@ -73,10 +74,10 @@ public:
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
 		std::string nextFlat;
-		std::unique_ptr<int> deathEffect;
+		std::optional<int> deathEffect;
 
 		// Used with S:#, where '#' is light intensity (for candles, etc.).
-		std::unique_ptr<int> lightIntensity;
+		std::optional<int> lightIntensity;
 
 		FlatData();
 	};
@@ -111,8 +112,8 @@ private:
 	std::vector<VoxelTextureData> voxelTextures;
 	std::vector<FlatTextureData> flatTextures;
 
-	// References to texture names in the textures vector. -1 if unset.
-	std::array<int, 16> boxCaps, boxSides, menus;
+	// References to texture names in the textures vector (if any).
+	std::array<std::optional<int>, 16> boxCaps, boxSides, menus;
 
 	// Flat data in the order they are discovered. Each record holds various data for a flat 
 	// (i.e., texture index, etc.).
@@ -121,7 +122,7 @@ private:
 	// Indices into the flats vector for flats paired with an *ITEM index. The highest *ITEM 
 	// number is 95, although those past 63 might not be used (character class names, lore 
 	// names, etc.).
-	std::array<int, 96> items;
+	std::array<std::optional<int>, 96> items;
 
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
@@ -137,16 +138,13 @@ private:
 
 	std::string name;
 
-	// References into the textures vector. -1 if unset.
-	int dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
+	// References into the textures vector (if any).
+	std::optional<int> dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
 
 	// Ceiling data (height, box scale(?), etc.).
 	CeilingData ceiling;
 public:
 	INFFile(const std::string &filename);
-
-	// Arbitrary index used for unset indices.
-	static const int NO_INDEX;
 
 	const std::vector<VoxelTextureData> &getVoxelTextures() const;
 	const std::vector<FlatTextureData> &getFlatTextures() const;

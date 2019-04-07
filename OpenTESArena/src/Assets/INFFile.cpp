@@ -19,15 +19,14 @@ namespace
 	{
 		enum class Mode { None, BoxCap, Ceiling };
 
-		std::unique_ptr<INFFile::CeilingData> ceilingData; // Non-null when present.
+		std::optional<INFFile::CeilingData> ceilingData;
 		std::string_view textureName;
 		FloorState::Mode mode;
-		int boxCapID;
+		std::optional<int> boxCapID;
 
 		FloorState()
 		{
 			this->mode = FloorState::Mode::None;
-			this->boxCapID = INFFile::NO_INDEX;
 		}
 	};
 
@@ -42,14 +41,13 @@ namespace
 		std::vector<int> boxCapIDs, boxSideIDs;
 		std::string_view textureName;
 		WallState::Mode mode;
-		int menuID;
+		std::optional<int> menuID;
 		bool dryChasm, lavaChasm, wetChasm;
 		// *TRANS, *TRANSWALKTHRU, and *WALKTHRU are unused (set by voxel data instead).
 
 		WallState()
 		{
 			this->mode = WallState::Mode::None;
-			this->menuID = INFFile::NO_INDEX;
 			this->dryChasm = false;
 			this->lavaChasm = false;
 			this->wetChasm = false;
@@ -61,12 +59,11 @@ namespace
 		enum class Mode { None, Item };
 
 		FlatState::Mode mode;
-		int itemID;
+		std::optional<int> itemID;
 
 		FlatState()
 		{
 			this->mode = FlatState::Mode::None;
-			this->itemID = INFFile::NO_INDEX;
 		}
 	};
 
@@ -88,9 +85,9 @@ namespace
 			}
 		};
 
-		std::unique_ptr<INFFile::KeyData> keyData;
-		std::unique_ptr<RiddleState> riddleState;
-		std::unique_ptr<INFFile::TextData> textData;
+		std::optional<INFFile::KeyData> keyData;
+		std::optional<RiddleState> riddleState;
+		std::optional<INFFile::TextData> textData;
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
@@ -106,21 +103,19 @@ INFFile::VoxelTextureData::VoxelTextureData(const std::string &filename, int set
 	: filename(filename), setIndex(setIndex) { }
 
 INFFile::VoxelTextureData::VoxelTextureData(const std::string &filename)
-	: filename(filename), setIndex(INFFile::NO_INDEX) { }
+	: filename(filename), setIndex(std::nullopt) { }
 
 INFFile::FlatTextureData::FlatTextureData(const std::string &filename)
 	: filename(filename) { }
 
 INFFile::CeilingData::CeilingData()
 {
-	this->textureIndex = INFFile::NO_INDEX;
 	this->height = CeilingData::DEFAULT_HEIGHT;
 	this->outdoorDungeon = false;
 }
 
 INFFile::FlatData::FlatData()
 {
-	this->textureIndex = INFFile::NO_INDEX;
 	this->yOffset = 0;
 	this->health = 0;
 	this->collider = false;
@@ -146,8 +141,6 @@ INFFile::TextData::TextData(bool displayedOnce)
 {
 	this->displayedOnce = displayedOnce;
 }
-
-const int INFFile::NO_INDEX = -1;
 
 INFFile::INFFile(const std::string &filename)
 {
@@ -189,17 +182,6 @@ INFFile::INFFile(const std::string &filename)
 
 	this->name = filename;
 
-	// Initialize texture indices to "unset".
-	this->boxCaps.fill(INFFile::NO_INDEX);
-	this->boxSides.fill(INFFile::NO_INDEX);
-	this->menus.fill(INFFile::NO_INDEX);
-	this->items.fill(INFFile::NO_INDEX);
-	this->dryChasmIndex = INFFile::NO_INDEX;
-	this->lavaChasmIndex = INFFile::NO_INDEX;
-	this->levelDownIndex = INFFile::NO_INDEX;
-	this->levelUpIndex = INFFile::NO_INDEX;
-	this->wetChasmIndex = INFFile::NO_INDEX;
-
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
 	std::string text(reinterpret_cast<char*>(srcData.data()), srcData.size());
@@ -213,13 +195,13 @@ INFFile::INFFile(const std::string &filename)
 		Floors, Walls, Flats, Sound, Text
 	};
 
-	// Initialize loop states to null (they are non-null when in use by the loop).
+	// Initialize loop states to empty (they are non-empty when in use by the loop).
 	// I tried re-organizing them into virtual classes, but this way seems to be the
 	// most practical for now.
-	std::unique_ptr<FloorState> floorState;
-	std::unique_ptr<WallState> wallState;
-	std::unique_ptr<FlatState> flatState;
-	std::unique_ptr<TextState> textState;
+	std::optional<FloorState> floorState;
+	std::optional<WallState> wallState;
+	std::optional<FlatState> flatState;
+	std::optional<TextState> textState;
 
 	// Lambda for flushing state to the INFFile. This is useful during the parse loop,
 	// but it's also sometimes necessary at the end of the file because the last element 
@@ -229,7 +211,7 @@ INFFile::INFFile(const std::string &filename)
 		if (textState->mode == TextState::Mode::Key)
 		{
 			// Save key data.
-			this->keys.insert(std::make_pair(textState->id, *textState->keyData.get()));
+			this->keys.insert(std::make_pair(textState->id, textState->keyData.value()));
 		}
 		else if (textState->mode == TextState::Mode::Riddle)
 		{
@@ -239,7 +221,7 @@ INFFile::INFFile(const std::string &filename)
 		else if (textState->mode == TextState::Mode::Text)
 		{
 			// Save text data.
-			this->texts.insert(std::make_pair(textState->id, *textState->textData.get()));
+			this->texts.insert(std::make_pair(textState->id, textState->textData.value()));
 		}
 	};
 
@@ -248,25 +230,25 @@ INFFile::INFFile(const std::string &filename)
 	auto flushAllStates = [&floorState, &wallState, &flatState, 
 		&textState, &flushTextState]()
 	{
-		if (floorState.get() != nullptr)
+		if (floorState.has_value())
 		{
-			floorState = nullptr;
+			floorState.reset();
 		}
 
-		if (wallState.get() != nullptr)
+		if (wallState.has_value())
 		{
-			wallState = nullptr;
+			wallState.reset();
 		}
 
-		if (flatState.get() != nullptr)
+		if (flatState.has_value())
 		{
-			flatState = nullptr;
+			flatState.reset();
 		}
 
-		if (textState.get() != nullptr)
+		if (textState.has_value())
 		{
 			flushTextState();
-			textState = nullptr;
+			textState.reset();
 		}
 	};
 
@@ -280,9 +262,9 @@ INFFile::INFFile(const std::string &filename)
 		if (line.front() == TYPE_CHAR)
 		{
 			// Initialize floor state if it is null.
-			if (floorState.get() == nullptr)
+			if (!floorState.has_value())
 			{
-				floorState = std::make_unique<FloorState>();
+				floorState = FloorState();
 			}
 
 			const std::string BOXCAP_STR = "BOXCAP";
@@ -303,7 +285,7 @@ INFFile::INFFile(const std::string &filename)
 			else if (firstTokenType == CEILING_STR)
 			{
 				// Initialize ceiling data.
-				floorState->ceilingData = std::make_unique<CeilingData>();
+				floorState->ceilingData = CeilingData();
 				floorState->mode = FloorState::Mode::Ceiling;
 
 				// Check up to three numbers on the right: ceiling height, box scale,
@@ -315,8 +297,7 @@ INFFile::INFFile(const std::string &filename)
 
 				if (tokens.size() >= 3)
 				{
-					floorState->ceilingData->boxScale =
-						std::make_unique<int>(std::stoi(std::string(tokens.at(2))));
+					floorState->ceilingData->boxScale = std::stoi(std::string(tokens.at(2)));
 				}
 
 				if (tokens.size() == 4)
@@ -334,7 +315,7 @@ INFFile::INFFile(const std::string &filename)
 				DebugCrash("Unrecognized @FLOOR section \"" + std::string(tokens.at(0)) + "\".");
 			}
 		}
-		else if (floorState.get() == nullptr)
+		else if (!floorState.has_value())
 		{
 			// No current floor state, so the current line is a loose texture filename
 			// (found in some city .INFs).
@@ -395,13 +376,13 @@ INFFile::INFFile(const std::string &filename)
 			// Write the boxcap data if a *BOXCAP line is currently stored in the floor state.
 			// The floor state ID will be unset for loose filenames that don't have an 
 			// associated *BOXCAP line, but might have an associated *CEILING line.
-			if (floorState->boxCapID != INFFile::NO_INDEX)
+			if (floorState->boxCapID.has_value())
 			{
-				this->boxCaps.at(floorState->boxCapID) = currentIndex;
+				this->boxCaps.at(floorState->boxCapID.value()) = currentIndex;
 			}
 
 			// Write to the ceiling data if it is being defined for the current group.
-			if (floorState->ceilingData.get() != nullptr)
+			if (floorState->ceilingData.has_value())
 			{
 				this->ceiling.textureIndex = currentIndex;
 				this->ceiling.height = floorState->ceilingData->height;
@@ -410,7 +391,7 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Reset the floor state for any future floor data.
-			floorState = std::make_unique<FloorState>();
+			floorState = FloorState();
 		}
 	};
 
@@ -423,9 +404,9 @@ INFFile::INFFile(const std::string &filename)
 		if (line.front() == TYPE_CHAR)
 		{
 			// Initialize wall state if it is null.
-			if (wallState.get() == nullptr)
+			if (!wallState.has_value())
 			{
-				wallState = std::make_unique<WallState>();
+				wallState = WallState();
 			}
 
 			// All the different possible '*' sections for walls.
@@ -510,7 +491,7 @@ INFFile::INFFile(const std::string &filename)
 				DebugCrash("Unrecognized @WALLS section \"" + std::string(firstTokenType) + "\".");
 			}
 		}
-		else if (wallState.get() == nullptr)
+		else if (!wallState.has_value())
 		{
 			// No existing wall state, so this line contains a "loose" texture name.
 			const std::vector<std::string_view> tokens = StringView::split(line, '#');
@@ -580,9 +561,9 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Write *MENU ID (if any).
-			if (wallState->menuID != INFFile::NO_INDEX)
+			if (wallState->menuID.has_value())
 			{
-				this->menus.at(wallState->menuID) = currentIndex;
+				this->menus.at(wallState->menuID.value()) = currentIndex;
 			}
 
 			// Write texture index for any chasms.
@@ -609,7 +590,7 @@ INFFile::INFFile(const std::string &filename)
 				this->levelUpIndex = currentIndex;
 			}
 
-			wallState = std::make_unique<WallState>();
+			wallState = WallState();
 		}
 	};
 
@@ -622,9 +603,9 @@ INFFile::INFFile(const std::string &filename)
 		if (line.front() == TYPE_CHAR)
 		{
 			// Initialize flat state if it is null.
-			if (flatState.get() == nullptr)
+			if (!flatState.has_value())
 			{
-				flatState = std::make_unique<FlatState>();
+				flatState = FlatState();
 			}
 
 			const std::string ITEM_STR = "ITEM";
@@ -677,7 +658,7 @@ INFFile::INFFile(const std::string &filename)
 
 			// Creature flats are between *ITEM 32 and *ITEM 54. These do not need their
 			// texture line parsed.
-			const bool isCreatureFlat = (flatState.get() != nullptr) &&
+			const bool isCreatureFlat = flatState.has_value() &&
 				(flatState->itemID >= 32) && (flatState->itemID <= 54);
 
 			// Get the texture name. Do not parse *ITEMs between 32 and 54 (return an empty
@@ -710,13 +691,12 @@ INFFile::INFFile(const std::string &filename)
 			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
 
 			// The current line is "loose" if the previous line was not an *ITEM line.
-			const bool looseTextureName = (flatState.get() == nullptr) ||
-				(flatState->itemID == INFFile::NO_INDEX);
+			const bool looseTextureName = !flatState.has_value() || !flatState->itemID.has_value();
 
 			// If an *ITEM index is currently stored, then pair it with the new flat's index.
 			if (!looseTextureName)
 			{
-				this->items.at(flatState->itemID) = flatIndex;
+				this->items.at(flatState->itemID.value()) = flatIndex;
 			}
 
 			// If the flat is not a creature and has modifiers, then check each modifier and
@@ -750,7 +730,7 @@ INFFile::INFFile(const std::string &filename)
 					else if (modifierType == LIGHT_MODIFIER)
 					{
 						// Light range (in units of voxels).
-						flat.lightIntensity = std::make_unique<int>(modifierValue);
+						flat.lightIntensity = modifierValue;
 					}
 					else if (modifierType == Y_OFFSET_MODIFIER)
 					{
@@ -766,7 +746,7 @@ INFFile::INFFile(const std::string &filename)
 			}
 
 			// Reset flat state for the next loop.
-			flatState = std::make_unique<FlatState>();
+			flatState = FlatState();
 		}
 	};
 
@@ -798,13 +778,13 @@ INFFile::INFFile(const std::string &filename)
 			const int textID = std::stoi(std::string(tokens.at(1)));
 
 			// If there is existing text state present, save it.
-			if (textState.get() != nullptr)
+			if (textState.has_value())
 			{
 				flushTextState();
 			}
 
 			// Reset the text state to default with the new *TEXT ID.
-			textState = std::make_unique<TextState>(textID);
+			textState = TextState(textID);
 		}
 		else if (line.front() == KEY_INDEX_CHAR)
 		{
@@ -813,7 +793,7 @@ INFFile::INFFile(const std::string &filename)
 			const int keyNumber = std::stoi(std::string(keyStr));
 
 			textState->mode = TextState::Mode::Key;
-			textState->keyData = std::make_unique<KeyData>(keyNumber);
+			textState->keyData = KeyData(keyNumber);
 		}
 		else if (line.front() == RIDDLE_CHAR)
 		{
@@ -824,15 +804,14 @@ INFFile::INFFile(const std::string &filename)
 			const int secondNumber = std::stoi(std::string(tokens.at(1)));
 
 			textState->mode = TextState::Mode::Riddle;
-			textState->riddleState = std::make_unique<TextState::RiddleState>(
-				firstNumber, secondNumber);
+			textState->riddleState = TextState::RiddleState(firstNumber, secondNumber);
 		}
 		else if (line.front() == DISPLAYED_ONCE_CHAR)
 		{
 			textState->mode = TextState::Mode::Text;
 
 			const bool displayedOnce = true;
-			textState->textData = std::make_unique<TextData>(displayedOnce);
+			textState->textData = TextData(displayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState->textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -895,14 +874,14 @@ INFFile::INFFile(const std::string &filename)
 				if (textState->mode == TextState::Mode::Key)
 				{
 					// Save key data and empty the key data state.
-					this->keys.insert(std::make_pair(textState->id, *textState->keyData.get()));
-					textState->keyData = nullptr;
+					this->keys.insert(std::make_pair(textState->id, textState->keyData.value()));
+					textState->keyData.reset();
 				}
 
 				textState->mode = TextState::Mode::Text;
 
 				const bool displayedOnce = false;
-				textState->textData = std::make_unique<TextData>(displayedOnce);
+				textState->textData = TextData(displayedOnce);
 			}
 
 			// Read the line into the text data.
@@ -927,8 +906,7 @@ INFFile::INFFile(const std::string &filename)
 		{
 			// Usually, empty lines indicate a separation from two sections, but there are 
 			// some riddles with newlines (like *TEXT 0 in LABRNTH2.INF), so don't skip those.
-			if ((textState.get() != nullptr) &&
-				(textState->riddleState.get() != nullptr) &&
+			if (textState.has_value() && textState->riddleState.has_value() &&
 				(textState->riddleState->mode == TextState::RiddleState::Mode::Riddle))
 			{
 				textState->riddleState->data.riddle += '\n';
@@ -1005,33 +983,33 @@ const std::vector<INFFile::FlatTextureData> &INFFile::getFlatTextures() const
 
 const int *INFFile::getBoxCap(int index) const
 {
-	const int *ptr = &this->boxCaps.at(index);
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	const auto &opt = this->boxCaps.at(index);
+	return opt.has_value() ? &opt.value() : nullptr;
 }
 
 const int *INFFile::getBoxSide(int index) const
 {
-	const int *ptr = &this->boxSides.at(index);
+	const auto &opt = this->boxSides.at(index);
 
 	// Some null pointers were being returned here, and they appear to be errors within
 	// the Arena data (i.e., the initial level in some noble houses asks for wall texture 
 	// #14, which doesn't exist in NOBLE1.INF), so maybe it should resort to a default 
 	// index instead.
-	if ((*ptr) != INFFile::NO_INDEX)
+	if (opt.has_value())
 	{
-		return ptr;
+		return &opt.value();
 	}
 	else
 	{
 		DebugWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
-		return &this->boxSides.at(0);
+		return &this->boxSides.at(0).value();
 	}
 }
 
 const int *INFFile::getMenu(int index) const
 {
-	const int *ptr = &this->menus.at(index);
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	const auto &opt = this->menus.at(index);
+	return opt.has_value() ? &opt.value() : nullptr;
 }
 
 int INFFile::getMenuIndex(int textureID) const
@@ -1049,7 +1027,7 @@ const INFFile::FlatData &INFFile::getFlat(int index) const
 
 const INFFile::FlatData &INFFile::getItem(int index) const
 {
-	const int flatIndex = this->items.at(index);
+	const int flatIndex = this->items.at(index).value();
 	return this->flats.at(flatIndex);
 }
 
@@ -1108,32 +1086,27 @@ const std::string &INFFile::getName() const
 
 const int *INFFile::getDryChasmIndex() const
 {
-	const int *ptr = &this->dryChasmIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	return this->dryChasmIndex.has_value() ? &this->dryChasmIndex.value() : nullptr;
 }
 
 const int *INFFile::getLavaChasmIndex() const
 {
-	const int *ptr = &this->lavaChasmIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	return this->lavaChasmIndex.has_value() ? &this->lavaChasmIndex.value() : nullptr;
 }
 
 const int *INFFile::getLevelDownIndex() const
 {
-	const int *ptr = &this->levelDownIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	return this->levelDownIndex.has_value() ? &this->levelDownIndex.value() : nullptr;
 }
 
 const int *INFFile::getLevelUpIndex() const
 {
-	const int *ptr = &this->levelUpIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	return this->levelUpIndex.has_value() ? &this->levelUpIndex.value() : nullptr;
 }
 
 const int *INFFile::getWetChasmIndex() const
 {
-	const int *ptr = &this->wetChasmIndex;
-	return ((*ptr) != INFFile::NO_INDEX) ? ptr : nullptr;
+	return this->wetChasmIndex.has_value() ? &this->wetChasmIndex.value() : nullptr;
 }
 
 const INFFile::CeilingData &INFFile::getCeiling() const

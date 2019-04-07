@@ -383,8 +383,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 			// Lambda for obtaining the index of a newly-added VoxelData object, and inserting
 			// it into the data mappings if it hasn't been already. The function parameter
 			// decodes the voxel and returns the created VoxelData.
-			auto getDataIndex = [this, &inf, map1Voxel](
-				const std::function<VoxelData(void)> &function)
+			auto getDataIndex = [this, map1Voxel](const std::function<VoxelData(void)> &function)
 			{
 				const auto wallIter = this->wallDataMappings.find(map1Voxel);
 				if (wallIter != this->wallDataMappings.end())
@@ -470,7 +469,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					else
 					{
 						// Raised platform.
-						const int dataIndex = getDataIndex([&inf, worldType, &exeData,
+						const int dataIndex = getDataIndex([&inf, worldType, &exeData, x, z,
 							map1Voxel, mostSigByte]()
 						{
 							const uint8_t wallTextureID = map1Voxel & 0x000F;
@@ -491,18 +490,18 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 							}();
 
-							const int floorID = [&inf]()
+							const int floorID = [&inf, x, z]()
 							{
-								const int id = inf.getCeiling().textureIndex;
+								const auto &id = inf.getCeiling().textureIndex;
 
-								if (id >= 0)
+								if (id.has_value())
 								{
-									return id;
+									return id.value();
 								}
 								else
 								{
-									DebugWarning("Invalid platform floor ID \"" +
-										std::to_string(id) + "\".");
+									DebugWarning("Missing platform floor ID (" +
+										std::to_string(x) + ", " + std::to_string(z) + ").");
 									return 0;
 								}
 							}();
@@ -537,8 +536,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								baseOffset = wallHeightTables.box1a.at(heightIndex);
 
 								const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
-								const int *boxScale = inf.getCeiling().boxScale.get();
-								baseSize = (boxScale != nullptr) ?
+								const auto &boxScale = inf.getCeiling().boxScale;
+								baseSize = boxScale.has_value() ?
 									((boxSize * (*boxScale)) / 256) : boxSize;
 							}
 							else if (worldType == WorldType::Wilderness)
@@ -546,9 +545,9 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								baseOffset = wallHeightTables.box1c.at(heightIndex);
 
 								const int boxSize = 32;
-								const int *boxScale = inf.getCeiling().boxScale.get();
-								baseSize = (boxSize * ((boxScale != nullptr) ?
-									*boxScale : 192)) / 256;
+								const auto &boxScale = inf.getCeiling().boxScale;
+								baseSize = (boxSize *
+									(boxScale.has_value() ? boxScale.value() : 192)) / 256;
 							}
 							else
 							{
@@ -797,16 +796,9 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 	// Get the index of the ceiling texture name in the textures array.
 	const int ceilingIndex = [&ceiling]()
 	{
-		if (ceiling.textureIndex != INFFile::NO_INDEX)
-		{
-			return ceiling.textureIndex;
-		}
-		else
-		{
-			// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe
-			// hardcoding index 1 is enough?
-			return 1;
-		}
+		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe
+		// hardcoding index 1 is enough?
+		return ceiling.textureIndex.value_or(1);
 	}();
 
 	// Define the ceiling voxel data.
@@ -865,7 +857,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		{
 			// Use the texture data's .SET index to obtain the correct surface.
 			const auto &surfaces = textureManager.getSurfaces(textureName);
-			const Surface &surface = surfaces.at(textureData.setIndex);
+			const Surface &surface = surfaces.at(textureData.setIndex.value());
 			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
 		}
 		else if (isIMG)
