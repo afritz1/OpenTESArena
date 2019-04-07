@@ -1,6 +1,6 @@
 # OpenTESArena
 
-This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++14 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows, Linux, and macOS.
+This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++17 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows, Linux, and macOS.
 
 - Version: 0.9.0
 - License: MIT
@@ -55,7 +55,7 @@ If you would like music played in-game, see **Music setup** below. The engine us
 - Extract Arena106Setup.zip and run Arena106.exe.
 - Pick a destination folder anywhere and install.
 - Point `ArenaPath` in the options file to the `ARENA` folder.
-- If you receive an error about missing MSVCP140.dll, you will need to download and run the Visual C++ 2015 Redistributable installer from [here](https://www.microsoft.com/en-us/download/details.aspx?id=53587) for your desired target (x64 for 64-bit, x86 for 32-bit).
+- If you receive an error about missing MSVCP141.dll, you will need to download and run the Visual C++ 2017 Redistributable installer from [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll for Visual C++ 2015 is available [here](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
 - If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
 
 ### macOS
