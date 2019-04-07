@@ -1,11 +1,13 @@
 #include <cassert>
 #include <sstream>
+#include <string_view>
 #include <vector>
 
 #include "KeyValueMap.h"
 #include "../Utilities/Debug.h"
 #include "../Utilities/File.h"
 #include "../Utilities/String.h"
+#include "../Utilities/StringView.h"
 
 namespace
 {
@@ -32,28 +34,25 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 	// Check each line for a valid section or key-value pair. Start the line numbers at 1
 	// since most users aren't programmers.
 	std::string line;
-	std::string section;
 	SectionMap *activeSectionMap = nullptr;
 	for (int lineNumber = 1; std::getline(iss, line); lineNumber++)
 	{
 		// Get a filtered version of the current line so it can be parsed. If the filtered
 		// string is empty, then skip to the next line.
-		// - @todo: std::string_view would be useful here. The skip/remove/comment code
-		//   combined could return the usable portion of the line.
-		const std::string filteredLine = [&line]()
+		const std::string_view filteredLine = [&line]()
 		{
-			std::string str = line;
+			std::string_view str = line;
 
 			// Skip empty strings.
 			if ((str.size() == 0) || ((str.size() == 1) && (str.front() == '\r')))
 			{
-				return std::string();
+				return std::string_view();
 			}
 
 			// Remove carriage return at the end (if any).
 			if (str.back() == '\r')
 			{
-				str.pop_back();
+				str.remove_suffix(1);
 			}
 
 			// Extract left-most comment (if any).
@@ -61,9 +60,9 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 			if (commentIndex == 0)
 			{
 				// Comment covers the entire line.
-				return std::string();
+				return std::string_view();
 			}
-			else if (commentIndex != std::string::npos)
+			else if (commentIndex != std::string_view::npos)
 			{
 				// Comment is somewhere in the line, so only work with the left substring.
 				str = str.substr(0, commentIndex);
@@ -71,7 +70,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 
 			// Trim leading and trailing whitespace (i.e., in case the key has whitespace
 			// before it, or a comment had whitespace before it).
-			return String::trimFront(String::trimBack(str));
+			return StringView::trimFront(StringView::trimBack(str));
 		}();
 
 		if (filteredLine.empty())
@@ -82,81 +81,82 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 		else if (filteredLine.size() < 3)
 		{
 			// Not long enough to be a section or key-value pair.
-			DebugCrash("Syntax error \"" + filteredLine + "\" (line " +
+			DebugCrash("Syntax error \"" + std::string(filteredLine) + "\" (line " +
 				std::to_string(lineNumber) + ") in " + filename + ".");
 		}
 
 		// See if it's a section line or key-value pair line.
 		const size_t sectionFrontIndex = filteredLine.find(KeyValueMap::SECTION_FRONT);
-		if (sectionFrontIndex != std::string::npos)
+		if (sectionFrontIndex != std::string_view::npos)
 		{
 			// Section line. There must be a closing character with enough space between it
 			// and the front character for at least one section character.
 			const size_t sectionBackIndex = filteredLine.find(
 				KeyValueMap::SECTION_BACK, sectionFrontIndex);
 
-			if ((sectionBackIndex != std::string::npos) &&
+			if ((sectionBackIndex != std::string_view::npos) &&
 				(sectionBackIndex > (sectionFrontIndex + 1)))
 			{
 				// Get the string that's between the section characters and trim any
 				// leading or trailing whitespace.
-				std::string sectionName = filteredLine.substr(
+				std::string_view sectionName = filteredLine.substr(
 					sectionFrontIndex + 1, sectionBackIndex - sectionFrontIndex - 1);
-				sectionName = String::trimFront(String::trimBack(sectionName));
+				sectionName = StringView::trimFront(StringView::trimBack(sectionName));
 
-				auto sectionIter = this->sectionMaps.find(sectionName);
+				std::string sectionNameStr(sectionName);
+				auto sectionIter = this->sectionMaps.find(sectionNameStr);
 
 				// If the section is new, add it to the section maps.
 				if (sectionIter == this->sectionMaps.end())
 				{
 					sectionIter = this->sectionMaps.insert(std::make_pair(
-						std::move(sectionName), SectionMap())).first;
+						std::move(sectionNameStr), SectionMap())).first;
 					activeSectionMap = &sectionIter->second;
 				}
 				else
 				{
-					DebugCrash("Section \"" + sectionName + "\" (line " +
+					DebugCrash("Section \"" + sectionNameStr + "\" (line " +
 						std::to_string(lineNumber) + ") already defined in " + filename + ".");
 				}
 			}
 			else
 			{
-				DebugCrash("Invalid section \"" + filteredLine + "\" (line " +
+				DebugCrash("Invalid section \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
 			}
 		}
 		else if (filteredLine.find(KeyValueMap::PAIR_SEPARATOR) != std::string::npos)
 		{
 			// Key-value pair line. There must be two tokens: key and value.
-			const std::vector<std::string> tokens = String::split(
+			const std::vector<std::string_view> tokens = StringView::split(
 				filteredLine, KeyValueMap::PAIR_SEPARATOR);
 
 			if (tokens.size() != 2)
 			{
-				DebugCrash("Invalid pair \"" + filteredLine + "\" (line " +
+				DebugCrash("Invalid pair \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
 			}
 
 			// Trim trailing whitespace from the key and leading whitespace from the value.
-			std::string key = String::trimBack(tokens.front());
-			std::string value = String::trimFront(tokens.back());
+			std::string_view key = StringView::trimBack(tokens.front());
+			std::string_view value = StringView::trimFront(tokens.back());
 
 			if (key.size() == 0)
 			{
-				DebugCrash("Empty key in \"" + filteredLine + "\" (line " +
+				DebugCrash("Empty key in \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
 			}
 
 			// Add the key-value pair to the active section map.
 			if (activeSectionMap != nullptr)
 			{
-				activeSectionMap->insert(std::make_pair(std::move(key), std::move(value)));
+				activeSectionMap->insert(std::make_pair(std::string(key), std::string(value)));
 			}
 			else
 			{
 				// If no active section map, print a warning and ignore the current pair.
 				// All key-value pairs must be in a section.
-				DebugWarning("Ignoring \"" + filteredLine + "\" (line " +
+				DebugWarning("Ignoring \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + "), no active section in " + filename);
 			}
 		}
