@@ -2027,6 +2027,10 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	auto &game = this->getGame();
 	const double resolutionScale = game.getOptions().getGraphics_ResolutionScale();
 
+	const FPSCounter &fpsCounter = game.getFPSCounter();
+	const double targetFps = static_cast<double>(game.getOptions().getGraphics_TargetFPS());
+	const double minFps = static_cast<double>(Options::MIN_FPS);
+
 	auto &gameData = game.getGameData();
 	const auto &player = gameData.getPlayer();
 	const Double3 &position = player.getPosition();
@@ -2038,7 +2042,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const std::string text =
 		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
 		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
-		"FPS: " + String::fixedPrecision(game.getFPSCounter().getFPS(), 1) + "\n" +
+		"FPS: " + String::fixedPrecision(fpsCounter.getFPS(), 1) + "\n" +
 		"Map: " + worldData.getMifName() + "\n" +
 		"Info: " + level.getInfFile().getName() + "\n" +
 		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
@@ -2046,7 +2050,10 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
 		"DirX: " + String::fixedPrecision(direction.x, 5) + "\n" +
 		"DirY: " + String::fixedPrecision(direction.y, 5) + "\n" +
-		"DirZ: " + String::fixedPrecision(direction.z, 5);
+		"DirZ: " + String::fixedPrecision(direction.z, 5) + "\n\n" +
+		"FPS Graph:" + "\n" +
+		"                               " + std::to_string(static_cast<int>(targetFps)) + "\n\n\n\n" +
+		"                               " + std::to_string(static_cast<int>(minFps));
 
 	const RichTextString richText(
 		text,
@@ -2059,7 +2066,74 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 	const int y = 2;
 	const TextBox tempText(x, y, richText, renderer);
 
+	// Create graph of frame times.
+	const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps, minFps]()
+	{
+		// Graph maximum is target FPS, minimum is MIN_FPS.
+		const int columnWidth = 1;
+		const int width = fpsCounter.getFrameCount() * columnWidth;
+		const int height = 32;
+		const Surface surface = Surface::createWithFormat(
+			width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		SDL_FillRect(surface.get(), nullptr, SDL_MapRGBA(surface.get()->format, 0, 0, 0, 128));
+
+		const std::array<uint32_t, 3> Colors =
+		{
+			SDL_MapRGBA(surface.get()->format, 255, 0, 0, 128),
+			SDL_MapRGBA(surface.get()->format, 255, 255, 0, 128),
+			SDL_MapRGBA(surface.get()->format, 0, 255, 0, 128)
+		};
+
+		auto drawGraphColumn = [columnWidth, &surface, &Colors](int x, double percent)
+		{
+			const uint32_t color = [&Colors, percent]()
+			{
+				const int colorIndex = [percent]()
+				{
+					if (percent < (1.0 / 3.0))
+					{
+						return 0;
+					}
+					else if (percent < (2.0 / 3.0))
+					{
+						return 1;
+					}
+					else
+					{
+						return 2;
+					}
+				}();
+
+				return Colors.at(colorIndex);
+			}();
+
+			// Height of column in pixels.
+			const int height = std::clamp(static_cast<int>(
+				percent * static_cast<double>(surface.getHeight())), 0, surface.getHeight());
+
+			SDL_Rect rect;
+			rect.x = x * columnWidth;
+			rect.y = surface.getHeight() - height;
+			rect.w = columnWidth;
+			rect.h = height;
+
+			SDL_FillRect(surface.get(), &rect, color);
+		};
+
+		// Fill in columns.
+		for (int i = 0; i < fpsCounter.getFrameCount(); i++)
+		{
+			const double frameTime = fpsCounter.getFrameTime(i);
+			const double fps = 1.0 / frameTime;
+			const double fpsPercent = std::clamp((fps - minFps) / (targetFps - minFps), 0.0, 1.0);
+			drawGraphColumn(i, fpsPercent);
+		}
+
+		return renderer.createTextureFromSurface(surface.get());
+	}();
+
 	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
+	renderer.drawOriginal(frameTimesGraph.get(), tempText.getX(), 94);
 }
 
 void GameWorldPanel::tick(double dt)
@@ -2294,12 +2368,6 @@ void GameWorldPanel::render(Renderer &renderer)
 		renderer.drawOriginal(this->playerNameTextBox->getTexture(),
 			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
 	}
-
-	// Draw some optional debug text.
-	if (options.getMisc_ShowDebug())
-	{
-		this->drawDebugText(renderer);
-	}
 }
 
 void GameWorldPanel::renderSecondary(Renderer &renderer)
@@ -2479,5 +2547,11 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		{
 			this->drawTooltip(tooltip, renderer);
 		}
+	}
+
+	// Draw some optional debug text.
+	if (options.getMisc_ShowDebug())
+	{
+		this->drawDebugText(renderer);
 	}
 }
