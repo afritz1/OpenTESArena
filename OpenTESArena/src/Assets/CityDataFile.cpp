@@ -479,6 +479,18 @@ uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
 
+uint32_t CityDataFile::getWildernessSeed(int localCityID, int provinceID) const
+{
+	const auto &province = this->getProvinceData(provinceID);
+	const auto &location = province.getLocationData(Location::cityToLocationID(localCityID));
+	const std::string &locationName = location.name;
+	DebugAssertMsg(locationName.size() >= 4, "Name \"" + locationName + "\" too short.");
+
+	// Use the first four letters as the seed.
+	const uint8_t *ptr = reinterpret_cast<const uint8_t*>(locationName.data());
+	return Bytes::getLE32(ptr);
+}
+
 uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
 {
 	const Int2 globalPoint = this->getGlobalPoint(localCityID, provinceID);
