@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <numeric>
 
@@ -21,8 +22,12 @@ double FPSCounter::getFrameTime(int index) const
 
 double FPSCounter::getAverageFrameTime() const
 {
-	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.end(), 0.0);
-	return sum / static_cast<double>(this->frameTimes.size());
+	// Only need a few frame times to get a decent approximation.
+	const size_t count = 20;
+	assert(count <= this->frameTimes.size());
+
+	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.begin() + count, 0.0);
+	return sum / static_cast<double>(count);
 }
 
 double FPSCounter::getFPS() const
