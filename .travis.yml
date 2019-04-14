@@ -15,7 +15,7 @@ matrix:
     - os: osx
       osx_image: xcode9
       env:
-        - MATRIX_EVAL="brew install gcc && CC=gcc-7 && CXX=g++-7"
+        - MATRIX_EVAL="brew update-reset && brew install gcc && CC=gcc-8 && CXX=g++-8"
 
 before_install:
   - eval "${MATRIX_EVAL}"
