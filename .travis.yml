@@ -13,8 +13,9 @@ matrix:
       env:
         - MATRIX_EVAL="export CC=gcc-7 && export CXX=g++-7"
     - os: osx
+      osx_image: xcode9
       env:
-        - MATRIX_EVAL="export CC=clang && export CXX=clang++"
+        - MATRIX_EVAL="brew update-reset && brew install gcc && CC=gcc-8 && CXX=g++-8"
 
 before_install:
   - eval "${MATRIX_EVAL}"
