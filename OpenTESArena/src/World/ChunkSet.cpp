@@ -59,7 +59,7 @@ const T *ChunkSet<T>::get(int index) const
 }
 
 template <typename T>
-void ChunkSet<T>::set(int x, int y, const T &chunk)
+T &ChunkSet<T>::insert(int x, int y)
 {
 	const auto iter = this->getIter(x, y, this->chunks);
 
@@ -68,29 +68,13 @@ void ChunkSet<T>::set(int x, int y, const T &chunk)
 
 	if (exists)
 	{
-		*iter = chunk;
+		*iter = T(x, y);
+		return *iter;
 	}
 	else
 	{
-		this->chunks.push_back(chunk);
-	}
-}
-
-template <typename T>
-void ChunkSet<T>::set(int x, int y, T &&chunk)
-{
-	const auto iter = this->getIter(x, y, this->chunks);
-
-	// Add if it doesn't exist, overwrite if it does.
-	const bool exists = iter != this->chunks.end();
-
-	if (exists)
-	{
-		*iter = std::move(chunk);
-	}
-	else
-	{
-		this->chunks.push_back(std::move(chunk));
+		this->chunks.push_back(T(x, y));
+		return this->chunks.back();
 	}
 }
 

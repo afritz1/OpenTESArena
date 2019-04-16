@@ -8,9 +8,6 @@
 // Dynamic group of all active chunks. Chunks are added and removed by a caller as needed.
 // This only stores the voxels in each chunk, not the entities.
 
-// @todo: maybe sort chunks from top-leftmost to bottom-rightmost, like text? Instead of
-// being unsorted? Might not make a difference.
-
 template <typename T>
 class ChunkSet
 {
@@ -32,12 +29,12 @@ public:
 	const T *get(int x, int y) const;
 
 	// Functions for iterating over all chunks in the set. Returns null once the end is reached.
+	// Chunks are assumed to be unsorted.
 	T *get(int index);
 	const T *get(int index) const;
 
-	// Adds a chunk at the given coordinate, overwriting any existing one.
-	void set(int x, int y, const T &chunk);
-	void set(int x, int y, T &&chunk);
+	// Adds an empty chunk, overwriting any existing one at the given coordinates.
+	T &insert(int x, int y);
 
 	// Removes a chunk at the given coordinate if it exists.
 	void remove(int x, int y);
