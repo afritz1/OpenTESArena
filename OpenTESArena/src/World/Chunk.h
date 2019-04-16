@@ -19,10 +19,15 @@ private:
 	// Indices into voxel data.
 	std::array<uint16_t, WIDTH * HEIGHT * DEPTH> voxels;
 
+	// Chunk coordinates.
+	int x, y;
+
 	constexpr int getIndex(int x, int y, int z) const;
 public:
-	Chunk();
+	Chunk(int x, int y);
 
+	int getX() const;
+	int getY() const;
 	constexpr int getWidth() const;
 	constexpr int getHeight() const;
 	constexpr int getDepth() const;

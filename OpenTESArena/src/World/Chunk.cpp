@@ -3,27 +3,41 @@
 #include "Chunk.h"
 
 template <size_t T>
-Chunk<T>::Chunk()
+Chunk<T>::Chunk(int x, int y)
 {
 	std::fill(this->voxels.begin(), this->voxels.end(), 0);
+	this->x = x;
+	this->y = y;
+}
+
+template <size_t T>
+int Chunk<T>::getX() const
+{
+	return this->x;
+}
+
+template <size_t T>
+int Chunk<T>::getY() const
+{
+	return this->y;
 }
 
 template <size_t T>
 constexpr int Chunk<T>::getWidth() const
 {
-	return WIDTH;
+	return Chunk<T>::WIDTH;
 }
 
 template <size_t T>
 constexpr int Chunk<T>::getHeight() const
 {
-	return HEIGHT;
+	return Chunk<T>::HEIGHT;
 }
 
 template <size_t T>
 constexpr int Chunk<T>::getDepth() const
 {
-	return DEPTH;
+	return Chunk<T>::DEPTH;
 }
 
 template <size_t T>
