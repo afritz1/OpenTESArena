@@ -1,11 +1,13 @@
-#include <algorithm>
+#include <cassert>
 
 #include "Chunk.h"
 
 template <size_t T>
 Chunk<T>::Chunk(int x, int y)
 {
-	std::fill(this->voxels.begin(), this->voxels.end(), 0);
+	this->voxels.fill(0);
+	this->voxelData.fill(VoxelData());
+	this->voxelDataCount = 0;
 	this->x = x;
 	this->y = y;
 }
@@ -41,23 +43,50 @@ constexpr int Chunk<T>::getDepth() const
 }
 
 template <size_t T>
+constexpr bool Chunk<T>::coordIsValid(int x, int y, int z) const
+{
+	return (x >= 0) && (x < this->getWidth()) &&
+		(y >= 0) && (y < this->getHeight()) &&
+		(z >= 0) && (z < this->getDepth());
+}
+
+template <size_t T>
 constexpr int Chunk<T>::getIndex(int x, int y, int z) const
 {
+	assert(this->coordIsValid(x, y, z));
 	return x + (y * this->getWidth()) + (z * this->getWidth() * this->getHeight());
 }
 
 template <size_t T>
-uint16_t Chunk<T>::get(int x, int y, int z) const
+constexpr VoxelID Chunk<T>::get(int x, int y, int z) const
 {
 	const int index = this->getIndex(x, y, z);
-	return this->voxels.at(index);
+	return this->voxels[index];
 }
 
-template<size_t T>
-void Chunk<T>::set(int x, int y, int z, uint16_t value)
+template <size_t T>
+const VoxelData &Chunk<T>::getVoxelData(VoxelID id) const
+{
+	assert(id < this->voxelData.size());
+	return this->voxelData[id];
+}
+
+template <size_t T>
+constexpr void Chunk<T>::set(int x, int y, int z, VoxelID value)
 {
 	const int index = this->getIndex(x, y, z);
-	this->voxels.at(index) = value;
+	this->voxels[index] = value;
+}
+
+template <size_t T>
+VoxelID Chunk<T>::addVoxelData(VoxelData &&voxelData)
+{
+	// If we ever reach more than 256 unique voxel datas, we need more bits per voxel.
+	assert(this->voxelDataCount < this->voxelData.size());
+
+	this->voxelData[this->voxelDataCount] = std::move(voxelData);
+	this->voxelDataCount++;
+	return this->voxelDataCount - 1;
 }
 
 // Template instantiations.
