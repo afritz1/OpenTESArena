@@ -7,7 +7,10 @@ Chunk<T>::Chunk(int x, int y)
 {
 	this->voxels.fill(0);
 	this->voxelData.fill(VoxelData());
-	this->voxelDataCount = 0;
+
+	// Let the first voxel data (air) be usable immediately. All default voxel IDs can safely point to it.
+	this->voxelDataCount = 1;
+
 	this->x = x;
 	this->y = y;
 }
