@@ -3,7 +3,7 @@
 #include "ChunkSet.h"
 
 template <typename T>
-auto ChunkSet<T>::getIter(int x, int y, const std::vector<T> &chunks)
+auto ChunkSet<T>::getIter(int x, int y)
 {
 	const auto iter = std::find_if(this->chunks.begin(), this->chunks.end(),
 		[x, y](const T &chunk)
@@ -15,7 +15,7 @@ auto ChunkSet<T>::getIter(int x, int y, const std::vector<T> &chunks)
 }
 
 template <typename T>
-auto ChunkSet<T>::getIter(int x, int y, const std::vector<T> &chunks) const
+auto ChunkSet<T>::getIter(int x, int y) const
 {
 	const auto iter = std::find_if(this->chunks.begin(), this->chunks.end(),
 		[x, y](const T &chunk)
@@ -35,14 +35,14 @@ int ChunkSet<T>::getCount() const
 template <typename T>
 T *ChunkSet<T>::get(int x, int y)
 {
-	const auto iter = this->getIter(x, y, this->chunks);
+	const auto iter = this->getIter(x, y);
 	return (iter != this->chunks.end()) ? &(*iter) : nullptr;
 }
 
 template <typename T>
 const T *ChunkSet<T>::get(int x, int y) const
 {
-	const auto iter = this->getIter(x, y, this->chunks);
+	const auto iter = this->getIter(x, y);
 	return (iter != this->chunks.end()) ? &(*iter) : nullptr;
 }
 
@@ -61,7 +61,7 @@ const T *ChunkSet<T>::get(int index) const
 template <typename T>
 T &ChunkSet<T>::insert(int x, int y)
 {
-	const auto iter = this->getIter(x, y, this->chunks);
+	const auto iter = this->getIter(x, y);
 
 	// Add if it doesn't exist, overwrite if it does.
 	const bool exists = iter != this->chunks.end();
@@ -81,7 +81,7 @@ T &ChunkSet<T>::insert(int x, int y)
 template <typename T>
 void ChunkSet<T>::remove(int x, int y)
 {
-	const auto iter = this->getIter(x, y, this->chunks);
+	const auto iter = this->getIter(x, y);
 
 	// Remove if the chunk exists.
 	const bool exists = iter != this->chunks.end();

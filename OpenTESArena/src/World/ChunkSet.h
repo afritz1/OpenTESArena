@@ -16,8 +16,8 @@ private:
 
 	// Convenience function for getting an iterator to a chunk if it exists, or the end of
 	// the chunks list if it doesn't.
-	auto getIter(int x, int y, const std::vector<T> &chunks);
-	auto getIter(int x, int y, const std::vector<T> &chunks) const;
+	auto getIter(int x, int y);
+	auto getIter(int x, int y) const;
 public:
 	// Returns number of chunks in the set.
 	int getCount() const;
