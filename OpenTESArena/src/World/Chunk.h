@@ -15,8 +15,6 @@ using VoxelID = uint8_t;
 class Chunk
 {
 private:
-	static constexpr int WIDTH = 64;
-	static constexpr int DEPTH = WIDTH;
 	static constexpr int MAX_VOXEL_DATA = 256;
 
 	// Indices into voxel data.
@@ -38,6 +36,10 @@ private:
 	bool coordIsValid(int x, int y, int z) const;
 	int getIndex(int x, int y, int z) const;
 public:
+	// Public for some classes that want non-instance dimensions.
+	static constexpr int WIDTH = 64;
+	static constexpr int DEPTH = WIDTH;
+
 	int getX() const;
 	int getY() const;
 	constexpr int getWidth() const;
