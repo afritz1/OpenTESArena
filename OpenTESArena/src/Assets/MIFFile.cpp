@@ -215,6 +215,8 @@ int MIFFile::Level::loadFLAT(MIFFile::Level &level, const uint8_t *tagStart)
 
 int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 {
+	// Compressed size is in chunks and contains a 2 byte decompressed length after it, which
+	// should not be included when determining the end of the compressed range.
 	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
 	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
 
@@ -223,7 +225,8 @@ int MIFFile::Level::loadFLOR(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
+	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
 
 	// Write into 16-bit vector (in little-endian).
 	level.flor.resize(decomp.size() / 2);
@@ -298,7 +301,8 @@ int MIFFile::Level::loadMAP1(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
+	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
 
 	// Write into 16-bit vector (in little-endian).
 	level.map1.resize(decomp.size() / 2);
@@ -317,7 +321,8 @@ int MIFFile::Level::loadMAP2(MIFFile::Level &level, const uint8_t *tagStart)
 
 	// Decode the data with type 8 decompression.
 	const uint8_t *tagDataStart = tagStart + 8;
-	Compression::decodeType08(tagDataStart, tagDataStart + compressedSize, decomp);
+	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
+	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
 
 	// Write into 16-bit vector (in little-endian).
 	level.map2.resize(decomp.size() / 2);
