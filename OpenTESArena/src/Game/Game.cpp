@@ -43,29 +43,8 @@ Game::Game()
 	// default file before the "changes" file.
 	this->initOptions(this->basePath, this->optionsPath);
 
-	// Verify that GLOBAL.BSA (the most important Arena file) exists.
-	const bool arenaPathIsRelative = File::pathIsRelative(
-		this->options.getMisc_ArenaPath());
-	const std::string fullArenaPath = [this, arenaPathIsRelative]()
-	{
-		// Include the base path if the ArenaPath is relative.
-		const std::string path = (arenaPathIsRelative ? this->basePath : "") +
-			this->options.getMisc_ArenaPath();
-		return String::addTrailingSlashIfMissing(path);
-	}();
-
-	const std::string globalBsaPath = fullArenaPath + "GLOBAL.BSA";
-	DebugAssertMsg(File::exists(globalBsaPath),
-		"\"" + this->options.getMisc_ArenaPath() + "\" not a valid ARENA path.");
-
-	// Verify that the floppy version's executable exists. If not, it's probably the CD version,
-	// which is not currently supported.
-	const std::string exeName = "A.EXE";
-	const std::string exePath = fullArenaPath + exeName;
-	DebugAssertMsg(File::exists(exePath), exeName + " not found in \"" + fullArenaPath +
-		"\". The CD version is not supported. Please use the floppy version.");
-
 	// Initialize virtual file system using the Arena path in the options file.
+	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath());
 	VFS::Manager::get().initialize(std::string(
 		(arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath()));
 
@@ -86,8 +65,42 @@ Game::Game()
 	// Initialize the texture manager.
 	this->textureManager.init();
 
+	// Determine which version of the game the Arena path is pointing to.
+	const bool isFloppyVersion = [this, arenaPathIsRelative]()
+	{
+		// Path to the Arena folder.
+		const std::string fullArenaPath = [this, arenaPathIsRelative]()
+		{
+			// Include the base path if the ArenaPath is relative.
+			const std::string path = (arenaPathIsRelative ? this->basePath : "") +
+				this->options.getMisc_ArenaPath();
+			return String::addTrailingSlashIfMissing(path);
+		}();
+
+		// Check for the CD version first.
+		const std::string &acdExeName = ExeData::CD_VERSION_EXE_FILENAME;
+		const std::string acdExePath = fullArenaPath + acdExeName;
+		if (File::exists(acdExePath))
+		{
+			DebugMention("CD version.");
+			return false;
+		}
+
+		// If that's not there, check for the floppy disk version.
+		const std::string &aExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
+		const std::string aExePath = fullArenaPath + aExeName;
+		if (File::exists(aExePath))
+		{
+			DebugMention("Floppy disk version.");
+			return true;
+		}
+
+		// If neither exist, it's not a valid Arena directory.
+		throw DebugException("\"" + fullArenaPath + "\" does not have an Arena executable.");
+	}();
+
 	// Load various miscellaneous assets.
-	this->miscAssets.init();
+	this->miscAssets.init(isFloppyVersion);
 
 	// Load and set window icon.
 	const Surface icon = [this]()

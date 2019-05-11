@@ -133,10 +133,7 @@ private:
 
 	// Loads the executable associated with the current Arena data path (either A.EXE
 	// for the floppy version or ACD.EXE for the CD version).
-	void parseExecutableData();
-
-	// Load TEMPLATE.DAT, grouping blocks of text by their ID.
-	void parseTemplateDat();
+	void parseExecutableData(bool floppyVersion);
 
 	// Load QUESTION.TXT and separate each question by its number.
 	void parseQuestionTxt();
@@ -216,7 +213,7 @@ public:
 	// Gets the world map terrain used with climate and travel calculations.
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
-	void init();
+	void init(bool floppyVersion);
 };
 
 #endif

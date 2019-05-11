@@ -498,10 +498,8 @@ public:
 		void init(const char *data, const KeyValueMap &keyValueMap);
 	};
 private:
-	static const std::string FLOPPY_VERSION_EXE_FILENAME;
-	static const std::string FLOPPY_VERSION_MAP_FILENAME;
-	static const std::string CD_VERSION_EXE_FILENAME;
 	static const std::string CD_VERSION_MAP_FILENAME;
+	static const std::string FLOPPY_VERSION_MAP_FILENAME;
 	static const char PAIR_SEPARATOR;
 
 	// Gets the offset value from the given section and key.
@@ -525,6 +523,9 @@ private:
 
 	bool floppyVersion;
 public:
+	static const std::string CD_VERSION_EXE_FILENAME;
+	static const std::string FLOPPY_VERSION_EXE_FILENAME;
+
 	Calendar calendar;
 	CharacterClasses charClasses;
 	CharacterCreation charCreation;

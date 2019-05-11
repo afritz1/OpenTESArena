@@ -627,12 +627,12 @@ MiscAssets::MiscAssets()
 	// Initialized by init().
 }
 
-void MiscAssets::init()
+void MiscAssets::init(bool floppyVersion)
 {
 	DebugMention("Initializing.");
 
 	// Load the executable data.
-	this->parseExecutableData();
+	this->parseExecutableData(floppyVersion);
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
 	this->templateDat.init();
@@ -671,10 +671,8 @@ void MiscAssets::init()
 	this->worldMapTerrain.init();
 }
 
-void MiscAssets::parseExecutableData()
+void MiscAssets::parseExecutableData(bool floppyVersion)
 {
-	// For now, just read the floppy disk executable.
-	const bool floppyVersion = true;
 	this->exeData.init(floppyVersion);
 }
 
