@@ -667,6 +667,9 @@ void MiscAssets::init(bool floppyVersion)
 	// Read in the world map mask data from TAMRIEL.MNU.
 	this->parseWorldMapMasks();
 
+	// Read in the wilderness chunks to have them cached when exploring wilderness.
+	this->parseWildernessChunks();
+
 	// Read in the terrain map from TERRAIN.IMG.
 	this->worldMapTerrain.init();
 }
@@ -1259,6 +1262,25 @@ void MiscAssets::parseSpellMakerDescriptions()
 				state->str += line;
 			}
 		}
+	}
+}
+
+void MiscAssets::parseWildernessChunks()
+{
+	// The first four wilderness definitions are city blocks but they can be loaded anyway.
+	const size_t wildChunkCount = 70;
+	this->wildernessChunks.reserve(wildChunkCount);
+
+	for (size_t i = 0; i < wildChunkCount; i++)
+	{
+		std::stringstream ss;
+		ss << "WILD0";
+		ss << std::setw(2) << std::setfill('0');
+		ss << (i + 1);
+		ss << ".RMD";
+
+		RMDFile rmdFile(ss.str());
+		this->wildernessChunks.push_back(std::move(rmdFile));
 	}
 }
 

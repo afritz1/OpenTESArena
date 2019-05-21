@@ -9,6 +9,7 @@
 #include "ArenaTypes.h"
 #include "CityDataFile.h"
 #include "ExeData.h"
+#include "RMDFile.h"
 #include "WorldMapMask.h"
 #include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
@@ -128,6 +129,7 @@ private:
 	CityDataFile cityDataFile;
 	ArenaTypes::Spellsg standardSpells; // From SPELLSG.65.
 	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
+	std::vector<RMDFile> wildernessChunks; // WILD001 to WILD070.
 	std::array<WorldMapMask, 10> worldMapMasks;
 	WorldMapTerrain worldMapTerrain;
 
@@ -158,6 +160,9 @@ private:
 
 	// Loads SPELLMKR.TXT.
 	void parseSpellMakerDescriptions();
+
+	// Loads wilderness .RMD files.
+	void parseWildernessChunks();
 
 	// Reads the mask data from TAMRIEL.MNU.
 	void parseWorldMapMasks();
