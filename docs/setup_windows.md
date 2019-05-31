@@ -4,7 +4,7 @@ This document describes how to setup a build environment for building with Visua
 
 ## Setup build environment
 
-1. Install [Visual Studio Community 2017](https://www.visualstudio.com/downloads/) with the C++ for games workload
+1. Install [Visual Studio Community 2019](https://www.visualstudio.com/downloads/) with the C++ for games workload
 2. Install [cmake](https://cmake.org/download/) and [git](https://git-scm.com/download)
 
 ### Installing vcpkg
@@ -22,7 +22,7 @@ The easiest way to build the dependencies is with [vcpkg](https://github.com/Mic
 
 3. Install the dependencies:
   ```PowerShell
-  vcpkg install sdl2 openal-soft wildmidi
+  vcpkg install sdl2 openal-soft wildmidi --triplet x64-windows
   ```
 
 ## Building
