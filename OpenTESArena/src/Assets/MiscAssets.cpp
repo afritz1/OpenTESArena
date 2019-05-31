@@ -662,7 +662,7 @@ void MiscAssets::init(bool floppyVersion)
 	this->parseSpellMakerDescriptions();
 
 	// Read city data file.
-	this->cityDataFile.init("CITYDATA.00");
+	this->cityDataFile.init("CITYDATA.65");
 
 	// Read in the world map mask data from TAMRIEL.MNU.
 	this->parseWorldMapMasks();
