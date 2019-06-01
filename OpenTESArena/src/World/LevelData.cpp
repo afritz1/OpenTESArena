@@ -280,7 +280,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 							}
 							else
 							{
-								DebugWarning("Missing *DRYCHASM ID.");
+								DebugLogWarning("Missing *DRYCHASM ID.");
 								return 0;
 							}
 						}();
@@ -310,7 +310,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 							}
 							else
 							{
-								DebugWarning("Missing *LAVACHASM ID.");
+								DebugLogWarning("Missing *LAVACHASM ID.");
 								return 0;
 							}
 						}();
@@ -340,7 +340,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 							}
 							else
 							{
-								DebugWarning("Missing *WETCHASM ID.");
+								DebugLogWarning("Missing *WETCHASM ID.");
 								return 0;
 							}
 						}();
@@ -484,7 +484,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 								else
 								{
-									DebugWarning("Missing *BOXSIDE ID \"" +
+									DebugLogWarning("Missing *BOXSIDE ID \"" +
 										std::to_string(wallTextureID) + "\".");
 									return 0;
 								}
@@ -500,7 +500,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 								else
 								{
-									DebugWarning("Missing platform floor ID (" +
+									DebugLogWarning("Missing platform floor ID (" +
 										std::to_string(x) + ", " + std::to_string(z) + ").");
 									return 0;
 								}
@@ -515,7 +515,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 								}
 								else
 								{
-									DebugWarning("Missing *BOXCAP ID \"" +
+									DebugLogWarning("Missing *BOXCAP ID \"" +
 										std::to_string(capTextureID) + "\".");
 									return 0;
 								}
@@ -701,7 +701,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				else if (mostSigNibble == 0xC)
 				{
 					// Unknown.
-					DebugWarning("Voxel type 0xC not implemented.");
+					DebugLogWarning("Voxel type 0xC not implemented.");
 				}
 				else if (mostSigNibble == 0xD)
 				{

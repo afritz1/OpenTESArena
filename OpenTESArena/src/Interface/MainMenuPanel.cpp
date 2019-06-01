@@ -363,7 +363,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const int rmdTL = 5 + random.next(66);
 				const int rmdBR = 5 + random.next(66);
 				const int rmdBL = 5 + random.next(66);
-				DebugMention(std::string("Wilderness IDs:\n") +
+				DebugLog(std::string("Wilderness IDs:\n") +
 					"- Top right: " + std::to_string(rmdTR) + "\n" +
 					"- Top left: " + std::to_string(rmdTL) + "\n" +
 					"- Bottom right: " + std::to_string(rmdBR) + "\n" +

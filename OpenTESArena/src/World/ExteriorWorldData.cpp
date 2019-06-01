@@ -70,7 +70,7 @@ std::string ExteriorWorldData::generateCityInfName(ClimateType climateType, Weat
 			}
 			else
 			{
-				DebugWarning("Deserts do not have snow templates.");
+				DebugLogWarning("Deserts do not have snow templates.");
 				return "N";
 			}
 		}
@@ -129,7 +129,7 @@ std::string ExteriorWorldData::generateWildernessInfName(ClimateType climateType
 			}
 			else
 			{
-				DebugWarning("Deserts do not have snow templates.");
+				DebugLogWarning("Deserts do not have snow templates.");
 				return "N";
 			}
 		}

@@ -64,7 +64,7 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	}
 	else
 	{
-		DebugMention("No NAMES.DAT found in \"" + savesPath + "\".");
+		DebugLog("No NAMES.DAT found in \"" + savesPath + "\".");
 	}
 
 	this->confirmButton = []()

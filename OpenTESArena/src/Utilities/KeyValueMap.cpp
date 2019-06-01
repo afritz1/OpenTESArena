@@ -156,7 +156,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 			{
 				// If no active section map, print a warning and ignore the current pair.
 				// All key-value pairs must be in a section.
-				DebugWarning("Ignoring \"" + std::string(filteredLine) + "\" (line " +
+				DebugLogWarning("Ignoring \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + "), no active section in " + filename);
 			}
 		}

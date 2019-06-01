@@ -92,7 +92,7 @@ VoxelData::WallData::MenuType VoxelData::WallData::getMenuType(int menuID, bool 
 		}
 		else
 		{
-			DebugWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
+			DebugLogWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
 			return VoxelData::WallData::MenuType::None;
 		}
 	}
@@ -203,17 +203,17 @@ VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID,
 {
 	if (sideID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Wall side ID \"" + std::to_string(sideID) + "\" out of range.");
+		DebugLogWarning("Wall side ID \"" + std::to_string(sideID) + "\" out of range.");
 	}
 
 	if (floorID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Wall floor ID \"" + std::to_string(floorID) + "\" out of range.");
+		DebugLogWarning("Wall floor ID \"" + std::to_string(floorID) + "\" out of range.");
 	}
 
 	if (ceilingID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Wall ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
+		DebugLogWarning("Wall ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -245,7 +245,7 @@ VoxelData VoxelData::makeFloor(int id)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Floor ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Floor ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -261,7 +261,7 @@ VoxelData VoxelData::makeCeiling(int id)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Ceiling ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Ceiling ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -278,17 +278,17 @@ VoxelData VoxelData::makeRaised(int sideID, int floorID, int ceilingID, double y
 {
 	if (sideID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Raised side ID \"" + std::to_string(sideID) + "\" out of range.");
+		DebugLogWarning("Raised side ID \"" + std::to_string(sideID) + "\" out of range.");
 	}
 
 	if (floorID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Raised floor ID \"" + std::to_string(floorID) + "\" out of range.");
+		DebugLogWarning("Raised floor ID \"" + std::to_string(floorID) + "\" out of range.");
 	}
 
 	if (ceilingID >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Raised ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
+		DebugLogWarning("Raised ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -310,7 +310,7 @@ VoxelData VoxelData::makeDiagonal(int id, bool type1)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Diagonal ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Diagonal ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -327,7 +327,7 @@ VoxelData VoxelData::makeTransparentWall(int id, bool collider)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Transparent wall ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Transparent wall ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -344,7 +344,7 @@ VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, bool flippe
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Edge ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Edge ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -365,7 +365,7 @@ VoxelData VoxelData::makeChasm(int id, bool north, bool east, bool south, bool w
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Chasm ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Chasm ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;
@@ -386,7 +386,7 @@ VoxelData VoxelData::makeDoor(int id, DoorData::Type type)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
-		DebugWarning("Door ID \"" + std::to_string(id) + "\" out of range.");
+		DebugLogWarning("Door ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
 	VoxelData data;

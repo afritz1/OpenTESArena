@@ -29,7 +29,7 @@
 
 Game::Game()
 {
-	DebugMention("Initializing (Platform: " + Platform::getPlatform() + ").");
+	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
 
 	// Get the current working directory. This is most relevant for platforms
 	// like macOS, where the base path might be in the app's own "Resources" folder.
@@ -82,7 +82,7 @@ Game::Game()
 		const std::string acdExePath = fullArenaPath + acdExeName;
 		if (File::exists(acdExePath))
 		{
-			DebugMention("CD version.");
+			DebugLog("CD version.");
 			return false;
 		}
 
@@ -91,7 +91,7 @@ Game::Game()
 		const std::string aExePath = fullArenaPath + aExeName;
 		if (File::exists(aExePath))
 		{
-			DebugMention("Floppy disk version.");
+			DebugLog("Floppy disk version.");
 			return true;
 		}
 
@@ -241,7 +241,7 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 	{
 		// Make one. Since the default options object has no changes, the new file will have
 		// no key-value pairs.
-		DebugMention("Creating options file at \"" + changesOptionsPath + "\".");
+		DebugLog("Creating options file at \"" + changesOptionsPath + "\".");
 		this->options.saveChanges();
 	}
 	else
@@ -289,7 +289,7 @@ void Game::saveScreenshot(const Surface &surface)
 
 	if (status == 0)
 	{
-		DebugMention("Screenshot saved to \"" + screenshotPath + "\".");
+		DebugLog("Screenshot saved to \"" + screenshotPath + "\".");
 	}
 	else
 	{

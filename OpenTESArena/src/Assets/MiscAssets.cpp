@@ -629,7 +629,7 @@ MiscAssets::MiscAssets()
 
 void MiscAssets::init(bool floppyVersion)
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	// Load the executable data.
 	this->parseExecutableData(floppyVersion);

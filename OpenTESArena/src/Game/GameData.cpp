@@ -84,7 +84,7 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	// Make a copy of the global constant city data. This is the "instance" city data
 	// that can be assigned to.
@@ -128,7 +128,7 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 
 GameData::~GameData()
 {
-	DebugMention("Closing.");
+	DebugLog("Closing.");
 }
 
 std::string GameData::getDateString(const Date &date, const ExeData &exeData)

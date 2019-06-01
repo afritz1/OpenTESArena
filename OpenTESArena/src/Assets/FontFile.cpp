@@ -126,7 +126,7 @@ int FontFile::getWidth(char c) const
 	// a default character.
 	if ((c < 32) || (c > 127))
 	{
-		DebugWarning("Character value \"" + std::to_string(c) + 
+		DebugLogWarning("Character value \"" + std::to_string(c) + 
 			"\" out of range (must be ASCII 32-127).");
 		return this->characters.at(0).first;
 	}
@@ -146,7 +146,7 @@ uint32_t *FontFile::getPixels(char c) const
 	// a default character.
 	if ((c < 32) || (c > 127))
 	{
-		DebugWarning("Character value \"" + std::to_string(c) +
+		DebugLogWarning("Character value \"" + std::to_string(c) +
 			"\" out of range (must be ASCII 32-127).");
 		return this->characters.at(0).second.get();
 	}

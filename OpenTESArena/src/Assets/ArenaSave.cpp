@@ -44,7 +44,7 @@ namespace
 		}
 		else
 		{
-			DebugWarning("\"" + filename + "\" not found.");
+			DebugLogWarning("\"" + filename + "\" not found.");
 			return nullptr;
 		}
 	}
@@ -93,7 +93,7 @@ std::unique_ptr<ArenaTypes::Log> ArenaSave::loadLOG(const std::string &savePath,
 	}
 	else
 	{
-		DebugWarning("\"" + filename + "\" not found.");
+		DebugLogWarning("\"" + filename + "\" not found.");
 		return nullptr;
 	}
 }
@@ -147,7 +147,7 @@ std::unique_ptr<ArenaTypes::Spells> ArenaSave::loadSPELLS(const std::string &sav
 	}
 	else
 	{
-		DebugWarning("\"" + filename + "\" not found.");
+		DebugLogWarning("\"" + filename + "\" not found.");
 		return nullptr;
 	}
 }
@@ -175,7 +175,7 @@ std::unique_ptr<ArenaTypes::Spellsg> ArenaSave::loadSPELLSG(const std::string &s
 	}
 	else
 	{
-		DebugWarning("\"" + filename + "\" not found.");
+		DebugLogWarning("\"" + filename + "\" not found.");
 		return nullptr;
 	}
 }

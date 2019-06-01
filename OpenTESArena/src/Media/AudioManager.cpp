@@ -439,7 +439,7 @@ bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
 	int resamplingOption, const std::string &midiConfig)
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 #ifdef HAVE_WILDMIDI
 	WildMidiDevice::init(midiConfig);
@@ -449,19 +449,19 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	ALCdevice *device = alcOpenDevice(nullptr);
 	if (device == nullptr)
 	{
-		DebugWarning("alcOpenDevice() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcOpenDevice() error " + std::to_string(alGetError()) + ".");
 	}
 
 	ALCcontext *context = alcCreateContext(device, nullptr);
 	if (context == nullptr)
 	{
-		DebugWarning("alcCreateContext() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcCreateContext() error " + std::to_string(alGetError()) + ".");
 	}
 
 	const ALCboolean success = alcMakeContextCurrent(context);
 	if (success != AL_TRUE)
 	{
-		DebugWarning("alcMakeContextCurrent() error " + std::to_string(alGetError()) + ".");
+		DebugLogWarning("alcMakeContextCurrent() error " + std::to_string(alGetError()) + ".");
 	}
 
 	// Check for sound resampling extension.
@@ -479,7 +479,7 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 		const ALenum status = alGetError();
 		if (status != AL_NO_ERROR)
 		{
-			DebugWarning("alGenSources() error " + std::to_string(status) + ".");
+			DebugLogWarning("alGenSources() error " + std::to_string(status) + ".");
 		}
 
 		// Set resampling if the extension is supported.
@@ -505,7 +505,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 			mCurrentSong = MidiDevice::get().open(filename);
 		if (!mCurrentSong)
 		{
-			DebugWarning("Failed to play " + filename + ".");
+			DebugLogWarning("Failed to play " + filename + ".");
 			return;
 		}
 
@@ -514,11 +514,11 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
-			DebugMention("Playing music " + filename + ".");
+			DebugLog("Playing music " + filename + ".");
 		}
 		else
 		{
-			DebugWarning("Failed to init " + filename + " stream.");
+			DebugLogWarning("Failed to init " + filename + " stream.");
 		}
 	}
 }
@@ -551,7 +551,7 @@ void AudioManagerImpl::playSound(const std::string &filename)
 			const ALenum status = alGetError();
 			if (status != AL_NO_ERROR)
 			{
-				DebugWarning("alGenBuffers() error " + std::to_string(status) + ".");
+				DebugLogWarning("alGenBuffers() error " + std::to_string(status) + ".");
 			}
 
 			const std::vector<uint8_t> &audioData = voc.getAudioData();

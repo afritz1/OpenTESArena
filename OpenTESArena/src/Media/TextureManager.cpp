@@ -533,7 +533,7 @@ const std::vector<Texture> &TextureManager::getTextures(const std::string &filen
 
 void TextureManager::init()
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	// Load default palette.
 	this->setPalette(PaletteFile::fromName(PaletteName::Default));

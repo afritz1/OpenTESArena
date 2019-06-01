@@ -67,7 +67,7 @@ WildMidiDevice::WildMidiDevice(const std::string &midiConfig)
 	sInitState = WildMidi_Init(midiConfig.c_str(), 48000, WM_MO_ENHANCED_RESAMPLING);
 	if (sInitState < 0)
 	{
-		DebugWarning("Cannot play music. Invalid/missing WildMIDI config \"" + midiConfig + "\"");
+		DebugLogWarning("Cannot play music. Invalid/missing WildMIDI config \"" + midiConfig + "\"");
 	}
 	else
 	{
@@ -94,7 +94,7 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 	VFS::IStreamPtr stream = VFS::Manager::get().open(name);
 	if (stream == nullptr)
 	{
-		DebugWarning("Failed to open \"" + name + "\".");
+		DebugLogWarning("Failed to open \"" + name + "\".");
 		return MidiSongPtr(nullptr);
 	}
 

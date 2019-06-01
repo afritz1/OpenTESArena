@@ -1001,7 +1001,7 @@ const int *INFFile::getBoxSide(int index) const
 	}
 	else
 	{
-		DebugWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
+		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
 		return &this->boxSides.at(0).value();
 	}
 }
@@ -1044,7 +1044,7 @@ const std::string &INFFile::getSound(int index) const
 	}
 	else
 	{
-		DebugWarning("Invalid sound index \"" + std::to_string(index) + "\".");
+		DebugLogWarning("Invalid sound index \"" + std::to_string(index) + "\".");
 		return this->sounds.at(0);
 	}
 }

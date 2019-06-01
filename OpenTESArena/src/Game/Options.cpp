@@ -184,7 +184,7 @@ void Options::load(const std::string &filename,
 			}
 			else
 			{
-				DebugWarning("Key \"" + key + "\" not recognized in " + filename + ".");
+				DebugLogWarning("Key \"" + key + "\" not recognized in " + filename + ".");
 			}
 		}
 	}
@@ -583,14 +583,14 @@ void Options::checkMisc_StarDensity(int value) const
 
 void Options::loadDefaults(const std::string &filename)
 {
-	DebugMention("Reading defaults \"" + filename + "\".");
+	DebugLog("Reading defaults \"" + filename + "\".");
 
 	Options::load(filename, this->defaultMaps);
 }
 
 void Options::loadChanges(const std::string &filename)
 {
-	DebugMention("Reading changes \"" + filename + "\".");
+	DebugLog("Reading changes \"" + filename + "\".");
 
 	Options::load(filename, this->changedMaps);
 }
@@ -694,7 +694,7 @@ void Options::saveChanges()
 		tryWriteSection(Options::SECTION_INPUT, InputMappings);
 		tryWriteSection(Options::SECTION_MISC, MiscMappings);
 
-		DebugMention("Saved settings in \"" + filename + "\".");
+		DebugLog("Saved settings in \"" + filename + "\".");
 	}
 	else
 	{

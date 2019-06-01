@@ -12,7 +12,7 @@ namespace
 {
 	const std::unordered_map<Debug::MessageType, std::string> DebugMessageTypeNames =
 	{
-		{ Debug::MessageType::Info, "" },
+		{ Debug::MessageType::Status, "" },
 		{ Debug::MessageType::Warning, "Warning: " },
 		{ Debug::MessageType::Error, "Error: " },
 	};
@@ -48,15 +48,21 @@ void Debug::write(Debug::MessageType type, const std::string &filePath,
 		messageType << message << "\n";
 }
 
-void Debug::mention(const char *__file__, int lineNumber, const std::string &message)
+void Debug::log(const char *__file__, int lineNumber, const std::string &message)
 {
-	Debug::write(Debug::MessageType::Info, Debug::getShorterPath(__file__),
+	Debug::write(Debug::MessageType::Status, Debug::getShorterPath(__file__),
 		lineNumber, message);
 }
 
-void Debug::warning(const char *__file__, int lineNumber, const std::string &message)
+void Debug::logWarning(const char *__file__, int lineNumber, const std::string &message)
 {
 	Debug::write(Debug::MessageType::Warning, Debug::getShorterPath(__file__),
+		lineNumber, message);
+}
+
+void Debug::logError(const char *__file__, int lineNumber, const std::string &message)
+{
+	Debug::write(Debug::MessageType::Error, Debug::getShorterPath(__file__),
 		lineNumber, message);
 }
 
@@ -78,13 +84,4 @@ void Debug::crash(const char *__file__, int lineNumber, const std::string &messa
 	}
 
 	exit(EXIT_FAILURE);
-}
-
-void Debug::check(bool condition, const char *__file__, int lineNumber,
-	const std::string &message)
-{
-	if (!condition)
-	{
-		Debug::crash(__file__, lineNumber, message);
-	}
 }

@@ -39,7 +39,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-	DebugMention("Closing.");
+	DebugLog("Closing.");
 
 	SDL_DestroyWindow(this->window);
 
@@ -61,7 +61,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		DebugWarning("Could not set interpolation hint.");
+		DebugLogWarning("Could not set interpolation hint.");
 	}
 
 	// Set the size of the render texture to be the size of the whole screen
@@ -72,7 +72,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	// (such as with Linux), so we retry with software.
 	if (!nativeSurface)
 	{
-		DebugWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
+		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
 
 		SDL_DestroyRenderer(rendererContext);
 
@@ -302,7 +302,7 @@ SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
 
 void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	assert(width > 0);
 	assert(height > 0);
