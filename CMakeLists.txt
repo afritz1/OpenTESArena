@@ -7,6 +7,20 @@ ENDIF (COMMAND cmake_policy)
 PROJECT(OpenTESArena)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+include(CMakeDependentOption)
+
+cmake_dependent_option(USE_PACKAGE_MANAGER "Use VCPKG for managing packages" ON MSVC OFF)
+
+IF (USE_PACKAGE_MANAGER)
+    include(pmm)
+
+    # To update libs, update the commit hash with the latest commit found here: https://github.com/microsoft/vcpkg/commits/master
+    pmm(VCPKG
+        REVISION 046f8383efd70f57814faf1a8b7ef628c92ed959
+        REQUIRES sdl2 openal-soft wildmidi
+    )
+
+ENDIF(USE_PACKAGE_MANAGER)
 
 # Set global C++ standard for all targets.
 set(CMAKE_CXX_STANDARD 17)
