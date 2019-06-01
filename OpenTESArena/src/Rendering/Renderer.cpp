@@ -116,8 +116,7 @@ double Renderer::getLetterboxAspect() const
 	}
 	else
 	{
-		throw DebugException("Bad letterbox mode \"" +
-			std::to_string(this->letterboxMode) + "\".");
+		DebugUnhandledReturnMsg(double, std::to_string(this->letterboxMode));
 	}
 }
 

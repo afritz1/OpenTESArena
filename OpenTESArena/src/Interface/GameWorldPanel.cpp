@@ -1767,8 +1767,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						}
 						else
 						{
-							throw DebugException("Invalid hit facing \"" +
-								std::to_string(static_cast<int>(hit.facing)) + "\".");
+							DebugUnhandledReturnMsg(Int3,
+								std::to_string(static_cast<int>(hit.facing)));
 						}
 					}();
 

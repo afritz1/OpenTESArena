@@ -688,8 +688,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 							{
 								// I don't believe any doors in Arena split (but they are
 								// supported by the engine).
-								throw DebugException("Bad door type \"" +
-									std::to_string(type) + "\".");
+								DebugUnhandledReturnMsg(
+									VoxelData::DoorData::Type, std::to_string(type));
 							}
 						}();
 

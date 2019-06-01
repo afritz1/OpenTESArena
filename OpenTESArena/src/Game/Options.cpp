@@ -698,6 +698,7 @@ void Options::saveChanges()
 	}
 	else
 	{
+		// @todo: doesn't need to be an exception -- can be a warning/error instead.
 		throw DebugException("Could not save to \"" + filename + "\".");
 	}
 }

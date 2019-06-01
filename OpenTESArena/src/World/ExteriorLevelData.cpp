@@ -88,8 +88,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 					}
 					else
 					{
-						throw DebugException("Invalid local city ID \"" +
-							std::to_string(localCityID) + "\".");
+						DebugUnhandledReturnMsg(int, std::to_string(localCityID));
 					}
 				}();
 

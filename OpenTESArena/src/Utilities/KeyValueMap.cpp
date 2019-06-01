@@ -173,6 +173,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 {
 	const auto sectionIter = this->sectionMaps.find(section);
 
+	// @todo: redesign so it returns success instead of needing exceptions.
 	if (sectionIter == this->sectionMaps.end())
 	{
 		throw DebugException("Section \"" + section +

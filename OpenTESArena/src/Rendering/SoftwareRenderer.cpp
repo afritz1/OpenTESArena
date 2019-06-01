@@ -440,8 +440,8 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			}
 			else
 			{
-				throw DebugException("Invalid star type \"" +
-					std::to_string(static_cast<int>(starObject.getType())) + "\".");
+				DebugUnhandledReturnMsg(int,
+					std::to_string(static_cast<int>(starObject.getType())));
 			}
 		}();
 
@@ -1273,8 +1273,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				}
 				else
 				{
-					throw DebugException("Invalid moon type \"" +
-						std::to_string(static_cast<int>(type)) + "\".");
+					DebugUnhandledReturnMsg(Double3, std::to_string(static_cast<int>(type)));
 				}
 			}();
 
@@ -1764,8 +1763,7 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 	}
 	else
 	{
-		throw DebugException("Invalid render threads mode \"" +
-			std::to_string(mode) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(mode));
 	}
 }
 
@@ -2840,8 +2838,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 			}
 			else
 			{
-				throw DebugException("Invalid near facing \"" +
-					std::to_string(static_cast<int>(nearFacing)) + "\".");
+				DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(nearFacing)));
 			}
 		}();
 

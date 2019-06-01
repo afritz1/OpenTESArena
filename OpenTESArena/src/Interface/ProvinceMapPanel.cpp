@@ -196,14 +196,13 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 			}
 			else
 			{
-				throw DebugException("Bad special location type \"" +
-					std::to_string(static_cast<int>(specialCaseType)) + "\".");
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(specialCaseType)));
 			}
 		}
 		else
 		{
-			throw DebugException("Bad location data type \"" +
-				std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
+			DebugUnhandledReturnMsg(int,
+				std::to_string(static_cast<int>(currentLocation.dataType)));
 		}
 	}();
 

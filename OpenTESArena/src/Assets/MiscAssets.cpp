@@ -531,8 +531,7 @@ ClimateType MiscAssets::WorldMapTerrain::toClimateType(uint8_t index)
 	}
 	else
 	{
-		throw DebugException("Bad terrain index \"" +
-			std::to_string(static_cast<int>(index)) + "\".");
+		DebugUnhandledReturnMsg(ClimateType, std::to_string(static_cast<int>(index)));
 	}
 }
 
@@ -720,6 +719,8 @@ void MiscAssets::parseQuestionTxt()
 			}
 			else
 			{
+				// @todo: redesign error-handling via bools so we don't need exceptions
+				// for file correctness.
 				throw DebugException("Bad QUESTION.TXT class category.");
 			}
 		};
@@ -896,8 +897,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 			}
 			else
 			{
-				throw DebugException("Bad allowed armors value \"" +
-					std::to_string(value) + "\".");
+				DebugUnhandledReturnMsg(std::vector<ArmorMaterialType>, std::to_string(value));
 			}
 		}();
 

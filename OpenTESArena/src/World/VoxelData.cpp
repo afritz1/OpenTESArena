@@ -164,8 +164,7 @@ int VoxelData::DoorData::getOpenSoundIndex() const
 	}
 	else
 	{
-		throw DebugException("Invalid door type \"" +
-			std::to_string(static_cast<int>(this->type)) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
 	}
 }
 
@@ -185,8 +184,8 @@ VoxelData::DoorData::CloseSoundData VoxelData::DoorData::getCloseSoundData() con
 	}
 	else
 	{
-		throw DebugException("Invalid door type \"" +
-			std::to_string(static_cast<int>(this->type)) + "\".");
+		DebugUnhandledReturnMsg(VoxelData::DoorData::CloseSoundData,
+			std::to_string(static_cast<int>(this->type)));
 	}
 }
 

@@ -318,7 +318,7 @@ int DistantSky::getStarCountFromDensity(int starDensity)
 	}
 	else
 	{
-		throw DebugException("Invalid star density \"" + std::to_string(starDensity) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(starDensity));
 	}
 }
 
@@ -526,8 +526,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 				}
 				else
 				{
-					throw DebugException("Invalid moon type \"" +
-						std::to_string(static_cast<int>(type)) + "\".");
+					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
 				}
 			}();
 

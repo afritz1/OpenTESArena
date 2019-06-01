@@ -25,7 +25,7 @@ public:
 	// Uncompresses an RLE run of words. Used with .RMD files.
 	static void decodeRLEWords(const uint8_t *src, int stopCount,
 		std::vector<uint8_t> &out);
-	
+
 	// Works with .IMG and .CIF type 4 files.
 	template <typename T>
 	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
@@ -57,35 +57,22 @@ public:
 
 			if ((mask & 1))
 			{
-				if (src == srcend)
-				{
-					throw DebugException("Unexpected end of image.");
-				}
-
-				if (dst == out.end())
-				{
-					throw DebugException("Decoded image overflow.");
-				}
+				DebugAssertMsg(src != srcend, "Unexpected end of image.");
+				DebugAssertMsg(dst != out.end(), "Decoded image overflow.");
 
 				history[historypos++ & 0x0FFF] = *src;
 				*(dst++) = *(src++);
 			}
 			else
 			{
-				if (std::distance(src, srcend) < 2)
-				{
-					throw DebugException("Unexpected end of image.");
-				}
+				DebugAssertMsg(std::distance(src, srcend) >= 2, "Unexpected end of image.");
 
 				uint8_t byte1 = *(src++);
 				uint8_t byte2 = *(src++);
 				int tocopy = (byte2 & 0x0F) + 3;
 				int copypos = (((byte2 & 0xF0) << 4) | byte1) + 18;
 
-				if (std::distance(dst, out.end()) < tocopy)
-				{
-					throw DebugException("Decoded image overflow.");
-				}
+				DebugAssertMsg(std::distance(dst, out.end()) >= tocopy, "Decoded image overflow.");
 
 				for (int i = 0; i < tocopy; i++)
 				{

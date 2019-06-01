@@ -419,8 +419,7 @@ ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
 	}
 	else
 	{
-		throw DebugException("Bad resampling option \"" +
-			std::to_string(resamplingOption) + "\".");
+		DebugUnhandledReturnMsg(ALint, std::to_string(resamplingOption));
 	}
 }
 
