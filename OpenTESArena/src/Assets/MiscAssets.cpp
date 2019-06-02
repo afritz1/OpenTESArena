@@ -823,7 +823,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 		const uint8_t *srcPtr = srcData.data() + i;
 		const uint8_t value = *srcPtr;
 
-		CharacterClassGeneration::ClassData &classData = classes.at(i);
+		CharacterClassGeneration::ClassData &classData = classes[i];
 		classData.id = value & CharacterClassGeneration::ID_MASK;
 		classData.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
 		classData.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
@@ -838,7 +838,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 		const int choiceSize = 3;
 		const uint8_t *srcPtr = srcData.data() + classes.size() + (choiceSize * i);
 
-		CharacterClassGeneration::ChoiceData &choice = choices.at(i);
+		CharacterClassGeneration::ChoiceData &choice = choices[i];
 		choice.a = *srcPtr;
 		choice.b = *(srcPtr + 1);
 		choice.c = *(srcPtr + 2);
@@ -1330,7 +1330,7 @@ void MiscAssets::parseWorldMapMasks()
 		std::vector<uint8_t> maskData(maskStart, maskEnd);
 
 		// Assign the map mask onto the map masks list.
-		this->worldMapMasks.at(i) = WorldMapMask(std::move(maskData), rect);
+		this->worldMapMasks[i] = WorldMapMask(std::move(maskData), rect);
 
 		// Move to the next mask.
 		offset += byteCount;

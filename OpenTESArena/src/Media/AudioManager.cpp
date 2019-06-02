@@ -666,7 +666,7 @@ void AudioManagerImpl::update()
 	// If a sound source is done, reset it and return the ID to the free sources.
 	for (size_t i = 0; i < mUsedSources.size(); i++)
 	{
-		const ALuint source = mUsedSources.at(i).second;
+		const ALuint source = mUsedSources[i].second;
 
 		ALint state;
 		alGetSourcei(source, AL_SOURCE_STATE, &state);

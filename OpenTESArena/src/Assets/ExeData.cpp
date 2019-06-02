@@ -19,7 +19,7 @@ namespace
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			arr.at(i) = static_cast<T>(*(data + i));
+			arr[i] = static_cast<T>(*(data + i));
 		}
 	}
 
@@ -31,7 +31,7 @@ namespace
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			std::pair<T, T> &pair = arr.at(i);
+			std::pair<T, T> &pair = arr[i];
 			pair.first = static_cast<T>(*(data + (i * 2)));
 			pair.second = static_cast<T>(*(data + ((i * 2) + 1)));
 		}
@@ -77,7 +77,7 @@ namespace
 
 		for (size_t i = 0; i < arrs.size(); i++)
 		{
-			initInt8Array(arrs.at(i), data + (i * U));
+			initInt8Array(arrs[i], data + (i * U));
 		}
 	}
 
@@ -89,7 +89,7 @@ namespace
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			arr.at(i) = static_cast<T>(
+			arr[i] = static_cast<T>(
 				Bytes::getLE16(reinterpret_cast<const uint8_t*>(data + (i * 2))));
 		}
 	}
@@ -103,7 +103,7 @@ namespace
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			std::pair<T, T> &pair = arr.at(i);
+			std::pair<T, T> &pair = arr[i];
 			pair.first = static_cast<T>(Bytes::getLE16(ptr + (i * 4)));
 			pair.second = static_cast<T>(Bytes::getLE16(ptr + ((i * 4) + 2)));
 		}
@@ -117,7 +117,7 @@ namespace
 
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			arr.at(i) = static_cast<T>(
+			arr[i] = static_cast<T>(
 				Bytes::getLE32(reinterpret_cast<const uint8_t*>(data + (i * 4))));
 		}
 	}
@@ -141,7 +141,7 @@ namespace
 		// the index to put into the index array.
 		for (size_t i = 0; i < arr.size(); i++)
 		{
-			const T offset = arr.at(i);
+			const T offset = arr[i];
 			const int index = [uniqueBegin, uniqueEnd, offset]()
 			{
 				// If the offset is "null", return -1 (indicates no restrictions).
@@ -157,7 +157,7 @@ namespace
 				}
 			}();
 
-			indexArr.at(i) = index;
+			indexArr[i] = index;
 		}
 	}
 
@@ -520,7 +520,7 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < this->provinceNames.size(); i++)
 	{
-		this->provinceNames.at(i) = ExeData::readString(data + provinceNamesOffset + (i * 98));
+		this->provinceNames[i] = ExeData::readString(data + provinceNamesOffset + (i * 98));
 	}
 
 	initStringArray(this->charCreationProvinceNames, data + charCreationProvinceNamesOffset);

@@ -248,7 +248,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		const Double3 &color = skyPalette.at(index);
 		const Double3 &nextColor = skyPalette.at(nextIndex);
 
-		this->skyColors.at(i) = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
+		this->skyColors[i] = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
 	}
 
 	// The sun rises in the west (-Z) and sets in the east (+Z).
@@ -937,7 +937,7 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 		DebugAssert(startY >= 0);
 		DebugAssert(endY <= height);
 
-		this->renderThreads.at(i) = std::thread(SoftwareRenderer::renderThreadLoop,
+		this->renderThreads[i] = std::thread(SoftwareRenderer::renderThreadLoop,
 			std::ref(this->threadData), threadIndex, startX, endX, startY, endY);
 	}
 }

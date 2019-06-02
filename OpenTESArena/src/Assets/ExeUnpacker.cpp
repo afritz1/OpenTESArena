@@ -17,12 +17,12 @@ namespace
 	struct BitVector
 	{
 		std::array<bool, 9> bits;
-		int bitsUsed;
+		int count;
 
 		BitVector()
 		{
 			this->bits.fill(false);
-			this->bitsUsed = 0;
+			this->count = 0;
 		}
 	};
 
@@ -53,7 +53,7 @@ namespace
 			// Walk the tree, creating new nodes as necessary. Internal nodes have null values.
 			for (size_t i = 0; i < bits.size(); i++)
 			{
-				const bool bit = bits.at(i);
+				const bool bit = bits[i];
 
 				// Decide which branch to use.
 				if (bit)
@@ -95,7 +95,7 @@ namespace
 			const BitTree::Node *right = this->root.right.get();
 
 			// Walk the tree.
-			for (int i = 0; i < bitVector.bitsUsed; i++)
+			for (int i = 0; i < bitVector.count; i++)
 			{
 				const bool bit = bitVector.bits.at(i);
 
@@ -220,19 +220,19 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	for (int i = 0; i < 11; i++)
 	{
-		bitTree1.insert(Duplication1.at(i), i + 2);
+		bitTree1.insert(Duplication1[i], i + 2);
 	}
 
-	bitTree1.insert(Duplication1.at(11), 13);
+	bitTree1.insert(Duplication1[11], 13);
 
 	for (int i = 12; i < Duplication1.size(); i++)
 	{
-		bitTree1.insert(Duplication1.at(i), i + 1);
+		bitTree1.insert(Duplication1[i], i + 1);
 	}
 
 	for (int i = 0; i < Duplication2.size(); i++)
 	{
-		bitTree2.insert(Duplication2.at(i), i);
+		bitTree2.insert(Duplication2[i], i);
 	}
 
 	// Beginning and end of compressed data in the executable.
@@ -311,8 +311,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			// Read bits until they match a bit tree leaf.
 			while (copyPtr == nullptr)
 			{
-				copyBits.bits.at(copyBits.bitsUsed) = getNextBit();
-				copyBits.bitsUsed++;
+				copyBits.bits.at(copyBits.count) = getNextBit();
+				copyBits.count++;
 				copyPtr = bitTree1.get(copyBits);
 			}
 
@@ -323,7 +323,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			auto matchesSpecialCase = [](const BitVector &bitVector)
 			{
 				const std::vector<bool> &specialCase = Duplication1.at(11);
-				const bool equalSize = bitVector.bitsUsed == specialCase.size();
+				const bool equalSize = bitVector.count == specialCase.size();
 
 				if (!equalSize)
 				{
@@ -331,7 +331,7 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 				}
 				else
 				{
-					for (int i = 0; i < bitVector.bitsUsed; i++)
+					for (int i = 0; i < bitVector.count; i++)
 					{
 						if (bitVector.bits.at(i) != specialCase.at(i))
 						{
@@ -384,8 +384,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 				// Read bits until they match a bit tree leaf.
 				while (offsetPtr == nullptr)
 				{
-					offsetBits.bits.at(offsetBits.bitsUsed) = getNextBit();
-					offsetBits.bitsUsed++;
+					offsetBits.bits.at(offsetBits.count) = getNextBit();
+					offsetBits.count++;
 					offsetPtr = bitTree2.get(offsetBits);
 				}
 

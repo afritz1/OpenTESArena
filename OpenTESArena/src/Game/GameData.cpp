@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <tuple>
 
 #include "SDL.h"
 
@@ -754,7 +755,10 @@ void GameData::updateWeather(const ExeData &exeData)
 
 	for (size_t i = 0; i < this->weathers.size(); i++)
 	{
-		const int climateIndex = exeData.locations.climates.at(i);
+		static_assert(std::tuple_size<decltype(exeData.locations.climates)>::value ==
+			std::tuple_size<decltype(this->weathers)>::value);
+		
+		const int climateIndex = exeData.locations.climates[i];
 		const int variantIndex = [this]()
 		{
 			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
@@ -783,7 +787,7 @@ void GameData::updateWeather(const ExeData &exeData)
 		}();
 
 		const int weatherTableIndex = (climateIndex * 20) + (seasonIndex * 5) + variantIndex;
-		this->weathers.at(i) = static_cast<WeatherType>(
+		this->weathers[i] = static_cast<WeatherType>(
 			exeData.locations.weatherTable.at(weatherTableIndex));
 	}
 }

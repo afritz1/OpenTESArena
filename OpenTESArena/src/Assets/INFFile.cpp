@@ -709,7 +709,7 @@ INFFile::INFFile(const std::string &filename)
 					const char LIGHT_MODIFIER = 'S';
 					const char Y_OFFSET_MODIFIER = 'Y';
 
-					const std::string_view modifierStr = tokens.at(i);
+					const std::string_view modifierStr = tokens[i];
 					const char modifierType = std::toupper(modifierStr.at(0));
 
 					// The modifier value comes after the modifier separator.

@@ -563,7 +563,7 @@ void CityDataFile::init(const std::string &filename)
 	// Iterate over each province and initialize the location data.
 	for (size_t i = 0; i < this->provinces.size(); i++)
 	{
-		auto &province = this->provinces.at(i);
+		auto &province = this->provinces[i];
 
 		// Size of each province definition in bytes.
 		const size_t provinceDataSize = 1228;

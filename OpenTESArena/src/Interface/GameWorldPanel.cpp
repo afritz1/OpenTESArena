@@ -517,7 +517,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 		// See which arrow cursor region the native mouse is in.
 		for (int i = 0; i < this->nativeCursorRegions.size(); i++)
 		{
-			if (this->nativeCursorRegions.at(i).contains(mousePosition))
+			if (this->nativeCursorRegions[i].contains(mousePosition))
 			{
 				const auto &texture = textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors), renderer).at(i);
