@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "CinematicPanel.h"

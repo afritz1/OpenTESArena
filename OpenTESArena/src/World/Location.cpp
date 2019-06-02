@@ -48,7 +48,7 @@ Location Location::makeFromLocationID(int locationID, int provinceID)
 	}
 	else
 	{
-		throw DebugException("Bad location ID \"" + std::to_string(locationID) + "\".");
+		DebugUnhandledReturnMsg(Location, std::to_string(locationID));
 	}
 }
 
@@ -62,9 +62,13 @@ LocationType Location::getCityType(int localCityID)
 	{
 		return LocationType::Town;
 	}
-	else
+	else if (localCityID < 32)
 	{
 		return LocationType::Village;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(LocationType, std::to_string(localCityID));
 	}
 }
 
@@ -192,14 +196,13 @@ double Location::getLatitude(const CityDataFile &cityData) const
 				}
 				else
 				{
-					throw DebugException("Bad special case type \"" +
-						std::to_string(static_cast<int>(this->specialCaseType)) + "\".");
+					DebugUnhandledReturnMsg(int,
+						std::to_string(static_cast<int>(this->specialCaseType)));
 				}
 			}
 			else
 			{
-				throw DebugException("Bad location data type \"" +
-					std::to_string(static_cast<int>(this->dataType)) + "\".");
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->dataType)));
 			}
 		}();
 

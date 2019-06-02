@@ -1,13 +1,12 @@
-#include <cassert>
 #include <sstream>
 #include <string_view>
 #include <vector>
 
+#include "Debug.h"
+#include "File.h"
 #include "KeyValueMap.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/File.h"
-#include "../Utilities/String.h"
-#include "../Utilities/StringView.h"
+#include "String.h"
+#include "StringView.h"
 
 namespace
 {
@@ -156,7 +155,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 			{
 				// If no active section map, print a warning and ignore the current pair.
 				// All key-value pairs must be in a section.
-				DebugWarning("Ignoring \"" + std::string(filteredLine) + "\" (line " +
+				DebugLogWarning("Ignoring \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + "), no active section in " + filename);
 			}
 		}
@@ -173,6 +172,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 {
 	const auto sectionIter = this->sectionMaps.find(section);
 
+	// @todo: redesign so it returns success instead of needing exceptions.
 	if (sectionIter == this->sectionMaps.end())
 	{
 		throw DebugException("Section \"" + section +

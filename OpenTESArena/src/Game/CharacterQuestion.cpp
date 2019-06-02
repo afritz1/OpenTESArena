@@ -1,7 +1,6 @@
-#include <cassert>
-
 #include "CharacterQuestion.h"
 #include "../Entities/CharacterClassCategoryName.h"
+#include "../Utilities/Debug.h"
 
 CharacterQuestion::CharacterQuestion(const std::string &description,
 	const std::pair<std::string, CharacterClassCategoryName> &a,
@@ -10,9 +9,9 @@ CharacterQuestion::CharacterQuestion(const std::string &description,
 	: description(description), a(a), b(b), c(c)
 {
 	// Make sure none of the class categories match.
-	assert(a.second != b.second);
-	assert(a.second != c.second);
-	assert(b.second != c.second);
+	DebugAssert(a.second != b.second);
+	DebugAssert(a.second != c.second);
+	DebugAssert(b.second != c.second);
 }
 
 const std::string &CharacterQuestion::getDescription() const

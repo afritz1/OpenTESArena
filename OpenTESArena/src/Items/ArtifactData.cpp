@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ArtifactData.h"
 
 ArtifactData::ArtifactData(const std::string &displayName, const std::string &flavorText, 

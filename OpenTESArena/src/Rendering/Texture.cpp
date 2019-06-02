@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "Texture.h"
@@ -17,7 +15,7 @@ Texture::Texture()
 
 Texture::Texture(SDL_Texture *texture)
 {
-	assert(texture != nullptr);
+	DebugAssert(texture != nullptr);
 	this->texture = texture;
 }
 
@@ -54,8 +52,8 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 	if (type == Texture::PatternType::Parchment)
 	{
 		// Minimum dimensions of parchment pop-up.
-		assert(width >= 40);
-		assert(height >= 40);
+		DebugAssert(width >= 40);
+		DebugAssert(height >= 40);
 
 		// Get the nine parchment tiles.
 		const auto &tiles = textureManager.getSurfaces(
@@ -175,8 +173,8 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 	else if (type == Texture::PatternType::Dark)
 	{
 		// Minimum dimensions of dark pop-up.
-		assert(width >= 4);
-		assert(height >= 4);
+		DebugAssert(width >= 4);
+		DebugAssert(height >= 4);
 
 		// Get all the colors used with the dark pop-up.
 		const uint32_t fillColor = SDL_MapRGBA(surface.get()->format, 28, 24, 36, 255);
@@ -220,8 +218,8 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 	else if (type == Texture::PatternType::Custom1)
 	{
 		// Minimum dimensions of light-gray pattern.
-		assert(width >= 3);
-		assert(height >= 3);
+		DebugAssert(width >= 3);
+		DebugAssert(height >= 3);
 
 		const uint32_t fillColor = SDL_MapRGBA(surface.get()->format, 85, 85, 97, 255);
 		const uint32_t lightBorder = SDL_MapRGBA(surface.get()->format, 125, 125, 145, 255);
@@ -259,7 +257,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 
 int Texture::getWidth() const
 {
-	assert(this->texture != nullptr);
+	DebugAssert(this->texture != nullptr);
 
 	int width;
 	SDL_QueryTexture(this->texture, nullptr, nullptr, &width, nullptr);
@@ -269,7 +267,7 @@ int Texture::getWidth() const
 
 int Texture::getHeight() const
 {
-	assert(this->texture != nullptr);
+	DebugAssert(this->texture != nullptr);
 
 	int height;
 	SDL_QueryTexture(this->texture, nullptr, nullptr, nullptr, &height);

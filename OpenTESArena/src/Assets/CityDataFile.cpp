@@ -64,8 +64,8 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 	}
 	else
 	{
-		throw DebugException("Bad location ID \"" +
-			std::to_string(locationID) + "\".");
+		// @todo: change function return so we can use DebugUnhandledReturn().
+		throw DebugException("Bad location ID \"" + std::to_string(locationID) + "\".");
 	}
 }
 
@@ -201,8 +201,8 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 							}
 							else
 							{
-								throw DebugException("Invalid location type \"" +
-									std::to_string(static_cast<int>(locationType)) + "\".");
+								DebugUnhandledReturnMsg(int,
+									std::to_string(static_cast<int>(locationType)));
 							}
 						}
 						else
@@ -222,8 +222,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 			}
 			else
 			{
-				throw DebugException("Bad menu type \"" +
-					std::to_string(static_cast<int>(menuType)) + "\".");
+				DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(menuType)));
 			}
 		}();
 
@@ -286,8 +285,7 @@ int CityDataFile::getCityDimensions(LocationType locationType)
 	}
 	else
 	{
-		throw DebugException("Bad location type \"" +
-			std::to_string(static_cast<int>(locationType)) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
 	}
 }
 
@@ -312,8 +310,7 @@ int CityDataFile::getCityTemplateNameIndex(LocationType locationType, bool isCoa
 	}
 	else
 	{
-		throw DebugException("Bad location type \"" +
-			std::to_string(static_cast<int>(locationType)) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
 	}
 }
 
@@ -334,8 +331,7 @@ int CityDataFile::getCityStartingPositionIndex(LocationType locationType,
 	}
 	else
 	{
-		throw DebugException("Bad location type \"" +
-			std::to_string(static_cast<int>(locationType)) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
 	}
 }
 
@@ -567,7 +563,7 @@ void CityDataFile::init(const std::string &filename)
 	// Iterate over each province and initialize the location data.
 	for (size_t i = 0; i < this->provinces.size(); i++)
 	{
-		auto &province = this->provinces.at(i);
+		auto &province = this->provinces[i];
 
 		// Size of each province definition in bytes.
 		const size_t provinceDataSize = 1228;

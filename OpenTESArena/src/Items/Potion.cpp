@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ConsumableType.h"
 #include "Potion.h"
 

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <unordered_map>
 
 #include "WeaponAnimation.h"
@@ -103,8 +102,8 @@ double WeaponAnimation::getTimePerFrame() const
 		// The ranged animation should never be in a sheathing or unsheathing state
 		// because both are instant (technically their times would be 0.0, but it's
 		// implemented differently -- see setState()).
-		assert(this->state != WeaponAnimation::State::Unsheathing);
-		assert(this->state != WeaponAnimation::State::Sheathing);
+		DebugAssert(this->state != WeaponAnimation::State::Unsheathing);
+		DebugAssert(this->state != WeaponAnimation::State::Sheathing);
 
 		return WeaponAnimation::DEFAULT_TIME_PER_FRAME *
 			((this->state == WeaponAnimation::State::Firing) ? 7.0 : 1.0);
@@ -156,7 +155,7 @@ const std::string &WeaponAnimation::getAnimationFilename() const
 int WeaponAnimation::getFrameIndex() const
 {
 	// The sheathe animation's frame index should not be used.
-	assert(!this->isSheathed());
+	DebugAssert(!this->isSheathed());
 
 	const std::vector<int> &indices = this->getCurrentRange();
 	return indices.at(this->rangeIndex);
@@ -177,13 +176,13 @@ void WeaponAnimation::setState(WeaponAnimation::State state)
 			WeaponAnimation::State::Sheathing
 		};
 
-		assert(std::find(AllowedRangedStates.begin(),
+		DebugAssert(std::find(AllowedRangedStates.begin(),
 			AllowedRangedStates.end(), state) != AllowedRangedStates.end());
 	}
 	else
 	{
 		// Melee weapons cannot use the firing state.
-		assert(state != WeaponAnimation::State::Firing);
+		DebugAssert(state != WeaponAnimation::State::Firing);
 	}	
 
 	// Switch to the beginning of the new range of indices. The combination of

@@ -126,8 +126,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	}
 	else
 	{
-		throw DebugException("Invalid voxel data type \"" +
-			std::to_string(static_cast<int>(voxelDataType)) + "\".");
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelDataType)));
 	}
 }
 
@@ -287,8 +286,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	}
 	else
 	{
-		throw DebugException("Invalid voxel data type \"" +
-			std::to_string(static_cast<int>(voxelDataType)) + "\".");
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelDataType)));
 	}
 }
 

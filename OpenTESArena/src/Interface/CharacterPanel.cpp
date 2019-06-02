@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "CharacterEquipmentPanel.h"
@@ -28,6 +26,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
 
 CharacterPanel::CharacterPanel(Game &game)
 	: Panel(game)
@@ -161,7 +160,7 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 
 void CharacterPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();

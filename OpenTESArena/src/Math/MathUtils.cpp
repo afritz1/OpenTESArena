@@ -1,8 +1,8 @@
-#include <cassert>
 #include <cmath>
 
 #include "Constants.h"
 #include "MathUtils.h"
+#include "../Utilities/Debug.h"
 
 double MathUtils::fullAtan2(double y, double x)
 {
@@ -17,9 +17,9 @@ double MathUtils::verticalFovToZoom(double fovY)
 
 double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
 {
-	assert(fovY > 0.0);
-	assert(fovY < 180.0);
-	assert(aspectRatio > 0.0);
+	DebugAssert(fovY > 0.0);
+	DebugAssert(fovY < 180.0);
+	DebugAssert(aspectRatio > 0.0);
 
 	const double halfDim = aspectRatio * std::tan((fovY * 0.50) * Constants::DegToRad);
 	return (2.0 * std::atan(halfDim)) * Constants::RadToDeg;

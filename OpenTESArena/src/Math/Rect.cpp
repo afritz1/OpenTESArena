@@ -1,11 +1,10 @@
-#include <cassert>
-
 #include "Rect.h"
+#include "../Utilities/Debug.h"
 
 Rect::Rect(int x, int y, int width, int height)
 {
-	assert(width >= 0);
-	assert(height >= 0);
+	DebugAssert(width >= 0);
+	DebugAssert(height >= 0);
 
 	this->rect = SDL_Rect();
 	this->rect.x = x;

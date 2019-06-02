@@ -94,12 +94,13 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 		else if (alignment == TextAlignment::Center)
 		{
 			const std::vector<int> &lineWidths = richText.getLineWidths();
+			DebugAssert(lineWidths.size() == surfaceLists.size());
 
 			int yOffset = 0;
 			for (size_t i = 0; i < surfaceLists.size(); i++)
 			{
-				const auto &charSurfaces = surfaceLists.at(i);
-				const int lineWidth = lineWidths.at(i);
+				const auto &charSurfaces = surfaceLists[i];
+				const int lineWidth = lineWidths[i];
 				const int xStart = (dimensions.x / 2) - (lineWidth / 2);
 
 				int xOffset = 0;

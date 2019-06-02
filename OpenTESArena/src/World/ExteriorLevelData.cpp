@@ -88,8 +88,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 					}
 					else
 					{
-						throw DebugException("Invalid local city ID \"" +
-							std::to_string(localCityID) + "\".");
+						DebugUnhandledReturnMsg(int, std::to_string(localCityID));
 					}
 				}();
 
@@ -447,7 +446,7 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 	else
 	{
 		// The search did not find any palace graphics block.
-		DebugWarning("No palace graphics found to revise.");
+		DebugLogWarning("No palace graphics found to revise.");
 	}
 }
 

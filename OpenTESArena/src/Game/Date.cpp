@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "Date.h"
 #include "../Utilities/Debug.h"
 
@@ -11,11 +9,11 @@ const int Date::DAYS_PER_WEEK = 7;
 Date::Date(int year, int month, int day)
 {
 	// Make sure each value is in a valid range.
-	assert(year >= 1);
-	assert(month >= 0);
-	assert(month < Date::MONTHS_PER_YEAR);
-	assert(day >= 0);
-	assert(day < Date::DAYS_PER_MONTH);
+	DebugAssert(year >= 1);
+	DebugAssert(month >= 0);
+	DebugAssert(month < Date::MONTHS_PER_YEAR);
+	DebugAssert(day >= 0);
+	DebugAssert(day < Date::DAYS_PER_MONTH);
 
 	this->year = year;
 	this->month = month;

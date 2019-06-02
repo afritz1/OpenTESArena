@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include "SDL.h"
@@ -39,7 +38,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-	DebugMention("Closing.");
+	DebugLog("Closing.");
 
 	SDL_DestroyWindow(this->window);
 
@@ -61,7 +60,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		DebugWarning("Could not set interpolation hint.");
+		DebugLogWarning("Could not set interpolation hint.");
 	}
 
 	// Set the size of the render texture to be the size of the whole screen
@@ -72,7 +71,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	// (such as with Linux), so we retry with software.
 	if (!nativeSurface)
 	{
-		DebugWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
+		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
 
 		SDL_DestroyRenderer(rendererContext);
 
@@ -116,8 +115,7 @@ double Renderer::getLetterboxAspect() const
 	}
 	else
 	{
-		throw DebugException("Bad letterbox mode \"" +
-			std::to_string(this->letterboxMode) + "\".");
+		DebugUnhandledReturnMsg(double, std::to_string(this->letterboxMode));
 	}
 }
 
@@ -302,10 +300,10 @@ SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
 
 void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
-	assert(width > 0);
-	assert(height > 0);
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
 
 	this->letterboxMode = letterboxMode;
 
@@ -470,94 +468,94 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 
 void Renderer::setRenderThreadsMode(int mode)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setRenderThreadsMode(mode);
 }
 
 void Renderer::addFlat(int id, const Double3 &position, double width, 
 	double height, int textureID)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.addFlat(id, position, width, height, textureID);
 }
 
 void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.addLight(id, point, color, intensity);
 }
 
 void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
 	const double *height, const int *textureID, const bool *flipped)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.updateFlat(id, position, width, height, textureID, flipped);
 }
 
 void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
 	const double *intensity)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.updateLight(id, point, color, intensity);
 }
 
 void Renderer::setFogDistance(double fogDistance)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setFogDistance(fogDistance);
 }
 
 void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setVoxelTexture(id, srcTexels);
 }
 
 void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setFlatTexture(id, srcTexels, width, height);
 }
 
 void Renderer::setDistantSky(const DistantSky &distantSky)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setDistantSky(distantSky);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setSkyPalette(colors, count);
 }
 
 void Renderer::setNightLightsActive(bool active)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setNightLightsActive(active);
 }
 
 void Renderer::removeFlat(int id)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.removeFlat(id);
 }
 
 void Renderer::removeLight(int id)
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.removeLight(id);
 }
 
 void Renderer::clearTextures()
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.clearTextures();
 }
 
 void Renderer::clearDistantSky()
 {
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.clearDistantSky();
 }
 
@@ -643,7 +641,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
-	assert(this->softwareRenderer.isInited());
+	DebugAssert(this->softwareRenderer.isInited());
 	
 	// Lock the game world texture and give the pixel pointer to the software renderer.
 	// - Supposedly this is faster than SDL_UpdateTexture(). In any case, there's one
@@ -672,7 +670,7 @@ void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
 	const Int2 &mousePosition, double scale)
 {
 	// The caller should check for any null textures.
-	assert(cursor != nullptr);
+	DebugAssert(cursor != nullptr);
 
 	int cursorWidth, cursorHeight;
 	SDL_QueryTexture(cursor, nullptr, nullptr, &cursorWidth, &cursorHeight);

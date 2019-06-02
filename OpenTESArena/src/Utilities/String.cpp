@@ -11,7 +11,7 @@ bool String::caseInsensitiveEquals(const std::string &a, const std::string &b)
 
 	for (size_t i = 0; i < a.size(); i++)
 	{
-		if (std::tolower(a.at(i)) != std::tolower(b.at(i)))
+		if (std::tolower(a[i]) != std::tolower(b[i]))
 		{
 			return false;
 		}
@@ -165,7 +165,7 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 
 	for (int i = 0; i < newStr.size(); i++, currentLineLength++)
 	{
-		if (newStr.at(i) == ' ')
+		if (newStr[i] == ' ')
 		{
 			mostRecentSpace = i;
 		}
@@ -179,7 +179,7 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 			}
 			else
 			{
-				newStr.at(mostRecentSpace) = '\n';
+				newStr[mostRecentSpace] = '\n';
 				mostRecentSpace = NO_SPACE;
 			}
 			

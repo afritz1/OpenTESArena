@@ -1,5 +1,4 @@
 #include <array>
-#include <cassert>
 
 #include "ItemType.h"
 #include "Metal.h"
@@ -146,7 +145,7 @@ Weapon::Weapon(int weaponID, MetalType metalType,
 	: Item(artifactData), Metallic(metalType)
 {
 	// Fists are not allowed.
-	assert(weaponID != -1);
+	DebugAssert(weaponID != -1);
 
 	this->weaponID = weaponID;
 	this->weaponName = exeData.equipment.weaponNames.at(weaponID);

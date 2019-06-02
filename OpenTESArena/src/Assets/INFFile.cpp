@@ -709,7 +709,7 @@ INFFile::INFFile(const std::string &filename)
 					const char LIGHT_MODIFIER = 'S';
 					const char Y_OFFSET_MODIFIER = 'Y';
 
-					const std::string_view modifierStr = tokens.at(i);
+					const std::string_view modifierStr = tokens[i];
 					const char modifierType = std::toupper(modifierStr.at(0));
 
 					// The modifier value comes after the modifier separator.
@@ -1001,7 +1001,7 @@ const int *INFFile::getBoxSide(int index) const
 	}
 	else
 	{
-		DebugWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
+		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
 		return &this->boxSides.at(0).value();
 	}
 }
@@ -1044,7 +1044,7 @@ const std::string &INFFile::getSound(int index) const
 	}
 	else
 	{
-		DebugWarning("Invalid sound index \"" + std::to_string(index) + "\".");
+		DebugLogWarning("Invalid sound index \"" + std::to_string(index) + "\".");
 		return this->sounds.at(0);
 	}
 }

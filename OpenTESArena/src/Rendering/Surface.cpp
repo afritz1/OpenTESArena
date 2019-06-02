@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "Surface.h"
@@ -12,7 +10,7 @@ Surface::Surface()
 
 Surface::Surface(SDL_Surface *surface)
 {
-	assert(surface != nullptr);
+	DebugAssert(surface != nullptr);
 	this->surface = surface;
 }
 

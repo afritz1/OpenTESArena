@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "PortraitFile.h"

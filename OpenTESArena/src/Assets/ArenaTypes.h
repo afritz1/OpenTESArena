@@ -406,7 +406,7 @@ public:
 		{
 			for (size_t i = 0; i < arr.size(); i++)
 			{
-				arr.at(i).init(data + (SpellData::SIZE * i));
+				arr[i].init(data + (SpellData::SIZE * i));
 			}
 		}
 	};

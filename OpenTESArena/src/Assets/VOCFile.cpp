@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cstdint>
 
 #include "VOCFile.h"
@@ -90,7 +89,7 @@ VOCFile::VOCFile(const std::string &filename)
 			const int sampleRate = 1000000 / (256 - frequencyDivisor);
 
 			// The codec must be 0 (8-bit unsigned PCM).
-			assert(pcmCodec == 0);
+			DebugAssert(pcmCodec == 0);
 
 			// Assign the sample rate if it hasn't been assigned yet.
 			if (this->sampleRate == 0)
@@ -100,7 +99,7 @@ VOCFile::VOCFile(const std::string &filename)
 			else
 			{
 				// Any subsequent sample rates must match.
-				assert(this->sampleRate == sampleRate);
+				DebugAssert(this->sampleRate == sampleRate);
 			}
 			
 			// Append the PCM data to the target vector depending on whether it's in
@@ -123,7 +122,7 @@ VOCFile::VOCFile(const std::string &filename)
 			repeating = true;
 
 			// Don't handle the 0xFFFF special case (no .VOC repeats indefinitely in Arena).
-			assert(repeatCount != 0xFFFF);
+			DebugAssert(repeatCount != 0xFFFF);
 #endif
 		}
 		else if (blockType == BlockType::RepeatEnd)

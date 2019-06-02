@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cctype>
 #include <numeric>
 #include <sstream>
@@ -531,8 +530,7 @@ ClimateType MiscAssets::WorldMapTerrain::toClimateType(uint8_t index)
 	}
 	else
 	{
-		throw DebugException("Bad terrain index \"" +
-			std::to_string(static_cast<int>(index)) + "\".");
+		DebugUnhandledReturnMsg(ClimateType, std::to_string(static_cast<int>(index)));
 	}
 }
 
@@ -629,7 +627,7 @@ MiscAssets::MiscAssets()
 
 void MiscAssets::init(bool floppyVersion)
 {
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	// Load the executable data.
 	this->parseExecutableData(floppyVersion);
@@ -720,6 +718,8 @@ void MiscAssets::parseQuestionTxt()
 			}
 			else
 			{
+				// @todo: redesign error-handling via bools so we don't need exceptions
+				// for file correctness.
 				throw DebugException("Bad QUESTION.TXT class category.");
 			}
 		};
@@ -823,7 +823,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 		const uint8_t *srcPtr = srcData.data() + i;
 		const uint8_t value = *srcPtr;
 
-		CharacterClassGeneration::ClassData &classData = classes.at(i);
+		CharacterClassGeneration::ClassData &classData = classes[i];
 		classData.id = value & CharacterClassGeneration::ID_MASK;
 		classData.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
 		classData.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
@@ -838,7 +838,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 		const int choiceSize = 3;
 		const uint8_t *srcPtr = srcData.data() + classes.size() + (choiceSize * i);
 
-		CharacterClassGeneration::ChoiceData &choice = choices.at(i);
+		CharacterClassGeneration::ChoiceData &choice = choices[i];
 		choice.a = *srcPtr;
 		choice.b = *(srcPtr + 1);
 		choice.c = *(srcPtr + 2);
@@ -896,8 +896,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 			}
 			else
 			{
-				throw DebugException("Bad allowed armors value \"" +
-					std::to_string(value) + "\".");
+				DebugUnhandledReturnMsg(std::vector<ArmorMaterialType>, std::to_string(value));
 			}
 		}();
 
@@ -1331,7 +1330,7 @@ void MiscAssets::parseWorldMapMasks()
 		std::vector<uint8_t> maskData(maskStart, maskEnd);
 
 		// Assign the map mask onto the map masks list.
-		this->worldMapMasks.at(i) = WorldMapMask(std::move(maskData), rect);
+		this->worldMapMasks[i] = WorldMapMask(std::move(maskData), rect);
 
 		// Move to the next mask.
 		offset += byteCount;

@@ -1,5 +1,4 @@
 #include <array>
-#include <cassert>
 #include <unordered_map>
 
 #include "TextureFile.h"

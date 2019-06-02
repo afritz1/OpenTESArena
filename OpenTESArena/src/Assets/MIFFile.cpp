@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <tuple>
 #include <unordered_map>
 
 #include "Compression.h"
@@ -73,15 +74,20 @@ MIFFile::MIFFile(const std::string &filename)
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
-		const uint16_t mifX = mifHeader.startX.at(i);
-		const uint16_t mifY = mifHeader.startY.at(i);
+		static_assert(std::tuple_size<decltype(mifHeader.startX)>::value ==
+			std::tuple_size<decltype(this->startPoints)>::value);
+		static_assert(std::tuple_size<decltype(mifHeader.startY)>::value ==
+			std::tuple_size<decltype(this->startPoints)>::value);
+
+		const uint16_t mifX = mifHeader.startX[i];
+		const uint16_t mifY = mifHeader.startY[i];
 		
 		// Convert the coordinates from .MIF format to voxel format. The remainder
 		// of the division is used for positioning within the voxel.
 		const double x = static_cast<double>(mifX) / MIFFile::ARENA_UNITS;
 		const double y = static_cast<double>(mifY) / MIFFile::ARENA_UNITS;
 
-		this->startPoints.at(i) = Double2(x, y);
+		this->startPoints[i] = Double2(x, y);
 	}
 
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,

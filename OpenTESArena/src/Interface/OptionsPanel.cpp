@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 #include "SDL.h"

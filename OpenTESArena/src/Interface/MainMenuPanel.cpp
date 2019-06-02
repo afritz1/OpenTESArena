@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 #include <vector>
 
@@ -363,7 +362,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const int rmdTL = 5 + random.next(66);
 				const int rmdBR = 5 + random.next(66);
 				const int rmdBL = 5 + random.next(66);
-				DebugMention(std::string("Wilderness IDs:\n") +
+				DebugLog(std::string("Wilderness IDs:\n") +
 					"- Top right: " + std::to_string(rmdTR) + "\n" +
 					"- Top left: " + std::to_string(rmdTL) + "\n" +
 					"- Bottom right: " + std::to_string(rmdBR) + "\n" +
@@ -568,7 +567,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testIndexUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Interior);
+			DebugAssert(panel.testType == TestType_Interior);
 
 			// Interior range.
 			const auto &interior = InteriorLocations.at(panel.testIndex);
@@ -588,7 +587,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testIndex2UpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert(panel.testType == TestType_Interior);
+			DebugAssert(panel.testType == TestType_Interior);
 
 			// Interior range.
 			const auto &interior = InteriorLocations.at(panel.testIndex);
@@ -609,7 +608,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testTypeUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert((panel.testType == TestType_City) ||
+			DebugAssert((panel.testType == TestType_City) ||
 				(panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
@@ -629,7 +628,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		const int height = this->testWeatherUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			assert((panel.testType == TestType_City) ||
+			DebugAssert((panel.testType == TestType_City) ||
 				(panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
@@ -647,7 +646,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->testWeather = 0;
 
 	// The game data should not be active on the main menu.
-	assert(!game.gameDataIsActive());
+	DebugAssert(!game.gameDataIsActive());
 }
 
 std::string MainMenuPanel::getSelectedTestName() const

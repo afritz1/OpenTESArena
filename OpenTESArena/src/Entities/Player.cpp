@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <vector>
 
@@ -12,6 +11,7 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelData.h"
@@ -337,10 +337,10 @@ void Player::setVelocityToZero()
 void Player::accelerate(const Double3 &direction, double magnitude,
 	bool isRunning, double dt)
 {
-	assert(dt >= 0.0);
-	assert(magnitude >= 0.0);
-	assert(std::isfinite(magnitude));
-	assert(direction.isNormalized());
+	DebugAssert(dt >= 0.0);
+	DebugAssert(magnitude >= 0.0);
+	DebugAssert(std::isfinite(magnitude));
+	DebugAssert(direction.isNormalized());
 
 	// Simple Euler integration for updating velocity.
 	Double3 newVelocity = this->velocity + (direction * (magnitude * dt));
@@ -369,7 +369,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
 {
-	assert(direction.isNormalized());
+	DebugAssert(direction.isNormalized());
 	
 	const Double3 additiveVelocity = direction * magnitude;
 

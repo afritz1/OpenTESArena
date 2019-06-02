@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cmath>
 #include <unordered_map>
 #include <vector>
@@ -219,7 +218,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 		}
 		else
 		{
-			DebugWarning("Unrecognized chasm type \"" +
+			DebugLogWarning("Unrecognized chasm type \"" +
 				std::to_string(static_cast<int>(chasmType)) + "\".");
 			return AutomapNotImplemented;
 		}
@@ -255,7 +254,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 			}
 			else
 			{
-				DebugWarning("Unrecognized wall type \"" +
+				DebugLogWarning("Unrecognized wall type \"" +
 					std::to_string(static_cast<int>(wallType)) + "\".");
 				return AutomapNotImplemented;
 			}
@@ -285,14 +284,14 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 		}
 		else
 		{
-			DebugWarning("Unrecognized wall data type \"" +
+			DebugLogWarning("Unrecognized wall data type \"" +
 				std::to_string(static_cast<int>(wallDataType)) + "\".");
 			return AutomapNotImplemented;
 		}
 	}
 	else
 	{
-		DebugWarning("Unrecognized floor data type \"" +
+		DebugLogWarning("Unrecognized floor data type \"" +
 			std::to_string(static_cast<int>(floorDataType)) + "\".");
 		return AutomapNotImplemented;
 	}

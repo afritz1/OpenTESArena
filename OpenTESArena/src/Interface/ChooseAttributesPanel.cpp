@@ -1,5 +1,4 @@
 #include <array>
-#include <cassert>
 
 #include "SDL.h"
 

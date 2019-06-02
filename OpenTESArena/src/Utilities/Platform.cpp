@@ -50,7 +50,7 @@ std::string Platform::getBasePath()
 
 	if (basePathPtr == nullptr)
 	{
-		DebugWarning("SDL_GetBasePath() not available on this platform.");
+		DebugLogWarning("SDL_GetBasePath() not available on this platform.");
 		basePathPtr = SDL_strdup("./");
 	}
 
@@ -72,7 +72,7 @@ std::string Platform::getOptionsPath()
 
 		if (optionsPathPtr == nullptr)
 		{
-			DebugWarning("SDL_GetPrefPath() not available on this platform.");
+			DebugLogWarning("SDL_GetPrefPath() not available on this platform.");
 			optionsPathPtr = SDL_strdup("options/");
 		}
 
@@ -92,7 +92,7 @@ std::string Platform::getOptionsPath()
 	}
 	else
 	{
-		DebugWarning("No default options path on this platform.");
+		DebugLogWarning("No default options path on this platform.");
 		return "OpenTESArena/options/";
 	}
 }
@@ -104,7 +104,7 @@ std::string Platform::getScreenshotPath()
 
 	if (screenshotPathPtr == nullptr)
 	{
-		DebugWarning("SDL_GetPrefPath() not available on this platform.");
+		DebugLogWarning("SDL_GetPrefPath() not available on this platform.");
 		screenshotPathPtr = SDL_strdup("screenshots/");
 	}
 
@@ -126,7 +126,7 @@ std::string Platform::getLogPath()
 
 		if (logPathPtr == nullptr)
 		{
-			DebugWarning("SDL_GetPrefPath() not available on this platform.");
+			DebugLogWarning("SDL_GetPrefPath() not available on this platform.");
 			logPathPtr = SDL_strdup("log/");
 		}
 
@@ -146,7 +146,7 @@ std::string Platform::getLogPath()
 	}
 	else
 	{
-		DebugWarning("No default log path on this platform.");
+		DebugLogWarning("No default log path on this platform.");
 		return "OpenTESArena/log/";
 	}
 }
@@ -158,7 +158,7 @@ int Platform::getThreadCount()
 	// hardware_concurrency() might return 0, so it needs to be clamped positive.
 	if (threadCount == 0)
 	{
-		DebugWarning("hardware_concurrency() returned 0.");
+		DebugLogWarning("hardware_concurrency() returned 0.");
 		return 1;
 	}
 	else
@@ -220,7 +220,7 @@ namespace
 				}
 			}();
 
-			DebugWarning("CreateDirectoryA(): " + message);
+			DebugLogWarning("CreateDirectoryA(): " + message);
 		}
 	}
 #elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
@@ -228,7 +228,7 @@ namespace
 	{
 		if (mkdir(path.c_str(), permissions) == -1)
 		{
-			DebugWarning("mkdir(): " + std::string(strerror(errno)) + ".");
+			DebugLogWarning("mkdir(): " + std::string(strerror(errno)) + ".");
 		}
 	}
 #endif

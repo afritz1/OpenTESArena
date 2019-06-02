@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "ArmorMaterial.h"
@@ -9,6 +8,7 @@
 #include "ShieldType.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
+#include "../Utilities/Debug.h"
 
 const std::unordered_map<ShieldType, std::string> ShieldTypeDisplayNames =
 {
@@ -84,7 +84,7 @@ double Shield::getWeight() const
 	double baseWeight = ShieldWeights.at(this->getShieldType());
 	double metalMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	double weight = baseWeight * metalMultiplier;
-	assert(weight >= 0.0);
+	DebugAssert(weight >= 0.0);
 	return weight;
 }
 

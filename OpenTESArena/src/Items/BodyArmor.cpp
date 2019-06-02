@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "ArmorType.h"
@@ -7,6 +6,7 @@
 #include "BodyArmorArtifactData.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
+#include "../Utilities/Debug.h"
 
 // This uses a body part name as the mapping instead of an armor type because the
 // "Shield" entry would never be used, since it's overridden by the Shield class.
@@ -74,7 +74,7 @@ double BodyArmor::getWeight() const
 	double baseWeight = BodyArmorWeights.at(this->getPartName());
 	double materialMultiplier = this->getArmorMaterial()->getWeightMultiplier();
 	double weight = baseWeight * materialMultiplier;
-	assert(weight >= 0.0);
+	DebugAssert(weight >= 0.0);
 	return weight;
 }
 
@@ -116,7 +116,7 @@ ArmorType BodyArmor::getArmorType() const
 
 const ArmorMaterial *BodyArmor::getArmorMaterial() const
 {
-	assert(this->armorMaterial.get() != nullptr);
+	DebugAssert(this->armorMaterial.get() != nullptr);
 
 	return this->armorMaterial.get();
 }
@@ -128,7 +128,7 @@ std::vector<BodyPartName> BodyArmor::getProtectedBodyParts() const
 	std::vector<BodyPartName> partNames;
 	partNames.push_back(this->getPartName());
 
-	assert(partNames.size() == 1);
+	DebugAssert(partNames.size() == 1);
 
 	return partNames;
 }

@@ -1,9 +1,9 @@
-#include <cassert>
 #include <cmath>
 
 #include "Camera3D.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
+#include "../Utilities/Debug.h"
 
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
@@ -59,9 +59,9 @@ void Camera3D::yaw(double radians)
 
 void Camera3D::rotate(double dx, double dy, double pitchLimit)
 {
-	assert(std::isfinite(this->forward.length()));
-	assert(pitchLimit >= 0.0);
-	assert(pitchLimit < 90.0);
+	DebugAssert(std::isfinite(this->forward.length()));
+	DebugAssert(pitchLimit >= 0.0);
+	DebugAssert(pitchLimit < 90.0);
 
 	auto safeDegToRad = [](double degrees)
 	{

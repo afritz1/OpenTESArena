@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include "SDL.h"
@@ -104,7 +103,7 @@ namespace
 GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game)
 {
-	assert(game.gameDataIsActive());
+	DebugAssert(game.gameDataIsActive());
 
 	this->playerNameTextBox = [&game]()
 	{
@@ -154,7 +153,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = []()
 		{
-			DebugMention("Steal.");
+			DebugLog("Steal.");
 		};
 		return Button<>(147, 151, 29, 22, function);
 	}();
@@ -309,7 +308,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = []()
 		{
-			DebugMention("Magic.");
+			DebugLog("Magic.");
 		};
 		return Button<>(88, 175, 29, 22, function);
 	}();
@@ -327,7 +326,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = []()
 		{
-			DebugMention("Use item.");
+			DebugLog("Use item.");
 		};
 		return Button<>(147, 175, 29, 22, function);
 	}();
@@ -336,7 +335,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		auto function = []()
 		{
-			DebugMention("Camp.");
+			DebugLog("Camp.");
 		};
 		return Button<>(177, 175, 29, 22, function);
 	}();
@@ -518,7 +517,7 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 		// See which arrow cursor region the native mouse is in.
 		for (int i = 0; i < this->nativeCursorRegions.size(); i++)
 		{
-			if (this->nativeCursorRegions.at(i).contains(mousePosition))
+			if (this->nativeCursorRegions[i].contains(mousePosition))
 			{
 				const auto &texture = textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors), renderer).at(i);
@@ -1506,7 +1505,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							{
 								// This should only happen if the player created a new *MENU voxel,
 								// which shouldn't occur in regular play.
-								DebugWarning("No *MENU name at (" + std::to_string(voxel.x) +
+								DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
 									", " + std::to_string(voxel.y) + ").");
 							}
 						}
@@ -1693,7 +1692,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// @temp: temporary condition while test interiors are allowed on the main menu.
 		if (worldData.getBaseWorldType() == WorldType::Interior)
 		{
-			DebugWarning("Test interiors have no exterior.");
+			DebugLogWarning("Test interiors have no exterior.");
 			return;
 		}
 
@@ -1767,8 +1766,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						}
 						else
 						{
-							throw DebugException("Invalid hit facing \"" +
-								std::to_string(static_cast<int>(hit.facing)) + "\".");
+							DebugUnhandledReturnMsg(Int3,
+								std::to_string(static_cast<int>(hit.facing)));
 						}
 					}();
 
@@ -1792,13 +1791,13 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// @todo: handle wilderness dungeon .MIF names differently than just with
 					// an empty string?
-					DebugWarning("Empty .MIF name at voxel (" + std::to_string(voxel.x) + ", " +
+					DebugLogWarning("Empty .MIF name at voxel (" + std::to_string(voxel.x) + ", " +
 						std::to_string(voxel.y) + ").");
 				}
 			}
 			else
 			{
-				DebugWarning("City gate transition not implemented.");
+				DebugLogWarning("City gate transition not implemented.");
 			}
 		}
 	}
@@ -1813,13 +1812,13 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	auto &interior = [&gameData]() -> InteriorWorldData&
 	{
 		auto &worldData = gameData.getWorldData();
-		assert(worldData.getActiveWorldType() == WorldType::Interior);
+		DebugAssert(worldData.getActiveWorldType() == WorldType::Interior);
 
 		if (worldData.getBaseWorldType() != WorldType::Interior)
 		{
 			auto &exterior = static_cast<ExteriorWorldData&>(worldData);
 			auto *interiorPtr = exterior.getInterior();
-			assert(interiorPtr != nullptr);
+			DebugAssert(interiorPtr != nullptr);
 			return *interiorPtr;
 		}
 		else
@@ -1933,7 +1932,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		// Check the voxel type to determine what it is exactly.
 		if (wallData.type == VoxelData::WallData::Type::Menu)
 		{
-			DebugMention("Entered *MENU " + std::to_string(wallData.menuID) + ".");
+			DebugLog("Entered *MENU " + std::to_string(wallData.menuID) + ".");
 		}
 		else if (wallData.type == VoxelData::WallData::Type::LevelUp)
 		{
@@ -2139,7 +2138,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 void GameWorldPanel::tick(double dt)
 {
 	auto &game = this->getGame();
-	assert(game.gameDataIsActive());
+	DebugAssert(game.gameDataIsActive());
 
 	// Get the relative mouse state.
 	const auto &inputManager = game.getInputManager();
@@ -2289,7 +2288,7 @@ void GameWorldPanel::tick(double dt)
 
 void GameWorldPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -2372,7 +2371,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 void GameWorldPanel::renderSecondary(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Several interface objects are in this method because they are hidden by the status
 	// pop-up and the spells list.

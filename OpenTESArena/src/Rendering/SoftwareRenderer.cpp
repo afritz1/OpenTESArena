@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <limits>
 
@@ -249,7 +248,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		const Double3 &color = skyPalette.at(index);
 		const Double3 &nextColor = skyPalette.at(nextIndex);
 
-		this->skyColors.at(i) = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
+		this->skyColors[i] = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
 	}
 
 	// The sun rises in the west (-Z) and sets in the east (+Z).
@@ -332,7 +331,7 @@ SoftwareRenderer::DistantObjects::DistantObjects()
 void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	std::vector<SkyTexture> &skyTextures)
 {
-	assert(skyTextures.size() == 0);
+	DebugAssert(skyTextures.size() == 0);
 
 	// Creates a render texture from the given surface, adds it to the sky textures list, and
 	// returns its index in the sky textures list.
@@ -440,8 +439,8 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			}
 			else
 			{
-				throw DebugException("Invalid star type \"" +
-					std::to_string(static_cast<int>(starObject.getType())) + "\".");
+				DebugUnhandledReturnMsg(int,
+					std::to_string(static_cast<int>(starObject.getType())));
 			}
 		}();
 
@@ -933,12 +932,12 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockHeight));
 
 		// Make sure the rounding is correct.
-		assert(startX >= 0);
-		assert(endX <= width);
-		assert(startY >= 0);
-		assert(endY <= height);
+		DebugAssert(startX >= 0);
+		DebugAssert(endX <= width);
+		DebugAssert(startY >= 0);
+		DebugAssert(endY <= height);
 
-		this->renderThreads.at(i) = std::thread(SoftwareRenderer::renderThreadLoop,
+		this->renderThreads[i] = std::thread(SoftwareRenderer::renderThreadLoop,
 			std::ref(this->threadData), threadIndex, startX, endX, startY, endY);
 	}
 }
@@ -1273,8 +1272,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				}
 				else
 				{
-					throw DebugException("Invalid moon type \"" +
-						std::to_string(static_cast<int>(type)) + "\".");
+					DebugUnhandledReturnMsg(Double3, std::to_string(static_cast<int>(type)));
 				}
 			}();
 
@@ -1764,8 +1762,7 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 	}
 	else
 	{
-		throw DebugException("Invalid render threads mode \"" +
-			std::to_string(mode) + "\".");
+		DebugUnhandledReturnMsg(int, std::to_string(mode));
 	}
 }
 
@@ -2840,8 +2837,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 			}
 			else
 			{
-				throw DebugException("Invalid near facing \"" +
-					std::to_string(static_cast<int>(nearFacing)) + "\".");
+				DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(nearFacing)));
 			}
 		}();
 
@@ -6244,8 +6240,8 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	auto drawDistantObjRange = [&visDistantObjs, &drawDistantObj](int start, int end,
 		DistantRenderType renderType)
 	{
-		assert(start >= 0);
-		assert(end <= visDistantObjs.objs.size());
+		DebugAssert(start >= 0);
+		DebugAssert(end <= visDistantObjs.objs.size());
 
 		// Reverse iterate so objects are drawn far to near.
 		const VisDistantObject *objs = visDistantObjs.objs.data();

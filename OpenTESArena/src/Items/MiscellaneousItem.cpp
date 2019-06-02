@@ -1,10 +1,10 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "ItemType.h"
 #include "MiscellaneousItem.h"
 #include "MiscellaneousItemType.h"
 #include "MiscellaneousArtifactData.h"
+#include "../Utilities/Debug.h"
 
 const std::unordered_map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames =
 {
@@ -59,7 +59,7 @@ ItemType MiscellaneousItem::getItemType() const
 double MiscellaneousItem::getWeight() const
 {
 	auto weight = MiscellaneousItemWeights.at(this->getMiscellaneousItemType());
-	assert(weight >= 0.0);
+	DebugAssert(weight >= 0.0);
 	return weight;
 }
 

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <tuple>
 
 #include "ArenaTypes.h"
 #include "../Utilities/Bytes.h"
@@ -283,14 +284,14 @@ void ArenaTypes::SaveEngine::init(const uint8_t *data)
 	const uint8_t *enemiesEnd = enemiesStart + (NPCData::SIZE * this->enemies.size());
 	for (size_t i = 0; i < this->enemies.size(); i++)
 	{
-		this->enemies.at(i).init(enemiesStart + (NPCData::SIZE * i));
+		this->enemies[i].init(enemiesStart + (NPCData::SIZE * i));
 	}
 
 	const uint8_t *lootStart = enemiesEnd;
 	const uint8_t *lootEnd = lootStart + (LootItem::SIZE * this->loot.size());
 	for (size_t i = 0; i < this->loot.size(); i++)
 	{
-		this->loot.at(i).init(lootStart + (LootItem::SIZE * i));
+		this->loot[i].init(lootStart + (LootItem::SIZE * i));
 	}
 
 	const uint8_t *gameState2Start = lootEnd;
@@ -305,7 +306,7 @@ void ArenaTypes::MQLevelState::HashTable::init(const uint8_t *data)
 	const uint8_t *triggersEnd = triggersStart + (MIFTrigger::SIZE * this->triggers.size());
 	for (size_t i = 0; i < this->triggers.size(); i++)
 	{
-		this->triggers.at(i).init(triggersStart + (MIFTrigger::SIZE * i));
+		this->triggers[i].init(triggersStart + (MIFTrigger::SIZE * i));
 	}
 
 	this->lockCount = *(data + 257);
@@ -313,7 +314,7 @@ void ArenaTypes::MQLevelState::HashTable::init(const uint8_t *data)
 	const uint8_t *locksStart = data + 258;
 	for (size_t i = 0; i < this->locks.size(); i++)
 	{
-		this->locks.at(i).init(locksStart + (MIFLock::SIZE * i));
+		this->locks[i].init(locksStart + (MIFLock::SIZE * i));
 	}
 }
 
@@ -322,7 +323,7 @@ void ArenaTypes::MQLevelState::init(const uint8_t *data)
 	const uint8_t *hashTablesStart = data;
 	for (size_t i = 0; i < this->hashTables.size(); i++)
 	{
-		this->hashTables.at(i).init(hashTablesStart + (HashTable::SIZE * i));
+		this->hashTables[i].init(hashTablesStart + (HashTable::SIZE * i));
 	}
 }
 
@@ -330,11 +331,13 @@ void ArenaTypes::SpellData::init(const uint8_t *data)
 {
 	for (size_t i = 0; i < this->params.size(); i++)
 	{
+		auto &param = this->params[i];
 		const size_t offset = i * 6;
-		auto &param = this->params.at(i);
-		param.at(0) = Bytes::getLE16(data + offset);
-		param.at(1) = Bytes::getLE16(data + offset + 2);
-		param.at(2) = Bytes::getLE16(data + offset + 4);
+
+		for (size_t j = 0; j < param.size(); j++)
+		{
+			param[j] = Bytes::getLE16(data + offset + (j * 2));
+		}
 	}
 
 	this->targetType = *(data + 36);
@@ -342,11 +345,16 @@ void ArenaTypes::SpellData::init(const uint8_t *data)
 	this->element = *(data + 38);
 	this->flags = Bytes::getLE16(data + 39);
 
-	for (size_t i = 0; i < 3; i++)
+	constexpr size_t arrSize = 3;
+	for (size_t i = 0; i < arrSize; i++)
 	{
-		this->effects.at(i) = *(data + 41 + i);
-		this->subEffects.at(i) = *(data + 44 + i);
-		this->affectedAttributes.at(i) = *(data + 47 + i);
+		static_assert(std::tuple_size<decltype(this->effects)>::value == arrSize);
+		static_assert(std::tuple_size<decltype(this->subEffects)>::value == arrSize);
+		static_assert(std::tuple_size<decltype(this->affectedAttributes)>::value == arrSize);
+
+		this->effects[i] = *(data + 41 + i);
+		this->subEffects[i] = *(data + 44 + i);
+		this->affectedAttributes[i] = *(data + 47 + i);
 	}
 
 	this->cost = Bytes::getLE16(data + 50);
@@ -374,7 +382,7 @@ void ArenaTypes::Repair::init(const uint8_t *data)
 	const uint8_t *jobsStart = data;
 	for (size_t i = 0; i < this->jobs.size(); i++)
 	{
-		this->jobs.at(i).init(jobsStart + (Job::SIZE * i));
+		this->jobs[i].init(jobsStart + (Job::SIZE * i));
 	}
 }
 
@@ -396,7 +404,7 @@ void ArenaTypes::Automap::FogOfWarCache::init(const uint8_t *data)
 	const uint8_t *notesEnd = notesStart + (Note::SIZE * this->notes.size());
 	for (size_t i = 0; i < this->notes.size(); i++)
 	{
-		this->notes.at(i).init(notesStart + (Note::SIZE * i));
+		this->notes[i].init(notesStart + (Note::SIZE * i));
 	}
 
 	const uint8_t *bitmapStart = notesEnd;
@@ -409,7 +417,7 @@ void ArenaTypes::Automap::init(const uint8_t *data)
 	const uint8_t *cachesStart = data;
 	for (size_t i = 0; i < this->caches.size(); i++)
 	{
-		this->caches.at(i).init(cachesStart + (FogOfWarCache::SIZE * i));
+		this->caches[i].init(cachesStart + (FogOfWarCache::SIZE * i));
 	}
 }
 
@@ -452,6 +460,6 @@ void ArenaTypes::Names::init(const uint8_t *data)
 	const uint8_t *entriesStart = data;
 	for (size_t i = 0; i < this->entries.size(); i++)
 	{
-		this->entries.at(i).init(entriesStart + (Entry::SIZE * i));
+		this->entries[i].init(entriesStart + (Entry::SIZE * i));
 	}
 }

@@ -175,8 +175,8 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 						}
 						else
 						{
-							throw DebugException("Bad location type \"" +
-								std::to_string(static_cast<int>(locationType)) + "\".");
+							DebugUnhandledReturnMsg(int,
+								std::to_string(static_cast<int>(locationType)));
 						}
 					}();
 

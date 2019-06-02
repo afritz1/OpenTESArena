@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <unordered_map>
 
@@ -196,14 +195,13 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 			}
 			else
 			{
-				throw DebugException("Bad special location type \"" +
-					std::to_string(static_cast<int>(specialCaseType)) + "\".");
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(specialCaseType)));
 			}
 		}
 		else
 		{
-			throw DebugException("Bad location data type \"" +
-				std::to_string(static_cast<int>(currentLocation.dataType)) + "\".");
+			DebugUnhandledReturnMsg(int,
+				std::to_string(static_cast<int>(currentLocation.dataType)));
 		}
 	}();
 
@@ -907,7 +905,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 void ProvinceMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();

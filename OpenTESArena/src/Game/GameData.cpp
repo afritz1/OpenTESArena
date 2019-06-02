@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
+#include <tuple>
 
 #include "SDL.h"
 
@@ -84,7 +84,7 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
-	DebugMention("Initializing.");
+	DebugLog("Initializing.");
 
 	// Make a copy of the global constant city data. This is the "instance" city data
 	// that can be assigned to.
@@ -128,7 +128,7 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 
 GameData::~GameData()
 {
-	DebugMention("Closing.");
+	DebugLog("Closing.");
 }
 
 std::string GameData::getDateString(const Date &date, const ExeData &exeData)
@@ -287,11 +287,11 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const ExeData &exeData,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	assert(this->worldData.get() != nullptr);
-	assert(this->worldData->getActiveWorldType() != WorldType::Interior);
+	DebugAssert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData->getActiveWorldType() != WorldType::Interior);
 
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
-	assert(exterior.getInterior() == nullptr);
+	DebugAssert(exterior.getInterior() == nullptr);
 
 	InteriorWorldData interior = InteriorWorldData::loadInterior(mif, exeData);
 
@@ -316,12 +316,12 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 
 void GameData::leaveInterior(TextureManager &textureManager, Renderer &renderer)
 {
-	assert(this->worldData.get() != nullptr);
-	assert(this->worldData->getActiveWorldType() == WorldType::Interior);
-	assert(this->worldData->getBaseWorldType() != WorldType::Interior);
+	DebugAssert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData->getActiveWorldType() == WorldType::Interior);
+	DebugAssert(this->worldData->getBaseWorldType() != WorldType::Interior);
 
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
-	assert(exterior.getInterior() != nullptr);
+	DebugAssert(exterior.getInterior() != nullptr);
 
 	// Leave the interior and get the voxel to return to in the exterior.
 	const Int2 returnVoxel = exterior.leaveInterior();
@@ -619,7 +619,7 @@ Player &GameData::getPlayer()
 
 WorldData &GameData::getWorldData()
 {
-	assert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData.get() != nullptr);
 	return *this->worldData.get();
 }
 
@@ -755,7 +755,10 @@ void GameData::updateWeather(const ExeData &exeData)
 
 	for (size_t i = 0; i < this->weathers.size(); i++)
 	{
-		const int climateIndex = exeData.locations.climates.at(i);
+		static_assert(std::tuple_size<decltype(exeData.locations.climates)>::value ==
+			std::tuple_size<decltype(this->weathers)>::value);
+		
+		const int climateIndex = exeData.locations.climates[i];
 		const int variantIndex = [this]()
 		{
 			// 40% for 2, 20% for 1, 20% for 3, 10% for 0, and 10% for 4.
@@ -784,14 +787,14 @@ void GameData::updateWeather(const ExeData &exeData)
 		}();
 
 		const int weatherTableIndex = (climateIndex * 20) + (seasonIndex * 5) + variantIndex;
-		this->weathers.at(i) = static_cast<WeatherType>(
+		this->weathers[i] = static_cast<WeatherType>(
 			exeData.locations.weatherTable.at(weatherTableIndex));
 	}
 }
 
 void GameData::tickTime(double dt, Game &game)
 {
-	assert(dt >= 0.0);
+	DebugAssert(dt >= 0.0);
 
 	// Tick the game clock.
 	const int oldHour = this->clock.getHours24();

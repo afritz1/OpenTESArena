@@ -15,7 +15,7 @@ std::vector<std::string_view> StringView::split(const std::string_view &str, cha
 
 	for (size_t i = 0; i < str.size(); i++)
 	{
-		const char c = str.at(i);
+		const char c = str[i];
 
 		if (c == separator)
 		{

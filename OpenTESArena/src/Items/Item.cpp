@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ArtifactData.h"
 #include "Item.h"
 

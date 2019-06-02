@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <cassert>
-
 #include "SDL.h"
 
 #include "ListBox.h"
@@ -13,13 +11,14 @@
 #include "../Media/Font.h"
 #include "../Media/FontManager.h"
 #include "../Rendering/Renderer.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
 	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
 	: textColor(textColor), point(x, y), fontName(fontName)
 {
-	assert(maxDisplayed > 0);
+	DebugAssert(maxDisplayed > 0);
 
 	this->scrollIndex = 0;
 
