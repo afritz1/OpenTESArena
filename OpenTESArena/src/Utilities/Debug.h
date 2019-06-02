@@ -78,6 +78,8 @@ public:
 	(std::is_integral<decltype(index)>::value && (index >= 0) && (index < std::size(container)))
 #define DebugAssertIndex(container, index) \
 	do { if (!DebugValidIndex(container, index)) DebugCrash("Index '" + std::to_string(index) + "' out of bounds."); } while (false)
+#define DebugMakeIndex(container, index) \
+	([&]() { const auto val = index; DebugAssertIndex(container, val); return val; }())
 };
 
 #endif
