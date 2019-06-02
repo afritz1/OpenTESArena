@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ArmorType.h"
 #include "MetalType.h"
 #include "ShieldArtifactData.h"

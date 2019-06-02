@@ -1,9 +1,9 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "ItemType.h"
 #include "Trinket.h"
 #include "TrinketType.h"
+#include "../Utilities/Debug.h"
 
 const std::unordered_map<TrinketType, std::string> TrinketDisplayNames =
 {
@@ -45,7 +45,7 @@ ItemType Trinket::getItemType() const
 double Trinket::getWeight() const
 {
 	double weight = TrinketWeights.at(this->getTrinketType());
-	assert(weight >= 0.0);
+	DebugAssert(weight >= 0.0);
 	return weight;
 }
 

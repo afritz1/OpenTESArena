@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
-#include <cassert>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -299,13 +298,13 @@ public:
 
 	void setVolume(float volume)
 	{
-		assert(mSource != 0);
+		DebugAssert(mSource != 0);
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
 	bool init(ALuint source, float volume)
 	{
-		assert(mSource == 0);
+		DebugAssert(mSource == 0);
 
 		/* Clear existing errors */
 		alGetError();
@@ -644,7 +643,7 @@ void AudioManagerImpl::setSoundVolume(double percent)
 void AudioManagerImpl::setResamplingOption(int resamplingOption)
 {
 	// Do not call if AL_SOFT_source_resampler is unsupported.
-	assert(mHasResamplerExtension);
+	DebugAssert(mHasResamplerExtension);
 
 	// Determine which resampling index to use.
 	mResampler = AudioManagerImpl::getResamplingIndex(resamplingOption);

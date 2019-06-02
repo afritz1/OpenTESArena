@@ -1,10 +1,10 @@
-#include <cassert>
 #include <cmath>
 
 #include "CharacterClass.h"
 #include "CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
+#include "../Utilities/Debug.h"
 
 CharacterClass::CharacterClass(const std::string &name,
 	const std::string &preferredAttributes,
@@ -93,7 +93,7 @@ bool CharacterClass::hasCriticalHit() const
 
 int CharacterClass::getExperienceCap(int level) const
 {
-	assert(level >= 0);
+	DebugAssert(level >= 0);
 
 	if (level == 0)
 	{

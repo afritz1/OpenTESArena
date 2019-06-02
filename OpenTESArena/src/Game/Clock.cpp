@@ -1,6 +1,5 @@
-#include <cassert>
-
 #include "Clock.h"
+#include "../Utilities/Debug.h"
 
 const int Clock::SECONDS_IN_A_DAY = 86400;
 
@@ -27,12 +26,12 @@ const Clock Clock::MusicSwitchToNight(17, 45, 0);
 Clock::Clock(int hours, int minutes, int seconds, double currentSecond)
 {
 	// Make sure each value is in a valid range.
-	assert(hours >= 0);
-	assert(hours < 24);
-	assert(minutes >= 0);
-	assert(minutes < 60);
-	assert(seconds >= 0);
-	assert(seconds < 60);
+	DebugAssert(hours >= 0);
+	DebugAssert(hours < 24);
+	DebugAssert(minutes >= 0);
+	DebugAssert(minutes < 60);
+	DebugAssert(seconds >= 0);
+	DebugAssert(seconds < 60);
 
 	this->hours = hours;
 	this->minutes = minutes;

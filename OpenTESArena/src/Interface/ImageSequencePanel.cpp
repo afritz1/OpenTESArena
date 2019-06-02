@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 
 #include "SDL.h"
 
@@ -12,6 +11,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
 
 ImageSequencePanel::ImageSequencePanel(Game &game,
 	const std::vector<std::string> &paletteNames,
@@ -21,8 +21,8 @@ ImageSequencePanel::ImageSequencePanel(Game &game,
 	: Panel(game), paletteNames(paletteNames), textureNames(textureNames),
 	imageDurations(imageDurations)
 {
-	assert(paletteNames.size() == textureNames.size());
-	assert(paletteNames.size() == imageDurations.size());
+	DebugAssert(paletteNames.size() == textureNames.size());
+	DebugAssert(paletteNames.size() == imageDurations.size());
 
 	this->skipButton = [&endingAction]()
 	{

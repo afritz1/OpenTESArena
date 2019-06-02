@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include "SDL.h"
@@ -28,7 +27,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 	: Panel(game), sequenceName(sequenceName)
 {
 	// Text cannot be empty.
-	assert(text.size() > 0);
+	DebugAssert(text.size() > 0);
 
 	this->textBoxes = [&game, &text]()
 	{

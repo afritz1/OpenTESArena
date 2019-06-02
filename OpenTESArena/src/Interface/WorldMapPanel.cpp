@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "SDL.h"
 
 #include "CursorAlignment.h"
@@ -21,6 +19,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
+#include "../Utilities/Debug.h"
 #include "../World/Location.h"
 
 WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
@@ -123,7 +122,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 void WorldMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();

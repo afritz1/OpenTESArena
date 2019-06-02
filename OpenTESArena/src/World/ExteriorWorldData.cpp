@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ClimateType.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
@@ -268,13 +266,13 @@ const LevelData &ExteriorWorldData::getActiveLevel() const
 
 void ExteriorWorldData::enterInterior(InteriorWorldData &&interior, const Int2 &returnVoxel)
 {
-	assert(this->interior.get() == nullptr);
+	DebugAssert(this->interior.get() == nullptr);
 	this->interior = std::make_unique<InteriorState>(std::move(interior), returnVoxel);
 }
 
 Int2 ExteriorWorldData::leaveInterior()
 {
-	assert(this->interior.get() != nullptr);
+	DebugAssert(this->interior.get() != nullptr);
 
 	const Int2 returnVoxel = this->interior->returnVoxel;
 	this->interior = nullptr;

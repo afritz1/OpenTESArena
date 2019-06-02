@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <numeric>
 
 #include "FPSCounter.h"
+#include "../Utilities/Debug.h"
 
 FPSCounter::FPSCounter()
 {
@@ -24,7 +24,7 @@ double FPSCounter::getAverageFrameTime() const
 {
 	// Only need a few frame times to get a decent approximation.
 	const size_t count = 20;
-	assert(count <= this->frameTimes.size());
+	DebugAssert(count <= this->frameTimes.size());
 
 	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.begin() + count, 0.0);
 	return sum / static_cast<double>(count);

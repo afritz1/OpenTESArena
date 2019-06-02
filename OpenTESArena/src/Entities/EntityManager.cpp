@@ -1,8 +1,7 @@
-#include <cassert>
-
 #include "Entity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
+#include "../Utilities/Debug.h"
 
 EntityManager::EntityManager()
 {
@@ -60,10 +59,10 @@ int EntityManager::nextID() const
 
 void EntityManager::add(std::unique_ptr<Entity> entity)
 {
-	assert(entity.get() != nullptr);
+	DebugAssert(entity.get() != nullptr);
 
 	// Programmer error if two entities have the same ID.
-	assert(this->entities.find(entity->getID()) == this->entities.end());
+	DebugAssert(this->entities.find(entity->getID()) == this->entities.end());
 
 	// Add the pair to the entities map.
 	int entityID = entity->getID();

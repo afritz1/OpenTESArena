@@ -1,5 +1,3 @@
-#include <cassert>
-#include <exception>
 #include <unordered_map>
 
 #include "CardinalDirection.h"
@@ -28,7 +26,7 @@ const Double2 CardinalDirection::West = Double2(0.0, -1.0);
 CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
-	assert(direction.isNormalized());
+	DebugAssert(direction.isNormalized());
 
 	const Double2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
 	const Double2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
@@ -37,10 +35,10 @@ CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &directi
 
 	// The spherical interpolations should already be normalized if their parent vectors
 	// are normalized.
-	assert(northEast.isNormalized());
-	assert(southEast.isNormalized());
-	assert(southWest.isNormalized());
-	assert(northWest.isNormalized());
+	DebugAssert(northEast.isNormalized());
+	DebugAssert(southEast.isNormalized());
+	DebugAssert(southWest.isNormalized());
+	DebugAssert(northWest.isNormalized());
 
 	// Each direction gets an equal slice of the circle's area.
 	// (I'm not sure why the deviation is 1/12th; at a glance it should be 1/8th).

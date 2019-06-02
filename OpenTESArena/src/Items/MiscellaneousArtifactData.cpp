@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ItemType.h"
 #include "MiscellaneousArtifactData.h"
 #include "MiscellaneousItemType.h"

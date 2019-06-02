@@ -1,7 +1,7 @@
 #include <algorithm>
-#include <cassert>
 
 #include "Chunk.h"
+#include "../Utilities/Debug.h"
 
 Chunk::Chunk(int x, int y, int height)
 {
@@ -55,7 +55,7 @@ bool Chunk::coordIsValid(int x, int y, int z) const
 
 int Chunk::getIndex(int x, int y, int z) const
 {
-	assert(this->coordIsValid(x, y, z));
+	DebugAssert(this->coordIsValid(x, y, z));
 	return x + (y * this->getWidth()) + (z * this->getWidth() * this->getHeight());
 }
 
@@ -67,8 +67,8 @@ VoxelID Chunk::get(int x, int y, int z) const
 
 const VoxelData &Chunk::getVoxelData(VoxelID id) const
 {
-	assert(id < this->voxelData.size());
-	assert(this->activeVoxelData[id]);
+	DebugAssert(id < this->voxelData.size());
+	DebugAssert(this->activeVoxelData[id]);
 	return this->voxelData[id];
 }
 
@@ -90,7 +90,7 @@ VoxelID Chunk::addVoxelData(VoxelData &&voxelData)
 	const auto iter = std::find(this->activeVoxelData.begin(), this->activeVoxelData.end(), false);
 
 	// If we ever hit this, we need more bits per voxel.
-	assert(iter != this->activeVoxelData.end());
+	DebugAssert(iter != this->activeVoxelData.end());
 
 	const VoxelID id = static_cast<VoxelID>(std::distance(this->activeVoxelData.begin(), iter));
 	this->voxelData[id] = std::move(voxelData);
@@ -100,7 +100,7 @@ VoxelID Chunk::addVoxelData(VoxelData &&voxelData)
 
 void Chunk::removeVoxelData(VoxelID id)
 {
-	assert(id < this->voxelData.size());
+	DebugAssert(id < this->voxelData.size());
 	this->voxelData[id] = VoxelData();
 	this->activeVoxelData[id] = false;
 }

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 #include <unordered_map>
 
@@ -906,7 +905,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 void ProvinceMapPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();

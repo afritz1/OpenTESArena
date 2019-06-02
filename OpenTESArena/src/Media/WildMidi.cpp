@@ -3,7 +3,6 @@
 #ifdef HAVE_WILDMIDI
 
 #include <array>
-#include <cassert>
 
 #include "../Utilities/Debug.h"
 

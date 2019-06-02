@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ArmorMaterial.h"
 #include "ArmorType.h"
 #include "BodyArmorArtifactData.h"

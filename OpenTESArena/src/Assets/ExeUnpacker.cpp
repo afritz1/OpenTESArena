@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <memory>
 
 #include "ExeUnpacker.h"
@@ -104,7 +103,7 @@ namespace
 				if (bit)
 				{
 					// Right.
-					assert(right != nullptr);
+					DebugAssert(right != nullptr);
 
 					// Check if it's a leaf.
 					if (right->isLeaf())
@@ -118,7 +117,7 @@ namespace
 				else
 				{
 					// Left.
-					assert(left != nullptr);
+					DebugAssert(left != nullptr);
 
 					// Check if it's a leaf.
 					if (left->isLeaf())

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <cmath>
 
 #include "SDL.h"
@@ -287,11 +286,11 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const ExeData &exeData,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	assert(this->worldData.get() != nullptr);
-	assert(this->worldData->getActiveWorldType() != WorldType::Interior);
+	DebugAssert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData->getActiveWorldType() != WorldType::Interior);
 
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
-	assert(exterior.getInterior() == nullptr);
+	DebugAssert(exterior.getInterior() == nullptr);
 
 	InteriorWorldData interior = InteriorWorldData::loadInterior(mif, exeData);
 
@@ -316,12 +315,12 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 
 void GameData::leaveInterior(TextureManager &textureManager, Renderer &renderer)
 {
-	assert(this->worldData.get() != nullptr);
-	assert(this->worldData->getActiveWorldType() == WorldType::Interior);
-	assert(this->worldData->getBaseWorldType() != WorldType::Interior);
+	DebugAssert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData->getActiveWorldType() == WorldType::Interior);
+	DebugAssert(this->worldData->getBaseWorldType() != WorldType::Interior);
 
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
-	assert(exterior.getInterior() != nullptr);
+	DebugAssert(exterior.getInterior() != nullptr);
 
 	// Leave the interior and get the voxel to return to in the exterior.
 	const Int2 returnVoxel = exterior.leaveInterior();
@@ -619,7 +618,7 @@ Player &GameData::getPlayer()
 
 WorldData &GameData::getWorldData()
 {
-	assert(this->worldData.get() != nullptr);
+	DebugAssert(this->worldData.get() != nullptr);
 	return *this->worldData.get();
 }
 
@@ -791,7 +790,7 @@ void GameData::updateWeather(const ExeData &exeData)
 
 void GameData::tickTime(double dt, Game &game)
 {
-	assert(dt >= 0.0);
+	DebugAssert(dt >= 0.0);
 
 	// Tick the game clock.
 	const int oldHour = this->clock.getHours24();

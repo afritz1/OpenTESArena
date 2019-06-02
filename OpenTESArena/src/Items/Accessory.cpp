@@ -1,4 +1,3 @@
-#include <cassert>
 #include <unordered_map>
 
 #include "Accessory.h"
@@ -7,6 +6,7 @@
 #include "ItemType.h"
 #include "Metal.h"
 #include "MetalType.h"
+#include "../Utilities/Debug.h"
 
 const std::unordered_map<AccessoryType, std::string> AccessoryDisplayNames =
 {
@@ -84,7 +84,7 @@ ItemType Accessory::getItemType() const
 double Accessory::getWeight() const
 {
 	auto weight = AccessoryWeights.at(this->getAccessoryType());
-	assert(weight >= 0.0);
+	DebugAssert(weight >= 0.0);
 	return weight;
 }
 

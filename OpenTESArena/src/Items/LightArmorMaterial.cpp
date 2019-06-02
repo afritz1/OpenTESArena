@@ -1,5 +1,3 @@
-#include <cassert>
-
 #include "ArmorMaterialType.h"
 #include "LightArmorMaterial.h"
 

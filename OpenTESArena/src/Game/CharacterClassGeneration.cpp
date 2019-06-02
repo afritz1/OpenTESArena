@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <string>
 
 #include "CharacterClassGeneration.h"
@@ -29,9 +28,9 @@ const CharacterClassGeneration::ClassData &CharacterClassGeneration::getClassDat
 	int a, int b, int c) const
 {
 	// A maximum of ten answers for any category is the limit.
-	assert((a >= 0) && (a <= 10));
-	assert((b >= 0) && (b <= 10));
-	assert((c >= 0) && (c <= 10));
+	DebugAssert((a >= 0) && (a <= 10));
+	DebugAssert((b >= 0) && (b <= 10));
+	DebugAssert((c >= 0) && (c <= 10));
 
 	// Find the index of the given A/B/C counts in the choices array.
 	const int choiceID = [this, a, b, c]()

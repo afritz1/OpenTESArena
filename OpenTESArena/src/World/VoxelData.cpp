@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <stdexcept>
 
 #include "VoxelData.h"
@@ -13,7 +12,7 @@ bool VoxelData::WallData::isMenu() const
 {
 	if (this->type == WallData::Type::Menu)
 	{
-		assert(this->menuID != -1);
+		DebugAssert(this->menuID != -1);
 		return true;
 	}
 	else
@@ -226,12 +225,12 @@ VoxelData VoxelData::makeWall(int sideID, int floorID, int ceilingID,
 	// If the menu ID parameter is given, use it.
 	if (menuID != nullptr)
 	{
-		assert(type == WallData::Type::Menu);
+		DebugAssert(type == WallData::Type::Menu);
 		wall.menuID = *menuID;
 	}
 	else
 	{
-		assert(type != WallData::Type::Menu);
+		DebugAssert(type != WallData::Type::Menu);
 		wall.menuID = -1; // Unused.
 	}
 

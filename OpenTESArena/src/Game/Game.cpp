@@ -1,4 +1,3 @@
-#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -165,7 +164,7 @@ bool Game::gameDataIsActive() const
 GameData &Game::getGameData() const
 {
 	// The caller should not request the game data when there is no active session.
-	assert(this->gameDataIsActive());
+	DebugAssert(this->gameDataIsActive());
 
 	return *this->gameData.get();
 }

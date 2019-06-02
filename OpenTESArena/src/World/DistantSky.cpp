@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <array>
-#include <cassert>
 
 #include "ClimateType.h"
 #include "DistantSky.h"
@@ -68,7 +67,7 @@ double DistantSky::LandObject::getAngleRadians() const
 DistantSky::AnimatedLandObject::AnimatedLandObject(double angleRadians, double frameTime)
 {
 	// Frame time must be positive.
-	assert(frameTime > 0.0);
+	DebugAssert(frameTime > 0.0);
 
 	this->angleRadians = angleRadians;
 	this->targetFrameTime = frameTime;
@@ -112,7 +111,7 @@ void DistantSky::AnimatedLandObject::addSurface(const Surface &surface)
 void DistantSky::AnimatedLandObject::setFrameTime(double frameTime)
 {
 	// Frame time must be positive.
-	assert(frameTime > 0.0);
+	DebugAssert(frameTime > 0.0);
 
 	this->targetFrameTime = frameTime;
 }
@@ -215,13 +214,13 @@ DistantSky::StarObject::Type DistantSky::StarObject::getType() const
 
 const DistantSky::StarObject::SmallStar &DistantSky::StarObject::getSmallStar() const
 {
-	assert(this->type == StarObject::Type::Small);
+	DebugAssert(this->type == StarObject::Type::Small);
 	return this->small;
 }
 
 const DistantSky::StarObject::LargeStar &DistantSky::StarObject::getLargeStar() const
 {
-	assert(this->type == StarObject::Type::Large);
+	DebugAssert(this->type == StarObject::Type::Large);
 	return this->large;
 }
 
@@ -377,7 +376,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 				return std::to_string((randVal == 0) ? var : randVal);
 			}();
 
-			assert(digits.size() <= maxDigits);
+			DebugAssert(digits.size() <= maxDigits);
 
 			// Actual filename for the image.
 			const std::string filename = [&baseFilename, pos, maxDigits, &digits]()
@@ -683,7 +682,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 					const std::string typeStr = std::to_string(star.type + 1);
 					std::string filename = exeData.locations.starFilename;
 					const size_t index = filename.find('1');
-					assert(index != std::string::npos);
+					DebugAssert(index != std::string::npos);
 
 					filename.replace(index, 1, typeStr);
 					return String::toUppercase(filename);

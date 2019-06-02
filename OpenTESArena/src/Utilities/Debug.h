@@ -6,8 +6,7 @@
 #include <type_traits>
 
 // Below are various debug methods and macros for replacing asserts or program exits 
-// that should be accompanied with messages and logging. Plain old asserts like 
-// "assert(width > 0)" are for sanity checks and don't need to use these heavier methods.
+// that might be accompanied with messages and logging.
 
 class Debug
 {

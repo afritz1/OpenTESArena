@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include "SDL.h"
@@ -104,7 +103,7 @@ namespace
 GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game)
 {
-	assert(game.gameDataIsActive());
+	DebugAssert(game.gameDataIsActive());
 
 	this->playerNameTextBox = [&game]()
 	{
@@ -1813,13 +1812,13 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	auto &interior = [&gameData]() -> InteriorWorldData&
 	{
 		auto &worldData = gameData.getWorldData();
-		assert(worldData.getActiveWorldType() == WorldType::Interior);
+		DebugAssert(worldData.getActiveWorldType() == WorldType::Interior);
 
 		if (worldData.getBaseWorldType() != WorldType::Interior)
 		{
 			auto &exterior = static_cast<ExteriorWorldData&>(worldData);
 			auto *interiorPtr = exterior.getInterior();
-			assert(interiorPtr != nullptr);
+			DebugAssert(interiorPtr != nullptr);
 			return *interiorPtr;
 		}
 		else
@@ -2139,7 +2138,7 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 void GameWorldPanel::tick(double dt)
 {
 	auto &game = this->getGame();
-	assert(game.gameDataIsActive());
+	DebugAssert(game.gameDataIsActive());
 
 	// Get the relative mouse state.
 	const auto &inputManager = game.getInputManager();
@@ -2289,7 +2288,7 @@ void GameWorldPanel::tick(double dt)
 
 void GameWorldPanel::render(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -2372,7 +2371,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 void GameWorldPanel::renderSecondary(Renderer &renderer)
 {
-	assert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameDataIsActive());
 
 	// Several interface objects are in this method because they are hidden by the status
 	// pop-up and the spells list.

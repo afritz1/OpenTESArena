@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 
 #include "SDL.h"
 
@@ -43,7 +42,7 @@ void TextureManager::loadIMGPalette(const std::string &imgName)
 void TextureManager::loadPalette(const std::string &paletteName)
 {
 	// Don't load the same palette more than once.
-	assert(this->palettes.find(paletteName) == this->palettes.end());
+	DebugAssert(this->palettes.find(paletteName) == this->palettes.end());
 
 	// Get file extension of the palette name.
 	const std::string_view extension = StringView::getExtension(paletteName);
@@ -65,7 +64,7 @@ void TextureManager::loadPalette(const std::string &paletteName)
 	}
 
 	// Make sure everything above works as intended.
-	assert(this->palettes.find(paletteName) != this->palettes.end());
+	DebugAssert(this->palettes.find(paletteName) != this->palettes.end());
 }
 
 Surface TextureManager::make32BitFromPaletted(int width, int height,
@@ -130,7 +129,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		const COLFile colFile(filename);
 		const Palette &colPalette = colFile.getPalette();
 
-		assert(colPalette.get().size() == 256);
+		DebugAssert(colPalette.get().size() == 256);
 		surface = Surface::createWithFormat(16, 16, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 		

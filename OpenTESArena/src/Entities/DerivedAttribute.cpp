@@ -1,9 +1,9 @@
 #include <algorithm>
-#include <cassert>
 #include <unordered_map>
 
 #include "DerivedAttribute.h"
 #include "DerivedAttributeName.h"
+#include "../Utilities/Debug.h"
 
 const std::unordered_map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 {
@@ -14,7 +14,7 @@ const std::unordered_map<DerivedAttributeName, std::string> DerivedAttributeDisp
 
 DerivedAttribute::DerivedAttribute(DerivedAttributeName attributeName, int baseMaximum)
 {
-	assert(baseMaximum > 0);
+	DebugAssert(baseMaximum > 0);
 
 	this->attributeName = attributeName;
 	this->maximum = baseMaximum;
@@ -28,7 +28,7 @@ int DerivedAttribute::getCurrent() const
 
 int DerivedAttribute::getMaximum() const
 {
-	assert(this->maximum > 0);
+	DebugAssert(this->maximum > 0);
 
 	return this->maximum;
 }
@@ -53,7 +53,7 @@ void DerivedAttribute::setMaximum(int value)
 {
 	// The maximum for a derived attribute shouldn't be set to zero. Set
 	// the current value instead.
-	assert(value > 0);
+	DebugAssert(value > 0);
 
 	this->maximum = value;
 }

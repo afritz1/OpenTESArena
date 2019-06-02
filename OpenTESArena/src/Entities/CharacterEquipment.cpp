@@ -1,11 +1,10 @@
-#include <cassert>
-
 #include "CharacterEquipment.h"
 #include "../Items/Accessory.h"
 #include "../Items/BodyArmor.h"
 #include "../Items/Shield.h"
 #include "../Items/Trinket.h"
 #include "../Items/Weapon.h"
+#include "../Utilities/Debug.h"
 
 CharacterEquipment::CharacterEquipment()
 {
@@ -91,7 +90,7 @@ int CharacterEquipment::getTrinketCount(TrinketType trinketType) const
 
 bool CharacterEquipment::equipAccessory(Accessory *accessory)
 {
-	assert(accessory != nullptr);
+	DebugAssert(accessory != nullptr);
 
 	// Count how many similar accessories (i.e., rings) are already equipped.
 	int similarCount = this->getAccessoryCount(accessory->getAccessoryType());
@@ -107,7 +106,7 @@ bool CharacterEquipment::equipAccessory(Accessory *accessory)
 
 void CharacterEquipment::equipBodyArmor(BodyArmor *bodyArmor)
 {
-	assert(bodyArmor != nullptr);
+	DebugAssert(bodyArmor != nullptr);
 
 	if (this->bodyArmors.find(bodyArmor->getPartName()) == this->bodyArmors.end())
 	{
@@ -123,14 +122,14 @@ void CharacterEquipment::equipBodyArmor(BodyArmor *bodyArmor)
 
 void CharacterEquipment::equipShield(Shield *shield)
 {
-	assert(shield != nullptr);
+	DebugAssert(shield != nullptr);
 
 	this->shield = shield;
 }
 
 bool CharacterEquipment::equipTrinket(Trinket *trinket)
 {
-	assert(trinket != nullptr);
+	DebugAssert(trinket != nullptr);
 
 	// Count how many similar trinkets (i.e., marks) are already equipped.
 	int similarCount = this->getTrinketCount(trinket->getTrinketType());
@@ -146,15 +145,15 @@ bool CharacterEquipment::equipTrinket(Trinket *trinket)
 
 void CharacterEquipment::equipWeapon(Weapon *weapon)
 {
-	assert(weapon != nullptr);
+	DebugAssert(weapon != nullptr);
 
 	this->weapon = weapon;
 }
 
 void CharacterEquipment::removeAccessory(int index)
 {
-	assert(index >= 0);
-	assert(index < static_cast<int>(this->accessories.size()));
+	DebugAssert(index >= 0);
+	DebugAssert(index < static_cast<int>(this->accessories.size()));
 
 	this->accessories.erase(this->accessories.begin() + index);
 }
@@ -167,14 +166,12 @@ void CharacterEquipment::removeBodyArmor(BodyPartName partName)
 void CharacterEquipment::removeShield()
 {
 	this->shield = nullptr;
-
-	assert(this->shield == nullptr);
 }
 
 void CharacterEquipment::removeTrinket(int index)
 {
-	assert(index >= 0);
-	assert(index < static_cast<int>(this->trinkets.size()));
+	DebugAssert(index >= 0);
+	DebugAssert(index < static_cast<int>(this->trinkets.size()));
 
 	this->trinkets.erase(this->trinkets.begin() + index);
 }
@@ -182,6 +179,4 @@ void CharacterEquipment::removeTrinket(int index)
 void CharacterEquipment::removeWeapon()
 {
 	this->weapon = nullptr;
-
-	assert(this->weapon == nullptr);
 }

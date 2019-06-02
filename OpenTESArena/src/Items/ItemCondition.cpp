@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <unordered_map>
 
 #include "ArmorMaterial.h"
@@ -9,6 +8,7 @@
 #include "ShieldType.h"
 #include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
+#include "../Utilities/Debug.h"
 
 // It doesn't look like item condition values are visible anywhere, like in
 // the manual for instance, so I'm remaking them anew with reasonable values.
@@ -81,7 +81,7 @@ ItemCondition ItemCondition::makeFistsCondition()
 
 ItemConditionName ItemCondition::getCurrentConditionName() const
 {
-	assert(this->maxCondition > 0);
+	DebugAssert(this->maxCondition > 0);
 
 	const double percent = static_cast<double>(this->currentCondition) /
 		static_cast<double>(this->maxCondition);

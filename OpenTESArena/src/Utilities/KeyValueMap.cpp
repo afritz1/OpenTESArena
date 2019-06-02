@@ -1,13 +1,12 @@
-#include <cassert>
 #include <sstream>
 #include <string_view>
 #include <vector>
 
+#include "Debug.h"
+#include "File.h"
 #include "KeyValueMap.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/File.h"
-#include "../Utilities/String.h"
-#include "../Utilities/StringView.h"
+#include "String.h"
+#include "StringView.h"
 
 namespace
 {

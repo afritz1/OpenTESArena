@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <limits>
 
@@ -332,7 +331,7 @@ SoftwareRenderer::DistantObjects::DistantObjects()
 void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	std::vector<SkyTexture> &skyTextures)
 {
-	assert(skyTextures.size() == 0);
+	DebugAssert(skyTextures.size() == 0);
 
 	// Creates a render texture from the given surface, adds it to the sky textures list, and
 	// returns its index in the sky textures list.
@@ -933,10 +932,10 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 		const int endY = static_cast<int>(std::round(static_cast<double>(i + 1) * blockHeight));
 
 		// Make sure the rounding is correct.
-		assert(startX >= 0);
-		assert(endX <= width);
-		assert(startY >= 0);
-		assert(endY <= height);
+		DebugAssert(startX >= 0);
+		DebugAssert(endX <= width);
+		DebugAssert(startY >= 0);
+		DebugAssert(endY <= height);
 
 		this->renderThreads.at(i) = std::thread(SoftwareRenderer::renderThreadLoop,
 			std::ref(this->threadData), threadIndex, startX, endX, startY, endY);
@@ -6241,8 +6240,8 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 	auto drawDistantObjRange = [&visDistantObjs, &drawDistantObj](int start, int end,
 		DistantRenderType renderType)
 	{
-		assert(start >= 0);
-		assert(end <= visDistantObjs.objs.size());
+		DebugAssert(start >= 0);
+		DebugAssert(end <= visDistantObjs.objs.size());
 
 		// Reverse iterate so objects are drawn far to near.
 		const VisDistantObject *objs = visDistantObjs.objs.data();

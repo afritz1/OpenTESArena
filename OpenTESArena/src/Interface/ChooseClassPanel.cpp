@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <cassert>
 
 #include "SDL.h"
 
@@ -31,6 +30,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
+#include "../Utilities/Debug.h"
 
 const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 
@@ -40,7 +40,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	// Read in character classes (just copy from misc. assets for now).
 	const auto &classDefs = game.getMiscAssets().getClassDefinitions();
 	this->charClasses = std::vector<CharacterClass>(classDefs.begin(), classDefs.end());
-	assert(this->charClasses.size() > 0);
+	DebugAssert(this->charClasses.size() > 0);
 
 	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
@@ -155,7 +155,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
 	// Generating them all at once here is too slow in debug mode.
-	assert(this->tooltipTextures.size() == 0);
+	DebugAssert(this->tooltipTextures.size() == 0);
 }
 
 std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
