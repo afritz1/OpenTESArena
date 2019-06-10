@@ -56,20 +56,22 @@ const uint8_t MIFFile::LAVA_CHASM = 0xE;
 
 MIFFile::MIFFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
-
-	const uint16_t headerSize = Bytes::getLE16(srcData.data() + 4);
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint16_t headerSize = Bytes::getLE16(srcPtr + 4);
 
 	// Get data from the header (after "MHDR"). Constant for all levels. The header 
 	// size should be 61.
 	ArenaTypes::MIFHeader mifHeader;
-	mifHeader.init(srcData.data() + 6);
+	mifHeader.init(srcPtr + 6);
 
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
@@ -95,13 +97,13 @@ MIFFile::MIFFile(const std::string &filename)
 	int levelOffset = headerSize + 6;
 
 	// The level count is unused since it's inferred by this level loading loop.
-	while (levelOffset < srcData.size())
+	while (levelOffset < srcSize)
 	{
 		MIFFile::Level level;
 
 		// Begin loading the level data at the current LEVL, and get the offset
 		// to the next LEVL.
-		const uint8_t *levelStart = srcData.data() + levelOffset;
+		const uint8_t *levelStart = srcPtr + levelOffset;
 		levelOffset += level.load(levelStart);
 
 		// Add to list of levels.

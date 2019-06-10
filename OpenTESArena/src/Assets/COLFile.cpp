@@ -13,7 +13,7 @@ COLFile::COLFile(const std::string &filename)
 {
 	bool failed = false;
 	std::array<uint8_t, 776> rawPal;
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 
 	if (stream == nullptr)
 	{

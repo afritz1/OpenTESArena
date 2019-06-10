@@ -42,21 +42,22 @@ public:
 	void initialize(std::string&& rootPath = std::string());
 	void addDataPath(std::string&& path);
 
-	IStreamPtr open(const char *name, bool &inGlobalBSA);
+	IStreamPtr open(const char *name, bool *inGlobalBSA);
 	IStreamPtr open(const char *name);
-	IStreamPtr open(const std::string &name, bool &inGlobalBSA);
-	IStreamPtr open(const std::string &name);
-
-	// Convenience functions for opening and reading a file into the output parameters.
-	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA);
-	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
 
 	// Special open method intended for Unix systems since the Arena floppy and CD versions don't
 	// have consistent casing for some files (like SPELLSG.65). This method is specific to Arena's
 	// files and is not a general solution for case-insensitive file loading.
 	// - To do: replace with something using std::filesystem::equivalent() (C++17)?
-	IStreamPtr openCaseInsensitive(const std::string &name, bool &inGlobalBSA);
-	IStreamPtr openCaseInsensitive(const std::string &name);
+	IStreamPtr openCaseInsensitive(const char *name, bool *inGlobalBSA);
+	IStreamPtr openCaseInsensitive(const char *name);
+
+	// Convenience functions for opening and reading a file into the output parameters.
+	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA);
+	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
+	bool readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize,
+		bool *inGlobalBSA);
+	bool readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
 
 	bool exists(const char *name);
 	std::vector<std::string> list(const char *pattern = nullptr) const;

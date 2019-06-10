@@ -10,29 +10,32 @@
 
 CFAFile::CFAFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Read CFA header. Fortunately, all CFAs have headers, unlike IMGs and CIFs.
-	const uint16_t widthUncompressed = Bytes::getLE16(srcData.data());
-	const uint16_t height = Bytes::getLE16(srcData.data() + 2);
-	const uint16_t widthCompressed = Bytes::getLE16(srcData.data() + 4);
-	const uint16_t xOffset = Bytes::getLE16(srcData.data() + 6);
-	const uint16_t yOffset = Bytes::getLE16(srcData.data() + 8);
-	const uint8_t bitsPerPixel = *(srcData.data() + 10); // Determines demuxing routine.
-	const uint8_t frameCount = *(srcData.data() + 11);
-	const uint16_t headerSize = Bytes::getLE16(srcData.data() + 12);
+	const uint16_t widthUncompressed = Bytes::getLE16(srcPtr);
+	const uint16_t height = Bytes::getLE16(srcPtr + 2);
+	const uint16_t widthCompressed = Bytes::getLE16(srcPtr + 4);
+	const uint16_t xOffset = Bytes::getLE16(srcPtr + 6);
+	const uint16_t yOffset = Bytes::getLE16(srcPtr + 8);
+	const uint8_t bitsPerPixel = *(srcPtr + 10); // Determines demuxing routine.
+	const uint8_t frameCount = *(srcPtr + 11);
+	const uint16_t headerSize = Bytes::getLE16(srcPtr + 12);
 
 	// Adapted from WinArena.
 
 	// Pointer to the look-up conversion table. This is how the packed colors
 	// are converted into useful palette indices.
-	const uint8_t *lookUpTable = srcData.data() + 76;
+	const uint8_t *lookUpTable = srcPtr + 76;
 
 	// Line buffer (generously over-allocated for demuxing).
 	std::vector<uint8_t> encoded(widthUncompressed + 16, 0);
@@ -47,8 +50,7 @@ CFAFile::CFAFile(const std::string &filename)
 		sizeof(uint32_t) + (widthUncompressed * 16));
 
 	// Decompress the RLE data of the CFA images (they're all packed together).
-	Compression::decodeRLE(srcData.data() + headerSize,
-		widthCompressed * height * frameCount, decomp);
+	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount, decomp);
 
 	// Temporary buffers for frame palette indices.
 	std::vector<std::vector<uint8_t>> frames;

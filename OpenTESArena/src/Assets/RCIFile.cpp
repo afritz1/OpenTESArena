@@ -11,23 +11,26 @@ const int RCIFile::FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
 
 RCIFile::RCIFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Number of uncompressed frames packed in the .RCI.
-	const int frameCount = static_cast<int>(srcData.size()) / RCIFile::FRAME_SIZE;
+	const int frameCount = static_cast<int>(srcSize) / RCIFile::FRAME_SIZE;
 
 	// Create an image for each uncompressed frame using the given palette.
 	for (int i = 0; i < frameCount; i++)
 	{
 		this->pixels.push_back(std::make_unique<uint8_t[]>(RCIFile::FRAME_SIZE));
 
-		const uint8_t *srcPixels = srcData.data() + (RCIFile::FRAME_SIZE * i);
+		const uint8_t *srcPixels = srcPtr + (RCIFile::FRAME_SIZE * i);
 		uint8_t *dstPixels = this->pixels.back().get();
 		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, dstPixels);
 	}

@@ -90,7 +90,7 @@ MidiSongPtr WildMidiDevice::open(const std::string &name)
 	if (sInitState < 0)
 		return MidiSongPtr(nullptr);
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(name);
+	VFS::IStreamPtr stream = VFS::Manager::get().open(name.c_str());
 	if (stream == nullptr)
 	{
 		DebugLogWarning("Failed to open \"" + name + "\".");

@@ -206,13 +206,16 @@ namespace
 
 ExeUnpacker::ExeUnpacker(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Generate the bit trees for "duplication mode". Since the Duplication1 table has 
 	// a special case at index 11, split the insertions up for the first bit tree.
@@ -236,8 +239,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 	}
 
 	// Beginning and end of compressed data in the executable.
-	const uint8_t *compressedStart = srcData.data() + 752;
-	const uint8_t *compressedEnd = srcData.data() + (srcData.size() - 8);
+	const uint8_t *compressedStart = srcPtr + 752;
+	const uint8_t *compressedEnd = srcPtr + (srcSize - 8);
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);

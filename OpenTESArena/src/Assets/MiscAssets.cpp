@@ -290,7 +290,7 @@ void MiscAssets::TemplateDat::init()
 {
 	const std::string filename = "TEMPLATE.DAT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Read TEMPLATE.DAT into a string.
@@ -612,7 +612,7 @@ void MiscAssets::WorldMapTerrain::init()
 {
 	const std::string filename("TERRAIN.IMG");
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
 	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
 
 	// Skip the .IMG header.
@@ -674,6 +674,7 @@ void MiscAssets::init(bool floppyVersion)
 
 void MiscAssets::parseExecutableData(bool floppyVersion)
 {
+	// @todo: return success.
 	this->exeData.init(floppyVersion);
 }
 
@@ -681,16 +682,19 @@ void MiscAssets::parseQuestionTxt()
 {
 	const std::string filename = "QUESTION.TXT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Read QUESTION.TXT into a string.
-	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
+	const std::string text(reinterpret_cast<const char*>(srcPtr), srcSize);
 
 	// Lambda for adding a new question to the questions list.
 	auto addQuestion = [this](const std::string &description,
@@ -805,13 +809,16 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 {
 	const std::string filename = "CLASSES.DAT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Character class generation members (to be set).
 	auto &classes = this->classesDat.classes;
@@ -820,8 +827,7 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 	// The class IDs take up the first 18 bytes.
 	for (size_t i = 0; i < classes.size(); i++)
 	{
-		const uint8_t *srcPtr = srcData.data() + i;
-		const uint8_t value = *srcPtr;
+		const uint8_t value = *(srcPtr + i);
 
 		CharacterClassGeneration::ClassData &classData = classes[i];
 		classData.id = value & CharacterClassGeneration::ID_MASK;
@@ -836,12 +842,12 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 	for (size_t i = 0; i < choices.size(); i++)
 	{
 		const int choiceSize = 3;
-		const uint8_t *srcPtr = srcData.data() + classes.size() + (choiceSize * i);
+		const size_t offset = classes.size() + (choiceSize * i);
 
 		CharacterClassGeneration::ChoiceData &choice = choices[i];
-		choice.a = *srcPtr;
-		choice.b = *(srcPtr + 1);
-		choice.c = *(srcPtr + 2);
+		choice.a = *(srcPtr + offset);
+		choice.b = *(srcPtr + offset + 1);
+		choice.c = *(srcPtr + offset + 2);
 	}
 
 	// Now read in the character class data from A.EXE. Some of it also depends on
@@ -1016,15 +1022,16 @@ void MiscAssets::parseDungeonTxt()
 {
 	const std::string filename = "DUNGEON.TXT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
-
-	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
+	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
 
 	// Step line by line through the text, inserting data into the dungeon list.
 	std::istringstream iss(text);
@@ -1079,16 +1086,17 @@ void MiscAssets::parseArtifactText()
 	auto loadArtifactText = [](const std::string &filename,
 		std::array<MiscAssets::ArtifactTavernText, 16> &artifactTavernText)
 	{
-		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-		DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
-
-		stream->seekg(0, std::ios::end);
-		std::vector<uint8_t> srcData(stream->tellg());
-		stream->seekg(0, std::ios::beg);
-		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+		std::unique_ptr<std::byte[]> src;
+		size_t srcSize;
+		if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+		{
+			// @todo: return failure.
+			DebugAssert(false);
+			return;
+		}
 
 		// Write the null-terminated strings to the output array.
-		const char *stringPtr = reinterpret_cast<const char*>(srcData.data());
+		const char *stringPtr = reinterpret_cast<const char*>(src.get());
 		for (auto &block : artifactTavernText)
 		{
 			auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
@@ -1117,16 +1125,17 @@ void MiscAssets::parseTradeText()
 	auto loadTradeText = [](const std::string &filename,
 		MiscAssets::TradeText::FunctionArray &functionArr)
 	{
-		VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-		DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
-
-		stream->seekg(0, std::ios::end);
-		std::vector<uint8_t> srcData(stream->tellg());
-		stream->seekg(0, std::ios::beg);
-		stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+		std::unique_ptr<std::byte[]> src;
+		size_t srcSize;
+		if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+		{
+			// @todo: return failure.
+			DebugAssert(false);
+			return;
+		}
 
 		// Write the null-terminated strings to the output array.
-		const char *stringPtr = reinterpret_cast<const char*>(srcData.data());
+		const char *stringPtr = reinterpret_cast<const char*>(src.get());
 		for (MiscAssets::TradeText::PersonalityArray &personalityArr : functionArr)
 		{
 			for (MiscAssets::TradeText::RandomArray &randomArr : personalityArr)
@@ -1150,19 +1159,22 @@ void MiscAssets::parseNameChunks()
 {
 	const std::string filename("NAMECHNK.DAT");
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	size_t offset = 0;
-	while (offset < srcData.size())
+	while (offset < srcSize)
 	{
 		// Get information for the current chunk.
-		const uint8_t *chunkPtr = srcData.data() + offset;
+		const uint8_t *chunkPtr = srcPtr + offset;
 		const uint16_t chunkLength = Bytes::getLE16(chunkPtr);
 		const uint8_t stringCount = *(chunkPtr + 2);
 
@@ -1187,30 +1199,33 @@ void MiscAssets::parseStandardSpells()
 	// case-insensitive open method so it works on case-sensitive systems (i.e., Unix).
 	const std::string filename = "SPELLSG.65";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
-
-	ArenaTypes::SpellData::initArray(this->standardSpells, srcData.data());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	ArenaTypes::SpellData::initArray(this->standardSpells, srcPtr);
 }
 
 void MiscAssets::parseSpellMakerDescriptions()
 {
 	const std::string filename = "SPELLMKR.TXT";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
-
-	const std::string text(reinterpret_cast<const char*>(srcData.data()), srcData.size());
+	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
 
 	struct State
 	{
@@ -1287,13 +1302,16 @@ void MiscAssets::parseWorldMapMasks()
 {
 	const std::string filename = "TAMRIEL.MNU";
 
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Beginning of the mask data.
 	const int startOffset = 0x87D5;
@@ -1325,8 +1343,8 @@ void MiscAssets::parseWorldMapMasks()
 			WorldMapMask::getAdjustedWidth(rect.getWidth()) * rect.getHeight();
 
 		// Copy the segment of mask bytes to a new vector.
-		const auto maskStart = srcData.begin() + startOffset + offset;
-		const auto maskEnd = maskStart + byteCount;
+		const uint8_t *maskStart = srcPtr + startOffset + offset;
+		const uint8_t *maskEnd = maskStart + byteCount;
 		std::vector<uint8_t> maskData(maskStart, maskEnd);
 
 		// Assign the map mask onto the map masks list.

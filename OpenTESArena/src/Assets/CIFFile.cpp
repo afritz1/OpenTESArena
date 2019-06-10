@@ -28,13 +28,17 @@ CIFFile::CIFFile(const std::string &filename)
 	// Some filenames (i.e., Arrows.cif) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
-	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcEnd = srcPtr + srcSize;
 
 	// X and Y offset might be useful for weapon positions on the screen.
 	uint16_t xoff, yoff, width, height, flags, len;
@@ -56,12 +60,12 @@ CIFFile::CIFFile(const std::string &filename)
 	}
 	else
 	{
-		xoff = Bytes::getLE16(srcData.data());
-		yoff = Bytes::getLE16(srcData.data() + 2);
-		width = Bytes::getLE16(srcData.data() + 4);
-		height = Bytes::getLE16(srcData.data() + 6);
-		flags = Bytes::getLE16(srcData.data() + 8);
-		len = Bytes::getLE16(srcData.data() + 10);
+		xoff = Bytes::getLE16(srcPtr);
+		yoff = Bytes::getLE16(srcPtr + 2);
+		width = Bytes::getLE16(srcPtr + 4);
+		height = Bytes::getLE16(srcPtr + 6);
+		flags = Bytes::getLE16(srcPtr + 8);
+		len = Bytes::getLE16(srcPtr + 10);
 	}
 
 	const int headerSize = 12;
@@ -71,9 +75,9 @@ CIFFile::CIFFile(const std::string &filename)
 		// Type 2 CIF.
 		int offset = 0;
 
-		while ((srcData.begin() + offset) < srcData.end())
+		while ((srcPtr + offset) < srcEnd)
 		{
-			const uint8_t *header = srcData.data() + offset;
+			const uint8_t *header = srcPtr + offset;
 			xoff = Bytes::getLE16(header);
 			yoff = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
@@ -100,9 +104,9 @@ CIFFile::CIFFile(const std::string &filename)
 		// Type 4 CIF.
 		int offset = 0;
 
-		while ((srcData.begin() + offset) < srcData.end())
+		while ((srcPtr + offset) < srcEnd)
 		{
-			const uint8_t *header = srcData.data() + offset;
+			const uint8_t *header = srcPtr + offset;
 			xoff = Bytes::getLE16(header);
 			yoff = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
@@ -129,9 +133,9 @@ CIFFile::CIFFile(const std::string &filename)
 		// Type 8 CIF.
 		int offset = 0;
 
-		while ((srcData.begin() + offset) < srcData.end())
+		while ((srcPtr + offset) < srcEnd)
 		{
-			const uint8_t *header = srcData.data() + offset;
+			const uint8_t *header = srcPtr + offset;
 			xoff = Bytes::getLE16(header);
 			yoff = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
@@ -168,7 +172,7 @@ CIFFile::CIFFile(const std::string &filename)
 			this->offsets.push_back(Int2(xoff, yoff));
 			this->dimensions.push_back(Int2(width, height));
 
-			const uint8_t *srcPixels = srcData.data() + (i * len);
+			const uint8_t *srcPixels = srcPtr + (i * len);
 			uint8_t *dstPixels = this->pixels.back().get();
 			std::copy(srcPixels, srcPixels + len, dstPixels);
 		}
@@ -179,9 +183,9 @@ CIFFile::CIFFile(const std::string &filename)
 		int offset = 0;
 
 		// Read uncompressed images until the end of the file.
-		while ((srcData.begin() + offset) < srcData.end())
+		while ((srcPtr + offset) < srcEnd)
 		{
-			const uint8_t *header = srcData.data() + offset;
+			const uint8_t *header = srcPtr + offset;
 			xoff = Bytes::getLE16(header);
 			yoff = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);

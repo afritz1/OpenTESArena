@@ -27,17 +27,20 @@ namespace
 
 FontFile::FontFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// The character height is in the first byte.
-	const uint8_t charHeight = srcData.front();
-	const uint8_t *counts = srcData.data();
+	const uint8_t charHeight = srcPtr[0];
+	const uint8_t *counts = srcPtr;
 	const uint16_t *lines = reinterpret_cast<const uint16_t*>(counts + 95);
 
 	std::array<FontElement, 96> symbols;

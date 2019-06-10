@@ -23,20 +23,23 @@ enum class BlockType : uint8_t
 
 VOCFile::VOCFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Read part of the .VOC header. Bytes 0 to 18 contain "Creative Voice File",
 	// and byte 19 prevents the whole file from being printed by accident.
-	const uint8_t eofByte = *(srcData.data() + 19);
-	const uint16_t headerSize = Bytes::getLE16(srcData.data() + 20);
-	const uint16_t versionNumber = Bytes::getLE16(srcData.data() + 22);
-	const uint16_t checksum = Bytes::getLE16(srcData.data() + 24);
+	const uint8_t eofByte = *(srcPtr + 19);
+	const uint16_t headerSize = Bytes::getLE16(srcPtr + 20);
+	const uint16_t versionNumber = Bytes::getLE16(srcPtr + 22);
+	const uint16_t checksum = Bytes::getLE16(srcPtr + 24);
 
 	DebugAssertMsg(eofByte == 0x1A, "Invalid EOF byte \"" + std::to_string(eofByte) + "\".");
 	DebugAssertMsg(checksum == (~versionNumber + 0x1234),
@@ -53,13 +56,13 @@ VOCFile::VOCFile(const std::string &filename)
 
 	// Read data blocks.
 	int offset = headerSize;
-	while (offset < srcData.size())
+	while (offset < srcSize)
 	{
 		const int blockHeaderSize = 4;
 
 		// One byte for the block type (0-9). Don't read any further if it's a 
 		// terminator block.
-		const BlockType blockType = static_cast<BlockType>(*(srcData.data() + offset));
+		const BlockType blockType = static_cast<BlockType>(*(srcPtr + offset));
 
 		if (blockType == BlockType::Terminator)
 		{
@@ -68,10 +71,10 @@ VOCFile::VOCFile(const std::string &filename)
 		}
 
 		// Three bytes for the block size (unsigned 24-bit integer).
-		const uint32_t blockSize = Bytes::getLE24(srcData.data() + offset + 1);
+		const uint32_t blockSize = Bytes::getLE24(srcPtr + offset + 1);
 
 		// Pointer to the beginning of the block's data (after the common header).
-		const uint8_t *blockData = srcData.data() + offset + blockHeaderSize;
+		const uint8_t *blockData = srcPtr + offset + blockHeaderSize;
 
 		// Regarding this #define: the repeating drums are working just fine now, but they
 		// can get a little annoying after a while, so only define this name when repeating

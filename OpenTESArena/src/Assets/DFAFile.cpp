@@ -9,28 +9,31 @@
 
 DFAFile::DFAFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Read DFA header data.
-	const uint16_t imageCount = Bytes::getLE16(srcData.data());
-	//const uint16_t unknown1 = Bytes::getLE16(srcData.data() + 2); // Uncomment these when in use.
-	//const uint16_t unknown2 = Bytes::getLE16(srcData.data() + 4);
-	const uint16_t width = Bytes::getLE16(srcData.data() + 6);
-	const uint16_t height = Bytes::getLE16(srcData.data() + 8);
-	const uint16_t compressedLength = Bytes::getLE16(srcData.data() + 10); // First frame.
+	const uint16_t imageCount = Bytes::getLE16(srcPtr);
+	//const uint16_t unknown1 = Bytes::getLE16(srcPtr + 2); // Uncomment these when in use.
+	//const uint16_t unknown2 = Bytes::getLE16(srcPtr + 4);
+	const uint16_t width = Bytes::getLE16(srcPtr + 6);
+	const uint16_t height = Bytes::getLE16(srcPtr + 8);
+	const uint16_t compressedLength = Bytes::getLE16(srcPtr + 10); // First frame.
 
 	// Frame data with palette indices.
 	std::vector<std::vector<uint8_t>> frames;
 
 	// Uncompress the initial frame.
 	frames.push_back(std::vector<uint8_t>(width * height));
-	Compression::decodeRLE(srcData.data() + 12, width * height, frames.front());
+	Compression::decodeRLE(srcPtr + 12, width * height, frames.front());
 
 	// Make copies of the original frame for each update chunk.
 	for (int i = 1; i < imageCount; i++)
@@ -43,14 +46,14 @@ DFAFile::DFAFile(const std::string &filename)
 
 	// Start reading chunks for each update group. Skip the first frame because 
 	// that's the full image.
-	for (uint32_t frameIndex = 1; frameIndex < imageCount; ++frameIndex)
+	for (uint32_t frameIndex = 1; frameIndex < imageCount; frameIndex++)
 	{
 		// Select the frame buffer at the current frame index.
 		std::vector<uint8_t> &frame = frames.at(frameIndex);
 
 		// Pointer to the beginning of the chunk data. Each update chunk
 		// changes a group of pixels in a copy of the original image.
-		const uint8_t *chunkData = srcData.data() + offset;
+		const uint8_t *chunkData = srcPtr + offset;
 		const uint16_t chunkSize = Bytes::getLE16(chunkData);
 		const uint16_t chunkCount = Bytes::getLE16(chunkData + 2);
 
@@ -59,7 +62,7 @@ DFAFile::DFAFile(const std::string &filename)
 
 		for (uint32_t chunkIndex = 0; chunkIndex < chunkCount; ++chunkIndex)
 		{
-			const uint8_t *updateData = srcData.data() + offset;
+			const uint8_t *updateData = srcPtr + offset;
 			const uint16_t updateOffset = Bytes::getLE16(updateData);
 			const uint16_t updateCount = Bytes::getLE16(updateData + 2);
 
@@ -68,7 +71,7 @@ DFAFile::DFAFile(const std::string &filename)
 
 			for (uint32_t i = 0; i < updateCount; i++)
 			{
-				frame.at(updateOffset + i) = *(srcData.begin() + offset);
+				frame.at(updateOffset + i) = *(srcPtr + offset);
 				offset++;
 			}
 		}

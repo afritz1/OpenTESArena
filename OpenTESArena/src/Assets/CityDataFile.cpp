@@ -552,13 +552,16 @@ Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
 
 void CityDataFile::init(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Iterate over each province and initialize the location data.
 	for (size_t i = 0; i < this->provinces.size(); i++)
@@ -573,7 +576,7 @@ void CityDataFile::init(const std::string &filename)
 		const size_t nameSize = 20;
 
 		// Read the province header.
-		const char *provinceNamePtr = reinterpret_cast<const char*>(srcData.data() + startOffset);
+		const char *provinceNamePtr = reinterpret_cast<const char*>(srcPtr + startOffset);
 		province.name = std::string(provinceNamePtr);
 
 		const uint8_t *provinceGlobalDimsPtr =

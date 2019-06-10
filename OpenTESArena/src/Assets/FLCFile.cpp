@@ -90,25 +90,29 @@ struct ChunkHeader
 
 FLCFile::FLCFile(const std::string &filename)
 {
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+	const uint8_t *srcEnd = srcPtr + srcSize;
 
 	// Get the header data. Some of it is just miscellaneous (last updated, etc.),
 	// or only used in later versions with the EGI modifications.
 	FLICHeader header;
-	header.size = Bytes::getLE32(srcData.data());
-	header.type = Bytes::getLE16(srcData.data() + 4);
-	header.frames = Bytes::getLE16(srcData.data() + 6);
-	header.width = Bytes::getLE16(srcData.data() + 8);
-	header.height = Bytes::getLE16(srcData.data() + 10);
-	header.depth = Bytes::getLE16(srcData.data() + 12);
-	header.flags = Bytes::getLE16(srcData.data() + 14);
-	header.speed = Bytes::getLE32(srcData.data() + 16);
+	header.size = Bytes::getLE32(srcPtr);
+	header.type = Bytes::getLE16(srcPtr + 4);
+	header.frames = Bytes::getLE16(srcPtr + 6);
+	header.width = Bytes::getLE16(srcPtr + 8);
+	header.height = Bytes::getLE16(srcPtr + 10);
+	header.depth = Bytes::getLE16(srcPtr + 12);
+	header.flags = Bytes::getLE16(srcPtr + 14);
+	header.speed = Bytes::getLE32(srcPtr + 16);
 
 	// This class will only support the format used by Arena (0xAF12) for now.
 	DebugAssertMsg(header.type == static_cast<int>(FileType::FLC_TYPE),
@@ -124,9 +128,9 @@ FLCFile::FLCFile(const std::string &filename)
 
 	// Start decoding frames. The data starts after the header.
 	uint32_t dataOffset = sizeof(FLICHeader);
-	while ((srcData.begin() + dataOffset) < srcData.end())
+	while ((srcPtr + dataOffset) < srcEnd)
 	{
-		const uint8_t *framePtr = srcData.data() + dataOffset;
+		const uint8_t *framePtr = srcPtr + dataOffset;
 
 		const FrameHeader frameHeader(Bytes::getLE32(framePtr),
 			Bytes::getLE16(framePtr + 4), Bytes::getLE16(framePtr + 6));

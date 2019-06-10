@@ -53,8 +53,11 @@ void Manager::addDataPath(std::string&& path)
 	gRootPaths.push_back(std::move(path));
 }
 
-IStreamPtr Manager::open(const char *name, bool &inGlobalBSA)
+IStreamPtr Manager::open(const char *name, bool *inGlobalBSA)
 {
+	assert(name != nullptr);
+	assert(inGlobalBSA != nullptr);
+
 	std::unique_ptr<std::ifstream> stream(new std::ifstream());
 
 	// Search in reverse, so newer paths take precedence.
@@ -67,12 +70,12 @@ IStreamPtr Manager::open(const char *name, bool &inGlobalBSA)
 
 	if (iter != gRootPaths.rend())
 	{
-		inGlobalBSA = false;
+		*inGlobalBSA = false;
 		return IStreamPtr(std::move(stream));
 	}
 	else
 	{
-		inGlobalBSA = true;
+		*inGlobalBSA = true;
 		return gGlobalBsa.open(name);
 	}
 }
@@ -80,18 +83,45 @@ IStreamPtr Manager::open(const char *name, bool &inGlobalBSA)
 IStreamPtr Manager::open(const char *name)
 {
 	bool dummy;
-	return open(name, dummy);
+	return this->open(name, &dummy);
 }
 
-IStreamPtr Manager::open(const std::string &name, bool &inGlobalBSA)
+IStreamPtr Manager::openCaseInsensitive(const char *name, bool *inGlobalBSA)
 {
-	return this->open(name.c_str(), inGlobalBSA);
+	// Since the given filename is assumed to be unique in its directory, we only need to
+	// worry about filenames just like it but with different casing.
+	std::string newName = name;
+
+	// Case 1: upper first character, lower rest.
+	newName.front() = std::toupper(newName.front());
+	std::for_each(newName.begin() + 1, newName.end(),
+		[](char &c) { c = std::tolower(c); });
+
+	IStreamPtr stream = this->open(newName.c_str(), inGlobalBSA);
+
+	if (stream != nullptr)
+	{
+		return stream;
+	}
+	else
+	{
+		// Case 2: all uppercase.
+		for (char &c : newName)
+		{
+			c = std::toupper(c);
+		}
+
+		stream = this->open(newName.c_str(), inGlobalBSA);
+
+		// The caller does error checking to see if this is null.
+		return stream;
+	}
 }
 
-IStreamPtr Manager::open(const std::string &name)
+IStreamPtr Manager::openCaseInsensitive(const char *name)
 {
 	bool dummy;
-	return this->open(name, dummy);
+	return this->openCaseInsensitive(name, &dummy);
 }
 
 bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA)
@@ -99,9 +129,8 @@ bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *
 	assert(name != nullptr);
 	assert(dst != nullptr);
 	assert(dstSize != nullptr);
-	assert(inGlobalBSA != nullptr);
 
-	IStreamPtr stream = this->open(name, *inGlobalBSA);
+	IStreamPtr stream = this->open(name, inGlobalBSA);
 	if (stream == nullptr)
 	{
 		// @todo: use Debug logging.
@@ -123,42 +152,33 @@ bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *
 	return this->read(name, dst, dstSize, &dummy);
 }
 
-IStreamPtr Manager::openCaseInsensitive(const std::string &name, bool &inGlobalBSA)
+bool Manager::readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize,
+	bool *inGlobalBSA)
 {
-	// Since the given filename is assumed to be unique in its directory, we only need to
-	// worry about filenames just like it but with different casing.
-	std::string newName = name;
+	assert(name != nullptr);
+	assert(dst != nullptr);
+	assert(dstSize != nullptr);
 
-	// Case 1: upper first character, lower rest.
-	newName.front() = std::toupper(newName.front());
-	std::for_each(newName.begin() + 1, newName.end(),
-		[](char &c) { c = std::tolower(c); });
-
-	IStreamPtr stream = this->open(newName, inGlobalBSA);
-
-	if (stream != nullptr)
+	IStreamPtr stream = this->openCaseInsensitive(name, inGlobalBSA);
+	if (stream == nullptr)
 	{
-		return stream;
+		// @todo: use Debug logging.
+		std::cerr << "Could not open \"" << name << "\"." << '\n';
+		return false;
 	}
-	else
-	{
-		// Case 2: all uppercase.
-		for (char &c : newName)
-		{
-			c = std::toupper(c);
-		}
 
-		stream = this->open(newName, inGlobalBSA);
-
-		// The caller does error checking to see if this is null.
-		return stream;
-	}
+	stream->seekg(0, std::ios::end);
+	*dstSize = stream->tellg();
+	*dst = std::make_unique<std::byte[]>(*dstSize);
+	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(dst->get()), *dstSize);
+	return true;
 }
 
-IStreamPtr Manager::openCaseInsensitive(const std::string &name)
+bool Manager::readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize)
 {
 	bool dummy;
-	return this->openCaseInsensitive(name, dummy);
+	return this->readCaseInsensitive(name, dst, dstSize, &dummy);
 }
 
 bool Manager::exists(const char *name)

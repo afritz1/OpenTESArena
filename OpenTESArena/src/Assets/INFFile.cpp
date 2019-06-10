@@ -149,13 +149,17 @@ INFFile::INFFile(const std::string &filename)
 	// Some filenames (i.e., Crystal3.inf) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
-	VFS::IStreamPtr stream = VFS::Manager::get().openCaseInsensitive(filename, inGlobalBSA);
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	std::unique_ptr<std::byte[]> src;
+	size_t srcSize;
+	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize, &inGlobalBSA))
+	{
+		// @todo: return failure.
+		DebugAssert(false);
+		return;
+	}
 
-	stream->seekg(0, std::ios::end);
-	std::vector<uint8_t> srcData(stream->tellg());
-	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	uint8_t *srcPtr = reinterpret_cast<uint8_t*>(src.get());
+	uint8_t *srcEnd = srcPtr + srcSize;
 
 	// Check if the .INF is encrypted.
 	const bool isEncrypted = inGlobalBSA;
@@ -172,8 +176,9 @@ INFFile::INFFile(const std::string &filename)
 		// The count repeats every 256 bytes, and the key repeats every 8 bytes.
 		uint8_t keyIndex = 0;
 		uint8_t count = 0;
-		for (uint8_t &encryptedByte : srcData)
+		for (auto it = srcPtr; it != srcEnd; ++it)
 		{
+			uint8_t &encryptedByte = *it;
 			encryptedByte ^= count + encryptionKeys.at(keyIndex);
 			keyIndex = (keyIndex + 1) % encryptionKeys.size();
 			count++;
@@ -184,7 +189,7 @@ INFFile::INFFile(const std::string &filename)
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
-	std::string text(reinterpret_cast<char*>(srcData.data()), srcData.size());
+	std::string text(reinterpret_cast<char*>(srcPtr), srcSize);
 
 	// Remove carriage returns (newlines are nicer to work with).
 	text = String::replace(text, "\r", "");
