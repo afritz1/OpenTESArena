@@ -10,6 +10,7 @@
 #endif
 
 #include <algorithm>
+#include <cassert> // @todo: replace with DebugAssert
 #include <cctype>
 #include <cstring>
 #include <fstream>
@@ -91,6 +92,35 @@ IStreamPtr Manager::open(const std::string &name)
 {
 	bool dummy;
 	return this->open(name, dummy);
+}
+
+bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA)
+{
+	assert(name != nullptr);
+	assert(dst != nullptr);
+	assert(dstSize != nullptr);
+	assert(inGlobalBSA != nullptr);
+
+	IStreamPtr stream = this->open(name, *inGlobalBSA);
+	if (stream == nullptr)
+	{
+		// @todo: use Debug logging.
+		std::cerr << "Could not open \"" << name << "\"." << '\n';
+		return false;
+	}
+
+	stream->seekg(0, std::ios::end);
+	*dstSize = stream->tellg();
+	*dst = std::make_unique<std::byte[]>(*dstSize);
+	stream->seekg(0, std::ios::beg);
+	stream->read(reinterpret_cast<char*>(dst->get()), *dstSize);
+	return true;
+}
+
+bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize)
+{
+	bool dummy;
+	return this->read(name, dst, dstSize, &dummy);
 }
 
 IStreamPtr Manager::openCaseInsensitive(const std::string &name, bool &inGlobalBSA)

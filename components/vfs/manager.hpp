@@ -47,6 +47,10 @@ public:
 	IStreamPtr open(const std::string &name, bool &inGlobalBSA);
 	IStreamPtr open(const std::string &name);
 
+	// Convenience functions for opening and reading a file into the output parameters.
+	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA);
+	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
+
 	// Special open method intended for Unix systems since the Arena floppy and CD versions don't
 	// have consistent casing for some files (like SPELLSG.65). This method is specific to Arena's
 	// files and is not a general solution for case-insensitive file loading.
