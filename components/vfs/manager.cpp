@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <cassert> // @todo: replace with DebugAssert
 #include <cctype>
-#include <cstddef>
 #include <cstring>
 #include <fstream>
 #include <sstream>

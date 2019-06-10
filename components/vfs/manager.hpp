@@ -2,6 +2,7 @@
 #define COMPONENTS_VFS_MANAGER_HPP
 
 #include <array>
+#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <string>
