@@ -144,7 +144,7 @@ private:
 	// Ceiling data (height, box scale(?), etc.).
 	CeilingData ceiling;
 public:
-	INFFile(const std::string &filename);
+	bool init(const char *filename);
 
 	const std::vector<VoxelTextureData> &getVoxelTextures() const;
 	const std::vector<FlatTextureData> &getFlatTextures() const;

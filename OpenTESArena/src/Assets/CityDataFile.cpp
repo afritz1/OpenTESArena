@@ -550,15 +550,14 @@ Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
 	return Int2(citySeed >> 16, citySeed & 0xFFFF);
 }
 
-void CityDataFile::init(const std::string &filename)
+bool CityDataFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -634,4 +633,6 @@ void CityDataFile::init(const std::string &filename)
 			initLocation(dungeon);
 		}
 	}
+
+	return true;
 }

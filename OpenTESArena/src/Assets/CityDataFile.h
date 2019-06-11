@@ -150,7 +150,7 @@ public:
 	// Gets the local X and Y coordinates for a city from its seed.
 	static Int2 getLocalCityPoint(uint32_t citySeed);
 
-	void init(const std::string &filename);
+	bool init(const char *filename);
 };
 
 #endif

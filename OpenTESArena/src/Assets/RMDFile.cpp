@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <string>
 
 #include "Compression.h"
 #include "RMDFile.h"
@@ -12,20 +13,21 @@ const int RMDFile::WIDTH = 64;
 const int RMDFile::DEPTH = RMDFile::WIDTH;
 const int RMDFile::ELEMENTS_PER_FLOOR = RMDFile::BYTES_PER_FLOOR / 2;
 
-RMDFile::RMDFile(const std::string &filename)
-	: flor(RMDFile::ELEMENTS_PER_FLOOR), map1(RMDFile::ELEMENTS_PER_FLOOR),
-	map2(RMDFile::ELEMENTS_PER_FLOOR)
+bool RMDFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
+
+	this->flor = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
+	this->map1 = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
+	this->map2 = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
 
 	// The first word is the uncompressed length. Some .RMD files (#001 - #004) have 0 for 
 	// this value. They are used for storing uncompressed quarters of cities when in the 
@@ -37,7 +39,11 @@ RMDFile::RMDFile(const std::string &filename)
 	if (uncompLen == 0)
 	{
 		const uint16_t requiredSize = RMDFile::BYTES_PER_FLOOR * 3;
-		DebugAssertMsg(srcSize == requiredSize, "Invalid .RMD file.");
+		if (srcSize != requiredSize)
+		{
+			DebugLogError("Invalid .RMD file (size: " + std::to_string(srcSize) + ").");
+			return false;
+		}
 
 		// Write the uncompressed data into each floor.
 		const auto florStart = srcPtr;
@@ -66,6 +72,8 @@ RMDFile::RMDFile(const std::string &filename)
 		std::copy(florEnd, map1End, reinterpret_cast<uint8_t*>(this->map1.data()));
 		std::copy(map1End, map2End, reinterpret_cast<uint8_t*>(this->map2.data()));
 	}
+
+	return true;
 }
 
 const std::vector<uint16_t> &RMDFile::getFLOR() const

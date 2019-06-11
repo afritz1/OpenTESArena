@@ -618,7 +618,12 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 				std::to_string(variation) + rotation + ".MIF";
 
 			// Load the block's .MIF data into the level.
-			const MIFFile blockMif(blockMifName);
+			MIFFile blockMif;
+			if (!blockMif.init(blockMifName.c_str()))
+			{
+				DebugCrash("Could not init .MIF file \"" + blockMifName + "\".");
+			}
+
 			const auto &blockLevel = blockMif.getLevels().front();
 
 			// Offset of the block in the voxel grid.
@@ -691,7 +696,13 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Load WILD.MIF (blank slate, to be filled in by four .RMD files).
-	const MIFFile mif("WILD.MIF");
+	const std::string mifName = "WILD.MIF";
+	MIFFile mif;
+	if (!mif.init(mifName.c_str()))
+	{
+		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+	}
+
 	const MIFFile::Level &level = mif.getLevels().front();
 	const int gridWidth = 128;
 	const int gridDepth = gridWidth;
@@ -715,7 +726,11 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 			return "WILD" + ss.str() + ".RMD";
 		}();
 
-		const RMDFile rmd(rmdName);
+		RMDFile rmd;
+		if (!rmd.init(rmdName.c_str()))
+		{
+			DebugCrash("Could not init .RMD file \"" + rmdName + "\".");
+		}
 
 		// Copy .RMD voxel data to temp buffers.
 		for (int z = 0; z < RMDFile::DEPTH; z++)

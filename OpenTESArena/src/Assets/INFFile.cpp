@@ -142,7 +142,7 @@ INFFile::TextData::TextData(bool displayedOnce)
 	this->displayedOnce = displayedOnce;
 }
 
-INFFile::INFFile(const std::string &filename)
+bool INFFile::init(const char *filename)
 {
 	bool inGlobalBSA; // Set by VFS open() function.
 
@@ -151,11 +151,10 @@ INFFile::INFFile(const std::string &filename)
 	// on Unix-based systems.
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize, &inGlobalBSA))
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize, &inGlobalBSA))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	uint8_t *srcPtr = reinterpret_cast<uint8_t*>(src.get());
@@ -974,6 +973,8 @@ INFFile::INFFile(const std::string &filename)
 	// primarily for @TEXT since it's frequently the last section in the file
 	// and has the possibility of an off-by-one error with its *TEXT saving.
 	flushAllStates();
+
+	return true;
 }
 
 const std::vector<INFFile::VoxelTextureData> &INFFile::getVoxelTextures() const

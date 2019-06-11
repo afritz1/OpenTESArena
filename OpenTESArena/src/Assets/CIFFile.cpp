@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <string>
 #include <unordered_map>
 
 #include "CIFFile.h"
@@ -23,18 +24,17 @@ namespace
 	};
 }
 
-CIFFile::CIFFile(const std::string &filename)
+bool CIFFile::init(const char *filename)
 {
 	// Some filenames (i.e., Arrows.cif) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -71,7 +71,7 @@ CIFFile::CIFFile(const std::string &filename)
 	const int headerSize = 12;
 
 	if ((flags & 0x00FF) == 0x0002)
-	{		
+	{
 		// Type 2 CIF.
 		int offset = 0;
 
@@ -207,8 +207,11 @@ CIFFile::CIFFile(const std::string &filename)
 	}
 	else
 	{
-		DebugCrash("Unrecognized flags " + std::to_string(flags) + ".");
+		DebugLogError("Unrecognized flags " + std::to_string(flags) + ".");
+		return false;
 	}
+
+	return true;
 }
 
 int CIFFile::getImageCount() const

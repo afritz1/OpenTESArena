@@ -489,7 +489,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	const int templateCount = CityDataFile::getCityTemplateCount(isCoastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
-	const MIFFile mif = [locationType, &cityGen, isCoastal, templateID]()
+	const std::string mifName = [locationType, &cityGen, isCoastal, templateID]()
 	{
 		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
 		const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
@@ -499,8 +499,14 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
 		templateName = String::toUppercase(templateName);
 
-		return MIFFile(templateName);
+		return templateName;
 	}();
+
+	MIFFile mif;
+	if (!mif.init(mifName.c_str()))
+	{
+		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+	}
 
 	// City block count (6x6, 5x5, 4x4).
 	const int cityDim = CityDataFile::getCityDimensions(locationType);

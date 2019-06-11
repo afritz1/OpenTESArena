@@ -54,15 +54,14 @@ const uint8_t MIFFile::DRY_CHASM = 0xC;
 const uint8_t MIFFile::WET_CHASM = 0xD;
 const uint8_t MIFFile::LAVA_CHASM = 0xE;
 
-MIFFile::MIFFile(const std::string &filename)
+bool MIFFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -114,6 +113,7 @@ MIFFile::MIFFile(const std::string &filename)
 	this->depth = mifHeader.mapHeight;
 	this->startingLevelIndex = mifHeader.startingLevelIndex;
 	this->name = filename;
+	return true;
 }
 
 std::string MIFFile::mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID)

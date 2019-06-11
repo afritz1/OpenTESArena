@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <string>
 
 #include "VOCFile.h"
 #include "../Utilities/Bytes.h"
@@ -21,15 +22,14 @@ enum class BlockType : uint8_t
 	NewSoundData = 0x09
 };
 
-VOCFile::VOCFile(const std::string &filename)
+bool VOCFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -41,9 +41,17 @@ VOCFile::VOCFile(const std::string &filename)
 	const uint16_t versionNumber = Bytes::getLE16(srcPtr + 22);
 	const uint16_t checksum = Bytes::getLE16(srcPtr + 24);
 
-	DebugAssertMsg(eofByte == 0x1A, "Invalid EOF byte \"" + std::to_string(eofByte) + "\".");
-	DebugAssertMsg(checksum == (~versionNumber + 0x1234),
-		"Invalid checksum \"" + std::to_string(checksum) + "\".");
+	if (eofByte != 0x1A)
+	{
+		DebugLogError("Invalid EOF byte \"" + std::to_string(eofByte) + "\".");
+		return false;
+	}
+
+	if (checksum != (~versionNumber + 0x1234))
+	{
+		DebugLogError("Invalid checksum \"" + std::to_string(checksum) + "\".");
+		return false;
+	}
 
 	// Set the default sample rate to 0. Assume that a .VOC file has the same sample rate
 	// for all of its sound data (error otherwise).
@@ -153,6 +161,8 @@ VOCFile::VOCFile(const std::string &filename)
 
 		offset += blockHeaderSize + blockSize;
 	}
+
+	return true;
 }
 
 int VOCFile::getSampleRate() const

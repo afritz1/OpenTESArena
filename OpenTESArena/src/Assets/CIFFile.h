@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "../Math/Vector2.h"
@@ -18,7 +17,7 @@ private:
 	std::vector<std::unique_ptr<uint8_t[]>> pixels;
 	std::vector<Int2> offsets, dimensions;
 public:
-	CIFFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the number of images.
 	int getImageCount() const;

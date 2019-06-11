@@ -546,7 +546,7 @@ public:
 
 	// The floppy version boolean determines which strings file to use, and potentially
 	// how to interpret various data structures in the executable.
-	void init(bool floppyVersion);
+	bool init(bool floppyVersion);
 };
 
 #endif

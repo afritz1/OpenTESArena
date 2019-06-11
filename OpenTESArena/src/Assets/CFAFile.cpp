@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <string>
 
 #include "CFAFile.h"
 #include "Compression.h"
@@ -8,15 +9,14 @@
 
 #include "components/vfs/manager.hpp"
 
-CFAFile::CFAFile(const std::string &filename)
+bool CFAFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -151,6 +151,8 @@ CFAFile::CFAFile(const std::string &filename)
 		uint8_t *pixels = this->pixels.back().get();
 		std::copy(frame.begin(), frame.end(), pixels);
 	}
+
+	return true;
 }
 
 int CFAFile::getImageCount() const

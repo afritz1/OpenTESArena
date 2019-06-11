@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <string>
 
 #include "ExeUnpacker.h"
 #include "../Utilities/Bytes.h"
@@ -204,15 +205,14 @@ namespace
 	};
 }
 
-ExeUnpacker::ExeUnpacker(const std::string &filename)
+bool ExeUnpacker::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -244,8 +244,12 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);
-	DebugAssertMsg(lastCompWord == 0xFFFF, "Invalid last compressed word \"" +
-		String::toHexString(lastCompWord) + "\".");
+	if (lastCompWord != 0xFFFF)
+	{
+		DebugLogError("Invalid last compressed word \"0x" +
+			String::toHexString(lastCompWord) + "\".");
+		return false;
+	}
 
 	// Calculate length of decompressed data -- more precise method (for A.EXE).
 	const size_t decompLen = [compressedEnd]()
@@ -434,6 +438,8 @@ ExeUnpacker::ExeUnpacker(const std::string &filename)
 			decompIndex++;
 		}
 	}
+
+	return true;
 }
 
 const std::vector<uint8_t> &ExeUnpacker::getData() const

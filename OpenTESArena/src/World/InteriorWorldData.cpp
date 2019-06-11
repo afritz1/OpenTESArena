@@ -1,6 +1,7 @@
 #include "InteriorWorldData.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
+#include "../Utilities/Debug.h"
 #include "../Utilities/String.h"
 
 InteriorWorldData::InteriorWorldData()
@@ -41,7 +42,12 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	bool isArtifactDungeon, const ExeData &exeData)
 {
 	// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
-	const MIFFile mif("RANDOM1.MIF");
+	const std::string mifName = "RANDOM1.MIF";
+	MIFFile mif;
+	if (!mif.init(mifName.c_str()))
+	{
+		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+	}
 
 	ArenaRandom random(seed);
 

@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 // A DFA file contains images for entities that animate but don't move in the world, 
@@ -15,7 +14,7 @@ private:
 	std::vector<std::unique_ptr<uint8_t[]>> pixels;
 	int width, height;
 public:
-	DFAFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the number of images.
 	int getImageCount() const;

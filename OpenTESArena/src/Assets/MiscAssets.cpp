@@ -286,12 +286,15 @@ const MiscAssets::TemplateDat::Entry &MiscAssets::TemplateDat::getTilesetEntry(
 	return *iter;
 }
 
-void MiscAssets::TemplateDat::init()
+bool MiscAssets::TemplateDat::init()
 {
-	const std::string filename = "TEMPLATE.DAT";
-
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	const char *filename = "TEMPLATE.DAT";
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	if (stream == nullptr)
+	{
+		DebugLogError("Could not open \"" + std::string(filename) + "\".");
+		return false;
+	}
 
 	// Read TEMPLATE.DAT into a string.
 	stream->seekg(0, std::ios::end);
@@ -509,6 +512,8 @@ void MiscAssets::TemplateDat::init()
 			beginIter = endIter;
 		}
 	}
+
+	return true;
 }
 
 ClimateType MiscAssets::WorldMapTerrain::toClimateType(uint8_t index)
@@ -608,87 +613,91 @@ uint8_t MiscAssets::WorldMapTerrain::getFailSafeAt(int x, int y) const
 	}
 }
 
-void MiscAssets::WorldMapTerrain::init()
+bool MiscAssets::WorldMapTerrain::init(const char *filename)
 {
-	const std::string filename("TERRAIN.IMG");
-
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
-	DebugAssertMsg(stream != nullptr, "Could not open \"" + filename + "\".");
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	if (stream == nullptr)
+	{
+		DebugLogError("Could not open \"" + std::string(filename) + "\".");
+		return false;
+	}
 
 	// Skip the .IMG header.
 	stream->seekg(12);
 	stream->read(reinterpret_cast<char*>(this->indices.data()), this->indices.size());
+	return true;
 }
 
-MiscAssets::MiscAssets()
-{
-	// Initialized by init().
-}
-
-void MiscAssets::init(bool floppyVersion)
+bool MiscAssets::init(bool floppyVersion)
 {
 	DebugLog("Initializing.");
 
 	// Load the executable data.
-	this->parseExecutableData(floppyVersion);
+	bool success = this->initExecutableData(floppyVersion);
 
 	// Read in TEMPLATE.DAT, using "#..." as keys and the text as values.
-	this->templateDat.init();
+	success &= this->templateDat.init();
 
 	// Read in QUESTION.TXT and create character question objects.
-	this->parseQuestionTxt();
+	success &= this->initQuestionTxt();
 
 	// Read in CLASSES.DAT.
-	this->parseClasses(this->getExeData());
+	success &= this->initClasses(this->getExeData());
 
 	// Read in DUNGEON.TXT and pair each dungeon name with its description.
-	this->parseDungeonTxt();
+	success &= this->initDungeonTxt();
 
 	// Read in ARTFACT1.DAT and ARTFACT2.DAT.
-	this->parseArtifactText();
+	success &= this->initArtifactText();
 
 	// Read in EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, and TAVERN.DAT.
-	this->parseTradeText();
+	success &= this->initTradeText();
 
 	// Read in NAMECHNK.DAT.
-	this->parseNameChunks();
+	success &= this->initNameChunks();
 
 	// Read in SPELLSG.65.
-	this->parseStandardSpells();
+	success &= this->initStandardSpells();
 
 	// Read in SPELLMKR.TXT.
-	this->parseSpellMakerDescriptions();
+	success &= this->initSpellMakerDescriptions();
 
 	// Read city data file.
-	this->cityDataFile.init("CITYDATA.65");
+	success &= this->cityDataFile.init("CITYDATA.65");
 
 	// Read in the world map mask data from TAMRIEL.MNU.
-	this->parseWorldMapMasks();
+	success &= this->initWorldMapMasks();
 
 	// Read in the wilderness chunks to have them cached when exploring wilderness.
-	this->parseWildernessChunks();
+	success &= this->initWildernessChunks();
 
 	// Read in the terrain map from TERRAIN.IMG.
-	this->worldMapTerrain.init();
+	success &= this->worldMapTerrain.init("TERRAIN.IMG");
+
+	return success;
 }
 
-void MiscAssets::parseExecutableData(bool floppyVersion)
+bool MiscAssets::initExecutableData(bool floppyVersion)
 {
-	// @todo: return success.
-	this->exeData.init(floppyVersion);
+	if (!this->exeData.init(floppyVersion))
+	{
+		DebugLogError("Could not init .EXE data.");
+		return false;
+	}
+
+	return true;
 }
 
-void MiscAssets::parseQuestionTxt()
+bool MiscAssets::initQuestionTxt()
 {
-	const std::string filename = "QUESTION.TXT";
+	const char *filename = "QUESTION.TXT";
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -803,19 +812,19 @@ void MiscAssets::parseQuestionTxt()
 	// Add the last question object (#40) with the data collected by the last line
 	// in the file (it's skipped in the loop).
 	addQuestion(description, a, b, c);
+	return true;
 }
 
-void MiscAssets::parseClasses(const ExeData &exeData)
+bool MiscAssets::initClasses(const ExeData &exeData)
 {
-	const std::string filename = "CLASSES.DAT";
+	const char *filename = "CLASSES.DAT";
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -1016,19 +1025,20 @@ void MiscAssets::parseClasses(const ExeData &exeData)
 			allowedArmors, allowedShields, allowedWeapons, categoryName, lockpicking,
 			healthDie, initialExperienceCap, classIndex, mage, thief, criticalHit));
 	}
+
+	return true;
 }
 
-void MiscAssets::parseDungeonTxt()
+bool MiscAssets::initDungeonTxt()
 {
-	const std::string filename = "DUNGEON.TXT";
+	const char *filename = "DUNGEON.TXT";
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
@@ -1079,20 +1089,21 @@ void MiscAssets::parseDungeonTxt()
 			}
 		}
 	}
+
+	return true;
 }
 
-void MiscAssets::parseArtifactText()
+bool MiscAssets::initArtifactText()
 {
-	auto loadArtifactText = [](const std::string &filename,
+	auto loadArtifactText = [](const char *filename,
 		std::array<MiscAssets::ArtifactTavernText, 16> &artifactTavernText)
 	{
 		std::unique_ptr<std::byte[]> src;
 		size_t srcSize;
-		if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+		if (!VFS::Manager::get().read(filename, &src, &srcSize))
 		{
-			// @todo: return failure.
-			DebugAssert(false);
-			return;
+			DebugLogError("Could not read \"" + std::string(filename) + "\".");
+			return false;
 		}
 
 		// Write the null-terminated strings to the output array.
@@ -1114,24 +1125,26 @@ void MiscAssets::parseArtifactText()
 			initStringArray(block.barterFailureStrs);
 			initStringArray(block.counterOfferStrs);
 		}
+
+		return true;
 	};
 
-	loadArtifactText("ARTFACT1.DAT", this->artifactTavernText1);
-	loadArtifactText("ARTFACT2.DAT", this->artifactTavernText2);
+	bool success = loadArtifactText("ARTFACT1.DAT", this->artifactTavernText1);
+	success &= loadArtifactText("ARTFACT2.DAT", this->artifactTavernText2);
+	return success;
 }
 
-void MiscAssets::parseTradeText()
+bool MiscAssets::initTradeText()
 {
-	auto loadTradeText = [](const std::string &filename,
+	auto loadTradeText = [](const char *filename,
 		MiscAssets::TradeText::FunctionArray &functionArr)
 	{
 		std::unique_ptr<std::byte[]> src;
 		size_t srcSize;
-		if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+		if (!VFS::Manager::get().read(filename, &src, &srcSize))
 		{
-			// @todo: return failure.
-			DebugAssert(false);
-			return;
+			DebugLogError("Could not read \"" + std::string(filename) + "\".");
+			return false;
 		}
 
 		// Write the null-terminated strings to the output array.
@@ -1147,25 +1160,26 @@ void MiscAssets::parseTradeText()
 				}
 			}
 		}
+
+		return true;
 	};
 
-	loadTradeText("EQUIP.DAT", this->tradeText.equipment);
-	loadTradeText("MUGUILD.DAT", this->tradeText.magesGuild);
-	loadTradeText("SELLING.DAT", this->tradeText.selling);
-	loadTradeText("TAVERN.DAT", this->tradeText.tavern);
+	bool success = loadTradeText("EQUIP.DAT", this->tradeText.equipment);
+	success &= loadTradeText("MUGUILD.DAT", this->tradeText.magesGuild);
+	success &= loadTradeText("SELLING.DAT", this->tradeText.selling);
+	success &= loadTradeText("TAVERN.DAT", this->tradeText.tavern);
+	return success;
 }
 
-void MiscAssets::parseNameChunks()
+bool MiscAssets::initNameChunks()
 {
-	const std::string filename("NAMECHNK.DAT");
-
+	const char *filename = "NAMECHNK.DAT";
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -1191,38 +1205,39 @@ void MiscAssets::parseNameChunks()
 		this->nameChunks.push_back(std::move(strings));
 		offset += chunkLength;
 	}
+
+	return true;
 }
 
-void MiscAssets::parseStandardSpells()
+bool MiscAssets::initStandardSpells()
 {
 	// The filename has different casing between the floppy and CD version, so use a
 	// case-insensitive open method so it works on case-sensitive systems (i.e., Unix).
-	const std::string filename = "SPELLSG.65";
+	const char *filename = "SPELLSG.65";
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 	ArenaTypes::SpellData::initArray(this->standardSpells, srcPtr);
+	return true;
 }
 
-void MiscAssets::parseSpellMakerDescriptions()
+bool MiscAssets::initSpellMakerDescriptions()
 {
-	const std::string filename = "SPELLMKR.TXT";
+	const char *filename = "SPELLMKR.TXT";
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
@@ -1277,9 +1292,11 @@ void MiscAssets::parseSpellMakerDescriptions()
 			}
 		}
 	}
+
+	return true;
 }
 
-void MiscAssets::parseWildernessChunks()
+bool MiscAssets::initWildernessChunks()
 {
 	// The first four wilderness definitions are city blocks but they can be loaded anyway.
 	const size_t wildChunkCount = 70;
@@ -1293,22 +1310,23 @@ void MiscAssets::parseWildernessChunks()
 		ss << (i + 1);
 		ss << ".RMD";
 
-		RMDFile rmdFile(ss.str());
+		RMDFile rmdFile;
+		rmdFile.init(ss.str().c_str());
 		this->wildernessChunks.push_back(std::move(rmdFile));
 	}
+
+	return true;
 }
 
-void MiscAssets::parseWorldMapMasks()
+bool MiscAssets::initWorldMapMasks()
 {
-	const std::string filename = "TAMRIEL.MNU";
-
+	const char *filename = "TAMRIEL.MNU";
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -1353,6 +1371,8 @@ void MiscAssets::parseWorldMapMasks()
 		// Move to the next mask.
 		offset += byteCount;
 	}
+
+	return true;
 }
 
 const ExeData &MiscAssets::getExeData() const

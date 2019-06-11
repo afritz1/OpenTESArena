@@ -31,7 +31,11 @@ Font::Font(FontName fontName)
 
 	// Load the font file for this font name.
 	const std::string &filename = FontFilenames.at(fontName);
-	FontFile fontFile(filename);
+	FontFile fontFile;
+	if (!fontFile.init(filename.c_str()))
+	{
+		DebugCrash("Could not init font file \"" + filename + "\".");
+	}
 
 	const int elementHeight = fontFile.getHeight();
 	this->characterHeight = elementHeight;

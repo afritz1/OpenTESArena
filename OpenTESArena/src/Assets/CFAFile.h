@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 // A CFA file is for creatures and spell animations.
@@ -25,7 +24,7 @@ private:
 	static void demux6(const uint8_t *src, uint8_t *dst);
 	static void demux7(const uint8_t *src, uint8_t *dst);
 public:
-	CFAFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the number of images.
 	int getImageCount() const;

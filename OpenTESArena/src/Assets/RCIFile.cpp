@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <string>
 
 #include "RCIFile.h"
 #include "../Utilities/Debug.h"
@@ -9,15 +10,14 @@ const int RCIFile::WIDTH = 320;
 const int RCIFile::HEIGHT = 100;
 const int RCIFile::FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
 
-RCIFile::RCIFile(const std::string &filename)
+bool RCIFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -34,6 +34,8 @@ RCIFile::RCIFile(const std::string &filename)
 		uint8_t *dstPixels = this->pixels.back().get();
 		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, dstPixels);
 	}
+
+	return true;
 }
 
 int RCIFile::getImageCount() const

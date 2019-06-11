@@ -122,7 +122,13 @@ void LevelData::DoorState::update(double dt)
 
 LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
 	const std::string &name)
-	: voxelGrid(gridWidth, gridHeight, gridDepth), inf(infName), name(name) { }
+	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
+{
+	if (!this->inf.init(infName.c_str()))
+	{
+		DebugCrash("Could not init .INF file \"" + infName + "\".");
+	}
+}
 
 LevelData::~LevelData()
 {

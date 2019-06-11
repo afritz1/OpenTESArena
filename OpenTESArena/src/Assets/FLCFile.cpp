@@ -88,15 +88,14 @@ struct ChunkHeader
 	}
 };
 
-FLCFile::FLCFile(const std::string &filename)
+bool FLCFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -115,8 +114,11 @@ FLCFile::FLCFile(const std::string &filename)
 	header.speed = Bytes::getLE32(srcPtr + 16);
 
 	// This class will only support the format used by Arena (0xAF12) for now.
-	DebugAssertMsg(header.type == static_cast<int>(FileType::FLC_TYPE),
-		"Unsupported file type \"" + std::to_string(header.type) + "\".");
+	if (header.type != static_cast<int>(FileType::FLC_TYPE))
+	{
+		DebugLogError("Unsupported file type \"" + std::to_string(header.type) + "\".");
+		return false;
+	}
 
 	this->frameDuration = static_cast<double>(header.speed) / 1000.0;
 	this->width = header.width;
@@ -189,8 +191,9 @@ FLCFile::FLCFile(const std::string &filename)
 		}
 		else
 		{
-			DebugCrash("Unrecognized frame type \"" +
+			DebugLogError("Unrecognized frame type \"" +
 				std::to_string(static_cast<int>(frameHeader.type)) + "\".");
+			return false;
 		}
 
 		dataOffset += frameHeader.size;
@@ -199,11 +202,13 @@ FLCFile::FLCFile(const std::string &filename)
 	// Pop the last frame off, since they all seem to loop around to the beginning
 	// at the end.
 	this->pixels.pop_back();
+	return true;
 }
 
 Palette FLCFile::readPalette(const uint8_t *chunkData)
 {
 	// The number of elements (i.e., "groups" of pixels) should be one.
+	// @todo: change function signature so it can return failure.
 	const uint16_t numberOfElements = Bytes::getLE16(chunkData);
 	DebugAssertMsg(numberOfElements == 1, "Unusual palette element count \"" +
 		std::to_string(numberOfElements) + "\".");

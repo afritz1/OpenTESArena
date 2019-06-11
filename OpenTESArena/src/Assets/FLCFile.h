@@ -47,7 +47,7 @@ private:
 	std::unique_ptr<uint8_t[]> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
 		std::vector<uint8_t> &initialFrame);
 public:
-	FLCFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the number of frames.
 	int getFrameCount() const;

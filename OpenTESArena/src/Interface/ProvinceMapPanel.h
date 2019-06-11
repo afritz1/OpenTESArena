@@ -36,7 +36,7 @@ private:
 
 	Button<Game&, ProvinceMapPanel&> searchButton, travelButton;
 	Button<Game&, std::unique_ptr<ProvinceMapPanel::TravelData>> backToWorldMapButton;
-	std::unique_ptr<CIFFile> staffDungeonCif; // For obtaining palette indices.
+	CIFFile staffDungeonCif; // For obtaining palette indices.
 	std::unique_ptr<TravelData> travelData;
 	Palette provinceMapPalette;
 	double blinkTimer;

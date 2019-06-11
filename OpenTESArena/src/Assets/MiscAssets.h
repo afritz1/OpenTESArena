@@ -68,7 +68,7 @@ public:
 		const Entry &getEntry(int key, char letter) const;
 		const Entry &getTilesetEntry(int tileset, int key, char letter) const;
 
-		void init();
+		bool init();
 	};
 
 	// Each trade text file (EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, TAVERN.DAT) is an array
@@ -114,7 +114,7 @@ public:
 		// error and does a fail-safe search for sea pixels).
 		uint8_t getFailSafeAt(int x, int y) const;
 
-		void init();
+		bool init(const char *filename);
 	};
 private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
@@ -135,40 +135,38 @@ private:
 
 	// Loads the executable associated with the current Arena data path (either A.EXE
 	// for the floppy version or ACD.EXE for the CD version).
-	void parseExecutableData(bool floppyVersion);
+	bool initExecutableData(bool floppyVersion);
 
 	// Load QUESTION.TXT and separate each question by its number.
-	void parseQuestionTxt();
+	bool initQuestionTxt();
 
 	// Load CLASSES.DAT and also read class data from the executable.
-	void parseClasses(const ExeData &exeData);
+	bool initClasses(const ExeData &exeData);
 
 	// Load DUNGEON.TXT and pair each dungeon name with its description.
-	void parseDungeonTxt();
+	bool initDungeonTxt();
 
 	// Loads ARTFACT1.DAT and ARTFACT2.DAT.
-	void parseArtifactText();
+	bool initArtifactText();
 
 	// Loads EQUIP.DAT, MUGUILD.DAT, SELLING.DAT, and TAVERN.DAT.
-	void parseTradeText();
+	bool initTradeText();
 
 	// Loads NAMECHNK.DAT into a jagged list of name chunks.
-	void parseNameChunks();
+	bool initNameChunks();
 
 	// Loads SPELLSG.65.
-	void parseStandardSpells();
+	bool initStandardSpells();
 
 	// Loads SPELLMKR.TXT.
-	void parseSpellMakerDescriptions();
+	bool initSpellMakerDescriptions();
 
 	// Loads wilderness .RMD files.
-	void parseWildernessChunks();
+	bool initWildernessChunks();
 
 	// Reads the mask data from TAMRIEL.MNU.
-	void parseWorldMapMasks();
+	bool initWorldMapMasks();
 public:
-	MiscAssets();
-
 	// Gets the ExeData object. There may be slight differences between A.EXE and ACD.EXE,
 	// but only one will be available at a time for the lifetime of the program (dependent
 	// on the Arena path in the options).
@@ -218,7 +216,7 @@ public:
 	// Gets the world map terrain used with climate and travel calculations.
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
-	void init(bool floppyVersion);
+	bool init(bool floppyVersion);
 };
 
 #endif

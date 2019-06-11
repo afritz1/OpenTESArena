@@ -271,7 +271,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						const auto &exeData = miscAssets.getExeData();
 						const std::string mifName = String::toUppercase(
 							exeData.locations.startDungeonMifName);
-						const MIFFile mif(mifName);
+						
+						MIFFile mif;
+						if (!mif.init(mifName.c_str()))
+						{
+							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+						}
+
 						const int provinceID = Location::CENTER_PROVINCE_ID;
 						const Location location = Location::makeSpecialCase(
 							Location::SpecialCaseType::StartDungeon, provinceID);
@@ -482,7 +488,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 	// Get pixel offsets for each head.
 	const std::string &headsFilename = PortraitFile::getHeads(gender, raceID, false);
-	const CIFFile cifFile(headsFilename);
+	CIFFile cifFile;
+	if (!cifFile.init(headsFilename.c_str()))
+	{
+		DebugCrash("Could not init .CIF file \"" + headsFilename + "\".");
+	}
 
 	for (int i = 0; i < cifFile.getImageCount(); i++)
 	{

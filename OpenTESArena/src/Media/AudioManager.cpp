@@ -538,7 +538,11 @@ void AudioManagerImpl::playSound(const std::string &filename)
 		if (vocIter == mSoundBuffers.end())
 		{
 			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
-			const VOCFile voc(filename);
+			VOCFile voc;
+			if (!voc.init(filename.c_str()))
+			{
+				DebugCrash("Could not init .VOC file \"" + filename + "\".");
+			}
 
 			// Clear OpenAL error.
 			alGetError();

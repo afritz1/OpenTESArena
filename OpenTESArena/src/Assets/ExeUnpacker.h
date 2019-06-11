@@ -2,7 +2,6 @@
 #define EXE_UNPACKER_H
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 // For decompressing DOS executables compressed with PKLITE.
@@ -13,7 +12,7 @@ private:
 	std::vector<uint8_t> exeData;
 public:
 	// Reads in a compressed EXE file and decompresses it.
-	ExeUnpacker(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the decompressed executable data.
 	const std::vector<uint8_t> &getData() const;

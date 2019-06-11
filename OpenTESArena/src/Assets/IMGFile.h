@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 
 #include "../Media/Palette.h"
 
@@ -21,11 +20,10 @@ private:
 	// Reads the palette from an .IMG file's palette data.
 	static Palette readPalette(const uint8_t *paletteData);
 public:
-	IMGFile(const std::string &filename);
+	bool init(const char *filename);
 
-	// Extracts the palette from an .IMG file. Causes an error if the .IMG doesn't
-	// have a palette.
-	static Palette extractPalette(const std::string &filename);
+	// Extracts the palette from an .IMG file.
+	static bool extractPalette(const char *filename, Palette &palette);
 
 	// Gets the width in pixels.
 	int getWidth() const;

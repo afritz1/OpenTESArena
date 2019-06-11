@@ -1,7 +1,6 @@
 #ifndef VOC_FILE_H
 #define VOC_FILE_H
 
-#include <string>
 #include <vector>
 
 // A .VOC file contains audio data in the Creative Voice format. It's used with any 
@@ -15,7 +14,7 @@ private:
 	std::vector<uint8_t> audioData;
 	int sampleRate;
 public:
-	VOCFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Gets the sample rate of the .VOC file (usually between 4000 and 11111).
 	int getSampleRate() const;

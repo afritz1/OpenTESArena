@@ -440,7 +440,11 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	if (!weaponAnimation.isRanged())
 	{
 		// Melee weapon offsets.
-		const CIFFile cifFile(weaponFilename);
+		CIFFile cifFile;
+		if (!cifFile.init(weaponFilename.c_str()))
+		{
+			DebugCrash("Could not init .CIF file \"" + weaponFilename + "\".");
+		}
 
 		for (int i = 0; i < cifFile.getImageCount(); i++)
 		{
@@ -450,7 +454,11 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	else
 	{
 		// Ranged weapon offsets.
-		const CFAFile cfaFile(weaponFilename);
+		CFAFile cfaFile;
+		if (!cfaFile.init(weaponFilename.c_str()))
+		{
+			DebugCrash("Could not init .CFA file \"" + weaponFilename + "\".");
+		}
 
 		for (int i = 0; i < cfaFile.getImageCount(); i++)
 		{
@@ -1778,7 +1786,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				if (mifName.size() > 0)
 				{
 					// @todo: I think dungeons can't use enterInterior(). They need an enterDungeon() method.
-					const MIFFile mif(mifName);
+					MIFFile mif;
+					if (!mif.init(mifName.c_str()))
+					{
+						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+					}
+
 					gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
 						exeData, game.getTextureManager(), game.getRenderer());
 

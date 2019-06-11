@@ -151,14 +151,22 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	this->blinkTimer = 0.0;
 
 	// Get the palette for the background image.
-	this->provinceMapPalette = IMGFile::extractPalette(this->getBackgroundFilename());
+	const std::string backgroundFilename = this->getBackgroundFilename();
+	if (!IMGFile::extractPalette(backgroundFilename.c_str(), this->provinceMapPalette))
+	{
+		DebugCrash("Could not extract palette from \"" + backgroundFilename + "\".");
+	}
 
 	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
 	// raw palette indices (for yellow and red color swapping).
 	if (provinceID != Location::CENTER_PROVINCE_ID)
 	{
 		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
-		this->staffDungeonCif = std::make_unique<CIFFile>(cifName);
+		this->staffDungeonCif = CIFFile();
+		if (!this->staffDungeonCif.init(cifName.c_str()))
+		{
+			DebugCrash("Could not init .CIF file \"" + cifName + "\".");
+		}
 	}
 }
 
@@ -769,7 +777,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 			const Texture highlight = [this, highlightType, &renderer]()
 			{
 				// Get the palette indices associated with the staff dungeon icon.
-				const CIFFile &iconCif = *this->staffDungeonCif.get();
+				const CIFFile &iconCif = this->staffDungeonCif;
 				const int cifWidth = iconCif.getWidth(this->provinceID);
 				const int cifHeight = iconCif.getHeight(this->provinceID);
 

@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 // This class loads a .DAT file containing font information. Each character is put
@@ -19,7 +18,7 @@ private:
 	std::vector<std::pair<int, std::unique_ptr<uint32_t[]>>> characters;
 	int characterHeight;
 public:
-	FontFile(const std::string &filename);
+	bool init(const char *filename);
 
 	int getWidth(char c) const;
 	int getHeight() const;

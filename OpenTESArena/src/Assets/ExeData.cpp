@@ -802,13 +802,19 @@ bool ExeData::isFloppyVersion() const
 	return this->floppyVersion;
 }
 
-void ExeData::init(bool floppyVersion)
+bool ExeData::init(bool floppyVersion)
 {
 	// Load executable.
 	const std::string &exeFilename = floppyVersion ?
 		ExeData::FLOPPY_VERSION_EXE_FILENAME : ExeData::CD_VERSION_EXE_FILENAME;
-	const ExeUnpacker exe(exeFilename);
-	const char *exeDataPtr = reinterpret_cast<const char*>(exe.getData().data());
+	ExeUnpacker exe;
+	if (!exe.init(exeFilename.c_str()))
+	{
+		DebugLogError("Could not init .EXE unpacker for \"" + exeFilename + "\".");
+		return false;
+	}
+
+	const char *dataPtr = reinterpret_cast<const char*>(exe.getData().data());
 
 	// Load key-value map file.
 	const std::string &mapFilename = floppyVersion ?
@@ -816,21 +822,23 @@ void ExeData::init(bool floppyVersion)
 	const KeyValueMap keyValueMap(Platform::getBasePath() + mapFilename);
 
 	// Initialize members with the executable mappings.
-	this->calendar.init(exeDataPtr, keyValueMap);
-	this->charClasses.init(exeDataPtr, keyValueMap);
-	this->charCreation.init(exeDataPtr, keyValueMap);
-	this->cityGen.init(exeDataPtr, keyValueMap);
-	this->entities.init(exeDataPtr, keyValueMap);
-	this->equipment.init(exeDataPtr, keyValueMap);
-	this->locations.init(exeDataPtr, keyValueMap);
-	this->logbook.init(exeDataPtr, keyValueMap);
-	this->meta.init(exeDataPtr, keyValueMap);
-	this->races.init(exeDataPtr, keyValueMap);
-	this->status.init(exeDataPtr, keyValueMap);
-	this->travel.init(exeDataPtr, keyValueMap);
-	this->ui.init(exeDataPtr, keyValueMap);
-	this->wallHeightTables.init(exeDataPtr, keyValueMap);
-	this->wild.init(exeDataPtr, keyValueMap);
+	this->calendar.init(dataPtr, keyValueMap);
+	this->charClasses.init(dataPtr, keyValueMap);
+	this->charCreation.init(dataPtr, keyValueMap);
+	this->cityGen.init(dataPtr, keyValueMap);
+	this->entities.init(dataPtr, keyValueMap);
+	this->equipment.init(dataPtr, keyValueMap);
+	this->locations.init(dataPtr, keyValueMap);
+	this->logbook.init(dataPtr, keyValueMap);
+	this->meta.init(dataPtr, keyValueMap);
+	this->races.init(dataPtr, keyValueMap);
+	this->status.init(dataPtr, keyValueMap);
+	this->travel.init(dataPtr, keyValueMap);
+	this->ui.init(dataPtr, keyValueMap);
+	this->wallHeightTables.init(dataPtr, keyValueMap);
+	this->wild.init(dataPtr, keyValueMap);
 
 	this->floppyVersion = floppyVersion;
+
+	return true;
 }

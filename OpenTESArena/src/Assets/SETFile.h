@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 // A SET file is packed with some uncompressed 64x64 wall IMGs. Its size should
@@ -18,7 +17,7 @@ private:
 	// Number of bytes in a 64x64 chunk (should be 4096).
 	static const int CHUNK_SIZE;
 public:
-	SETFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// All individual images (chunks) are 64x64.
 	static const int CHUNK_WIDTH;

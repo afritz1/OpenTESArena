@@ -67,7 +67,7 @@ private:
 	// Should a vector of levels be exposed, or does the caller want a nicer format?
 	// VoxelGrid? Array of VoxelData?
 public:
-	MIFFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Identifiers for various chasms in Arena's voxel data.
 	static const uint8_t DRY_CHASM;

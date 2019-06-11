@@ -249,7 +249,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// are randomly generated.
 				if (mifName == ImperialMIF)
 				{
-					const MIFFile mif(mifName);
+					MIFFile mif;
+					if (!mif.init(mifName.c_str()))
+					{
+						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+					}
 
 					// Load city into game data. Location data is loaded, too.
 					gameData->loadPremadeCity(mif, weatherType, starCount, miscAssets,
@@ -294,7 +298,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				if (testType != TestType_Dungeon)
 				{
-					const MIFFile mif(mifName);
+					MIFFile mif;
+					if (!mif.init(mifName.c_str()))
+					{
+						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+					}
+
 					const Player &player = gameData->getPlayer();
 
 					// Set some interior location data for testing, depending on whether

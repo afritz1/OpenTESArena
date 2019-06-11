@@ -2,7 +2,6 @@
 #define RMD_FILE_H
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 class RMDFile
@@ -14,7 +13,7 @@ private:
 	// Using vectors because arrays caused stack overflow warnings.
 	std::vector<uint16_t> flor, map1, map2;
 public:
-	RMDFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Constant .RMD dimensions, always 64x64.
 	static const int WIDTH;

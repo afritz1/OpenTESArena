@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <string>
 
 #include "FontFile.h"
 #include "../Media/Color.h"
@@ -25,15 +26,14 @@ namespace
 	};
 }
 
-FontFile::FontFile(const std::string &filename)
+bool FontFile::init(const char *filename)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -121,6 +121,8 @@ FontFile::FontFile(const std::string &filename)
 			}
 		}
 	}
+
+	return true;
 }
 
 int FontFile::getWidth(char c) const

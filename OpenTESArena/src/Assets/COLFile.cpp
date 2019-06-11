@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <string>
 
 #include "COLFile.h"
 #include "../Utilities/Bytes.h"
@@ -9,47 +10,47 @@
 
 #include "components/vfs/manager.hpp"
 
-COLFile::COLFile(const std::string &filename)
+bool COLFile::init(const char *filename)
 {
-	bool failed = false;
-	std::array<uint8_t, 776> rawPal;
-	VFS::IStreamPtr stream = VFS::Manager::get().open(filename.c_str());
+	std::array<uint8_t, 8 + (256 * 3)> rawPal;
+	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
+	bool success = true;
 
 	if (stream == nullptr)
 	{
-		DebugLogWarning("Failed to open palette \"" + filename + "\".");
-		failed = true;
+		DebugLogWarning("Could not open \"" + std::string(filename) + "\".");
+		success = false;
 	}
 	else
 	{
 		stream->read(reinterpret_cast<char*>(rawPal.data()), rawPal.size());
 		if (stream->gcount() != static_cast<std::streamsize>(rawPal.size()))
 		{
-			DebugLogWarning("Failed to read palette \"" + filename + "\", got " +
+			DebugLogWarning("Could not read \"" + std::string(filename) + "\", got " +
 				std::to_string(stream->gcount()) + " bytes.");
-			failed = true;
+			success = false;
 		}
 	}
 
-	if (!failed)
+	if (success)
 	{
 		const uint32_t len = Bytes::getLE32(rawPal.data());
 		const uint32_t ver = Bytes::getLE32(rawPal.data() + 4);
 		if (len != 776)
 		{
-			DebugLogWarning("Invalid length for palette \"" + filename + "\" (" +
+			DebugLogWarning("Invalid length for palette \"" + std::string(filename) + "\" (" +
 				std::to_string(len) + " bytes).");
-			failed = true;
+			success = false;
 		}
 		else if (ver != 0xB123)
 		{
-			DebugLogWarning("Invalid version for palette \"" + filename + "\", 0x" +
+			DebugLogWarning("Invalid version for palette \"" + std::string(filename) + "\", 0x" +
 				String::toHexString(ver) + ".");
-			failed = true;
+			success = false;
 		}
 	}
 
-	if (!failed)
+	if (success)
 	{
 		auto iter = rawPal.begin() + 8;
 
@@ -80,6 +81,8 @@ COLFile::COLFile(const std::string &filename)
 			return Color(c, c, c, 255);
 		});
 	}
+
+	return true;
 }
 
 const Palette &COLFile::getPalette() const

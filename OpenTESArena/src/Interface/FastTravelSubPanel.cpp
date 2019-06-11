@@ -388,7 +388,13 @@ void FastTravelSubPanel::switchToNextPanel()
 		{
 			const std::string mifName = String::toUppercase(
 				exeData.locations.centerProvinceCityMifName);
-			const MIFFile mif(mifName);
+
+			MIFFile mif;
+			if (!mif.init(mifName.c_str()))
+			{
+				DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+			}
+
 			gameData.loadPremadeCity(mif, weatherType, starCount, game.getMiscAssets(),
 				game.getTextureManager(), game.getRenderer());
 		}
@@ -415,8 +421,14 @@ void FastTravelSubPanel::switchToNextPanel()
 			const auto &cityData = gameData.getCityDataFile();
 			const uint32_t dungeonSeed = cityData.getDungeonSeed(
 				localDungeonID, this->travelData.provinceID);
+			
 			const std::string mifName = CityDataFile::getMainQuestDungeonMifName(dungeonSeed);
-			const MIFFile mif(mifName);
+			MIFFile mif;
+			if (!mif.init(mifName.c_str()))
+			{
+				DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+			}
+
 			const Location location = Location::makeDungeon(
 				localDungeonID, this->travelData.provinceID);
 			gameData.loadInterior(mif, location, exeData, game.getTextureManager(), game.getRenderer());

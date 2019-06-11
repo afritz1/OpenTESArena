@@ -1,3 +1,5 @@
+#include <cstring>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -29,7 +31,7 @@ namespace
 		{ "SLIDER.IMG", { 289,  7 } },
 		{ "TOWN.IMG", { 9, 10 } },
 		{ "UPDOWN.IMG", { 8, 16 } },
-		{ "VILLAGE.IMG", { 8,  8 } }
+		{ "VILLAGE.IMG", { 8, 8 } }
 	};
 
 	// These .IMG filenames are misspelled, and Arena does not use them in-game.
@@ -40,7 +42,7 @@ namespace
 	};
 }
 
-IMGFile::IMGFile(const std::string &filename)
+bool IMGFile::init(const char *filename)
 {
 	// There are a couple .INFs that reference misspelled .IMGs. Arena doesn't seem
 	// to use them, so if they are requested here, just return a dummy image.
@@ -50,20 +52,18 @@ IMGFile::IMGFile(const std::string &filename)
 		this->height = 1;
 		this->pixels = std::make_unique<uint8_t[]>(this->width * this->height);
 		this->pixels[0] = 0;
-		return;
+		return true;
 	}
 
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
-		return;
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
-
 	uint16_t xoff, yoff, width, height, flags, len;
 
 	// Read header data if not raw. Wall .IMGs have no header and are 4096 bytes.
@@ -126,7 +126,7 @@ IMGFile::IMGFile(const std::string &filename)
 	{
 		// Special case: DZTTAV.IMG is a raw image with hardcoded dimensions, but the game
 		// expects it to be a 64x64 texture, so it needs its own case.
-		if (filename == "DZTTAV.IMG")
+		if (std::strcmp(filename, "DZTTAV.IMG") == 0)
 		{
 			this->width = 64;
 			this->height = 64;
@@ -184,9 +184,12 @@ IMGFile::IMGFile(const std::string &filename)
 		}
 		else
 		{
-			DebugCrash("Unrecognized IMG \"" + filename + "\".");
+			DebugLogError("Unrecognized IMG \"" + std::string(filename) + "\".");
+			return false;
 		}
 	}
+
+	return true;
 }
 
 Palette IMGFile::readPalette(const uint8_t *paletteData)
@@ -215,14 +218,14 @@ Palette IMGFile::readPalette(const uint8_t *paletteData)
 	return palette;
 }
 
-Palette IMGFile::extractPalette(const std::string &filename)
+bool IMGFile::extractPalette(const char *filename, Palette &palette)
 {
 	std::unique_ptr<std::byte[]> src;
 	size_t srcSize;
-	if (!VFS::Manager::get().read(filename.c_str(), &src, &srcSize))
+	if (!VFS::Manager::get().read(filename, &src, &srcSize))
 	{
-		// @todo: return failure.
-		DebugAssert(false);
+		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
@@ -236,11 +239,15 @@ Palette IMGFile::extractPalette(const std::string &filename)
 	const int headerSize = 12;
 
 	// Don't try to read a built-in palette if there isn't one.
-	DebugAssertMsg((flags & 0x0100) != 0, "\"" + filename +
-		"\" has no built-in palette to extract.");
+	if ((flags & 0x0100) == 0)
+	{
+		DebugLogError("\"" + std::string(filename) + "\" has no built-in palette to extract.");
+		return false;
+	}
 
 	// Get the palette.
-	return IMGFile::readPalette(srcPtr + headerSize + len);
+	palette = IMGFile::readPalette(srcPtr + headerSize + len);
+	return true;
 }
 
 int IMGFile::getWidth() const

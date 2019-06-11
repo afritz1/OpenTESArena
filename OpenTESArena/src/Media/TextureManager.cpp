@@ -29,14 +29,24 @@ TextureManager::~TextureManager()
 
 void TextureManager::loadCOLPalette(const std::string &colName)
 {
-	const COLFile colFile(colName);
+	COLFile colFile;
+	if (!colFile.init(colName.c_str()))
+	{
+		DebugCrash("Could not init .COL file \"" + colName + "\".");
+	}
+
 	this->palettes.emplace(std::make_pair(colName, colFile.getPalette()));
 }
 
 void TextureManager::loadIMGPalette(const std::string &imgName)
 {
-	this->palettes.emplace(
-		std::make_pair(imgName, IMGFile::extractPalette(imgName)));
+	Palette palette;
+	if (!IMGFile::extractPalette(imgName.c_str(), palette))
+	{
+		DebugCrash("Could not extract palette from \"" + imgName + "\".");
+	}
+
+	this->palettes.emplace(std::make_pair(imgName, palette));
 }
 
 void TextureManager::loadPalette(const std::string &paletteName)
@@ -126,7 +136,12 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	if (isCOL)
 	{
 		// A palette was requested as the primary image. Convert it to a surface.
-		const COLFile colFile(filename);
+		COLFile colFile;
+		if (!colFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .COL file \"" + filename + "\".");
+		}
+
 		const Palette &colPalette = colFile.getPalette();
 
 		DebugAssert(colPalette.get().size() == 256);
@@ -141,7 +156,11 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 	else if (isIMG || isMNU)
 	{
-		const IMGFile img(filename);
+		IMGFile img;
+		if (!img.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .IMG file \"" + filename + "\".");
+		}
 
 		// Decide if the .IMG will use its own palette or not.
 		const Palette &palette = useBuiltInPalette ?
@@ -215,7 +234,11 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	{
 		Surface surface = [this, &filename, &paletteName, useBuiltInPalette]()
 		{
-			const IMGFile img(filename);
+			IMGFile img;
+			if (!img.init(filename.c_str()))
+			{
+				DebugCrash("Could not init .IMG file \"" + filename + "\".");
+			}
 
 			// Decide if the .IMG will use its own palette or not.
 			const Palette &palette = useBuiltInPalette ?
@@ -304,7 +327,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 
 	if (isCFA)
 	{
-		const CFAFile cfaFile(filename);
+		CFAFile cfaFile;
+		if (!cfaFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .CFA file \"" + filename + "\".");
+		}
 
 		// Create a surface for each image in the .CFA.
 		for (int i = 0; i < cfaFile.getImageCount(); i++)
@@ -316,7 +343,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isCIF)
 	{
-		const CIFFile cifFile(filename);
+		CIFFile cifFile;
+		if (!cifFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .CIF file \"" + filename + "\".");
+		}
 
 		// Create a surface for each image in the .CIF.
 		for (int i = 0; i < cifFile.getImageCount(); i++)
@@ -328,7 +359,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isDFA)
 	{
-		const DFAFile dfaFile(filename);
+		DFAFile dfaFile;
+		if (!dfaFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .DFA file \"" + filename + "\".");
+		}
 
 		// Create a surface for each image in the .DFA.
 		for (int i = 0; i < dfaFile.getImageCount(); i++)
@@ -340,7 +375,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isFLC || isCEL)
 	{
-		const FLCFile flcFile(filename);
+		FLCFile flcFile;
+		if (!flcFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .FLC/.CEL file \"" + filename + "\".");
+		}
 
 		// Create a surface for each frame in the .FLC.
 		for (int i = 0; i < flcFile.getFrameCount(); i++)
@@ -353,7 +392,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isRCI)
 	{
-		const RCIFile rciFile(filename);
+		RCIFile rciFile;
+		if (!rciFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .RCI file \"" + filename + "\".");
+		}
 
 		// Create a surface for each image in the .RCI.
 		for (int i = 0; i < rciFile.getImageCount(); i++)
@@ -365,7 +408,11 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 	else if (isSET)
 	{
-		const SETFile setFile(filename);
+		SETFile setFile;
+		if (!setFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .SET file \"" + filename + "\".");
+		}
 
 		// Create a surface for each image in the .SET.
 		for (int i = 0; i < setFile.getImageCount(); i++)
@@ -433,7 +480,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 
 	if (isCFA)
 	{
-		const CFAFile cfaFile(filename);
+		CFAFile cfaFile;
+		if (!cfaFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .CFA file \"" + filename + "\".");
+		}
 
 		// Create a texture for each image in the .CFA.
 		for (int i = 0; i < cfaFile.getImageCount(); i++)
@@ -446,7 +497,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isCIF)
 	{
-		const CIFFile cifFile(filename);
+		CIFFile cifFile;
+		if (!cifFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .CIF file \"" + filename + "\".");
+		}
 
 		// Create a texture for each image in the .CIF.
 		for (int i = 0; i < cifFile.getImageCount(); i++)
@@ -459,7 +514,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isDFA)
 	{
-		const DFAFile dfaFile(filename);
+		DFAFile dfaFile;
+		if (!dfaFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .DFA file \"" + filename + "\".");
+		}
 
 		// Create a texture for each image in the .DFA.
 		for (int i = 0; i < dfaFile.getImageCount(); i++)
@@ -472,7 +531,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isFLC || isCEL)
 	{
-		const FLCFile flcFile(filename);
+		FLCFile flcFile;
+		if (!flcFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .FLC/.CEL file \"" + filename + "\".");
+		}
 
 		// Create a texture for each frame in the .FLC.
 		for (int i = 0; i < flcFile.getFrameCount(); i++)
@@ -486,7 +549,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isRCI)
 	{
-		const RCIFile rciFile(filename);
+		RCIFile rciFile;
+		if (!rciFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .RCI file \"" + filename + "\".");
+		}
 
 		// Create a texture for each image in the .RCI.
 		for (int i = 0; i < rciFile.getImageCount(); i++)
@@ -499,7 +566,11 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 	else if (isSET)
 	{
-		const SETFile setFile(filename);
+		SETFile setFile;
+		if (!setFile.init(filename.c_str()))
+		{
+			DebugCrash("Could not init .SET file \"" + filename + "\".");
+		}
 
 		// Create a texture for each image in the .SET.
 		for (int i = 0; i < setFile.getImageCount(); i++)
