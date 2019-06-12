@@ -2440,7 +2440,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 				static_cast<double>(weaponTexture.getWidth()) * weaponScaleX));
 			const int weaponHeight = static_cast<int>(std::round(
 				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
-					Renderer::ORIGINAL_HEIGHT - weaponY)) * weaponScaleY));
+					std::max(Renderer::ORIGINAL_HEIGHT - weaponY, 0))) * weaponScaleY));
 
 			renderer.drawOriginal(weaponTexture.get(),
 				weaponX, weaponY, weaponWidth, weaponHeight);
