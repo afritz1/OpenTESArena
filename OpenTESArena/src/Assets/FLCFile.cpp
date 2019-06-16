@@ -157,14 +157,21 @@ bool FLCFile::init(const char *filename)
 				if (chunkHeader.type == ChunkType::COLOR_256)
 				{
 					// Palette.
-					this->palettes.push_back(this->readPalette(chunkData));
+					Palette palette;
+					if (!FLCFile::readPalette(chunkData, &palette))
+					{
+						DebugLogError("Could not read .FLC palette.");
+						return false;
+					}
+
+					this->palettes.push_back(std::move(palette));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_BRUN)
 				{
 					// Full frame chunk.
 					std::unique_ptr<uint8_t[]> frame = this->decodeFullFrame(
 						chunkData, chunkHeader.size, framePixels);
-					const int paletteIndex = static_cast<int>(this->palettes.size() - 1);
+					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
 					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_SS2)
@@ -172,7 +179,7 @@ bool FLCFile::init(const char *filename)
 					// Delta frame chunk.
 					std::unique_ptr<uint8_t[]> frame = this->decodeDeltaFrame(
 						chunkData, chunkHeader.size, framePixels);
-					const int paletteIndex = static_cast<int>(this->palettes.size() - 1);
+					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
 					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else
@@ -205,30 +212,33 @@ bool FLCFile::init(const char *filename)
 	return true;
 }
 
-Palette FLCFile::readPalette(const uint8_t *chunkData)
+bool FLCFile::readPalette(const uint8_t *chunkData, Palette *dst)
 {
+	DebugAssert(chunkData != nullptr);
+	DebugAssert(dst != nullptr);
+
 	// The number of elements (i.e., "groups" of pixels) should be one.
-	// @todo: change function signature so it can return failure.
-	const uint16_t numberOfElements = Bytes::getLE16(chunkData);
-	DebugAssertMsg(numberOfElements == 1, "Unusual palette element count \"" +
-		std::to_string(numberOfElements) + "\".");
+	const uint16_t elementCount = Bytes::getLE16(chunkData);
+	if (elementCount != 1)
+	{
+		DebugLogError("Unusual palette element count \"" + std::to_string(elementCount) + "\".");
+		return false;
+	}
 
-	// Skip count and color count should both be ignored (one byte each).
-
-	// Read through the RGB components and place them in the palette. There isn't 
-	// a need for the first color to be transparent.
-	Palette palette;
+	// Read through the RGB components and place them in the palette. There isn't a need for
+	// the first color to be transparent. Skip count and color count should both be ignored
+	// (one byte each).
 	const uint8_t *colorData = chunkData + 4;
-	for (size_t i = 0; i < palette.get().size(); i++)
+	for (size_t i = 0; i < dst->get().size(); i++)
 	{
 		const uint8_t *ptr = colorData + (i * 3);
 		const uint8_t r = *(ptr + 0);
 		const uint8_t g = *(ptr + 1);
 		const uint8_t b = *(ptr + 2);
-		palette.get()[i] = Color(r, g, b, 255);
+		dst->get()[i] = Color(r, g, b, 255);
 	}
 
-	return palette;
+	return true;
 }
 
 std::unique_ptr<uint8_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
@@ -457,11 +467,15 @@ int FLCFile::getHeight() const
 
 const Palette &FLCFile::getFramePalette(int index) const
 {
-	const int paletteIndex = this->pixels.at(index).first;
-	return this->palettes.at(paletteIndex);
+	DebugAssertIndex(this->pixels, index);
+	const int paletteIndex = this->pixels[index].first;
+
+	DebugAssertIndex(this->palettes, paletteIndex);
+	return this->palettes[paletteIndex];
 }
 
 const uint8_t *FLCFile::getPixels(int index) const
 {
-	return this->pixels.at(index).second.get();
+	DebugAssertIndex(this->pixels, index);
+	return this->pixels[index].second.get();
 }

@@ -182,7 +182,8 @@ int CFAFile::getYOffset() const
 
 const uint8_t *CFAFile::getPixels(int index) const
 {
-	return this->pixels.at(index).get();
+	DebugAssertIndex(this->pixels, index);
+	return this->pixels[index].get();
 }
 
 void CFAFile::demux1(const uint8_t *src, uint8_t *dst)

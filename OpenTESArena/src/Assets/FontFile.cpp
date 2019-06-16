@@ -133,11 +133,13 @@ int FontFile::getWidth(char c) const
 	{
 		DebugLogWarning("Character value \"" + std::to_string(c) + 
 			"\" out of range (must be ASCII 32-127).");
-		return this->characters.at(0).first;
+		DebugAssert(this->characters.size() > 0);
+		return this->characters[0].first;
 	}
 
 	// Space (ASCII 32) is at index 0.
-	return this->characters.at(c - 32).first;
+	const int index = DebugMakeIndex(this->characters, c - 32);
+	return this->characters[index].first;
 }
 
 int FontFile::getHeight() const
@@ -153,9 +155,11 @@ uint32_t *FontFile::getPixels(char c) const
 	{
 		DebugLogWarning("Character value \"" + std::to_string(c) +
 			"\" out of range (must be ASCII 32-127).");
-		return this->characters.at(0).second.get();
+		DebugAssert(this->characters.size() > 0);
+		return this->characters[0].second.get();
 	}
 
 	// Space (ASCII 32) is at index 0.
-	return this->characters.at(c - 32).second.get();
+	const int index = DebugMakeIndex(this->characters, c - 32);
+	return this->characters[index].second.get();
 }

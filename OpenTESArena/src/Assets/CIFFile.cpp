@@ -221,25 +221,30 @@ int CIFFile::getImageCount() const
 
 int CIFFile::getXOffset(int index) const
 {
-	return this->offsets.at(index).x;
+	DebugAssertIndex(this->offsets, index);
+	return this->offsets[index].x;
 }
 
 int CIFFile::getYOffset(int index) const
 {
-	return this->offsets.at(index).y;
+	DebugAssertIndex(this->offsets, index);
+	return this->offsets[index].y;
 }
 
 int CIFFile::getWidth(int index) const
 {
-	return this->dimensions.at(index).x;
+	DebugAssertIndex(this->dimensions, index);
+	return this->dimensions[index].x;
 }
 
 int CIFFile::getHeight(int index) const
 {
-	return this->dimensions.at(index).y;
+	DebugAssertIndex(this->dimensions, index);
+	return this->dimensions[index].y;
 }
 
 const uint8_t *CIFFile::getPixels(int index) const
 {
-	return this->pixels.at(index).get();
+	DebugAssertIndex(this->pixels, index);
+	return this->pixels[index].get();
 }

@@ -989,13 +989,15 @@ const std::vector<INFFile::FlatTextureData> &INFFile::getFlatTextures() const
 
 const int *INFFile::getBoxCap(int index) const
 {
-	const auto &opt = this->boxCaps.at(index);
+	DebugAssertIndex(this->boxCaps, index);
+	const auto &opt = this->boxCaps[index];
 	return opt.has_value() ? &opt.value() : nullptr;
 }
 
 const int *INFFile::getBoxSide(int index) const
 {
-	const auto &opt = this->boxSides.at(index);
+	DebugAssertIndex(this->boxSides, index);
+	const auto &opt = this->boxSides[index];
 
 	// Some null pointers were being returned here, and they appear to be errors within
 	// the Arena data (i.e., the initial level in some noble houses asks for wall texture 
@@ -1008,13 +1010,15 @@ const int *INFFile::getBoxSide(int index) const
 	else
 	{
 		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
-		return &this->boxSides.at(0).value();
+		DebugAssert(this->boxSides.size() > 0);
+		return &this->boxSides[0].value();
 	}
 }
 
 const int *INFFile::getMenu(int index) const
 {
-	const auto &opt = this->menus.at(index);
+	DebugAssertIndex(this->menus, index);
+	const auto &opt = this->menus[index];
 	return opt.has_value() ? &opt.value() : nullptr;
 }
 
@@ -1028,13 +1032,17 @@ int INFFile::getMenuIndex(int textureID) const
 
 const INFFile::FlatData &INFFile::getFlat(int index) const
 {
-	return this->flats.at(index);
+	DebugAssertIndex(this->flats, index);
+	return this->flats[index];
 }
 
 const INFFile::FlatData &INFFile::getItem(int index) const
 {
-	const int flatIndex = this->items.at(index).value();
-	return this->flats.at(flatIndex);
+	DebugAssertIndex(this->items, index);
+	const int flatIndex = this->items[index].value();
+
+	DebugAssertIndex(this->flats, flatIndex);
+	return this->flats[flatIndex];
 }
 
 const std::string &INFFile::getSound(int index) const

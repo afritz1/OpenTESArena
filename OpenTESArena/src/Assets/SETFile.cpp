@@ -57,5 +57,6 @@ int SETFile::getImageCount() const
 
 const uint8_t *SETFile::getPixels(int index) const
 {
-	return this->pixels.at(index).get();
+	DebugAssertIndex(this->pixels, index);
+	return this->pixels[index].get();
 }

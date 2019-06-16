@@ -34,8 +34,8 @@ private:
 	int width;
 	int height;
 
-	// Reads a palette chunk returns the results.
-	static Palette readPalette(const uint8_t *chunkData);
+	// Reads a palette chunk and writes out the results to the reference parameter.
+	static bool readPalette(const uint8_t *chunkData, Palette *dst);
 
 	// Decodes a fullscreen FLC chunk by updating the initial frame indices and
 	// returning a complete frame.
