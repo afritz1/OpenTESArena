@@ -142,3 +142,26 @@ void Surface::fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b)
 {
 	this->fillRect(rect, r, g, b, 255);
 }
+
+void Surface::blit(Surface &dst, const Rect &dstRect) const
+{
+	SDL_BlitSurface(this->surface, nullptr, dst.surface, const_cast<SDL_Rect*>(&dstRect.getRect()));
+}
+
+void Surface::blit(Surface &dst, int dstX, int dstY) const
+{
+	const Rect dstRect(dstX, dstY, this->getWidth(), this->getHeight());
+	this->blit(dst, dstRect);
+}
+
+void Surface::blitRect(const Rect &srcRect, Surface &dst, const Rect &dstRect) const
+{
+	SDL_BlitSurface(this->surface, const_cast<SDL_Rect*>(&srcRect.getRect()),
+		dst.surface, const_cast<SDL_Rect*>(&dstRect.getRect()));
+}
+
+void Surface::blitRect(const Rect &srcRect, Surface &dst, int dstX, int dstY) const
+{
+	const Rect dstRect(dstX, dstY, this->getWidth(), this->getHeight());
+	this->blitRect(srcRect, dst, dstRect);
+}

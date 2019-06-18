@@ -51,6 +51,11 @@ public:
 	void fillRect(const Rect &rect, uint32_t color);
 	void fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 	void fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b);
+
+	void blit(Surface &dst, const Rect &dstRect) const;
+	void blit(Surface &dst, int dstX, int dstY) const;
+	void blitRect(const Rect &srcRect, Surface &dst, const Rect &dstRect) const;
+	void blitRect(const Rect &srcRect, Surface &dst, int dstX, int dstY) const;
 };
 
 #endif
