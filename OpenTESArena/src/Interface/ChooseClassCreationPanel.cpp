@@ -117,7 +117,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -125,7 +125,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCur
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
@@ -159,8 +159,8 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer));
+	const Texture tooltip = Panel::createTooltip(
+		text, FontName::D, this->getGame().getFontManager(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -172,7 +172,7 @@ void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &re
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip, x, y);
 }
 
 void ChooseClassCreationPanel::render(Renderer &renderer)
@@ -188,7 +188,7 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background.get());
+	renderer.drawOriginal(background);
 
 	// Draw parchments: title, generate, select.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
@@ -196,9 +196,9 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
 		(this->parchment.getHeight() / 2) + 1;
 
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
 
 	// Draw text: title, generate, select.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),

@@ -116,7 +116,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 	}();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -124,7 +124,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseGenderPanel::getCurrentCursor() c
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseGenderPanel::handleEvent(const SDL_Event &e)
@@ -169,16 +169,16 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background.get());
+	renderer.drawOriginal(background);
 
 	// Draw parchments: title, male, and female.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -
 		(this->parchment.getWidth() / 2);
 	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) -
 		(this->parchment.getHeight() / 2);
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY - 20);
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 20);
-	renderer.drawOriginal(this->parchment.get(), parchmentX, parchmentY + 60);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
+	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
 
 	// Draw text: title, male, and female.
 	renderer.drawOriginal(this->genderTextBox->getTexture(),

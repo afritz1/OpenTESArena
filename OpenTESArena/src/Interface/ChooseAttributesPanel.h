@@ -39,7 +39,7 @@ public:
 		const std::string &name, GenderName gender, int raceID);
 	virtual ~ChooseAttributesPanel() = default;
 
-	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

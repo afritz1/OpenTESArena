@@ -300,7 +300,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 	}();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -308,7 +308,7 @@ std::pair<SDL_Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() cons
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void PauseMenuPanel::handleEvent(const SDL_Event &e)
@@ -389,12 +389,12 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw pause background.
 	const auto &pauseBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PauseBackground), renderer);
-	renderer.drawOriginal(pauseBackground.get());
+	renderer.drawOriginal(pauseBackground);
 
 	// Draw game world interface below the pause menu.
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
-	renderer.drawOriginal(gameInterface.get(), 0,
+	renderer.drawOriginal(gameInterface, 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 	// Draw player portrait.
@@ -405,22 +405,22 @@ void PauseMenuPanel::render(Renderer &renderer)
 		headsFilename, renderer).at(player.getPortraitID());
 	const auto &status = textureManager.getTextures(
 		TextureFile::fromName(TextureName::StatusGradients), renderer).at(0);
-	renderer.drawOriginal(status.get(), 14, 166);
-	renderer.drawOriginal(portrait.get(), 14, 166);
+	renderer.drawOriginal(status, 14, 166);
+	renderer.drawOriginal(portrait, 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
 	if (!player.getCharacterClass().canCastMagic())
 	{
 		const auto &nonMagicIcon = textureManager.getTexture(
 			TextureFile::fromName(TextureName::NoSpell), renderer);
-		renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
+		renderer.drawOriginal(nonMagicIcon, 91, 177);
 	}
 
 	// Cover up the detail slider with a new options background.
 	Texture optionsBackground = Texture::generate(Texture::PatternType::Custom1,
 		this->optionsButton.getWidth(), this->optionsButton.getHeight(),
 		textureManager, renderer);
-	renderer.drawOriginal(optionsBackground.get(), this->optionsButton.getX(),
+	renderer.drawOriginal(optionsBackground, this->optionsButton.getX(),
 		this->optionsButton.getY());
 
 	// Draw text: player's name, music volume, sound volume, options.

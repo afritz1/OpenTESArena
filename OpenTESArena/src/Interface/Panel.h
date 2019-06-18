@@ -18,6 +18,7 @@ class Color;
 class FontManager;
 class Game;
 class Renderer;
+class Texture;
 
 enum class CursorAlignment;
 enum class FontName;
@@ -33,7 +34,7 @@ private:
 protected:
 	// Generates a tooltip texture with the default white foreground and gray
 	// background with alpha blending.
-	static SDL_Texture *createTooltip(const std::string &text,
+	static Texture createTooltip(const std::string &text,
 		FontName fontName, FontManager &fontManager, Renderer &renderer);
 
 	Game &getGame() const;
@@ -46,7 +47,7 @@ public:
 	// Gets the panel's active mouse cursor and alignment. Override this method if
 	// the panel has at least one cursor defined. The texture must be supplied by 
 	// the texture manager.
-	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const;
+	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const;
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.

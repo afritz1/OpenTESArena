@@ -14,12 +14,6 @@ Texture::Texture()
 	this->texture = nullptr;
 }
 
-Texture::Texture(SDL_Texture *texture)
-{
-	DebugAssert(texture != nullptr);
-	this->texture = texture;
-}
-
 Texture::Texture(Texture &&texture)
 {
 	this->texture = texture.texture;
@@ -36,7 +30,16 @@ Texture::~Texture()
 
 Texture &Texture::operator=(Texture &&texture)
 {
-	this->texture = texture.texture;
+	if (this->texture != texture.texture)
+	{
+		if (this->texture != nullptr)
+		{
+			SDL_DestroyTexture(this->texture);
+		}
+
+		this->texture = texture.texture;
+	}
+
 	texture.texture = nullptr;
 	return *this;
 }
@@ -216,7 +219,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		DebugCrash("Unrecognized pattern type.");
 	}
 
-	Texture texture(renderer.createTextureFromSurface(surface.get()));
+	Texture texture = renderer.createTextureFromSurface(surface);
 	return texture;
 }
 
@@ -243,4 +246,10 @@ int Texture::getHeight() const
 SDL_Texture *Texture::get() const
 {
 	return this->texture;
+}
+
+void Texture::init(SDL_Texture *texture)
+{
+	DebugAssert(this->texture == nullptr);
+	this->texture = texture;
 }

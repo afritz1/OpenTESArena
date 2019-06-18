@@ -509,7 +509,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	return ChooseRacePanel::NO_ID;
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -517,7 +517,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() con
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
@@ -555,8 +555,8 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	const auto &exeData = this->getGame().getMiscAssets().getExeData();
 	const std::string &raceName = exeData.races.pluralNames.at(provinceID);
 
-	const Texture tooltip(Panel::createTooltip(
-		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer));
+	const Texture tooltip = Panel::createTooltip(
+		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -568,7 +568,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip, x, y);
 }
 
 void ChooseRacePanel::render(Renderer &renderer)
@@ -584,13 +584,13 @@ void ChooseRacePanel::render(Renderer &renderer)
 	const auto &raceSelectMap = textureManager.getTexture(
 		TextureFile::fromName(TextureName::RaceSelect),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(raceSelectMap.get());
+	renderer.drawOriginal(raceSelectMap);
 
 	// Arena just covers up the "exit" text at the bottom right.
 	const auto &exitCover = textureManager.getTexture(
 		TextureFile::fromName(TextureName::NoExit),
 		TextureFile::fromName(TextureName::RaceSelect), renderer);
-	renderer.drawOriginal(exitCover.get(),
+	renderer.drawOriginal(exitCover,
 		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
 }

@@ -733,7 +733,7 @@ WorldType MainMenuPanel::getSelectedTestWorldType() const
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -741,7 +741,7 @@ std::pair<SDL_Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void MainMenuPanel::handleEvent(const SDL_Event &e)
@@ -875,32 +875,32 @@ void MainMenuPanel::render(Renderer &renderer)
 	const auto &mainMenu = textureManager.getTexture(
 		TextureFile::fromName(TextureName::MainMenu),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mainMenu.get());
+	renderer.drawOriginal(mainMenu);
 
 	// Draw test buttons.
 	const auto &arrows = textureManager.getTexture(
 		TextureFile::fromName(TextureName::UpDown),
 		PaletteFile::fromName(PaletteName::CharSheet), renderer);
-	renderer.drawOriginal(arrows.get(), this->testTypeUpButton.getX(),
+	renderer.drawOriginal(arrows, this->testTypeUpButton.getX(),
 		this->testTypeUpButton.getY());
-	renderer.drawOriginal(arrows.get(), this->testIndexUpButton.getX(),
+	renderer.drawOriginal(arrows, this->testIndexUpButton.getX(),
 		this->testIndexUpButton.getY());
 
 	if (this->testType == TestType_Interior)
 	{
-		renderer.drawOriginal(arrows.get(), this->testIndex2UpButton.getX(),
+		renderer.drawOriginal(arrows, this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
 	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		renderer.drawOriginal(arrows.get(), this->testWeatherUpButton.getX(),
+		renderer.drawOriginal(arrows, this->testWeatherUpButton.getX(),
 			this->testWeatherUpButton.getY());
 	}
 
 	const Texture testButton = Texture::generate(
 		Texture::PatternType::Custom1, TestButtonRect.getWidth(), 
 		TestButtonRect.getHeight(), textureManager, renderer);
-	renderer.drawOriginal(testButton.get(), 
+	renderer.drawOriginal(testButton, 
 		TestButtonRect.getLeft(), TestButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 

@@ -228,7 +228,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	const bool isIMG = extension == "IMG";
 	const bool isMNU = extension == "MNU";
 
-	SDL_Texture *texture = nullptr;
+	Texture texture;
 
 	if (isIMG || isMNU)
 	{
@@ -262,10 +262,10 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 		}();
 
 		// Create a texture from the surface.
-		texture = renderer.createTextureFromSurface(surface.get());
+		texture = renderer.createTextureFromSurface(surface);
 
 		// Set alpha transparency on.
-		SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+		SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND);
 	}
 	else
 	{
@@ -273,7 +273,8 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 	}
 
 	// Add the new texture and return it.
-	auto iter = this->textures.emplace(std::make_pair(fullName, Texture(texture))).first;
+	auto iter = this->textures.emplace(std::make_pair(fullName, std::move(texture))).first;
+	DebugAssert(texture.get() == nullptr);
 	return iter->second;
 }
 
@@ -491,8 +492,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 		{
 			Surface surface = TextureManager::make32BitFromPaletted(
 				cfaFile.getWidth(), cfaFile.getHeight(), cfaFile.getPixels(i), palette);
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else if (isCIF)
@@ -508,8 +509,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 		{
 			Surface surface = TextureManager::make32BitFromPaletted(
 				cifFile.getWidth(i), cifFile.getHeight(i), cifFile.getPixels(i), palette);
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else if (isDFA)
@@ -525,8 +526,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 		{
 			Surface surface = TextureManager::make32BitFromPaletted(
 				dfaFile.getWidth(), dfaFile.getHeight(), dfaFile.getPixels(i), palette);
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else if (isFLC || isCEL)
@@ -543,8 +544,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 			Surface surface = TextureManager::make32BitFromPaletted(
 				flcFile.getWidth(), flcFile.getHeight(), flcFile.getPixels(i),
 				flcFile.getFramePalette(i));
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else if (isRCI)
@@ -560,8 +561,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 		{
 			Surface surface = TextureManager::make32BitFromPaletted(
 				RCIFile::WIDTH, RCIFile::HEIGHT, rciFile.getPixels(i), palette);
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else if (isSET)
@@ -577,8 +578,8 @@ const std::vector<Texture> &TextureManager::getTextures(
 		{
 			Surface surface = TextureManager::make32BitFromPaletted(
 				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, setFile.getPixels(i), palette);
-			SDL_Texture *texture = renderer.createTextureFromSurface(surface.get());
-			textureSet.push_back(Texture(texture));
+			Texture texture = renderer.createTextureFromSurface(surface);
+			textureSet.push_back(std::move(texture));
 		}
 	}
 	else

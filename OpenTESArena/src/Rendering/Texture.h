@@ -1,7 +1,7 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-// Wrapper class for SDL_Texture.
+// A thin SDL_Texture wrapper.
 
 class Renderer;
 class TextureManager;
@@ -22,7 +22,6 @@ public:
 	};
 
 	Texture();
-	Texture(SDL_Texture *texture);
 	Texture(const Texture&) = delete;
 	Texture(Texture &&texture);
 	~Texture();
@@ -37,6 +36,10 @@ public:
 	int getWidth() const;
 	int getHeight() const;
 	SDL_Texture *get() const;
+
+	// Alternative to constructor to avoid accidentally copying pointers and double-freeing, etc..
+	// Most code shouldn't touch a native texture directly.
+	void init(SDL_Texture *texture);
 };
 
 #endif

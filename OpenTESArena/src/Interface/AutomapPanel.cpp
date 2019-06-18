@@ -183,7 +183,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		}
 
 		auto &renderer = this->getGame().getRenderer();
-		Texture texture(renderer.createTextureFromSurface(surface.get()));
+		Texture texture = renderer.createTextureFromSurface(surface);
 
 		return texture;
 	}();
@@ -294,7 +294,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -302,7 +302,7 @@ std::pair<SDL_Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::BottomLeft);
+	return std::make_pair(&texture, CursorAlignment::BottomLeft);
 }
 
 void AutomapPanel::handleEvent(const SDL_Event &e)
@@ -369,8 +369,8 @@ void AutomapPanel::handleMouse(double dt)
 
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer));
+	const Texture tooltip = Panel::createTooltip(
+		text, FontName::D, this->getGame().getFontManager(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -382,7 +382,7 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip, x, y);
 }
 
 void AutomapPanel::tick(double dt)
@@ -403,7 +403,7 @@ void AutomapPanel::render(Renderer &renderer)
 	const auto &automapBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Automap),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(automapBackground.get());
+	renderer.drawOriginal(automapBackground);
 
 	// Only draw the part of the automap within the drawing area.
 	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);
@@ -416,7 +416,7 @@ void AutomapPanel::render(Renderer &renderer)
 	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
 	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY -
 		this->mapTexture.getHeight();
-	renderer.drawOriginal(this->mapTexture.get(), mapX, mapY);
+	renderer.drawOriginal(this->mapTexture, mapX, mapY);
 
 	// Reset renderer clipping to normal.
 	renderer.setClipRect(nullptr);

@@ -506,7 +506,7 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
 	auto &game = this->getGame();
@@ -529,14 +529,14 @@ std::pair<SDL_Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() cons
 			{
 				const auto &texture = textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors), renderer).at(i);
-				return std::make_pair(texture.get(), ArrowCursorAlignments.at(i));
+				return std::make_pair(&texture, ArrowCursorAlignments.at(i));
 			}
 		}
 
 		// If not in any of the arrow regions, use the default sword cursor.
 		const auto &texture = textureManager.getTexture(
 			TextureFile::fromName(TextureName::SwordCursor), renderer);
-		return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+		return std::make_pair(&texture, CursorAlignment::TopLeft);
 	}
 }
 
@@ -1984,14 +1984,14 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer));
+	const Texture tooltip = Panel::createTooltip(
+		text, FontName::D, this->getGame().getFontManager(), renderer);
 
 	auto &textureManager = this->getGame().getTextureManager();
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
-	renderer.drawOriginal(tooltip.get(), 0, Renderer::ORIGINAL_HEIGHT -
+	renderer.drawOriginal(tooltip, 0, Renderer::ORIGINAL_HEIGHT -
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
@@ -2023,12 +2023,12 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
 		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
 
-	renderer.drawOriginalClipped(compassSlider.get(), clipRect, sliderX, sliderY);
+	renderer.drawOriginalClipped(compassSlider, clipRect, sliderX, sliderY);
 
 	// Draw the compass frame over the slider.
 	const auto &compassFrame = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CompassFrame), renderer);
-	renderer.drawOriginal(compassFrame.get(),
+	renderer.drawOriginal(compassFrame,
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 }
 
@@ -2136,11 +2136,11 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 			drawGraphColumn(i, fpsPercent);
 		}
 
-		return renderer.createTextureFromSurface(surface.get());
+		return renderer.createTextureFromSurface(surface);
 	}();
 
 	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
-	renderer.drawOriginal(frameTimesGraph.get(), tempText.getX(), 94);
+	renderer.drawOriginal(frameTimesGraph, tempText.getX(), 94);
 }
 
 void GameWorldPanel::tick(double dt)
@@ -2350,7 +2350,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	if (!modernInterface)
 	{
 		// Draw game world interface.
-		renderer.drawOriginal(gameInterface.get(), 0,
+		renderer.drawOriginal(gameInterface, 0,
 			Renderer::ORIGINAL_HEIGHT - gameInterface.getHeight());
 
 		// Draw player portrait.
@@ -2360,15 +2360,15 @@ void GameWorldPanel::render(Renderer &renderer)
 			headsFilename, renderer).at(player.getPortraitID());
 		const auto &status = textureManager.getTextures(
 			TextureFile::fromName(TextureName::StatusGradients), renderer).at(0);
-		renderer.drawOriginal(status.get(), 14, 166);
-		renderer.drawOriginal(portrait.get(), 14, 166);
+		renderer.drawOriginal(status, 14, 166);
+		renderer.drawOriginal(portrait, 14, 166);
 
 		// If the player's class can't use magic, show the darkened spell icon.
 		if (!player.getCharacterClass().canCastMagic())
 		{
 			const auto &nonMagicIcon = textureManager.getTexture(
 				TextureFile::fromName(TextureName::NoSpell), renderer);
-			renderer.drawOriginal(nonMagicIcon.get(), 91, 177);
+			renderer.drawOriginal(nonMagicIcon, 91, 177);
 		}
 
 		// Draw text: player name.
@@ -2437,7 +2437,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
 					std::max(Renderer::ORIGINAL_HEIGHT - weaponY, 0))) * weaponScaleY));
 
-			renderer.drawOriginal(weaponTexture.get(),
+			renderer.drawOriginal(weaponTexture,
 				weaponX, weaponY, weaponWidth, weaponHeight);
 
 			// Reset letterbox mode back to what it was.
@@ -2453,7 +2453,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
 			const int weaponHeight = std::clamp(weaponTexture.getHeight() + 1, 0, maxWeaponHeight);
-			renderer.drawOriginal(weaponTexture.get(),
+			renderer.drawOriginal(weaponTexture,
 				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
 		}
 	}
@@ -2473,13 +2473,13 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	{
 		const auto &triggerTextBox = *triggerText.textBox.get();
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
-			(triggerTextBox.getSurface()->w / 2) - 1;
+			(triggerTextBox.getSurface().getWidth() / 2) - 1;
 		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
 		{
 			const int interfaceOffset = modernInterface ?
 				(gameInterface.getHeight() / 2) : gameInterface.getHeight();
 			return Renderer::ORIGINAL_HEIGHT - interfaceOffset -
-				triggerTextBox.getSurface()->h - 2;
+				triggerTextBox.getSurface().getHeight() - 2;
 		}();
 
 		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
@@ -2489,7 +2489,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	{
 		const auto &actionTextBox = *actionText.textBox.get();
 		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -
-			(actionTextBox.getSurface()->w / 2);
+			(actionTextBox.getSurface().getWidth() / 2);
 		const int textY = 20;
 		renderer.drawOriginal(actionTextBox.getTexture(), textX, textY);
 	}

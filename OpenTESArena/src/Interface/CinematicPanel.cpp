@@ -75,5 +75,5 @@ void CinematicPanel::render(Renderer &renderer)
 
 	// Draw image.
 	const auto &texture = textures.at(this->imageIndex);
-	renderer.drawOriginal(texture.get());
+	renderer.drawOriginal(texture);
 }

@@ -89,7 +89,7 @@ public:
 	static Int2 getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
 		Renderer &renderer);
 
-	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void onPauseChanged(bool paused) override;
 	virtual void resize(int windowWidth, int windowHeight) override;

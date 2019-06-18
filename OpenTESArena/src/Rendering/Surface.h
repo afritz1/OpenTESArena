@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-// Acts as an SDL_Surface wrapper.
+// A thin SDL_Surface wrapper.
 
 // The usage of SDL_Surfaces in the program is falling in favor of SDL_Textures.
 // SDL_Surfaces are really just being used as scratch images which are then converted 
@@ -19,10 +19,13 @@ private:
 	SDL_Surface *surface;
 public:
 	Surface();
-	Surface(SDL_Surface *surface);
 	Surface(const Surface&) = delete;
 	Surface(Surface &&surface);
 	~Surface();
+
+	// Alternative to constructor to avoid accidentally copying pointers and double-freeing, etc..
+	// Most code shouldn't touch a native surface directly.
+	void init(SDL_Surface *surface);
 
 	Surface &operator=(const Surface&) = delete;
 	Surface &operator=(Surface &&surface);

@@ -158,7 +158,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	DebugAssert(this->tooltipTextures.size() == 0);
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -166,7 +166,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() co
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseClassPanel::handleEvent(const SDL_Event &e)
@@ -404,8 +404,8 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 			"Shields: " + this->getClassShields(characterClass) + "\n" +
 			"Weapons: " + this->getClassWeapons(characterClass);
 
-		Texture texture(Panel::createTooltip(
-			text, FontName::D, this->getGame().getFontManager(), renderer));
+		Texture texture = Panel::createTooltip(
+			text, FontName::D, this->getGame().getFontManager(), renderer);
 
 		tooltipIter = this->tooltipTextures.emplace(std::make_pair(
 			tooltipIndex, std::move(texture))).first;
@@ -423,7 +423,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip, x, y);
 }
 
 void ChooseClassPanel::render(Renderer &renderer)
@@ -440,13 +440,13 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background.get());
+	renderer.drawOriginal(background);
 
 	// Draw list pop-up.
 	const auto &listPopUp = textureManager.getTexture(
 		TextureFile::fromName(TextureName::PopUp2),
 		TextureFile::fromName(TextureName::CharacterCreation), renderer);
-	renderer.drawOriginal(listPopUp.get(), 55, 9,
+	renderer.drawOriginal(listPopUp, 55, 9,
 		listPopUp.getWidth(), listPopUp.getHeight());
 
 	// Draw text: title, list.

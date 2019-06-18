@@ -58,7 +58,7 @@ LogbookPanel::LogbookPanel(Game &game)
 	}();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> LogbookPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> LogbookPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -66,7 +66,7 @@ std::pair<SDL_Texture*, CursorAlignment> LogbookPanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void LogbookPanel::handleEvent(const SDL_Event &e)
@@ -108,7 +108,7 @@ void LogbookPanel::render(Renderer &renderer)
 	const auto &logbookBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::Logbook),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(logbookBackground.get());
+	renderer.drawOriginal(logbookBackground);
 
 	// Draw text: title.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),

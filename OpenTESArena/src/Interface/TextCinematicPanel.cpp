@@ -164,7 +164,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Draw animation.
 	const auto &texture = textures.at(this->imageIndex);
-	renderer.drawOriginal(texture.get());
+	renderer.drawOriginal(texture);
 
 	// Get the relevant text box.
 	const auto &textBox = this->textBoxes.at(this->textIndex);

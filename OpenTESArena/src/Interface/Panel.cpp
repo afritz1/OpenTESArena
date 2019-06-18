@@ -31,7 +31,7 @@
 Panel::Panel(Game &game)
 	: game(game) { }
 
-SDL_Texture *Panel::createTooltip(const std::string &text,
+Texture Panel::createTooltip(const std::string &text,
 	FontName fontName, FontManager &fontManager, Renderer &renderer)
 {
 	const Color textColor(255, 255, 255, 255);
@@ -49,13 +49,12 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 
 	// Create text.
 	const TextBox textBox(x, y, richText, renderer);
-
-	SDL_Surface *textSurface = textBox.getSurface();
+	const Surface &textSurface = textBox.getSurface();
 
 	// Create background. Make it a little bigger than the text box.
 	const int padding = 4;
 	Surface background = Surface::createWithFormat(
-		textSurface->w + padding, textSurface->h + padding,
+		textSurface.getWidth() + padding, textSurface.getHeight() + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	background.fill(backColor.r, backColor.g, backColor.b, backColor.a);
 
@@ -64,14 +63,14 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 	SDL_Rect rect;
 	rect.x = padding / 2;
 	rect.y = padding / 2;
-	rect.w = textSurface->w;
-	rect.h = textSurface->h;
+	rect.w = textSurface.getWidth();
+	rect.h = textSurface.getHeight();
 
 	// Draw the text onto the background.
-	SDL_BlitSurface(textSurface, nullptr, background.get(), &rect);
+	SDL_BlitSurface(textSurface.get(), nullptr, background.get(), &rect);
 
 	// Create a hardware texture for the tooltip.
-	SDL_Texture *tooltip = renderer.createTextureFromSurface(background.get());
+	Texture tooltip = renderer.createTextureFromSurface(background);
 
 	return tooltip;
 }
@@ -176,7 +175,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	//return (stream != nullptr) ? makeIntroBookPanel() : makeIntroTitlePanel();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> Panel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> Panel::getCurrentCursor() const
 {
 	// Null by default.
 	return std::make_pair(nullptr, CursorAlignment::TopLeft);

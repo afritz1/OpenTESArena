@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 #include "SDL.h"
 
@@ -20,7 +21,7 @@ Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 }
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
-const std::string Renderer::DEFAULT_TITLE = "OpenTESArena";
+const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
 const int Renderer::ORIGINAL_WIDTH = 320;
 const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
@@ -28,10 +29,10 @@ const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
 Renderer::Renderer()
 {
+	DebugAssert(this->nativeTexture.get() == nullptr);
+	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->window = nullptr;
 	this->renderer = nullptr;
-	this->nativeTexture = nullptr;
-	this->gameWorldTexture = nullptr;
 	this->letterboxMode = 0;
 	this->fullGameWindow = false;
 }
@@ -90,11 +91,6 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	return rendererContext;
 }
 
-SDL_Surface *Renderer::getWindowSurface() const
-{
-	return SDL_GetWindowSurface(this->window);
-}
-
 double Renderer::getLetterboxAspect() const
 {
 	if (this->letterboxMode == 0)
@@ -121,7 +117,7 @@ double Renderer::getLetterboxAspect() const
 
 Int2 Renderer::getWindowDimensions() const
 {
-	const SDL_Surface *nativeSurface = this->getWindowSurface();
+	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
 	return Int2(nativeSurface->w, nativeSurface->h);
 }
 
@@ -147,7 +143,7 @@ int Renderer::getViewHeight() const
 
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
-	const auto *nativeSurface = this->getWindowSurface();
+	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
 	const double nativeAspect = static_cast<double>(nativeSurface->w) /
 		static_cast<double>(nativeSurface->h);
 	const double letterboxAspect = this->getLetterboxAspect();
@@ -288,14 +284,30 @@ bool Renderer::letterboxContains(const Int2 &nativePoint) const
 	return rectangle.contains(nativePoint);
 }
 
-SDL_Texture *Renderer::createTexture(uint32_t format, int access, int w, int h)
+Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
 {
-	return SDL_CreateTexture(this->renderer, format, access, w, h);
+	SDL_Texture *tex = SDL_CreateTexture(this->renderer, format, access, w, h);
+	if (tex == nullptr)
+	{
+		DebugLogError("Could not create SDL_Texture.");
+	}
+
+	Texture texture;
+	texture.init(tex);
+	return texture;
 }
 
-SDL_Texture *Renderer::createTextureFromSurface(SDL_Surface *surface)
+Texture Renderer::createTextureFromSurface(const Surface &surface)
 {
-	return SDL_CreateTextureFromSurface(this->renderer, surface);
+	SDL_Texture *tex = SDL_CreateTextureFromSurface(this->renderer, surface.get());
+	if (tex == nullptr)
+	{
+		DebugLogError("Could not create SDL_Texture from surface.");
+	}
+
+	Texture texture;
+	texture.init(tex);
+	return texture;
 }
 
 void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
@@ -310,14 +322,14 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 	// Initialize window. The SDL_Surface is obtained from this window.
 	this->window = [width, height, fullscreen]()
 	{
-		const std::string &title = Renderer::DEFAULT_TITLE;
+		const char *title = Renderer::DEFAULT_TITLE;
 		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
 		const uint32_t flags = SDL_WINDOW_RESIZABLE |
 			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 
 		// If fullscreen is true, then width and height are ignored. They are stored
 		// behind the scenes for when the user changes to windowed mode, however.
-		return SDL_CreateWindow(title.c_str(), position, position, width, height, flags);
+		return SDL_CreateWindow(title, position, position, width, height, flags);
 	}();
 
 	DebugAssertMsg(this->window != nullptr, "SDL_CreateWindow");
@@ -350,28 +362,27 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 	// Initialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	DebugAssertMsg(this->nativeTexture != nullptr,
+	DebugAssertMsg(this->nativeTexture.get() != nullptr,
 		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
 
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
-	this->gameWorldTexture = nullptr;
+	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->fullGameWindow = false;
 }
 
 void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)
 {
 	// The window's dimensions are resized automatically. The renderer's are not.
-	const auto *nativeSurface = this->getWindowSurface();
+	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
 	DebugAssertMsg(nativeSurface->w == width, "Mismatched resize widths.");
 	DebugAssertMsg(nativeSurface->h == height, "Mismatched resize heights.");
 
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
 	// Reinitialize native frame buffer.
-	SDL_DestroyTexture(this->nativeTexture);
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, width, height);
-	DebugAssertMsg(this->nativeTexture != nullptr,
+	DebugAssertMsg(this->nativeTexture.get() != nullptr,
 		"Couldn't recreate native frame buffer, " + std::string(SDL_GetError()));
 
 	this->fullGameWindow = fullGameWindow;
@@ -388,10 +399,9 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
 
 		// Reinitialize the game world frame buffer.
-		SDL_DestroyTexture(this->gameWorldTexture);
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 			SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-		DebugAssertMsg(this->gameWorldTexture != nullptr,
+		DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
 			"Couldn't recreate game world texture, " + std::string(SDL_GetError()));
 
 		// Resize 3D renderer.
@@ -415,14 +425,14 @@ void Renderer::setFullscreen(bool fullscreen)
 	this->warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
-void Renderer::setWindowIcon(SDL_Surface *icon)
+void Renderer::setWindowIcon(const Surface &icon)
 {
-	SDL_SetWindowIcon(this->window, icon);
+	SDL_SetWindowIcon(this->window, icon.get());
 }
 
-void Renderer::setWindowTitle(const std::string &title)
+void Renderer::setWindowTitle(const char *title)
 {
-	SDL_SetWindowTitle(this->window, title.c_str());
+	SDL_SetWindowTitle(this->window, title);
 }
 
 void Renderer::warpMouse(int x, int y)
@@ -450,16 +460,10 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	const int renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
 	const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
 
-	// Remove any previous game world frame buffer.
-	if (this->softwareRenderer.isInited())
-	{
-		SDL_DestroyTexture(this->gameWorldTexture);
-	}
-
-	// Initialize a new game world frame buffer.
+	// Initialize a new game world frame buffer, removing any previous game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, renderWidth, renderHeight);
-	DebugAssertMsg(this->gameWorldTexture != nullptr,
+	DebugAssertMsg(this->gameWorldTexture.get() != nullptr,
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering.
@@ -561,7 +565,7 @@ void Renderer::clearDistantSky()
 
 void Renderer::clear(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderClear(this->renderer);
 }
@@ -573,7 +577,7 @@ void Renderer::clear()
 
 void Renderer::clearOriginal(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const SDL_Rect rect = this->getLetterboxDimensions();
@@ -587,21 +591,21 @@ void Renderer::clearOriginal()
 
 void Renderer::drawPixel(const Color &color, int x, int y)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawPoint(this->renderer, x, y);
 }
 
 void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
 }
 
 void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -615,7 +619,7 @@ void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -629,7 +633,7 @@ void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const Rect rect = this->originalToNative(Rect(x, y, w, h));
@@ -648,7 +652,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	//   less frame buffer to take care of.
 	uint32_t *gameWorldPixels;
 	int gameWorldPitch;
-	int status = SDL_LockTexture(this->gameWorldTexture, nullptr, 
+	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr,
 		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
 	DebugAssertMsg(status == 0, "Couldn't lock game world texture, " +
 		std::string(SDL_GetError()));
@@ -658,7 +662,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 		parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
 
 	// Update the game world texture with the new ARGB8888 pixels.
-	SDL_UnlockTexture(this->gameWorldTexture);
+	SDL_UnlockTexture(this->gameWorldTexture.get());
 
 	// Now copy to the native frame buffer (stretching if needed).
 	const int screenWidth = this->getWindowDimensions().x;
@@ -666,17 +670,14 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
 }
 
-void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
+void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,
 	const Int2 &mousePosition, double scale)
 {
 	// The caller should check for any null textures.
-	DebugAssert(cursor != nullptr);
+	DebugAssert(cursor.get() != nullptr);
 
-	int cursorWidth, cursorHeight;
-	SDL_QueryTexture(cursor, nullptr, nullptr, &cursorWidth, &cursorHeight);
-
-	const int scaledWidth = static_cast<int>(std::round(cursorWidth * scale));
-	const int scaledHeight = static_cast<int>(std::round(cursorHeight * scale));
+	const int scaledWidth = static_cast<int>(std::round(cursor.getWidth() * scale));
+	const int scaledHeight = static_cast<int>(std::round(cursor.getHeight() * scale));
 
 	// Get the magnitude to offset the cursor's coordinates by.
 	const Int2 cursorOffset = [alignment, scaledWidth, scaledHeight]()
@@ -731,9 +732,9 @@ void Renderer::drawCursor(SDL_Texture *cursor, CursorAlignment alignment,
 		scaledHeight);
 }
 
-void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
+void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 
 	SDL_Rect rect;
 	rect.x = x;
@@ -741,83 +742,83 @@ void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 	rect.w = w;
 	rect.h = h;
 
-	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
+	SDL_RenderCopy(this->renderer, texture.get(), nullptr, &rect);
 }
 
-void Renderer::draw(SDL_Texture *texture, int x, int y)
+void Renderer::draw(const Texture &texture, int x, int y)
 {
 	int width, height;
-	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+	SDL_QueryTexture(texture.get(), nullptr, nullptr, &width, &height);
 
 	this->draw(texture, x, y, width, height);
 }
 
-void Renderer::draw(SDL_Texture *texture)
+void Renderer::draw(const Texture &texture)
 {
 	this->draw(texture, 0, 0);
 }
 
-void Renderer::drawClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect)
+void Renderer::drawClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-	SDL_RenderCopy(this->renderer, texture, &srcRect.getRect(), &dstRect.getRect());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_RenderCopy(this->renderer, texture.get(), &srcRect.getRect(), &dstRect.getRect());
 }
 
-void Renderer::drawClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y)
+void Renderer::drawClipped(const Texture &texture, const Rect &srcRect, int x, int y)
 {
 	this->drawClipped(texture, srcRect, Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
 }
 
-void Renderer::drawOriginal(SDL_Texture *texture, int x, int y, int w, int h)
+void Renderer::drawOriginal(const Texture &texture, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 	
 	// The given coordinates and dimensions are in 320x200 space, so transform them
 	// to native space.
 	const Rect rect = this->originalToNative(Rect(x, y, w, h));
 
-	SDL_RenderCopy(this->renderer, texture, nullptr, &rect.getRect());
+	SDL_RenderCopy(this->renderer, texture.get(), nullptr, &rect.getRect());
 }
 
-void Renderer::drawOriginal(SDL_Texture *texture, int x, int y)
+void Renderer::drawOriginal(const Texture &texture, int x, int y)
 {
 	int width, height;
-	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+	SDL_QueryTexture(texture.get(), nullptr, nullptr, &width, &height);
 
 	this->drawOriginal(texture, x, y, width, height);
 }
 
-void Renderer::drawOriginal(SDL_Texture *texture)
+void Renderer::drawOriginal(const Texture &texture)
 {
 	this->drawOriginal(texture, 0, 0);
 }
 
-void Renderer::drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect)
+void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
 
 	// The destination coordinates and dimensions are in 320x200 space, so transform 
 	// them to native space.
 	const Rect rect = this->originalToNative(dstRect);
 
-	SDL_RenderCopy(this->renderer, texture, &srcRect.getRect(), &rect.getRect());
+	SDL_RenderCopy(this->renderer, texture.get(), &srcRect.getRect(), &rect.getRect());
 }
 
-void Renderer::drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y)
+void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y)
 {
 	this->drawOriginalClipped(texture, srcRect, 
 		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
 }
 
-void Renderer::fill(SDL_Texture *texture)
+void Renderer::fill(const Texture &texture)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-	SDL_RenderCopy(this->renderer, texture, nullptr, nullptr);
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_RenderCopy(this->renderer, texture.get(), nullptr, nullptr);
 }
 
 void Renderer::present()
 {
 	SDL_SetRenderTarget(this->renderer, nullptr);
-	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
+	SDL_RenderCopy(this->renderer, this->nativeTexture.get(), nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
 }

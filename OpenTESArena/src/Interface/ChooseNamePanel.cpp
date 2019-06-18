@@ -94,7 +94,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	SDL_StartTextInput();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -102,7 +102,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() con
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
@@ -171,10 +171,10 @@ void ChooseNamePanel::render(Renderer &renderer)
 	const auto &background = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterCreation),
 		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background.get());
+	renderer.drawOriginal(background);
 
 	// Draw parchment: title.
-	renderer.drawOriginal(this->parchment.get(),
+	renderer.drawOriginal(this->parchment,
 		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2),
 		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2));
 

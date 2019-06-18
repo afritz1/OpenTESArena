@@ -146,7 +146,7 @@ int LoadSavePanel::getClickedIndex(const Int2 &point)
 	return -1;
 }
 
-std::pair<SDL_Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -154,7 +154,7 @@ std::pair<SDL_Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void LoadSavePanel::handleEvent(const SDL_Event &e)
@@ -195,7 +195,7 @@ void LoadSavePanel::render(Renderer &renderer)
 	// Draw slots background.
 	const auto &slotsBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::LoadSave), renderer);
-	renderer.drawOriginal(slotsBackground.get());
+	renderer.drawOriginal(slotsBackground);
 
 	// Draw save text.
 	for (const auto &textBox : this->saveTextBoxes)

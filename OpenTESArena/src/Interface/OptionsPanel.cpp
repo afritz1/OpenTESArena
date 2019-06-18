@@ -759,7 +759,7 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 		descriptionTextBox->getX(), descriptionTextBox->getY());
 }
 
-std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -767,7 +767,7 @@ std::pair<SDL_Texture*, CursorAlignment> OptionsPanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void OptionsPanel::handleEvent(const SDL_Event &e)
@@ -932,7 +932,7 @@ void OptionsPanel::render(Renderer &renderer)
 		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
 	for (int i = 0; i < 5; i++)
 	{
-		renderer.drawOriginal(tabBackground.get(),
+		renderer.drawOriginal(tabBackground,
 			GraphicsTabRect.getLeft(),
 			GraphicsTabRect.getTop() + (tabBackground.getHeight() * i));
 	}
@@ -940,7 +940,7 @@ void OptionsPanel::render(Renderer &renderer)
 	Texture returnBackground = Texture::generate(Texture::PatternType::Custom1,
 		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
 		textureManager, renderer);
-	renderer.drawOriginal(returnBackground.get(), this->backToPauseMenuButton.getX(),
+	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(),
 		this->backToPauseMenuButton.getY());
 
 	// Draw text.

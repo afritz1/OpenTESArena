@@ -297,7 +297,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		std::move(texture), textureCenter);
 }
 
-std::pair<SDL_Texture*, CursorAlignment> FastTravelSubPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> FastTravelSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -305,7 +305,7 @@ std::pair<SDL_Texture*, CursorAlignment> FastTravelSubPanel::getCurrentCursor() 
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void FastTravelSubPanel::tickTravelTime(Random &random) const
@@ -494,5 +494,5 @@ void FastTravelSubPanel::render(Renderer &renderer)
 
 	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);
 	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (animFrame.getHeight() / 2);
-	renderer.drawOriginal(animFrame.get(), x, y);
+	renderer.drawOriginal(animFrame, x, y);
 }

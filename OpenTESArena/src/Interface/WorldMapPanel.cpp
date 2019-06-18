@@ -61,7 +61,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -69,7 +69,7 @@ std::pair<SDL_Texture*, CursorAlignment> WorldMapPanel::getCurrentCursor() const
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void WorldMapPanel::handleEvent(const SDL_Event &e)
@@ -141,7 +141,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	const std::string &backgroundFilename = TextureFile::fromName(TextureName::WorldMap);
 	const auto &mapBackground = textureManager.getTexture(
 		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mapBackground.get());
+	renderer.drawOriginal(mapBackground);
 
 	// Draw yellow text over current province name.
 	const int provinceID = this->getGame().getGameData().getLocation().provinceID;
@@ -149,5 +149,5 @@ void WorldMapPanel::render(Renderer &renderer)
 		TextureFile::fromName(TextureName::ProvinceNames),
 		backgroundFilename, renderer).at(provinceID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
-	renderer.drawOriginal(provinceText.get(), nameOffset.x, nameOffset.y);
+	renderer.drawOriginal(provinceText, nameOffset.x, nameOffset.y);
 }

@@ -549,7 +549,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -557,7 +557,7 @@ std::pair<SDL_Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
@@ -632,15 +632,15 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const auto &body = textureManager.getTexture(bodyFilename, renderer);
 	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
 	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
-	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(body, Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
+	renderer.drawOriginal(pants, pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(head, headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirt, shirtOffset.x, shirtOffset.y);
 
 	// Draw attributes texture.
 	const auto &attributesBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterStats), renderer);
-	renderer.drawOriginal(attributesBackground.get());
+	renderer.drawOriginal(attributesBackground);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->nameTextBox->getTexture(),

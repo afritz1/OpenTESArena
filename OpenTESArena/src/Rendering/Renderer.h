@@ -3,10 +3,10 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "SoftwareRenderer.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/LevelData.h"
@@ -40,21 +40,18 @@ public:
 	};
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
-	static const std::string DEFAULT_TITLE;
+	static const char *DEFAULT_TITLE;
 
 	std::vector<DisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
+	Texture nativeTexture, gameWorldTexture; // Frame buffers.
 	SoftwareRenderer softwareRenderer; // Game world renderer.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
 	// Helper method for making a renderer context.
 	static SDL_Renderer *createRenderer(SDL_Window *window);
-
-	// For use with window dimensions, etc.. No longer used for rendering.
-	SDL_Surface *getWindowSurface() const;
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
@@ -105,8 +102,8 @@ public:
 	bool letterboxContains(const Int2 &nativePoint) const;
 
 	// Wrapper methods for SDL_CreateTexture.
-	SDL_Texture *createTexture(uint32_t format, int access, int w, int h);
-	SDL_Texture *createTextureFromSurface(SDL_Surface *surface);
+	Texture createTexture(uint32_t format, int access, int w, int h);
+	Texture createTextureFromSurface(const Surface &surface);
 
 	void init(int width, int height, bool fullscreen, int letterboxMode);
 
@@ -120,10 +117,10 @@ public:
 	void setFullscreen(bool fullscreen);
 
 	// Sets the window icon to be the given surface.
-	void setWindowIcon(SDL_Surface *icon);
+	void setWindowIcon(const Surface &icon);
 
 	// Sets the window title.
-	void setWindowTitle(const std::string &title);
+	void setWindowTitle(const char *title);
 
 	// Teleports the mouse to a location in the window.
 	void warpMouse(int x, int y);
@@ -188,23 +185,23 @@ public:
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.
-	void drawCursor(SDL_Texture *texture, CursorAlignment alignment, 
+	void drawCursor(const Texture &texture, CursorAlignment alignment, 
 		const Int2 &mousePosition, double scale);
 
 	// Draw methods for the native and original frame buffers.
-	void draw(SDL_Texture *texture, int x, int y, int w, int h);
-	void draw(SDL_Texture *texture, int x, int y);
-	void draw(SDL_Texture *texture);
-	void drawClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect);
-	void drawClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y);
-	void drawOriginal(SDL_Texture *texture, int x, int y, int w, int h);
-	void drawOriginal(SDL_Texture *texture, int x, int y);
-	void drawOriginal(SDL_Texture *texture);
-	void drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, const Rect &dstRect);
-	void drawOriginalClipped(SDL_Texture *texture, const Rect &srcRect, int x, int y);
+	void draw(const Texture &texture, int x, int y, int w, int h);
+	void draw(const Texture &texture, int x, int y);
+	void draw(const Texture &texture);
+	void drawClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
+	void drawClipped(const Texture &texture, const Rect &srcRect, int x, int y);
+	void drawOriginal(const Texture &texture, int x, int y, int w, int h);
+	void drawOriginal(const Texture &texture, int x, int y);
+	void drawOriginal(const Texture &texture);
+	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
+	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y);
 
 	// Stretches a texture over the entire native frame buffer.
-	void fill(SDL_Texture *texture);
+	void fill(const Texture &texture);
 
 	// Refreshes the displayed frame buffer.
 	void present();

@@ -8,6 +8,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/Surface.h"
+#include "../Rendering/Texture.h"
 
 // This class defines a list of displayed text boxes. The index of a clicked text 
 // box can be obtained, and the list can be scrolled up and down. A list box is
@@ -22,8 +23,6 @@ class TextBox;
 
 enum class FontName;
 
-struct SDL_Texture;
-
 class ListBox
 {
 private:
@@ -32,7 +31,7 @@ private:
 	Int2 point;
 	FontName fontName;
 	Surface clearSurface; // For clearing the texture upon updating.
-	SDL_Texture *texture;
+	Texture texture;
 	int scrollIndex;
 	int characterHeight;
 
@@ -41,7 +40,6 @@ private:
 public:
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
-	~ListBox();
 
 	// Gets the index of the top-most displayed element.
 	int getScrollIndex() const;
@@ -56,7 +54,7 @@ public:
 	const Int2 &getPoint() const;
 
 	// Gets the texture for drawing to the screen.
-	SDL_Texture *getTexture() const;
+	const Texture &getTexture() const;
 
 	// Gets the width and height of the list box.
 	Int2 getDimensions() const;

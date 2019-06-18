@@ -158,7 +158,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	}
 
 	// Create the destination SDL textures (keeping the surfaces' color keys).
-	this->texture = Texture(renderer.createTextureFromSurface(this->surface.get()));
+	this->texture = renderer.createTextureFromSurface(this->surface);
 }
 
 TextBox::TextBox(const Int2 &center, const RichTextString &richText,
@@ -197,12 +197,12 @@ Rect TextBox::getRect() const
 	return Rect(this->x, this->y, this->surface.get()->w, this->surface.get()->h);
 }
 
-SDL_Surface *TextBox::getSurface() const
+const Surface &TextBox::getSurface() const
 {
-	return this->surface.get();
+	return this->surface;
 }
 
-SDL_Texture *TextBox::getTexture() const
+const Texture &TextBox::getTexture() const
 {
-	return this->texture.get();
+	return this->texture;
 }

@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include "SDL.h"
 
 #include "ListBox.h"
@@ -55,8 +56,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 		int maxWidth = 0;
 		for (const auto &textBox : this->textBoxes)
 		{
-			int textBoxWidth;
-			SDL_QueryTexture(textBox->getTexture(), nullptr, nullptr, &textBoxWidth, nullptr);
+			const int textBoxWidth = textBox->getTexture().getWidth();
 
 			if (textBoxWidth > maxWidth)
 			{
@@ -80,15 +80,10 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	// Create the visible texture. This will be updated when scrolling the list box.
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_STREAMING, width, height);
-	SDL_SetTextureBlendMode(this->texture, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND);
 
 	// Draw the text boxes to the texture.
 	this->updateDisplay();
-}
-
-ListBox::~ListBox()
-{
-	SDL_DestroyTexture(this->texture);
 }
 
 int ListBox::getScrollIndex() const
@@ -103,10 +98,7 @@ int ListBox::getElementCount() const
 
 int ListBox::getMaxDisplayedCount() const
 {
-	int height;
-	SDL_QueryTexture(this->getTexture(), nullptr, nullptr, nullptr, &height);
-
-	return height / this->characterHeight;
+	return this->texture.getHeight() / this->characterHeight;
 }
 
 const Int2 &ListBox::getPoint() const
@@ -114,7 +106,7 @@ const Int2 &ListBox::getPoint() const
 	return this->point;
 }
 
-SDL_Texture *ListBox::getTexture() const
+const Texture &ListBox::getTexture() const
 {
 	return this->texture;
 }
@@ -122,7 +114,7 @@ SDL_Texture *ListBox::getTexture() const
 Int2 ListBox::getDimensions() const
 {
 	int w, h;
-	SDL_QueryTexture(this->texture, nullptr, nullptr, &w, &h);
+	SDL_QueryTexture(this->texture.get(), nullptr, nullptr, &w, &h);
 	return Int2(w, h);
 }
 
@@ -144,7 +136,7 @@ int ListBox::getClickedIndex(const Int2 &point) const
 void ListBox::updateDisplay()
 {
 	// Clear the display texture. Otherwise, remnants of previous text might be left over.
-	SDL_UpdateTexture(this->texture, nullptr,
+	SDL_UpdateTexture(this->texture.get(), nullptr,
 		this->clearSurface.get()->pixels, this->clearSurface.get()->pitch);
 
 	// Prepare the range of text boxes that will be displayed.
@@ -155,16 +147,16 @@ void ListBox::updateDisplay()
 	// Draw the relevant text boxes according to scroll index.
 	for (int i = this->scrollIndex; i < indexEnd; i++)
 	{
-		const SDL_Surface *surface = this->textBoxes.at(i)->getSurface();
+		const Surface &surface = this->textBoxes.at(i)->getSurface();
 
 		SDL_Rect rect;
 		rect.x = 0;
-		rect.y = (i - this->scrollIndex) * surface->h;
-		rect.w = surface->w;
-		rect.h = surface->h;
+		rect.y = (i - this->scrollIndex) * surface.getHeight();
+		rect.w = surface.getWidth();
+		rect.h = surface.getHeight();
 
 		// Update the texture's pixels at the correct height offset.
-		SDL_UpdateTexture(this->texture, &rect, surface->pixels, surface->pitch);
+		SDL_UpdateTexture(this->texture.get(), &rect, surface.get()->pixels, surface.get()->pitch);
 	}
 }
 

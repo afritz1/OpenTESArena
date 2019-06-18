@@ -270,7 +270,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -278,7 +278,7 @@ std::pair<SDL_Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() co
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void ProvinceMapPanel::handleEvent(const SDL_Event &e)
@@ -647,7 +647,7 @@ void ProvinceMapPanel::handleFastTravel()
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
 	const Int2 &point, Renderer &renderer)
 {
-	renderer.drawOriginal(texture.get(),
+	renderer.drawOriginal(texture,
 		point.x - (texture.getWidth() / 2),
 		point.y - (texture.getHeight() / 2));
 }
@@ -808,7 +808,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 						highlightColor : getColorFromIndex(srcPixel);
 				});
 
-				Texture texture(renderer.createTextureFromSurface(surface.get()));
+				Texture texture = renderer.createTextureFromSurface(surface);
 				return texture;
 			}();
 
@@ -881,12 +881,13 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 
 	const TextBox::ShadowData shadowData(Color(48, 48, 48), Int2(1, 0));
 	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, renderer);
+	const Surface &textBoxSurface = textBox.getSurface();
 
 	// Clamp to screen edges, with some extra space on the left and right.
 	const int x = std::clamp(textBox.getX(),
-		2, Renderer::ORIGINAL_WIDTH - textBox.getSurface()->w - 2);
+		2, Renderer::ORIGINAL_WIDTH - textBoxSurface.getWidth() - 2);
 	const int y = std::clamp(textBox.getY(),
-		2, Renderer::ORIGINAL_HEIGHT - textBox.getSurface()->h - 2);
+		2, Renderer::ORIGINAL_HEIGHT - textBoxSurface.getHeight() - 2);
 
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
@@ -895,8 +896,8 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 {
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
 
-	Texture tooltip(Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer));
+	const Texture tooltip = Panel::createTooltip(
+		text, FontName::D, this->getGame().getFontManager(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -908,7 +909,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
-	renderer.drawOriginal(tooltip.get(), x, y);
+	renderer.drawOriginal(tooltip, x, y);
 }
 
 void ProvinceMapPanel::render(Renderer &renderer)
@@ -926,7 +927,7 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const std::string backgroundFilename = this->getBackgroundFilename();
 	const auto &mapBackground = textureManager.getTexture(
 		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mapBackground.get());
+	renderer.drawOriginal(mapBackground);
 
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);

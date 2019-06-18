@@ -157,7 +157,7 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 	SDL_StartTextInput();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> ProvinceSearchSubPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> ProvinceSearchSubPanel::getCurrentCursor() const
 {
 	if (this->mode == ProvinceSearchSubPanel::Mode::TextEntry)
 	{
@@ -172,7 +172,7 @@ std::pair<SDL_Texture*, CursorAlignment> ProvinceSearchSubPanel::getCurrentCurso
 		const auto &texture = textureManager.getTexture(
 			TextureFile::fromName(TextureName::SwordCursor),
 			PaletteFile::fromName(PaletteName::Default), renderer);
-		return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+		return std::make_pair(&texture, CursorAlignment::TopLeft);
 	}
 }
 
@@ -453,7 +453,7 @@ void ProvinceSearchSubPanel::tick(double dt)
 void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 {
 	// Draw parchment.
-	renderer.drawOriginal(this->parchment.get(),
+	renderer.drawOriginal(this->parchment,
 		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1,
 		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) - 1);
 
@@ -476,8 +476,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 
 	const int listBackgroundX = 57;
 	const int listBackgroundY = 11;
-	renderer.drawOriginal(listBackground.get(),
-		listBackgroundX, listBackgroundY);
+	renderer.drawOriginal(listBackground, listBackgroundX, listBackgroundY);
 
 	// Draw list box text.
 	renderer.drawOriginal(this->locationsListBox->getTexture(),

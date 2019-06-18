@@ -81,7 +81,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 	}();
 }
 
-std::pair<SDL_Texture*, CursorAlignment> MainQuestSplashPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> MainQuestSplashPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -89,7 +89,7 @@ std::pair<SDL_Texture*, CursorAlignment> MainQuestSplashPanel::getCurrentCursor(
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void MainQuestSplashPanel::handleEvent(const SDL_Event &e)
@@ -124,7 +124,7 @@ void MainQuestSplashPanel::render(Renderer &renderer)
 	// Draw staff dungeon splash image.
 	const auto &splashImage = textureManager.getTexture(
 		this->splashFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(splashImage.get());
+	renderer.drawOriginal(splashImage);
 
 	// Draw text.
 	renderer.drawOriginal(this->textBox->getTexture(),

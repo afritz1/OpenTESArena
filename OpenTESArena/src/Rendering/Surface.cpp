@@ -9,12 +9,6 @@ Surface::Surface()
 	this->surface = nullptr;
 }
 
-Surface::Surface(SDL_Surface *surface)
-{
-	DebugAssert(surface != nullptr);
-	this->surface = surface;
-}
-
 Surface::Surface(Surface &&surface)
 {
 	this->surface = surface.surface;
@@ -29,9 +23,24 @@ Surface::~Surface()
 	}
 }
 
+void Surface::init(SDL_Surface *surface)
+{
+	DebugAssert(this->surface == nullptr);
+	this->surface = surface;
+}
+
 Surface &Surface::operator=(Surface &&surface)
 {
-	this->surface = surface.surface;
+	if (this->surface != surface.surface)
+	{
+		if (this->surface != nullptr)
+		{
+			SDL_FreeSurface(this->surface);
+		}
+
+		this->surface = surface.surface;
+	}
+	
 	surface.surface = nullptr;
 	return *this;
 }
@@ -47,7 +56,9 @@ Surface Surface::loadBMP(const char *filename, uint32_t format)
 	SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, format, 0);
 	SDL_FreeSurface(surface);
 
-	return Surface(optimizedSurface);
+	Surface newSurface;
+	newSurface.init(optimizedSurface);
+	return newSurface;
 }
 
 Surface Surface::createWithFormat(int width, int height, int depth, uint32_t format)
@@ -66,7 +77,9 @@ Surface Surface::createWithFormat(int width, int height, int depth, uint32_t for
 		SDL_SetSurfaceBlendMode(optSurface, SDL_BLENDMODE_BLEND);
 	}
 
-	return Surface(optSurface);
+	Surface newSurface;
+	newSurface.init(optSurface);
+	return newSurface;
 #endif
 }
 

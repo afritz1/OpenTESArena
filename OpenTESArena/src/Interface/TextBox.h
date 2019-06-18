@@ -15,9 +15,6 @@
 class Rect;
 class Renderer;
 
-struct SDL_Surface;
-struct SDL_Texture;
-
 class TextBox
 {
 public:
@@ -54,8 +51,8 @@ public:
 	// over it with the mouse.
 	Rect getRect() const;
 
-	SDL_Surface *getSurface() const;
-	SDL_Texture *getTexture() const;
+	const Surface &getSurface() const;
+	const Texture &getTexture() const;
 };
 
 #endif

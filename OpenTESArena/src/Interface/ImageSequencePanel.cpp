@@ -99,5 +99,5 @@ void ImageSequencePanel::render(Renderer &renderer)
 	const auto &image = textureManager.getTexture(
 		this->textureNames.at(this->imageIndex),
 		this->paletteNames.at(this->imageIndex), renderer);
-	renderer.drawOriginal(image.get());
+	renderer.drawOriginal(image);
 }

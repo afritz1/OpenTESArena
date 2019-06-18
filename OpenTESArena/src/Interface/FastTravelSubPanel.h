@@ -44,7 +44,7 @@ public:
 
 	static const double MIN_SECONDS;
 
-	virtual std::pair<SDL_Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };

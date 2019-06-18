@@ -160,7 +160,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	}
 }
 
-std::pair<SDL_Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCursor() const
+std::pair<const Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -168,7 +168,7 @@ std::pair<SDL_Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCurs
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(texture.get(), CursorAlignment::TopLeft);
+	return std::make_pair(&texture, CursorAlignment::TopLeft);
 }
 
 void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
@@ -249,15 +249,15 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const auto &body = textureManager.getTexture(bodyFilename, renderer);
 	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
 	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
-	renderer.drawOriginal(body.get(), Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawOriginal(pants.get(), pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(head.get(), headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirt.get(), shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(body, Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
+	renderer.drawOriginal(pants, pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(head, headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirt, shirtOffset.x, shirtOffset.y);
 
 	// Draw character equipment background.
 	const auto &equipmentBackground = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CharacterEquipment), renderer);
-	renderer.drawOriginal(equipmentBackground.get());
+	renderer.drawOriginal(equipmentBackground);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->playerNameTextBox->getTexture(),
