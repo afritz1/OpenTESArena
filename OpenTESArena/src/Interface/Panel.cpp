@@ -57,8 +57,7 @@ SDL_Texture *Panel::createTooltip(const std::string &text,
 	Surface background = Surface::createWithFormat(
 		textSurface->w + padding, textSurface->h + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	SDL_FillRect(background.get(), nullptr,
-		background.mapRGBA(backColor.r, backColor.g, backColor.b, backColor.a));
+	background.fill(backColor.r, backColor.g, backColor.b, backColor.a);
 
 	// Offset the text from the top left corner by a bit so it isn't against the side 
 	// of the tooltip (for aesthetic purposes).

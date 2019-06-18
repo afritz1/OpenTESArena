@@ -75,7 +75,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	// allocation each time the update method is called).
 	this->clearSurface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	SDL_FillRect(this->clearSurface.get(), nullptr, this->clearSurface.mapRGBA(0, 0, 0, 0));
+	this->clearSurface.fill(0, 0, 0, 0);
 
 	// Create the visible texture. This will be updated when scrolling the list box.
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,

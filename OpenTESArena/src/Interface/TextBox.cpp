@@ -31,7 +31,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	{
 		Surface surface = Surface::createWithFormat(dimensions.x, dimensions.y,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 0));
+		surface.fill(0, 0, 0, 0);
 
 		return surface;
 	}();
@@ -133,7 +133,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 
 		Surface surface = Surface::createWithFormat(surfaceDims.x, surfaceDims.y,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 0));
+		surface.fill(0, 0, 0, 0);
 
 		return surface;
 	}();

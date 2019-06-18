@@ -1,6 +1,7 @@
 #include "SDL.h"
 
 #include "Surface.h"
+#include "../Math/Rect.h"
 #include "../Utilities/Debug.h"
 
 Surface::Surface()
@@ -110,4 +111,34 @@ uint32_t Surface::mapRGB(uint8_t r, uint8_t g, uint8_t b) const
 uint32_t Surface::mapRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) const
 {
 	return SDL_MapRGBA(this->surface->format, r, g, b, a);
+}
+
+void Surface::fill(uint32_t color)
+{
+	SDL_FillRect(this->surface, nullptr, color);
+}
+
+void Surface::fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	this->fill(this->mapRGBA(r, g, b, a));
+}
+
+void Surface::fill(uint8_t r, uint8_t g, uint8_t b)
+{
+	this->fill(r, g, b, 255);
+}
+
+void Surface::fillRect(const Rect &rect, uint32_t color)
+{
+	SDL_FillRect(this->surface, &rect.getRect(), color);
+}
+
+void Surface::fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	this->fillRect(rect, this->mapRGBA(r, g, b, a));
+}
+
+void Surface::fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b)
+{
+	this->fillRect(rect, r, g, b, 255);
 }

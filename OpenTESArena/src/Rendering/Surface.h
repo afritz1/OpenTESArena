@@ -9,6 +9,8 @@
 // SDL_Surfaces are really just being used as scratch images which are then converted 
 // to a hardware texture for rendering.
 
+class Rect;
+
 struct SDL_Surface;
 
 class Surface
@@ -42,6 +44,13 @@ public:
 
 	uint32_t mapRGB(uint8_t r, uint8_t g, uint8_t b) const;
 	uint32_t mapRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) const;
+
+	void fill(uint32_t color);
+	void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+	void fill(uint8_t r, uint8_t g, uint8_t b);
+	void fillRect(const Rect &rect, uint32_t color);
+	void fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+	void fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b);
 };
 
 #endif

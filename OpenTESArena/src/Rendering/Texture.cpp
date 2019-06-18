@@ -1,6 +1,7 @@
 #include "SDL.h"
 
 #include "Texture.h"
+#include "../Math/Rect.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
@@ -47,7 +48,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 	Surface surface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
-	SDL_FillRect(surface.get(), nullptr, clearColor);
+	surface.fill(clearColor);
 
 	if (type == Texture::PatternType::Parchment)
 	{
@@ -92,83 +93,47 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		// Draw edge tiles.
 		for (int y = topLeft->h; y < (surface.getHeight() - bottomLeft->h); y += left->h)
 		{
-			SDL_Rect leftRect;
-			leftRect.x = 0;
-			leftRect.y = y;
-			leftRect.w = left->w;
-			leftRect.h = left->h;
-
-			SDL_Rect rightRect;
-			rightRect.x = surface.getWidth() - right->w;
-			rightRect.y = y;
-			rightRect.w = right->w;
-			rightRect.h = right->h;
+			const Rect leftRect(0, y, left->w, left->h);
+			const Rect rightRect(surface.getWidth() - right->w, y, right->w, right->h);
 
 			// Remove any traces of body tiles underneath.
-			SDL_FillRect(surface.get(), &leftRect, clearColor);
-			SDL_FillRect(surface.get(), &rightRect, clearColor);
+			surface.fillRect(leftRect, clearColor);
+			surface.fillRect(rightRect, clearColor);
 
-			SDL_BlitSurface(left, nullptr, surface.get(), &leftRect);
-			SDL_BlitSurface(right, nullptr, surface.get(), &rightRect);
+			SDL_BlitSurface(left, nullptr, surface.get(), const_cast<SDL_Rect*>(&leftRect.getRect()));
+			SDL_BlitSurface(right, nullptr, surface.get(), const_cast<SDL_Rect*>(&rightRect.getRect()));
 		}
 
 		for (int x = topLeft->w; x < (surface.getWidth() - topRight->w); x += top->w)
 		{
-			SDL_Rect topRect;
-			topRect.x = x;
-			topRect.y = 0;
-			topRect.w = top->w;
-			topRect.h = top->h;
-
-			SDL_Rect bottomRect;
-			bottomRect.x = x;
-			bottomRect.y = surface.getHeight() - bottom->h;
-			bottomRect.w = bottom->w;
-			bottomRect.h = bottom->h;
+			const Rect topRect(x, 0, top->w, top->h);
+			const Rect bottomRect(x, surface.getHeight() - bottom->h, bottom->w, bottom->h);
 
 			// Remove any traces of other tiles underneath.
-			SDL_FillRect(surface.get(), &topRect, clearColor);
-			SDL_FillRect(surface.get(), &bottomRect, clearColor);
+			surface.fillRect(topRect, clearColor);
+			surface.fillRect(bottomRect, clearColor);
 
-			SDL_BlitSurface(top, nullptr, surface.get(), &topRect);
-			SDL_BlitSurface(bottom, nullptr, surface.get(), &bottomRect);
+			SDL_BlitSurface(top, nullptr, surface.get(), const_cast<SDL_Rect*>(&topRect.getRect()));
+			SDL_BlitSurface(bottom, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRect.getRect()));
 		}
 
 		// Draw corner tiles.
-		SDL_Rect topLeftRect;
-		topLeftRect.x = 0;
-		topLeftRect.y = 0;
-		topLeftRect.w = topLeft->w;
-		topLeftRect.h = topLeft->h;
-
-		SDL_Rect topRightRect;
-		topRightRect.x = surface.getWidth() - topRight->w;
-		topRightRect.y = 0;
-		topRightRect.w = topRight->w;
-		topRightRect.h = topRight->h;
-
-		SDL_Rect bottomLeftRect;
-		bottomLeftRect.x = 0;
-		bottomLeftRect.y = surface.getHeight() - bottomLeft->h;
-		bottomLeftRect.w = bottomLeft->w;
-		bottomLeftRect.h = bottomLeft->h;
-
-		SDL_Rect bottomRightRect;
-		bottomRightRect.x = surface.getWidth() - bottomRight->w;
-		bottomRightRect.y = surface.getHeight() - bottomRight->h;
-		bottomRightRect.w = bottomRight->w;
-		bottomRightRect.h = bottomRight->h;
+		const Rect topLeftRect(0, 0, topLeft->w, topLeft->h);
+		const Rect topRightRect(surface.getWidth() - topRight->w, 0, topRight->w, topRight->h);
+		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft->h, bottomLeft->w, bottomLeft->h);
+		const Rect bottomRightRect(surface.getWidth() - bottomRight->w,
+			surface.getHeight() - bottomRight->h, bottomRight->w, bottomRight->h);
 
 		// Remove any traces of other tiles underneath.
-		SDL_FillRect(surface.get(), &topLeftRect, clearColor);
-		SDL_FillRect(surface.get(), &topRightRect, clearColor);
-		SDL_FillRect(surface.get(), &bottomLeftRect, clearColor);
-		SDL_FillRect(surface.get(), &bottomRightRect, clearColor);
+		surface.fillRect(topLeftRect, clearColor);
+		surface.fillRect(topRightRect, clearColor);
+		surface.fillRect(bottomLeftRect, clearColor);
+		surface.fillRect(bottomRightRect, clearColor);
 
-		SDL_BlitSurface(topLeft, nullptr, surface.get(), &topLeftRect);
-		SDL_BlitSurface(topRight, nullptr, surface.get(), &topRightRect);
-		SDL_BlitSurface(bottomLeft, nullptr, surface.get(), &bottomLeftRect);
-		SDL_BlitSurface(bottomRight, nullptr, surface.get(), &bottomRightRect);
+		SDL_BlitSurface(topLeft, nullptr, surface.get(), const_cast<SDL_Rect*>(&topLeftRect.getRect()));
+		SDL_BlitSurface(topRight, nullptr, surface.get(), const_cast<SDL_Rect*>(&topRightRect.getRect()));
+		SDL_BlitSurface(bottomLeft, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomLeftRect.getRect()));
+		SDL_BlitSurface(bottomRight, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRightRect.getRect()));
 	}
 	else if (type == Texture::PatternType::Dark)
 	{
@@ -186,7 +151,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		const uint32_t bottomRightColor = surface.mapRGBA(36, 36, 48, 255);
 
 		// Fill with dark-bluish color.
-		SDL_FillRect(surface.get(), nullptr, fillColor);
+		surface.fill(fillColor);
 
 		// Color edges.
 		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
@@ -226,7 +191,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		const uint32_t darkBorder = surface.mapRGBA(40, 40, 48, 255);
 
 		// Fill with light gray color.
-		SDL_FillRect(surface.get(), nullptr, fillColor);
+		surface.fill(fillColor);
 
 		// Color edges.
 		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);

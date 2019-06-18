@@ -113,18 +113,15 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 			Renderer::DEFAULT_PIXELFORMAT);
 
 		// Fill with transparent color first (used by floor voxels).
-		SDL_FillRect(surface.get(), nullptr, AutomapFloor.toARGB());
+		surface.fill(AutomapFloor.toARGB());
 
 		// Lambda for filling in a square in the map surface.
 		auto drawSquare = [&surface](int x, int z, const Color &color)
 		{
-			SDL_Rect rect;
-			rect.x = z * 3;
-			rect.y = surface.getHeight() - 3 - (x * 3);
-			rect.w = 3;
-			rect.h = 3;
-
-			SDL_FillRect(surface.get(), &rect, color.toARGB());
+			const int width = 3;
+			const int height = width;
+			const Rect rect(z * 3, surface.getHeight() - 3 - (x * 3), width, height);
+			surface.fillRect(rect, color.toARGB());
 		};
 
 		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&

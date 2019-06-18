@@ -2085,9 +2085,9 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 		const int columnWidth = 1;
 		const int width = fpsCounter.getFrameCount() * columnWidth;
 		const int height = 32;
-		const Surface surface = Surface::createWithFormat(
+		Surface surface = Surface::createWithFormat(
 			width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 128));
+		surface.fill(0, 0, 0, 128);
 
 		const std::array<uint32_t, 3> Colors =
 		{
@@ -2123,13 +2123,8 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 			const int height = std::clamp(static_cast<int>(
 				percent * static_cast<double>(surface.getHeight())), 0, surface.getHeight());
 
-			SDL_Rect rect;
-			rect.x = x * columnWidth;
-			rect.y = surface.getHeight() - height;
-			rect.w = columnWidth;
-			rect.h = height;
-
-			SDL_FillRect(surface.get(), &rect, color);
+			const Rect rect(x * columnWidth, surface.getHeight() - height, columnWidth, height);
+			surface.fillRect(rect, color);
 		};
 
 		// Fill in columns.
