@@ -105,7 +105,7 @@ Game::Game()
 	const Surface icon = [this]()
 	{
 		const std::string iconPath = this->basePath + "data/icon.bmp";
-		Surface surface = Surface::loadBMP(iconPath, Renderer::DEFAULT_PIXELFORMAT);
+		Surface surface = Surface::loadBMP(iconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
 
 		// Treat black as transparent.
 		const uint32_t black = surface.mapRGBA(0, 0, 0, 255);
