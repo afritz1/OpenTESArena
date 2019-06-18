@@ -108,7 +108,7 @@ Game::Game()
 		Surface surface = Surface::loadBMP(iconPath, Renderer::DEFAULT_PIXELFORMAT);
 
 		// Treat black as transparent.
-		const uint32_t black = SDL_MapRGBA(surface.get()->format, 0, 0, 0, 255);
+		const uint32_t black = surface.mapRGBA(0, 0, 0, 255);
 		SDL_SetColorKey(surface.get(), SDL_TRUE, black);
 
 		return surface;

@@ -99,3 +99,13 @@ SDL_Surface *Surface::get() const
 {
 	return this->surface;
 }
+
+uint32_t Surface::mapRGB(uint8_t r, uint8_t g, uint8_t b) const
+{
+	return SDL_MapRGB(this->surface->format, r, g, b);
+}
+
+uint32_t Surface::mapRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) const
+{
+	return SDL_MapRGBA(this->surface->format, r, g, b, a);
+}

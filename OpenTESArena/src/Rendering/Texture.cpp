@@ -46,7 +46,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 	// Initialize the scratch surface to transparent.
 	Surface surface = Surface::createWithFormat(width, height,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	const uint32_t clearColor = SDL_MapRGBA(surface.get()->format, 0, 0, 0, 0);
+	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
 	SDL_FillRect(surface.get(), nullptr, clearColor);
 
 	if (type == Texture::PatternType::Parchment)
@@ -177,13 +177,13 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		DebugAssert(height >= 4);
 
 		// Get all the colors used with the dark pop-up.
-		const uint32_t fillColor = SDL_MapRGBA(surface.get()->format, 28, 24, 36, 255);
-		const uint32_t topColor = SDL_MapRGBA(surface.get()->format, 36, 36, 48, 255);
-		const uint32_t bottomColor = SDL_MapRGBA(surface.get()->format, 12, 12, 24, 255);
-		const uint32_t rightColor = SDL_MapRGBA(surface.get()->format, 56, 69, 77, 255);
+		const uint32_t fillColor = surface.mapRGBA(28, 24, 36, 255);
+		const uint32_t topColor = surface.mapRGBA(36, 36, 48, 255);
+		const uint32_t bottomColor = surface.mapRGBA(12, 12, 24, 255);
+		const uint32_t rightColor = surface.mapRGBA(56, 69, 77, 255);
 		const uint32_t leftColor = bottomColor;
-		const uint32_t topRightColor = SDL_MapRGBA(surface.get()->format, 69, 85, 89, 255);
-		const uint32_t bottomRightColor = SDL_MapRGBA(surface.get()->format, 36, 36, 48, 255);
+		const uint32_t topRightColor = surface.mapRGBA(69, 85, 89, 255);
+		const uint32_t bottomRightColor = surface.mapRGBA(36, 36, 48, 255);
 
 		// Fill with dark-bluish color.
 		SDL_FillRect(surface.get(), nullptr, fillColor);
@@ -221,9 +221,9 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		DebugAssert(width >= 3);
 		DebugAssert(height >= 3);
 
-		const uint32_t fillColor = SDL_MapRGBA(surface.get()->format, 85, 85, 97, 255);
-		const uint32_t lightBorder = SDL_MapRGBA(surface.get()->format, 125, 125, 145, 255);
-		const uint32_t darkBorder = SDL_MapRGBA(surface.get()->format, 40, 40, 48, 255);
+		const uint32_t fillColor = surface.mapRGBA(85, 85, 97, 255);
+		const uint32_t lightBorder = surface.mapRGBA(125, 125, 145, 255);
+		const uint32_t darkBorder = surface.mapRGBA(40, 40, 48, 255);
 
 		// Fill with light gray color.
 		SDL_FillRect(surface.get(), nullptr, fillColor);

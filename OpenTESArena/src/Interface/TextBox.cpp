@@ -31,7 +31,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	{
 		Surface surface = Surface::createWithFormat(dimensions.x, dimensions.y,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, SDL_MapRGBA(surface.get()->format, 0, 0, 0, 0));
+		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 0));
 
 		return surface;
 	}();
@@ -53,9 +53,8 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	{
 		uint32_t *pixels = static_cast<uint32_t*>(tempSurface.getPixels());
 		const int pixelCount = tempSurface.getWidth() * tempSurface.getHeight();
-		const uint32_t transparent = SDL_MapRGBA(tempSurface.get()->format, 0, 0, 0, 0);
-		const uint32_t desiredColor = SDL_MapRGBA(tempSurface.get()->format,
-			color.r, color.g, color.b, color.a);
+		const uint32_t transparent = tempSurface.mapRGBA(0, 0, 0, 0);
+		const uint32_t desiredColor = tempSurface.mapRGBA(color.r, color.g, color.b, color.a);
 
 		std::for_each(pixels, pixels + pixelCount,
 			[transparent, desiredColor](uint32_t &pixel)
@@ -134,7 +133,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 
 		Surface surface = Surface::createWithFormat(surfaceDims.x, surfaceDims.y,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, SDL_MapRGBA(surface.get()->format, 0, 0, 0, 0));
+		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 0));
 
 		return surface;
 	}();

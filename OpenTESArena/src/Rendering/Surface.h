@@ -40,6 +40,9 @@ public:
 	int getHeight() const;
 	void *getPixels() const;
 	SDL_Surface *get() const;
+
+	uint32_t mapRGB(uint8_t r, uint8_t g, uint8_t b) const;
+	uint32_t mapRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) const;
 };
 
 #endif

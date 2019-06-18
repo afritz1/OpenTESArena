@@ -2087,13 +2087,13 @@ void GameWorldPanel::drawDebugText(Renderer &renderer)
 		const int height = 32;
 		const Surface surface = Surface::createWithFormat(
 			width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		SDL_FillRect(surface.get(), nullptr, SDL_MapRGBA(surface.get()->format, 0, 0, 0, 128));
+		SDL_FillRect(surface.get(), nullptr, surface.mapRGBA(0, 0, 0, 128));
 
 		const std::array<uint32_t, 3> Colors =
 		{
-			SDL_MapRGBA(surface.get()->format, 255, 0, 0, 128),
-			SDL_MapRGBA(surface.get()->format, 255, 255, 0, 128),
-			SDL_MapRGBA(surface.get()->format, 0, 255, 0, 128)
+			surface.mapRGBA(255, 0, 0, 128),
+			surface.mapRGBA(255, 255, 0, 128),
+			surface.mapRGBA(0, 255, 0, 128)
 		};
 
 		auto drawGraphColumn = [columnWidth, &surface, &Colors](int x, double percent)

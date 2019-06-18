@@ -789,7 +789,7 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 				auto getColorFromIndex = [this, highlightType, &surface](int paletteIndex)
 				{
 					const Color &color = this->provinceMapPalette.get().at(paletteIndex);
-					return SDL_MapRGBA(surface.get()->format, color.r, color.g, color.b, color.a);
+					return surface.mapRGBA(color.r, color.g, color.b, color.a);
 				};
 
 				const uint32_t highlightColor = getColorFromIndex(
