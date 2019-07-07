@@ -168,6 +168,11 @@ int Platform::getThreadCount()
 	}
 }
 
+int Platform::getCacheLineSize()
+{
+	return SDL_GetCPUCacheLineSize();
+}
+
 bool Platform::directoryExists(const std::string &path)
 {
 #if defined(_WIN32)
