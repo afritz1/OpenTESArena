@@ -3,10 +3,10 @@
 
 #include "Compression.h"
 #include "FLCFile.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 enum class FileType : uint16_t

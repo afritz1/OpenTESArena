@@ -2,7 +2,8 @@
 
 #include "Constants.h"
 #include "MathUtils.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 double MathUtils::fullAtan2(double y, double x)
 {

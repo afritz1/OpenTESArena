@@ -11,7 +11,8 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 ImageSequencePanel::ImageSequencePanel(Game &game,
 	const std::vector<std::string> &paletteNames,

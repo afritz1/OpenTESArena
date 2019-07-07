@@ -7,7 +7,8 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 Texture::Texture()
 {

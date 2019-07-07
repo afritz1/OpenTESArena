@@ -46,8 +46,6 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
 #include "../World/InteriorWorldData.h"
@@ -57,6 +55,9 @@
 #include "../World/LocationType.h"
 #include "../World/VoxelDataType.h"
 #include "../World/WorldType.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {

@@ -4,9 +4,9 @@
 
 #include "CFAFile.h"
 #include "Compression.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 bool CFAFile::init(const char *filename)

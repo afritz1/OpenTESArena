@@ -17,8 +17,9 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Surface.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {

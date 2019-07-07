@@ -4,7 +4,8 @@
 #include "CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 CharacterClass::CharacterClass(const std::string &name,
 	const std::string &preferredAttributes,

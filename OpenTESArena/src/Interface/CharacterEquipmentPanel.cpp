@@ -24,7 +24,8 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	: Panel(game)

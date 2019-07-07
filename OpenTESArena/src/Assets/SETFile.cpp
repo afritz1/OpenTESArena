@@ -3,8 +3,8 @@
 #include <string>
 
 #include "SETFile.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
 const int SETFile::CHUNK_WIDTH = 64;

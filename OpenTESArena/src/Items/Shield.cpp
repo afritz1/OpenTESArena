@@ -8,7 +8,8 @@
 #include "ShieldType.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<ShieldType, std::string> ShieldTypeDisplayNames =
 {

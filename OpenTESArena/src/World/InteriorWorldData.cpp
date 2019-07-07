@@ -1,8 +1,9 @@
 #include "InteriorWorldData.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 InteriorWorldData::InteriorWorldData()
 {

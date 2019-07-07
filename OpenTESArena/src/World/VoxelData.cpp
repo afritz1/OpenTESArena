@@ -6,7 +6,8 @@
 #include "VoxelDataType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 bool VoxelData::WallData::isMenu() const
 {

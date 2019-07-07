@@ -7,7 +7,7 @@
 #include <numeric>
 #include <vector>
 
-#include "../Utilities/Debug.h"
+#include "components/debug/Debug.h"
 
 // There are a few different methods used for compressing textures in Arena.
 // The reusable decompression algorithms will be kept in this class.

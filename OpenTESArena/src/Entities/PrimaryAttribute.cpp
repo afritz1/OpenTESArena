@@ -3,7 +3,8 @@
 #include "AttributeModifierName.h"
 #include "PrimaryAttribute.h"
 #include "PrimaryAttributeName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<PrimaryAttributeName, std::string> PrimaryAttributeDisplayNames =
 {

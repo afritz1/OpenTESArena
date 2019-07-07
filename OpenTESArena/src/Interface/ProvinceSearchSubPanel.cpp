@@ -18,7 +18,8 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/String.h"
+
+#include "components/utilities/String.h"
 
 const int ProvinceSearchSubPanel::MAX_NAME_LENGTH = 20;
 const Int2 ProvinceSearchSubPanel::DEFAULT_TEXT_CURSOR_POSITION(85, 100);

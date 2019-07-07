@@ -1,6 +1,6 @@
 #include "ExeTypes.h"
 
-#include "../Utilities/Bytes.h"
+#include "components/utilities/Bytes.h"
 
 const size_t ExeTypes::Rect16::SIZE = sizeof(int16_t) * 4;
 

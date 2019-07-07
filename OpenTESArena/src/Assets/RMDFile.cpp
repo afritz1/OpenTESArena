@@ -3,9 +3,9 @@
 
 #include "Compression.h"
 #include "RMDFile.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 const int RMDFile::BYTES_PER_FLOOR = 8192;

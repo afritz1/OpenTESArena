@@ -1,5 +1,6 @@
 #include "Rect.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 Rect::Rect(int x, int y, int width, int height)
 {

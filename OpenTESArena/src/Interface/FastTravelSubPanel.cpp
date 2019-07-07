@@ -19,8 +19,9 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../World/LocationType.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 const double FastTravelSubPanel::FRAME_TIME = 1.0 / 24.0;
 const double FastTravelSubPanel::MIN_SECONDS = 1.0;

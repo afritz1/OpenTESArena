@@ -8,7 +8,8 @@
 #include "ShieldType.h"
 #include "../Entities/BodyPartName.h"
 #include "../Math/Random.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 // It doesn't look like item condition values are visible anywhere, like in
 // the manual for instance, so I'm remaking them anew with reasonable values.

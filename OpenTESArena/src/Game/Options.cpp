@@ -3,10 +3,11 @@
 #include <sstream>
 
 #include "Options.h"
-#include "../Utilities/Debug.h"
 #include "../Utilities/KeyValueMap.h"
 #include "../Utilities/Platform.h"
-#include "../Utilities/String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {

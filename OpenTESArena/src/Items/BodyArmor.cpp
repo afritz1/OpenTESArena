@@ -6,7 +6,8 @@
 #include "BodyArmorArtifactData.h"
 #include "../Entities/BodyPart.h"
 #include "../Entities/BodyPartName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 // This uses a body part name as the mapping instead of an armor type because the
 // "Shield" entry would never be used, since it's overridden by the Shield class.

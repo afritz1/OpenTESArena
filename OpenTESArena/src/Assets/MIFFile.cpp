@@ -4,9 +4,9 @@
 
 #include "Compression.h"
 #include "MIFFile.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 namespace

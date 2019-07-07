@@ -2,11 +2,11 @@
 #include <string_view>
 #include <vector>
 
-#include "Debug.h"
-#include "File.h"
 #include "KeyValueMap.h"
-#include "String.h"
-#include "StringView.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/File.h"
+#include "components/utilities/StringView.h"
 
 namespace
 {

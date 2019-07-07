@@ -3,7 +3,8 @@
 #include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/String.h"
+
+#include "components/utilities/String.h"
 
 const int InteriorLevelData::GRID_HEIGHT = 3;
 

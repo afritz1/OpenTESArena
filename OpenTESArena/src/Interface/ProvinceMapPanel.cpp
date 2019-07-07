@@ -37,11 +37,12 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
 #include "../World/WeatherType.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {

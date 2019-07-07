@@ -7,10 +7,11 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
-#include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
+
+#include "components/debug/Debug.h"
 
 SoftwareRenderer::VoxelTexel::VoxelTexel()
 {

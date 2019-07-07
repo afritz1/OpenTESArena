@@ -5,10 +5,10 @@
 #include <unordered_set>
 
 #include "INFFile.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
-#include "../Utilities/StringView.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 #include "components/vfs/manager.hpp"
 
 namespace

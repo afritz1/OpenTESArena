@@ -4,7 +4,8 @@
 #include "MiscellaneousItem.h"
 #include "MiscellaneousItemType.h"
 #include "MiscellaneousArtifactData.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<MiscellaneousItemType, std::string> MiscellaneousItemDisplayNames =
 {

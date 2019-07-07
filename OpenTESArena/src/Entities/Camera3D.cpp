@@ -3,7 +3,8 @@
 #include "Camera3D.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),

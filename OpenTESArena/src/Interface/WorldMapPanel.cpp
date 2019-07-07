@@ -19,8 +19,9 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/Debug.h"
 #include "../World/Location.h"
+
+#include "components/debug/Debug.h"
 
 WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
 	: Panel(game), travelData(std::move(travelData))

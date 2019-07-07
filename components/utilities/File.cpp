@@ -2,9 +2,8 @@
 #include <cstring>
 #include <fstream>
 
-#include "Debug.h"
 #include "File.h"
-#include "Platform.h"
+#include "../debug/Debug.h"
 
 std::string File::readAllText(const char *filename)
 {
@@ -33,25 +32,19 @@ bool File::pathIsRelative(const char *filename)
 	const size_t length = std::strlen(filename);
 	DebugAssertMsg(length > 0, "Path cannot be empty.");
 
-	// See which platform we're running on by comparing with names provided by SDL.
-	const std::string platformName = Platform::getPlatform();
-
-	if (platformName == "Windows")
+#if defined(_WIN32)
+	// Can't be absolute without a colon at index 1.
+	if (length < 2)
 	{
-		// Can't be absolute without a colon at index 1.
-		if (length < 2)
-		{
-			return true;
-		}
+		return true;
+	}
 
-		// Needs a drive letter and a colon to be absolute.
-		return !(std::isalpha(static_cast<unsigned char>(filename[0])) && (filename[1] == ':'));
-	}
-	else
-	{
-		// Needs a leading forward slash to be absolute.
-		return filename[0] != '/';
-	}
+	// Needs a drive letter and a colon to be absolute.
+	return !(std::isalpha(static_cast<unsigned char>(filename[0])) && (filename[1] == ':'));
+#else
+	// Needs a leading forward slash to be absolute.
+	return filename[0] != '/';
+#endif
 }
 
 void File::copy(const char *srcFilename, const char *dstFilename)

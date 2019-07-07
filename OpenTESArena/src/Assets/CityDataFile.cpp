@@ -5,13 +5,13 @@
 #include "ExeData.h"
 #include "MiscAssets.h"
 #include "../Math/Random.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelData.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 bool CityDataFile::ProvinceData::LocationData::isVisible() const

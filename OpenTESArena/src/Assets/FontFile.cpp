@@ -6,8 +6,8 @@
 #include "../Media/Color.h"
 #include "../Media/Font.h"
 #include "../Media/FontName.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
 namespace

@@ -10,10 +10,11 @@
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/WorldType.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	: position(position)

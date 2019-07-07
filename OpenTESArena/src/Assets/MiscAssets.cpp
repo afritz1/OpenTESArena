@@ -8,14 +8,14 @@
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
 #include "../Math/Random.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
 #include "../Utilities/Platform.h"
-#include "../Utilities/String.h"
 #include "../World/ClimateType.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 namespace

@@ -3,7 +3,8 @@
 #include "ItemType.h"
 #include "Trinket.h"
 #include "TrinketType.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<TrinketType, std::string> TrinketDisplayNames =
 {

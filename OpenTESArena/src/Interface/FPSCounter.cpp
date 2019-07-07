@@ -3,7 +3,8 @@
 #include <numeric>
 
 #include "FPSCounter.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 FPSCounter::FPSCounter()
 {

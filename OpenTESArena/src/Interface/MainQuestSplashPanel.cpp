@@ -17,7 +17,8 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../Utilities/String.h"
+
+#include "components/utilities/String.h"
 
 MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 	: Panel(game)

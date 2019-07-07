@@ -3,7 +3,8 @@
 #include "RichTextString.h"
 #include "../Media/Font.h"
 #include "../Media/FontManager.h"
-#include "../Utilities/String.h"
+
+#include "components/utilities/String.h"
 
 RichTextString::RichTextString(const std::string &text, FontName fontName,
 	const Color &color, TextAlignment alignment, int lineSpacing, FontManager &fontManager)

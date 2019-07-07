@@ -12,8 +12,9 @@
 #include "../Media/Font.h"
 #include "../Media/FontManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
 	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)

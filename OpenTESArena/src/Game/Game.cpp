@@ -19,11 +19,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/File.h"
 #include "../Utilities/Platform.h"
-#include "../Utilities/String.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/File.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 Game::Game()

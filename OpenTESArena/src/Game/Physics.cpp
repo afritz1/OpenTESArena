@@ -1,9 +1,10 @@
 #include <cmath>
 
 #include "Physics.h"
-#include "../Utilities/Debug.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
+
+#include "components/debug/Debug.h"
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direction, 
 	const Int3 &voxel, VoxelData::Facing facing, const Double2 &nearPoint,

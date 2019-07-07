@@ -1,5 +1,6 @@
 #include "Clock.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const int Clock::SECONDS_IN_A_DAY = 86400;
 

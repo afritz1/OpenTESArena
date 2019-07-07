@@ -2,9 +2,9 @@
 #include <string>
 
 #include "VOCFile.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 // Data block types. Arena's .VOC files only use 0, 1, 6, and 7.

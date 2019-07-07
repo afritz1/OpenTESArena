@@ -6,7 +6,8 @@
 #include "WeatherType.h"
 #include "WorldType.h"
 #include "../Assets/MiscAssets.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 ExteriorWorldData::InteriorState::InteriorState(InteriorWorldData &&worldData,
 	const Int2 &returnVoxel)

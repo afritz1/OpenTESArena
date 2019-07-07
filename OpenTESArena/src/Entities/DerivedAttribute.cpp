@@ -3,7 +3,8 @@
 
 #include "DerivedAttribute.h"
 #include "DerivedAttributeName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<DerivedAttributeName, std::string> DerivedAttributeDisplayNames =
 {

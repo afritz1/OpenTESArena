@@ -2,9 +2,10 @@
 
 #include "SDL.h"
 
-#include "Debug.h"
 #include "Platform.h"
-#include "String.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 #if defined(_WIN32)
 #include <Windows.h>

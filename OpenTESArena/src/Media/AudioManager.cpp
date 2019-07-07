@@ -17,7 +17,8 @@
 #include "WildMidi.h"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 namespace
 {

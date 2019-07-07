@@ -5,7 +5,8 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const int Location::CENTER_PROVINCE_ID = 8;
 

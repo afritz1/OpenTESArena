@@ -2,8 +2,9 @@
 #include <tuple>
 
 #include "ArenaTypes.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 
 void ArenaTypes::Light::init(const uint8_t *data)
 {

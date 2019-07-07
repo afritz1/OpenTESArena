@@ -7,7 +7,8 @@
 #include "WeaponHandCount.h"
 #include "WeaponRangeType.h"
 #include "../Assets/ExeData.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 // @todo: most of this class could be in MiscAssets as plain old data, and any instance-related
 // things (condition, artifact state, etc.) would be in this class.

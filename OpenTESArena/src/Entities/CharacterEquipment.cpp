@@ -4,7 +4,8 @@
 #include "../Items/Shield.h"
 #include "../Items/Trinket.h"
 #include "../Items/Weapon.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 CharacterEquipment::CharacterEquipment()
 {

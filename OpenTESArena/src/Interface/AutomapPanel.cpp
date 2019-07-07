@@ -26,10 +26,11 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Utilities/Debug.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
+
+#include "components/debug/Debug.h"
 
 namespace
 {

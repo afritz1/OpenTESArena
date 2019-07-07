@@ -4,10 +4,10 @@
 
 #include <array>
 
-#include "../Utilities/Debug.h"
-
-#include "components/vfs/manager.hpp"
 #include "wildmidi_lib.h"
+
+#include "components/debug/Debug.h"
+#include "components/vfs/manager.hpp"
 
 namespace
 {

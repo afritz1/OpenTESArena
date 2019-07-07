@@ -1,7 +1,8 @@
 #include "Entity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 EntityManager::EntityManager()
 {

@@ -10,8 +10,9 @@
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
-#include "../Utilities/Debug.h"
 #include "../World/VoxelGrid.h"
+
+#include "components/debug/Debug.h"
 
 Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 {

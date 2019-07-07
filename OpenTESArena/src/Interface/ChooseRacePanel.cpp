@@ -26,7 +26,8 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../Utilities/String.h"
+
+#include "components/utilities/String.h"
 
 const int ChooseRacePanel::NO_ID = -1;
 

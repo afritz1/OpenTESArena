@@ -2,7 +2,8 @@
 #include <string>
 
 #include "CharacterClassGeneration.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 CharacterClassGeneration::ClassData::ClassData()
 {

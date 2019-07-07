@@ -1,5 +1,6 @@
 #include "ScrollBar.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 ScrollBar::ScrollBar(const Rect &rect, int totalElements, int visibleElements)
 	: rect(rect)

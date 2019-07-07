@@ -6,7 +6,8 @@
 #include "SDL.h"
 
 #include "Game/Game.h"
-#include "Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 int main(int argc, char *argv[])
 {

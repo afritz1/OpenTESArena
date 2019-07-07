@@ -1,7 +1,8 @@
 #include <algorithm>
 
 #include "Chunk.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 Chunk::Chunk(int x, int y, int height)
 {

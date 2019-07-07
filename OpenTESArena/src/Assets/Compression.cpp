@@ -1,5 +1,6 @@
 #include "Compression.h"
-#include "../Utilities/Bytes.h"
+
+#include "components/utilities/Bytes.h"
 
 void Compression::decodeRLE(const uint8_t *src, int stopCount,
 	std::vector<uint8_t> &out)

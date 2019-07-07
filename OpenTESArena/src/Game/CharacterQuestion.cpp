@@ -1,6 +1,7 @@
 #include "CharacterQuestion.h"
 #include "../Entities/CharacterClassCategoryName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 CharacterQuestion::CharacterQuestion(const std::string &description,
 	const std::pair<std::string, CharacterClassCategoryName> &a,

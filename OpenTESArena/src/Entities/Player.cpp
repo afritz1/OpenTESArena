@@ -11,13 +11,14 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WorldData.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 const double Player::HEIGHT = 60.0 / MIFFile::ARENA_UNITS;
 const double Player::DEFAULT_WALK_SPEED = 2.0;

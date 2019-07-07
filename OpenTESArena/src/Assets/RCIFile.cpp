@@ -2,8 +2,8 @@
 #include <string>
 
 #include "RCIFile.h"
-#include "../Utilities/Debug.h"
 
+#include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
 const int RCIFile::WIDTH = 320;

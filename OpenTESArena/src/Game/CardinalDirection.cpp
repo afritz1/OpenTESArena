@@ -2,7 +2,8 @@
 
 #include "CardinalDirection.h"
 #include "CardinalDirectionName.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 // Wikipedia says the intermediate directions don't have a space, so that's the
 // convention I'll use here.

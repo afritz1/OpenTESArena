@@ -2,7 +2,8 @@
 
 #include "Surface.h"
 #include "../Math/Rect.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 Surface::Surface()
 {

@@ -6,7 +6,8 @@
 #include "ItemType.h"
 #include "Metal.h"
 #include "MetalType.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 const std::unordered_map<AccessoryType, std::string> AccessoryDisplayNames =
 {

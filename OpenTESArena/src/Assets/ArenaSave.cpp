@@ -3,7 +3,8 @@
 #include <sstream>
 
 #include "ArenaSave.h"
-#include "../Utilities/Debug.h"
+
+#include "components/debug/Debug.h"
 
 namespace
 {

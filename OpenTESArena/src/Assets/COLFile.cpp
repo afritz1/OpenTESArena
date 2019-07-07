@@ -4,10 +4,10 @@
 #include <string>
 
 #include "COLFile.h"
-#include "../Utilities/Bytes.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 
+#include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
+#include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 bool COLFile::init(const char *filename)

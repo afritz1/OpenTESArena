@@ -27,8 +27,6 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Utilities/Debug.h"
-#include "../Utilities/String.h"
 #include "../World/ClimateType.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
@@ -36,6 +34,9 @@
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
+
+#include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 namespace
 {
