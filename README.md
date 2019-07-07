@@ -39,7 +39,7 @@ Here are some keys in the game world:
 
 The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
 
-Note that there are two versions of Arena: the floppy disk version and the CD version. Bethesda released the floppy disk version for free, and this project is currently only compatible with that. The user must acquire their own copy of Arena because OpenTESArena is just an engine and does not contain any content.
+Note that there are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is just an engine and does not contain any content.
 
 OpenTESArena is licensed under the MIT and uses code licensed under the GPL2. See [LICENSE.txt](LICENSE.txt) and [COPYING.txt](COPYING.txt) for details.
 
@@ -47,7 +47,7 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 
 ## Installation
 
-If you would like music played in-game, see **Music setup** below. The engine uses `ArenaPath` and `MidiConfig` from the options file to find where the game files and MIDI config are (see **Options files** below).
+If you would like music played in-game, see **Music setup** below. The engine uses `ArenaPath` and `MidiConfig` from the options file to find where the game files and MIDI config are.
 
 ### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
@@ -55,8 +55,11 @@ If you would like music played in-game, see **Music setup** below. The engine us
 - Extract Arena106Setup.zip and run Arena106.exe.
 - Pick a destination folder anywhere and install.
 - Point `ArenaPath` in the options file to the `ARENA` folder.
-- If you receive an error about missing MSVCP141.dll, you will need to download and run the Visual C++ 2017 Redistributable installer from [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll for Visual C++ 2015 is available [here](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
-- If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
+- Run OpenTESArena.exe.
+
+If you receive an error about missing MSVCP141.dll, you will need to download and run the Visual C++ 2017 Redistributable installer from [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll for Visual C++ 2015 is available [here](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
+
+If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
@@ -95,9 +98,11 @@ cd ..
 - macOS: `~/Library/Preferences/OpenTESArena/options/`
 
 ### Music setup
-- Arena uses MIDI files for music, and the user must have MIDI sound patches in order to have music play in-game.
-- The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
-- If you would like to use a different sound patches library (like OPL3), simply edit `MidiConfig` in the options file to point to another MIDI `.cfg` file.
+Arena uses MIDI files for music, so the user must have MIDI sound patches in order to have music play in-game.
+
+The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
+
+If you would like to use a different sound patches library (like OPL3), simply edit `MidiConfig` in the options file to point to another MIDI `.cfg` file.
 
 ## Building from source
 
@@ -109,14 +114,20 @@ cd ..
   - Windows users building with Visual Studio must build WildMIDI 0.4.3 from source to avoid [crash bug](https://github.com/Mindwerks/wildmidi/issues/192#issuecomment-389211843) in `wildmidi_dynamic.dll`
 
 ### Building the executable
-- Create a `build` folder in the top-level directory.
-- Use CMake to generate your project files in `build`, then compile the executable.
+- Create a `build` folder in the project's top-level directory.
+- Use CMake to generate your project files in `build`. In a Unix terminal, the command might look like:
+```bash
+cd build
+cmake ..
+make -j4
+```
+- Other user-specific parameters may be necessary for CMake depending on your IDE.
 
 ### Running the executable
-- Verify that the `data` and `options` folders are in the same folder as the executable, and that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
+- Verify that the `data` and `options` folders are in the same folder as the executable.
+- Make sure that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If you struggle, here are some more detailed guides:
-
 - [Building with Visual Studio (Windows)](docs/setup_windows.md)  
 - [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
