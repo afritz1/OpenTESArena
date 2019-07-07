@@ -27,7 +27,7 @@ const char KeyValueMap::SECTION_BACK = ']';
 KeyValueMap::KeyValueMap(const std::string &filename)
 	: filename(filename)
 {
-	const std::string text = File::readAllText(filename);
+	const std::string text = File::readAllText(filename.c_str());
 	std::istringstream iss(text);
 
 	// Check each line for a valid section or key-value pair. Start the line numbers at 1

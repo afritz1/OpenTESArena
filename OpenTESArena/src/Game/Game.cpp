@@ -43,12 +43,12 @@ Game::Game()
 	this->initOptions(this->basePath, this->optionsPath);
 
 	// Initialize virtual file system using the Arena path in the options file.
-	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath());
+	const bool arenaPathIsRelative = File::pathIsRelative(this->options.getMisc_ArenaPath().c_str());
 	VFS::Manager::get().initialize(std::string(
 		(arenaPathIsRelative ? this->basePath : "") + this->options.getMisc_ArenaPath()));
 
 	// Initialize the OpenAL Soft audio manager.
-	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig());
+	const bool midiPathIsRelative = File::pathIsRelative(this->options.getAudio_MidiConfig().c_str());
 	const std::string midiPath = (midiPathIsRelative ? this->basePath : "") +
 		this->options.getAudio_MidiConfig();
 
@@ -79,7 +79,7 @@ Game::Game()
 		// Check for the CD version first.
 		const std::string &acdExeName = ExeData::CD_VERSION_EXE_FILENAME;
 		const std::string acdExePath = fullArenaPath + acdExeName;
-		if (File::exists(acdExePath))
+		if (File::exists(acdExePath.c_str()))
 		{
 			DebugLog("CD version.");
 			return false;
@@ -88,7 +88,7 @@ Game::Game()
 		// If that's not there, check for the floppy disk version.
 		const std::string &aExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
 		const std::string aExePath = fullArenaPath + aExeName;
-		if (File::exists(aExePath))
+		if (File::exists(aExePath.c_str()))
 		{
 			DebugLog("Floppy disk version.");
 			return true;
@@ -236,7 +236,7 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 
 	// Check if the changes options file exists.
 	const std::string changesOptionsPath(optionsPath + Options::CHANGES_FILENAME);
-	if (!File::exists(changesOptionsPath))
+	if (!File::exists(changesOptionsPath.c_str()))
 	{
 		// Make one. Since the default options object has no changes, the new file will have
 		// no key-value pairs.
@@ -276,7 +276,7 @@ void Game::saveScreenshot(const Surface &surface)
 		};
 
 		std::string path = getNextAvailablePath();
-		while (File::exists(path))
+		while (File::exists(path.c_str()))
 		{
 			path = getNextAvailablePath();
 		}

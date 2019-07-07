@@ -37,12 +37,12 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	const std::string savesPath = [&game]()
 	{
 		const std::string &arenaSavesPath = game.getOptions().getMisc_ArenaSavesPath();
-		const bool savesPathIsRelative = File::pathIsRelative(arenaSavesPath);
+		const bool savesPathIsRelative = File::pathIsRelative(arenaSavesPath.c_str());
 		const std::string path = (savesPathIsRelative ? Platform::getBasePath() : "") + arenaSavesPath;
 		return String::addTrailingSlashIfMissing(path);
 	}();
 
-	if (File::exists(savesPath + "NAMES.DAT"))
+	if (File::exists((savesPath + "NAMES.DAT").c_str()))
 	{
 		const auto names = ArenaSave::loadNAMES(savesPath);
 		for (int i = 0; i < LoadSavePanel::SlotCount; i++)
