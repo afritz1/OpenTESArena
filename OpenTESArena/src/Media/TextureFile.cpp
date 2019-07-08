@@ -108,18 +108,24 @@ namespace
 	// The filename of each TextureSequenceName.
 	const std::unordered_map<TextureSequenceName, std::string> TextureSequenceFilenames =
 	{
+		{ TextureSequenceName::AFLC2, "AFLC2.FLC" },
 		{ TextureSequenceName::ChaosVision, "CHAOSVSN.FLC" },
 		{ TextureSequenceName::End01, "END01.FLC" },
 		{ TextureSequenceName::End02, "END02.FLC" },
+		{ TextureSequenceName::IntroBook, "INTRO.FLC" },
 		{ TextureSequenceName::Jagar, "JAGAR.FLC" },
 		{ TextureSequenceName::JagarDeath, "JAGARDTH.FLC" },
 		{ TextureSequenceName::JagarShield, "JAGRSHLD.FLC" },
 		{ TextureSequenceName::King, "KING.FLC" },
 		{ TextureSequenceName::Mage, "MAGE.CEL" },
 		{ TextureSequenceName::Morph, "MORPH.FLC" },
+		{ TextureSequenceName::NewJagarDeath, "NUJAGDTH.FLC" },
+		{ TextureSequenceName::NewKing, "NUKING.FLC" },
 		{ TextureSequenceName::OpeningScroll, "SCROLL.FLC" },
 		{ TextureSequenceName::Rogue, "ROGUE.CEL" },
 		{ TextureSequenceName::Silmane, "VISION.FLC" },
+		{ TextureSequenceName::Staff, "STAFF.FLC" },
+		{ TextureSequenceName::Walk, "WALK.FLC" },
 		{ TextureSequenceName::Warhaft, "WARHAFT.FLC" },
 		{ TextureSequenceName::Warrior, "WARRIOR.CEL" }
 	};

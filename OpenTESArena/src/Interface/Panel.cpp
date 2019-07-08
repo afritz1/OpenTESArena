@@ -145,34 +145,33 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 			changeToQuote);
 	};
 
-	// Uncomment this for the CD version.
-	/*auto changeToTitle = [makeIntroTitlePanel, changeToQuote](Game &game)
-	{
-		game.setPanel<ImagePanel>(makeIntroTitlePanel());
-	};
-
-	auto makeIntroBookPanel = [changeToTitle, game]()
-	{
-		auto introBook = std::make_unique<CinematicPanel>(
-			game,
-			PaletteFile::fromName(PaletteName::Default),
-			TextureFile::fromName(TextureSequenceName::IntroBook),
-			1.0 / 7.0, // 7 fps.
-			changeToTitle);
-		return std::move(introBook);
-	};*/
-
 	// Decide how the game starts up. If only the floppy disk data is available,
-	// then go to the Arena splash screen. Otherwise, load the intro book video.	
+	// then go to the splash screen. Otherwise, load the intro book video.
+	const auto &exeData = game.getMiscAssets().getExeData();
+	const bool isFloppyVersion = exeData.isFloppyVersion();
+	if (!isFloppyVersion)
+	{
+		auto changeToTitle = [makeIntroTitlePanel](Game &game)
+		{
+			game.setPanel(makeIntroTitlePanel());
+		};
 
-	// Just skip the intro book check for now.
-	return makeIntroTitlePanel();
+		auto makeIntroBookPanel = [changeToTitle, &game]()
+		{
+			return std::make_unique<CinematicPanel>(
+				game,
+				PaletteFile::fromName(PaletteName::Default),
+				TextureFile::fromName(TextureSequenceName::IntroBook),
+				1.0 / 7.0,
+				changeToTitle);
+		};
 
-	// Check if "INTRO.FLC" is available (only available in CD version).
-	//VFS::IStreamPtr stream = VFS::Manager::get().open("INTRO.FLC");
-
-	// Once all texture sequences are available as FLCFile loads, uncomment this.
-	//return (stream != nullptr) ? makeIntroBookPanel() : makeIntroTitlePanel();
+		return makeIntroBookPanel();
+	}
+	else
+	{
+		return makeIntroTitlePanel();
+	}
 }
 
 std::pair<const Texture*, CursorAlignment> Panel::getCurrentCursor() const

@@ -4,8 +4,6 @@
 // A unique identifier for each .FLC/.CEL video, such as cinematics. This is not 
 // intended for sprite animations.
 
-// A couple sequence names are left out (for now) because they are only in the 
-// CD version of the game, and development is focused on the floppy version.
 // The videos in the CD version are:
 // - AFLC2 (AFLC2.FLC)
 // - IntroBook (INTRO.FLC)
@@ -19,18 +17,24 @@
 
 enum class TextureSequenceName
 {
+	AFLC2,
 	ChaosVision,
 	End01,
 	End02,
+	IntroBook,
 	Jagar,
 	JagarDeath,
 	JagarShield,
 	King,
 	Mage,
 	Morph,
+	NewJagarDeath,
+	NewKing,
 	OpeningScroll,
 	Rogue,
 	Silmane,
+	Staff,
+	Walk,
 	Warhaft,
 	Warrior
 };
