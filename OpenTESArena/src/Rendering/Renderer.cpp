@@ -324,7 +324,7 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	this->window = [width, height, windowMode]()
 	{
 		const char *title = Renderer::DEFAULT_TITLE;
-		const int position = [windowMode]()
+		const int position = [windowMode]() -> int
 		{
 			switch (windowMode)
 			{
