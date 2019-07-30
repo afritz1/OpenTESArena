@@ -58,7 +58,8 @@ Game::Game()
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getGraphics_ScreenWidth(),
-		this->options.getGraphics_ScreenHeight(), this->options.getGraphics_Fullscreen(),
+		this->options.getGraphics_ScreenHeight(),
+		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
 		this->options.getGraphics_LetterboxMode());
 
 	// Initialize the texture manager.

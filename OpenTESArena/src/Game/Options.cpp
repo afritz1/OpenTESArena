@@ -20,7 +20,7 @@ namespace
 	{
 		{ "ScreenWidth", OptionType::Int },
 		{ "ScreenHeight", OptionType::Int },
-		{ "Fullscreen", OptionType::Bool },
+		{ "WindowMode", OptionType::Int },
 		{ "TargetFPS", OptionType::Int },
 		{ "ResolutionScale", OptionType::Double },
 		{ "VerticalFOV", OptionType::Double },
@@ -73,6 +73,8 @@ const std::string Options::SECTION_AUDIO = "Audio";
 const std::string Options::SECTION_MISC = "Misc";
 
 const int Options::MIN_FPS = 15;
+const int Options::MIN_WINDOW_MODE = 0;
+const int Options::MAX_WINDOW_MODE = 1;
 const double Options::MIN_RESOLUTION_SCALE = 0.10;
 const double Options::MAX_RESOLUTION_SCALE = 1.0;
 const double Options::MIN_VERTICAL_FOV = 40.0;
@@ -452,6 +454,14 @@ void Options::checkGraphics_ScreenWidth(int value) const
 void Options::checkGraphics_ScreenHeight(int value) const
 {
 	DebugAssertMsg(value > 0, "Screen height must be positive.");
+}
+
+void Options::checkGraphics_WindowMode(int value) const
+{
+	DebugAssertMsg(value >= Options::MIN_WINDOW_MODE, "Window mode cannot be less than " +
+		std::to_string(Options::MIN_WINDOW_MODE) + ".");
+	DebugAssertMsg(value <= Options::MAX_WINDOW_MODE, "Window mode cannot be greater than " +
+		std::to_string(Options::MAX_WINDOW_MODE) + ".");
 }
 
 void Options::checkGraphics_TargetFPS(int value) const

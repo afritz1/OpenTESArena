@@ -137,7 +137,7 @@ private:
 	// Graphics.
 	static const std::string CURSOR_SCALE_NAME;
 	static const std::string FPS_LIMIT_NAME;
-	static const std::string FULLSCREEN_NAME;
+	static const std::string WINDOW_MODE_NAME;
 	static const std::string LETTERBOX_MODE_NAME;
 	static const std::string MODERN_INTERFACE_NAME;
 	static const std::string PARALLAX_SKY_NAME;

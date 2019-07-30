@@ -11,8 +11,9 @@
 ScreenWidth=1280
 ScreenHeight=720
 
-# If Fullscreen is true, then screen width and height are ignored.
-Fullscreen=false
+# Determines how the game window is displayed.
+# 0: window, 1: borderless fullscreen
+WindowMode=0
 
 TargetFPS=60
 

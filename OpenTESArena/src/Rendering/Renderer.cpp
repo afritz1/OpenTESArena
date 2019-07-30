@@ -311,7 +311,7 @@ Texture Renderer::createTextureFromSurface(const Surface &surface)
 	return texture;
 }
 
-void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
+void Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode)
 {
 	DebugLog("Initializing.");
 
@@ -321,12 +321,24 @@ void Renderer::init(int width, int height, bool fullscreen, int letterboxMode)
 	this->letterboxMode = letterboxMode;
 
 	// Initialize window. The SDL_Surface is obtained from this window.
-	this->window = [width, height, fullscreen]()
+	this->window = [width, height, windowMode]()
 	{
 		const char *title = Renderer::DEFAULT_TITLE;
-		const int position = fullscreen ? SDL_WINDOWPOS_UNDEFINED : SDL_WINDOWPOS_CENTERED;
+		const int position = [windowMode]()
+		{
+			switch (windowMode)
+			{
+			case WindowMode::Window:
+				return SDL_WINDOWPOS_CENTERED;
+			case WindowMode::BorderlessFull:
+				return SDL_WINDOWPOS_UNDEFINED;
+			default:
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
+			}
+		}();
+
 		const uint32_t flags = SDL_WINDOW_RESIZABLE |
-			(fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+			((windowMode == WindowMode::BorderlessFull) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 
 		// If fullscreen is true, then width and height are ignored. They are stored
 		// behind the scenes for when the user changes to windowed mode, however.
@@ -415,10 +427,22 @@ void Renderer::setLetterboxMode(int letterboxMode)
 	this->letterboxMode = letterboxMode;
 }
 
-void Renderer::setFullscreen(bool fullscreen)
+void Renderer::setWindowMode(WindowMode mode)
 {
-	// Use "fake" fullscreen for now.
-	uint32_t flags = fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
+	const uint32_t flags = [mode]() -> uint32_t
+	{
+		// Use fake fullscreen for now.
+		switch (mode)
+		{
+		case WindowMode::Window:
+			return 0;
+		case WindowMode::BorderlessFull:
+			return SDL_WINDOW_FULLSCREEN_DESKTOP;
+		default:
+			DebugUnhandledReturnMsg(uint32_t, std::to_string(static_cast<int>(mode)));
+		}
+	}();
+
 	SDL_SetWindowFullscreen(this->window, flags);
 
 	// Reset the cursor to the center of the screen for consistency.

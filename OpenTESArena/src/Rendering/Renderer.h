@@ -38,6 +38,12 @@ public:
 
 		DisplayMode(int width, int height, int refreshRate);
 	};
+
+	enum class WindowMode
+	{
+		Window,
+		BorderlessFull
+	};
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
@@ -105,7 +111,7 @@ public:
 	Texture createTexture(uint32_t format, int access, int w, int h);
 	Texture createTextureFromSurface(const Surface &surface);
 
-	void init(int width, int height, bool fullscreen, int letterboxMode);
+	void init(int width, int height, WindowMode windowMode, int letterboxMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -113,8 +119,8 @@ public:
 	// Sets the letterbox mode.
 	void setLetterboxMode(int letterboxMode);
 
-	// Sets whether the program is windowed or fullscreen.
-	void setFullscreen(bool fullscreen);
+	// Sets whether the program is windowed, fullscreen, etc..
+	void setWindowMode(WindowMode mode);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(const Surface &icon);

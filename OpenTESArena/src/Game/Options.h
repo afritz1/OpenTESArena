@@ -58,6 +58,8 @@ public:
 
 	// Min/max/allowed values for the application.
 	static const int MIN_FPS;
+	static const int MIN_WINDOW_MODE;
+	static const int MAX_WINDOW_MODE;
 	static const double MIN_RESOLUTION_SCALE;
 	static const double MAX_RESOLUTION_SCALE;
 	static const double MIN_VERTICAL_FOV;
@@ -134,7 +136,7 @@ void set##section##_##name(const std::string &value) \
 	// Getter, setter, and optional checker methods.
 	OPTION_INT(Graphics, ScreenWidth)
 	OPTION_INT(Graphics, ScreenHeight)
-	OPTION_BOOL(Graphics, Fullscreen)
+	OPTION_INT(Graphics, WindowMode)
 	OPTION_INT(Graphics, TargetFPS)
 	OPTION_DOUBLE(Graphics, ResolutionScale)
 	OPTION_DOUBLE(Graphics, VerticalFOV)

@@ -221,7 +221,7 @@ const std::string OptionsPanel::DEV_TAB_NAME = "Dev";
 // Graphics.
 const std::string OptionsPanel::CURSOR_SCALE_NAME = "Cursor Scale";
 const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
-const std::string OptionsPanel::FULLSCREEN_NAME = "Fullscreen";
+const std::string OptionsPanel::WINDOW_MODE_NAME = "Window Mode";
 const std::string OptionsPanel::LETTERBOX_MODE_NAME = "Letterbox Mode";
 const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
 const std::string OptionsPanel::PARALLAX_SKY_NAME = "Parallax Sky";
@@ -347,17 +347,37 @@ OptionsPanel::OptionsPanel(Game &game)
 	const auto &options = game.getOptions();
 
 	// Create graphics options.
-	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::FULLSCREEN_NAME,
-		options.getGraphics_Fullscreen(),
-		[this](bool value)
+	auto windowModeOption = std::make_unique<IntOption>(
+		OptionsPanel::WINDOW_MODE_NAME,
+		options.getGraphics_WindowMode(),
+		1,
+		Options::MIN_WINDOW_MODE,
+		Options::MAX_WINDOW_MODE,
+		[this](int value)
 	{
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		auto &renderer = game.getRenderer();
-		options.setGraphics_Fullscreen(value);
-		renderer.setFullscreen(value);
-	}));
+		options.setGraphics_WindowMode(value);
+
+		const Renderer::WindowMode mode = [value]()
+		{
+			switch (value)
+			{
+			case 0:
+				return Renderer::WindowMode::Window;
+			case 1:
+				return Renderer::WindowMode::BorderlessFull;
+			default:
+				DebugUnhandledReturnMsg(Renderer::WindowMode, std::to_string(value));
+			}
+		}();
+
+		renderer.setWindowMode(mode);
+	});
+
+	windowModeOption->setDisplayOverrides({ "Window", "Borderless Full" });
+	this->graphicsOptions.push_back(std::move(windowModeOption));
 
 	this->graphicsOptions.push_back(std::make_unique<IntOption>(
 		OptionsPanel::FPS_LIMIT_NAME,
