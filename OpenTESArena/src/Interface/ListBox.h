@@ -34,10 +34,14 @@ private:
 	Texture texture;
 	int scrollIndex;
 	int characterHeight;
+	int maxDisplayed;
+	int distBetweenElements;
 
 	// Updates the texture to show the currently visible text boxes.
 	void updateDisplay();
 public:
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
+		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements);
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 
