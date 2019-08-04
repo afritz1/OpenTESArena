@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Button.h"
+#include "ListBox.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
 
@@ -18,7 +19,8 @@ private:
 	Button<Game&> backToStatsButton;
 	Button<> spellbookButton;
 	Button<Game&, int> dropButton;
-	Button<CharacterEquipmentPanel*> scrollDownButton, scrollUpButton;
+	std::shared_ptr<ListBox> inventoryListBox;
+	Button<std::shared_ptr<ListBox>> scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterEquipmentPanel(Game &game);

@@ -120,16 +120,33 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		return Button<Game&, int>(x, y, width, height, function);
 	}();
 
+	this->inventoryListBox = [&game]()
+	{
+		int x = 16;
+		int y = 51;
+		return std::make_shared<ListBox>(x, y, Color(235, 199, 52),
+				std::vector<std::string>{"test","test2","test3 a long test",
+					"test3 a long test","test3 a long test","test3 a long test",
+					"test3 a long test","test3 a long test","test3 a long test",
+					"test3 a long test1","test3 a long test2","test3 a long test3",
+					"test3 a long test4","test3 a long test5","test3 a long test6"}, 
+				FontName::Teeny, 7, game.getFontManager(), game.getRenderer(), 3);
+	}();
+
 	this->scrollDownButton = []()
 	{
 		Int2 center(16, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](CharacterEquipmentPanel* panel)
+		auto function = [](std::shared_ptr<ListBox> invListBox)
 		{
-			// Nothing yet.
+			if (invListBox->getScrollIndex() + invListBox->getMaxDisplayedCount()
+				< invListBox->getElementCount())
+			{
+				invListBox->scrollDown();
+			}
 		};
-		return Button<CharacterEquipmentPanel*>(center, width, height, function);
+		return Button<std::shared_ptr<ListBox>>(center, width, height, function);
 	}();
 
 	this->scrollUpButton = []()
@@ -137,11 +154,14 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		Int2 center(152, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](CharacterEquipmentPanel* panel)
+		auto function = [](std::shared_ptr<ListBox> invListBox)
 		{
-			// Nothing yet.
+			if (invListBox->getScrollIndex() > 0)
+			{
+				invListBox->scrollUp();
+			}
 		};
-		return Button<CharacterEquipmentPanel*>(center, width, height, function);
+		return Button<std::shared_ptr<ListBox>>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -206,11 +226,11 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->scrollUpButton.contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton.click(this);
+			this->scrollUpButton.click(this->inventoryListBox);
 		}
 		else if (this->scrollDownButton.contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton.click(this);
+			this->scrollDownButton.click(this->inventoryListBox);
 		}
 	}
 }
@@ -267,4 +287,8 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
 	renderer.drawOriginal(this->playerClassTextBox->getTexture(),
 		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
+	
+	// Draw the inventory list.
+	renderer.drawOriginal(this->inventoryListBox->getTexture(),
+		this->inventoryListBox->getPoint()[0], this->inventoryListBox->getPoint()[1]);
 }
