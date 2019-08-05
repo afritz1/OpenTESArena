@@ -1,6 +1,6 @@
 # OpenTESArena build manual for Visual Studio
 
-This document describes how to setup a build environment for building with Visual Studio
+This document describes how to setup a build environment for building with Visual Studio.
 
 ## Setup build environment
 
@@ -27,13 +27,13 @@ The easiest way to build the dependencies is with [vcpkg](https://github.com/Mic
 
 ## Building
 
-1. Create `build` directory
+1. Create a `build` directory and move into it
 2. Create solution files with `cmake`:
 
   ```PowerShell
   cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
   ```
-3. Open the file OpenTESArena.sln and in Visual Studio, do the following: from the menu: Build -> build Solution
+3. Open the file OpenTESArena.sln and in Visual Studio, do the following from the menu: Build -> build Solution
 
 4.   The compilation is done when you can read something like the following in the bottom text output window:  
   ```========== Build: succeeded ==========```
