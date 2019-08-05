@@ -61,3 +61,6 @@ cmake_install.cmake
 
 # Files Intellij CLion
 .idea/
+
+# VS Code Workspace Settings folder
+.vscode/
