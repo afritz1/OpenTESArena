@@ -16,9 +16,22 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+std::vector<std::pair<std::string,Color>> ListBox::makeStringColorPairs(const std::vector<std::string> &strings, const std::vector<Color> &colors)
+{
+	// make a vector with the size of the smaller input vector
+	std::vector<std::pair<std::string,Color>> pairs((strings.size() < colors.size()) ? strings.size() : colors.size());
+
+	for (size_t i = 0; i < pairs.size(); i++)
+	{
+		pairs[i] = std::make_pair(strings[i], colors[i]);
+	}
+
+	return pairs;
+}
+
+ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements,
 	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements)
-	: textColor(textColor), point(x, y), fontName(fontName), maxDisplayed(maxDisplayed), distBetweenElements(distBetweenElements)
+	: point(x, y), fontName(fontName), maxDisplayed(maxDisplayed), distBetweenElements(distBetweenElements)
 {
 	DebugAssert(maxDisplayed > 0);
 
@@ -34,7 +47,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	for (const auto &element : elements)
 	{
 		// Remove any new lines.
-		std::string trimmedElement = String::trimLines(element);
+		std::string trimmedElement = String::trimLines(element.first);
 
 		const int textBoxX = 0;
 		const int textBoxY = 0;
@@ -42,7 +55,7 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 		const RichTextString richText(
 			trimmedElement,
 			font.getFontName(),
-			textColor,
+			element.second,
 			TextAlignment::Left,
 			fontManager);
 
@@ -87,9 +100,19 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	this->updateDisplay();
 }
 
+ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
+	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements)
+	: ListBox(x, y, ListBox::makeStringColorPairs(elements, std::vector<Color>(elements.size(), textColor)),
+		fontName, maxDisplayed, fontManager, renderer, distBetweenElements) { };
+
+ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements, 
+	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
+	: ListBox(x, y, elements, fontName, maxDisplayed, fontManager, renderer, 0) { };
+
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
 	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
-	: ListBox(x, y, textColor, elements, fontName, maxDisplayed, fontManager, renderer, 0) { }
+	: ListBox(x, y, ListBox::makeStringColorPairs(elements, std::vector<Color>(elements.size(), textColor)),
+		fontName, maxDisplayed, fontManager, renderer, 0) { };
 
 int ListBox::getScrollIndex() const
 {

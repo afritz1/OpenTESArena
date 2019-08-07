@@ -27,7 +27,6 @@ class ListBox
 {
 private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes;
-	Color textColor;
 	Int2 point;
 	FontName fontName;
 	Surface clearSurface; // For clearing the texture upon updating.
@@ -39,9 +38,22 @@ private:
 
 	// Updates the texture to show the currently visible text boxes.
 	void updateDisplay();
+
+	static std::vector<std::pair<std::string,Color>> makeStringColorPairs(const std::vector<std::string> &strings, const std::vector<Color> &colors);
 public:
+	// per-element color customization, customizable distance between elements
+	ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements, 
+		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements);
+
+	// customizable distance between elements
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements);
+
+	// per-element color customization
+	ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements, 
+		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
+
+	// no color or distance customization
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 
