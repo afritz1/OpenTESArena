@@ -124,12 +124,23 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	{
 		int x = 16;
 		int y = 51;
-		return std::make_shared<ListBox>(x, y, Color(235, 199, 52),
-				std::vector<std::string>{"test","test2","test3 a long test",
-					"test3 a long test","test3 a long test","test3 a long test",
-					"test3 a long test","test3 a long test","test3 a long test",
-					"test3 a long test1","test3 a long test2","test3 a long test3",
-					"test3 a long test4","test3 a long test5","test3 a long test6"}, 
+		std::vector<std::pair<std::string, Color>> elements = 
+					{{"test", Color(235, 199, 52)},
+					{"test2", Color::Red},
+					{"test3 a long test", Color::Cyan},
+					{"test3 a long test", Color::Yellow},
+					{"test3 a long test", Color::Blue},
+					{"test3 a long test", Color::Green},
+					{"test3 a long test", Color::Magenta},
+					{"test3 a long test", Color(235, 199, 52)},
+					{"test3 a long test", Color(235, 199, 52)},
+					{"test3 a long test1", Color(235, 199, 52)},
+					{"test3 a long test2", Color(235, 199, 52)},
+					{"test3 a long test3", Color(235, 199, 52)},
+					{"test3 a long test4", Color(235, 199, 52)},
+					{"test3 a long test5", Color(235, 199, 52)},
+					{"test3 a long test6", Color(235, 199, 52)}};
+		return std::make_shared<ListBox>(x, y, elements, 
 				FontName::Teeny, 7, game.getFontManager(), game.getRenderer(), 3);
 	}();
 
