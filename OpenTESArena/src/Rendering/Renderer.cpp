@@ -328,17 +328,20 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		{
 			switch (windowMode)
 			{
-			case WindowMode::Window:
+			case WindowMode::Windowed:
 				return SDL_WINDOWPOS_CENTERED;
-			case WindowMode::BorderlessFull:
+			case WindowMode::Borderless:
+			case WindowMode::Fullscreen:
 				return SDL_WINDOWPOS_UNDEFINED;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
 			}
 		}();
 
-		const uint32_t flags = SDL_WINDOW_RESIZABLE |
-			((windowMode == WindowMode::BorderlessFull) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+		const uint32_t flags =
+			((windowMode == WindowMode::Windowed) ? SDL_WINDOW_RESIZABLE : 0) |
+			((windowMode == WindowMode::Borderless) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0)/* |
+			((windowMode == WindowMode::Fullscreen) ? SDL_WINDOW_FULLSCREEN : 0)*/; // @todo: handle fullscreen in setWindowMode().
 
 		// If fullscreen is true, then width and height are ignored. They are stored
 		// behind the scenes for when the user changes to windowed mode, however.
@@ -434,16 +437,47 @@ void Renderer::setWindowMode(WindowMode mode)
 		// Use fake fullscreen for now.
 		switch (mode)
 		{
-		case WindowMode::Window:
+		case WindowMode::Windowed:
 			return 0;
-		case WindowMode::BorderlessFull:
+		case WindowMode::Borderless:
+			return SDL_WINDOW_FULLSCREEN_DESKTOP;
+		case WindowMode::Fullscreen:
+			//return SDL_WINDOW_FULLSCREEN; // @todo: handle changing display mode correctly (SDL_SetWindowSize()? Display mode?).
 			return SDL_WINDOW_FULLSCREEN_DESKTOP;
 		default:
 			DebugUnhandledReturnMsg(uint32_t, std::to_string(static_cast<int>(mode)));
 		}
 	}();
 
-	SDL_SetWindowFullscreen(this->window, flags);
+	// @todo: handle this correctly. Do we need to change to windowed mode before changing the resolution? And
+	// do we care about destroying the context on video mode change? Also, does the renderer logical size need
+	// to change?
+	/*if (mode == WindowMode::Fullscreen)
+	{
+		if (SDL_SetWindowFullscreen(this->window, 0) != 0)
+		{
+			DebugLogError("Couldn't set window mode \"" + std::to_string(static_cast<int>(mode)) + "\".");
+		}
+
+		// Use desktop resolution and format.
+		SDL_DisplayMode displayMode;
+		displayMode.w = 3840;
+		displayMode.h = 2160;
+		displayMode.refresh_rate = 60;
+		displayMode.format = SDL_PIXELFORMAT_RGB888;
+		displayMode.driverdata = nullptr;
+		if (SDL_SetWindowDisplayMode(this->window, &displayMode) != 0)
+		{
+			DebugLogError("Couldn't set display mode.");
+		}
+
+		SDL_SetWindowSize(this->window, 3840, 2160);
+	}*/
+
+	if (SDL_SetWindowFullscreen(this->window, flags) != 0)
+	{
+		DebugLogError("Couldn't set window mode \"" + std::to_string(static_cast<int>(mode)) + "\".");
+	}
 
 	// Reset the cursor to the center of the screen for consistency.
 	const Int2 windowDims = this->getWindowDimensions();

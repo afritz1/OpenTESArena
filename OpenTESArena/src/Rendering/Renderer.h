@@ -41,8 +41,9 @@ public:
 
 	enum class WindowMode
 	{
-		Window,
-		BorderlessFull
+		Windowed,
+		Borderless,
+		Fullscreen,
 	};
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;

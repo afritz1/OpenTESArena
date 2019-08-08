@@ -365,9 +365,11 @@ OptionsPanel::OptionsPanel(Game &game)
 			switch (value)
 			{
 			case 0:
-				return Renderer::WindowMode::Window;
+				return Renderer::WindowMode::Windowed;
 			case 1:
-				return Renderer::WindowMode::BorderlessFull;
+				return Renderer::WindowMode::Borderless;
+			case 2:
+				return Renderer::WindowMode::Fullscreen;
 			default:
 				DebugUnhandledReturnMsg(Renderer::WindowMode, std::to_string(value));
 			}
@@ -376,7 +378,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		renderer.setWindowMode(mode);
 	});
 
-	windowModeOption->setDisplayOverrides({ "Window", "Borderless Full" });
+	windowModeOption->setDisplayOverrides({ "Windowed", "Borderless", "Fullscreen" });
 	this->graphicsOptions.push_back(std::move(windowModeOption));
 
 	this->graphicsOptions.push_back(std::make_unique<IntOption>(
