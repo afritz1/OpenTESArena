@@ -34,27 +34,33 @@ private:
 	int scrollIndex;
 	int characterHeight;
 	int maxDisplayed;
-	int distBetweenElements;
+	int rowSpacing;
+
+	// Helper functions for pairing each line of a list box with a text color.
+	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
+		const std::vector<std::string> &strings, const std::vector<Color> &colors);
+	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
+		const std::vector<std::string> &strings, const Color &color);
 
 	// Updates the texture to show the currently visible text boxes.
 	void updateDisplay();
-
-	static std::vector<std::pair<std::string,Color>> makeStringColorPairs(const std::vector<std::string> &strings, const std::vector<Color> &colors);
 public:
-	// per-element color customization, customizable distance between elements
-	ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements, 
-		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements);
+	// Per-element color customization and customizable distance between elements.
+	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
+		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		Renderer &renderer);
 
-	// customizable distance between elements
-	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
-		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer, int distBetweenElements);
+	// Customizable distance between elements.
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		Renderer &renderer);
 
-	// per-element color customization
-	ListBox(int x, int y, const std::vector<std::pair<std::string,Color>> &elements, 
+	// Per-element color customization.
+	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 
-	// no color or distance customization
-	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
+	// No color or distance customization.
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 
 	// Gets the index of the top-most displayed element.

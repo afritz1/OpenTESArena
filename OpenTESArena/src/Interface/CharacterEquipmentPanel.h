@@ -16,11 +16,11 @@ class CharacterEquipmentPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
+	std::unique_ptr<ListBox> inventoryListBox;
 	Button<Game&> backToStatsButton;
 	Button<> spellbookButton;
 	Button<Game&, int> dropButton;
-	std::shared_ptr<ListBox> inventoryListBox;
-	Button<std::shared_ptr<ListBox>> scrollDownButton, scrollUpButton;
+	Button<ListBox&> scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterEquipmentPanel(Game &game);
