@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Button.h"
+#include "ListBox.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
 
@@ -15,10 +16,11 @@ class CharacterEquipmentPanel : public Panel
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
 		playerClassTextBox;
+	std::unique_ptr<ListBox> inventoryListBox;
 	Button<Game&> backToStatsButton;
 	Button<> spellbookButton;
 	Button<Game&, int> dropButton;
-	Button<CharacterEquipmentPanel*> scrollDownButton, scrollUpButton;
+	Button<ListBox&> scrollDownButton, scrollUpButton;
 	std::vector<Int2> headOffsets;
 public:
 	CharacterEquipmentPanel(Game &game);

@@ -16,12 +16,16 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
-	: textColor(textColor), point(x, y), fontName(fontName)
+ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
+	FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+	Renderer &renderer)
+	: point(x, y)
 {
 	DebugAssert(maxDisplayed > 0);
 
+	this->fontName = fontName;
+	this->maxDisplayed = maxDisplayed;
+	this->rowSpacing = rowSpacing;
 	this->scrollIndex = 0;
 
 	// Get the font data associated with the font name.
@@ -34,10 +38,12 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	for (const auto &element : elements)
 	{
 		// Remove any new lines.
-		std::string trimmedElement = String::trimLines(element);
+		const std::string &text = element.first;
+		std::string trimmedElement = String::trimLines(text);
 
 		const int textBoxX = 0;
 		const int textBoxY = 0;
+		const Color &textColor = element.second;
 
 		const RichTextString richText(
 			trimmedElement,
@@ -68,7 +74,8 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 		return maxWidth;
 	}();
 
-	const int height = font.getCharacterHeight() * maxDisplayed;
+	const int height = (font.getCharacterHeight() * maxDisplayed) +
+		(rowSpacing * (maxDisplayed - 1));
 
 	// Create the clear surface. This exists because the text box surfaces can't
 	// currently have an arbitrary size (otherwise they could extend to the end of 
@@ -87,6 +94,21 @@ ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::st
 	this->updateDisplay();
 }
 
+ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+	FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+	Renderer &renderer)
+	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName, maxDisplayed,
+		rowSpacing, fontManager, renderer) { }
+
+ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
+	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
+	: ListBox(x, y, elements, fontName, maxDisplayed, 0, fontManager, renderer) { }
+
+ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
+	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName,
+		maxDisplayed, 0, fontManager, renderer) { }
+
 int ListBox::getScrollIndex() const
 {
 	return this->scrollIndex;
@@ -99,7 +121,7 @@ int ListBox::getElementCount() const
 
 int ListBox::getMaxDisplayedCount() const
 {
-	return this->texture.getHeight() / this->characterHeight;
+	return this->maxDisplayed;
 }
 
 const Int2 &ListBox::getPoint() const
@@ -129,9 +151,29 @@ bool ListBox::contains(const Int2 &point)
 int ListBox::getClickedIndex(const Int2 &point) const
 {
 	// Only the Y component of the point really matters here.
-	const int index = this->scrollIndex + 
+	const int index = this->scrollIndex +
 		((point.y - this->point.y) / this->characterHeight);
 	return index;
+}
+
+std::vector<std::pair<std::string, Color>> ListBox::makeStringColorPairs(
+	const std::vector<std::string> &strings, const std::vector<Color> &colors)
+{
+	DebugAssertMsg(strings.size() == colors.size(), "Mismatched vector sizes.");
+	std::vector<std::pair<std::string, Color>> pairs(strings.size());
+
+	for (size_t i = 0; i < pairs.size(); i++)
+	{
+		pairs[i] = std::make_pair(strings[i], colors[i]);
+	}
+
+	return pairs;
+}
+
+std::vector<std::pair<std::string, Color>> ListBox::makeStringColorPairs(
+	const std::vector<std::string> &strings, const Color &color)
+{
+	return ListBox::makeStringColorPairs(strings, std::vector<Color>(strings.size(), color));
 }
 
 void ListBox::updateDisplay()
@@ -142,7 +184,7 @@ void ListBox::updateDisplay()
 
 	// Prepare the range of text boxes that will be displayed.
 	const int totalElements = static_cast<int>(this->textBoxes.size());
-	const int maxDisplayed = this->getMaxDisplayedCount();
+	const int maxDisplayed = this->maxDisplayed;
 	const int indexEnd = std::min(this->scrollIndex + maxDisplayed, totalElements);
 
 	// Draw the relevant text boxes according to scroll index.
@@ -152,7 +194,7 @@ void ListBox::updateDisplay()
 
 		SDL_Rect rect;
 		rect.x = 0;
-		rect.y = (i - this->scrollIndex) * surface.getHeight();
+		rect.y = (i - this->scrollIndex) * (surface.getHeight() + this->rowSpacing);
 		rect.w = surface.getWidth();
 		rect.h = surface.getHeight();
 

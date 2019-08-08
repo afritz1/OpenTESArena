@@ -79,6 +79,38 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
+	this->inventoryListBox = [&game]()
+	{
+		const int x = 14;
+		const int y = 50;
+
+		// @todo: make these visible to other panels that need them.
+		const Color equipmentColor(211, 142, 0);
+		const Color equipmentEquippedColor(235, 199, 52);
+		const Color magicItemColor(69, 186, 190);
+		const Color magicItemEquippedColor(138, 255, 255);
+		const Color unequipableColor(199, 32, 0);
+
+		const std::vector<std::pair<std::string, Color>> elements =
+		{
+			{ "Test slot 1", equipmentColor },
+			{ "Test slot 2", equipmentEquippedColor },
+			{ "Test slot 3", magicItemColor },
+			{ "Test slot 4", magicItemEquippedColor },
+			{ "Test slot 5", unequipableColor },
+			{ "Test slot 6", unequipableColor },
+			{ "Test slot 7", equipmentColor },
+			{ "Test slot 8", equipmentColor },
+			{ "Test slot 9", magicItemColor },
+			{ "Test slot 10", magicItemEquippedColor }
+		};
+
+		const int maxDisplayed = 7;
+		const int rowSpacing = 3;
+		return std::make_unique<ListBox>(x, y, elements, FontName::Teeny, maxDisplayed,
+			rowSpacing, game.getFontManager(), game.getRenderer());
+	}();
+
 	this->backToStatsButton = []()
 	{
 		int x = 0;
@@ -125,11 +157,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		Int2 center(16, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](CharacterEquipmentPanel* panel)
+		auto function = [](ListBox &invListBox)
 		{
-			// Nothing yet.
+			if ((invListBox.getScrollIndex() + invListBox.getMaxDisplayedCount()) <
+				invListBox.getElementCount())
+			{
+				invListBox.scrollDown();
+			}
 		};
-		return Button<CharacterEquipmentPanel*>(center, width, height, function);
+		return Button<ListBox&>(center, width, height, function);
 	}();
 
 	this->scrollUpButton = []()
@@ -137,11 +173,14 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		Int2 center(152, 131);
 		int width = 9;
 		int height = 9;
-		auto function = [](CharacterEquipmentPanel* panel)
+		auto function = [](ListBox &invListBox)
 		{
-			// Nothing yet.
+			if (invListBox.getScrollIndex() > 0)
+			{
+				invListBox.scrollUp();
+			}
 		};
-		return Button<CharacterEquipmentPanel*>(center, width, height, function);
+		return Button<ListBox&>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
@@ -175,22 +214,24 @@ std::pair<const Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCu
 void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
 
 	if (escapePressed || tabPressed)
 	{
 		this->backToStatsButton.click(this->getGame());
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool mouseWheeledUp = inputManager.mouseWheeledUp(e);
+	const bool mouseWheeledDown = inputManager.mouseWheeledDown(e);
+
+	const Int2 mousePosition = inputManager.getMousePosition();
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
+		.nativeToOriginal(mousePosition);
 
 	if (leftClick)
 	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
-
 		if (this->backToStatsButton.contains(mouseOriginalPoint))
 		{
 			this->backToStatsButton.click(this->getGame());
@@ -206,12 +247,20 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->scrollUpButton.contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton.click(this);
+			this->scrollUpButton.click(*this->inventoryListBox.get());
 		}
 		else if (this->scrollDownButton.contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton.click(this);
+			this->scrollDownButton.click(*this->inventoryListBox.get());
 		}
+	}
+	else if (mouseWheeledUp)
+	{
+		this->scrollUpButton.click(*this->inventoryListBox.get());
+	}
+	else if (mouseWheeledDown)
+	{
+		this->scrollDownButton.click(*this->inventoryListBox.get());
 	}
 }
 
@@ -267,4 +316,9 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
 	renderer.drawOriginal(this->playerClassTextBox->getTexture(),
 		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
+	
+	// Draw inventory list box.
+	const Int2 &inventoryListBoxPoint = this->inventoryListBox->getPoint();
+	renderer.drawOriginal(this->inventoryListBox->getTexture(),
+		inventoryListBoxPoint.x, inventoryListBoxPoint.y);
 }

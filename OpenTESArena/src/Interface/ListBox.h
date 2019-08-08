@@ -27,18 +27,40 @@ class ListBox
 {
 private:
 	std::vector<std::unique_ptr<TextBox>> textBoxes;
-	Color textColor;
 	Int2 point;
 	FontName fontName;
 	Surface clearSurface; // For clearing the texture upon updating.
 	Texture texture;
 	int scrollIndex;
 	int characterHeight;
+	int maxDisplayed;
+	int rowSpacing;
+
+	// Helper functions for pairing each line of a list box with a text color.
+	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
+		const std::vector<std::string> &strings, const std::vector<Color> &colors);
+	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
+		const std::vector<std::string> &strings, const Color &color);
 
 	// Updates the texture to show the currently visible text boxes.
 	void updateDisplay();
 public:
-	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements, 
+	// Per-element color customization and customizable distance between elements.
+	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
+		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		Renderer &renderer);
+
+	// Customizable distance between elements.
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
+		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		Renderer &renderer);
+
+	// Per-element color customization.
+	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
+		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
+
+	// No color or distance customization.
+	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
 		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
 
 	// Gets the index of the top-most displayed element.
