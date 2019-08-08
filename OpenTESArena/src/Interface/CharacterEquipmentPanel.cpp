@@ -81,8 +81,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 
 	this->inventoryListBox = [&game]()
 	{
-		const int x = 16;
-		const int y = 51;
+		const int x = 14;
+		const int y = 50;
 
 		// @todo: make these visible to other panels that need them.
 		const Color equipmentColor(211, 142, 0);
