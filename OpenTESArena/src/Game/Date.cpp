@@ -54,16 +54,17 @@ std::string Date::getOrdinalDay() const
 	const int displayedDay = this->day + 1;
 	const int ordinalDay = displayedDay % 10;
 
+	// Days in the teens have some special cases.
 	auto dayString = std::to_string(displayedDay);
-	if (ordinalDay == 1)
+	if ((ordinalDay == 1) && (displayedDay != 11))
 	{
 		dayString += "st";
 	}
-	else if (ordinalDay == 2)
+	else if ((ordinalDay == 2) && (displayedDay != 12))
 	{
 		dayString += "nd";
 	}
-	else if (ordinalDay == 3)
+	else if ((ordinalDay == 3) && (displayedDay != 13))
 	{
 		dayString += "rd";
 	}
