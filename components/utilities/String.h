@@ -1,6 +1,8 @@
 #ifndef STRING_H
 #define STRING_H
 
+#include <array>
+#include <cstdint>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -22,6 +24,46 @@ public:
 
 	// Splits a string on whitespace.
 	static std::vector<std::string> split(const std::string &str);
+
+	// Splits a string on the given character without allocating the destination array. Breaks
+	// early if too many splits are encountered. Returns whether the split count matches the
+	// destination size.
+	template <size_t T>
+	static bool splitExpected(const std::string &str, char separator,
+		std::array<std::string, T> &dst)
+	{
+		static_assert(T > 0);
+
+		size_t dstIndex = 0;
+		for (const char c : str)
+		{
+			if (c == separator)
+			{
+				// Move to the next destination string.
+				dstIndex++;
+				if (dstIndex == T)
+				{
+					return false;
+				}
+			}
+			else
+			{
+				// Put the character on the end of the current string.
+				dst[dstIndex].push_back(c);
+			}
+		}
+
+		return dstIndex == (T - 1);
+	}
+
+	// Splits a string on whitespace without allocating the destination array. Breaks early if
+	// too many splits are encountered. Returns whether the split count matches the destination
+	// size.
+	template <size_t T>
+	static bool splitExpected(const std::string &str, std::array<std::string, T> &dst)
+	{
+		return String::splitExpected(str, ' ', dst);
+	}
 
 	// Removes all whitespace from a string.
 	static std::string trim(const std::string &str);
