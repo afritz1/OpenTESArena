@@ -57,7 +57,7 @@ public:
 	ProvinceSearchSubPanel(Game &game, ProvinceMapPanel &provinceMapPanel, int provinceID);
 	virtual ~ProvinceSearchSubPanel() = default;
 
-	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

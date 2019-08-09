@@ -158,12 +158,12 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 	SDL_StartTextInput();
 }
 
-std::pair<const Texture*, CursorAlignment> ProvinceSearchSubPanel::getCurrentCursor() const
+Panel::CursorData ProvinceSearchSubPanel::getCurrentCursor() const
 {
 	if (this->mode == ProvinceSearchSubPanel::Mode::TextEntry)
 	{
 		// No mouse cursor when typing.
-		return std::make_pair(nullptr, CursorAlignment::TopLeft);
+		return CursorData(nullptr, CursorAlignment::TopLeft);
 	}
 	else
 	{
@@ -173,7 +173,7 @@ std::pair<const Texture*, CursorAlignment> ProvinceSearchSubPanel::getCurrentCur
 		const auto &texture = textureManager.getTexture(
 			TextureFile::fromName(TextureName::SwordCursor),
 			PaletteFile::fromName(PaletteName::Default), renderer);
-		return std::make_pair(&texture, CursorAlignment::TopLeft);
+		return CursorData(&texture, CursorAlignment::TopLeft);
 	}
 }
 

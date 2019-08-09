@@ -21,7 +21,7 @@ MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&t
 	: Panel(game), title(std::move(title)), elements(std::move(elements)),
 	cancelFunction([](Game&) {}) { }
 
-std::pair<const Texture*, CursorAlignment> MessageBoxSubPanel::getCurrentCursor() const
+Panel::CursorData MessageBoxSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -29,7 +29,7 @@ std::pair<const Texture*, CursorAlignment> MessageBoxSubPanel::getCurrentCursor(
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void MessageBoxSubPanel::handleEvent(const SDL_Event &e)

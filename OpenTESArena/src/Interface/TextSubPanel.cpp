@@ -27,7 +27,7 @@ TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	const RichTextString &richText, const std::function<void(Game&)> &endingAction)
 	: TextSubPanel(game, textCenter, richText, endingAction, std::move(Texture()), Int2()) { }
 
-std::pair<const Texture*, CursorAlignment> TextSubPanel::getCurrentCursor() const
+Panel::CursorData TextSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -35,7 +35,7 @@ std::pair<const Texture*, CursorAlignment> TextSubPanel::getCurrentCursor() cons
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void TextSubPanel::handleEvent(const SDL_Event &e)

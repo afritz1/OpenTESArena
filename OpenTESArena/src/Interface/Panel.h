@@ -29,6 +29,18 @@ union SDL_Event;
 
 class Panel
 {
+public:
+	class CursorData
+	{
+	private:
+		const Texture *texture;
+		CursorAlignment alignment;
+	public:
+		CursorData(const Texture *texture, CursorAlignment alignment);
+
+		const Texture *getTexture() const;
+		CursorAlignment getAlignment() const;
+	};
 private:
 	Game &game;
 protected:
@@ -47,7 +59,7 @@ public:
 	// Gets the panel's active mouse cursor and alignment. Override this method if
 	// the panel has at least one cursor defined. The texture must be supplied by 
 	// the texture manager.
-	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const;
+	virtual CursorData getCurrentCursor() const;
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.

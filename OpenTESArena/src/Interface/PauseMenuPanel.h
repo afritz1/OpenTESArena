@@ -27,7 +27,7 @@ public:
 	PauseMenuPanel(Game &game);
 	virtual ~PauseMenuPanel() = default;
 
-	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

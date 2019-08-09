@@ -200,7 +200,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCursor() const
+Panel::CursorData CharacterEquipmentPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -208,7 +208,7 @@ std::pair<const Texture*, CursorAlignment> CharacterEquipmentPanel::getCurrentCu
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)

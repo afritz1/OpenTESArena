@@ -734,7 +734,7 @@ WorldType MainMenuPanel::getSelectedTestWorldType() const
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() const
+Panel::CursorData MainMenuPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -742,7 +742,7 @@ std::pair<const Texture*, CursorAlignment> MainMenuPanel::getCurrentCursor() con
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void MainMenuPanel::handleEvent(const SDL_Event &e)

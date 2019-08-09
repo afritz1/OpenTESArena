@@ -95,7 +95,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	SDL_StartTextInput();
 }
 
-std::pair<const Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() const
+Panel::CursorData ChooseNamePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -103,7 +103,7 @@ std::pair<const Texture*, CursorAlignment> ChooseNamePanel::getCurrentCursor() c
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)

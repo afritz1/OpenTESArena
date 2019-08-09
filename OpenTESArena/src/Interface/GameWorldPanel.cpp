@@ -507,7 +507,7 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() const
+Panel::CursorData GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
 	auto &game = this->getGame();
@@ -519,7 +519,7 @@ std::pair<const Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() co
 	if (modernInterface)
 	{
 		// Do not show cursor in modern mode.
-		return std::make_pair(nullptr, CursorAlignment::TopLeft);
+		return CursorData(nullptr, CursorAlignment::TopLeft);
 	}
 	else
 	{
@@ -530,14 +530,14 @@ std::pair<const Texture*, CursorAlignment> GameWorldPanel::getCurrentCursor() co
 			{
 				const auto &texture = textureManager.getTextures(
 					TextureFile::fromName(TextureName::ArrowCursors), renderer).at(i);
-				return std::make_pair(&texture, ArrowCursorAlignments.at(i));
+				return CursorData(&texture, ArrowCursorAlignments.at(i));
 			}
 		}
 
 		// If not in any of the arrow regions, use the default sword cursor.
 		const auto &texture = textureManager.getTexture(
 			TextureFile::fromName(TextureName::SwordCursor), renderer);
-		return std::make_pair(&texture, CursorAlignment::TopLeft);
+		return CursorData(&texture, CursorAlignment::TopLeft);
 	}
 }
 

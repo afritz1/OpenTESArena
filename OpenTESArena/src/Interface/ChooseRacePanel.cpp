@@ -510,7 +510,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	return ChooseRacePanel::NO_ID;
 }
 
-std::pair<const Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() const
+Panel::CursorData ChooseRacePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -518,7 +518,7 @@ std::pair<const Texture*, CursorAlignment> ChooseRacePanel::getCurrentCursor() c
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)

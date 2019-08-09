@@ -271,7 +271,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() const
+Panel::CursorData ProvinceMapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -279,7 +279,7 @@ std::pair<const Texture*, CursorAlignment> ProvinceMapPanel::getCurrentCursor() 
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ProvinceMapPanel::handleEvent(const SDL_Event &e)

@@ -28,6 +28,22 @@
 
 #include "components/vfs/manager.hpp"
 
+Panel::CursorData::CursorData(const Texture *texture, CursorAlignment alignment)
+{
+	this->texture = texture;
+	this->alignment = alignment;
+}
+
+const Texture *Panel::CursorData::getTexture() const
+{
+	return this->texture;
+}
+
+CursorAlignment Panel::CursorData::getAlignment() const
+{
+	return this->alignment;
+}
+
 Panel::Panel(Game &game)
 	: game(game) { }
 
@@ -174,10 +190,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> Panel::getCurrentCursor() const
+Panel::CursorData Panel::getCurrentCursor() const
 {
 	// Null by default.
-	return std::make_pair(nullptr, CursorAlignment::TopLeft);
+	return CursorData(nullptr, CursorAlignment::TopLeft);
 }
 
 void Panel::handleEvent(const SDL_Event &e)

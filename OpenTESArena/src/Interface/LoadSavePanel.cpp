@@ -147,7 +147,7 @@ int LoadSavePanel::getClickedIndex(const Int2 &point)
 	return -1;
 }
 
-std::pair<const Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() const
+Panel::CursorData LoadSavePanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -155,7 +155,7 @@ std::pair<const Texture*, CursorAlignment> LoadSavePanel::getCurrentCursor() con
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void LoadSavePanel::handleEvent(const SDL_Event &e)

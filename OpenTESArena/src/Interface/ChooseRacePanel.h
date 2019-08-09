@@ -38,7 +38,7 @@ public:
 		const std::string &name, GenderName gender);
 	virtual ~ChooseRacePanel() = default;
 
-	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 	virtual void renderSecondary(Renderer &renderer) override;

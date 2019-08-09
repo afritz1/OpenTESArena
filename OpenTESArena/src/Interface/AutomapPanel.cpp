@@ -295,7 +295,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 	}
 }
 
-std::pair<const Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() const
+Panel::CursorData AutomapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -303,7 +303,7 @@ std::pair<const Texture*, CursorAlignment> AutomapPanel::getCurrentCursor() cons
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::QuillCursor),
 		TextureFile::fromName(TextureName::Automap), renderer);
-	return std::make_pair(&texture, CursorAlignment::BottomLeft);
+	return CursorData(&texture, CursorAlignment::BottomLeft);
 }
 
 void AutomapPanel::handleEvent(const SDL_Event &e)

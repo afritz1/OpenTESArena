@@ -118,7 +118,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 }
 
-std::pair<const Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentCursor() const
+Panel::CursorData ChooseClassCreationPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -126,7 +126,7 @@ std::pair<const Texture*, CursorAlignment> ChooseClassCreationPanel::getCurrentC
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)

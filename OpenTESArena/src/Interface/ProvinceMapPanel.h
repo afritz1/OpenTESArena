@@ -90,7 +90,7 @@ public:
 	// so the province search sub-panel can call it, too.
 	void trySelectLocation(int selectedLocationID);
 
-	virtual std::pair<const Texture*, CursorAlignment> getCurrentCursor() const override;
+	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

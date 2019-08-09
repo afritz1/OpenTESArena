@@ -300,7 +300,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 	}();
 }
 
-std::pair<const Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() const
+Panel::CursorData PauseMenuPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -308,7 +308,7 @@ std::pair<const Texture*, CursorAlignment> PauseMenuPanel::getCurrentCursor() co
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void PauseMenuPanel::handleEvent(const SDL_Event &e)

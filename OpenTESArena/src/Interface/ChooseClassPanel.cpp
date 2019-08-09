@@ -159,7 +159,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	DebugAssert(this->tooltipTextures.size() == 0);
 }
 
-std::pair<const Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() const
+Panel::CursorData ChooseClassPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -167,7 +167,7 @@ std::pair<const Texture*, CursorAlignment> ChooseClassPanel::getCurrentCursor() 
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseClassPanel::handleEvent(const SDL_Event &e)

@@ -550,7 +550,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-std::pair<const Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCursor() const
+Panel::CursorData ChooseAttributesPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
@@ -558,7 +558,7 @@ std::pair<const Texture*, CursorAlignment> ChooseAttributesPanel::getCurrentCurs
 	const auto &texture = textureManager.getTexture(
 		TextureFile::fromName(TextureName::SwordCursor),
 		PaletteFile::fromName(PaletteName::Default), renderer);
-	return std::make_pair(&texture, CursorAlignment::TopLeft);
+	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 
 void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
