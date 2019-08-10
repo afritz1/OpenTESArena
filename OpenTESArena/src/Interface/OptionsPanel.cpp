@@ -240,7 +240,7 @@ const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
 
 // Misc.
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
-const std::string OptionsPanel::SKIP_INTRO_NAME = "Skip Intro";
+const std::string OptionsPanel::SHOW_INTRO_NAME = "Show Intro";
 const std::string OptionsPanel::TIME_SCALE_NAME = "Time Scale";
 const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
 
@@ -625,14 +625,14 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	this->miscOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::SKIP_INTRO_NAME,
-		"Skips startup logo and related screens.",
-		options.getMisc_SkipIntro(),
+		OptionsPanel::SHOW_INTRO_NAME,
+		"Shows startup logo and related screens.",
+		options.getMisc_ShowIntro(),
 		[this](bool value)
 	{
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
-		options.setMisc_SkipIntro(value);
+		options.setMisc_ShowIntro(value);
 	}));
 
 	this->miscOptions.push_back(std::make_unique<DoubleOption>(

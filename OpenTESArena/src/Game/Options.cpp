@@ -52,7 +52,7 @@ namespace
 		{ "ArenaPath", OptionType::String },
 		{ "ArenaSavesPath", OptionType::String },
 		{ "Collision", OptionType::Bool },
-		{ "SkipIntro", OptionType::Bool },
+		{ "ShowIntro", OptionType::Bool },
 		{ "ShowDebug", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
 		{ "TimeScale", OptionType::Double },

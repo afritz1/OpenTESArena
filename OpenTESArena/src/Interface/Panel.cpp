@@ -93,8 +93,8 @@ Texture Panel::createTooltip(const std::string &text,
 
 std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 {
-	// If the intro skip option is set, then jump to the main menu.
-	if (game.getOptions().getMisc_SkipIntro())
+	// If not showing the intro, then jump to the main menu.
+	if (!game.getOptions().getMisc_ShowIntro())
 	{
 		return std::make_unique<MainMenuPanel>(game);
 	}

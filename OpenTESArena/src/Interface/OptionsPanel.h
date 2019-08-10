@@ -156,7 +156,7 @@ private:
 
 	// Misc.
 	static const std::string SHOW_COMPASS_NAME;
-	static const std::string SKIP_INTRO_NAME;
+	static const std::string SHOW_INTRO_NAME;
 	static const std::string TIME_SCALE_NAME;
 	static const std::string STAR_DENSITY_NAME;
 
