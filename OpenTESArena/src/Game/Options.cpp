@@ -3,10 +3,10 @@
 #include <sstream>
 
 #include "Options.h"
-#include "../Utilities/KeyValueMap.h"
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
 
 namespace
@@ -104,12 +104,12 @@ void Options::load(const std::string &filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
 {
 	// Read the key-value pairs from each section in the given options file.
-	const KeyValueMap keyValueMap(filename);
+	const KeyValueFile keyValueFile(filename);
 
-	for (const auto &sectionPair : keyValueMap.getAll())
+	for (const auto &sectionPair : keyValueFile.getAll())
 	{
 		const std::string &section = sectionPair.first;
-		const KeyValueMap::SectionMap &sectionMap = sectionPair.second;
+		const KeyValueFile::SectionMap &sectionMap = sectionPair.second;
 
 		// Get the list of key-type pairs to pull from.
 		const auto &keyList = [&filename, &section]()
@@ -162,27 +162,27 @@ void Options::load(const std::string &filename,
 
 				Options::MapGroup &mapGroup = groupIter->second;
 
-				// Using KeyValueMap's getter code here for convenience, despite it doing
+				// Using KeyValueFile's getter code here for convenience, despite it doing
 				// an unnecessary look-up.
 				if (type == OptionType::Bool)
 				{
 					mapGroup.bools.insert(std::make_pair(
-						key, keyValueMap.getBoolean(section, key)));
+						key, keyValueFile.getBoolean(section, key)));
 				}
 				else if (type == OptionType::Int)
 				{
 					mapGroup.integers.insert(std::make_pair(
-						key, keyValueMap.getInteger(section, key)));
+						key, keyValueFile.getInteger(section, key)));
 				}
 				else if (type == OptionType::Double)
 				{
 					mapGroup.doubles.insert(std::make_pair(
-						key, keyValueMap.getDouble(section, key)));
+						key, keyValueFile.getDouble(section, key)));
 				}
 				else if (type == OptionType::String)
 				{
 					mapGroup.strings.insert(std::make_pair(
-						key, keyValueMap.getString(section, key)));
+						key, keyValueFile.getString(section, key)));
 				}
 			}
 			else
@@ -631,7 +631,7 @@ void Options::saveChanges()
 				const auto &mapGroup = sectionIter->second;
 
 				// Print section line.
-				ofs << KeyValueMap::SECTION_FRONT << section << KeyValueMap::SECTION_BACK << '\n';
+				ofs << KeyValueFile::SECTION_FRONT << section << KeyValueFile::SECTION_BACK << '\n';
 
 				// Write all pairs present in the current section.
 				for (const auto &pair : keyList)
@@ -641,7 +641,7 @@ void Options::saveChanges()
 
 					auto writePair = [&ofs, &key](const std::string &value)
 					{
-						ofs << key << KeyValueMap::PAIR_SEPARATOR << value << '\n';
+						ofs << key << KeyValueFile::PAIR_SEPARATOR << value << '\n';
 					};
 
 					// If the associated changed map has the key, print the key-value pair.

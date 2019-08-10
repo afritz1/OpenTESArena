@@ -2,11 +2,10 @@
 #include <string_view>
 #include <vector>
 
-#include "KeyValueMap.h"
-
-#include "components/debug/Debug.h"
-#include "components/utilities/File.h"
-#include "components/utilities/StringView.h"
+#include "File.h"
+#include "KeyValueFile.h"
+#include "StringView.h"
+#include "../debug/Debug.h"
 
 namespace
 {
@@ -19,12 +18,12 @@ namespace
 	};
 }
 
-const char KeyValueMap::COMMENT = '#';
-const char KeyValueMap::PAIR_SEPARATOR = '=';
-const char KeyValueMap::SECTION_FRONT = '[';
-const char KeyValueMap::SECTION_BACK = ']';
+const char KeyValueFile::COMMENT = '#';
+const char KeyValueFile::PAIR_SEPARATOR = '=';
+const char KeyValueFile::SECTION_FRONT = '[';
+const char KeyValueFile::SECTION_BACK = ']';
 
-KeyValueMap::KeyValueMap(const std::string &filename)
+KeyValueFile::KeyValueFile(const std::string &filename)
 	: filename(filename)
 {
 	const std::string text = File::readAllText(filename.c_str());
@@ -55,7 +54,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 			}
 
 			// Extract left-most comment (if any).
-			const size_t commentIndex = str.find(KeyValueMap::COMMENT);
+			const size_t commentIndex = str.find(KeyValueFile::COMMENT);
 			if (commentIndex == 0)
 			{
 				// Comment covers the entire line.
@@ -85,13 +84,13 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 		}
 
 		// See if it's a section line or key-value pair line.
-		const size_t sectionFrontIndex = filteredLine.find(KeyValueMap::SECTION_FRONT);
+		const size_t sectionFrontIndex = filteredLine.find(KeyValueFile::SECTION_FRONT);
 		if (sectionFrontIndex != std::string_view::npos)
 		{
 			// Section line. There must be a closing character with enough space between it
 			// and the front character for at least one section character.
 			const size_t sectionBackIndex = filteredLine.find(
-				KeyValueMap::SECTION_BACK, sectionFrontIndex);
+				KeyValueFile::SECTION_BACK, sectionFrontIndex);
 
 			if ((sectionBackIndex != std::string_view::npos) &&
 				(sectionBackIndex > (sectionFrontIndex + 1)))
@@ -124,11 +123,11 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 					std::to_string(lineNumber) + ") in " + filename + ".");
 			}
 		}
-		else if (filteredLine.find(KeyValueMap::PAIR_SEPARATOR) != std::string::npos)
+		else if (filteredLine.find(KeyValueFile::PAIR_SEPARATOR) != std::string::npos)
 		{
 			// Key-value pair line. There must be two tokens: key and value.
 			const std::vector<std::string_view> tokens = StringView::split(
-				filteredLine, KeyValueMap::PAIR_SEPARATOR);
+				filteredLine, KeyValueFile::PAIR_SEPARATOR);
 
 			if (tokens.size() != 2)
 			{
@@ -168,7 +167,7 @@ KeyValueMap::KeyValueMap(const std::string &filename)
 	}
 }
 
-const std::string &KeyValueMap::getValue(const std::string &section, const std::string &key) const
+const std::string &KeyValueFile::getValue(const std::string &section, const std::string &key) const
 {
 	const auto sectionIter = this->sectionMaps.find(section);
 
@@ -185,7 +184,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 		if (keyIter == sectionMap.end())
 		{
 			throw DebugException("Key \"" + key + "\" not found in " +
-				KeyValueMap::SECTION_FRONT + section + KeyValueMap::SECTION_BACK +
+				KeyValueFile::SECTION_FRONT + section + KeyValueFile::SECTION_BACK +
 				" in " + this->filename + ".");
 		}
 		else
@@ -195,7 +194,7 @@ const std::string &KeyValueMap::getValue(const std::string &section, const std::
 	}
 }
 
-bool KeyValueMap::getBoolean(const std::string &section, const std::string &key) const
+bool KeyValueFile::getBoolean(const std::string &section, const std::string &key) const
 {
 	const std::string &value = this->getValue(section, key);
 	const auto iter = BooleanStrings.find(value);
@@ -205,25 +204,25 @@ bool KeyValueMap::getBoolean(const std::string &section, const std::string &key)
 	return iter->second;
 }
 
-int KeyValueMap::getInteger(const std::string &section, const std::string &key) const
+int KeyValueFile::getInteger(const std::string &section, const std::string &key) const
 {
 	const std::string &value = this->getValue(section, key);
 	return std::stoi(value);
 }
 
-double KeyValueMap::getDouble(const std::string &section, const std::string &key) const
+double KeyValueFile::getDouble(const std::string &section, const std::string &key) const
 {
 	const std::string &value = this->getValue(section, key);
 	return std::stod(value);
 }
 
-const std::string &KeyValueMap::getString(const std::string &section, const std::string &key) const
+const std::string &KeyValueFile::getString(const std::string &section, const std::string &key) const
 {
 	const std::string &value = this->getValue(section, key);
 	return value;
 }
 
-const std::unordered_map<std::string, KeyValueMap::SectionMap> &KeyValueMap::getAll() const
+const std::unordered_map<std::string, KeyValueFile::SectionMap> &KeyValueFile::getAll() const
 {
 	return this->sectionMaps;
 }

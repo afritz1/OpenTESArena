@@ -3,11 +3,11 @@
 
 #include "ExeData.h"
 #include "ExeUnpacker.h"
-#include "../Utilities/KeyValueMap.h"
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
+#include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
 
 namespace
@@ -175,14 +175,14 @@ namespace
 	}
 }
 
-void ExeData::Calendar::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Calendar::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Calendar";
-	const int monthNamesOffset = ExeData::get(section, "MonthNames", keyValueMap);
-	const int timesOfDayOffset = ExeData::get(section, "TimesOfDay", keyValueMap);
-	const int weekdayNamesOffset = ExeData::get(section, "WeekdayNames", keyValueMap);
-	const int holidayNamesOffset = ExeData::get(section, "HolidayNames", keyValueMap);
-	const int holidayDatesOffset = ExeData::get(section, "HolidayDates", keyValueMap);
+	const int monthNamesOffset = ExeData::get(section, "MonthNames", keyValueFile);
+	const int timesOfDayOffset = ExeData::get(section, "TimesOfDay", keyValueFile);
+	const int weekdayNamesOffset = ExeData::get(section, "WeekdayNames", keyValueFile);
+	const int holidayNamesOffset = ExeData::get(section, "HolidayNames", keyValueFile);
+	const int holidayDatesOffset = ExeData::get(section, "HolidayDates", keyValueFile);
 
 	initStringArray(this->monthNames, data + monthNamesOffset);
 	initStringArray(this->timesOfDay, data + timesOfDayOffset);
@@ -191,20 +191,20 @@ void ExeData::Calendar::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt16Array(this->holidayDates, data + holidayDatesOffset);
 }
 
-void ExeData::CharacterClasses::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::CharacterClasses::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "CharacterClasses";
-	const int allowedArmorsOffset = ExeData::get(section, "AllowedArmors", keyValueMap);
-	const int allowedShieldsOffset = ExeData::get(section, "AllowedShields", keyValueMap);
-	const int allowedShieldsListsOffset = ExeData::get(section, "AllowedShieldsLists", keyValueMap);
-	const int allowedWeaponsOffset = ExeData::get(section, "AllowedWeapons", keyValueMap);
-	const int allowedWeaponsListsOffset = ExeData::get(section, "AllowedWeaponsLists", keyValueMap);
-	const int classNamesOffset = ExeData::get(section, "ClassNames", keyValueMap);
-	const int classNumbersToIDsOffset = ExeData::get(section, "ClassNumbersToIDs", keyValueMap);
-	const int healthDiceOffset = ExeData::get(section, "HealthDice", keyValueMap);
-	const int initialExpCapsOffset = ExeData::get(section, "InitialExperienceCaps", keyValueMap);
-	const int lockpickingDivisorsOffset = ExeData::get(section, "LockpickingDivisors", keyValueMap);
-	const int preferredAttributesOffset = ExeData::get(section, "PreferredAttributes", keyValueMap);
+	const int allowedArmorsOffset = ExeData::get(section, "AllowedArmors", keyValueFile);
+	const int allowedShieldsOffset = ExeData::get(section, "AllowedShields", keyValueFile);
+	const int allowedShieldsListsOffset = ExeData::get(section, "AllowedShieldsLists", keyValueFile);
+	const int allowedWeaponsOffset = ExeData::get(section, "AllowedWeapons", keyValueFile);
+	const int allowedWeaponsListsOffset = ExeData::get(section, "AllowedWeaponsLists", keyValueFile);
+	const int classNamesOffset = ExeData::get(section, "ClassNames", keyValueFile);
+	const int classNumbersToIDsOffset = ExeData::get(section, "ClassNumbersToIDs", keyValueFile);
+	const int healthDiceOffset = ExeData::get(section, "HealthDice", keyValueFile);
+	const int initialExpCapsOffset = ExeData::get(section, "InitialExperienceCaps", keyValueFile);
+	const int lockpickingDivisorsOffset = ExeData::get(section, "LockpickingDivisors", keyValueFile);
+	const int preferredAttributesOffset = ExeData::get(section, "PreferredAttributes", keyValueFile);
 
 	initInt8Array(this->allowedArmors, data + allowedArmorsOffset);
 	initInt16Array(this->allowedShields, data + allowedShieldsOffset);
@@ -229,30 +229,30 @@ void ExeData::CharacterClasses::init(const char *data, const KeyValueMap &keyVal
 	initStringArray(this->preferredAttributes, data + preferredAttributesOffset);
 }
 
-void ExeData::CharacterCreation::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::CharacterCreation::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "CharacterCreation";
-	const auto chooseClassCreationPair = ExeData::getPair(section, "ChooseClassCreation", keyValueMap);
-	const auto chooseClassCreationGeneratePair = ExeData::getPair(section, "ChooseClassCreationGenerate", keyValueMap);
-	const auto chooseClassCreationSelectPair = ExeData::getPair(section, "ChooseClassCreationSelect", keyValueMap);
-	const auto classQuestionsIntroPair = ExeData::getPair(section, "ClassQuestionsIntro", keyValueMap);
-	const auto suggestedClassPair = ExeData::getPair(section, "SuggestedClass", keyValueMap);
-	const auto chooseClassListPair = ExeData::getPair(section, "ChooseClassList", keyValueMap);
-	const auto chooseNamePair = ExeData::getPair(section, "ChooseName", keyValueMap);
-	const auto chooseGenderPair = ExeData::getPair(section, "ChooseGender", keyValueMap);
-	const auto chooseGenderMalePair = ExeData::getPair(section, "ChooseGenderMale", keyValueMap);
-	const auto chooseGenderFemalePair = ExeData::getPair(section, "ChooseGenderFemale", keyValueMap);
-	const auto chooseRacePair = ExeData::getPair(section, "ChooseRace", keyValueMap);
-	const auto confirmRacePair = ExeData::getPair(section, "ConfirmRace", keyValueMap);
-	const auto confirmedRace1Pair = ExeData::getPair(section, "ConfirmedRace1", keyValueMap);
-	const auto confirmedRace2Pair = ExeData::getPair(section, "ConfirmedRace2", keyValueMap);
-	const auto confirmedRace3Pair = ExeData::getPair(section, "ConfirmedRace3", keyValueMap);
-	const auto confirmedRace4Pair = ExeData::getPair(section, "ConfirmedRace4", keyValueMap);
-	const auto distributeClassPointsPair = ExeData::getPair(section, "DistributeClassPoints", keyValueMap);
-	const auto chooseAttributesPair = ExeData::getPair(section, "ChooseAttributes", keyValueMap);
-	const auto chooseAttributesSavePair = ExeData::getPair(section, "ChooseAttributesSave", keyValueMap);
-	const auto chooseAttributesRerollPair = ExeData::getPair(section, "ChooseAttributesReroll", keyValueMap);
-	const auto chooseAppearancePair = ExeData::getPair(section, "ChooseAppearance", keyValueMap);
+	const auto chooseClassCreationPair = ExeData::getPair(section, "ChooseClassCreation", keyValueFile);
+	const auto chooseClassCreationGeneratePair = ExeData::getPair(section, "ChooseClassCreationGenerate", keyValueFile);
+	const auto chooseClassCreationSelectPair = ExeData::getPair(section, "ChooseClassCreationSelect", keyValueFile);
+	const auto classQuestionsIntroPair = ExeData::getPair(section, "ClassQuestionsIntro", keyValueFile);
+	const auto suggestedClassPair = ExeData::getPair(section, "SuggestedClass", keyValueFile);
+	const auto chooseClassListPair = ExeData::getPair(section, "ChooseClassList", keyValueFile);
+	const auto chooseNamePair = ExeData::getPair(section, "ChooseName", keyValueFile);
+	const auto chooseGenderPair = ExeData::getPair(section, "ChooseGender", keyValueFile);
+	const auto chooseGenderMalePair = ExeData::getPair(section, "ChooseGenderMale", keyValueFile);
+	const auto chooseGenderFemalePair = ExeData::getPair(section, "ChooseGenderFemale", keyValueFile);
+	const auto chooseRacePair = ExeData::getPair(section, "ChooseRace", keyValueFile);
+	const auto confirmRacePair = ExeData::getPair(section, "ConfirmRace", keyValueFile);
+	const auto confirmedRace1Pair = ExeData::getPair(section, "ConfirmedRace1", keyValueFile);
+	const auto confirmedRace2Pair = ExeData::getPair(section, "ConfirmedRace2", keyValueFile);
+	const auto confirmedRace3Pair = ExeData::getPair(section, "ConfirmedRace3", keyValueFile);
+	const auto confirmedRace4Pair = ExeData::getPair(section, "ConfirmedRace4", keyValueFile);
+	const auto distributeClassPointsPair = ExeData::getPair(section, "DistributeClassPoints", keyValueFile);
+	const auto chooseAttributesPair = ExeData::getPair(section, "ChooseAttributes", keyValueFile);
+	const auto chooseAttributesSavePair = ExeData::getPair(section, "ChooseAttributesSave", keyValueFile);
+	const auto chooseAttributesRerollPair = ExeData::getPair(section, "ChooseAttributesReroll", keyValueFile);
+	const auto chooseAppearancePair = ExeData::getPair(section, "ChooseAppearance", keyValueFile);
 
 	this->chooseClassCreation = ExeData::readFixedString(data, chooseClassCreationPair);
 	this->chooseClassCreationGenerate =
@@ -279,23 +279,23 @@ void ExeData::CharacterCreation::init(const char *data, const KeyValueMap &keyVa
 	this->chooseAppearance = ExeData::readFixedString(data, chooseAppearancePair);
 }
 
-void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::CityGeneration::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "CityGeneration";
-	const int coastalCityListOffset = ExeData::get(section, "CoastalCityList", keyValueMap);
-	const int cityTemplateFilenamesOffset = ExeData::get(section, "CityTemplateFilenames", keyValueMap);
-	const int startingPositionsOffset = ExeData::get(section, "StartingPositions", keyValueMap);
-	const int reservedBlockListsOffset = ExeData::get(section, "ReservedBlockLists", keyValueMap);
-	const int tavernPrefixesOffset = ExeData::get(section, "TavernPrefixes", keyValueMap);
-	const int tavernMarineSuffixesOffset = ExeData::get(section, "TavernMarineSuffixes", keyValueMap);
-	const int tavernSuffixesOffset = ExeData::get(section, "TavernSuffixes", keyValueMap);
-	const int templePrefixesOffset = ExeData::get(section, "TemplePrefixes", keyValueMap);
-	const int temple1SuffixesOffset = ExeData::get(section, "Temple1Suffixes", keyValueMap);
-	const int temple2SuffixesOffset = ExeData::get(section, "Temple2Suffixes", keyValueMap);
-	const int temple3SuffixesOffset = ExeData::get(section, "Temple3Suffixes", keyValueMap);
-	const int equipmentPrefixesOffset = ExeData::get(section, "EquipmentPrefixes", keyValueMap);
-	const int equipmentSuffixesOffset = ExeData::get(section, "EquipmentSuffixes", keyValueMap);
-	const int magesGuildMenuNameOffset = ExeData::get(section, "MagesGuildMenuName", keyValueMap);
+	const int coastalCityListOffset = ExeData::get(section, "CoastalCityList", keyValueFile);
+	const int cityTemplateFilenamesOffset = ExeData::get(section, "CityTemplateFilenames", keyValueFile);
+	const int startingPositionsOffset = ExeData::get(section, "StartingPositions", keyValueFile);
+	const int reservedBlockListsOffset = ExeData::get(section, "ReservedBlockLists", keyValueFile);
+	const int tavernPrefixesOffset = ExeData::get(section, "TavernPrefixes", keyValueFile);
+	const int tavernMarineSuffixesOffset = ExeData::get(section, "TavernMarineSuffixes", keyValueFile);
+	const int tavernSuffixesOffset = ExeData::get(section, "TavernSuffixes", keyValueFile);
+	const int templePrefixesOffset = ExeData::get(section, "TemplePrefixes", keyValueFile);
+	const int temple1SuffixesOffset = ExeData::get(section, "Temple1Suffixes", keyValueFile);
+	const int temple2SuffixesOffset = ExeData::get(section, "Temple2Suffixes", keyValueFile);
+	const int temple3SuffixesOffset = ExeData::get(section, "Temple3Suffixes", keyValueFile);
+	const int equipmentPrefixesOffset = ExeData::get(section, "EquipmentPrefixes", keyValueFile);
+	const int equipmentSuffixesOffset = ExeData::get(section, "EquipmentSuffixes", keyValueFile);
+	const int magesGuildMenuNameOffset = ExeData::get(section, "MagesGuildMenuName", keyValueFile);
 
 	initInt8Array(this->coastalCityList, data + coastalCityListOffset);
 	initStringArray(this->templateFilenames, data + cityTemplateFilenamesOffset);
@@ -317,37 +317,37 @@ void ExeData::CityGeneration::init(const char *data, const KeyValueMap &keyValue
 	this->magesGuildMenuName = ExeData::readString(data + magesGuildMenuNameOffset);
 }
 
-void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Entities";
-	const int creatureNamesOffset = ExeData::get(section, "CreatureNames", keyValueMap);
-	const int creatureLevelsOffset = ExeData::get(section, "CreatureLevels", keyValueMap);
-	const int creatureHitPointsOffset = ExeData::get(section, "CreatureHitPoints", keyValueMap);
-	const int creatureBaseExpsOffset = ExeData::get(section, "CreatureBaseExperience", keyValueMap);
-	const int creatureExpMultipliersOffset = ExeData::get(section, "CreatureExperienceMultipliers", keyValueMap);
-	const int creatureSoundsOffset = ExeData::get(section, "CreatureSounds", keyValueMap);
-	const int creatureSoundNamesOffset = ExeData::get(section, "CreatureSoundNames", keyValueMap);
-	const int creatureDamagesOffset = ExeData::get(section, "CreatureDamages", keyValueMap);
-	const int creatureMagicEffectsOffset = ExeData::get(section, "CreatureMagicEffects", keyValueMap);
-	const int creatureScalesOffset = ExeData::get(section, "CreatureScales", keyValueMap);
-	const int creatureYOffsetsOffset = ExeData::get(section, "CreatureYOffsets", keyValueMap);
-	const int creatureHasNoCorpseOffset = ExeData::get(section, "CreatureHasNoCorpse", keyValueMap);
-	const int creatureBloodOffset = ExeData::get(section, "CreatureBlood", keyValueMap);
-	const int creatureDiseaseChancesOffset = ExeData::get(section, "CreatureDiseaseChances", keyValueMap);
-	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes", keyValueMap);
-	const int creatureAnimFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames", keyValueMap);
-	const int maleMainRaceAttrsOffset = ExeData::get(section, "MaleMainRaceAttributes", keyValueMap);
-	const int femaleMainRaceAttrsOffset = ExeData::get(section, "FemaleMainRaceAttributes", keyValueMap);
-	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes", keyValueMap);
-	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueMap);
-	const int femaleCitizenAnimFilenamesOffset = ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueMap);
-	const int cfaFilenameChunksOffset = ExeData::get(section, "CFAFilenameChunks", keyValueMap);
-	const int cfaFilenameTemplatesOffset = ExeData::get(section, "CFAFilenameTemplates", keyValueMap);
-	const int cfaHumansWithWeaponAnimsOffset = ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueMap);
-	const int cfaWeaponAnimationsOffset = ExeData::get(section, "CFAWeaponAnimations", keyValueMap);
-	const int effectAnimsOffset = ExeData::get(section, "EffectAnimations", keyValueMap);
-	const int citizenColorBaseOffset = ExeData::get(section, "CitizenColorBase", keyValueMap);
-	const int citizenSkinColorsOffset = ExeData::get(section, "CitizenSkinColors", keyValueMap);
+	const int creatureNamesOffset = ExeData::get(section, "CreatureNames", keyValueFile);
+	const int creatureLevelsOffset = ExeData::get(section, "CreatureLevels", keyValueFile);
+	const int creatureHitPointsOffset = ExeData::get(section, "CreatureHitPoints", keyValueFile);
+	const int creatureBaseExpsOffset = ExeData::get(section, "CreatureBaseExperience", keyValueFile);
+	const int creatureExpMultipliersOffset = ExeData::get(section, "CreatureExperienceMultipliers", keyValueFile);
+	const int creatureSoundsOffset = ExeData::get(section, "CreatureSounds", keyValueFile);
+	const int creatureSoundNamesOffset = ExeData::get(section, "CreatureSoundNames", keyValueFile);
+	const int creatureDamagesOffset = ExeData::get(section, "CreatureDamages", keyValueFile);
+	const int creatureMagicEffectsOffset = ExeData::get(section, "CreatureMagicEffects", keyValueFile);
+	const int creatureScalesOffset = ExeData::get(section, "CreatureScales", keyValueFile);
+	const int creatureYOffsetsOffset = ExeData::get(section, "CreatureYOffsets", keyValueFile);
+	const int creatureHasNoCorpseOffset = ExeData::get(section, "CreatureHasNoCorpse", keyValueFile);
+	const int creatureBloodOffset = ExeData::get(section, "CreatureBlood", keyValueFile);
+	const int creatureDiseaseChancesOffset = ExeData::get(section, "CreatureDiseaseChances", keyValueFile);
+	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes", keyValueFile);
+	const int creatureAnimFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames", keyValueFile);
+	const int maleMainRaceAttrsOffset = ExeData::get(section, "MaleMainRaceAttributes", keyValueFile);
+	const int femaleMainRaceAttrsOffset = ExeData::get(section, "FemaleMainRaceAttributes", keyValueFile);
+	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes", keyValueFile);
+	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueFile);
+	const int femaleCitizenAnimFilenamesOffset = ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueFile);
+	const int cfaFilenameChunksOffset = ExeData::get(section, "CFAFilenameChunks", keyValueFile);
+	const int cfaFilenameTemplatesOffset = ExeData::get(section, "CFAFilenameTemplates", keyValueFile);
+	const int cfaHumansWithWeaponAnimsOffset = ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueFile);
+	const int cfaWeaponAnimationsOffset = ExeData::get(section, "CFAWeaponAnimations", keyValueFile);
+	const int effectAnimsOffset = ExeData::get(section, "EffectAnimations", keyValueFile);
+	const int citizenColorBaseOffset = ExeData::get(section, "CitizenColorBase", keyValueFile);
+	const int citizenSkinColorsOffset = ExeData::get(section, "CitizenSkinColors", keyValueFile);
 
 	initStringArray(this->creatureNames, data + creatureNamesOffset);
 	initInt8Array(this->creatureLevels, data + creatureLevelsOffset);
@@ -379,63 +379,63 @@ void ExeData::Entities::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->citizenSkinColors, data + citizenSkinColorsOffset);
 }
 
-void ExeData::Equipment::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Equipment";
-	const int enchantmentChancesOffset = ExeData::get(section, "EnchantmentChances", keyValueMap);
-	const int materialNamesOffset = ExeData::get(section, "MaterialNames", keyValueMap);
-	const int materialBonusesOffset = ExeData::get(section, "MaterialBonuses", keyValueMap);
-	const int materialChancesOffset = ExeData::get(section, "MaterialChances", keyValueMap);
-	const int materialPriceMultipliersOffset = ExeData::get(section, "MaterialPriceMultipliers", keyValueMap);
-	const int armorNamesOffset = ExeData::get(section, "ArmorNames", keyValueMap);
-	const int plateArmorNamesOffset = ExeData::get(section, "PlateArmorNames", keyValueMap);
-	const int plateArmorQualitiesOffset = ExeData::get(section, "PlateArmorQualities", keyValueMap);
-	const int plateArmorBasePricesOffset = ExeData::get(section, "PlateArmorBasePrices", keyValueMap);
-	const int plateArmorWeightsOffset = ExeData::get(section, "PlateArmorWeights", keyValueMap);
-	const int chainArmorNamesOffset = ExeData::get(section, "ChainArmorNames", keyValueMap);
-	const int chainArmorQualitiesOffset = ExeData::get(section, "ChainArmorQualities", keyValueMap);
-	const int chainArmorBasePricesOffset = ExeData::get(section, "ChainArmorBasePrices", keyValueMap);
-	const int chainArmorWeightsOffset = ExeData::get(section, "ChainArmorWeights", keyValueMap);
-	const int leatherArmorNamesOffset = ExeData::get(section, "LeatherArmorNames", keyValueMap);
-	const int leatherArmorQualitiesOffset = ExeData::get(section, "LeatherArmorQualities", keyValueMap);
-	const int leatherArmorBasePricesOffset = ExeData::get(section, "LeatherArmorBasePrices", keyValueMap);
-	const int leatherArmorWeightsOffset = ExeData::get(section, "LeatherArmorWeights", keyValueMap);
-	const int shieldArmorClassesOffset = ExeData::get(section, "ShieldArmorClasses", keyValueMap);
-	const int armorEnchantmentNamesOffset = ExeData::get(section, "ArmorEnchantmentNames", keyValueMap);
-	const int armorEnchantmentQualitiesOffset = ExeData::get(section, "ArmorEnchantmentQualities", keyValueMap);
-	const int armorEnchantmentSpellsOffset = ExeData::get(section, "ArmorEnchantmentSpells", keyValueMap);
-	const int armorEnchantmentBonusPricesOffset = ExeData::get(section, "ArmorEnchantmentBonusPrices", keyValueMap);
-	const int weaponNamesOffset = ExeData::get(section, "WeaponNames", keyValueMap);
-	const int weaponQualitiesOffset = ExeData::get(section, "WeaponQualities", keyValueMap);
-	const int weaponBasePricesOffset = ExeData::get(section, "WeaponBasePrices", keyValueMap);
-	const int weaponWeightsOffset = ExeData::get(section, "WeaponWeights", keyValueMap);
-	const int weaponDamagesOffset = ExeData::get(section, "WeaponDamages", keyValueMap);
-	const int weaponHandednessesOffset = ExeData::get(section, "WeaponHandednesses", keyValueMap);
-	const int weaponEnchantmentNamesOffset = ExeData::get(section, "WeaponEnchantmentNames", keyValueMap);
-	const int weaponEnchantmentQualitiesOffset = ExeData::get(section, "WeaponEnchantmentQualities", keyValueMap);
-	const int weaponEnchantmentSpellsOffset = ExeData::get(section, "WeaponEnchantmentSpells", keyValueMap);
-	const int weaponEnchantmentBonusPricesOffset = ExeData::get(section, "WeaponEnchantmentBonusPrices", keyValueMap);
-	const int spellcastingItemNamesOffset = ExeData::get(section, "SpellcastingItemNames", keyValueMap);
-	const int spellcastingItemCumulativeChancesOffset = ExeData::get(section, "SpellcastingItemCumulativeChances", keyValueMap);
-	const int spellcastingItemBasePricesOffset = ExeData::get(section, "SpellcastingItemBasePrices", keyValueMap);
-	const int spellcastingItemChargeRangesOffset = ExeData::get(section, "SpellcastingItemChargeRanges", keyValueMap);
-	const int spellcastingItemAttackSpellNamesOffset = ExeData::get(section, "SpellcastingItemAttackSpellNames", keyValueMap);
-	const int spellcastingItemAttackSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemAttackSpellQualities", keyValueMap);
-	const int spellcastingItemAttackSpellSpellsOffset = ExeData::get(section, "SpellcastingItemAttackSpellSpells", keyValueMap);
-	const int spellcastingItemAttackSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemAttackSpellPricesPerCharge", keyValueMap);
-	const int spellcastingItemDefensiveSpellNamesOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellNames", keyValueMap);
-	const int spellcastingItemDefensiveSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellQualities", keyValueMap);
-	const int spellcastingItemDefensiveSpellSpellsOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellSpells", keyValueMap);
-	const int spellcastingItemDefensiveSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellPricesPerCharge", keyValueMap);
-	const int spellcastingItemMiscSpellNamesOffset = ExeData::get(section, "SpellcastingItemMiscSpellNames", keyValueMap);
-	const int spellcastingItemMiscSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemMiscSpellQualities", keyValueMap);
-	const int spellcastingItemMiscSpellSpellsOffset = ExeData::get(section, "SpellcastingItemMiscSpellSpells", keyValueMap);
-	const int spellcastingItemMiscSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemMiscSpellPricesPerCharge", keyValueMap);
-	const int enhancementItemNamesOffset = ExeData::get(section, "EnhancementItemNames", keyValueMap);
-	const int enhancementItemCumulativeChancesOffset = ExeData::get(section, "EnhancementItemCumulativeChances", keyValueMap);
-	const int enhancementItemBasePricesOffset = ExeData::get(section, "EnhancementItemBasePrices", keyValueMap);
-	const int bodyPartNamesOffset = ExeData::get(section, "BodyPartNames", keyValueMap);
-	const int weaponAnimFilenamesOffset = ExeData::get(section, "WeaponAnimationFilenames", keyValueMap);
+	const int enchantmentChancesOffset = ExeData::get(section, "EnchantmentChances", keyValueFile);
+	const int materialNamesOffset = ExeData::get(section, "MaterialNames", keyValueFile);
+	const int materialBonusesOffset = ExeData::get(section, "MaterialBonuses", keyValueFile);
+	const int materialChancesOffset = ExeData::get(section, "MaterialChances", keyValueFile);
+	const int materialPriceMultipliersOffset = ExeData::get(section, "MaterialPriceMultipliers", keyValueFile);
+	const int armorNamesOffset = ExeData::get(section, "ArmorNames", keyValueFile);
+	const int plateArmorNamesOffset = ExeData::get(section, "PlateArmorNames", keyValueFile);
+	const int plateArmorQualitiesOffset = ExeData::get(section, "PlateArmorQualities", keyValueFile);
+	const int plateArmorBasePricesOffset = ExeData::get(section, "PlateArmorBasePrices", keyValueFile);
+	const int plateArmorWeightsOffset = ExeData::get(section, "PlateArmorWeights", keyValueFile);
+	const int chainArmorNamesOffset = ExeData::get(section, "ChainArmorNames", keyValueFile);
+	const int chainArmorQualitiesOffset = ExeData::get(section, "ChainArmorQualities", keyValueFile);
+	const int chainArmorBasePricesOffset = ExeData::get(section, "ChainArmorBasePrices", keyValueFile);
+	const int chainArmorWeightsOffset = ExeData::get(section, "ChainArmorWeights", keyValueFile);
+	const int leatherArmorNamesOffset = ExeData::get(section, "LeatherArmorNames", keyValueFile);
+	const int leatherArmorQualitiesOffset = ExeData::get(section, "LeatherArmorQualities", keyValueFile);
+	const int leatherArmorBasePricesOffset = ExeData::get(section, "LeatherArmorBasePrices", keyValueFile);
+	const int leatherArmorWeightsOffset = ExeData::get(section, "LeatherArmorWeights", keyValueFile);
+	const int shieldArmorClassesOffset = ExeData::get(section, "ShieldArmorClasses", keyValueFile);
+	const int armorEnchantmentNamesOffset = ExeData::get(section, "ArmorEnchantmentNames", keyValueFile);
+	const int armorEnchantmentQualitiesOffset = ExeData::get(section, "ArmorEnchantmentQualities", keyValueFile);
+	const int armorEnchantmentSpellsOffset = ExeData::get(section, "ArmorEnchantmentSpells", keyValueFile);
+	const int armorEnchantmentBonusPricesOffset = ExeData::get(section, "ArmorEnchantmentBonusPrices", keyValueFile);
+	const int weaponNamesOffset = ExeData::get(section, "WeaponNames", keyValueFile);
+	const int weaponQualitiesOffset = ExeData::get(section, "WeaponQualities", keyValueFile);
+	const int weaponBasePricesOffset = ExeData::get(section, "WeaponBasePrices", keyValueFile);
+	const int weaponWeightsOffset = ExeData::get(section, "WeaponWeights", keyValueFile);
+	const int weaponDamagesOffset = ExeData::get(section, "WeaponDamages", keyValueFile);
+	const int weaponHandednessesOffset = ExeData::get(section, "WeaponHandednesses", keyValueFile);
+	const int weaponEnchantmentNamesOffset = ExeData::get(section, "WeaponEnchantmentNames", keyValueFile);
+	const int weaponEnchantmentQualitiesOffset = ExeData::get(section, "WeaponEnchantmentQualities", keyValueFile);
+	const int weaponEnchantmentSpellsOffset = ExeData::get(section, "WeaponEnchantmentSpells", keyValueFile);
+	const int weaponEnchantmentBonusPricesOffset = ExeData::get(section, "WeaponEnchantmentBonusPrices", keyValueFile);
+	const int spellcastingItemNamesOffset = ExeData::get(section, "SpellcastingItemNames", keyValueFile);
+	const int spellcastingItemCumulativeChancesOffset = ExeData::get(section, "SpellcastingItemCumulativeChances", keyValueFile);
+	const int spellcastingItemBasePricesOffset = ExeData::get(section, "SpellcastingItemBasePrices", keyValueFile);
+	const int spellcastingItemChargeRangesOffset = ExeData::get(section, "SpellcastingItemChargeRanges", keyValueFile);
+	const int spellcastingItemAttackSpellNamesOffset = ExeData::get(section, "SpellcastingItemAttackSpellNames", keyValueFile);
+	const int spellcastingItemAttackSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemAttackSpellQualities", keyValueFile);
+	const int spellcastingItemAttackSpellSpellsOffset = ExeData::get(section, "SpellcastingItemAttackSpellSpells", keyValueFile);
+	const int spellcastingItemAttackSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemAttackSpellPricesPerCharge", keyValueFile);
+	const int spellcastingItemDefensiveSpellNamesOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellNames", keyValueFile);
+	const int spellcastingItemDefensiveSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellQualities", keyValueFile);
+	const int spellcastingItemDefensiveSpellSpellsOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellSpells", keyValueFile);
+	const int spellcastingItemDefensiveSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemDefensiveSpellPricesPerCharge", keyValueFile);
+	const int spellcastingItemMiscSpellNamesOffset = ExeData::get(section, "SpellcastingItemMiscSpellNames", keyValueFile);
+	const int spellcastingItemMiscSpellQualitiesOffset = ExeData::get(section, "SpellcastingItemMiscSpellQualities", keyValueFile);
+	const int spellcastingItemMiscSpellSpellsOffset = ExeData::get(section, "SpellcastingItemMiscSpellSpells", keyValueFile);
+	const int spellcastingItemMiscSpellPricesPerChargeOffset = ExeData::get(section, "SpellcastingItemMiscSpellPricesPerCharge", keyValueFile);
+	const int enhancementItemNamesOffset = ExeData::get(section, "EnhancementItemNames", keyValueFile);
+	const int enhancementItemCumulativeChancesOffset = ExeData::get(section, "EnhancementItemCumulativeChances", keyValueFile);
+	const int enhancementItemBasePricesOffset = ExeData::get(section, "EnhancementItemBasePrices", keyValueFile);
+	const int bodyPartNamesOffset = ExeData::get(section, "BodyPartNames", keyValueFile);
+	const int weaponAnimFilenamesOffset = ExeData::get(section, "WeaponAnimationFilenames", keyValueFile);
 
 	initInt8Array(this->enchantmentChances, data + enchantmentChancesOffset);
 	initStringArray(this->materialNames, data + materialNamesOffset);
@@ -493,30 +493,30 @@ void ExeData::Equipment::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->weaponAnimationFilenames, data + weaponAnimFilenamesOffset);
 }
 
-void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Locations::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Locations";
-	const int provinceNamesOffset = ExeData::get(section, "ProvinceNames", keyValueMap);
-	const int charCreationProvinceNamesOffset = ExeData::get(section, "CharCreationProvinceNames", keyValueMap);
-	const int provinceImgFilenamesOffset = ExeData::get(section, "ProvinceImgFilenames", keyValueMap);
-	const int locationTypesOffset = ExeData::get(section, "LocationTypes", keyValueMap);
-	const int menuMifPrefixesOffset = ExeData::get(section, "MenuMifPrefixes", keyValueMap);
-	const int centerProvinceCityMifNameOffset = ExeData::get(section, "CenterProvinceCityMifName", keyValueMap);
-	const int startDungeonNameOffset = ExeData::get(section, "StartDungeonName", keyValueMap);
-	const int startDungeonMifNameOffset = ExeData::get(section, "StartDungeonMifName", keyValueMap);
-	const int finalDungeonMifNameOffset = ExeData::get(section, "FinalDungeonMifName", keyValueMap);
-	const int staffProvincesOffset = ExeData::get(section, "StaffProvinces", keyValueMap);
-	const int climatesOffset = ExeData::get(section, "Climates", keyValueMap);
-	const int weatherTableOffset = ExeData::get(section, "WeatherTable", keyValueMap);
-	const int climateSpeedTablesOffset = ExeData::get(section, "ClimateSpeedTables", keyValueMap);
-	const int weatherSpeedTablesOffset = ExeData::get(section, "WeatherSpeedTables", keyValueMap);
-	const int rulerTitlesOffset = ExeData::get(section, "RulerTitles", keyValueMap);
-	const int distantMountainFilenamesOffset = ExeData::get(section, "DistantMountainFilenames", keyValueMap);
-	const int animDistantMountainFilenamesOffset = ExeData::get(section, "AnimDistantMountainFilenames", keyValueMap);
-	const int cloudFilenameOffset = ExeData::get(section, "CloudFilename", keyValueMap);
-	const int sunFilenameOffset = ExeData::get(section, "SunFilename", keyValueMap);
-	const int moonFilenamesOffset = ExeData::get(section, "MoonFilenames", keyValueMap);
-	const int starFilenameOffset = ExeData::get(section, "StarFilename", keyValueMap);
+	const int provinceNamesOffset = ExeData::get(section, "ProvinceNames", keyValueFile);
+	const int charCreationProvinceNamesOffset = ExeData::get(section, "CharCreationProvinceNames", keyValueFile);
+	const int provinceImgFilenamesOffset = ExeData::get(section, "ProvinceImgFilenames", keyValueFile);
+	const int locationTypesOffset = ExeData::get(section, "LocationTypes", keyValueFile);
+	const int menuMifPrefixesOffset = ExeData::get(section, "MenuMifPrefixes", keyValueFile);
+	const int centerProvinceCityMifNameOffset = ExeData::get(section, "CenterProvinceCityMifName", keyValueFile);
+	const int startDungeonNameOffset = ExeData::get(section, "StartDungeonName", keyValueFile);
+	const int startDungeonMifNameOffset = ExeData::get(section, "StartDungeonMifName", keyValueFile);
+	const int finalDungeonMifNameOffset = ExeData::get(section, "FinalDungeonMifName", keyValueFile);
+	const int staffProvincesOffset = ExeData::get(section, "StaffProvinces", keyValueFile);
+	const int climatesOffset = ExeData::get(section, "Climates", keyValueFile);
+	const int weatherTableOffset = ExeData::get(section, "WeatherTable", keyValueFile);
+	const int climateSpeedTablesOffset = ExeData::get(section, "ClimateSpeedTables", keyValueFile);
+	const int weatherSpeedTablesOffset = ExeData::get(section, "WeatherSpeedTables", keyValueFile);
+	const int rulerTitlesOffset = ExeData::get(section, "RulerTitles", keyValueFile);
+	const int distantMountainFilenamesOffset = ExeData::get(section, "DistantMountainFilenames", keyValueFile);
+	const int animDistantMountainFilenamesOffset = ExeData::get(section, "AnimDistantMountainFilenames", keyValueFile);
+	const int cloudFilenameOffset = ExeData::get(section, "CloudFilename", keyValueFile);
+	const int sunFilenameOffset = ExeData::get(section, "SunFilename", keyValueFile);
+	const int moonFilenamesOffset = ExeData::get(section, "MoonFilenames", keyValueFile);
+	const int starFilenameOffset = ExeData::get(section, "StarFilename", keyValueFile);
 
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < this->provinceNames.size(); i++)
@@ -546,39 +546,39 @@ void ExeData::Locations::init(const char *data, const KeyValueMap &keyValueMap)
 	this->starFilename = ExeData::readString(data + starFilenameOffset);
 }
 
-void ExeData::Logbook::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Logbook::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Logbook";
-	const int isEmptyOffset = ExeData::get(section, "IsEmpty", keyValueMap);
+	const int isEmptyOffset = ExeData::get(section, "IsEmpty", keyValueFile);
 
 	this->isEmpty = ExeData::readString(data + isEmptyOffset);
 }
 
-void ExeData::Meta::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Meta::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Meta";
-	this->dataSegmentOffset = ExeData::get(section, "DataSegmentOffset", keyValueMap);
+	this->dataSegmentOffset = ExeData::get(section, "DataSegmentOffset", keyValueFile);
 }
 
-void ExeData::Races::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Races";
-	const int singularNamesOffset = ExeData::get(section, "SingularNames", keyValueMap);
-	const int pluralNamesOffset = ExeData::get(section, "PluralNames", keyValueMap);
+	const int singularNamesOffset = ExeData::get(section, "SingularNames", keyValueFile);
+	const int pluralNamesOffset = ExeData::get(section, "PluralNames", keyValueFile);
 
 	initStringArray(this->singularNames, data + singularNamesOffset);
 	initStringArray(this->pluralNames, data + pluralNamesOffset);
 }
 
-void ExeData::Status::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Status";
-	const int popUpOffset = ExeData::get(section, "PopUp", keyValueMap);
-	const int dateOffset = ExeData::get(section, "Date", keyValueMap);
-	const int fortifyOffset = ExeData::get(section, "Fortify", keyValueMap);
-	const int diseaseOffset = ExeData::get(section, "Disease", keyValueMap);
-	const int effectOffset = ExeData::get(section, "Effect", keyValueMap);
-	const int effectsListOffset = ExeData::get(section, "EffectsList", keyValueMap);
+	const int popUpOffset = ExeData::get(section, "PopUp", keyValueFile);
+	const int dateOffset = ExeData::get(section, "Date", keyValueFile);
+	const int fortifyOffset = ExeData::get(section, "Fortify", keyValueFile);
+	const int diseaseOffset = ExeData::get(section, "Disease", keyValueFile);
+	const int effectOffset = ExeData::get(section, "Effect", keyValueFile);
+	const int effectsListOffset = ExeData::get(section, "EffectsList", keyValueFile);
 
 	this->popUp = ExeData::readString(data + popUpOffset);
 	this->date = ExeData::readString(data + dateOffset);
@@ -588,22 +588,22 @@ void ExeData::Status::init(const char *data, const KeyValueMap &keyValueMap)
 	initStringArray(this->effectsList, data + effectsListOffset);
 }
 
-void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Travel::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Travel";
-	const int locationFormatTextsOffset = ExeData::get(section, "LocationFormatTexts", keyValueMap);
-	const int dayPredictionOffset = ExeData::get(section, "DayPrediction", keyValueMap);
-	const int distancePredictionOffset = ExeData::get(section, "DistancePrediction", keyValueMap);
-	const int arrivalDatePredictionOffset = ExeData::get(section, "ArrivalDatePrediction", keyValueMap);
-	const int alreadyAtDestinationOffset = ExeData::get(section, "AlreadyAtDestination", keyValueMap);
-	const int noDestinationOffset = ExeData::get(section, "NoDestination", keyValueMap);
-	const int arrivalPopUpLocationOffset = ExeData::get(section, "ArrivalPopUpLocation", keyValueMap);
-	const int arrivalPopUpDateOffset = ExeData::get(section, "ArrivalPopUpDate", keyValueMap);
-	const int arrivalPopUpDaysOffset = ExeData::get(section, "ArrivalPopUpDays", keyValueMap);
-	const int arrivalCenterProvinceLocationOffset = ExeData::get(section, "ArrivalCenterProvinceLocation", keyValueMap);
-	const int searchTitleTextOffset = ExeData::get(section, "SearchTitleText", keyValueMap);
-	const int staffDungeonSplashesOffset = ExeData::get(section, "StaffDungeonSplashes", keyValueMap);
-	const int staffDungeonSplashIndicesOffset = ExeData::get(section, "StaffDungeonSplashIndices", keyValueMap);
+	const int locationFormatTextsOffset = ExeData::get(section, "LocationFormatTexts", keyValueFile);
+	const int dayPredictionOffset = ExeData::get(section, "DayPrediction", keyValueFile);
+	const int distancePredictionOffset = ExeData::get(section, "DistancePrediction", keyValueFile);
+	const int arrivalDatePredictionOffset = ExeData::get(section, "ArrivalDatePrediction", keyValueFile);
+	const int alreadyAtDestinationOffset = ExeData::get(section, "AlreadyAtDestination", keyValueFile);
+	const int noDestinationOffset = ExeData::get(section, "NoDestination", keyValueFile);
+	const int arrivalPopUpLocationOffset = ExeData::get(section, "ArrivalPopUpLocation", keyValueFile);
+	const int arrivalPopUpDateOffset = ExeData::get(section, "ArrivalPopUpDate", keyValueFile);
+	const int arrivalPopUpDaysOffset = ExeData::get(section, "ArrivalPopUpDays", keyValueFile);
+	const int arrivalCenterProvinceLocationOffset = ExeData::get(section, "ArrivalCenterProvinceLocation", keyValueFile);
+	const int searchTitleTextOffset = ExeData::get(section, "SearchTitleText", keyValueFile);
+	const int staffDungeonSplashesOffset = ExeData::get(section, "StaffDungeonSplashes", keyValueFile);
+	const int staffDungeonSplashIndicesOffset = ExeData::get(section, "StaffDungeonSplashIndices", keyValueFile);
 
 	initStringArray(this->locationFormatTexts, data + locationFormatTextsOffset);
 	initStringArray(this->dayPrediction, data + dayPredictionOffset);
@@ -620,29 +620,29 @@ void ExeData::Travel::init(const char *data, const KeyValueMap &keyValueMap)
 	initInt8Array(this->staffDungeonSplashIndices, data + staffDungeonSplashIndicesOffset);
 }
 
-void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "UI";
-	const int chooseClassListOffset = ExeData::get(section, "ChooseClassList", keyValueMap);
-	const int buyingWeaponsOffset = ExeData::get(section, "BuyingWeapons", keyValueMap);
-	const int buyingArmorOffset = ExeData::get(section, "BuyingArmor", keyValueMap);
-	const int spellmakerOffset = ExeData::get(section, "Spellmaker", keyValueMap);
-	const int popUp5Offset = ExeData::get(section, "PopUp5", keyValueMap);
-	const int loadSaveOffset = ExeData::get(section, "LoadSave", keyValueMap);
-	const int charClassSelectionOffset = ExeData::get(section, "CharacterClassSelection", keyValueMap);
-	const int buyingMagicItemsOffset = ExeData::get(section, "BuyingMagicItems", keyValueMap);
-	const int travelCitySelectionOffset = ExeData::get(section, "TravelCitySelection", keyValueMap);
-	const int dialogueOffset = ExeData::get(section, "Dialogue", keyValueMap);
-	const int roomSelectionAndCuresOffset = ExeData::get(section, "RoomSelectionAndCures", keyValueMap);
-	const int generalLootAndSellingOffset = ExeData::get(section, "GeneralLootAndSelling", keyValueMap);
-	const int followerPortraitPositionsOffset = ExeData::get(section, "FollowerPortraitPositions", keyValueMap);
-	const int maleArmorClassPositionsOffset = ExeData::get(section, "MaleArmorClassPositions", keyValueMap);
-	const int femaleArmorClassPositionsOffset = ExeData::get(section, "FemaleArmorClassPositions", keyValueMap);
-	const int helmetPaletteIndicesOffset = ExeData::get(section, "HelmetPaletteIndices", keyValueMap);
-	const int race1HelmetPaletteValuesOffset = ExeData::get(section, "Race1HelmetPaletteValues", keyValueMap);
-	const int race3HelmetPaletteValuesOffset = ExeData::get(section, "Race3HelmetPaletteValues", keyValueMap);
-	const int race4HelmetPaletteValuesOffset = ExeData::get(section, "Race4HelmetPaletteValues", keyValueMap);
-	const int currentWorldPositionOffset = ExeData::get(section, "CurrentWorldPosition", keyValueMap);
+	const int chooseClassListOffset = ExeData::get(section, "ChooseClassList", keyValueFile);
+	const int buyingWeaponsOffset = ExeData::get(section, "BuyingWeapons", keyValueFile);
+	const int buyingArmorOffset = ExeData::get(section, "BuyingArmor", keyValueFile);
+	const int spellmakerOffset = ExeData::get(section, "Spellmaker", keyValueFile);
+	const int popUp5Offset = ExeData::get(section, "PopUp5", keyValueFile);
+	const int loadSaveOffset = ExeData::get(section, "LoadSave", keyValueFile);
+	const int charClassSelectionOffset = ExeData::get(section, "CharacterClassSelection", keyValueFile);
+	const int buyingMagicItemsOffset = ExeData::get(section, "BuyingMagicItems", keyValueFile);
+	const int travelCitySelectionOffset = ExeData::get(section, "TravelCitySelection", keyValueFile);
+	const int dialogueOffset = ExeData::get(section, "Dialogue", keyValueFile);
+	const int roomSelectionAndCuresOffset = ExeData::get(section, "RoomSelectionAndCures", keyValueFile);
+	const int generalLootAndSellingOffset = ExeData::get(section, "GeneralLootAndSelling", keyValueFile);
+	const int followerPortraitPositionsOffset = ExeData::get(section, "FollowerPortraitPositions", keyValueFile);
+	const int maleArmorClassPositionsOffset = ExeData::get(section, "MaleArmorClassPositions", keyValueFile);
+	const int femaleArmorClassPositionsOffset = ExeData::get(section, "FemaleArmorClassPositions", keyValueFile);
+	const int helmetPaletteIndicesOffset = ExeData::get(section, "HelmetPaletteIndices", keyValueFile);
+	const int race1HelmetPaletteValuesOffset = ExeData::get(section, "Race1HelmetPaletteValues", keyValueFile);
+	const int race3HelmetPaletteValuesOffset = ExeData::get(section, "Race3HelmetPaletteValues", keyValueFile);
+	const int race4HelmetPaletteValuesOffset = ExeData::get(section, "Race4HelmetPaletteValues", keyValueFile);
+	const int currentWorldPositionOffset = ExeData::get(section, "CurrentWorldPosition", keyValueFile);
 
 	this->chooseClassList.init(data + chooseClassListOffset);
 	this->buyingWeapons.init(data + buyingWeaponsOffset);
@@ -666,17 +666,17 @@ void ExeData::UI::init(const char *data, const KeyValueMap &keyValueMap)
 	this->currentWorldPosition = ExeData::readString(data + currentWorldPositionOffset);
 }
 
-void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::WallHeightTables::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "WallHeightTables";
-	const int box1aOffset = ExeData::get(section, "Box1A", keyValueMap);
-	const int box1bOffset = ExeData::get(section, "Box1B", keyValueMap);
-	const int box1cOffset = ExeData::get(section, "Box1C", keyValueMap);
-	const int box2aOffset = ExeData::get(section, "Box2A", keyValueMap);
-	const int box2bOffset = ExeData::get(section, "Box2B", keyValueMap);
-	const int box3aOffset = ExeData::get(section, "Box3A", keyValueMap);
-	const int box3bOffset = ExeData::get(section, "Box3B", keyValueMap);
-	const int box4Offset = ExeData::get(section, "Box4", keyValueMap);
+	const int box1aOffset = ExeData::get(section, "Box1A", keyValueFile);
+	const int box1bOffset = ExeData::get(section, "Box1B", keyValueFile);
+	const int box1cOffset = ExeData::get(section, "Box1C", keyValueFile);
+	const int box2aOffset = ExeData::get(section, "Box2A", keyValueFile);
+	const int box2bOffset = ExeData::get(section, "Box2B", keyValueFile);
+	const int box3aOffset = ExeData::get(section, "Box3A", keyValueFile);
+	const int box3bOffset = ExeData::get(section, "Box3B", keyValueFile);
+	const int box4Offset = ExeData::get(section, "Box4", keyValueFile);
 
 	initInt16Array(this->box1a, data + box1aOffset);
 	initInt16Array(this->box1b, data + box1bOffset);
@@ -688,14 +688,14 @@ void ExeData::WallHeightTables::init(const char *data, const KeyValueMap &keyVal
 	initInt16Array(this->box4, data + box4Offset);
 }
 
-void ExeData::Wilderness::init(const char *data, const KeyValueMap &keyValueMap)
+void ExeData::Wilderness::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Wilderness";
-	const int normalBlocksOffset = ExeData::get(section, "NormalBlocks", keyValueMap);
-	const int villageBlocksOffset = ExeData::get(section, "VillageBlocks", keyValueMap);
-	const int dungeonBlocksOffset = ExeData::get(section, "DungeonBlocks", keyValueMap);
-	const int tavernBlocksOffset = ExeData::get(section, "TavernBlocks", keyValueMap);
-	const int templeBlocksOffset = ExeData::get(section, "TempleBlocks", keyValueMap);
+	const int normalBlocksOffset = ExeData::get(section, "NormalBlocks", keyValueFile);
+	const int villageBlocksOffset = ExeData::get(section, "VillageBlocks", keyValueFile);
+	const int dungeonBlocksOffset = ExeData::get(section, "DungeonBlocks", keyValueFile);
+	const int tavernBlocksOffset = ExeData::get(section, "TavernBlocks", keyValueFile);
+	const int templeBlocksOffset = ExeData::get(section, "TempleBlocks", keyValueFile);
 
 	auto initWildBlockList = [](std::vector<uint8_t> &vec, const char *data)
 	{
@@ -721,9 +721,9 @@ const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.tx
 const char ExeData::PAIR_SEPARATOR = ',';
 
 int ExeData::get(const std::string &section, const std::string &key,
-	const KeyValueMap &keyValueMap)
+	const KeyValueFile &keyValueFile)
 {
-	const std::string &valueStr = keyValueMap.getString(section, key);
+	const std::string &valueStr = keyValueFile.getString(section, key);
 
 	// Make sure the value only has an offset and isn't an offset + length pair.
 	DebugAssertMsg(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string::npos,
@@ -738,9 +738,9 @@ int ExeData::get(const std::string &section, const std::string &key,
 }
 
 std::pair<int, int> ExeData::getPair(const std::string &section, const std::string &key,
-	const KeyValueMap &keyValueMap)
+	const KeyValueFile &keyValueFile)
 {
-	const std::string &valueStr = keyValueMap.getString(section, key);
+	const std::string &valueStr = keyValueFile.getString(section, key);
 
 	// Make sure the value has a comma-separated offset + length pair.
 	const std::vector<std::string> tokens = String::split(valueStr, ExeData::PAIR_SEPARATOR);
@@ -820,24 +820,24 @@ bool ExeData::init(bool floppyVersion)
 	// Load key-value map file.
 	const std::string &mapFilename = floppyVersion ?
 		ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
-	const KeyValueMap keyValueMap(Platform::getBasePath() + mapFilename);
+	const KeyValueFile keyValueFile(Platform::getBasePath() + mapFilename);
 
 	// Initialize members with the executable mappings.
-	this->calendar.init(dataPtr, keyValueMap);
-	this->charClasses.init(dataPtr, keyValueMap);
-	this->charCreation.init(dataPtr, keyValueMap);
-	this->cityGen.init(dataPtr, keyValueMap);
-	this->entities.init(dataPtr, keyValueMap);
-	this->equipment.init(dataPtr, keyValueMap);
-	this->locations.init(dataPtr, keyValueMap);
-	this->logbook.init(dataPtr, keyValueMap);
-	this->meta.init(dataPtr, keyValueMap);
-	this->races.init(dataPtr, keyValueMap);
-	this->status.init(dataPtr, keyValueMap);
-	this->travel.init(dataPtr, keyValueMap);
-	this->ui.init(dataPtr, keyValueMap);
-	this->wallHeightTables.init(dataPtr, keyValueMap);
-	this->wild.init(dataPtr, keyValueMap);
+	this->calendar.init(dataPtr, keyValueFile);
+	this->charClasses.init(dataPtr, keyValueFile);
+	this->charCreation.init(dataPtr, keyValueFile);
+	this->cityGen.init(dataPtr, keyValueFile);
+	this->entities.init(dataPtr, keyValueFile);
+	this->equipment.init(dataPtr, keyValueFile);
+	this->locations.init(dataPtr, keyValueFile);
+	this->logbook.init(dataPtr, keyValueFile);
+	this->meta.init(dataPtr, keyValueFile);
+	this->races.init(dataPtr, keyValueFile);
+	this->status.init(dataPtr, keyValueFile);
+	this->travel.init(dataPtr, keyValueFile);
+	this->ui.init(dataPtr, keyValueFile);
+	this->wallHeightTables.init(dataPtr, keyValueFile);
+	this->wild.init(dataPtr, keyValueFile);
 
 	this->floppyVersion = floppyVersion;
 

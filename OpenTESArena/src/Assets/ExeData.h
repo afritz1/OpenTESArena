@@ -14,7 +14,7 @@
 // When expanding this to work with both A.EXE and ACD.EXE, maybe use a union for
 // members that differ between the two executables, with an _a/_acd suffix.
 
-class KeyValueMap;
+class KeyValueFile;
 
 class ExeData
 {
@@ -27,7 +27,7 @@ public:
 		std::array<std::string, 15> holidayNames;
 		std::array<uint16_t, 15> holidayDates;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CharacterClasses
@@ -58,7 +58,7 @@ public:
 		std::array<uint8_t, 18> lockpickingDivisors;
 		std::array<std::string, 18> preferredAttributes;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CharacterCreation
@@ -86,7 +86,7 @@ public:
 		std::string chooseAttributesReroll;
 		std::string chooseAppearance;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CityGeneration
@@ -117,7 +117,7 @@ public:
 		// The displayed name when a mage's guild *MENU voxel is right-clicked.
 		std::string magesGuildMenuName;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Entities
@@ -189,7 +189,7 @@ public:
 		std::array<uint8_t, 16> citizenColorBase;
 		std::array<uint8_t, 10> citizenSkinColors;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	// See Items wiki page for more information.
@@ -274,7 +274,7 @@ public:
 		std::array<std::string, 11> bodyPartNames; // Chest, ..., general.
 		std::array<std::string, 11> weaponAnimationFilenames; // staff.cif, ..., spell.img.
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Locations
@@ -341,14 +341,14 @@ public:
 		// Base filename for distant stars.
 		std::string starFilename;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Logbook
 	{
 		std::string isEmpty;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Meta
@@ -357,7 +357,7 @@ public:
 		// weapons lists (not necessary for this class, though).
 		uint32_t dataSegmentOffset;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Races
@@ -366,7 +366,7 @@ public:
 		std::array<std::string, 8> singularNames;
 		std::array<std::string, 8> pluralNames;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Status
@@ -382,7 +382,7 @@ public:
 		std::string effect; // With %s token.
 		std::array<std::string, 23> effectsList; // Healthy, diseased, etc..
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Travel
@@ -425,7 +425,7 @@ public:
 		// Province indices into the staff dungeon splash filenames.
 		std::array<uint8_t, 8> staffDungeonSplashIndices;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct UI
@@ -459,7 +459,7 @@ public:
 		// Displayed when pressing F2.
 		std::string currentWorldPosition;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct WallHeightTables
@@ -485,7 +485,7 @@ public:
 		std::array<uint16_t, 8> box3a, box3b;
 		std::array<uint16_t, 16> box4;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Wilderness
@@ -495,7 +495,7 @@ public:
 		std::vector<uint8_t> normalBlocks, villageBlocks, dungeonBlocks,
 			tavernBlocks, templeBlocks;
 
-		void init(const char *data, const KeyValueMap &keyValueMap);
+		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 private:
 	static const std::string CD_VERSION_MAP_FILENAME;
@@ -504,11 +504,11 @@ private:
 
 	// Gets the offset value from the given section and key.
 	static int get(const std::string &section, const std::string &key,
-		const KeyValueMap &keyValueMap);
+		const KeyValueFile &keyValueFile);
 
 	// Gets the offset + length value from the given section and key.
 	static std::pair<int, int> getPair(const std::string &section, const std::string &key,
-		const KeyValueMap &keyValueMap);
+		const KeyValueFile &keyValueFile);
 
 	static int8_t readInt8(const char *data);
 	static uint8_t readUint8(const char *data);

@@ -1,5 +1,5 @@
-#ifndef KEY_VALUE_MAP_H
-#define KEY_VALUE_MAP_H
+#ifndef KEY_VALUE_FILE_H
+#define KEY_VALUE_FILE_H
 
 #include <string>
 #include <unordered_map>
@@ -8,7 +8,7 @@
 // Pairs are associated with a section and can be listed in the file in any order.
 // Comments can be anywhere in a line.
 
-class KeyValueMap
+class KeyValueFile
 {
 public:
 	typedef std::unordered_map<std::string, std::string> SectionMap;
@@ -27,7 +27,7 @@ public:
 	static const char SECTION_BACK;
 
 	// Converts key-value pairs in a file to string->string mappings.
-	KeyValueMap(const std::string &filename);
+	KeyValueFile(const std::string &filename);
 
 	// Typed getter methods for convenience.
 	bool getBoolean(const std::string &section, const std::string &key) const;
