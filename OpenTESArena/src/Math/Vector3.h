@@ -113,15 +113,15 @@ const Vector3f<T> Vector3f<T>::UnitZ(
 
 // The template instantiations are at the end of the .cpp file.
 // - size_t vector types cause issues with GCC 4.8.4 32-bit (identical to unsigned int).
-typedef Vector3i<char> Char3;
-typedef Vector3i<unsigned char> Uchar3;
-typedef Vector3i<short> Short3;
-typedef Vector3i<unsigned short> Ushort3;
-typedef Vector3i<int> Int3;
-typedef Vector3i<unsigned int> Uint3;
+using Char3 = Vector3i<char>;
+using Uchar3 = Vector3i<unsigned char>;
+using Short3 = Vector3i<short>;
+using Ushort3 = Vector3i<unsigned short>;
+using Int3 = Vector3i<int>;
+using Uint3 = Vector3i<unsigned int>;
 
-typedef Vector3f<float> Float3;
-typedef Vector3f<double> Double3;
+using Float3 = Vector3f<float>;
+using Double3 = Vector3f<double>;
 
 // Hash definition for unordered_map<Int3, ...>.
 namespace std

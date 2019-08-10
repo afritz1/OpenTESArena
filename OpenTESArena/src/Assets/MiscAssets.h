@@ -78,9 +78,9 @@ public:
 	// - The format is like: [[3][3][3][3][3]] ... [[3][3][3][3][3]]
 	struct TradeText
 	{
-		typedef std::array<std::string, 3> RandomArray;
-		typedef std::array<RandomArray, 5> PersonalityArray;
-		typedef std::array<PersonalityArray, 5> FunctionArray;
+		using RandomArray = std::array<std::string, 3>;
+		using PersonalityArray = std::array<RandomArray, 5>;
+		using FunctionArray = std::array<PersonalityArray, 5>;
 		FunctionArray equipment, magesGuild, selling, tavern;
 	};
 

@@ -46,7 +46,7 @@ public:
 };
 
 // The template instantiations are at the end of the .cpp file.
-typedef Matrix4<float> Matrix4f;
-typedef Matrix4<double> Matrix4d;
+using Matrix4f = Matrix4<float>;
+using Matrix4d = Matrix4<double>;
 
 #endif

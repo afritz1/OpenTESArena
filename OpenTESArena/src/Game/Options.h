@@ -12,10 +12,10 @@ enum class PlayerInterface;
 class Options
 {
 private:
-	typedef std::unordered_map<std::string, bool> BoolMap;
-	typedef std::unordered_map<std::string, int> IntegerMap;
-	typedef std::unordered_map<std::string, double> DoubleMap;
-	typedef std::unordered_map<std::string, std::string> StringMap;
+	using BoolMap = std::unordered_map<std::string, bool>;
+	using IntegerMap = std::unordered_map<std::string, int>;
+	using DoubleMap = std::unordered_map<std::string, double>;
+	using StringMap = std::unordered_map<std::string, std::string>;
 
 	struct MapGroup
 	{

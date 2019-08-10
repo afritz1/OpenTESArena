@@ -412,10 +412,10 @@ public:
 	};
 
 	// For SPELLS.0x (custom spells).
-	typedef std::array<SpellData, 32> Spells;
+	using Spells = std::array<SpellData, 32>;
 
 	// For SPELLSG.0x (general spells).
-	typedef std::array<SpellData, 128> Spellsg;
+	using Spellsg = std::array<SpellData, 128>;
 
 	// For IN#.0x.
 	struct Tavern

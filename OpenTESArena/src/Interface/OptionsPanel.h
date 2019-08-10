@@ -46,7 +46,7 @@ private:
 	class BoolOption : public Option
 	{
 	public:
-		typedef std::function<void(bool)> Callback;
+		using Callback = std::function<void(bool)>;
 	private:
 		bool value;
 		Callback callback;
@@ -64,7 +64,7 @@ private:
 	class IntOption : public Option
 	{
 	public:
-		typedef std::function<void(int)> Callback;
+		using Callback = std::function<void(int)>;
 	private:
 		int value, delta, min, max;
 		Callback callback;
@@ -87,7 +87,7 @@ private:
 	class DoubleOption : public Option
 	{
 	public:
-		typedef std::function<void(double)> Callback;
+		using Callback = std::function<void(double)>;
 	private:
 		double value, delta, min, max;
 		int precision;
@@ -109,7 +109,7 @@ private:
 	class StringOption : public Option
 	{
 	public:
-		typedef std::function<void(const std::string&)> Callback;
+		using Callback = std::function<void(const std::string&)>;
 	private:
 		std::string value;
 		Callback callback;

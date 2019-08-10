@@ -23,7 +23,7 @@ public:
     virtual bool seek(size_t offset) = 0;
 };
 
-typedef std::unique_ptr<MidiSong> MidiSongPtr;
+using MidiSongPtr = std::unique_ptr<MidiSong>;
 
 /* Pure virtual interface for opening MIDI-style songs. Should be implemented
  * as a factory singleton.

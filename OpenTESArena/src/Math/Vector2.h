@@ -143,15 +143,15 @@ template <typename T>
 const Vector2f<T> Vector2f<T>::UnitY(static_cast<T>(0.0), static_cast<T>(1.0));
 
 // The template instantiations are at the end of the .cpp file.
-typedef Vector2i<char> Char2;
-typedef Vector2i<unsigned char> Uchar2;
-typedef Vector2i<short> Short2;
-typedef Vector2i<unsigned short> Ushort2;
-typedef Vector2i<int> Int2;
-typedef Vector2i<unsigned int> Uint2;
+using Char2 = Vector2i<char>;
+using Uchar2 = Vector2i<unsigned char>;
+using Short2 = Vector2i<short>;
+using Ushort2 = Vector2i<unsigned short>;
+using Int2 = Vector2i<int>;
+using Uint2 = Vector2i<unsigned int>;
 
-typedef Vector2f<float> Float2;
-typedef Vector2f<double> Double2;
+using Float2 = Vector2f<float>;
+using Double2 = Vector2f<double>;
 
 // Hash definition for unordered_map<Int2, ...>.
 namespace std

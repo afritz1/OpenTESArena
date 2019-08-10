@@ -106,14 +106,14 @@ const Vector4f<T> Vector4f<T>::UnitW(
 	static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(0.0), static_cast<T>(1.0));
 
 // The template instantiations are at the end of the .cpp file.
-typedef Vector4i<char> Char4;
-typedef Vector4i<unsigned char> Uchar4;
-typedef Vector4i<short> Short4;
-typedef Vector4i<unsigned short> Ushort4;
-typedef Vector4i<int> Int4;
-typedef Vector4i<unsigned int> Uint4;
+using Char4 = Vector4i<char>;
+using Uchar4 = Vector4i<unsigned char>;
+using Short4 = Vector4i<short>;
+using Ushort4 = Vector4i<unsigned short>;
+using Int4 = Vector4i<int>;
+using Uint4 = Vector4i<unsigned int>;
 
-typedef Vector4f<float> Float4;
-typedef Vector4f<double> Double4;
+using Float4 = Vector4f<float>;
+using Double4 = Vector4f<double>;
 
 #endif
