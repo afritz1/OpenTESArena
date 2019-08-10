@@ -9,6 +9,7 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 
 namespace
 {
@@ -723,10 +724,14 @@ const char ExeData::PAIR_SEPARATOR = ',';
 int ExeData::get(const std::string &section, const std::string &key,
 	const KeyValueFile &keyValueFile)
 {
-	const std::string &valueStr = keyValueFile.getString(section, key);
+	std::string_view valueStr;
+	if (!keyValueFile.tryGetString(section, key, valueStr))
+	{
+		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section + "\").");
+	}
 
 	// Make sure the value only has an offset and isn't an offset + length pair.
-	DebugAssertMsg(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string::npos,
+	DebugAssertMsg(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string_view::npos,
 		"\"" + key + "\" (section \"" + section + "\") should only have an offset.");
 
 	int offset;
@@ -740,15 +745,21 @@ int ExeData::get(const std::string &section, const std::string &key,
 std::pair<int, int> ExeData::getPair(const std::string &section, const std::string &key,
 	const KeyValueFile &keyValueFile)
 {
-	const std::string &valueStr = keyValueFile.getString(section, key);
+	std::string_view valueStr;
+	if (!keyValueFile.tryGetString(section, key, valueStr))
+	{
+		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section + "\").");
+	}
 
 	// Make sure the value has a comma-separated offset + length pair.
-	const std::vector<std::string> tokens = String::split(valueStr, ExeData::PAIR_SEPARATOR);
-	DebugAssertMsg(tokens.size() == 2, "\"" + key + "\" (section \"" + section +
-		"\") should have an offset and length.");
+	std::array<std::string_view, 2> tokens;
+	if (!StringView::splitExpected(valueStr, ExeData::PAIR_SEPARATOR, tokens))
+	{
+		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section + "\").");
+	}
 
-	const std::string &offsetStr = tokens.front();
-	const std::string &lengthStr = tokens.at(1);
+	const std::string_view &offsetStr = tokens[0];
+	const std::string_view &lengthStr = tokens[1];
 	int offset, length;
 
 	std::stringstream ss;
@@ -788,14 +799,9 @@ std::string ExeData::readString(const char *data)
 	return std::string(data);
 }
 
-std::string ExeData::readString(const char *data, int length)
-{
-	return std::string(data, length);
-}
-
 std::string ExeData::readFixedString(const char *data, const std::pair<int, int> &pair)
 {
-	return ExeData::readString(data + pair.first, pair.second);
+	return std::string(data + pair.first, pair.second);
 }
 
 bool ExeData::isFloppyVersion() const
@@ -811,7 +817,7 @@ bool ExeData::init(bool floppyVersion)
 	ExeUnpacker exe;
 	if (!exe.init(exeFilename.c_str()))
 	{
-		DebugLogError("Could not init .EXE unpacker for \"" + exeFilename + "\".");
+		DebugLogError("Couldn't init .EXE unpacker for \"" + exeFilename + "\".");
 		return false;
 	}
 
@@ -820,7 +826,12 @@ bool ExeData::init(bool floppyVersion)
 	// Load key-value map file.
 	const std::string &mapFilename = floppyVersion ?
 		ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
-	const KeyValueFile keyValueFile(Platform::getBasePath() + mapFilename);
+	KeyValueFile keyValueFile;
+	if (!keyValueFile.init((Platform::getBasePath() + mapFilename).c_str()))
+	{
+		DebugLogError("Couldn't init KeyValueFile for \"" + exeFilename + "\".");
+		return false;
+	}
 
 	// Initialize members with the executable mappings.
 	this->calendar.init(dataPtr, keyValueFile);

@@ -515,7 +515,6 @@ private:
 	static int16_t readInt16(const char *data);
 	static uint16_t readUint16(const char *data);
 	static std::string readString(const char *data); // Null-terminated string.
-	static std::string readString(const char *data, int length); // Fixed-size string.
 
 	// Convenience method for reading a fixed-size string given the .EXE text pointer
 	// and an offset + length pair.

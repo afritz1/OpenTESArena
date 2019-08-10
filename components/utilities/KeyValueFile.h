@@ -2,6 +2,7 @@
 #define KEY_VALUE_FILE_H
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 // A key-value map reads in a key-value pair file that uses the "key = value" syntax.
@@ -15,10 +16,9 @@ public:
 private:
 	// Each section has a map of key-value pairs.
 	std::unordered_map<std::string, SectionMap> sectionMaps;
-	std::string filename;
 
 	// Use this function to access the section maps since it does error checking.
-	const std::string &getValue(const std::string &section, const std::string &key) const;
+	bool tryGetValue(const std::string &section, const std::string &key, std::string_view &value) const;
 public:
 	// These are public so other code can use them (i.e., for options writing).
 	static const char COMMENT;
@@ -26,14 +26,13 @@ public:
 	static const char SECTION_FRONT;
 	static const char SECTION_BACK;
 
-	// Converts key-value pairs in a file to string->string mappings.
-	KeyValueFile(const std::string &filename);
+	bool init(const char *filename);
 
 	// Typed getter methods for convenience.
-	bool getBoolean(const std::string &section, const std::string &key) const;
-	int getInteger(const std::string &section, const std::string &key) const;
-	double getDouble(const std::string &section, const std::string &key) const;
-	const std::string &getString(const std::string &section, const std::string &key) const;
+	bool tryGetBoolean(const std::string &section, const std::string &key, bool &value) const;
+	bool tryGetInteger(const std::string &section, const std::string &key, int &value) const;
+	bool tryGetDouble(const std::string &section, const std::string &key, double &value) const;
+	bool tryGetString(const std::string &section, const std::string &key, std::string_view &value) const;
 
 	// Gets a reference to all section maps. Intended for iteration.
 	const std::unordered_map<std::string, SectionMap> &getAll() const;

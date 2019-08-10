@@ -100,11 +100,15 @@ const double Options::MAX_TIME_SCALE = 1.0;
 const int Options::MIN_STAR_DENSITY_MODE = 0;
 const int Options::MAX_STAR_DENSITY_MODE = 2;
 
-void Options::load(const std::string &filename,
+void Options::load(const char *filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
 {
 	// Read the key-value pairs from each section in the given options file.
-	const KeyValueFile keyValueFile(filename);
+	KeyValueFile keyValueFile;
+	if (!keyValueFile.init(filename))
+	{
+		DebugCrash("Couldn't load \"" + std::string(filename) + "\".");
+	}
 
 	for (const auto &sectionPair : keyValueFile.getAll())
 	{
@@ -166,23 +170,43 @@ void Options::load(const std::string &filename,
 				// an unnecessary look-up.
 				if (type == OptionType::Bool)
 				{
-					mapGroup.bools.insert(std::make_pair(
-						key, keyValueFile.getBoolean(section, key)));
+					bool value;
+					if (!keyValueFile.tryGetBoolean(section, key, value))
+					{
+						DebugCrash("Couldn't get boolean \"" + key + "\" (section \"" + section + "\").");
+					}
+
+					mapGroup.bools.insert(std::make_pair(key, value));
 				}
 				else if (type == OptionType::Int)
 				{
-					mapGroup.integers.insert(std::make_pair(
-						key, keyValueFile.getInteger(section, key)));
+					int value;
+					if (!keyValueFile.tryGetInteger(section, key, value))
+					{
+						DebugCrash("Couldn't get integer \"" + key + "\" (section \"" + section + "\").");
+					}
+
+					mapGroup.integers.insert(std::make_pair(key, value));
 				}
 				else if (type == OptionType::Double)
 				{
-					mapGroup.doubles.insert(std::make_pair(
-						key, keyValueFile.getDouble(section, key)));
+					double value;
+					if (!keyValueFile.tryGetDouble(section, key, value))
+					{
+						DebugCrash("Couldn't get double \"" + key + "\" (section \"" + section + "\").");
+					}
+
+					mapGroup.doubles.insert(std::make_pair(key, value));
 				}
 				else if (type == OptionType::String)
 				{
-					mapGroup.strings.insert(std::make_pair(
-						key, keyValueFile.getString(section, key)));
+					std::string_view value;
+					if (!keyValueFile.tryGetString(section, key, value))
+					{
+						DebugCrash("Couldn't get string \"" + key + "\" (section \"" + section + "\").");
+					}
+
+					mapGroup.strings.insert(std::make_pair(key, std::string(value)));
 				}
 			}
 			else
@@ -596,14 +620,14 @@ void Options::loadDefaults(const std::string &filename)
 {
 	DebugLog("Reading defaults \"" + filename + "\".");
 
-	Options::load(filename, this->defaultMaps);
+	Options::load(filename.c_str(), this->defaultMaps);
 }
 
 void Options::loadChanges(const std::string &filename)
 {
 	DebugLog("Reading changes \"" + filename + "\".");
 
-	Options::load(filename, this->changedMaps);
+	Options::load(filename.c_str(), this->changedMaps);
 }
 
 void Options::saveChanges()

@@ -31,7 +31,7 @@ private:
 	std::unordered_map<std::string, MapGroup> defaultMaps, changedMaps;
 
 	// Opens the given file and reads its key-value pairs into the given maps.
-	static void load(const std::string &filename,
+	static void load(const char *filename,
 		std::unordered_map<std::string, Options::MapGroup> &maps);
 
 	bool getBool(const std::string &section, const std::string &key) const;

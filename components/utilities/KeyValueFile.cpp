@@ -1,32 +1,22 @@
 #include <sstream>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
 #include "File.h"
 #include "KeyValueFile.h"
+#include "String.h"
 #include "StringView.h"
 #include "../debug/Debug.h"
-
-namespace
-{
-	const std::unordered_map<std::string, bool> BooleanStrings =
-	{
-		{ "True", true },
-		{ "true", true },
-		{ "False", false },
-		{ "false", false }
-	};
-}
 
 const char KeyValueFile::COMMENT = '#';
 const char KeyValueFile::PAIR_SEPARATOR = '=';
 const char KeyValueFile::SECTION_FRONT = '[';
 const char KeyValueFile::SECTION_BACK = ']';
 
-KeyValueFile::KeyValueFile(const std::string &filename)
-	: filename(filename)
+bool KeyValueFile::init(const char *filename)
 {
-	const std::string text = File::readAllText(filename.c_str());
+	const std::string text = File::readAllText(filename);
 	std::istringstream iss(text);
 
 	// Check each line for a valid section or key-value pair. Start the line numbers at 1
@@ -79,8 +69,9 @@ KeyValueFile::KeyValueFile(const std::string &filename)
 		else if (filteredLine.size() < 3)
 		{
 			// Not long enough to be a section or key-value pair.
-			DebugCrash("Syntax error \"" + std::string(filteredLine) + "\" (line " +
+			DebugLogError("Syntax error \"" + std::string(filteredLine) + "\" (line " +
 				std::to_string(lineNumber) + ") in " + filename + ".");
+			return false;
 		}
 
 		// See if it's a section line or key-value pair line.
@@ -113,36 +104,38 @@ KeyValueFile::KeyValueFile(const std::string &filename)
 				}
 				else
 				{
-					DebugCrash("Section \"" + sectionNameStr + "\" (line " +
+					DebugLogError("Section \"" + sectionNameStr + "\" (line " +
 						std::to_string(lineNumber) + ") already defined in " + filename + ".");
+					return false;
 				}
 			}
 			else
 			{
-				DebugCrash("Invalid section \"" + std::string(filteredLine) + "\" (line " +
+				DebugLogError("Invalid section \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
+				return false;
 			}
 		}
 		else if (filteredLine.find(KeyValueFile::PAIR_SEPARATOR) != std::string::npos)
 		{
 			// Key-value pair line. There must be two tokens: key and value.
-			const std::vector<std::string_view> tokens = StringView::split(
-				filteredLine, KeyValueFile::PAIR_SEPARATOR);
-
-			if (tokens.size() != 2)
+			std::array<std::string_view, 2> tokens;
+			if (!StringView::splitExpected(filteredLine, KeyValueFile::PAIR_SEPARATOR, tokens))
 			{
-				DebugCrash("Invalid pair \"" + std::string(filteredLine) + "\" (line " +
+				DebugLogError("Invalid pair \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
+				return false;
 			}
 
 			// Trim trailing whitespace from the key and leading whitespace from the value.
-			std::string_view key = StringView::trimBack(tokens.front());
-			std::string_view value = StringView::trimFront(tokens.back());
+			const std::string_view &key = StringView::trimBack(tokens[0]);
+			const std::string_view &value = StringView::trimFront(tokens[1]);
 
 			if (key.size() == 0)
 			{
-				DebugCrash("Empty key in \"" + std::string(filteredLine) + "\" (line " +
+				DebugLogError("Empty key in \"" + std::string(filteredLine) + "\" (line " +
 					std::to_string(lineNumber) + ") in " + filename + ".");
+				return false;
 			}
 
 			// Add the key-value pair to the active section map.
@@ -161,65 +154,118 @@ KeyValueFile::KeyValueFile(const std::string &filename)
 		else
 		{
 			// Filtered line is not a section or key-value pair.
-			DebugCrash("Invalid line \"" + line + "\" (line " +
+			DebugLogError("Invalid line \"" + line + "\" (line " +
 				std::to_string(lineNumber) + ") in " + filename + ".");
+			return false;
 		}
 	}
+
+	return true;
 }
 
-const std::string &KeyValueFile::getValue(const std::string &section, const std::string &key) const
+bool KeyValueFile::tryGetValue(const std::string &section, const std::string &key,
+	std::string_view &value) const
 {
+	// See if the section exists.
 	const auto sectionIter = this->sectionMaps.find(section);
-
-	// @todo: redesign so it returns success instead of needing exceptions.
 	if (sectionIter == this->sectionMaps.end())
 	{
-		throw DebugException("Section \"" + section +
-			"\" not found in " + this->filename + ".");
+		return false;
 	}
 	else
 	{
+		// See if the key exists in the section.
 		const SectionMap &sectionMap = sectionIter->second;
 		const auto keyIter = sectionMap.find(key);
 		if (keyIter == sectionMap.end())
 		{
-			throw DebugException("Key \"" + key + "\" not found in " +
-				KeyValueFile::SECTION_FRONT + section + KeyValueFile::SECTION_BACK +
-				" in " + this->filename + ".");
+			return false;
 		}
 		else
 		{
-			return keyIter->second;
+			value = keyIter->second;
+			return true;
 		}
 	}
 }
 
-bool KeyValueFile::getBoolean(const std::string &section, const std::string &key) const
+bool KeyValueFile::tryGetBoolean(const std::string &section, const std::string &key, bool &value) const
 {
-	const std::string &value = this->getValue(section, key);
-	const auto iter = BooleanStrings.find(value);
-	DebugAssertMsg(iter != BooleanStrings.end(), "\"" + key + "\" value \"" +
-		value + "\" in " + this->filename + " must be true or false.");
+	std::string_view str;
+	if (!this->tryGetValue(section, key, str))
+	{
+		return false;
+	}
+	else
+	{
+		// Convert to lowercase for easier comparison.
+		const std::string lowerStr = String::toLowercase(std::string(str));
 
-	return iter->second;
+		if (lowerStr == "true")
+		{
+			value = true;
+			return true;
+		}
+		else if (lowerStr == "false")
+		{
+			value = false;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 }
 
-int KeyValueFile::getInteger(const std::string &section, const std::string &key) const
+bool KeyValueFile::tryGetInteger(const std::string &section, const std::string &key, int &value) const
 {
-	const std::string &value = this->getValue(section, key);
-	return std::stoi(value);
+	std::string_view str;
+	if (!this->tryGetValue(section, key, str))
+	{
+		return false;
+	}
+	else
+	{
+		try
+		{
+			size_t index = 0;
+			value = std::stoi(std::string(str), &index);
+			return index == str.size();
+		}
+		catch (std::exception)
+		{
+			return false;
+		}
+	}
 }
 
-double KeyValueFile::getDouble(const std::string &section, const std::string &key) const
+bool KeyValueFile::tryGetDouble(const std::string &section, const std::string &key, double &value) const
 {
-	const std::string &value = this->getValue(section, key);
-	return std::stod(value);
+	std::string_view str;
+	if (!this->tryGetValue(section, key, str))
+	{
+		return false;
+	}
+	else
+	{
+		try
+		{
+			size_t index = 0;
+			value = std::stod(std::string(str), &index);
+			return index == str.size();
+		}
+		catch (std::exception)
+		{
+			return false;
+		}
+	}
 }
 
-const std::string &KeyValueFile::getString(const std::string &section, const std::string &key) const
+bool KeyValueFile::tryGetString(const std::string &section, const std::string &key,
+	std::string_view &value) const
 {
-	const std::string &value = this->getValue(section, key);
-	return value;
+	return this->tryGetValue(section, key, value);
 }
 
 const std::unordered_map<std::string, KeyValueFile::SectionMap> &KeyValueFile::getAll() const
