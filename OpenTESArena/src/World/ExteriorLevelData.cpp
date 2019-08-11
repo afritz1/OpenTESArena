@@ -451,6 +451,78 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 	}
 }
 
+Buffer2D<uint8_t> ExteriorLevelData::generateWildernessIndices(uint32_t wildSeed,
+	const ExeData::Wilderness &wildData)
+{
+	const int wildWidth = 64;
+	const int wildHeight = 64;
+	Buffer2D<uint8_t> indices(wildWidth, wildHeight);
+	ArenaRandom random(wildSeed);
+
+	// Generate a random wilderness .MIF index for each wilderness chunk.
+	std::generate(indices.get(), indices.get() + (indices.getWidth() * indices.getHeight()),
+		[&wildData, &random]()
+	{
+		// Determine the wilderness block list to draw from.
+		const auto &blockList = [&wildData, &random]() -> const std::vector<uint8_t>&
+		{
+			const uint16_t normalVal = 0x6666;
+			const uint16_t villageVal = 0x4000;
+			const uint16_t dungeonVal = 0x2666;
+			const uint16_t tavernVal = 0x1999;
+			int randVal = random.next();
+
+			if (randVal < normalVal)
+			{
+				return wildData.normalBlocks;
+			}
+			else
+			{
+				randVal -= normalVal;
+				if (randVal < villageVal)
+				{
+					return wildData.villageBlocks;
+				}
+				else
+				{
+					randVal -= villageVal;
+					if (randVal < dungeonVal)
+					{
+						return wildData.dungeonBlocks;
+					}
+					else
+					{
+						randVal -= dungeonVal;
+						if (randVal < tavernVal)
+						{
+							return wildData.tavernBlocks;
+						}
+						else
+						{
+							return wildData.templeBlocks;
+						}
+					}
+				}
+			}
+		}();
+
+		const int blockListIndex = (random.next() & 0xFF) % blockList.size();
+		return blockList[blockListIndex];
+	});
+
+	// City indices in the center of the wilderness (WILD001.MIF, etc.).
+	DebugAssertMsg(wildWidth >= 2, "Wild width \"" + std::to_string(wildWidth) + "\" too small.");
+	DebugAssertMsg(wildHeight >= 2, "Wild height \"" + std::to_string(wildHeight) + "\" too small.");
+	const int cityX = (wildWidth / 2) - 1;
+	const int cityY = (wildHeight / 2) - 1;
+	indices.set(cityX, cityY, 1);
+	indices.set(cityX + 1, cityY, 2);
+	indices.set(cityX, cityY + 1, 3);
+	indices.set(cityX + 1, cityY + 1, 4);
+
+	return indices;
+}
+
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
 	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 	int gridWidth, int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)

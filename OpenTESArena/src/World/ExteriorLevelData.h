@@ -10,6 +10,8 @@
 #include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
 
+#include "components/utilities/Buffer2D.h"
+
 class ExteriorLevelData : public LevelData
 {
 private:
@@ -30,6 +32,10 @@ private:
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.
 	static void revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth);
+
+	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
+	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,
+		const ExeData::Wilderness &wildData);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
