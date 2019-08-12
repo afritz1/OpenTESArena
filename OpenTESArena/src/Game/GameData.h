@@ -150,9 +150,9 @@ public:
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
-	void loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-		int rmdBL, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void loadWilderness(int localCityID, int provinceID, WeatherType weatherType,
+		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	TimedTextBox &getTriggerText();
 	TimedTextBox &getActionText();

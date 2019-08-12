@@ -55,10 +55,10 @@ public:
 		const Int2 &startPosition, WeatherType weatherType, int currentDay, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
-	// Loads some wilderness blocks.
-	static ExteriorWorldData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
-		ClimateType climateType, WeatherType weatherType, int currentDay, int starCount,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+	// Loads wilderness for a given city on the world map.
+	static ExteriorWorldData loadWilderness(int localCityID, int provinceID,
+		WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
+		TextureManager &textureManager);
 
 	// Returns the current active interior (if any).
 	InteriorWorldData *getInterior() const;

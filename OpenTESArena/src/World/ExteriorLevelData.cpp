@@ -764,38 +764,33 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	return levelData;
 }
 
-ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinceID,
 	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	// Load WILD.MIF (blank slate, to be filled in by four .RMD files).
-	const std::string mifName = "WILD.MIF";
-	MIFFile mif;
-	if (!mif.init(mifName.c_str()))
-	{
-		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-	}
+	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &wildData = miscAssets.getExeData().wild;
+	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
+	const Buffer2D<uint8_t> wildIndices =
+		ExteriorLevelData::generateWildernessIndices(wildSeed, wildData);
 
-	const MIFFile::Level &level = mif.getLevels().front();
-	const int gridWidth = 128;
-	const int gridDepth = gridWidth;
+	const int gridWidth = 64 * wildIndices.getHeight();
+	const int gridDepth = 64 * wildIndices.getWidth();
 
-	// Copy voxel data into temp buffers. Each floor in the four 64x64 wilderness blocks
-	// is 8192 bytes. Using vectors here because arrays are too large on the stack.
-	std::vector<uint16_t> tempFlor(RMDFile::ELEMENTS_PER_FLOOR * 4);
-	std::vector<uint16_t> tempMap1(tempFlor.size());
-	std::vector<uint16_t> tempMap2(tempMap1.size());
-	std::copy(level.flor.begin(), level.flor.end(), tempFlor.begin());
-	std::copy(level.map1.begin(), level.map1.end(), tempMap1.begin());
-	std::copy(level.map2.begin(), level.map2.end(), tempMap2.begin());
+	// Temp buffers for voxel data.
+	const size_t voxelsPerFloor = RMDFile::ELEMENTS_PER_FLOOR *
+		(wildIndices.getWidth() * wildIndices.getHeight());
+	std::vector<uint16_t> tempFlor(voxelsPerFloor, 0);
+	std::vector<uint16_t> tempMap1(voxelsPerFloor, 0);
+	std::vector<uint16_t> tempMap2(voxelsPerFloor, 0);
 
 	auto writeRMD = [gridDepth, &tempFlor, &tempMap1, &tempMap2](
-		int rmdID, int xOffset, int zOffset)
+		uint8_t rmdID, int xOffset, int zOffset)
 	{
 		const std::string rmdName = [rmdID]()
 		{
 			std::stringstream ss;
-			ss << std::setw(3) << std::setfill('0') << rmdID;
+			ss << std::setw(3) << std::setfill('0') << static_cast<int>(rmdID);
 			return "WILD" + ss.str() + ".RMD";
 		}();
 
@@ -826,15 +821,21 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 		}
 	};
 
-	// Load four .RMD files into the wilderness skeleton, each at some X and Z offset in
-	// the voxel grid.
-	writeRMD(rmdTR, 0, 0); // Top right.
-	writeRMD(rmdTL, RMDFile::WIDTH, 0); // Top left.
-	writeRMD(rmdBR, 0, RMDFile::DEPTH); // Bottom right.
-	writeRMD(rmdBL, RMDFile::WIDTH, RMDFile::DEPTH); // Bottom left.
+	// Load .RMD files into the wilderness, each at some X and Z offset in the voxel grid.
+	for (int y = 0; y < wildIndices.getHeight(); y++)
+	{
+		for (int x = 0; x < wildIndices.getWidth(); x++)
+		{
+			// @todo: offsets are from top right; change to top left?
+			const uint8_t wildIndex = *wildIndices.get(x, y);
+			writeRMD(wildIndex, x * RMDFile::WIDTH, y * RMDFile::DEPTH);
+		}
+	}
 
 	// Create the level for the voxel data to be written into.
-	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
+	const int levelHeight = 6;
+	const std::string levelName = "WILD"; // Arbitrary
+	ExteriorLevelData levelData(gridWidth, levelHeight, gridDepth, infName, levelName);
 
 	// Empty voxel data (for air).
 	levelData.getVoxelGrid().addVoxelData(VoxelData());
@@ -847,10 +848,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int rmdTR, int rmdTL, int rm
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
-	// Generate random distant sky since this wilderness isn't anywhere in particular.
-	Random random;
-	const int localCityID = random.next() % 32;
-	const int provinceID = random.next() % 9;
+	// Generate distant sky.
 	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
 		starCount, miscAssets, textureManager);
 

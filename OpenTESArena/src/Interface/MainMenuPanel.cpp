@@ -114,7 +114,7 @@ namespace
 
 	const std::vector<std::string> WildernessLocations =
 	{
-		"WILD.MIF"
+		"WILD" // Arbitrary name (since it's not loading WILD.MIF anymore).
 	};
 
 	const std::string RandomNamedDungeon = "Random Named";
@@ -367,25 +367,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
 
-				// Pick random wilderness chunks between WILD005.RMD and WILD070.RMD.
-				const int rmdTR = 5 + random.next(66);
-				const int rmdTL = 5 + random.next(66);
-				const int rmdBR = 5 + random.next(66);
-				const int rmdBL = 5 + random.next(66);
-				DebugLog(std::string("Wilderness IDs:\n") +
-					"- Top right: " + std::to_string(rmdTR) + "\n" +
-					"- Top left: " + std::to_string(rmdTL) + "\n" +
-					"- Bottom right: " + std::to_string(rmdBR) + "\n" +
-					"- Bottom left: " + std::to_string(rmdBL));
-
 				const ClimateType climateType = Location::getCityClimateType(
 					localCityID, provinceID, miscAssets);
 				const WeatherType filteredWeatherType =
 					GameData::getFilteredWeatherType(weatherType, climateType);
 
 				// Load wilderness into game data. Location data is loaded, too.
-				gameData->loadWilderness(localCityID, provinceID, rmdTR, rmdTL, rmdBR, rmdBL,
-					filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer);
+				gameData->loadWilderness(localCityID, provinceID, filteredWeatherType,
+					starCount, miscAssets, game.getTextureManager(), renderer);
 			}
 			else
 			{

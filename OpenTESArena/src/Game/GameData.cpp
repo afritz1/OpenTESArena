@@ -560,25 +560,24 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-void GameData::loadWilderness(int localCityID, int provinceID, int rmdTR, int rmdTL, int rmdBR,
-	int rmdBL, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+void GameData::loadWilderness(int localCityID, int provinceID, WeatherType weatherType,
+	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
+	Renderer &renderer)
 {
-	// Get the location's climate type.
-	const ClimateType climateType = Location::getCityClimateType(
-		localCityID, provinceID, miscAssets);
-
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
-		rmdTR, rmdTL, rmdBR, rmdBL, climateType, weatherType, this->date.getDay(), starCount,
+		localCityID, provinceID, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
 	activeLevel.setActive(textureManager, renderer);
 
-	// Set arbitrary player starting position and velocity (no starting point in WILD.MIF).
-	const Double2 startPoint(63.50, 63.50);
+	// Set arbitrary player starting position and velocity.
+	const auto &voxelGrid = activeLevel.getVoxelGrid();
+	const Double2 startPoint(
+		static_cast<double>(voxelGrid.getWidth() / 2) - 0.50,
+		static_cast<double>(voxelGrid.getDepth() / 2) - 0.50);
 	this->player.teleport(Double3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();

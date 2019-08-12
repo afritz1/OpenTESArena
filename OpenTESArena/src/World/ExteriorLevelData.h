@@ -56,7 +56,7 @@ public:
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.
-	static ExteriorLevelData loadWilderness(int rmdTR, int rmdTL, int rmdBR, int rmdBL,
+	static ExteriorLevelData loadWilderness(int localCityID, int provinceID,
 		WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
