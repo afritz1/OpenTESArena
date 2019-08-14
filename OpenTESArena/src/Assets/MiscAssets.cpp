@@ -1509,6 +1509,11 @@ const std::array<std::string, 43> &MiscAssets::getSpellMakerDescriptions() const
 	return this->spellMakerDescriptions;
 }
 
+const std::vector<RMDFile> &MiscAssets::getWildernessChunks() const
+{
+	return this->wildernessChunks;
+}
+
 const std::array<WorldMapMask, 10> &MiscAssets::getWorldMapMasks() const
 {
 	return this->worldMapMasks;

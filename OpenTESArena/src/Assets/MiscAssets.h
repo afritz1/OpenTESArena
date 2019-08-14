@@ -209,6 +209,9 @@ public:
 	// Gets the list of spell maker description strings.
 	const std::array<std::string, 43> &getSpellMakerDescriptions() const;
 
+	// Gets all the preloaded .RMD files for wilderness generation.
+	const std::vector<RMDFile> &getWildernessChunks() const;
+
 	// Gets the mask rectangles used for registering clicks on the world map. There are
 	// ten entries -- the first nine are provinces and the last is the "Exit" button.
 	const std::array<WorldMapMask, 10> &getWorldMapMasks() const;

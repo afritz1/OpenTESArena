@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <iomanip>
-#include <sstream>
 
 #include "ExteriorLevelData.h"
 #include "WorldType.h"
@@ -784,21 +783,12 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	std::vector<uint16_t> tempMap1(voxelsPerFloor, 0);
 	std::vector<uint16_t> tempMap2(voxelsPerFloor, 0);
 
-	auto writeRMD = [gridDepth, &tempFlor, &tempMap1, &tempMap2](
+	auto writeRMD = [&miscAssets, gridDepth, &tempFlor, &tempMap1, &tempMap2](
 		uint8_t rmdID, int xOffset, int zOffset)
 	{
-		const std::string rmdName = [rmdID]()
-		{
-			std::stringstream ss;
-			ss << std::setw(3) << std::setfill('0') << static_cast<int>(rmdID);
-			return "WILD" + ss.str() + ".RMD";
-		}();
-
-		RMDFile rmd;
-		if (!rmd.init(rmdName.c_str()))
-		{
-			DebugCrash("Could not init .RMD file \"" + rmdName + "\".");
-		}
+		const std::vector<RMDFile> &rmdFiles = miscAssets.getWildernessChunks();
+		const int rmdIndex = DebugMakeIndex(rmdFiles, rmdID - 1);
+		const RMDFile &rmd = rmdFiles[rmdIndex];
 
 		// Copy .RMD voxel data to temp buffers.
 		for (int z = 0; z < RMDFile::DEPTH; z++)
