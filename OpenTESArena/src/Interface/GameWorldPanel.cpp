@@ -1811,7 +1811,40 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			}
 			else
 			{
-				DebugLogWarning("City gate transition not implemented.");
+				// City gate transition.
+				const auto &location = gameData.getLocation();
+				const int starCount = DistantSky::getStarCountFromDensity(
+					game.getOptions().getMisc_StarDensity());
+				
+				if (isCity)
+				{
+					// From city to wilderness.
+					gameData.loadWilderness(location.localCityID, location.provinceID,
+						gameData.getWeatherType(), starCount, game.getMiscAssets(),
+						textureManager, renderer);
+				}
+				else
+				{
+					// From wilderness to city.
+					gameData.loadCity(location.localCityID, location.provinceID,
+						gameData.getWeatherType(), starCount, game.getMiscAssets(),
+						textureManager, renderer);
+				}
+				
+				// Reset the current music (even if it's the same one).
+				const MusicName musicName = [&game, &gameData, &location]()
+				{
+					const ClimateType climateType = Location::getCityClimateType(
+						location.localCityID, location.provinceID, game.getMiscAssets());
+					const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+						gameData.getWeatherType(), climateType);
+					const auto &clock = gameData.getClock();
+					return !clock.nightMusicIsActive() ?
+						GameData::getExteriorMusicName(filteredWeatherType) :
+						MusicName::Night;
+				}();
+
+				game.setMusic(musicName);
 			}
 		}
 	}
