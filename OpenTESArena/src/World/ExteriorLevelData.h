@@ -36,6 +36,11 @@ private:
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,
 		const ExeData::Wilderness &wildData);
+
+	// Changes the default filler city skeleton to the one intended for the city.
+	static void reviseWildernessCity(int localCityID, int provinceID, std::vector<uint16_t> &flor,
+		std::vector<uint16_t> &map1, std::vector<uint16_t> &map2, int gridWidth, int gridDepth,
+		const ExeData::CityGeneration &cityGen);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();

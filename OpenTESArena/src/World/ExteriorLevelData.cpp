@@ -522,6 +522,136 @@ Buffer2D<uint8_t> ExteriorLevelData::generateWildernessIndices(uint32_t wildSeed
 	return indices;
 }
 
+void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
+	std::vector<uint16_t> &flor, std::vector<uint16_t> &map1, std::vector<uint16_t> &map2,
+	int gridWidth, int gridDepth, const ExeData::CityGeneration &cityGen)
+{
+	// For now, assume the given buffers are for the entire 4096x4096 wilderness.
+	// @todo: change to only care about 128x128 layers.
+	DebugAssert(flor.size() == (RMDFile::ELEMENTS_PER_FLOOR *
+		(gridWidth / RMDFile::WIDTH) * (gridDepth / RMDFile::DEPTH)));
+	DebugAssert(flor.size() == map1.size());
+	DebugAssert(flor.size() == map2.size());
+	DebugAssert(gridWidth == gridDepth);
+
+	// Clear all placeholder city blocks.
+	const int placeholderWidth = RMDFile::WIDTH * 2;
+	const int placeholderDepth = RMDFile::DEPTH * 2;
+
+	// @todo: change to only care about 128x128 floors -- these should both be removed.
+	const int xOffset = RMDFile::WIDTH * 31;
+	const int zOffset = RMDFile::DEPTH * 31;
+
+	for (int x = 0; x < placeholderWidth; x++)
+	{
+		const int posX = x + xOffset;
+		for (int z = 0; z < placeholderDepth; z++)
+		{
+			const int posZ = z + zOffset;
+			const int index = DebugMakeIndex(flor, posZ + (posX * gridDepth));
+			flor[index] = 0;
+			map1[index] = 0;
+			map2[index] = 0;
+		}
+	}
+
+	// Fetch city generation info.
+	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+	DebugAssertMsg((globalCityID >= 0) && (globalCityID <= 256),
+		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
+
+	// Determine city traits from the given city ID.
+	const LocationType locationType = Location::getCityType(localCityID);
+	const bool isCityState = locationType == LocationType::CityState;
+	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
+		cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
+	const int templateCount = CityDataFile::getCityTemplateCount(isCoastal, isCityState);
+	const int templateID = globalCityID % templateCount;
+
+	const std::string mifName = [locationType, &cityGen, isCoastal, templateID]()
+	{
+		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
+		const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
+
+		// Get the template name associated with the city ID.
+		std::string templateName = cityGen.templateFilenames.at(nameIndex);
+		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
+		templateName = String::toUppercase(templateName);
+
+		return templateName;
+	}();
+
+	MIFFile mif;
+	if (!mif.init(mifName.c_str()))
+	{
+		DebugLogError("Couldn't init .MIF file \"" + mifName + "\".");
+		return;
+	}
+
+	// Write block data by rows into city chunks.
+	const MIFFile::Level &level = mif.getLevels().front();
+	for (int z = 0; z < mif.getDepth(); z++)
+	{
+		// @todo: need to transpose/flip?
+		const int srcIndex = DebugMakeIndex(level.flor, z * mif.getWidth());
+		const int dstIndex = DebugMakeIndex(flor, xOffset + ((z + zOffset) * gridDepth));
+
+		auto writeRow = [&mif, srcIndex, dstIndex](
+			const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+		{
+			const auto srcBegin = src.begin() + srcIndex;
+			const auto srcEnd = srcBegin + mif.getWidth();
+			const auto dstBegin = dst.begin() + dstIndex;
+			std::copy(srcBegin, srcEnd, dstBegin);
+		};
+
+		writeRow(level.flor, flor);
+		writeRow(level.map1, map1);
+		writeRow(level.map2, map2);
+	}
+
+	// Transform city voxels based on the wilderness rules.
+	for (int x = 0; x < placeholderWidth; x++)
+	{
+		const int posX = x + xOffset;
+		for (int z = 0; z < placeholderDepth; z++)
+		{
+			const int posZ = z + zOffset;
+			const int index = DebugMakeIndex(map1, posZ + (posX * gridDepth));
+			const uint16_t map1Voxel = map1[index];
+			const uint16_t map2Voxel = map2[index];
+
+			/*if ((map1Voxel != 0) || (map2Voxel != 0))
+				DebugLog(String::toHexString(map1Voxel) + ", " + String::toHexString(map2Voxel));*/
+
+			if ((map1Voxel & 0x8000) != 0)
+			{
+				map1[index] = 0;
+			}
+			else
+			{
+				const bool isWall = (map1Voxel == 0x2F2F) || (map1Voxel == 0x2D2D) || (map1Voxel == 0x2E2E);
+				if (!isWall)
+				{
+					map1[index] = 0;
+				}
+				else
+				{
+					// Replace solid walls.
+					if ((map1Voxel & 0xFFFF) == 0x2F2F)
+					{
+						map1[index] = 0x3030;
+					}
+					else if ((map1Voxel & 0xFFFF) == 0x2D2D)
+					{
+						map1[index] = 0x2F2F;
+					}
+				}
+			}
+		}
+	}
+}
+
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
 	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 	int gridWidth, int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)
@@ -821,6 +951,10 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 			writeRMD(wildIndex, x * RMDFile::WIDTH, y * RMDFile::DEPTH);
 		}
 	}
+
+	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
+	ExteriorLevelData::reviseWildernessCity(localCityID, provinceID, tempFlor, tempMap1,
+		tempMap2, gridWidth, gridDepth, miscAssets.getExeData().cityGen);
 
 	// Create the level for the voxel data to be written into.
 	const int levelHeight = 6;
