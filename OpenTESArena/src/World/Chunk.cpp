@@ -7,9 +7,8 @@
 Chunk::Chunk(int x, int y, int height)
 {
 	// Set all voxels to air and unused.
-	const int voxelCount = Chunk::WIDTH * height * Chunk::DEPTH;
-	this->voxels = std::make_unique<VoxelID[]>(voxelCount);
-	std::fill(this->voxels.get(), this->voxels.get() + voxelCount, 0);
+	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->voxels.fill(0);
 
 	this->voxelData.fill(VoxelData());
 	this->activeVoxelData.fill(false);
@@ -17,7 +16,6 @@ Chunk::Chunk(int x, int y, int height)
 	// Let the first voxel data (air) be usable immediately. All default voxel IDs can safely point to it.
 	this->activeVoxelData.front() = true;
 
-	this->height = height;
 	this->x = x;
 	this->y = y;
 }
@@ -39,7 +37,7 @@ constexpr int Chunk::getWidth() const
 
 int Chunk::getHeight() const
 {
-	return this->height;
+	return this->voxels.getHeight();
 }
 
 constexpr int Chunk::getDepth() const
@@ -47,23 +45,9 @@ constexpr int Chunk::getDepth() const
 	return Chunk::DEPTH;
 }
 
-bool Chunk::coordIsValid(int x, int y, int z) const
-{
-	return (x >= 0) && (x < this->getWidth()) &&
-		(y >= 0) && (y < this->getHeight()) &&
-		(z >= 0) && (z < this->getDepth());
-}
-
-int Chunk::getIndex(int x, int y, int z) const
-{
-	DebugAssert(this->coordIsValid(x, y, z));
-	return x + (y * this->getWidth()) + (z * this->getWidth() * this->getHeight());
-}
-
 VoxelID Chunk::get(int x, int y, int z) const
 {
-	const int index = this->getIndex(x, y, z);
-	return this->voxels[index];
+	return *this->voxels.get(x, y, z);
 }
 
 const VoxelData &Chunk::getVoxelData(VoxelID id) const
@@ -81,8 +65,7 @@ int Chunk::debug_getVoxelDataCount() const
 
 void Chunk::set(int x, int y, int z, VoxelID value)
 {
-	const int index = this->getIndex(x, y, z);
-	this->voxels[index] = value;
+	this->voxels.set(x, y, z, value);
 }
 
 VoxelID Chunk::addVoxelData(VoxelData &&voxelData)

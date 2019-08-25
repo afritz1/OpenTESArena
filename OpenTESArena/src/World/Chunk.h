@@ -3,9 +3,10 @@
 
 #include <array>
 #include <cstdint>
-#include <memory>
 
 #include "VoxelData.h"
+
+#include "components/utilities/Buffer3D.h"
 
 // There should be fewer than 256 unique voxel types per chunk. If we need more, then the data
 // can be redesigned to be something like 9 bits per voxel (and the ID type would be 16-bit).
@@ -17,24 +18,18 @@ class Chunk
 private:
 	static constexpr int MAX_VOXEL_DATA = 256;
 
-	// Indices into voxel data.
-	std::unique_ptr<VoxelID[]> voxels;
+	// Indices into voxel data. Size depends on whether it's an interior or exterior.
+	Buffer3D<VoxelID> voxels;
 
 	// Voxel data definitions, pointed to by voxel IDs. If the associated bool is true,
 	// the voxel data is in use by the voxel grid.
 	std::array<VoxelData, MAX_VOXEL_DATA> voxelData;
 	std::array<bool, MAX_VOXEL_DATA> activeVoxelData;
 
-	// Chunk height. Depends on whether it's an interior or exterior.
-	int height;
-
 	// Chunk coordinates.
 	int x, y;
 protected:
 	Chunk(int x, int y, int height);
-private:
-	bool coordIsValid(int x, int y, int z) const;
-	int getIndex(int x, int y, int z) const;
 public:
 	// Public for some classes that want non-instance dimensions.
 	static constexpr int WIDTH = 64;
