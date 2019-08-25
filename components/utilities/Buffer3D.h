@@ -1,6 +1,7 @@
 #ifndef BUFFER3D_H
 #define BUFFER3D_H
 
+#include <algorithm>
 #include <memory>
 
 #include "../debug/Debug.h"
@@ -89,6 +90,12 @@ public:
 	{
 		const int index = this->getIndex(x, y, z);
 		this->data.get()[index] = std::move(value);
+	}
+
+	void fill(const T &value)
+	{
+		const int count = this->width * this->height * this->depth;
+		std::fill(this->data.get(), this->data.get() + count, value);
 	}
 
 	void clear()
