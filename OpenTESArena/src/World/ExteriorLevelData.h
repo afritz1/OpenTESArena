@@ -23,6 +23,13 @@ private:
 	ExteriorLevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
 		const std::string &name);
 
+	// Writes city building data into the output buffers. The buffers should already be
+	// initialized with the city skeleton.
+	static void generateCity(int localCityID, int provinceID, int cityDim, int gridDepth,
+		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, uint32_t citySeed,
+		ArenaRandom &random, std::vector<uint16_t> &dstFlor, std::vector<uint16_t> &dstMap1,
+		std::vector<uint16_t> &dstMap2);
+
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	void generateBuildingNames(int localCityID, int provinceID, uint32_t citySeed,

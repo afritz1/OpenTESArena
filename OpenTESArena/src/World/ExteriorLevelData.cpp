@@ -23,6 +23,167 @@ ExteriorLevelData::~ExteriorLevelData()
 
 }
 
+void ExteriorLevelData::generateCity(int localCityID, int provinceID, int cityDim, int gridDepth,
+	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, uint32_t citySeed,
+	ArenaRandom &random, std::vector<uint16_t> &dstFlor, std::vector<uint16_t> &dstMap1,
+	std::vector<uint16_t> &dstMap2)
+{
+	// Decide which city blocks to load.
+	enum class BlockType
+	{
+		Empty, Reserved, Equipment, MagesGuild,
+		NobleHouse, Temple, Tavern, Spacer, Houses
+	};
+
+	// Get the city's local X and Y, to be used later for building name generation.
+	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
+
+	const int citySize = cityDim * cityDim;
+	std::vector<BlockType> plan(citySize, BlockType::Empty);
+
+	auto placeBlock = [citySize, &plan, &random](BlockType blockType)
+	{
+		int planIndex;
+
+		do
+		{
+			planIndex = random.next() % citySize;
+		} while (plan.at(planIndex) != BlockType::Empty);
+
+		plan.at(planIndex) = blockType;
+	};
+
+	// Set reserved blocks.
+	for (const uint8_t block : reservedBlocks)
+	{
+		// The original engine uses a fixed array so all block indices always fall within the
+		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
+		// explicitly.
+		if (block < plan.size())
+		{
+			plan.at(block) = BlockType::Reserved;
+		}
+	}
+
+	// Initial block placement.
+	placeBlock(BlockType::Equipment);
+	placeBlock(BlockType::MagesGuild);
+	placeBlock(BlockType::NobleHouse);
+	placeBlock(BlockType::Temple);
+	placeBlock(BlockType::Tavern);
+	placeBlock(BlockType::Spacer);
+
+	// Create city plan according to RNG.
+	const int emptyBlocksInPlan = static_cast<int>(
+		std::count(plan.begin(), plan.end(), BlockType::Empty));
+	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
+	{
+		const uint32_t randVal = random.next();
+		const BlockType blockType = [randVal]()
+		{
+			if (randVal <= 0x7333)
+			{
+				return BlockType::Houses;
+			}
+			else if (randVal <= 0xA666)
+			{
+				return BlockType::Tavern;
+			}
+			else if (randVal <= 0xCCCC)
+			{
+				return BlockType::Equipment;
+			}
+			else if (randVal <= 0xE666)
+			{
+				return BlockType::Temple;
+			}
+			else
+			{
+				return BlockType::NobleHouse;
+			}
+		}();
+
+		placeBlock(blockType);
+	}
+
+	// Build the city, loading data for each block. Load blocks right to left, top to bottom.
+	int xDim = 0;
+	int yDim = 0;
+
+	for (const BlockType block : plan)
+	{
+		if (block != BlockType::Reserved)
+		{
+			const std::array<std::string, 7> BlockCodes =
+			{
+				"EQ", "MG", "NB", "TP", "TV", "TS", "BS"
+			};
+
+			const std::array<int, 7> VariationCounts =
+			{
+				13, 11, 10, 12, 15, 11, 20
+			};
+
+			const std::array<std::string, 4> Rotations =
+			{
+				"A", "B", "C", "D"
+			};
+
+			const int blockIndex = static_cast<int>(block) - 2;
+			const std::string &blockCode = BlockCodes.at(blockIndex);
+			const std::string &rotation = Rotations.at(random.next() % Rotations.size());
+			const int variationCount = VariationCounts.at(blockIndex);
+			const int variation = std::max(random.next() % variationCount, 1);
+			const std::string blockMifName = blockCode + "BD" +
+				std::to_string(variation) + rotation + ".MIF";
+
+			// Load the block's .MIF data into the level.
+			MIFFile blockMif;
+			if (!blockMif.init(blockMifName.c_str()))
+			{
+				DebugCrash("Could not init .MIF file \"" + blockMifName + "\".");
+			}
+
+			const auto &blockLevel = blockMif.getLevels().front();
+
+			// Offset of the block in the voxel grid.
+			const int xOffset = startPosition.x + (xDim * 20);
+			const int zOffset = startPosition.y + (yDim * 20);
+
+			// Copy block data to temp buffers.
+			for (int z = 0; z < blockMif.getDepth(); z++)
+			{
+				const int srcIndex = z * blockMif.getWidth();
+				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
+
+				auto writeRow = [&blockMif, srcIndex, dstIndex](
+					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+				{
+					const auto srcBegin = src.begin() + srcIndex;
+					const auto srcEnd = srcBegin + blockMif.getWidth();
+					const auto dstBegin = dst.begin() + dstIndex;
+					std::copy(srcBegin, srcEnd, dstBegin);
+				};
+
+				writeRow(blockLevel.flor, dstFlor);
+				writeRow(blockLevel.map1, dstMap1);
+				writeRow(blockLevel.map2, dstMap2);
+			}
+
+			// @todo: load flats.
+		}
+
+		xDim++;
+
+		// Move to the next row if done with the current one.
+		if (xDim == cityDim)
+		{
+			xDim = 0;
+			yDim++;
+		}
+	}
+}
+
 void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, uint32_t citySeed,
 	ArenaRandom &random, bool isCoastal, bool isCity, int gridWidth, int gridDepth,
 	const MiscAssets &miscAssets)
@@ -704,166 +865,15 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
 	std::vector<uint16_t> tempMap2(level.map2.begin(), level.map2.end());
 
-	// Decide which city blocks to load.
-	enum class BlockType
-	{
-		Empty, Reserved, Equipment, MagesGuild,
-		NobleHouse, Temple, Tavern, Spacer, Houses
-	};
-
 	// Get the city's seed for random chunk generation. It is modified later during
 	// building name generation.
 	const auto &cityData = miscAssets.getCityDataFile();
-	uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
-
-	// Get the city's local X and Y, to be used later for building name generation.
-	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
-
-	const int citySize = cityDim * cityDim;
-	std::vector<BlockType> plan(citySize, BlockType::Empty);
+	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	ArenaRandom random(citySeed);
-
-	auto placeBlock = [citySize, &plan, &random](BlockType blockType)
-	{
-		int planIndex;
-
-		do
-		{
-			planIndex = random.next() % citySize;
-		} while (plan.at(planIndex) != BlockType::Empty);
-
-		plan.at(planIndex) = blockType;
-	};
-
-	// Set reserved blocks.
-	for (const uint8_t block : reservedBlocks)
-	{
-		// The original engine uses a fixed array so all block indices always fall within the
-		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
-		// explicitly.
-		if (block < plan.size())
-		{
-			plan.at(block) = BlockType::Reserved;
-		}
-	}
-
-	// Initial block placement.
-	placeBlock(BlockType::Equipment);
-	placeBlock(BlockType::MagesGuild);
-	placeBlock(BlockType::NobleHouse);
-	placeBlock(BlockType::Temple);
-	placeBlock(BlockType::Tavern);
-	placeBlock(BlockType::Spacer);
-
-	// Create city plan according to RNG.
-	const int emptyBlocksInPlan = static_cast<int>(
-		std::count(plan.begin(), plan.end(), BlockType::Empty));
-	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
-	{
-		const uint32_t randVal = random.next();
-		const BlockType blockType = [randVal]()
-		{
-			if (randVal <= 0x7333)
-			{
-				return BlockType::Houses;
-			}
-			else if (randVal <= 0xA666)
-			{
-				return BlockType::Tavern;
-			}
-			else if (randVal <= 0xCCCC)
-			{
-				return BlockType::Equipment;
-			}
-			else if (randVal <= 0xE666)
-			{
-				return BlockType::Temple;
-			}
-			else
-			{
-				return BlockType::NobleHouse;
-			}
-		}();
-
-		placeBlock(blockType);
-	}
-
-	// Build the city, loading data for each block. Load blocks right to left, top to bottom.
-	int xDim = 0;
-	int yDim = 0;
-
-	for (const BlockType block : plan)
-	{
-		if (block != BlockType::Reserved)
-		{
-			const std::array<std::string, 7> BlockCodes =
-			{
-				"EQ", "MG", "NB", "TP", "TV", "TS", "BS"
-			};
-
-			const std::array<int, 7> VariationCounts =
-			{
-				13, 11, 10, 12, 15, 11, 20
-			};
-
-			const std::array<std::string, 4> Rotations =
-			{
-				"A", "B", "C", "D"
-			};
-
-			const int blockIndex = static_cast<int>(block) - 2;
-			const std::string &blockCode = BlockCodes.at(blockIndex);
-			const std::string &rotation = Rotations.at(random.next() % Rotations.size());
-			const int variationCount = VariationCounts.at(blockIndex);
-			const int variation = std::max(random.next() % variationCount, 1);
-			const std::string blockMifName = blockCode + "BD" +
-				std::to_string(variation) + rotation + ".MIF";
-
-			// Load the block's .MIF data into the level.
-			MIFFile blockMif;
-			if (!blockMif.init(blockMifName.c_str()))
-			{
-				DebugCrash("Could not init .MIF file \"" + blockMifName + "\".");
-			}
-
-			const auto &blockLevel = blockMif.getLevels().front();
-
-			// Offset of the block in the voxel grid.
-			const int xOffset = startPosition.x + (xDim * 20);
-			const int zOffset = startPosition.y + (yDim * 20);
-
-			// Copy block data to temp buffers.
-			for (int z = 0; z < blockMif.getDepth(); z++)
-			{
-				const int srcIndex = z * blockMif.getWidth();
-				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
-
-				auto writeRow = [&blockMif, srcIndex, dstIndex](
-					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
-				{
-					const auto srcBegin = src.begin() + srcIndex;
-					const auto srcEnd = srcBegin + blockMif.getWidth();
-					const auto dstBegin = dst.begin() + dstIndex;
-					std::copy(srcBegin, srcEnd, dstBegin);
-				};
-
-				writeRow(blockLevel.flor, tempFlor);
-				writeRow(blockLevel.map1, tempMap1);
-				writeRow(blockLevel.map2, tempMap2);
-			}
-
-			// @todo: load flats.
-		}
-
-		xDim++;
-
-		// Move to the next row if done with the current one.
-		if (xDim == cityDim)
-		{
-			xDim = 0;
-			yDim++;
-		}
-	}
+	
+	// Generate the bulk of city data and write it into the temp buffers.
+	ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, gridDepth, reservedBlocks,
+		startPosition, citySeed, random, tempFlor, tempMap1, tempMap2);
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
