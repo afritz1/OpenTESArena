@@ -1826,9 +1826,28 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				else
 				{
 					// From wilderness to city.
-					gameData.loadCity(location.localCityID, location.provinceID,
-						gameData.getWeatherType(), starCount, game.getMiscAssets(),
-						textureManager, renderer);
+					const bool isCenterProvince = location.provinceID == Location::CENTER_PROVINCE_ID;
+					if (!isCenterProvince)
+					{
+						gameData.loadCity(location.localCityID, location.provinceID,
+							gameData.getWeatherType(), starCount, game.getMiscAssets(),
+							textureManager, renderer);
+					}
+					else
+					{
+						const auto &exeData = game.getMiscAssets().getExeData();
+						const std::string mifName = String::toUppercase(
+							exeData.locations.centerProvinceCityMifName);
+
+						MIFFile mif;
+						if (!mif.init(mifName.c_str()))
+						{
+							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+						}
+
+						gameData.loadPremadeCity(mif, gameData.getWeatherType(), starCount,
+							game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
+					}
 				}
 				
 				// Reset the current music (even if it's the same one).
