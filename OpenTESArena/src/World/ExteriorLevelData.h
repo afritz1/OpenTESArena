@@ -47,7 +47,7 @@ private:
 	// Changes the default filler city skeleton to the one intended for the city.
 	static void reviseWildernessCity(int localCityID, int provinceID, std::vector<uint16_t> &flor,
 		std::vector<uint16_t> &map1, std::vector<uint16_t> &map2, int gridWidth, int gridDepth,
-		const ExeData::CityGeneration &cityGen);
+		const MiscAssets &miscAssets);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
