@@ -1818,10 +1818,41 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				
 				if (isCity)
 				{
-					// From city to wilderness.
+					// From city to wilderness. Use the gate position to determine where to put the
+					// player in the wilderness.
+					const Int2 gatePos(hit.voxel.x, hit.voxel.z);
+					const Int2 transitionDir = [&hit]()
+					{
+						if (hit.facing == VoxelData::Facing::PositiveX)
+						{
+							return Int2(-1, 0);
+						}
+						else if (hit.facing == VoxelData::Facing::NegativeX)
+						{
+							return Int2(1, 0);
+						}
+						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						{
+							return Int2(0, -1);
+						}
+						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						{
+							return Int2(0, 1);
+						}
+						else
+						{
+							DebugUnhandledReturnMsg(Int2,
+								std::to_string(static_cast<int>(hit.facing)));
+						}
+					}();
+
+					const Int2 originalGateVoxel = VoxelGrid::getTransformedCoordinate(
+						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+					const bool ignoreGatePos = false;
 					gameData.loadWilderness(location.localCityID, location.provinceID,
-						gameData.getWeatherType(), starCount, game.getMiscAssets(),
-						textureManager, renderer);
+						originalGateVoxel, transitionDir, ignoreGatePos, gameData.getWeatherType(),
+						starCount, game.getMiscAssets(), textureManager, renderer);
 				}
 				else
 				{

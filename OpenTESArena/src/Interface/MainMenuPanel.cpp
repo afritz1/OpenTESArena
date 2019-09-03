@@ -373,8 +373,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					GameData::getFilteredWeatherType(weatherType, climateType);
 
 				// Load wilderness into game data. Location data is loaded, too.
-				gameData->loadWilderness(localCityID, provinceID, filteredWeatherType,
-					starCount, miscAssets, game.getTextureManager(), renderer);
+				const bool ignoreGatePos = true;
+				gameData->loadWilderness(localCityID, provinceID, Int2(), Int2(),
+					ignoreGatePos, filteredWeatherType, starCount, miscAssets,
+					game.getTextureManager(), renderer);
 			}
 			else
 			{

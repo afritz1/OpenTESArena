@@ -560,7 +560,8 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-void GameData::loadWilderness(int localCityID, int provinceID, WeatherType weatherType,
+void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gatePos,
+	const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
 	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
@@ -573,11 +574,32 @@ void GameData::loadWilderness(int localCityID, int provinceID, WeatherType weath
 	LevelData &activeLevel = this->worldData->getActiveLevel();
 	activeLevel.setActive(textureManager, renderer);
 
-	// Set arbitrary player starting position and velocity.
+	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
-	const Double2 startPoint(
-		static_cast<double>(voxelGrid.getWidth() / 2) - 0.50,
-		static_cast<double>(voxelGrid.getDepth() / 2) - 0.50);
+	const Double2 startPoint = [&gatePos, &transitionDir, debug_ignoreGatePos, &voxelGrid]()
+	{
+		if (debug_ignoreGatePos)
+		{
+			// Just use center of the wilderness for testing.
+			return Double2(
+				static_cast<double>(voxelGrid.getWidth() / 2) - 0.50,
+				static_cast<double>(voxelGrid.getDepth() / 2) - 0.50);
+		}
+		else
+		{
+			// Set player starting position based on which gate they passed through. Start from
+			// top-right corner of wilderness city since gatePos is assumed to be in original
+			// coordinates (so size of city doesn't matter). Note that the original game only
+			// handles the transition one way -- i.e., going from wilderness to city always uses
+			// the city's default gate instead.
+			const int cityStartX = (RMDFile::WIDTH * 33) - 1;
+			const int cityStartY = (RMDFile::DEPTH * 33) - 1;
+			return Double2(
+				cityStartX - gatePos.y + transitionDir.x + 0.50,
+				cityStartY - gatePos.x + transitionDir.y + 0.50);
+		}
+	}();
+
 	this->player.teleport(Double3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
