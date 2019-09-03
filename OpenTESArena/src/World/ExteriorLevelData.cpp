@@ -734,17 +734,26 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	const int templateCount = CityDataFile::getCityTemplateCount(isCoastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
-	const std::string mifName = [locationType, &cityGen, isCoastal, templateID]()
+	const std::string mifName = [provinceID, &exeData, &cityGen, locationType,
+		isCoastal, templateID]()
 	{
-		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-		const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
+		// Special case for center province.
+		if (provinceID == Location::CENTER_PROVINCE_ID)
+		{
+			return String::toUppercase(exeData.locations.centerProvinceCityMifName);
+		}
+		else
+		{
+			// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
+			const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
 
-		// Get the template name associated with the city ID.
-		std::string templateName = cityGen.templateFilenames.at(nameIndex);
-		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
-		templateName = String::toUppercase(templateName);
+			// Get the template name associated with the city ID.
+			std::string templateName = cityGen.templateFilenames.at(nameIndex);
+			templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
+			templateName = String::toUppercase(templateName);
 
-		return templateName;
+			return templateName;
+		}
 	}();
 
 	MIFFile mif;
@@ -761,37 +770,39 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	std::vector<uint16_t> cityMap1(level.map1.begin(), level.map1.end());
 	std::vector<uint16_t> cityMap2(level.map2.begin(), level.map2.end());
 
-	// City block count (6x6, 5x5, 4x4).
-	const int cityDim = CityDataFile::getCityDimensions(locationType);
-
-	// Get the reserved block list for the given city.
-	const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
+	// Run city generation if it's not the center province. The center province does not have
+	// any special generation -- the .MIF buffers are simply used as-is (with some simple palace
+	// gate revisions done afterwards).
+	if (provinceID != Location::CENTER_PROVINCE_ID)
 	{
-		const int index = CityDataFile::getCityReservedBlockListIndex(isCoastal, templateID);
-		return cityGen.reservedBlockLists.at(index);
-	}();
+		// City block count (6x6, 5x5, 4x4).
+		const int cityDim = CityDataFile::getCityDimensions(locationType);
 
-	// Get the starting position of city blocks within the city skeleton.
-	const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
-	{
-		const int index = CityDataFile::getCityStartingPositionIndex(
-			locationType, isCoastal, templateID);
+		// Get the reserved block list for the given city.
+		const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
+		{
+			const int index = CityDataFile::getCityReservedBlockListIndex(isCoastal, templateID);
+			return cityGen.reservedBlockLists.at(index);
+		}();
 
-		const auto &pair = cityGen.startingPositions.at(index);
-		return Int2(pair.first, pair.second);
-	}();
+		// Get the starting position of city blocks within the city skeleton.
+		const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
+		{
+			const int index = CityDataFile::getCityStartingPositionIndex(
+				locationType, isCoastal, templateID);
 
-	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
-	ArenaRandom random(citySeed);
+			const auto &pair = cityGen.startingPositions.at(index);
+			return Int2(pair.first, pair.second);
+		}();
 
-	// @todo: generate premade city for center province.
-	/*DebugAssertMsg(provinceID != Location::CENTER_PROVINCE_ID,
-		"(not implemented) need generatePremadeCity() for center province.");*/
+		const auto &cityData = miscAssets.getCityDataFile();
+		const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+		ArenaRandom random(citySeed);
 
-	// Write city data into the temp city buffers.
-	ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, mif.getWidth(),
-		reservedBlocks, startPosition, citySeed, random, cityFlor, cityMap1, cityMap2);
+		// Write generated city data into the temp city buffers.
+		ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, mif.getWidth(),
+			reservedBlocks, startPosition, citySeed, random, cityFlor, cityMap1, cityMap2);
+	}
 
 	// Transform city voxels based on the wilderness rules.
 	for (int x = 0; x < mif.getWidth(); x++)
@@ -827,6 +838,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 				}
 			}
 
+			// @todo: need to fix second-story voxels.
 			if (((map2Voxel & 0xF000) == 0xA000) || (map2Voxel == 0x2F2F))
 			{
 				// @todo: replace type 0xA with 0xB?
