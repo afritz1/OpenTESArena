@@ -52,6 +52,12 @@ public:
 	// between threads that access the same cache line of memory.
 	static int getCacheLineSize();
 
+	// Gets CPU support for 4-wide float vector intrinsics.
+	static bool hasSSE();
+
+	// Gets CPU support for 8-wide float vector intrinsics.
+	static bool hasAVX();
+
 	// Returns whether the given directory exists.
 	static bool directoryExists(const std::string &path);
 

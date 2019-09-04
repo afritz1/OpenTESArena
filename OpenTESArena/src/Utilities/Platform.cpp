@@ -173,6 +173,16 @@ int Platform::getCacheLineSize()
 	return SDL_GetCPUCacheLineSize();
 }
 
+bool Platform::hasSSE()
+{
+	return SDL_HasSSE() && SDL_HasSSE2() && SDL_HasSSE3() && SDL_HasSSE41() && SDL_HasSSE42();
+}
+
+bool Platform::hasAVX()
+{
+	return SDL_HasAVX() && SDL_HasAVX2();
+}
+
 bool Platform::directoryExists(const std::string &path)
 {
 #if defined(_WIN32)
