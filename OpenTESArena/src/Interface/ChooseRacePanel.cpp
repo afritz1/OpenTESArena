@@ -136,13 +136,13 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 				// Generate all of the parchments leading up to the attributes panel,
 				// and link them together so they appear after each other.
-				auto toAttributes = [&game, &charClass, &name, gender, raceID](Game &game)
+				auto toAttributes = [&charClass, &name, gender, raceID](Game &game)
 				{
 					game.popSubPanel();
 					game.setPanel<ChooseAttributesPanel>(game, charClass, name, gender, raceID);
 				};
 
-				auto toFourthSubPanel = [&game, textColor, toAttributes](Game &game)
+				auto toFourthSubPanel = [textColor, toAttributes](Game &game)
 				{
 					game.popSubPanel();
 
@@ -183,7 +183,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					game.pushSubPanel(std::move(fourthSubPanel));
 				};
 
-				auto toThirdSubPanel = [&game, &charClass, textColor, toFourthSubPanel](Game &game)
+				auto toThirdSubPanel = [&charClass, textColor, toFourthSubPanel](Game &game)
 				{
 					game.popSubPanel();
 
@@ -235,7 +235,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					game.pushSubPanel(std::move(thirdSubPanel));
 				};
 
-				auto toSecondSubPanel = [&game, raceID, textColor, toThirdSubPanel](Game &game)
+				auto toSecondSubPanel = [raceID, textColor, toThirdSubPanel](Game &game)
 				{
 					game.popSubPanel();
 
