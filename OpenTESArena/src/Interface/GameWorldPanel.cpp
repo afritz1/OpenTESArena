@@ -663,24 +663,44 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
-		const auto &worldData = game.getGameData().getWorldData();
-		const auto &level = worldData.getActiveLevel();
-		const auto &voxelGrid = level.getVoxelGrid();
-		const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-			Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
-			voxelGrid.getWidth(), voxelGrid.getDepth());
-
 		const auto &exeData = game.getMiscAssets().getExeData();
-		const std::string text = [&exeData, &originalVoxel]()
+		const auto &worldData = game.getGameData().getWorldData();
+
+		const std::string text = [&worldData, &player, &exeData]()
 		{
+			const auto &level = worldData.getActiveLevel();
+			const auto &voxelGrid = level.getVoxelGrid();
+
+			const Int2 displayedCoords = [&worldData, &player, &voxelGrid]()
+			{
+				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+					Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
+					voxelGrid.getWidth(), voxelGrid.getDepth());
+
+				// The displayed coordinates in the wilderness behave differently in the original
+				// game due to how the 128x128 grid shifts to keep the player roughly centered.
+				if (worldData.getActiveWorldType() != WorldType::Wilderness)
+				{
+					return originalVoxel;
+				}
+				else
+				{
+					const int halfWidth = RMDFile::WIDTH / 2;
+					const int halfDepth = RMDFile::DEPTH / 2;
+					return Int2(
+						halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
+						halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
+				}
+			}();
+
 			std::string str = exeData.ui.currentWorldPosition;
 
 			// Replace first %d with X, second %d with Y.
 			size_t index = str.find("%d");
-			str.replace(index, 2, std::to_string(originalVoxel.x));
+			str.replace(index, 2, std::to_string(displayedCoords.x));
 
 			index = str.find("%d", index);
-			str.replace(index, 2, std::to_string(originalVoxel.y));
+			str.replace(index, 2, std::to_string(displayedCoords.y));
 
 			return str;
 		}();
