@@ -710,8 +710,9 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.
-	this->profilerData.width = 0;
-	this->profilerData.height = 0;
+	const SoftwareRenderer::ProfilerData swProfilerData = this->softwareRenderer.getProfilerData();
+	this->profilerData.width = swProfilerData.width;
+	this->profilerData.height = swProfilerData.height;
 	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /
 		static_cast<double>(std::nano::den);
 

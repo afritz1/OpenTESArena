@@ -24,6 +24,12 @@ class VoxelGrid;
 
 class SoftwareRenderer
 {
+public:
+	// Profiling info gathered from internal renderer state.
+	struct ProfilerData
+	{
+		int width, height;
+	};
 private:
 	struct VoxelTexel
 	{
@@ -652,6 +658,9 @@ public:
 	static const double TALL_PIXEL_RATIO;
 
 	bool isInited() const;
+
+	// Gets profiling information about renderer internals.
+	ProfilerData getProfilerData() const;
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

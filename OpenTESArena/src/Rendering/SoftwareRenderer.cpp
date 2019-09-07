@@ -628,6 +628,16 @@ bool SoftwareRenderer::isInited() const
 	return (this->width > 0) && (this->height > 0);
 }
 
+SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
+{
+	// @todo: make this a member of SoftwareRenderer eventually when it is capturing more
+	// information in render(), etc..
+	ProfilerData data;
+	data.width = this->width;
+	data.height = this->height;
+	return data;
+}
+
 void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 {
 	// Initialize 2D frame buffer.
