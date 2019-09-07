@@ -84,6 +84,8 @@ public:
 	static const double MAX_TIME_SCALE;
 	static const int MIN_STAR_DENSITY_MODE;
 	static const int MAX_STAR_DENSITY_MODE;
+	static const int MIN_PROFILER_LEVEL;
+	static const int MAX_PROFILER_LEVEL;
 
 #define OPTION_BOOL(section, name) \
 bool get##section##_##name() const \
@@ -159,8 +161,8 @@ void set##section##_##name(const std::string &value) \
 	OPTION_STRING(Misc, ArenaPath)
 	OPTION_STRING(Misc, ArenaSavesPath)
 	OPTION_BOOL(Misc, Collision)
+	OPTION_INT(Misc, ProfilerLevel)
 	OPTION_BOOL(Misc, ShowIntro)
-	OPTION_BOOL(Misc, ShowDebug)
 	OPTION_BOOL(Misc, ShowCompass)
 	OPTION_DOUBLE(Misc, TimeScale)
 	OPTION_INT(Misc, StarDensity)

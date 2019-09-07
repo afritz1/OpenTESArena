@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <string>
 
@@ -19,6 +20,13 @@ Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 	this->width = width;
 	this->height = height;
 	this->refreshRate = refreshRate;
+}
+
+Renderer::ProfilerData::ProfilerData()
+{
+	this->width = 0;
+	this->height = 0;
+	this->frameTime = 0.0;
 }
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
@@ -201,6 +209,11 @@ Surface Renderer::getScreenshot() const
 	}
 
 	return screenshot;
+}
+
+const Renderer::ProfilerData &Renderer::getProfilerData() const
+{
+	return this->profilerData;
 }
 
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
@@ -683,8 +696,16 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 		std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.
+	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, latitude,
 		parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
+	const auto endTime = std::chrono::high_resolution_clock::now();
+
+	// Update profiler stats.
+	this->profilerData.width = 0;
+	this->profilerData.height = 0;
+	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /
+		static_cast<double>(std::nano::den);
 
 	// Update the game world texture with the new ARGB8888 pixels.
 	SDL_UnlockTexture(this->gameWorldTexture.get());

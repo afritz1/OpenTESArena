@@ -52,8 +52,8 @@ namespace
 		{ "ArenaPath", OptionType::String },
 		{ "ArenaSavesPath", OptionType::String },
 		{ "Collision", OptionType::Bool },
+		{ "ProfilerLevel", OptionType::Int },
 		{ "ShowIntro", OptionType::Bool },
-		{ "ShowDebug", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
 		{ "TimeScale", OptionType::Double },
 		{ "StarDensity", OptionType::Int }
@@ -99,6 +99,8 @@ const double Options::MIN_TIME_SCALE = 0.50;
 const double Options::MAX_TIME_SCALE = 1.0;
 const int Options::MIN_STAR_DENSITY_MODE = 0;
 const int Options::MAX_STAR_DENSITY_MODE = 2;
+const int Options::MIN_PROFILER_LEVEL = 0;
+const int Options::MAX_PROFILER_LEVEL = 3;
 
 void Options::load(const char *filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
@@ -614,6 +616,16 @@ void Options::checkMisc_StarDensity(int value) const
 	DebugAssertMsg(value <= Options::MAX_STAR_DENSITY_MODE,
 		"Star density cannot be greater than " +
 		std::to_string(Options::MAX_STAR_DENSITY_MODE) + ".");
+}
+
+void Options::checkMisc_ProfilerLevel(int value) const
+{
+	DebugAssertMsg(value >= Options::MIN_PROFILER_LEVEL,
+		"Profiler level cannot be less than " +
+		std::to_string(Options::MIN_PROFILER_LEVEL) + ".");
+	DebugAssertMsg(value <= Options::MAX_PROFILER_LEVEL,
+		"Profiler level cannot be greater than " +
+		std::to_string(Options::MAX_PROFILER_LEVEL) + ".");
 }
 
 void Options::loadDefaults(const std::string &filename)

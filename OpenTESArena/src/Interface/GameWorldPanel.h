@@ -77,8 +77,8 @@ private:
 	void drawCompass(const Double2 &direction, TextureManager &textureManager,
 		Renderer &renderer);
 
-	// Draws some debug text.
-	void drawDebugText(Renderer &renderer);
+	// Draws some debug profiler text.
+	void drawProfiler(int profilerLevel, Renderer &renderer);
 public:
 	// Constructs the game world panel. The GameData object in Game must be initialized.
 	GameWorldPanel(Game &game);

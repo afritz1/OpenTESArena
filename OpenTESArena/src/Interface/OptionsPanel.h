@@ -162,7 +162,7 @@ private:
 
 	// Dev.
 	static const std::string COLLISION_NAME;
-	static const std::string SHOW_DEBUG_NAME;
+	static const std::string PROFILER_LEVEL_NAME;
 
 	std::unique_ptr<TextBox> titleTextBox, backToPauseMenuTextBox, graphicsTextBox, audioTextBox,
 		inputTextBox, miscTextBox, devTextBox;

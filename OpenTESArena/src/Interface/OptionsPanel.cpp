@@ -246,7 +246,7 @@ const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
 
 // Dev.
 const std::string OptionsPanel::COLLISION_NAME = "Collision";
-const std::string OptionsPanel::SHOW_DEBUG_NAME = "Show Debug";
+const std::string OptionsPanel::PROFILER_LEVEL_NAME = "Profiler Level";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
@@ -679,15 +679,18 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_Collision(value);
 	}));
 
-	this->devOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::SHOW_DEBUG_NAME,
-		"Displays debug information in the game world.",
-		options.getMisc_ShowDebug(),
-		[this](bool value)
+	this->devOptions.push_back(std::make_unique<IntOption>(
+		OptionsPanel::PROFILER_LEVEL_NAME,
+		"Displays varying levels of profiler information in the game world.",
+		options.getMisc_ProfilerLevel(),
+		1,
+		Options::MIN_PROFILER_LEVEL,
+		Options::MAX_PROFILER_LEVEL,
+		[this](int value)
 	{
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
-		options.setMisc_ShowDebug(value);
+		options.setMisc_ProfilerLevel(value);
 	}));
 
 	// Set initial tab.

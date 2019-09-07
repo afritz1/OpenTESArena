@@ -44,6 +44,17 @@ public:
 		Window,
 		BorderlessFull
 	};
+
+	// Profiler information from the most recently rendered frame.
+	struct ProfilerData
+	{
+		// Internal renderer resolution.
+		int width, height;
+
+		double frameTime;
+
+		ProfilerData();
+	};
 private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
@@ -53,6 +64,7 @@ private:
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
 	SoftwareRenderer softwareRenderer; // Game world renderer.
+	ProfilerData profilerData;
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
 
@@ -93,6 +105,9 @@ public:
 
 	// Gets a screenshot of the current window.
 	Surface getScreenshot() const;
+
+	// Gets profiler data (timings, renderer properties, etc.).
+	const ProfilerData &getProfilerData() const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 

@@ -610,8 +610,11 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	}
 	else if (f4Pressed)
 	{
-		// Toggle debug display.
-		options.setMisc_ShowDebug(!options.getMisc_ShowDebug());
+		// Increment or wrap profiler level.
+		const int oldProfilerLevel = options.getMisc_ProfilerLevel();
+		const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ?
+			(oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
+		options.setMisc_ProfilerLevel(newProfilerLevel);
 	}
 
 	// Listen for hotkeys.
@@ -2136,115 +2139,183 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 }
 
-void GameWorldPanel::drawDebugText(Renderer &renderer)
+void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 {
-	const Int2 windowDims = renderer.getWindowDimensions();
+	DebugAssert(profilerLevel > Options::MIN_PROFILER_LEVEL);
+	DebugAssert(profilerLevel <= Options::MAX_PROFILER_LEVEL);
 
 	auto &game = this->getGame();
-	const double resolutionScale = game.getOptions().getGraphics_ResolutionScale();
 
 	const FPSCounter &fpsCounter = game.getFPSCounter();
-	const double targetFps = static_cast<double>(game.getOptions().getGraphics_TargetFPS());
-	const double minFps = static_cast<double>(Options::MIN_FPS);
+	const double fps = fpsCounter.getAverageFPS();
+	const double frameTimeMS = 1000.0 / fps;
 
-	auto &gameData = game.getGameData();
-	const auto &player = gameData.getPlayer();
-	const Double3 &position = player.getPosition();
-	const Double3 &direction = player.getDirection();
+	const auto &options = game.getOptions();
+	const int targetFps = options.getGraphics_TargetFPS();
+	const int minFps = Options::MIN_FPS;
 
-	const auto &worldData = gameData.getWorldData();
-	const auto &level = worldData.getActiveLevel();
-
-	const std::string text =
-		"Screen: " + std::to_string(windowDims.x) + "x" + std::to_string(windowDims.y) + "\n" +
-		"Resolution scale: " + String::fixedPrecision(resolutionScale, 2) + "\n" +
-		"FPS: " + String::fixedPrecision(fpsCounter.getFPS(), 1) + "\n" +
-		"Map: " + worldData.getMifName() + "\n" +
-		"Info: " + level.getInfFile().getName() + "\n" +
-		"X: " + String::fixedPrecision(position.x, 5) + "\n" +
-		"Y: " + String::fixedPrecision(position.y, 5) + "\n" +
-		"Z: " + String::fixedPrecision(position.z, 5) + "\n" +
-		"DirX: " + String::fixedPrecision(direction.x, 5) + "\n" +
-		"DirY: " + String::fixedPrecision(direction.y, 5) + "\n" +
-		"DirZ: " + String::fixedPrecision(direction.z, 5) + "\n\n" +
-		"FPS Graph:" + "\n" +
-		"                               " + std::to_string(static_cast<int>(targetFps)) + "\n\n\n\n" +
-		"                               " + std::to_string(static_cast<int>(minFps));
-
-	const RichTextString richText(
-		text,
-		FontName::D,
-		Color::White,
-		TextAlignment::Left,
-		game.getFontManager());
-
-	const int x = 2;
-	const int y = 2;
-	const TextBox tempText(x, y, richText, renderer);
-
-	// Create graph of frame times.
-	const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps, minFps]()
+	// Draw each profiler level with its own draw call.
+	if (profilerLevel >= 1)
 	{
-		// Graph maximum is target FPS, minimum is MIN_FPS.
-		const int columnWidth = 1;
-		const int width = fpsCounter.getFrameCount() * columnWidth;
-		const int height = 32;
-		Surface surface = Surface::createWithFormat(
-			width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-		surface.fill(0, 0, 0, 128);
+		// FPS.
+		const std::string fpsText = String::fixedPrecision(fps, 1);
+		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 1);
+		const std::string text = "FPS: " + fpsText + " (" + frameTimeText + "ms)";
+		const RichTextString richText(
+			text, 
+			FontName::D,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
 
-		const std::array<uint32_t, 3> Colors =
-		{
-			surface.mapRGBA(255, 0, 0, 128),
-			surface.mapRGBA(255, 255, 0, 128),
-			surface.mapRGBA(0, 255, 0, 128)
-		};
+		const int x = 2;
+		const int y = 2;
+		const TextBox textBox(x, y, richText, renderer);
+		renderer.drawOriginal(textBox.getTexture(), x, y);
+	}
 
-		auto drawGraphColumn = [columnWidth, &surface, &Colors](int x, double percent)
+	if (profilerLevel >= 2)
+	{
+		// Screen, renderer, timing, and player info.
+		const Int2 windowDims = renderer.getWindowDimensions();
+
+		const Renderer::ProfilerData &profilerData = renderer.getProfilerData();
+		const Int2 renderDims(profilerData.width, profilerData.height);
+		const double resolutionScale = options.getGraphics_ResolutionScale();
+
+		auto &gameData = game.getGameData();
+		const auto &player = gameData.getPlayer();
+		const Double3 &position = player.getPosition();
+		const Double3 &direction = player.getDirection();
+
+		const std::string windowWidth = std::to_string(windowDims.x);
+		const std::string windowHeight = std::to_string(windowDims.y);
+
+		const std::string renderWidth = std::to_string(renderDims.x);
+		const std::string renderHeight = std::to_string(renderDims.y);
+		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
+		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+
+		const std::string posX = String::fixedPrecision(position.x, 2);
+		const std::string posY = String::fixedPrecision(position.y, 2);
+		const std::string posZ = String::fixedPrecision(position.z, 2);
+		const std::string dirX = String::fixedPrecision(direction.x, 2);
+		const std::string dirY = String::fixedPrecision(direction.y, 2);
+		const std::string dirZ = String::fixedPrecision(direction.z, 2);
+
+		const std::string text =
+			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
+			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
+			"Pos: " + posX + ", " + posY + ", " + posZ + '\n' +
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ + "\n\n" +
+			"Idle: TBD" + '\n' +
+			"Tick: TBD" + '\n' +
+			"3D render: " + renderTime + "ms" + '\n' +
+			"Other: TBD";
+
+		auto &fontManager = game.getFontManager();
+		const FontName fontName = FontName::D;
+		const RichTextString richText(
+			text,
+			fontName,
+			Color::White,
+			TextAlignment::Left,
+			fontManager);
+
+		// Get character height of the FPS font so Y position is correct.
+		const int yOffset = fontManager.getFont(fontName).getCharacterHeight();
+
+		const int x = 2;
+		const int y = 2 + yOffset;
+		const TextBox textBox(x, y, richText, renderer);
+		renderer.drawOriginal(textBox.getTexture(), x, y);
+	}
+
+	if (profilerLevel >= 3)
+	{
+		// Draw frame times graph.
+		const std::string text = 
+			std::string("FPS Graph:") + '\n' +
+			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
+			"                               " + std::to_string(minFps);
+
+		const RichTextString richText(
+			text,
+			FontName::D,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		const int x = 2;
+		const int y = 86;
+		const TextBox textBox(x, y, richText, renderer);
+
+		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps, minFps]()
 		{
-			const uint32_t color = [&Colors, percent]()
+			// Graph maximum is target FPS, minimum is MIN_FPS.
+			const int columnWidth = 1;
+			const int width = fpsCounter.getFrameCount() * columnWidth;
+			const int height = 32;
+			Surface surface = Surface::createWithFormat(
+				width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			surface.fill(0, 0, 0, 128);
+
+			const std::array<uint32_t, 3> Colors =
 			{
-				const int colorIndex = [percent]()
+				surface.mapRGBA(255, 0, 0, 128),
+				surface.mapRGBA(255, 255, 0, 128),
+				surface.mapRGBA(0, 255, 0, 128)
+			};
+
+			auto drawGraphColumn = [columnWidth, &surface, &Colors](int x, double percent)
+			{
+				const uint32_t color = [&Colors, percent]()
 				{
-					if (percent < (1.0 / 3.0))
+					const int colorIndex = [percent]()
 					{
-						return 0;
-					}
-					else if (percent < (2.0 / 3.0))
-					{
-						return 1;
-					}
-					else
-					{
-						return 2;
-					}
+						if (percent < (1.0 / 3.0))
+						{
+							return 0;
+						}
+						else if (percent < (2.0 / 3.0))
+						{
+							return 1;
+						}
+						else
+						{
+							return 2;
+						}
+					}();
+
+					return Colors.at(colorIndex);
 				}();
 
-				return Colors.at(colorIndex);
-			}();
+				// Height of column in pixels.
+				const int height = std::clamp(static_cast<int>(
+					percent * static_cast<double>(surface.getHeight())), 0, surface.getHeight());
 
-			// Height of column in pixels.
-			const int height = std::clamp(static_cast<int>(
-				percent * static_cast<double>(surface.getHeight())), 0, surface.getHeight());
+				const Rect rect(x * columnWidth, surface.getHeight() - height, columnWidth, height);
+				surface.fillRect(rect, color);
+			};
 
-			const Rect rect(x * columnWidth, surface.getHeight() - height, columnWidth, height);
-			surface.fillRect(rect, color);
-		};
+			// Fill in columns.
+			const double targetFpsReal = static_cast<double>(targetFps);
+			const double minFpsReal = static_cast<double>(minFps);
+			for (int i = 0; i < fpsCounter.getFrameCount(); i++)
+			{
+				const double frameTime = fpsCounter.getFrameTime(i);
+				const double fps = 1.0 / frameTime;
+				const double fpsPercent = std::clamp(
+					(fps - minFpsReal) / (targetFpsReal - minFpsReal), 0.0, 1.0);
+				drawGraphColumn(i, fpsPercent);
+			}
 
-		// Fill in columns.
-		for (int i = 0; i < fpsCounter.getFrameCount(); i++)
-		{
-			const double frameTime = fpsCounter.getFrameTime(i);
-			const double fps = 1.0 / frameTime;
-			const double fpsPercent = std::clamp((fps - minFps) / (targetFps - minFps), 0.0, 1.0);
-			drawGraphColumn(i, fpsPercent);
-		}
+			return renderer.createTextureFromSurface(surface);
+		}();
 
-		return renderer.createTextureFromSurface(surface);
-	}();
-
-	renderer.drawOriginal(tempText.getTexture(), tempText.getX(), tempText.getY());
-	renderer.drawOriginal(frameTimesGraph, tempText.getX(), 94);
+		renderer.drawOriginal(textBox.getTexture(), textBox.getX(), textBox.getY());
+		renderer.drawOriginal(frameTimesGraph, textBox.getX(), 94);
+	}
 }
 
 void GameWorldPanel::tick(double dt)
@@ -2660,9 +2731,10 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		}
 	}
 
-	// Draw some optional debug text.
-	if (options.getMisc_ShowDebug())
+	// Draw some optional profiler text.
+	const int profilerLevel = options.getMisc_ProfilerLevel();
+	if (profilerLevel > Options::MIN_PROFILER_LEVEL)
 	{
-		this->drawDebugText(renderer);
+		this->drawProfiler(profilerLevel, renderer);
 	}
 }

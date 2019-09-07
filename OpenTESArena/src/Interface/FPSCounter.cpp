@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <tuple>
 
 #include "FPSCounter.h"
 
@@ -18,23 +19,23 @@ int FPSCounter::getFrameCount() const
 
 double FPSCounter::getFrameTime(int index) const
 {
-	return this->frameTimes.at(index);
+	DebugAssertIndex(this->frameTimes, index);
+	return this->frameTimes[index];
 }
 
 double FPSCounter::getAverageFrameTime() const
 {
 	// Only need a few frame times to get a decent approximation.
-	const size_t count = 20;
-	DebugAssert(count <= this->frameTimes.size());
+	constexpr size_t count = 20;
+	static_assert(std::tuple_size<decltype(this->frameTimes)>::value >= count);
 
 	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.begin() + count, 0.0);
 	return sum / static_cast<double>(count);
 }
 
-double FPSCounter::getFPS() const
+double FPSCounter::getAverageFPS() const
 {
-	const double fps = 1.0 / this->getAverageFrameTime();
-	return std::isfinite(fps) ? fps : 0.0;
+	return 1.0 / this->getAverageFrameTime();
 }
 
 void FPSCounter::updateFrameTime(double dt)

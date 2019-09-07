@@ -76,8 +76,9 @@ Collision=true
 # Shows the opening cinematic on program start.
 ShowIntro=true
 
-# Draws various debug info to the screen.
-ShowDebug=false
+# Draws various profiler info in the game world. Higher profiler levels
+# display more information. Min is 0, max is 3.
+ProfilerLevel=0
 
 ShowCompass=true
 
