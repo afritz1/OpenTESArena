@@ -70,6 +70,9 @@ private:
 
 	// Helper method for making a renderer context.
 	static SDL_Renderer *createRenderer(SDL_Window *window);
+
+	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
+	static int makeRendererDimension(int value, double resolutionScale);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();

@@ -100,6 +100,14 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 	return rendererContext;
 }
 
+int Renderer::makeRendererDimension(int value, double resolutionScale)
+{
+	// Make sure renderer dimensions are at least 1x1, and round to make sure an
+	// imprecise resolution scale doesn't result in off-by-one resolutions (like 1079p).
+	return std::max(static_cast<int>(
+		std::round(static_cast<double>(value) * resolutionScale)), 1);
+}
+
 double Renderer::getLetterboxAspect() const
 {
 	if (this->letterboxMode == 0)
@@ -420,9 +428,9 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		// interface is visible or not.
 		const int viewHeight = this->getViewHeight();
 
-		// Make sure render dimensions are at least 1x1.
-		const int renderWidth = std::max(static_cast<int>(width * resolutionScale), 1);
-		const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
+		// Calculate renderer dimensions.
+		const int renderWidth = Renderer::makeRendererDimension(width, resolutionScale);
+		const int renderHeight = Renderer::makeRendererDimension(viewHeight, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
 		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
@@ -495,8 +503,8 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 	const int viewHeight = this->getViewHeight();
 
 	// Make sure render dimensions are at least 1x1.
-	const int renderWidth = std::max(static_cast<int>(screenWidth * resolutionScale), 1);
-	const int renderHeight = std::max(static_cast<int>(viewHeight * resolutionScale), 1);
+	const int renderWidth = Renderer::makeRendererDimension(screenWidth, resolutionScale);
+	const int renderHeight = Renderer::makeRendererDimension(viewHeight, resolutionScale);
 
 	// Initialize a new game world frame buffer, removing any previous game world frame buffer.
 	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
