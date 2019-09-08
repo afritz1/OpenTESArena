@@ -2237,7 +2237,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string text = 
 			std::string("FPS Graph:") + '\n' +
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
-			"                               " + std::to_string(minFps);
+			"                               " + std::to_string(0);
 
 		const RichTextString richText(
 			text,
@@ -2250,7 +2250,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const int y = 86;
 		const TextBox textBox(x, y, richText, renderer);
 
-		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps, minFps]()
+		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps]()
 		{
 			// Graph maximum is target FPS, minimum is MIN_FPS.
 			const int columnWidth = 1;
@@ -2300,13 +2300,11 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 			// Fill in columns.
 			const double targetFpsReal = static_cast<double>(targetFps);
-			const double minFpsReal = static_cast<double>(minFps);
 			for (int i = 0; i < fpsCounter.getFrameCount(); i++)
 			{
 				const double frameTime = fpsCounter.getFrameTime(i);
 				const double fps = 1.0 / frameTime;
-				const double fpsPercent = std::clamp(
-					(fps - minFpsReal) / (targetFpsReal - minFpsReal), 0.0, 1.0);
+				const double fpsPercent = std::clamp(fps / targetFpsReal, 0.0, 1.0);
 				drawGraphColumn(i, fpsPercent);
 			}
 

@@ -476,9 +476,11 @@ void Game::loop()
 			return diff;
 		}();
 
-		// Clamp the delta time to at most the maximum frame time.
-		const double dt = std::fmin(frameTime.count(), maxFrameTime.count()) /
-			static_cast<double>(timeUnits);
+		// Two delta times: actual and clamped. Use the clamped delta time for game calculations
+		// so things don't break at low frame rates.
+		constexpr double timeUnitsReal = static_cast<double>(timeUnits);
+		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
+		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
 
 		// Update the input manager's state.
 		this->inputManager.update();
@@ -505,7 +507,7 @@ void Game::loop()
 			// Multiply delta time by the time scale. I settled on having the effects of this
 			// be application-wide rather than just in the game world since it's intended to
 			// simulate lower DOSBox cycles.
-			const double timeScaledDt = dt * this->options.getMisc_TimeScale();
+			const double timeScaledDt = clampedDt * this->options.getMisc_TimeScale();
 			this->tick(timeScaledDt);
 		}
 		catch (const std::exception &e)
