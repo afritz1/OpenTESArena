@@ -16,6 +16,8 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
+#include "components/utilities/Profiler.h"
+
 // This class holds the current game data, manages the primary game loop, and 
 // updates the game state each frame.
 
@@ -46,6 +48,7 @@ private:
 	Renderer renderer;
 	TextureManager textureManager;
 	MiscAssets miscAssets;
+	Profiler profiler;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
@@ -110,6 +113,9 @@ public:
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets();
+
+	// Gets the profiler instance for measuring precise time spans.
+	Profiler &getProfiler();
 
 	// Gets the frames-per-second counter. This is updated in the game loop.
 	const FPSCounter &getFPSCounter() const;

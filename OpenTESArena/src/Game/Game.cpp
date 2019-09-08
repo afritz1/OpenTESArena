@@ -190,6 +190,11 @@ MiscAssets &Game::getMiscAssets()
 	return this->miscAssets;
 }
 
+Profiler &Game::getProfiler()
+{
+	return this->profiler;
+}
+
 const FPSCounter &Game::getFPSCounter() const
 {
 	return this->fpsCounter;
@@ -445,26 +450,31 @@ void Game::loop()
 		const std::chrono::duration<int64_t, std::nano> minFrameTime(
 			timeUnits / this->options.getGraphics_TargetFPS());
 
-		// Delay the current frame if the previous one was too fast.
-		auto frameTime = thisTime - lastTime;
-		if (frameTime < minFrameTime)
+		// Time since the last frame started.
+		const auto frameTime = [minFrameTime, &sleepBias, &thisTime, lastTime]()
 		{
-			const auto sleepTime = minFrameTime - frameTime + sleepBias;
-
-			std::this_thread::sleep_for(sleepTime);
-
-			// Compensate for sleeping too long. Thread sleeping has questionable accuracy.
-			const auto tempTime = std::chrono::high_resolution_clock::now();
-			const auto unnecessarySleepTime = [thisTime, sleepTime, tempTime]()
+			// Delay the current frame if the previous one was too fast.
+			auto diff = thisTime - lastTime;
+			if (diff < minFrameTime)
 			{
-				const auto tempFrameTime = tempTime - thisTime;
-				return tempFrameTime - sleepTime;
-			}();
+				const auto sleepTime = minFrameTime - diff + sleepBias;
+				std::this_thread::sleep_for(sleepTime);
 
-			sleepBias = -unnecessarySleepTime;
-			thisTime = tempTime;
-			frameTime = thisTime - lastTime;
-		}
+				// Compensate for sleeping too long. Thread sleeping has questionable accuracy.
+				const auto tempTime = std::chrono::high_resolution_clock::now();
+				const auto unnecessarySleepTime = [thisTime, sleepTime, tempTime]()
+				{
+					const auto tempFrameTime = tempTime - thisTime;
+					return tempFrameTime - sleepTime;
+				}();
+
+				sleepBias = -unnecessarySleepTime;
+				thisTime = tempTime;
+				diff = thisTime - lastTime;
+			}
+
+			return diff;
+		}();
 
 		// Clamp the delta time to at most the maximum frame time.
 		const double dt = std::fmin(frameTime.count(), maxFrameTime.count()) /
