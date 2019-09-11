@@ -1506,41 +1506,59 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					if (VoxelData::WallData::menuHasDisplayName(menuType))
 					{
 						const auto &exterior = static_cast<ExteriorLevelData&>(level);
-						const Int2 voxelXZ(voxel.x, voxel.z);
 
 						// Get interior name from the clicked voxel.
-						// @todo: probably need to handle wilderness coordinates differently.
-						const auto &menuNames = exterior.getMenuNames();
-						const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-							[&voxelXZ](const std::pair<Int2, std::string> &pair)
+						const std::string menuName = [&game, isCity, menuType, &exterior, &voxel]()
 						{
-							return pair.first == voxelXZ;
-						});
+							const Int2 voxelXZ(voxel.x, voxel.z);
 
-						std::string menuName;
-						const bool foundName = iter != menuNames.end();
-
-						if (foundName)
-						{
-							menuName = iter->second;
-						}
-						else
-						{
-							// If no menu name was generated, then see if it's a mage's guild.
-							if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+							if (isCity)
 							{
-								const auto &miscAssets = game.getMiscAssets();
-								const auto &exeData = miscAssets.getExeData();
-								menuName = exeData.cityGen.magesGuildMenuName;
+								// City interior name.
+								const auto &menuNames = exterior.getMenuNames();
+								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+									[&voxelXZ](const std::pair<Int2, std::string> &pair)
+								{
+									return pair.first == voxelXZ;
+								});
+
+								const bool foundName = iter != menuNames.end();
+
+								if (foundName)
+								{
+									return iter->second;
+								}
+								else
+								{
+									// If no menu name was generated, then see if it's a mage's guild.
+									if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+									{
+										const auto &miscAssets = game.getMiscAssets();
+										const auto &exeData = miscAssets.getExeData();
+										return exeData.cityGen.magesGuildMenuName;
+									}
+									else
+									{
+										// This should only happen if the player created a new *MENU voxel,
+										// which shouldn't occur in regular play.
+										DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
+											", " + std::to_string(voxel.y) + ").");
+										return std::string();
+									}
+								}
 							}
 							else
 							{
-								// This should only happen if the player created a new *MENU voxel,
-								// which shouldn't occur in regular play.
-								DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
-									", " + std::to_string(voxel.y) + ").");
+								// Wilderness interior name.
+								// @todo: get the actual interior name (depends on the chunk coordinate).
+								const auto &voxelGrid = exterior.getVoxelGrid();
+								const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+									voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+								const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+								const Int2 relativeVoxel = originalVoxel - relativeOrigin;
+								return std::to_string(relativeVoxel.x) + ", " + std::to_string(relativeVoxel.y);
 							}
-						}
+						}();
 
 						const RichTextString richText(
 							menuName,

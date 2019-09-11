@@ -874,18 +874,9 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 
 Int2 ExteriorLevelData::getRelativeWildOrigin(const Int2 &voxel)
 {
-	// Trying to get voxel coordinate of place in wilderness that behaves as (0, 0) for
-	// where the player is.
-
-	// Sort of works in blocks of 64 with 32 block offset.
-	// The edges of the player's 128x128 region are always multiples of 64.
-	DebugNotImplemented();
-
-	return Int2();
-
-	/*return Int2(
-		32 + (voxel.x / RMDFile::WIDTH),
-		32 + (voxel.y / RMDFile::DEPTH));*/
+	return Int2(
+		voxel.x - (voxel.x % (RMDFile::WIDTH * 2)),
+		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
