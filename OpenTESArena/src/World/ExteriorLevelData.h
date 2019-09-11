@@ -52,6 +52,12 @@ public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
 
+	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given
+	// position. This space always contains 4 wild chunks.
+	// @todo: when changing to chunks, probably use chunk X and Y here instead of absolute [0,4095],
+	// and return the chunk coordinate that contains the origin.
+	static Int2 getRelativeWildOrigin(const Int2 &voxel);
+
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
 	static ExteriorLevelData loadPremadeCity(const MIFFile::Level &level, WeatherType weatherType,
 		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
