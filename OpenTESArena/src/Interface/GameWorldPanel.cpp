@@ -1556,7 +1556,13 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 									voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
 								const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
 								const Int2 relativeVoxel = originalVoxel - relativeOrigin;
-								return std::to_string(relativeVoxel.x) + ", " + std::to_string(relativeVoxel.y);
+								const Int2 chunkCoords(
+									originalVoxel.x / RMDFile::WIDTH,
+									originalVoxel.y / RMDFile::DEPTH);
+								return std::to_string(relativeVoxel.x) + ", " +
+									std::to_string(relativeVoxel.y) + " (chunk: " +
+									std::to_string(chunkCoords.x) + ", " +
+									std::to_string(chunkCoords.y) + ")";
 							}
 						}();
 
