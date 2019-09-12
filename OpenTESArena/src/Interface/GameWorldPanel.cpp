@@ -1786,15 +1786,30 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 			if (isTransitionToInterior)
 			{
-				// @todo: this probably needs to be relative to the current chunk when in the
-				// wilderness.
 				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+				const Int2 doorVoxel = [isCity, &originalVoxel]()
+				{
+					if (isCity)
+					{
+						return originalVoxel;
+					}
+					else
+					{
+						// Get the door voxel using the relative wilderness origin near the player
+						// as the reference.
+						const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+						const Int2 relativeVoxel = originalVoxel - relativeOrigin;
+						return relativeVoxel;
+					}
+				}();
+
 				const auto &cityDataFile = gameData.getCityDataFile();
 				const Location &location = gameData.getLocation();
 				const auto &exeData = game.getMiscAssets().getExeData();
 				const std::string mifName = cityDataFile.getDoorVoxelMifName(
-					originalVoxel.x, originalVoxel.y, menuID, location.localCityID,
+					doorVoxel.x, doorVoxel.y, menuID, location.localCityID,
 					location.provinceID, isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
