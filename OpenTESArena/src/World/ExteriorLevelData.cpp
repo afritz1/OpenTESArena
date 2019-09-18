@@ -428,6 +428,14 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 	generateNames(VoxelData::WallData::MenuType::Temple);
 }
 
+void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int provinceID,
+	const MiscAssets &miscAssets)
+{
+	// @todo
+	/*const auto &cityData = miscAssets.getCityDataFile();
+	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);*/
+}
+
 void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
@@ -1047,6 +1055,9 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
 	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
+
+	// Generate wilderness building names.
+	levelData.generateWildChunkBuildingNames(localCityID, provinceID, miscAssets);
 
 	// Generate distant sky.
 	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,

@@ -36,6 +36,10 @@ private:
 		ArenaRandom &random, bool isCoastal, bool isCity, int gridWidth, int gridDepth,
 		const MiscAssets &miscAssets);
 
+	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
+	void generateWildChunkBuildingNames(int localCityID, int provinceID,
+		const MiscAssets &miscAssets);
+
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.
 	static void revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth);
