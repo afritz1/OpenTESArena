@@ -71,6 +71,18 @@ public:
 		return this->data.get()[index];
 	}
 
+	T *end()
+	{
+		return (this->data.get() != nullptr) ?
+			(this->data.get() + (this->width * this->height)) : nullptr;
+	}
+
+	const T *end() const
+	{
+		return (this->data.get() != nullptr) ?
+			(this->data.get() + (this->width * this->height)) : nullptr;
+	}
+
 	int getWidth() const
 	{
 		return this->width;
@@ -95,8 +107,7 @@ public:
 
 	void fill(const T &value)
 	{
-		const int count = this->width * this->height;
-		std::fill(this->data.get(), this->data.get() + count, value);
+		std::fill(this->data.get(), this->end(), value);
 	}
 
 	void clear()

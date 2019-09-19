@@ -61,6 +61,18 @@ public:
 		return this->data.get()[index];
 	}
 
+	T *end()
+	{
+		return (this->data.get() != nullptr) ?
+			(this->data.get() + this->count) : nullptr;
+	}
+
+	const T *end() const
+	{
+		return (this->data.get() != nullptr) ?
+			(this->data.get() + this->count) : nullptr;
+	}
+
 	int getCount() const
 	{
 		return this->count;
@@ -82,7 +94,7 @@ public:
 
 	void fill(const T &value)
 	{
-		std::fill(this->data.get(), this->data.get() + this->count, value);
+		std::fill(this->data.get(), this->end(), value);
 	}
 
 	void clear()
