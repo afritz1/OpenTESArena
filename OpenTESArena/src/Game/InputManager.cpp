@@ -5,7 +5,7 @@ InputManager::InputManager()
 
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
 {
-	return (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == keycode);
+	return (e.type == SDL_KEYDOWN) && (e.key.keysym.sym == keycode) && (e.key.repeat == 0);
 }
 
 bool InputManager::keyReleased(const SDL_Event &e, SDL_Keycode keycode) const
