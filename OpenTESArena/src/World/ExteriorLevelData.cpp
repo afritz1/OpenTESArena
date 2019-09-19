@@ -692,16 +692,15 @@ Buffer2D<uint8_t> ExteriorLevelData::generateWildernessIndices(uint32_t wildSeed
 }
 
 void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
-	std::vector<uint16_t> &flor, std::vector<uint16_t> &map1, std::vector<uint16_t> &map2,
-	int gridWidth, int gridDepth, const MiscAssets &miscAssets)
+	Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
+	const MiscAssets &miscAssets)
 {
 	// For now, assume the given buffers are for the entire 4096x4096 wilderness.
 	// @todo: change to only care about 128x128 layers.
-	DebugAssert(flor.size() == (RMDFile::ELEMENTS_PER_FLOOR *
-		(gridWidth / RMDFile::WIDTH) * (gridDepth / RMDFile::DEPTH)));
-	DebugAssert(flor.size() == map1.size());
-	DebugAssert(flor.size() == map2.size());
-	DebugAssert(gridWidth == gridDepth);
+	DebugAssert(flor.getWidth() == (64 * RMDFile::WIDTH));
+	DebugAssert(flor.getWidth() == flor.getHeight());
+	DebugAssert(flor.getWidth() == map1.getWidth());
+	DebugAssert(flor.getWidth() == map2.getWidth());
 
 	// Clear all placeholder city blocks.
 	const int placeholderWidth = RMDFile::WIDTH * 2;
@@ -713,12 +712,13 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 
 	for (int x = 0; x < placeholderWidth; x++)
 	{
-		const int startIndex = DebugMakeIndex(flor, zOffset + ((x + xOffset) * gridDepth));
+		const int startIndex = zOffset + ((x + xOffset) * flor.getWidth());
 
-		auto clearRow = [placeholderDepth, startIndex](std::vector<uint16_t> &dst)
+		auto clearRow = [placeholderDepth, startIndex](Buffer2D<uint16_t> &dst)
 		{
-			const auto dstBegin = dst.begin() + startIndex;
+			const auto dstBegin = dst.get() + startIndex;
 			const auto dstEnd = dstBegin + placeholderDepth;
+			DebugAssert(dstEnd <= dst.end());
 			std::fill(dstBegin, dstEnd, 0);
 		};
 
@@ -863,14 +863,15 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	for (int z = 0; z < mif.getDepth(); z++)
 	{
 		const int srcIndex = DebugMakeIndex(cityFlor, z * mif.getWidth());
-		const int dstIndex = DebugMakeIndex(flor, xOffset + ((z + zOffset) * gridDepth));
+		const int dstIndex = xOffset + ((z + zOffset) * flor.getWidth());
 
 		auto writeRow = [&mif, srcIndex, dstIndex](
-			const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+			const std::vector<uint16_t> &src, Buffer2D<uint16_t> &dst)
 		{
 			const auto srcBegin = src.begin() + srcIndex;
 			const auto srcEnd = srcBegin + mif.getWidth();
-			const auto dstBegin = dst.begin() + dstIndex;
+			const auto dstBegin = dst.get() + dstIndex;
+			DebugAssert((dstBegin + std::distance(srcBegin, srcEnd)) <= dst.end());
 			std::copy(srcBegin, srcEnd, dstBegin);
 		};
 
@@ -987,17 +988,16 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	const Buffer2D<uint8_t> wildIndices =
 		ExteriorLevelData::generateWildernessIndices(wildSeed, wildData);
 
-	const int gridWidth = 64 * wildIndices.getHeight();
-	const int gridDepth = 64 * wildIndices.getWidth();
-
 	// Temp buffers for voxel data.
-	const size_t voxelsPerFloor = RMDFile::ELEMENTS_PER_FLOOR *
-		(wildIndices.getWidth() * wildIndices.getHeight());
-	std::vector<uint16_t> tempFlor(voxelsPerFloor, 0);
-	std::vector<uint16_t> tempMap1(voxelsPerFloor, 0);
-	std::vector<uint16_t> tempMap2(voxelsPerFloor, 0);
+	Buffer2D<uint16_t> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
+		RMDFile::WIDTH * wildIndices.getHeight());
+	Buffer2D<uint16_t> tempMap1(tempFlor.getWidth(), tempFlor.getHeight());
+	Buffer2D<uint16_t> tempMap2(tempFlor.getWidth(), tempFlor.getHeight());
+	tempFlor.fill(0);
+	tempMap1.fill(0);
+	tempMap2.fill(0);
 
-	auto writeRMD = [&miscAssets, gridDepth, &tempFlor, &tempMap1, &tempMap2](
+	auto writeRMD = [&miscAssets, &tempFlor, &tempMap1, &tempMap2](
 		uint8_t rmdID, int xOffset, int zOffset)
 	{
 		const std::vector<RMDFile> &rmdFiles = miscAssets.getWildernessChunks();
@@ -1007,15 +1007,16 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 		// Copy .RMD voxel data to temp buffers.
 		for (int z = 0; z < RMDFile::DEPTH; z++)
 		{
-			const int srcIndex = z * RMDFile::WIDTH;
-			const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
+			const int srcIndex = z * RMDFile::DEPTH;
+			const int dstIndex = xOffset + ((z + zOffset) * tempFlor.getWidth());
 
 			auto writeRow = [srcIndex, dstIndex](const std::vector<uint16_t> &src,
-				std::vector<uint16_t> &dst)
+				Buffer2D<uint16_t> &dst)
 			{
 				const auto srcBegin = src.begin() + srcIndex;
-				const auto srcEnd = srcBegin + RMDFile::WIDTH;
-				const auto dstBegin = dst.begin() + dstIndex;
+				const auto srcEnd = srcBegin + RMDFile::DEPTH;
+				const auto dstBegin = dst.get() + dstIndex;
+				DebugAssert((dstBegin + std::distance(srcBegin, srcEnd)) <= dst.end());
 				std::copy(srcBegin, srcEnd, dstBegin);
 			};
 
@@ -1036,13 +1037,14 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	}
 
 	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
-	ExteriorLevelData::reviseWildernessCity(localCityID, provinceID, tempFlor, tempMap1,
-		tempMap2, gridWidth, gridDepth, miscAssets);
+	ExteriorLevelData::reviseWildernessCity(
+		localCityID, provinceID, tempFlor, tempMap1, tempMap2, miscAssets);
 
 	// Create the level for the voxel data to be written into.
 	const int levelHeight = 6;
 	const std::string levelName = "WILD"; // Arbitrary
-	ExteriorLevelData levelData(gridWidth, levelHeight, gridDepth, infName, levelName);
+	ExteriorLevelData levelData(tempFlor.getWidth(), levelHeight, tempFlor.getHeight(),
+		infName, levelName);
 
 	// Empty voxel data (for air).
 	levelData.getVoxelGrid().addVoxelData(VoxelData());
@@ -1050,9 +1052,10 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
-	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Wilderness, gridWidth, gridDepth, exeData);
-	levelData.readMAP2(tempMap2.data(), inf, gridWidth, gridDepth);
+	levelData.readFLOR(tempFlor.get(), inf, tempFlor.getWidth(), tempFlor.getHeight());
+	levelData.readMAP1(tempMap1.get(), inf, WorldType::Wilderness, tempMap1.getWidth(),
+		tempMap1.getHeight(), exeData);
+	levelData.readMAP2(tempMap2.get(), inf, tempMap1.getWidth(), tempMap1.getHeight());
 	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
 	// Generate wilderness building names.
