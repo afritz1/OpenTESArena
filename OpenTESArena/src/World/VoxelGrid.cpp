@@ -2,6 +2,8 @@
 
 #include "VoxelGrid.h"
 
+#include "components/debug/Debug.h"
+
 VoxelGrid::VoxelGrid(int width, int height, int depth)
 {
 	const int voxelCount = width * height * depth;
@@ -14,6 +16,12 @@ VoxelGrid::VoxelGrid(int width, int height, int depth)
 
 int VoxelGrid::getIndex(int x, int y, int z) const
 {
+	DebugAssert(x >= 0);
+	DebugAssert(y >= 0);
+	DebugAssert(z >= 0);
+	DebugAssert(x < this->width);
+	DebugAssert(y < this->height);
+	DebugAssert(z < this->depth);
 	return x + (y * this->width) + (z * this->width * this->height);
 }
 
