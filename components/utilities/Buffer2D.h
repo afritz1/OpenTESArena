@@ -49,12 +49,23 @@ public:
 		return this->data.get() != nullptr;
 	}
 
-	T *get() const
+	T *get()
 	{
 		return this->data.get();
 	}
 
-	T &get(int x, int y) const
+	const T *get() const
+	{
+		return this->data.get();
+	}
+
+	T &get(int x, int y)
+	{
+		const int index = this->getIndex(x, y);
+		return this->data.get()[index];
+	}
+
+	const T &get(int x, int y) const
 	{
 		const int index = this->getIndex(x, y);
 		return this->data.get()[index];

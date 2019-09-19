@@ -37,12 +37,24 @@ public:
 		return this->data.get() != nullptr;
 	}
 
-	T *get() const
+	T *get()
 	{
 		return this->data.get();
 	}
 
-	T &get(int index) const
+	const T *get() const
+	{
+		return this->data.get();
+	}
+
+	T &get(int index)
+	{
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
+		return this->data.get()[index];
+	}
+
+	const T &get(int index) const
 	{
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
