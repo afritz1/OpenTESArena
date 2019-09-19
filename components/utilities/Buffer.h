@@ -42,6 +42,13 @@ public:
 		return this->data.get();
 	}
 
+	T &get(int index) const
+	{
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
+		return this->data.get()[index];
+	}
+
 	int getCount() const
 	{
 		return this->count;

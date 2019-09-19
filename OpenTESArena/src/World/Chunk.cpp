@@ -47,7 +47,7 @@ constexpr int Chunk::getDepth() const
 
 VoxelID Chunk::get(int x, int y, int z) const
 {
-	return *this->voxels.get(x, y, z);
+	return this->voxels.get(x, y, z);
 }
 
 const VoxelData &Chunk::getVoxelData(VoxelID id) const

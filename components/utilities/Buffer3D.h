@@ -59,10 +59,10 @@ public:
 		return this->data.get();
 	}
 
-	T *get(int x, int y, int z) const
+	T &get(int x, int y, int z) const
 	{
 		const int index = this->getIndex(x, y, z);
-		return this->data.get() + index;
+		return this->data.get()[index];
 	}
 
 	int getWidth() const

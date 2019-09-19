@@ -1030,8 +1030,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	{
 		for (int x = 0; x < wildIndices.getWidth(); x++)
 		{
-			// @todo: offsets are from top right; change to top left?
-			const uint8_t wildIndex = *wildIndices.get(x, y);
+			const uint8_t wildIndex = wildIndices.get(x, y);
 			writeRMD(wildIndex, x * RMDFile::WIDTH, y * RMDFile::DEPTH);
 		}
 	}
