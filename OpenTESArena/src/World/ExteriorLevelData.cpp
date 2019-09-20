@@ -431,9 +431,120 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int provinceID,
 	const MiscAssets &miscAssets)
 {
-	// @todo
-	/*const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);*/
+	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
+	// match the given menu type.
+	auto generateNames = [this, localCityID, provinceID, &miscAssets](
+		int wildX, int wildY, VoxelData::WallData::MenuType menuType)
+	{
+		const auto &exeData = miscAssets.getExeData();
+
+		// Don't need hashInSeen() for the wilderness.
+
+		// Lambdas for creating tavern and temple building names.
+		auto createTavernName = [&exeData](int m, int n)
+		{
+			const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+			const auto &tavernSuffixes = exeData.cityGen.tavernSuffixes;
+			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
+		};
+
+		auto createTempleName = [&exeData](int model, int n)
+		{
+			const auto &templePrefixes = exeData.cityGen.templePrefixes;
+			const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+			const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+			const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+			const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
+				&temple3Suffixes, model, n]() -> const std::string&
+			{
+				if (model == 0)
+				{
+					return temple1Suffixes.at(n);
+				}
+				else if (model == 1)
+				{
+					return temple2Suffixes.at(n);
+				}
+				else
+				{
+					return temple3Suffixes.at(n);
+				}
+			}();
+
+			// No extra whitespace needed, I think?
+			return templePrefixes.at(model) + templeSuffix;
+		};
+
+		// The lambda called for each main-floor voxel in the area.
+		auto tryGenerateBlockName = [this, wildX, wildY, menuType, &createTavernName,
+			&createTempleName](int x, int z)
+		{
+			const uint32_t wildChunkSeed = (wildY << 16) + wildX;
+			ArenaRandom random(wildChunkSeed);
+
+			// See if the current voxel is a *MENU block and matches the target menu type.
+			const bool matchesTargetType = [this, x, z, menuType]()
+			{
+				const auto &voxelGrid = this->getVoxelGrid();
+				const bool isCity = false; // Wilderness only.
+				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
+				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+				return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
+					(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
+			}();
+
+			if (matchesTargetType)
+			{
+				// Get the *MENU block's display name.
+				int hash;
+				std::string name;
+
+				if (menuType == VoxelData::WallData::MenuType::Tavern)
+				{
+					// Tavern.
+					int m = random.next() % 23;
+					int n = random.next() % 23;
+					hash = (m << 8) + n;
+					name = createTavernName(m, n);
+				}
+				else
+				{
+					// Temple.
+					int model = random.next() % 3;
+					const std::array<int, 3> ModelVars = { 5, 9, 10 };
+					const int vars = ModelVars.at(model);
+					int n = random.next() % vars;
+					hash = (model << 8) + n;
+					name = createTempleName(model, n);
+				}
+
+				this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
+			}
+		};
+
+		// Start at the top-right corner of the map, running right to left and top to bottom.
+		for (int x = RMDFile::DEPTH - 1; x >= 0; x--)
+		{
+			for (int z = RMDFile::WIDTH - 1; z >= 0; z--)
+			{
+				const int xOffset = wildY * RMDFile::DEPTH;
+				const int zOffset = wildX * RMDFile::WIDTH;
+				tryGenerateBlockName(x + xOffset, z + zOffset);
+			}
+		}
+	};
+
+	// Iterate over each wild chunk.
+	const int wildChunksPerSide = 64;
+	for (int y = 0; y < wildChunksPerSide; y++)
+	{
+		for (int x = 0; x < wildChunksPerSide; x++)
+		{
+			generateNames(x, y, VoxelData::WallData::MenuType::Tavern);
+			generateNames(x, y, VoxelData::WallData::MenuType::Temple);
+		}
+	}
 }
 
 void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth)

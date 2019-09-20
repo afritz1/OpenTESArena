@@ -1550,19 +1550,38 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							else
 							{
 								// Wilderness interior name.
-								// @todo: get the actual interior name (depends on the chunk coordinate).
-								const auto &voxelGrid = exterior.getVoxelGrid();
+
+								// Probably don't need this here with the current wild name generation.
+								/*const auto &voxelGrid = exterior.getVoxelGrid();
 								const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
 									voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
 								const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
 								const Int2 relativeVoxel = originalVoxel - relativeOrigin;
 								const Int2 chunkCoords(
 									originalVoxel.x / RMDFile::WIDTH,
-									originalVoxel.y / RMDFile::DEPTH);
-								return std::to_string(relativeVoxel.x) + ", " +
-									std::to_string(relativeVoxel.y) + " (chunk: " +
-									std::to_string(chunkCoords.x) + ", " +
-									std::to_string(chunkCoords.y) + ")";
+									originalVoxel.y / RMDFile::DEPTH);*/
+
+								const auto &menuNames = exterior.getMenuNames();
+								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+									[&voxelXZ](const std::pair<Int2, std::string> &pair)
+								{
+									return pair.first == voxelXZ;
+								});
+
+								const bool foundName = iter != menuNames.end();
+
+								if (foundName)
+								{
+									return iter->second;
+								}
+								else
+								{
+									// This should only happen if the player created a new *MENU voxel,
+									// which shouldn't occur in regular play.
+									DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
+										", " + std::to_string(voxel.y) + ").");
+									return std::string();
+								}
 							}
 						}();
 
