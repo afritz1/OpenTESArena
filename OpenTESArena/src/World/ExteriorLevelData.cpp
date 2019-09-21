@@ -437,6 +437,7 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 		int wildX, int wildY, VoxelData::WallData::MenuType menuType)
 	{
 		const auto &exeData = miscAssets.getExeData();
+		const uint32_t wildChunkSeed = (wildY << 16) + wildX;
 
 		// Don't need hashInSeen() for the wilderness.
 
@@ -477,18 +478,25 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 		};
 
 		// The lambda called for each main-floor voxel in the area.
-		auto tryGenerateBlockName = [this, wildX, wildY, menuType, &createTavernName,
+		auto tryGenerateBlockName = [this, wildX, wildY, wildChunkSeed, menuType, &createTavernName,
 			&createTempleName](int x, int z)
 		{
-			const uint32_t wildChunkSeed = (wildY << 16) + wildX;
 			ArenaRandom random(wildChunkSeed);
 
+			// Make sure the coordinate math is done in the new coordinate system.
+			const Int2 relativeOrigin(
+				((RMDFile::DEPTH - 1) - wildX) * RMDFile::DEPTH,
+				((RMDFile::WIDTH - 1) - wildY) * RMDFile::WIDTH);
+			const Int2 dstPoint(
+				relativeOrigin.y + (RMDFile::WIDTH - 1 - x),
+				relativeOrigin.x + (RMDFile::DEPTH - 1 - z));
+
 			// See if the current voxel is a *MENU block and matches the target menu type.
-			const bool matchesTargetType = [this, x, z, menuType]()
+			const bool matchesTargetType = [this, &dstPoint, menuType]()
 			{
 				const auto &voxelGrid = this->getVoxelGrid();
 				const bool isCity = false; // Wilderness only.
-				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
+				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
 				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 				return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
 					(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
@@ -497,40 +505,36 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 			if (matchesTargetType)
 			{
 				// Get the *MENU block's display name.
-				int hash;
-				std::string name;
-
-				if (menuType == VoxelData::WallData::MenuType::Tavern)
+				const std::string name = [menuType, &random, &createTavernName, &createTempleName]()
 				{
-					// Tavern.
-					int m = random.next() % 23;
-					int n = random.next() % 23;
-					hash = (m << 8) + n;
-					name = createTavernName(m, n);
-				}
-				else
-				{
-					// Temple.
-					int model = random.next() % 3;
-					const std::array<int, 3> ModelVars = { 5, 9, 10 };
-					const int vars = ModelVars.at(model);
-					int n = random.next() % vars;
-					hash = (model << 8) + n;
-					name = createTempleName(model, n);
-				}
+					if (menuType == VoxelData::WallData::MenuType::Tavern)
+					{
+						// Tavern.
+						const int m = random.next() % 23;
+						const int n = random.next() % 23;
+						return createTavernName(m, n);
+					}
+					else
+					{
+						// Temple.
+						const int model = random.next() % 3;
+						const std::array<int, 3> ModelVars = { 5, 9, 10 };
+						const int vars = ModelVars.at(model);
+						const int n = random.next() % vars;
+						return createTempleName(model, n);
+					}
+				}();
 
-				this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
+				this->menuNames.push_back(std::make_pair(dstPoint, std::move(name)));
 			}
 		};
 
-		// Start at the top-right corner of the map, running right to left and top to bottom.
-		for (int x = RMDFile::DEPTH - 1; x >= 0; x--)
+		// Iterate blocks in the chunk in any order. They are order-independent in the wild.
+		for (int x = 0; x < RMDFile::DEPTH; x++)
 		{
-			for (int z = RMDFile::WIDTH - 1; z >= 0; z--)
+			for (int z = 0; z < RMDFile::WIDTH; z++)
 			{
-				const int xOffset = wildY * RMDFile::DEPTH;
-				const int zOffset = wildX * RMDFile::WIDTH;
-				tryGenerateBlockName(x + xOffset, z + zOffset);
+				tryGenerateBlockName(x, z);
 			}
 		}
 	};

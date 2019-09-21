@@ -1541,8 +1541,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 									{
 										// This should only happen if the player created a new *MENU voxel,
 										// which shouldn't occur in regular play.
-										DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
-											", " + std::to_string(voxel.y) + ").");
+										DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
+											", " + std::to_string(voxelXZ.y) + ").");
 										return std::string();
 									}
 								}
@@ -1578,8 +1578,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								{
 									// This should only happen if the player created a new *MENU voxel,
 									// which shouldn't occur in regular play.
-									DebugLogWarning("No *MENU name at (" + std::to_string(voxel.x) +
-										", " + std::to_string(voxel.y) + ").");
+									DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
+										", " + std::to_string(voxelXZ.y) + ").");
 									return std::string();
 								}
 							}
