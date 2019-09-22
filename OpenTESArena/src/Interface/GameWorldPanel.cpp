@@ -2252,7 +2252,6 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string renderWidth = std::to_string(renderDims.x);
 		const std::string renderHeight = std::to_string(renderDims.y);
 		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
-		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
 
 		const std::string posX = String::fixedPrecision(position.x, 2);
 		const std::string posY = String::fixedPrecision(position.y, 2);
@@ -2265,11 +2264,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
 			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
 			"Pos: " + posX + ", " + posY + ", " + posZ + '\n' +
-			"Dir: " + dirX + ", " + dirY + ", " + dirZ + "\n\n" +
-			"Idle: TBD" + '\n' +
-			"Tick: TBD" + '\n' +
-			"3D render: " + renderTime + "ms" + '\n' +
-			"Other: TBD";
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
 		auto &fontManager = game.getFontManager();
 		const FontName fontName = FontName::D;
@@ -2291,9 +2286,13 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 	if (profilerLevel >= 3)
 	{
-		// Draw frame times graph.
+		// Draw frame times and graph.
+		const Renderer::ProfilerData &profilerData = renderer.getProfilerData();
+		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+
 		const std::string text = 
-			std::string("FPS Graph:") + '\n' +
+			"3D render: " + renderTime + "ms" + "\n\n" +
+			"FPS Graph:" + '\n' +
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
 			"                               " + std::to_string(0);
 
@@ -2305,7 +2304,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			game.getFontManager());
 
 		const int x = 2;
-		const int y = 86;
+		const int y = 72;
 		const TextBox textBox(x, y, richText, renderer);
 
 		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps]()
