@@ -109,20 +109,33 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		// is (0, 0), left to right is the Z axis, and up and down is the X axis, because 
 		// north is +X in-game. It is scaled by 3 so that all directions of the player's 
 		// arrow are representable.
+		constexpr int squareWidth = 3;
+		constexpr int squareHeight = squareWidth;
 		Surface surface = Surface::createWithFormat(
-			voxelGrid.getDepth() * 3, voxelGrid.getWidth() * 3, Renderer::DEFAULT_BPP,
-			Renderer::DEFAULT_PIXELFORMAT);
+			voxelGrid.getDepth() * squareWidth, voxelGrid.getWidth() * squareHeight,
+			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 		// Fill with transparent color first (used by floor voxels).
 		surface.fill(AutomapFloor.toARGB());
 
 		// Lambda for filling in a square in the map surface.
-		auto drawSquare = [&surface](int x, int z, const Color &color)
+		auto drawSquare = [squareWidth, squareHeight, &surface](int x, int z, const Color &color)
 		{
-			const int width = 3;
-			const int height = width;
-			const Rect rect(z * 3, surface.getHeight() - 3 - (x * 3), width, height);
-			surface.fillRect(rect, color.toARGB());
+			const int surfaceWidth = surface.getWidth();
+			const int surfaceHeight = surface.getHeight();
+			const int xOffset = z * squareWidth;
+			const int yOffset = surfaceHeight - squareHeight - (x * squareHeight);
+			const uint32_t colorARGB = color.toARGB();
+
+			uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
+			for (int h = 0; h < squareHeight; h++)
+			{
+				for (int w = 0; w < squareWidth; w++)
+				{
+					const int index = (xOffset + w) + ((yOffset + h) * surfaceWidth);
+					pixels[index] = colorARGB;
+				}
+			}
 		};
 
 		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
