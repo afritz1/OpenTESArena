@@ -391,36 +391,342 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 		return voxel;
 	};
 
+	// Lambda for finding if there's an existing mapping for a MAP1 voxel.
+	auto findWallMapping = [this](uint16_t map1Voxel)
+	{
+		return std::find_if(this->wallDataMappings.begin(), this->wallDataMappings.end(),
+			[map1Voxel](const std::pair<uint16_t, int> &pair)
+		{
+			return pair.first == map1Voxel;
+		});
+	};
+
+	// Lambda for obtaining the voxel data index of a general-case MAP1 object. The function
+	// parameter returns the created voxel data if no previous mapping exists, and is intended
+	// for general cases where the voxel data type does not need extra parameters.
+	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelData (*func)(uint16_t))
+	{
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			const int index = this->voxelGrid.addVoxelData(func(map1Voxel));
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
+	};
+
+	// Lambda for obtaining the voxel data index of a solid wall.
+	auto getWallDataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel, uint8_t mostSigByte)
+	{
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating a basic solid wall voxel data.
+			auto makeWallVoxelData = [map1Voxel, &inf, mostSigByte]()
+			{
+				const int textureIndex = mostSigByte - 1;
+
+				// Menu index if the voxel has the *MENU tag, or -1 if it is
+				// not a *MENU voxel.
+				const int menuIndex = inf.getMenuIndex(textureIndex);
+				const bool isMenu = menuIndex != -1;
+
+				// Determine what the type of the wall is (level up/down, menu, 
+				// or just plain solid).
+				const VoxelData::WallData::Type type = [&inf, textureIndex, isMenu]()
+				{
+					// Returns whether the given index pointer is non-null and
+					// matches the current texture index.
+					auto matchesIndex = [textureIndex](const int *index)
+					{
+						return (index != nullptr) && (*index == textureIndex);
+					};
+
+					if (matchesIndex(inf.getLevelUpIndex()))
+					{
+						return VoxelData::WallData::Type::LevelUp;
+					}
+					else if (matchesIndex(inf.getLevelDownIndex()))
+					{
+						return VoxelData::WallData::Type::LevelDown;
+					}
+					else if (isMenu)
+					{
+						return VoxelData::WallData::Type::Menu;
+					}
+					else
+					{
+						return VoxelData::WallData::Type::Solid;
+					}
+				}();
+
+				VoxelData voxelData = VoxelData::makeWall(textureIndex, textureIndex, textureIndex,
+					(isMenu ? &menuIndex : nullptr), type);
+
+				// Set the *MENU index if it's a menu voxel.
+				if (isMenu)
+				{
+					VoxelData::WallData &wallData = voxelData.wall;
+					wallData.menuID = menuIndex;
+				}
+
+				return voxelData;
+			};
+
+			const int index = this->voxelGrid.addVoxelData(makeWallVoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
+	};
+
+	// Lambda for obtaining the voxel data index of a raised platform.
+	auto getRaisedDataIndex = [this, &inf, worldType, &exeData, &findWallMapping](
+		uint16_t map1Voxel, uint8_t mostSigByte, int x, int z)
+	{
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating a raised voxel data.
+			auto makeRaisedVoxelData = [worldType, &exeData, map1Voxel, &inf, mostSigByte, x, z]()
+			{
+				const uint8_t wallTextureID = map1Voxel & 0x000F;
+				const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
+
+				const int sideID = [&inf, wallTextureID]()
+				{
+					const int *ptr = inf.getBoxSide(wallTextureID);
+					if (ptr != nullptr)
+					{
+						return *ptr;
+					}
+					else
+					{
+						DebugLogWarning("Missing *BOXSIDE ID \"" +
+							std::to_string(wallTextureID) + "\".");
+						return 0;
+					}
+				}();
+
+				const int floorID = [&inf, x, z]()
+				{
+					const auto &id = inf.getCeiling().textureIndex;
+
+					if (id.has_value())
+					{
+						return id.value();
+					}
+					else
+					{
+						DebugLogWarning("Missing platform floor ID (" +
+							std::to_string(x) + ", " + std::to_string(z) + ").");
+						return 0;
+					}
+				}();
+
+				const int ceilingID = [&inf, capTextureID]()
+				{
+					const int *ptr = inf.getBoxCap(capTextureID);
+					if (ptr != nullptr)
+					{
+						return *ptr;
+					}
+					else
+					{
+						DebugLogWarning("Missing *BOXCAP ID \"" +
+							std::to_string(capTextureID) + "\".");
+						return 0;
+					}
+				}();
+
+				const auto &wallHeightTables = exeData.wallHeightTables;
+				const int heightIndex = mostSigByte & 0x07;
+				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
+				int baseOffset, baseSize;
+
+				if (worldType == WorldType::City)
+				{
+					baseOffset = wallHeightTables.box1b.at(heightIndex);
+					baseSize = wallHeightTables.box2b.at(thicknessIndex);
+				}
+				else if (worldType == WorldType::Interior)
+				{
+					baseOffset = wallHeightTables.box1a.at(heightIndex);
+
+					const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
+					const auto &boxScale = inf.getCeiling().boxScale;
+					baseSize = boxScale.has_value() ?
+						((boxSize * (*boxScale)) / 256) : boxSize;
+				}
+				else if (worldType == WorldType::Wilderness)
+				{
+					baseOffset = wallHeightTables.box1c.at(heightIndex);
+
+					const int boxSize = 32;
+					const auto &boxScale = inf.getCeiling().boxScale;
+					baseSize = (boxSize *
+						(boxScale.has_value() ? boxScale.value() : 192)) / 256;
+				}
+				else
+				{
+					throw DebugException("Invalid world type \"" +
+						std::to_string(static_cast<int>(worldType)) + "\".");
+				}
+
+				const double yOffset =
+					static_cast<double>(baseOffset) / MIFFile::ARENA_UNITS;
+				const double ySize =
+					static_cast<double>(baseSize) / MIFFile::ARENA_UNITS;
+
+				const double normalizedScale =
+					static_cast<double>(inf.getCeiling().height) /
+					MIFFile::ARENA_UNITS;
+				const double yOffsetNormalized = yOffset / normalizedScale;
+				const double ySizeNormalized = ySize / normalizedScale;
+
+				// @todo: might need some tweaking with box3/box4 values.
+				const double vTop = std::max(
+					0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
+				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
+
+				return VoxelData::makeRaised(sideID, floorID, ceilingID,
+					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
+			};
+
+			const int index = this->voxelGrid.addVoxelData(makeRaisedVoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
+	};
+
+	// Lambda for creating type 0x9 voxel data.
+	auto makeType9VoxelData = [](uint16_t map1Voxel)
+	{
+		const int textureIndex = (map1Voxel & 0x00FF) - 1;
+		const bool collider = (map1Voxel & 0x0100) == 0;
+		return VoxelData::makeTransparentWall(textureIndex, collider);
+	};
+
+	// Lambda for obtaining the voxel data index of a type 0xA voxel.
+	auto getTypeADataIndex = [this, worldType, &findWallMapping](
+		uint16_t map1Voxel, int textureIndex)
+	{
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating type 0xA voxel data.
+			auto makeTypeAVoxelData = [worldType, map1Voxel, textureIndex]()
+			{
+				const double yOffset = [worldType, map1Voxel]()
+				{
+					const int baseOffset = (map1Voxel & 0x0E00) >> 9;
+					const int fullOffset = (worldType == WorldType::Interior) ?
+						(baseOffset * 8) : ((baseOffset * 32) - 8);
+
+					return static_cast<double>(fullOffset) / MIFFile::ARENA_UNITS;
+				}();
+
+				const bool collider = (map1Voxel & 0x0100) != 0;
+
+				// "Flipped" is not present in the original game, but has been added
+				// here so that all edge voxel texture coordinates (i.e., palace
+				// graphics, store signs) can be correct. Currently only palace
+				// graphics and gates are type 0xA colliders, I believe.
+				const bool flipped = collider;
+
+				const VoxelData::Facing facing = [map1Voxel]()
+				{
+					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
+					// and C is east. It is stored in two bits above the texture index.
+					const int orientation = (map1Voxel & 0x00C0) >> 4;
+					if (orientation == 0x0)
+					{
+						return VoxelData::Facing::PositiveX;
+					}
+					else if (orientation == 0x4)
+					{
+						return VoxelData::Facing::NegativeZ;
+					}
+					else if (orientation == 0x8)
+					{
+						return VoxelData::Facing::NegativeX;
+					}
+					else
+					{
+						return VoxelData::Facing::PositiveZ;
+					}
+				}();
+
+				return VoxelData::makeEdge(
+					textureIndex, yOffset, collider, flipped, facing);
+			};
+
+			const int index = this->voxelGrid.addVoxelData(makeTypeAVoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
+	};
+
+	// Lambda for creating type 0xB voxel data.
+	auto makeTypeBVoxelData = [](uint16_t map1Voxel)
+	{
+		const int textureIndex = (map1Voxel & 0x003F) - 1;
+		const VoxelData::DoorData::Type doorType = [map1Voxel]()
+		{
+			const int type = (map1Voxel & 0x00C0) >> 4;
+			if (type == 0x0)
+			{
+				return VoxelData::DoorData::Type::Swinging;
+			}
+			else if (type == 0x4)
+			{
+				return VoxelData::DoorData::Type::Sliding;
+			}
+			else if (type == 0x8)
+			{
+				return VoxelData::DoorData::Type::Raising;
+			}
+			else
+			{
+				// I don't believe any doors in Arena split (but they are
+				// supported by the engine).
+				DebugUnhandledReturnMsg(
+					VoxelData::DoorData::Type, std::to_string(type));
+			}
+		}();
+
+		return VoxelData::makeDoor(textureIndex, doorType);
+	};
+
+	// Lambda for creating type 0xD voxel data.
+	auto makeTypeDVoxelData = [](uint16_t map1Voxel)
+	{
+		const int textureIndex = (map1Voxel & 0x00FF) - 1;
+		const bool isRightDiag = (map1Voxel & 0x0100) == 0;
+		return VoxelData::makeDiagonal(textureIndex, isRightDiag);
+	};
+
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < gridWidth; x++)
 	{
 		for (int z = 0; z < gridDepth; z++)
 		{
 			const uint16_t map1Voxel = getMap1Voxel(x, z);
-
-			// Lambda for obtaining the index of a newly-added VoxelData object, and inserting
-			// it into the data mappings if it hasn't been already. The function parameter
-			// decodes the voxel and returns the created VoxelData.
-			auto getDataIndex = [this, map1Voxel](const std::function<VoxelData(void)> &function)
-			{
-				const auto wallIter = std::find_if(
-					this->wallDataMappings.begin(), this->wallDataMappings.end(),
-					[map1Voxel](const std::pair<uint16_t, int> &pair)
-				{
-					return pair.first == map1Voxel;
-				});
-
-				if (wallIter != this->wallDataMappings.end())
-				{
-					return wallIter->second;
-				}
-				else
-				{
-					const int index = this->voxelGrid.addVoxelData(function());
-					this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
-					return index;
-				}
-			};
 
 			if ((map1Voxel & 0x8000) == 0)
 			{
@@ -436,169 +742,13 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					if (voxelIsSolid)
 					{
 						// Regular solid wall.
-						const int dataIndex = getDataIndex([&inf, mostSigByte]()
-						{
-							const int textureIndex = mostSigByte - 1;
-
-							// Menu index if the voxel has the *MENU tag, or -1 if it is
-							// not a *MENU voxel.
-							const int menuIndex = inf.getMenuIndex(textureIndex);
-							const bool isMenu = menuIndex != -1;
-
-							// Determine what the type of the wall is (level up/down, menu, 
-							// or just plain solid).
-							const VoxelData::WallData::Type type = [&inf, textureIndex, isMenu]()
-							{
-								// Returns whether the given index pointer is non-null and
-								// matches the current texture index.
-								auto matchesIndex = [textureIndex](const int *index)
-								{
-									return (index != nullptr) && (*index == textureIndex);
-								};
-
-								if (matchesIndex(inf.getLevelUpIndex()))
-								{
-									return VoxelData::WallData::Type::LevelUp;
-								}
-								else if (matchesIndex(inf.getLevelDownIndex()))
-								{
-									return VoxelData::WallData::Type::LevelDown;
-								}
-								else if (isMenu)
-								{
-									return VoxelData::WallData::Type::Menu;
-								}
-								else
-								{
-									return VoxelData::WallData::Type::Solid;
-								}
-							}();
-
-							VoxelData voxelData = VoxelData::makeWall(
-								textureIndex, textureIndex, textureIndex,
-								(isMenu ? &menuIndex : nullptr), type);
-
-							// Set the *MENU index if it's a menu voxel.
-							if (isMenu)
-							{
-								VoxelData::WallData &wallData = voxelData.wall;
-								wallData.menuID = menuIndex;
-							}
-
-							return voxelData;
-						});
-
+						const int dataIndex = getWallDataIndex(map1Voxel, mostSigByte);
 						this->setVoxel(x, 1, z, dataIndex);
 					}
 					else
 					{
 						// Raised platform.
-						const int dataIndex = getDataIndex([&inf, worldType, &exeData, x, z,
-							map1Voxel, mostSigByte]()
-						{
-							const uint8_t wallTextureID = map1Voxel & 0x000F;
-							const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
-
-							const int sideID = [&inf, wallTextureID]()
-							{
-								const int *ptr = inf.getBoxSide(wallTextureID);
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugLogWarning("Missing *BOXSIDE ID \"" +
-										std::to_string(wallTextureID) + "\".");
-									return 0;
-								}
-							}();
-
-							const int floorID = [&inf, x, z]()
-							{
-								const auto &id = inf.getCeiling().textureIndex;
-
-								if (id.has_value())
-								{
-									return id.value();
-								}
-								else
-								{
-									DebugLogWarning("Missing platform floor ID (" +
-										std::to_string(x) + ", " + std::to_string(z) + ").");
-									return 0;
-								}
-							}();
-
-							const int ceilingID = [&inf, capTextureID]()
-							{
-								const int *ptr = inf.getBoxCap(capTextureID);
-								if (ptr != nullptr)
-								{
-									return *ptr;
-								}
-								else
-								{
-									DebugLogWarning("Missing *BOXCAP ID \"" +
-										std::to_string(capTextureID) + "\".");
-									return 0;
-								}
-							}();
-
-							const auto &wallHeightTables = exeData.wallHeightTables;
-							const int heightIndex = mostSigByte & 0x07;
-							const int thicknessIndex = (mostSigByte & 0x78) >> 3;
-							int baseOffset, baseSize;
-
-							if (worldType == WorldType::City)
-							{
-								baseOffset = wallHeightTables.box1b.at(heightIndex);
-								baseSize = wallHeightTables.box2b.at(thicknessIndex);
-							}
-							else if (worldType == WorldType::Interior)
-							{
-								baseOffset = wallHeightTables.box1a.at(heightIndex);
-
-								const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
-								const auto &boxScale = inf.getCeiling().boxScale;
-								baseSize = boxScale.has_value() ?
-									((boxSize * (*boxScale)) / 256) : boxSize;
-							}
-							else if (worldType == WorldType::Wilderness)
-							{
-								baseOffset = wallHeightTables.box1c.at(heightIndex);
-
-								const int boxSize = 32;
-								const auto &boxScale = inf.getCeiling().boxScale;
-								baseSize = (boxSize *
-									(boxScale.has_value() ? boxScale.value() : 192)) / 256;
-							}
-							else
-							{
-								throw DebugException("Invalid world type \"" +
-									std::to_string(static_cast<int>(worldType)) + "\".");
-							}
-
-							const double yOffset =
-								static_cast<double>(baseOffset) / MIFFile::ARENA_UNITS;
-							const double ySize =
-								static_cast<double>(baseSize) / MIFFile::ARENA_UNITS;
-
-							const double normalizedScale =
-								static_cast<double>(inf.getCeiling().height) /
-								MIFFile::ARENA_UNITS;
-							const double yOffsetNormalized = yOffset / normalizedScale;
-							const double ySizeNormalized = ySize / normalizedScale;
-
-							// @todo: might need some tweaking with box3/box4 values.
-							const double vTop = std::max(
-								0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
-							const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
-
-							return VoxelData::makeRaised(sideID, floorID, ceilingID,
-								yOffsetNormalized, ySizeNormalized, vTop, vBottom);
-						});
-
+						const int dataIndex = getRaisedDataIndex(map1Voxel, mostSigByte, x, z);
 						this->setVoxel(x, 1, z, dataIndex);
 					}
 				}
@@ -619,13 +769,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					// Transparent block with 1-sided texture on all sides, such as wooden 
 					// arches in dungeons. These do not have back-faces (especially when 
 					// standing in the voxel itself).
-					const int dataIndex = getDataIndex([map1Voxel]()
-					{
-						const int textureIndex = (map1Voxel & 0x00FF) - 1;
-						const bool collider = (map1Voxel & 0x0100) == 0;
-						return VoxelData::makeTransparentWall(textureIndex, collider);
-					});
-
+					const int dataIndex = getDataIndex(map1Voxel, makeType9VoxelData);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xA)
@@ -638,88 +782,14 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					// appears solid gray in the original game (presumably a silent bug).
 					if (textureIndex >= 0)
 					{
-						const int dataIndex = getDataIndex([worldType, map1Voxel, textureIndex]()
-						{
-							const double yOffset = [worldType, map1Voxel]()
-							{
-								const int baseOffset = (map1Voxel & 0x0E00) >> 9;
-								const int fullOffset = (worldType == WorldType::Interior) ?
-									(baseOffset * 8) : ((baseOffset * 32) - 8);
-
-								return static_cast<double>(fullOffset) / MIFFile::ARENA_UNITS;
-							}();
-
-							const bool collider = (map1Voxel & 0x0100) != 0;
-
-							// "Flipped" is not present in the original game, but has been added
-							// here so that all edge voxel texture coordinates (i.e., palace
-							// graphics, store signs) can be correct. Currently only palace
-							// graphics and gates are type 0xA colliders, I believe.
-							const bool flipped = collider;
-
-							const VoxelData::Facing facing = [map1Voxel]()
-							{
-								// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
-								// and C is east. It is stored in two bits above the texture index.
-								const int orientation = (map1Voxel & 0x00C0) >> 4;
-								if (orientation == 0x0)
-								{
-									return VoxelData::Facing::PositiveX;
-								}
-								else if (orientation == 0x4)
-								{
-									return VoxelData::Facing::NegativeZ;
-								}
-								else if (orientation == 0x8)
-								{
-									return VoxelData::Facing::NegativeX;
-								}
-								else
-								{
-									return VoxelData::Facing::PositiveZ;
-								}
-							}();
-
-							return VoxelData::makeEdge(
-								textureIndex, yOffset, collider, flipped, facing);
-						});
-
+						const int dataIndex = getTypeADataIndex(map1Voxel, textureIndex);
 						this->setVoxel(x, 1, z, dataIndex);
 					}
 				}
 				else if (mostSigNibble == 0xB)
 				{
 					// Door voxel.
-					const int dataIndex = getDataIndex([map1Voxel]()
-					{
-						const int textureIndex = (map1Voxel & 0x003F) - 1;
-						const VoxelData::DoorData::Type doorType = [map1Voxel]()
-						{
-							const int type = (map1Voxel & 0x00C0) >> 4;
-							if (type == 0x0)
-							{
-								return VoxelData::DoorData::Type::Swinging;
-							}
-							else if (type == 0x4)
-							{
-								return VoxelData::DoorData::Type::Sliding;
-							}
-							else if (type == 0x8)
-							{
-								return VoxelData::DoorData::Type::Raising;
-							}
-							else
-							{
-								// I don't believe any doors in Arena split (but they are
-								// supported by the engine).
-								DebugUnhandledReturnMsg(
-									VoxelData::DoorData::Type, std::to_string(type));
-							}
-						}();
-
-						return VoxelData::makeDoor(textureIndex, doorType);
-					});
-
+					const int dataIndex = getDataIndex(map1Voxel, makeTypeBVoxelData);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xC)
@@ -730,13 +800,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				else if (mostSigNibble == 0xD)
 				{
 					// Diagonal wall. Its type is determined by the nineth bit.
-					const int dataIndex = getDataIndex([map1Voxel]()
-					{
-						const int textureIndex = (map1Voxel & 0x00FF) - 1;
-						const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-						return VoxelData::makeDiagonal(textureIndex, isRightDiag);
-					});
-
+					const int dataIndex = getDataIndex(map1Voxel, makeTypeDVoxelData);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 			}
