@@ -218,12 +218,12 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}
 	};
 
-	using ChasmDataFunc = VoxelData(*)(const INFFile&, const std::array<bool, 4>&);
+	using ChasmDataFunc = VoxelData(*)(const INFFile &inf, const std::array<bool, 4>&);
 
 	// Lambda for obtaining the voxel data index of a chasm voxel. The given function argument
 	// returns the created voxel data if there was no previous mapping.
-	auto getChasmDataIndex = [this](uint16_t florVoxel, ChasmDataFunc chasmFunc,
-		const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto getChasmDataIndex = [this, &inf](uint16_t florVoxel, ChasmDataFunc chasmFunc,
+		const std::array<bool, 4> &adjacentFaces)
 	{
 		const auto chasmIter = std::find_if(
 			this->chasmDataMappings.begin(), this->chasmDataMappings.end(),
@@ -359,19 +359,19 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				if (floorTextureID == MIFFile::DRY_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeDryChasmVoxelData, inf, adjacentFaces);
+						florVoxel, makeDryChasmVoxelData, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeLavaChasmVoxelData, inf, adjacentFaces);
+						florVoxel, makeLavaChasmVoxelData, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::WET_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeWetChasmVoxelData, inf, adjacentFaces);
+						florVoxel, makeWetChasmVoxelData, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 			}
