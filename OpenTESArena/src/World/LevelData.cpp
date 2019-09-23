@@ -193,6 +193,124 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		return voxel;
 	};
 
+	// Lambda for obtaining the voxel data index of a typical (non-chasm) FLOR voxel.
+	auto getFlorDataIndex = [this](uint16_t florVoxel, int floorTextureID)
+	{
+		// See if the voxel already has a mapping.
+		const auto floorIter = std::find_if(
+			this->floorDataMappings.begin(), this->floorDataMappings.end(),
+			[florVoxel](const std::pair<uint16_t, int> &pair)
+		{
+			return pair.first == florVoxel;
+		});
+
+		if (floorIter != this->floorDataMappings.end())
+		{
+			return floorIter->second;
+		}
+		else
+		{
+			// Insert new mapping.
+			const int index = this->voxelGrid.addVoxelData(
+				VoxelData::makeFloor(floorTextureID));
+			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
+			return index;
+		}
+	};
+
+	using ChasmDataFunc = VoxelData(*)(const INFFile&, const std::array<bool, 4>&);
+
+	// Lambda for obtaining the voxel data index of a chasm voxel. The given function argument
+	// returns the created voxel data if there was no previous mapping.
+	auto getChasmDataIndex = [this](uint16_t florVoxel, ChasmDataFunc chasmFunc,
+		const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	{
+		const auto chasmIter = std::find_if(
+			this->chasmDataMappings.begin(), this->chasmDataMappings.end(),
+			[florVoxel, &adjacentFaces](const auto &tuple)
+		{
+			return (std::get<0>(tuple) == florVoxel) && (std::get<1>(tuple) == adjacentFaces);
+		});
+
+		if (chasmIter != this->chasmDataMappings.end())
+		{
+			return std::get<2>(*chasmIter);
+		}
+		else
+		{
+			const int index = this->voxelGrid.addVoxelData(chasmFunc(inf, adjacentFaces));
+			this->chasmDataMappings.push_back(std::make_tuple(florVoxel, adjacentFaces, index));
+			return index;
+		}
+	};
+
+	// Helper lambdas for creating each type of chasm voxel data.
+	auto makeDryChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	{
+		const int dryChasmID = [&inf]()
+		{
+			const int *ptr = inf.getDryChasmIndex();
+			if (ptr != nullptr)
+			{
+				return *ptr;
+			}
+			else
+			{
+				DebugLogWarning("Missing *DRYCHASM ID.");
+				return 0;
+			}
+		}();
+
+		DebugAssert(adjacentFaces.size() == 4);
+		return VoxelData::makeChasm(dryChasmID,
+			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
+			VoxelData::ChasmData::Type::Dry);
+	};
+
+	auto makeLavaChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	{
+		const int lavaChasmID = [&inf]()
+		{
+			const int *ptr = inf.getLavaChasmIndex();
+			if (ptr != nullptr)
+			{
+				return *ptr;
+			}
+			else
+			{
+				DebugLogWarning("Missing *LAVACHASM ID.");
+				return 0;
+			}
+		}();
+
+		DebugAssert(adjacentFaces.size() == 4);
+		return VoxelData::makeChasm(lavaChasmID,
+			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
+			VoxelData::ChasmData::Type::Lava);
+	};
+
+	auto makeWetChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	{
+		const int wetChasmID = [&inf]()
+		{
+			const int *ptr = inf.getWetChasmIndex();
+			if (ptr != nullptr)
+			{
+				return *ptr;
+			}
+			else
+			{
+				DebugLogWarning("Missing *WETCHASM ID.");
+				return 0;
+			}
+		}();
+
+		DebugAssert(adjacentFaces.size() == 4);
+		return VoxelData::makeChasm(wetChasmID,
+			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
+			VoxelData::ChasmData::Type::Wet);
+	};
+
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < gridWidth; x++)
 	{
@@ -218,28 +336,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 			{
 				// Get the voxel data index associated with the floor value, or add it
 				// if it doesn't exist yet.
-				const int dataIndex = [this, florVoxel, floorTextureID]()
-				{
-					const auto floorIter = std::find_if(
-						this->floorDataMappings.begin(), this->floorDataMappings.end(),
-						[florVoxel](const std::pair<uint16_t, int> &pair)
-					{
-						return pair.first == florVoxel;
-					});
-
-					if (floorIter != this->floorDataMappings.end())
-					{
-						return floorIter->second;
-					}
-					else
-					{
-						const int index = this->voxelGrid.addVoxelData(
-							VoxelData::makeFloor(floorTextureID));
-						this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
-						return index;
-					}
-				}();
-
+				const int dataIndex = getFlorDataIndex(florVoxel, floorTextureID);
 				this->setVoxel(x, 0, z, dataIndex);
 			}
 			else
@@ -259,121 +356,22 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 					!isChasm(getFloorTextureID(westVoxel)) // West.
 				};
 
-				// Lambda for obtaining the index of a newly-added VoxelData object, and
-				// inserting it into the chasm data mappings if it hasn't been already. The
-				// function parameter decodes the voxel and returns the created VoxelData.
-				auto getChasmDataIndex = [this, &inf, florVoxel, &adjacentFaces](
-					const std::function<VoxelData(void)> &function)
-				{
-					const auto chasmIter = std::find_if(
-						this->chasmDataMappings.begin(), this->chasmDataMappings.end(),
-						[florVoxel, &adjacentFaces](const auto &tuple)
-					{
-						return (std::get<0>(tuple) == florVoxel) &&
-							(std::get<1>(tuple) == adjacentFaces);
-					});
-
-					if (chasmIter != this->chasmDataMappings.end())
-					{
-						return std::get<2>(*chasmIter);
-					}
-					else
-					{
-						const int index = this->voxelGrid.addVoxelData(function());
-						this->chasmDataMappings.push_back(
-							std::make_tuple(florVoxel, adjacentFaces, index));
-						return index;
-					}
-				};
-
 				if (floorTextureID == MIFFile::DRY_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						[&inf, floorTextureID, &adjacentFaces]()
-					{
-						const int dryChasmID = [&inf]()
-						{
-							const int *ptr = inf.getDryChasmIndex();
-							if (ptr != nullptr)
-							{
-								return *ptr;
-							}
-							else
-							{
-								DebugLogWarning("Missing *DRYCHASM ID.");
-								return 0;
-							}
-						}();
-
-						return VoxelData::makeChasm(
-							dryChasmID,
-							adjacentFaces.at(0),
-							adjacentFaces.at(1),
-							adjacentFaces.at(2),
-							adjacentFaces.at(3),
-							VoxelData::ChasmData::Type::Dry);
-					});
-
+						florVoxel, makeDryChasmVoxelData, inf, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						[&inf, floorTextureID, &adjacentFaces]()
-					{
-						const int lavaChasmID = [&inf]()
-						{
-							const int *ptr = inf.getLavaChasmIndex();
-							if (ptr != nullptr)
-							{
-								return *ptr;
-							}
-							else
-							{
-								DebugLogWarning("Missing *LAVACHASM ID.");
-								return 0;
-							}
-						}();
-
-						return VoxelData::makeChasm(
-							lavaChasmID,
-							adjacentFaces.at(0),
-							adjacentFaces.at(1),
-							adjacentFaces.at(2),
-							adjacentFaces.at(3),
-							VoxelData::ChasmData::Type::Lava);
-					});
-
+						florVoxel, makeLavaChasmVoxelData, inf, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::WET_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						[&inf, floorTextureID, &adjacentFaces]()
-					{
-						const int wetChasmID = [&inf]()
-						{
-							const int *ptr = inf.getWetChasmIndex();
-							if (ptr != nullptr)
-							{
-								return *ptr;
-							}
-							else
-							{
-								DebugLogWarning("Missing *WETCHASM ID.");
-								return 0;
-							}
-						}();
-
-						return VoxelData::makeChasm(
-							wetChasmID,
-							adjacentFaces.at(0),
-							adjacentFaces.at(1),
-							adjacentFaces.at(2),
-							adjacentFaces.at(3),
-							VoxelData::ChasmData::Type::Wet);
-					});
-
+						florVoxel, makeWetChasmVoxelData, inf, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 			}
