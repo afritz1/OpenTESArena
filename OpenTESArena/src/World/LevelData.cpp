@@ -819,6 +819,53 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 		return voxel;
 	};
 
+	// Lambda for getting the number of stories a MAP2 voxel takes up.
+	auto getMap2VoxelHeight = [](uint16_t map2Voxel)
+	{
+		if ((map2Voxel & 0x80) == 0x80)
+		{
+			return 2;
+		}
+		else if ((map2Voxel & 0x8000) == 0x8000)
+		{
+			return 3;
+		}
+		else if ((map2Voxel & 0x8080) == 0x8080)
+		{
+			return 4;
+		}
+		else
+		{
+			return 1;
+		}
+	};
+
+	// Lambda for obtaining the voxel data index for a MAP2 voxel.
+	auto getMap2DataIndex = [this, &inf](uint16_t map2Voxel)
+	{
+		const auto map2Iter = std::find_if(
+			this->map2DataMappings.begin(), this->map2DataMappings.end(),
+			[map2Voxel](const std::pair<uint16_t, int> &pair)
+		{
+			return pair.first == map2Voxel;
+		});
+
+		if (map2Iter != this->map2DataMappings.end())
+		{
+			return map2Iter->second;
+		}
+		else
+		{
+			const int textureIndex = (map2Voxel & 0x007F) - 1;
+			const int *menuID = nullptr;
+			const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
+				textureIndex, textureIndex, textureIndex, menuID,
+				VoxelData::WallData::Type::Solid));
+			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
+			return index;
+		}
+	};
+
 	// Write the voxel IDs into the voxel grid.
 	for (int x = 0; x < gridWidth; x++)
 	{
@@ -828,51 +875,10 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 
 			if (map2Voxel != 0)
 			{
-				// Number of blocks to extend upwards (including second story).
-				const int height = [map2Voxel]()
-				{
-					if ((map2Voxel & 0x80) == 0x80)
-					{
-						return 2;
-					}
-					else if ((map2Voxel & 0x8000) == 0x8000)
-					{
-						return 3;
-					}
-					else if ((map2Voxel & 0x8080) == 0x8080)
-					{
-						return 4;
-					}
-					else
-					{
-						return 1;
-					}
-				}();
+				// Number of stories the MAP2 voxel occupies.
+				const int height = getMap2VoxelHeight(map2Voxel);
 
-				const int dataIndex = [this, &inf, map2Voxel, height]()
-				{
-					const auto map2Iter = std::find_if(
-						this->map2DataMappings.begin(), this->map2DataMappings.end(),
-						[map2Voxel](const std::pair<uint16_t, int> &pair)
-					{
-						return pair.first == map2Voxel;
-					});
-
-					if (map2Iter != this->map2DataMappings.end())
-					{
-						return map2Iter->second;
-					}
-					else
-					{
-						const int textureIndex = (map2Voxel & 0x007F) - 1;
-						const int *menuID = nullptr;
-						const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
-							textureIndex, textureIndex, textureIndex, menuID,
-							VoxelData::WallData::Type::Solid));
-						this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
-						return index;
-					}
-				}();
+				const int dataIndex = getMap2DataIndex(map2Voxel);
 
 				for (int y = 2; y < (height + 2); y++)
 				{
