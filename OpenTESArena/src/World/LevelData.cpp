@@ -220,7 +220,13 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				// if it doesn't exist yet.
 				const int dataIndex = [this, florVoxel, floorTextureID]()
 				{
-					const auto floorIter = this->floorDataMappings.find(florVoxel);
+					const auto floorIter = std::find_if(
+						this->floorDataMappings.begin(), this->floorDataMappings.end(),
+						[florVoxel](const std::pair<uint16_t, int> &pair)
+					{
+						return pair.first == florVoxel;
+					});
+
 					if (floorIter != this->floorDataMappings.end())
 					{
 						return floorIter->second;
@@ -229,8 +235,8 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 					{
 						const int index = this->voxelGrid.addVoxelData(
 							VoxelData::makeFloor(floorTextureID));
-						return this->floorDataMappings.insert(
-							std::make_pair(florVoxel, index)).first->second;
+						this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
+						return index;
 					}
 				}();
 
@@ -259,17 +265,24 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				auto getChasmDataIndex = [this, &inf, florVoxel, &adjacentFaces](
 					const std::function<VoxelData(void)> &function)
 				{
-					const auto chasmPair = std::make_pair(florVoxel, adjacentFaces);
-					const auto chasmIter = this->chasmDataMappings.find(chasmPair);
+					const auto chasmIter = std::find_if(
+						this->chasmDataMappings.begin(), this->chasmDataMappings.end(),
+						[florVoxel, &adjacentFaces](const auto &tuple)
+					{
+						return (std::get<0>(tuple) == florVoxel) &&
+							(std::get<1>(tuple) == adjacentFaces);
+					});
+
 					if (chasmIter != this->chasmDataMappings.end())
 					{
-						return chasmIter->second;
+						return std::get<2>(*chasmIter);
 					}
 					else
 					{
 						const int index = this->voxelGrid.addVoxelData(function());
-						return this->chasmDataMappings.insert(
-							std::make_pair(chasmPair, index)).first->second;
+						this->chasmDataMappings.push_back(
+							std::make_tuple(florVoxel, adjacentFaces, index));
+						return index;
 					}
 				};
 
@@ -392,7 +405,13 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 			// decodes the voxel and returns the created VoxelData.
 			auto getDataIndex = [this, map1Voxel](const std::function<VoxelData(void)> &function)
 			{
-				const auto wallIter = this->wallDataMappings.find(map1Voxel);
+				const auto wallIter = std::find_if(
+					this->wallDataMappings.begin(), this->wallDataMappings.end(),
+					[map1Voxel](const std::pair<uint16_t, int> &pair)
+				{
+					return pair.first == map1Voxel;
+				});
+
 				if (wallIter != this->wallDataMappings.end())
 				{
 					return wallIter->second;
@@ -400,8 +419,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				else
 				{
 					const int index = this->voxelGrid.addVoxelData(function());
-					return this->wallDataMappings.insert(
-						std::make_pair(map1Voxel, index)).first->second;
+					this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+					return index;
 				}
 			};
 
@@ -770,7 +789,13 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 
 				const int dataIndex = [this, &inf, map2Voxel, height]()
 				{
-					const auto map2Iter = this->map2DataMappings.find(map2Voxel);
+					const auto map2Iter = std::find_if(
+						this->map2DataMappings.begin(), this->map2DataMappings.end(),
+						[map2Voxel](const std::pair<uint16_t, int> &pair)
+					{
+						return pair.first == map2Voxel;
+					});
+
 					if (map2Iter != this->map2DataMappings.end())
 					{
 						return map2Iter->second;
@@ -782,8 +807,8 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 						const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
 							textureIndex, textureIndex, textureIndex, menuID,
 							VoxelData::WallData::Type::Solid));
-						return this->map2DataMappings.insert(
-							std::make_pair(map2Voxel, index)).first->second;
+						this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
+						return index;
 					}
 				}();
 

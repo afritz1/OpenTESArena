@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -27,24 +28,6 @@
 // ^
 // |
 // Max (mapWidth - 1, mapDepth - 1)
-
-// Hash specialization for readFLOR() chasm mappings.
-namespace std
-{
-	template <>
-	struct hash<std::pair<uint16_t, std::array<bool, 4>>>
-	{
-		size_t operator()(const std::pair<uint16_t, std::array<bool, 4>> &p) const
-		{
-			// XOR with some arbitrary prime numbers (not sure if this is any good).
-			return static_cast<size_t>(p.first ^
-				(p.second.at(0) ? 41 : 73) ^
-				(p.second.at(1) ? 89 : 113) ^
-				(p.second.at(2) ? 127 : 149) ^
-				(p.second.at(3) ? 157 : 193));
-		}
-	};
-}
 
 class ArenaRandom;
 class ExeData;
@@ -119,8 +102,8 @@ private:
 	// Mappings of IDs to voxel data indices. Chasms are treated separately since their voxel
 	// data index is also a function of the four adjacent voxels. These maps are stored here
 	// because they might be shared between multiple calls to read{FLOR,MAP1,MAP2}().
-	std::unordered_map<uint16_t, int> wallDataMappings, floorDataMappings, map2DataMappings;
-	std::unordered_map<std::pair<uint16_t, std::array<bool, 4>>, int> chasmDataMappings;
+	std::vector<std::pair<uint16_t, int>> wallDataMappings, floorDataMappings, map2DataMappings;
+	std::vector<std::tuple<uint16_t, std::array<bool, 4>, int>> chasmDataMappings;
 
 	VoxelGrid voxelGrid;
 	INFFile inf;
