@@ -939,6 +939,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 			if ((map1Voxel & 0x8000) != 0)
 			{
 				map1Voxel = 0;
+				map2Voxel = 0;
 			}
 			else
 			{
@@ -946,30 +947,26 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 				if (!isWall)
 				{
 					map1Voxel = 0;
+					map2Voxel = 0;
 				}
 				else
 				{
 					// Replace solid walls.
-					if ((map1Voxel & 0xFFFF) == 0x2F2F)
+					if (map1Voxel == 0x2F2F)
 					{
 						map1Voxel = 0x3030;
+						map2Voxel = 0x3030 | (map2Voxel & 0x8080);
 					}
-					else if ((map1Voxel & 0xFFFF) == 0x2D2D)
+					else if (map1Voxel == 0x2D2D)
 					{
 						map1Voxel = 0x2F2F;
+						map2Voxel = 0x3030 | (map2Voxel & 0x8080);
+					}
+					else if (map1Voxel == 0x2E2E)
+					{
+						map2Voxel = 0x3030 | (map2Voxel & 0x8080);
 					}
 				}
-			}
-
-			// @todo: need to fix second-story voxels.
-			if (((map2Voxel & 0xF000) == 0xA000) || (map2Voxel == 0x2F2F))
-			{
-				// @todo: replace type 0xA with 0xB?
-				map2Voxel = 0x0030 | (map2Voxel & 0x8080);
-			}
-			else
-			{
-				map2Voxel = 0;
 			}
 		}
 	}
