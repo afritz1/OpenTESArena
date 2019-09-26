@@ -29,6 +29,7 @@
 #include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
+#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 
@@ -103,100 +104,22 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		return Button<Game&>(center, width, height, function);
 	}();
 
-	this->mapTexture = [this, &playerPosition, &playerDirection, &voxelGrid]()
+	this->mapTexture = [&game, &playerPosition, &playerDirection, &voxelGrid]()
 	{
-		// Create scratch surface. For the purposes of the automap, the bottom left corner
-		// is (0, 0), left to right is the Z axis, and up and down is the X axis, because 
-		// north is +X in-game. It is scaled by 3 so that all directions of the player's 
-		// arrow are representable.
-		constexpr int squareWidth = 3;
-		constexpr int squareHeight = squareWidth;
-		Surface surface = Surface::createWithFormat(
-			voxelGrid.getDepth() * squareWidth, voxelGrid.getWidth() * squareHeight,
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		const Int2 playerVoxel(
+			static_cast<int>(std::floor(playerPosition.x)),
+			static_cast<int>(std::floor(playerPosition.y)));
+		const CardinalDirectionName playerDir =
+			CardinalDirection::getDirectionName(playerDirection);
 
-		// Fill with transparent color first (used by floor voxels).
-		surface.fill(AutomapFloor.toARGB());
-
-		// Lambda for filling in a square in the map surface.
-		auto drawSquare = [squareWidth, squareHeight, &surface](int x, int z, const Color &color)
+		const bool isWild = [&game]()
 		{
-			const int surfaceWidth = surface.getWidth();
-			const int surfaceHeight = surface.getHeight();
-			const int xOffset = z * squareWidth;
-			const int yOffset = surfaceHeight - squareHeight - (x * squareHeight);
-			const uint32_t colorARGB = color.toARGB();
+			const auto &worldData = game.getGameData().getWorldData();
+			return worldData.getActiveWorldType() == WorldType::Wilderness;
+		}();
 
-			uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
-			for (int h = 0; h < squareHeight; h++)
-			{
-				for (int w = 0; w < squareWidth; w++)
-				{
-					const int index = (xOffset + w) + ((yOffset + h) * surfaceWidth);
-					pixels[index] = colorARGB;
-				}
-			}
-		};
-
-		auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
-		{
-			const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
-			return voxelGrid.getVoxelData(voxelID);
-		};
-
-		// For each voxel, start at the lowest Y and walk upwards. The color depends 
-		// on a couple factors, like whether the voxel is a wall, a door, water, etc.,
-		// and some context-sensitive cases like whether a dry chasm has a wall
-		// over it.
-		for (int x = 0; x < voxelGrid.getWidth(); x++)
-		{
-			for (int z = 0; z < voxelGrid.getDepth(); z++)
-			{
-				const VoxelData &floorData = getVoxelData(x, 0, z);
-				const VoxelData &wallData = getVoxelData(x, 1, z);
-
-				// Decide which color to use for the automap pixel.
-				const Color &color = AutomapPanel::getPixelColor(floorData, wallData);
-
-				// Draw the automap pixel.
-				drawSquare(x, z, color);
-			}
-		}
-
-		// Lambda for drawing the player's arrow in the automap. It's drawn differently 
-		// depending on their direction.
-		auto drawPlayer = [&surface](int x, int z, const Double2 &direction)
-		{
-			const CardinalDirectionName cardinalDirection =
-				CardinalDirection::getDirectionName(direction);
-
-			const int surfaceX = z * 3;
-			const int surfaceY = surface.getHeight() - 3 - (x * 3);
-
-			uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
-
-			// Draw the player's arrow within the 3x3 map pixel.
-			const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
-			for (const auto &offset : offsets)
-			{
-				const int index = (surfaceX + offset.x) +
-					((surfaceY + offset.y) * surface.getWidth());
-				pixels[index] = AutomapPlayer.toARGB();
-			}
-		};
-
-		const int playerVoxelX = static_cast<int>(std::floor(playerPosition.x));
-		const int playerVoxelZ = static_cast<int>(std::floor(playerPosition.y));
-
-		// Draw player last. Verify that the player is within the bounds of the map 
-		// before drawing.
-		if ((playerVoxelX >= 0) && (playerVoxelX < voxelGrid.getWidth()) &&
-			(playerVoxelZ >= 0) && (playerVoxelZ < voxelGrid.getDepth()))
-		{
-			drawPlayer(playerVoxelX, playerVoxelZ, playerDirection);
-		}
-
-		auto &renderer = this->getGame().getRenderer();
+		auto &renderer = game.getRenderer();
+		Surface surface = AutomapPanel::makeAutomap(playerVoxel, playerDir, isWild, voxelGrid);
 		Texture texture = renderer.createTextureFromSurface(surface);
 
 		return texture;
@@ -306,6 +229,107 @@ const Color &AutomapPanel::getPixelColor(const VoxelData &floorData, const Voxel
 			std::to_string(static_cast<int>(floorDataType)) + "\".");
 		return AutomapNotImplemented;
 	}
+}
+
+Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName playerDir,
+	bool isWild, const VoxelGrid &voxelGrid)
+{
+	// @todo: should probably change drawSquare parameters to (x, y) and do the transform
+	// at the callsite, just so it's clear what pixels it's setting.
+	// @todo: transform player XZ to automap XY
+	// @todo: determine automap offset value so player is centered in view
+
+	// Player position is in new coordinate system.
+
+	// Create scratch surface triple the size of the voxel area to display. For the purposes of
+	// the automap, the bottom left corner is (0, 0), left to right is the Z axis, and up and down
+	// is the X axis, because north is +X in-game. It is scaled by 3 so that all directions of the
+	// player's arrow are representable.
+	constexpr int squareWidth = 3;
+	constexpr int squareHeight = squareWidth;
+	Surface surface = Surface::createWithFormat(
+		voxelGrid.getDepth() * squareWidth, voxelGrid.getWidth() * squareHeight,
+		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+
+	// Fill with transparent color first (used by floor voxels).
+	surface.fill(AutomapFloor.toARGB());
+
+	// Lambda for filling in a square in the map surface.
+	auto drawSquare = [squareWidth, squareHeight, &surface](int x, int z, const Color &color)
+	{
+		const int surfaceWidth = surface.getWidth();
+		const int surfaceHeight = surface.getHeight();
+		const int xOffset = z * squareWidth;
+		const int yOffset = surfaceHeight - squareHeight - (x * squareHeight);
+		const uint32_t colorARGB = color.toARGB();
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
+		for (int h = 0; h < squareHeight; h++)
+		{
+			for (int w = 0; w < squareWidth; w++)
+			{
+				const int index = (xOffset + w) + ((yOffset + h) * surfaceWidth);
+				pixels[index] = colorARGB;
+			}
+		}
+	};
+
+	auto getVoxelData = [&voxelGrid](int x, int y, int z) -> const VoxelData&
+	{
+		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
+		return voxelGrid.getVoxelData(voxelID);
+	};
+
+	// For each voxel, start at the lowest Y and walk upwards. The color depends 
+	// on a couple factors, like whether the voxel is a wall, a door, water, etc.,
+	// and some context-sensitive cases like whether a dry chasm has a wall
+	// over it.
+	for (int x = 0; x < voxelGrid.getWidth(); x++)
+	{
+		for (int z = 0; z < voxelGrid.getDepth(); z++)
+		{
+			const VoxelData &floorData = getVoxelData(x, 0, z);
+			const VoxelData &wallData = getVoxelData(x, 1, z);
+
+			// Decide which color to use for the automap pixel.
+			const Color &color = AutomapPanel::getPixelColor(floorData, wallData);
+
+			// Draw the automap pixel.
+			drawSquare(x, z, color);
+		}
+	}
+
+	// Lambda for drawing the player's arrow in the automap. It's drawn differently 
+	// depending on their direction.
+	auto drawPlayer = [&surface](int x, int z, CardinalDirectionName cardinalDirection)
+	{
+		const int surfaceX = z * 3;
+		const int surfaceY = surface.getHeight() - 3 - (x * 3);
+
+		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
+
+		// Draw the player's arrow within the 3x3 map pixel.
+		const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
+		for (const auto &offset : offsets)
+		{
+			const int index = (surfaceX + offset.x) +
+				((surfaceY + offset.y) * surface.getWidth());
+			pixels[index] = AutomapPlayer.toARGB();
+		}
+	};
+
+	const int playerVoxelX = playerVoxel.x;
+	const int playerVoxelZ = playerVoxel.y;
+
+	// Draw player last. Verify that the player is within the bounds of the map 
+	// before drawing.
+	if ((playerVoxelX >= 0) && (playerVoxelX < voxelGrid.getWidth()) &&
+		(playerVoxelZ >= 0) && (playerVoxelZ < voxelGrid.getDepth()))
+	{
+		drawPlayer(playerVoxelX, playerVoxelZ, playerDir);
+	}
+
+	return surface;
 }
 
 Panel::CursorData AutomapPanel::getCurrentCursor() const

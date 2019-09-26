@@ -10,9 +10,12 @@
 
 class Color;
 class Renderer;
+class Surface;
 class TextBox;
 class VoxelData;
 class VoxelGrid;
+
+enum class CardinalDirectionName;
 
 class AutomapPanel : public Panel
 {
@@ -25,6 +28,10 @@ private:
 	// Gets the display color for a pixel on the automap, given its associated floor
 	// and wall voxel data definitions.
 	static const Color &getPixelColor(const VoxelData &floorData, const VoxelData &wallData);
+
+	// Generates a surface of the automap to be converted to a texture for rendering.
+	static Surface makeAutomap(const Int2 &playerVoxel, CardinalDirectionName playerDir,
+		bool isWild, const VoxelGrid &voxelGrid);
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
