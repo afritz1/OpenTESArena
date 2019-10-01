@@ -61,6 +61,11 @@ public:
 	// and return the chunk coordinate that contains the origin.
 	static Int2 getRelativeWildOrigin(const Int2 &voxel);
 
+	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
+	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.
+	// Given coordinates are expected to be in original coordinate system.
+	static Int2 getCenteredWildOrigin(const Int2 &voxel);
+
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
 	static ExteriorLevelData loadPremadeCity(const MIFFile::Level &level, WeatherType weatherType,
 		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,

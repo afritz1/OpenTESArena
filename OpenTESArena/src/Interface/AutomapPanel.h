@@ -33,6 +33,13 @@ private:
 	static Surface makeAutomap(const Int2 &playerVoxel, CardinalDirectionName playerDir,
 		bool isWild, const VoxelGrid &voxelGrid);
 
+	// Calculates screen offset of automap for rendering.
+	static Double2 makeAutomapOffset(const Int2 &playerVoxel, bool isWild,
+		int gridWidth, int gridDepth);
+
+	// Helper function for obtaining relative wild origin in new coordinate system.
+	static Int2 makeRelativeWildOrigin(const Int2 &voxel, int gridWidth, int gridDepth);
+
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
 
