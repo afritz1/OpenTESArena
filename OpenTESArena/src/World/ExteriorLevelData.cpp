@@ -1000,6 +1000,13 @@ Int2 ExteriorLevelData::getRelativeWildOrigin(const Int2 &voxel)
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
+Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
+{
+	return Int2(
+		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,
+		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
+}
+
 ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
 	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 	int gridWidth, int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)
