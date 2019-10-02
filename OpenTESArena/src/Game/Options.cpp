@@ -74,7 +74,7 @@ const std::string Options::SECTION_MISC = "Misc";
 
 const int Options::MIN_FPS = 15;
 const int Options::MIN_WINDOW_MODE = 0;
-const int Options::MAX_WINDOW_MODE = 1;
+const int Options::MAX_WINDOW_MODE = 2;
 const double Options::MIN_RESOLUTION_SCALE = 0.10;
 const double Options::MAX_RESOLUTION_SCALE = 1.0;
 const double Options::MIN_VERTICAL_FOV = 40.0;

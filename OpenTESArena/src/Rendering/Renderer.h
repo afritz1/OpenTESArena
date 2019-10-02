@@ -41,8 +41,9 @@ public:
 
 	enum class WindowMode
 	{
-		Window,
-		BorderlessFull
+		Windowed,
+		Borderless,
+		Fullscreen,
 	};
 
 	// Profiler information from the most recently rendered frame.
