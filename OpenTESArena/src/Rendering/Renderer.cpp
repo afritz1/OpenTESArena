@@ -11,6 +11,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
+#include "../Utilities/Platform.h"
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
@@ -141,6 +142,23 @@ Int2 Renderer::getWindowDimensions() const
 const std::vector<Renderer::DisplayMode> &Renderer::getDisplayModes() const
 {
 	return this->displayModes;
+}
+
+double Renderer::getDpiScale() const
+{
+	const double platformDpi = Platform::getDefaultDPI();	
+	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
+
+	float hdpi;
+	if (SDL_GetDisplayDPI(displayIndex, nullptr, &hdpi, nullptr) == 0)
+	{
+		return static_cast<double>(hdpi) / platformDpi;
+	}
+	else
+	{
+		DebugLogWarning("Couldn't get DPI of display \"" + std::to_string(displayIndex) + "\".");
+		return 1.0;
+	}
 }
 
 int Renderer::getViewHeight() const

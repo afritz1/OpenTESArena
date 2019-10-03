@@ -97,6 +97,9 @@ public:
 	// Gets a list of supported fullscreen display modes.
 	const std::vector<DisplayMode> &getDisplayModes() const;
 
+	// Gets the active window's pixels-per-inch scale divided by platform DPI.
+	double getDpiScale() const;
+
 	// The "view height" is the height in pixels for the visible game world. This 
 	// depends on whether the whole screen is rendered or just the portion above 
 	// the interface. The game interface is 53 pixels tall in 320x200.
