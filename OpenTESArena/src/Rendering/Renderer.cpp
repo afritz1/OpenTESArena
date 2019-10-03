@@ -359,7 +359,8 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		}();
 
 		const uint32_t flags = SDL_WINDOW_RESIZABLE |
-			((windowMode == WindowMode::BorderlessFull) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+			((windowMode == WindowMode::BorderlessFull) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) |
+			SDL_WINDOW_ALLOW_HIGHDPI;
 
 		// If fullscreen is true, then width and height are ignored. They are stored
 		// behind the scenes for when the user changes to windowed mode, however.
