@@ -45,6 +45,9 @@ public:
 	// Gets the log folder path for logging program messages.
 	static std::string getLogPath();
 
+	// Gets the default pixels-per-inch value from the OS.
+	static double getDefaultDPI();
+
 	// Gets the max number of threads available on the CPU.
 	static int getThreadCount();
 

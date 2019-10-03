@@ -152,6 +152,27 @@ std::string Platform::getLogPath()
 	}
 }
 
+double Platform::getDefaultDPI()
+{
+	const std::string platform = Platform::getPlatform();
+
+	// @todo: not sure how to handle Linux. Might need an ifdef and some environment variables.
+
+	if (platform == "Windows")
+	{
+		return 96.0;
+	}
+	else if (platform == "Mac OS X")
+	{
+		return 72.0;
+	}
+	else
+	{
+		DebugLogWarning("No default DPI on this platform.");
+		return 96.0;
+	}
+}
+
 int Platform::getThreadCount()
 {
 	const int threadCount = static_cast<int>(std::thread::hardware_concurrency());
