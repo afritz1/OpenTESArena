@@ -2,13 +2,13 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++17 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows, Linux, and macOS.
 
-- Version: 0.9.0
+- Version: 0.10.0
 - License: MIT
 - Discord: https://discord.gg/DgHe2jG
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-No actual gameplay yet, but all cities, main quest dungeons, random dungeons, interior locations, and a fixed portion of wilderness can be accessed from test options on the main menu.
+No actual gameplay yet, but all cities, main quest dungeons, random dungeons, interior locations, and wilderness can be accessed from test options on the main menu.
 
 Doors and transition blocks can be interacted with, and you can enter and exit buildings.
 
@@ -27,7 +27,8 @@ Here are some keys in the game world:
 - M - world map
 - N - automap
 - V - status
-- F4 - toggle debug text
+- F2 - player position
+- F4 - debug profiler
 - PrintScreen - screenshot
 
 <br/>
