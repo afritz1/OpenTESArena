@@ -8,6 +8,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     Chris Robinson (kcat)
     enderdrag64
     Malcolm Mallardi (mdmallardi)
+    MinganMuon
     Paul Cercueil (pcercuei)
     Robert MacGregor (Ragora)
     Will Herrmann (Thunderforge)
