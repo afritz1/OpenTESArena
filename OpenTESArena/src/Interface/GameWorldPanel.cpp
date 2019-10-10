@@ -735,6 +735,9 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
+	// @temp: hold this key down to make clicks cause voxels to fade.
+	const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
+
 	const auto &renderer = game.getRenderer();
 
 	// Handle input events based on which player interface mode is active.
@@ -793,7 +796,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 				if (centerCursorRegion.contains(mousePosition))
 				{
 					const bool primaryClick = true;
-					this->handleClickInWorld(mousePosition, primaryClick);
+					this->handleClickInWorld(mousePosition, primaryClick, debugFadeVoxel);
 				}
 			}
 		}
@@ -809,7 +812,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 				if (centerCursorRegion.contains(mousePosition))
 				{
 					const bool primaryClick = false;
-					this->handleClickInWorld(mousePosition, primaryClick);
+					this->handleClickInWorld(mousePosition, primaryClick, false);
 				}
 			}
 		}
@@ -827,13 +830,13 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		{
 			// Activate (left click in classic mode).
 			const bool primaryClick = true;
-			this->handleClickInWorld(nativeCenter, primaryClick);
+			this->handleClickInWorld(nativeCenter, primaryClick, debugFadeVoxel);
 		}
 		else if (leftClick)
 		{
 			// Read (right click in classic mode).
 			const bool primaryClick = false;
-			this->handleClickInWorld(nativeCenter, primaryClick);
+			this->handleClickInWorld(nativeCenter, primaryClick, false);
 		}
 	}
 }
@@ -1360,7 +1363,8 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	}	
 }
 
-void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryClick)
+void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryClick,
+	bool debugFadeVoxel)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -1438,11 +1442,36 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			{
 				if (voxelData.dataType == VoxelDataType::Wall)
 				{
-					const VoxelData::WallData &wallData = voxelData.wall;
-
-					if (wallData.isMenu())
+					if (!debugFadeVoxel)
 					{
-						this->handleWorldTransition(hit, wallData.menuID);
+						const VoxelData::WallData &wallData = voxelData.wall;
+
+						if (wallData.isMenu())
+						{
+							this->handleWorldTransition(hit, wallData.menuID);
+						}
+					}
+					else
+					{
+						// @temp: add to fading voxels if it doesn't already exist.
+						LevelData::FadeState fadeState(voxel);
+						auto &fadingVoxels = level.getFadingVoxels();
+
+						const bool exists = [&voxel, fadingVoxels]()
+						{
+							const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
+								[&voxel](const LevelData::FadeState &state)
+							{
+								return state.getVoxel() == voxel;
+							});
+
+							return iter != fadingVoxels.end();
+						}();
+
+						if (!exists)
+						{
+							fadingVoxels.push_back(std::move(fadeState));
+						}
 					}
 				}
 				else if (voxelData.dataType == VoxelDataType::Edge)
@@ -1747,6 +1776,31 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 				// Only some doors play a sound when they start closing.
 				playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosing);
 			}
+		}
+	}
+}
+
+void GameWorldPanel::handleFadingVoxels(double dt)
+{
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	auto &worldData = gameData.getWorldData();
+	auto &activeLevel = worldData.getActiveLevel();
+	auto &fadingVoxels = activeLevel.getFadingVoxels();
+	auto &voxelGrid = activeLevel.getVoxelGrid();
+
+	// Reverse iterate, removing voxels that are done fading out.
+	for (int i = static_cast<int>(fadingVoxels.size()) - 1; i >= 0; i--)
+	{
+		auto &fadingVoxel = fadingVoxels[i];
+		const Int3 &voxel = fadingVoxel.getVoxel();
+		fadingVoxel.update(dt);
+
+		if (fadingVoxel.isDoneFading())
+		{
+			// Change voxel in grid to empty and erase fading voxel from list.
+			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, 0);
+			fadingVoxels.erase(fadingVoxels.begin() + i);
 		}
 	}
 }
@@ -2073,20 +2127,23 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		auto switchToLevel = [&game, &interior, &player, &destinationXZ,
 			&dirToNewVoxel](int levelIndex)
 		{
-			// Close all doors in the level the player is switching away from.
-			interior.getActiveLevel().getOpenDoors().clear();
+			// Clear all open doors and fading voxels in the level the player is switching
+			// away from.
+			auto &oldActiveLevel = interior.getActiveLevel();
+			oldActiveLevel.getOpenDoors().clear();
+			oldActiveLevel.getFadingVoxels().clear();
 
 			// Select the new level.
 			interior.setLevelIndex(levelIndex);
 
-			// Set the level active in the renderer.
-			auto &activeLevel = interior.getActiveLevel();
-			activeLevel.setActive(game.getTextureManager(), game.getRenderer());
+			// Set the new level active in the renderer.
+			auto &newActiveLevel = interior.getActiveLevel();
+			newActiveLevel.setActive(game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
 				destinationXZ.x,
-				activeLevel.getCeilingHeight() + Player::HEIGHT,
+				newActiveLevel.getCeilingHeight() + Player::HEIGHT,
 				destinationXZ.y));
 			player.lookAt(player.getPosition() + dirToNewVoxel);
 			player.setVelocityToZero();
@@ -2480,6 +2537,9 @@ void GameWorldPanel::tick(double dt)
 	const Double3 newPlayerPos = player.getPosition();
 	this->handleDoors(dt, Double2(newPlayerPos.x, newPlayerPos.z));
 
+	// Handle fading voxels.
+	this->handleFadingVoxels(dt);
+
 	// Update entities and their state in the renderer.
 	// @todo: entity management.
 	/*auto &entityManager = worldData.getEntityManager();
@@ -2563,7 +2623,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(), latitude,
 		options.getGraphics_ParallaxSky(), level.getCeilingHeight(), level.getOpenDoors(),
-		level.getVoxelGrid());
+		level.getFadingVoxels(), level.getVoxelGrid());
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

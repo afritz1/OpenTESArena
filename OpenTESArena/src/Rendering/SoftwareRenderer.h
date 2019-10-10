@@ -725,7 +725,8 @@ public:
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double latitude, bool parallaxSky,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const VoxelGrid &voxelGrid, uint32_t *colorBuffer);
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		uint32_t *colorBuffer);
 };
 
 #endif

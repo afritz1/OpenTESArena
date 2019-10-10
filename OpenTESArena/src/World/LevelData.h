@@ -96,6 +96,24 @@ public:
 		void setDirection(DoorState::Direction direction);
 		void update(double dt);
 	};
+
+	class FadeState
+	{
+	private:
+		Int3 voxel;
+		double currentSeconds, targetSeconds;
+	public:
+		static constexpr double DEFAULT_SECONDS = 1.0;
+
+		FadeState(const Int3 &voxel, double targetSeconds);
+		FadeState(const Int3 &voxel);
+
+		const Int3 &getVoxel() const;
+		double getPercentDone() const;
+		bool isDoneFading() const;
+
+		void update(double dt);
+	};
 private:
 	std::unordered_map<Int2, Lock> locks;
 
@@ -108,6 +126,7 @@ private:
 	VoxelGrid voxelGrid;
 	INFFile inf;
 	std::vector<DoorState> openDoors;
+	std::vector<FadeState> fadingVoxels;
 	std::string name;
 protected:
 	// Used by derived LevelData load methods.
@@ -129,6 +148,8 @@ public:
 	double getCeilingHeight() const;
 	std::vector<DoorState> &getOpenDoors();
 	const std::vector<DoorState> &getOpenDoors() const;
+	std::vector<FadeState> &getFadingVoxels();
+	const std::vector<FadeState> &getFadingVoxels() const;
 	const INFFile &getInfFile() const;
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;

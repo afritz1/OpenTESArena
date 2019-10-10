@@ -707,7 +707,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
 	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid)
+	const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->softwareRenderer.isInited());
@@ -725,7 +726,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, latitude,
-		parallaxSky, ceilingHeight, openDoors, voxelGrid, gameWorldPixels);
+		parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.

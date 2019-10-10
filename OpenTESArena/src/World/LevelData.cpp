@@ -121,6 +121,36 @@ void LevelData::DoorState::update(double dt)
 	}
 }
 
+LevelData::FadeState::FadeState(const Int3 &voxel, double targetSeconds)
+	: voxel(voxel)
+{
+	this->currentSeconds = 0.0;
+	this->targetSeconds = targetSeconds;
+}
+
+LevelData::FadeState::FadeState(const Int3 &voxel)
+	: FadeState(voxel, FadeState::DEFAULT_SECONDS) { }
+
+const Int3 &LevelData::FadeState::getVoxel() const
+{
+	return this->voxel;
+}
+
+double LevelData::FadeState::getPercentDone() const
+{
+	return std::clamp(this->currentSeconds / this->targetSeconds, 0.0, 1.0);
+}
+
+bool LevelData::FadeState::isDoneFading() const
+{
+	return this->getPercentDone() == 1.0;
+}
+
+void LevelData::FadeState::update(double dt)
+{
+	this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
+}
+
 LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
@@ -154,6 +184,16 @@ std::vector<LevelData::DoorState> &LevelData::getOpenDoors()
 const std::vector<LevelData::DoorState> &LevelData::getOpenDoors() const
 {
 	return this->openDoors;
+}
+
+std::vector<LevelData::FadeState> &LevelData::getFadingVoxels()
+{
+	return this->fadingVoxels;
+}
+
+const std::vector<LevelData::FadeState> &LevelData::getFadingVoxels() const
+{
+	return this->fadingVoxels;
 }
 
 const INFFile &LevelData::getInfFile() const

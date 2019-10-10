@@ -6423,7 +6423,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.

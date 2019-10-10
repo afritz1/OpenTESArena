@@ -208,7 +208,7 @@ public:
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
 		double ambient, double daytimePercent, double latitude, bool parallaxSky,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const VoxelGrid &voxelGrid);
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.
