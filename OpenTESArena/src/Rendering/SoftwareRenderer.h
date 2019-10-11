@@ -350,13 +350,15 @@ private:
 		{
 			int threadsDone;
 			const std::vector<LevelData::DoorState> *openDoors;
+			const std::vector<LevelData::FadeState> *fadingVoxels;
 			const VoxelGrid *voxelGrid;
 			const std::vector<VoxelTexture> *voxelTextures;
 			std::vector<OcclusionData> *occlusion;
 			double ceilingHeight;
 
 			void init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-				const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &voxelTextures,
+				const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+				const std::vector<VoxelTexture> &voxelTextures,
 				std::vector<OcclusionData> &occlusion);
 		};
 
@@ -453,6 +455,10 @@ private:
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
 		const std::vector<LevelData::DoorState> &openDoors);
+
+	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
+	static double getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
+		const std::vector<LevelData::FadeState> &fadingVoxels);
 
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
@@ -554,14 +560,15 @@ private:
 	// Draws a column of pixels with no perspective or transparency.
 	static void drawPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectivePixels(int x, const DrawRange &drawRange, const Double2 &startPoint,
 		const Double2 &endPoint, double depthStart, double depthEnd, const Double3 &normal,
-		const VoxelTexture &texture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		const VoxelTexture &texture, double fadePercent, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with transparency but no perspective.
 	static void drawTransparentPixels(int x, const DrawRange &drawRange, double depth, double u,
@@ -591,16 +598,18 @@ private:
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-		OcclusionData &occlusion, const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-		OcclusionData &occlusion, const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
@@ -615,7 +624,8 @@ private:
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
 		const FrameView &frame);
 
@@ -635,7 +645,8 @@ private:
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors, const VoxelGrid &voxelGrid,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
