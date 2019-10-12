@@ -84,6 +84,18 @@ public:
 	// and the province ID.
 	static std::string mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID);
 
+	// City block generation data functions.
+	static int getCityBlockCodeCount();
+	static int getCityBlockVariationsCount();
+	static int getCityBlockRotationCount();
+	static const std::string &getCityBlockCode(int index);
+	static int getCityBlockVariations(int index);
+	static const std::string &getCityBlockRotation(int index);
+
+	// Makes a city block .MIF filename for city generation.
+	static std::string makeCityBlockMifName(const std::string &code, int variation,
+		const std::string &rotation);
+
 	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
 	// and the height depends on MAP2 data in each level (if any -- default otherwise).
 	int getWidth() const;

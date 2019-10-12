@@ -9,6 +9,7 @@
 #include "ArenaTypes.h"
 #include "CityDataFile.h"
 #include "ExeData.h"
+#include "MIFFile.h"
 #include "RMDFile.h"
 #include "WorldMapMask.h"
 #include "../Entities/CharacterClass.h"
@@ -120,6 +121,7 @@ private:
 	ExeData exeData; // Either floppy version or CD version (depends on ArenaPath).
 	TemplateDat templateDat;
 	std::vector<CharacterQuestion> questionTxt;
+	std::unordered_map<std::string, MIFFile> cityBlockMifs;
 	CharacterClassGeneration classesDat;
 	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
@@ -139,6 +141,9 @@ private:
 
 	// Load QUESTION.TXT and separate each question by its number.
 	bool initQuestionTxt();
+
+	// Load all city block .MIF files used for city generation.
+	bool initCityBlockMifs();
 
 	// Load CLASSES.DAT and also read class data from the executable.
 	bool initClasses(const ExeData &exeData);
@@ -177,6 +182,9 @@ public:
 
 	// Returns all of the questions in QUESTION.TXT.
 	const std::vector<CharacterQuestion> &getQuestionTxtQuestions() const;
+
+	// Gets mappings of city block .MIF filenames to their associated .MIF file.
+	const std::unordered_map<std::string, MIFFile> &getCityBlockMifs() const;
 
 	const CharacterClassGeneration &getClassGenData() const;
 	const std::vector<CharacterClass> &getClassDefinitions() const;

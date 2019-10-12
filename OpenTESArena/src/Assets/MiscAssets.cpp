@@ -641,6 +641,9 @@ bool MiscAssets::init(bool floppyVersion)
 	// Read in QUESTION.TXT and create character question objects.
 	success &= this->initQuestionTxt();
 
+	// Read in city block .MIF files.
+	success &= this->initCityBlockMifs();
+
 	// Read in CLASSES.DAT.
 	success &= this->initClasses(this->getExeData());
 
@@ -813,6 +816,49 @@ bool MiscAssets::initQuestionTxt()
 	// in the file (it's skipped in the loop).
 	addQuestion(description, a, b, c);
 	return true;
+}
+
+bool MiscAssets::initCityBlockMifs()
+{
+	const int codeCount = MIFFile::getCityBlockCodeCount();
+	const int variationsCount = MIFFile::getCityBlockVariationsCount();
+	const int rotationCount = MIFFile::getCityBlockRotationCount();
+
+	bool success = true;
+
+	// Iterate over all city block codes, variations, and rotations.
+	for (int i = 0; i < codeCount; i++)
+	{
+		const std::string &code = MIFFile::getCityBlockCode(i);
+		const int variations = MIFFile::getCityBlockVariations(i);
+
+		// Variation IDs are 1-based.
+		for (int variation = 1; variation <= variations; variation++)
+		{
+			for (int k = 0; k < rotationCount; k++)
+			{
+				const std::string &rotation = MIFFile::getCityBlockRotation(k);
+				std::string mifName = MIFFile::makeCityBlockMifName(code, variation, rotation);
+
+				// No duplicate .MIFs.
+				DebugAssert(this->cityBlockMifs.find(mifName) == this->cityBlockMifs.end());
+
+				MIFFile mif;
+				if (mif.init(mifName.c_str()))
+				{
+					// Add the .MIF file pair into the city blocks map.
+					this->cityBlockMifs.emplace(std::make_pair(std::move(mifName), std::move(mif)));
+				}
+				else
+				{
+					DebugLogError("Could not init .MIF \"" + mifName + "\".");
+					success = false;
+				}
+			}
+		}
+	}
+
+	return success;
 }
 
 bool MiscAssets::initClasses(const ExeData &exeData)
@@ -1388,6 +1434,11 @@ const MiscAssets::TemplateDat &MiscAssets::getTemplateDat() const
 const std::vector<CharacterQuestion> &MiscAssets::getQuestionTxtQuestions() const
 {
 	return this->questionTxt;
+}
+
+const std::unordered_map<std::string, MIFFile> &MiscAssets::getCityBlockMifs() const
+{
+	return this->cityBlockMifs;
 }
 
 const CharacterClassGeneration &MiscAssets::getClassGenData() const

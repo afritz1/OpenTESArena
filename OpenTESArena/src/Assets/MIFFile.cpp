@@ -43,6 +43,12 @@ namespace
 		{ Tag_TARG, MIFFile::Level::loadTARG },
 		{ Tag_TRIG, MIFFile::Level::loadTRIG }
 	};
+
+	// City block generation data, used by city generation. The order of data is tightly coupled
+	// with the original generation algorithm.
+	const std::array<std::string, 7> CityBlockCodes = { "EQ", "MG", "NB", "TP", "TV", "TS", "BS" };
+	const std::array<int, 7> CityBlockVariations = { 13, 11, 10, 12, 15, 11, 20 };
+	const std::array<std::string, 4> CityBlockRotations = { "A", "B", "C", "D" };
 }
 
 MIFFile::Level::Level()
@@ -122,6 +128,44 @@ std::string MIFFile::mainQuestDungeonFilename(int dungeonX, int dungeonY, int pr
 	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
 	const std::string mifName = std::to_string(mifID) + ".MIF";
 	return mifName;
+}
+
+int MIFFile::getCityBlockCodeCount()
+{
+	return static_cast<int>(CityBlockCodes.size());
+}
+
+int MIFFile::getCityBlockVariationsCount()
+{
+	return static_cast<int>(CityBlockVariations.size());
+}
+
+int MIFFile::getCityBlockRotationCount()
+{
+	return static_cast<int>(CityBlockRotations.size());
+}
+
+const std::string &MIFFile::getCityBlockCode(int index)
+{
+	DebugAssertIndex(CityBlockCodes, index);
+	return CityBlockCodes[index];
+}
+
+int MIFFile::getCityBlockVariations(int index)
+{
+	DebugAssertIndex(CityBlockVariations, index);
+	return CityBlockVariations[index];
+}
+
+const std::string &MIFFile::getCityBlockRotation(int index)
+{
+	DebugAssertIndex(CityBlockRotations, index);
+	return CityBlockRotations[index];
+}
+
+std::string MIFFile::makeCityBlockMifName(const std::string &code, int variation, const std::string &rotation)
+{
+	return code + "BD" + std::to_string(variation) + rotation + ".MIF";
 }
 
 int MIFFile::getWidth() const

@@ -25,8 +25,8 @@ ExteriorLevelData::~ExteriorLevelData()
 
 void ExteriorLevelData::generateCity(int localCityID, int provinceID, int cityDim, int gridDepth,
 	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, uint32_t citySeed,
-	ArenaRandom &random, std::vector<uint16_t> &dstFlor, std::vector<uint16_t> &dstMap1,
-	std::vector<uint16_t> &dstMap2)
+	ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
+	std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2)
 {
 	// Decide which city blocks to load.
 	enum class BlockType
@@ -114,36 +114,24 @@ void ExteriorLevelData::generateCity(int localCityID, int provinceID, int cityDi
 	{
 		if (block != BlockType::Reserved)
 		{
-			const std::array<std::string, 7> BlockCodes =
-			{
-				"EQ", "MG", "NB", "TP", "TV", "TS", "BS"
-			};
-
-			const std::array<int, 7> VariationCounts =
-			{
-				13, 11, 10, 12, 15, 11, 20
-			};
-
-			const std::array<std::string, 4> Rotations =
-			{
-				"A", "B", "C", "D"
-			};
-
 			const int blockIndex = static_cast<int>(block) - 2;
-			const std::string &blockCode = BlockCodes.at(blockIndex);
-			const std::string &rotation = Rotations.at(random.next() % Rotations.size());
-			const int variationCount = VariationCounts.at(blockIndex);
+			const std::string &blockCode = MIFFile::getCityBlockCode(blockIndex);
+			const std::string &rotation = MIFFile::getCityBlockRotation(
+				random.next() % MIFFile::getCityBlockRotationCount());
+			const int variationCount = MIFFile::getCityBlockVariations(blockIndex);
 			const int variation = std::max(random.next() % variationCount, 1);
-			const std::string blockMifName = blockCode + "BD" +
-				std::to_string(variation) + rotation + ".MIF";
+			const std::string blockMifName = MIFFile::makeCityBlockMifName(
+				blockCode, variation, rotation);
 
 			// Load the block's .MIF data into the level.
-			MIFFile blockMif;
-			if (!blockMif.init(blockMifName.c_str()))
+			const auto &cityBlockMifs = miscAssets.getCityBlockMifs();
+			const auto iter = cityBlockMifs.find(blockMifName);
+			if (iter == cityBlockMifs.end())
 			{
-				DebugCrash("Could not init .MIF file \"" + blockMifName + "\".");
+				DebugCrash("Could not find .MIF file \"" + blockMifName + "\".");
 			}
 
+			const MIFFile &blockMif = iter->second;
 			const auto &blockLevel = blockMif.getLevels().front();
 
 			// Offset of the block in the voxel grid.
@@ -924,7 +912,8 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 
 		// Write generated city data into the temp city buffers.
 		ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, mif.getWidth(),
-			reservedBlocks, startPosition, citySeed, random, cityFlor, cityMap1, cityMap2);
+			reservedBlocks, startPosition, citySeed, random, miscAssets, cityFlor,
+			cityMap1, cityMap2);
 	}
 
 	// Transform city voxels based on the wilderness rules.
@@ -1067,7 +1056,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	
 	// Generate the bulk of city data and write it into the temp buffers.
 	ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, gridDepth, reservedBlocks,
-		startPosition, citySeed, random, tempFlor, tempMap1, tempMap2);
+		startPosition, citySeed, random, miscAssets, tempFlor, tempMap1, tempMap2);
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
