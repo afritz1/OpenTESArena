@@ -2,6 +2,7 @@
 #define PROFILER_H
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,9 @@ public:
 		void setStop();
 	};
 private:
-	std::vector<std::pair<std::string, Sampler>> samplers;
+	// Need to allocate sampler on the heap so returned pointers are not invalidated
+	// on vector resize.
+	std::vector<std::pair<std::string, std::unique_ptr<Sampler>>> samplers;
 
 	// Searches samplers for the one with the given name.
 	Sampler *findSampler(const std::string &name);

@@ -32,14 +32,14 @@ Profiler::Sampler *Profiler::findSampler(const std::string &name)
 		return pair.first == name;
 	});
 
-	return (iter != this->samplers.end()) ? &iter->second : nullptr;
+	return (iter != this->samplers.end()) ? iter->second.get() : nullptr;
 }
 
 Profiler::Sampler *Profiler::addSampler(const std::string &name)
 {
 	DebugAssertMsg(this->findSampler(name) == nullptr, "Sampler \"" + name + "\" already exists.");
-	this->samplers.push_back(std::make_pair(name, Sampler()));
-	return &this->samplers.back().second;
+	this->samplers.push_back(std::make_pair(name, std::make_unique<Sampler>()));
+	return this->samplers.back().second.get();
 }
 
 Profiler::Sampler *Profiler::getSampler(const std::string &name)
