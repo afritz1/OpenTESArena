@@ -39,6 +39,18 @@ enum class WorldType;
 class LevelData
 {
 public:
+	class Flat
+	{
+	private:
+		Int2 position;
+		int flatIndex; // Index in .INF file flats and flat textures.
+	public:
+		Flat(const Int2 &position, int flatIndex);
+
+		const Int2 &getPosition() const;
+		int getFlatIndex() const;
+	};
+
 	class Lock
 	{
 	private:
@@ -115,8 +127,6 @@ public:
 		void update(double dt);
 	};
 private:
-	std::unordered_map<Int2, Lock> locks;
-
 	// Mappings of IDs to voxel data indices. Chasms are treated separately since their voxel
 	// data index is also a function of the four adjacent voxels. These maps are stored here
 	// because they might be shared between multiple calls to read{FLOR,MAP1,MAP2}().
@@ -125,6 +135,8 @@ private:
 
 	VoxelGrid voxelGrid;
 	INFFile inf;
+	std::vector<Flat> flats;
+	std::unordered_map<Int2, Lock> locks;
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
 	std::string name;
@@ -146,6 +158,8 @@ public:
 
 	const std::string &getName() const;
 	double getCeilingHeight() const;
+	std::vector<Flat> &getFlats();
+	const std::vector<Flat> &getFlats() const;
 	std::vector<DoorState> &getOpenDoors();
 	const std::vector<DoorState> &getOpenDoors() const;
 	std::vector<FadeState> &getFadingVoxels();

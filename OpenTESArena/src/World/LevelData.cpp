@@ -16,6 +16,22 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
+LevelData::Flat::Flat(const Int2 &position, int flatIndex)
+	: position(position)
+{
+	this->flatIndex = flatIndex;
+}
+
+const Int2 &LevelData::Flat::getPosition() const
+{
+	return this->position;
+}
+
+int LevelData::Flat::getFlatIndex() const
+{
+	return this->flatIndex;
+}
+
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
 	: position(position)
 {
@@ -174,6 +190,16 @@ const std::string &LevelData::getName() const
 double LevelData::getCeilingHeight() const
 {
 	return static_cast<double>(this->inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+}
+
+std::vector<LevelData::Flat> &LevelData::getFlats()
+{
+	return this->flats;
+}
+
+const std::vector<LevelData::Flat> &LevelData::getFlats() const
+{
+	return this->flats;
 }
 
 std::vector<LevelData::DoorState> &LevelData::getOpenDoors()
@@ -361,6 +387,11 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				return (voxel & 0xFF00) >> 8;
 			};
 
+			auto getFlatIndex = [](uint16_t voxel)
+			{
+				return voxel & 0x00FF;
+			};
+
 			auto isChasm = [](int id)
 			{
 				return (id == MIFFile::DRY_CHASM) ||
@@ -414,6 +445,13 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 						florVoxel, makeWetChasmVoxelData, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
+			}
+
+			// See if the FLOR voxel contains a FLAT index (for raised platform flats).
+			const int flatIndex = getFlatIndex(florVoxel);
+			if (flatIndex > 0)
+			{
+				this->flats.push_back(Flat(Int2(x, z), flatIndex - 1));
 			}
 		}
 	}
@@ -802,7 +840,8 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					// @todo.
+					const Int2 position(x, z);
+					this->flats.push_back(Flat(position, flatIndex));
 				}
 				else if (mostSigNibble == 0x9)
 				{

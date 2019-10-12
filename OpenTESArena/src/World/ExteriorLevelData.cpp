@@ -157,8 +157,6 @@ void ExteriorLevelData::generateCity(int localCityID, int provinceID, int cityDi
 				writeRow(blockLevel.map1, dstMap1);
 				writeRow(blockLevel.map2, dstMap2);
 			}
-
-			// @todo: load flats.
 		}
 
 		xDim++;
@@ -1164,7 +1162,6 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	levelData.readMAP1(tempMap1.get(), inf, WorldType::Wilderness, tempMap1.getWidth(),
 		tempMap1.getHeight(), exeData);
 	levelData.readMAP2(tempMap2.get(), inf, tempMap1.getWidth(), tempMap1.getHeight());
-	// @todo: load FLAT from WILD.MIF level data. levelData.readFLAT(level.flat, ...)?
 
 	// Generate wilderness building names.
 	levelData.generateWildChunkBuildingNames(localCityID, provinceID, miscAssets);
