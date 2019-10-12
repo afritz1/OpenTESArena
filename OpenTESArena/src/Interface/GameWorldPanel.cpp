@@ -2317,11 +2317,34 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
 
-		const std::string text =
+		std::string text =
 			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
 			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
 			"Pos: " + posX + ", " + posY + ", " + posZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
+
+		// Add any wilderness-specific info.
+		const auto &worldData = game.getGameData().getWorldData();
+		const WorldType worldType = worldData.getActiveWorldType();
+		if (worldType == WorldType::Wilderness)
+		{
+			const auto &activeLevel = static_cast<const ExteriorLevelData&>(worldData.getActiveLevel());
+			const auto &voxelGrid = activeLevel.getVoxelGrid();
+
+			const Int2 playerVoxel(
+				static_cast<int>(position.x),
+				static_cast<int>(position.z));
+			const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+				playerVoxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+			const Int2 chunkCoord(
+				originalVoxel.x / RMDFile::WIDTH,
+				originalVoxel.y / RMDFile::DEPTH);
+
+			const std::string chunkX = std::to_string(chunkCoord.x);
+			const std::string chunkY = std::to_string(chunkCoord.y);
+
+			text += "\nChunk: " + chunkX + ", " + chunkY;
+		}
 
 		auto &fontManager = game.getFontManager();
 		const FontName fontName = FontName::D;
