@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "Entity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
