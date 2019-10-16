@@ -5,18 +5,10 @@
 NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
 	const std::vector<Animation> &idleAnimations,
 	const std::vector<Animation> &moveAnimations,
-	const Animation &attackAnimation, const Animation &deathAnimation, 
-	EntityManager &entityManager)
-	: Entity(entityManager), idleAnimations(idleAnimations), moveAnimations(moveAnimations),
+	const Animation &attackAnimation, const Animation &deathAnimation)
+	: Entity(EntityType::NonPlayer), idleAnimations(idleAnimations), moveAnimations(moveAnimations),
 	attackAnimation(attackAnimation), deathAnimation(deathAnimation),
 	camera(position, direction), velocity(0.0, 0.0) { }
-
-std::unique_ptr<Entity> NonPlayer::clone(EntityManager &entityManager) const
-{
-	return std::make_unique<NonPlayer>(this->camera.position, this->camera.direction,
-		this->idleAnimations, this->moveAnimations, this->attackAnimation,
-		this->deathAnimation, entityManager);
-}
 
 NonPlayer::AnimationType NonPlayer::getAnimationType() const
 {
@@ -32,12 +24,7 @@ NonPlayer::AnimationType NonPlayer::getAnimationType() const
 		return NonPlayer::AnimationType::Idle;
 	}
 
-	// Check combat state eventually.
-}
-
-EntityType NonPlayer::getEntityType() const
-{
-	return EntityType::NonPlayer;
+	// @todo: Check combat state eventually.
 }
 
 const Double3 &NonPlayer::getPosition() const

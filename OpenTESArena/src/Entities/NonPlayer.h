@@ -36,13 +36,9 @@ public:
 	NonPlayer(const Double3 &position, const Double2 &direction,
 		const std::vector<Animation> &idleAnimations,
 		const std::vector<Animation> &moveAnimations,
-		const Animation &attackAnimation, const Animation &deathAnimation,
-		EntityManager &entityManager);
+		const Animation &attackAnimation, const Animation &deathAnimation);
 	virtual ~NonPlayer() = default;
 
-	virtual std::unique_ptr<Entity> clone(EntityManager &entityManager) const override;
-
-	virtual EntityType getEntityType() const override;
 	virtual const Double3 &getPosition() const override;
 
 	virtual void tick(Game &game, double dt) override;

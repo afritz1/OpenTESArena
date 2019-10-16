@@ -13,6 +13,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Entities/EntityManager.h"
 #include "../Math/Vector2.h"
 
 // Base class for each active "space" in the game. Exteriors only have one level, but
@@ -134,6 +135,7 @@ private:
 	std::vector<std::tuple<uint16_t, std::array<bool, 4>, int>> chasmDataMappings;
 
 	VoxelGrid voxelGrid;
+	EntityManager entityManager;
 	INFFile inf;
 	std::vector<Flat> flats;
 	std::unordered_map<Int2, Lock> locks;

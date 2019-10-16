@@ -2,11 +2,11 @@
 #include "EntityManager.h"
 #include "EntityType.h"
 
-Entity::Entity(EntityManager &entityManager)
+Entity::Entity(EntityType entityType)
 {
-	this->id = entityManager.nextID();
-	this->textureID = 0;
-	this->flipped = false;
+	this->id = EntityManager::NO_ID;
+	this->entityType = entityType;
+	this->textureID = -1;
 }
 
 int Entity::getID() const
@@ -14,12 +14,22 @@ int Entity::getID() const
 	return this->id;
 }
 
+EntityType Entity::getEntityType() const
+{
+	return this->entityType;
+}
+
 int Entity::getTextureID() const
 {
 	return this->textureID;
 }
 
-bool Entity::getFlipped() const
+void Entity::setID(int id)
 {
-	return this->flipped;
+	this->id = id;
+}
+
+void Entity::setTextureID(int textureID)
+{
+	this->textureID = textureID;
 }
