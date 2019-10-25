@@ -40,16 +40,19 @@ enum class WorldType;
 class LevelData
 {
 public:
-	class Flat
+	// Mapping of .INF flat index to instances in the game world.
+	class FlatDef
 	{
 	private:
-		Int2 position;
 		int flatIndex; // Index in .INF file flats and flat textures.
+		std::vector<Int2> positions;
 	public:
-		Flat(const Int2 &position, int flatIndex);
+		FlatDef(int flatIndex);
 
-		const Int2 &getPosition() const;
 		int getFlatIndex() const;
+		const std::vector<Int2> &getPositions() const;
+
+		void addPosition(const Int2 &position);
 	};
 
 	class Lock
@@ -137,11 +140,13 @@ private:
 	VoxelGrid voxelGrid;
 	EntityManager entityManager;
 	INFFile inf;
-	std::vector<Flat> flats;
+	std::vector<FlatDef> flatsLists;
 	std::unordered_map<Int2, Lock> locks;
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
 	std::string name;
+
+	void addFlatInstance(int flatIndex, const Int2 &flatPosition);
 protected:
 	// Used by derived LevelData load methods.
 	LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
@@ -160,8 +165,8 @@ public:
 
 	const std::string &getName() const;
 	double getCeilingHeight() const;
-	std::vector<Flat> &getFlats();
-	const std::vector<Flat> &getFlats() const;
+	std::vector<FlatDef> &getFlats();
+	const std::vector<FlatDef> &getFlats() const;
 	std::vector<DoorState> &getOpenDoors();
 	const std::vector<DoorState> &getOpenDoors() const;
 	std::vector<FadeState> &getFadingVoxels();

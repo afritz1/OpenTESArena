@@ -15,21 +15,26 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 
-LevelData::Flat::Flat(const Int2 &position, int flatIndex)
-	: position(position)
+LevelData::FlatDef::FlatDef(int flatIndex)
 {
 	this->flatIndex = flatIndex;
 }
 
-const Int2 &LevelData::Flat::getPosition() const
-{
-	return this->position;
-}
-
-int LevelData::Flat::getFlatIndex() const
+int LevelData::FlatDef::getFlatIndex() const
 {
 	return this->flatIndex;
+}
+
+const std::vector<Int2> &LevelData::FlatDef::getPositions() const
+{
+	return this->positions;
+}
+
+void LevelData::FlatDef::addPosition(const Int2 &position)
+{
+	this->positions.push_back(position);
 }
 
 LevelData::Lock::Lock(const Int2 &position, int lockLevel)
@@ -192,14 +197,14 @@ double LevelData::getCeilingHeight() const
 	return static_cast<double>(this->inf.getCeiling().height) / MIFFile::ARENA_UNITS;
 }
 
-std::vector<LevelData::Flat> &LevelData::getFlats()
+std::vector<LevelData::FlatDef> &LevelData::getFlats()
 {
-	return this->flats;
+	return this->flatsLists;
 }
 
-const std::vector<LevelData::Flat> &LevelData::getFlats() const
+const std::vector<LevelData::FlatDef> &LevelData::getFlats() const
 {
-	return this->flats;
+	return this->flatsLists;
 }
 
 std::vector<LevelData::DoorState> &LevelData::getOpenDoors()
@@ -241,6 +246,30 @@ const LevelData::Lock *LevelData::getLock(const Int2 &voxel) const
 {
 	const auto lockIter = this->locks.find(voxel);
 	return (lockIter != this->locks.end()) ? &lockIter->second : nullptr;
+}
+
+void LevelData::addFlatInstance(int flatIndex, const Int2 &flatPosition)
+{
+	const int actualIndex = flatIndex - 1;
+
+	// Add position to instance list if the flat def has already been created.
+	const auto iter = std::find_if(this->flatsLists.begin(), this->flatsLists.end(),
+		[actualIndex](const FlatDef &flatDef)
+	{
+		return flatDef.getFlatIndex() == actualIndex;
+	});
+
+	if (iter != this->flatsLists.end())
+	{
+		iter->addPosition(flatPosition);
+	}
+	else
+	{
+		// Create new def.
+		FlatDef flatDef(actualIndex);
+		flatDef.addPosition(flatPosition);
+		this->flatsLists.push_back(std::move(flatDef));
+	}
 }
 
 void LevelData::setVoxel(int x, int y, int z, uint16_t id)
@@ -451,7 +480,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 			const int flatIndex = getFlatIndex(florVoxel);
 			if (flatIndex > 0)
 			{
-				this->flats.push_back(Flat(Int2(x, z), flatIndex - 1));
+				this->addFlatInstance(flatIndex, Int2(x, z));
 			}
 		}
 	}
@@ -840,8 +869,10 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					const Int2 position(x, z);
-					this->flats.push_back(Flat(position, flatIndex));
+					if (flatIndex > 0)
+					{
+						this->addFlatInstance(flatIndex, Int2(x, z));
+					}
 				}
 				else if (mostSigNibble == 0x9)
 				{
@@ -1026,8 +1057,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		const auto &textureData = this->inf.getVoxelTextures().at(i);
 
 		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string extension = String::getExtension(textureName);
-
+		const std::string_view extension = StringView::getExtension(textureName);
 		const bool isIMG = extension == "IMG";
 		const bool isSET = extension == "SET";
 		const bool noExtension = extension.size() == 0;
@@ -1052,7 +1082,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		}
 		else
 		{
-			DebugCrash("Unrecognized voxel texture extension \"" + extension + "\".");
+			DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 		}
 	}
 
