@@ -55,9 +55,8 @@ bool IMGFile::init(const char *filename)
 		return true;
 	}
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -78,7 +77,7 @@ bool IMGFile::init(const char *filename)
 		flags = 0;
 		len = width * height;
 	}
-	else if (srcSize == 4096)
+	else if (src.getCount() == 4096)
 	{
 		// Some wall .IMGs have rows of black (transparent) pixels near the 
 		// beginning, so the header would just be zeroes. This is a guess to 
@@ -150,7 +149,7 @@ bool IMGFile::init(const char *filename)
 			makeImage(width, height, srcPtr);
 		}
 	}
-	else if ((srcSize == 4096) && (width == 64) && (height == 64))
+	else if ((src.getCount() == 4096) && (width == 64) && (height == 64))
 	{
 		// Wall texture (the flags variable is garbage).
 		makeImage(64, 64, srcPtr);
@@ -220,9 +219,8 @@ Palette IMGFile::readPalette(const uint8_t *paletteData)
 
 bool IMGFile::extractPalette(const char *filename, Palette &palette)
 {
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;

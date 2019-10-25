@@ -90,16 +90,15 @@ struct ChunkHeader
 
 bool FLCFile::init(const char *filename)
 {
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
-	const uint8_t *srcEnd = srcPtr + srcSize;
+	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
 	// Get the header data. Some of it is just miscellaneous (last updated, etc.),
 	// or only used in later versions with the EGI modifications.

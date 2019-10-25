@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../archives/bsaarchive.hpp"
+#include "../debug/Debug.h"
 
 namespace
 {
@@ -124,61 +125,54 @@ IStreamPtr Manager::openCaseInsensitive(const char *name)
 	return this->openCaseInsensitive(name, &dummy);
 }
 
-bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA)
+bool Manager::read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 {
 	assert(name != nullptr);
 	assert(dst != nullptr);
-	assert(dstSize != nullptr);
 
 	IStreamPtr stream = this->open(name, inGlobalBSA);
 	if (stream == nullptr)
 	{
-		// @todo: use Debug logging.
-		std::cerr << "Could not open \"" << name << "\"." << '\n';
+		DebugLogError("Could not open \"" + std::string(name) + "\".");
 		return false;
 	}
 
 	stream->seekg(0, std::ios::end);
-	*dstSize = stream->tellg();
-	*dst = std::make_unique<std::byte[]>(*dstSize);
+	dst->init(static_cast<int>(stream->tellg()));
 	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(dst->get()), *dstSize);
+	stream->read(reinterpret_cast<char*>(dst->get()), dst->getCount());
 	return true;
 }
 
-bool Manager::read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize)
+bool Manager::read(const char *name, Buffer<std::byte> *dst)
 {
 	bool dummy;
-	return this->read(name, dst, dstSize, &dummy);
+	return this->read(name, dst, &dummy);
 }
 
-bool Manager::readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize,
-	bool *inGlobalBSA)
+bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 {
 	assert(name != nullptr);
 	assert(dst != nullptr);
-	assert(dstSize != nullptr);
 
 	IStreamPtr stream = this->openCaseInsensitive(name, inGlobalBSA);
 	if (stream == nullptr)
 	{
-		// @todo: use Debug logging.
-		std::cerr << "Could not open \"" << name << "\"." << '\n';
+		DebugLogError("Could not open \"" + std::string(name) + "\".");
 		return false;
 	}
 
 	stream->seekg(0, std::ios::end);
-	*dstSize = stream->tellg();
-	*dst = std::make_unique<std::byte[]>(*dstSize);
+	dst->init(static_cast<int>(stream->tellg()));
 	stream->seekg(0, std::ios::beg);
-	stream->read(reinterpret_cast<char*>(dst->get()), *dstSize);
+	stream->read(reinterpret_cast<char*>(dst->get()), dst->getCount());
 	return true;
 }
 
-bool Manager::readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize)
+bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst)
 {
 	bool dummy;
-	return this->readCaseInsensitive(name, dst, dstSize, &dummy);
+	return this->readCaseInsensitive(name, dst, &dummy);
 }
 
 bool Manager::exists(const char *name)

@@ -695,9 +695,8 @@ bool MiscAssets::initQuestionTxt()
 {
 	const char *filename = "QUESTION.TXT";
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -706,7 +705,7 @@ bool MiscAssets::initQuestionTxt()
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Read QUESTION.TXT into a string.
-	const std::string text(reinterpret_cast<const char*>(srcPtr), srcSize);
+	const std::string text(reinterpret_cast<const char*>(srcPtr), src.getCount());
 
 	// Lambda for adding a new question to the questions list.
 	auto addQuestion = [this](const std::string &description,
@@ -865,9 +864,8 @@ bool MiscAssets::initClasses(const ExeData &exeData)
 {
 	const char *filename = "CLASSES.DAT";
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -1079,15 +1077,14 @@ bool MiscAssets::initDungeonTxt()
 {
 	const char *filename = "DUNGEON.TXT";
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
 	}
 
-	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
+	const std::string text(reinterpret_cast<const char*>(src.get()), src.getCount());
 
 	// Step line by line through the text, inserting data into the dungeon list.
 	std::istringstream iss(text);
@@ -1144,9 +1141,8 @@ bool MiscAssets::initArtifactText()
 	auto loadArtifactText = [](const char *filename,
 		std::array<MiscAssets::ArtifactTavernText, 16> &artifactTavernText)
 	{
-		std::unique_ptr<std::byte[]> src;
-		size_t srcSize;
-		if (!VFS::Manager::get().read(filename, &src, &srcSize))
+		Buffer<std::byte> src;
+		if (!VFS::Manager::get().read(filename, &src))
 		{
 			DebugLogError("Could not read \"" + std::string(filename) + "\".");
 			return false;
@@ -1185,9 +1181,8 @@ bool MiscAssets::initTradeText()
 	auto loadTradeText = [](const char *filename,
 		MiscAssets::TradeText::FunctionArray &functionArr)
 	{
-		std::unique_ptr<std::byte[]> src;
-		size_t srcSize;
-		if (!VFS::Manager::get().read(filename, &src, &srcSize))
+		Buffer<std::byte> src;
+		if (!VFS::Manager::get().read(filename, &src))
 		{
 			DebugLogError("Could not read \"" + std::string(filename) + "\".");
 			return false;
@@ -1220,9 +1215,8 @@ bool MiscAssets::initTradeText()
 bool MiscAssets::initNameChunks()
 {
 	const char *filename = "NAMECHNK.DAT";
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -1231,7 +1225,7 @@ bool MiscAssets::initNameChunks()
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	size_t offset = 0;
-	while (offset < srcSize)
+	while (offset < src.getCount())
 	{
 		// Get information for the current chunk.
 		const uint8_t *chunkPtr = srcPtr + offset;
@@ -1261,9 +1255,8 @@ bool MiscAssets::initStandardSpells()
 	// case-insensitive open method so it works on case-sensitive systems (i.e., Unix).
 	const char *filename = "SPELLSG.65";
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -1278,15 +1271,14 @@ bool MiscAssets::initSpellMakerDescriptions()
 {
 	const char *filename = "SPELLMKR.TXT";
 
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
 	}
 
-	const std::string text(reinterpret_cast<const char*>(src.get()), srcSize);
+	const std::string text(reinterpret_cast<const char*>(src.get()), src.getCount());
 
 	struct State
 	{
@@ -1367,9 +1359,8 @@ bool MiscAssets::initWildernessChunks()
 bool MiscAssets::initWorldMapMasks()
 {
 	const char *filename = "TAMRIEL.MNU";
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;

@@ -552,9 +552,8 @@ Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
 
 bool CityDataFile::init(const char *filename)
 {
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;

@@ -29,16 +29,15 @@ bool CIFFile::init(const char *filename)
 	// Some filenames (i.e., Arrows.cif) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
-	const uint8_t *srcEnd = srcPtr + srcSize;
+	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
 	// X and Y offset might be useful for weapon positions on the screen.
 	uint16_t xoff, yoff, width, height, flags, len;

@@ -149,16 +149,15 @@ bool INFFile::init(const char *filename)
 	// Some filenames (i.e., Crystal3.inf) have different casing between the floppy version and
 	// CD version, so this needs to use the case-insensitive open() method for correct behavior
 	// on Unix-based systems.
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &srcSize, &inGlobalBSA))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().readCaseInsensitive(filename, &src, &inGlobalBSA))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
 	}
 
 	uint8_t *srcPtr = reinterpret_cast<uint8_t*>(src.get());
-	uint8_t *srcEnd = srcPtr + srcSize;
+	uint8_t *srcEnd = reinterpret_cast<uint8_t*>(src.end());
 
 	// Check if the .INF is encrypted.
 	const bool isEncrypted = inGlobalBSA;
@@ -188,7 +187,7 @@ bool INFFile::init(const char *filename)
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
-	std::string text(reinterpret_cast<char*>(srcPtr), srcSize);
+	std::string text(reinterpret_cast<char*>(srcPtr), src.getCount());
 
 	// Remove carriage returns (newlines are nicer to work with).
 	text = String::replace(text, "\r", "");

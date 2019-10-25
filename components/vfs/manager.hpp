@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "../utilities/Buffer.h"
+
 namespace VFS
 {
 
@@ -54,11 +56,10 @@ public:
 	IStreamPtr openCaseInsensitive(const char *name);
 
 	// Convenience functions for opening and reading a file into the output parameters.
-	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize, bool *inGlobalBSA);
-	bool read(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
-	bool readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize,
-		bool *inGlobalBSA);
-	bool readCaseInsensitive(const char *name, std::unique_ptr<std::byte[]> *dst, size_t *dstSize);
+	bool read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA);
+	bool read(const char *name, Buffer<std::byte> *dst);
+	bool readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA);
+	bool readCaseInsensitive(const char *name, Buffer<std::byte> *dst);
 
 	bool exists(const char *name);
 	std::vector<std::string> list(const char *pattern = nullptr) const;

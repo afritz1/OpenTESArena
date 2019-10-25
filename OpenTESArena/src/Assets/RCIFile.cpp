@@ -12,9 +12,8 @@ const int RCIFile::FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
 
 bool RCIFile::init(const char *filename)
 {
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -23,7 +22,7 @@ bool RCIFile::init(const char *filename)
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 
 	// Number of uncompressed frames packed in the .RCI.
-	const int frameCount = static_cast<int>(srcSize) / RCIFile::FRAME_SIZE;
+	const int frameCount = src.getCount() / RCIFile::FRAME_SIZE;
 
 	// Create an image for each uncompressed frame using the given palette.
 	for (int i = 0; i < frameCount; i++)

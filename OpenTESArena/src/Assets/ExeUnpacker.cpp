@@ -207,9 +207,8 @@ namespace
 
 bool ExeUnpacker::init(const char *filename)
 {
-	std::unique_ptr<std::byte[]> src;
-	size_t srcSize;
-	if (!VFS::Manager::get().read(filename, &src, &srcSize))
+	Buffer<std::byte> src;
+	if (!VFS::Manager::get().read(filename, &src))
 	{
 		DebugLogError("Could not read \"" + std::string(filename) + "\".");
 		return false;
@@ -240,7 +239,7 @@ bool ExeUnpacker::init(const char *filename)
 
 	// Beginning and end of compressed data in the executable.
 	const uint8_t *compressedStart = srcPtr + 752;
-	const uint8_t *compressedEnd = srcPtr + (srcSize - 8);
+	const uint8_t *compressedEnd = srcPtr + (src.getCount() - 8);
 
 	// Last word of compressed data must be 0xFFFF.
 	const uint16_t lastCompWord = Bytes::getLE16(compressedEnd - 2);
