@@ -6523,7 +6523,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	uint32_t *colorBuffer)
+	const EntityManager &entityManager, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);

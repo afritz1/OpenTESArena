@@ -541,24 +541,10 @@ void Renderer::setRenderThreadsMode(int mode)
 	this->softwareRenderer.setRenderThreadsMode(mode);
 }
 
-void Renderer::addFlat(int id, const Double3 &position, double width, 
-	double height, int textureID)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.addFlat(id, position, width, height, textureID);
-}
-
 void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.addLight(id, point, color, intensity);
-}
-
-void Renderer::updateFlat(int id, const Double3 *position, const double *width, 
-	const double *height, const int *textureID, const bool *flipped)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.updateFlat(id, position, width, height, textureID, flipped);
 }
 
 void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
@@ -602,12 +588,6 @@ void Renderer::setNightLightsActive(bool active)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setNightLightsActive(active);
-}
-
-void Renderer::removeFlat(int id)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.removeFlat(id);
 }
 
 void Renderer::removeLight(int id)
@@ -708,7 +688,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
 	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid)
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const EntityManager &entityManager)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->softwareRenderer.isInited());
@@ -725,8 +706,9 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, latitude,
-		parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid, gameWorldPixels);
+	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent,
+		latitude, parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid,
+		entityManager, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.

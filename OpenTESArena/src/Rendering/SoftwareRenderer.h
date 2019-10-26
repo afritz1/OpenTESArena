@@ -737,7 +737,7 @@ public:
 		double ambient, double daytimePercent, double latitude, bool parallaxSky,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		uint32_t *colorBuffer);
+		const EntityManager &entityManager, uint32_t *colorBuffer);
 };
 
 #endif

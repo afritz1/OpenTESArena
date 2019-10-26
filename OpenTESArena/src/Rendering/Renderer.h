@@ -17,6 +17,7 @@
 
 class Color;
 class DistantSky;
+class EntityManager;
 class Rect;
 class Surface;
 class VoxelGrid;
@@ -171,10 +172,7 @@ public:
 	// - Some 'add' methods take a unique ID and parameters to create a new object.
 	// - 'update' methods take optional parameters for updating, ignoring null ones.
 	// - 'remove' methods delete an object from renderer memory if it exists.
-	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-	void updateFlat(int id, const Double3 *position, const double *width, 
-		const double *height, const int *textureID, const bool *flipped);
 	void updateLight(int id, const Double3 *point, const Double3 *color,
 		const double *intensity);
 	void setFogDistance(double fogDistance);
@@ -183,7 +181,6 @@ public:
 	void setDistantSky(const DistantSky &distantSky);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
-	void removeFlat(int id);
 	void removeLight(int id);
 	void clearTextures();
 	void clearDistantSky();
@@ -208,7 +205,8 @@ public:
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
 		double ambient, double daytimePercent, double latitude, bool parallaxSky,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid);
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const EntityManager &entityManager);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

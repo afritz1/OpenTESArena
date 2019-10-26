@@ -232,6 +232,16 @@ const INFFile &LevelData::getInfFile() const
 	return this->inf;
 }
 
+EntityManager &LevelData::getEntityManager()
+{
+	return this->entityManager;
+}
+
+const EntityManager &LevelData::getEntityManager() const
+{
+	return this->entityManager;
+}
+
 VoxelGrid &LevelData::getVoxelGrid()
 {
 	return this->voxelGrid;

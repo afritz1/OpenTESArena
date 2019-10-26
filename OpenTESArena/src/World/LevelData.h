@@ -172,6 +172,8 @@ public:
 	std::vector<FadeState> &getFadingVoxels();
 	const std::vector<FadeState> &getFadingVoxels() const;
 	const INFFile &getInfFile() const;
+	EntityManager &getEntityManager();
+	const EntityManager &getEntityManager() const;
 	VoxelGrid &getVoxelGrid();
 	const VoxelGrid &getVoxelGrid() const;
 
