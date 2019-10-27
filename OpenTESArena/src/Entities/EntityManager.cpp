@@ -156,7 +156,7 @@ int EntityManager::getTotalCount() const
 	return count;
 }
 
-int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int outSize)
+int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int outSize) const
 {
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);
@@ -173,7 +173,7 @@ int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int 
 	return writeCount;
 }
 
-int EntityManager::getTotalEntities(Entity **outEntities, int outSize)
+int EntityManager::getTotalEntities(Entity **outEntities, int outSize) const
 {
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);

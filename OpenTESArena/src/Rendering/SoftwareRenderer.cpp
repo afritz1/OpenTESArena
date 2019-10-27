@@ -678,24 +678,6 @@ void SoftwareRenderer::setRenderThreadsMode(int mode)
 	this->initRenderThreads(this->width, this->height, threadCount);
 }
 
-void SoftwareRenderer::addFlat(int id, const Double3 &position, double width, 
-	double height, int textureID)
-{
-	// Verify that the ID is not already in use.
-	DebugAssertMsg(this->flats.find(id) == this->flats.end(),
-		"Flat ID \"" + std::to_string(id) + "\" already taken.");
-
-	SoftwareRenderer::Flat flat;
-	flat.position = position;
-	flat.width = width;
-	flat.height = height;
-	flat.textureID = textureID;
-	flat.flipped = false; // The initial value doesn't matter; it's updated frequently.
-
-	// Add the flat (sprite, door, store sign, etc.).
-	this->flats.insert(std::make_pair(id, flat));
-}
-
 void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &color, 
 	double intensity)
 {
@@ -760,42 +742,6 @@ void SoftwareRenderer::setFlatTexture(int id, const uint32_t *srcTexels, int wid
 	}
 }
 
-void SoftwareRenderer::updateFlat(int id, const Double3 *position, const double *width, 
-	const double *height, const int *textureID, const bool *flipped)
-{
-	const auto flatIter = this->flats.find(id);
-	DebugAssertMsg(flatIter != this->flats.end(),
-		"Cannot update a non-existent flat (" + std::to_string(id) + ").");
-
-	SoftwareRenderer::Flat &flat = flatIter->second;
-
-	// Check which values requested updating and update them.
-	if (position != nullptr)
-	{
-		flat.position = *position;
-	}
-
-	if (width != nullptr)
-	{
-		flat.width = *width;
-	}
-
-	if (height != nullptr)
-	{
-		flat.height = *height;
-	}
-
-	if (textureID != nullptr)
-	{
-		flat.textureID = *textureID;
-	}
-
-	if (flipped != nullptr)
-	{
-		flat.flipped = *flipped;
-	}
-}
-
 void SoftwareRenderer::updateLight(int id, const Double3 *point,
 	const Double3 *color, const double *intensity)
 {
@@ -852,16 +798,6 @@ void SoftwareRenderer::setNightLightsActive(bool active)
 			texel.emission = texelEmission;
 		}
 	}
-}
-
-void SoftwareRenderer::removeFlat(int id)
-{
-	// Make sure the flat exists before removing it.
-	const auto flatIter = this->flats.find(id);
-	DebugAssertMsg(flatIter != this->flats.end(),
-		"Cannot remove a non-existent flat (" + std::to_string(id) + ").");
-
-	this->flats.erase(flatIter);
 }
 
 void SoftwareRenderer::removeLight(int id)
@@ -1357,9 +1293,16 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
+void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
+
+	// Max 256 potentially visible entities, just a naive limit. A better way might be to keep an
+	// expand-only buffer between frames.
+	std::array<Entity*, 256> entityPtrs;
+	const int entityCount = entityManager.getTotalEntities(
+		entityPtrs.data(), static_cast<int>(entityPtrs.size()));
+	DebugAssert(entityCount <= entityPtrs.size());
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
@@ -1370,9 +1313,23 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 direction(camera.forwardX, camera.forwardZ);
 
+	for (int i = 0; i < entityCount; i++)
+	{
+		const Entity *entity = entityPtrs[i];
+
+		// @todo: visible flat algorithm
+
+		// @todo: Determine usefulness of SoftwareRenderer::Flat and VisibleFlat; if there needs
+		// to be some intermediate representation between EntityManager and VisibleFlat. Probably
+		// just redesign it.
+
+		// @todo: need Flat information (or equivalent) from Entity class in order to generate
+		// visible flat entry.
+	}
+
 	// This is the visible flat determination algorithm. It goes through all flats and sees 
 	// which ones would be at least partially visible in the view frustum.
-	for (const auto &pair : this->flats)
+	/*for (const auto &pair : this->flats)
 	{
 		const Flat &flat = pair.second;
 
@@ -1421,7 +1378,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera)
 				this->visibleFlats.push_back(VisibleFlat(flat, std::move(flatFrame)));
 			}
 		}
-	}
+	}*/
 
 	// Sort the visible flats farthest to nearest (relevant for transparencies).
 	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
@@ -6591,7 +6548,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
-	this->updateVisibleFlats(camera);
+	this->updateVisibleFlats(camera, entityManager);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

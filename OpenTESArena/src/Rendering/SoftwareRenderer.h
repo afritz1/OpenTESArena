@@ -413,7 +413,6 @@ private:
 
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
-	std::unordered_map<int, Flat> flats; // All flats in world.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
@@ -444,7 +443,7 @@ private:
 		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera);
+	void updateVisibleFlats(const Camera &camera, const EntityManager &entityManager);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -676,16 +675,8 @@ public:
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
-	// Adds a flat. Causes an error if the ID exists.
-	void addFlat(int id, const Double3 &position, double width, double height, int textureID);
-
 	// Adds a light. Causes an error if the ID exists.
 	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-
-	// Updates various data for a flat. If a value doesn't need updating, pass null.
-	// Causes an error if no ID matches.
-	void updateFlat(int id, const Double3 *position, const double *width, 
-		const double *height, const int *textureID, const bool *flipped);
 
 	// Updates various data for a light. If a value doesn't need updating, pass null.
 	// Causes an error if no ID matches.
@@ -712,9 +703,6 @@ public:
 	// exterior locations (i.e., cities and wilderness) because those are the only places
 	// with time-dependent light sources and textures.
 	void setNightLightsActive(bool active);
-
-	// Removes a flat. Causes an error if no ID matches.
-	void removeFlat(int id);
 
 	// Removes a light. Causes an error if no ID matches.
 	void removeLight(int id);

@@ -57,10 +57,10 @@ public:
 	int getTotalCount() const;
 
 	// Gets pointers to entities of the given type. Returns number of entities written.
-	int getEntities(EntityType entityType, Entity **outEntities, int outSize);
+	int getEntities(EntityType entityType, Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities. Returns number of entities written.
-	int getTotalEntities(Entity **outEntities, int outSize);
+	int getTotalEntities(Entity **outEntities, int outSize) const;
 	
 	// Adds an entity. The entity will have their ID assigned in here.
 	Entity *add(std::unique_ptr<Entity> entity);
