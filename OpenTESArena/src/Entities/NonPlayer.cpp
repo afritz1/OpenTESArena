@@ -27,7 +27,7 @@ NonPlayer::AnimationType NonPlayer::getAnimationType() const
 	// @todo: Check combat state eventually.
 }
 
-const Double3 &NonPlayer::getPosition() const
+Double3 NonPlayer::getPosition() const
 {
 	return this->camera.position;
 }

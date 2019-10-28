@@ -36,11 +36,13 @@ public:
 	// Gets the texture ID for the current animation frame, to be used by the renderer.
 	int getTextureID() const;
 
+	// @todo: just remove getPosition() completely, unless we want to pass ceilingHeight
+	// as a parameter.
 	// @todo: rework; don't want a virtual function call for something like this.
 	// Gets the 3D position of the entity. The semantics of this depends on how it is 
 	// implemented for each entity. Sometimes it's an NPC's feet, sometimes it's the
 	// center of a projectile.
-	virtual const Double3 &getPosition() const = 0;
+	virtual Double3 getPosition() const = 0;
 
 	// Animates the entity's state by delta time.
 	virtual void tick(Game &game, double dt) = 0;

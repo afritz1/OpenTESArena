@@ -39,7 +39,7 @@ public:
 		const Animation &attackAnimation, const Animation &deathAnimation);
 	virtual ~NonPlayer() = default;
 
-	virtual const Double3 &getPosition() const override;
+	virtual Double3 getPosition() const override;
 
 	virtual void tick(Game &game, double dt) override;
 };

@@ -1,12 +1,17 @@
 #include "Doodad.h"
 #include "EntityType.h"
 
-Doodad::Doodad(const Animation &animation, const Double3 &position)
-	: Entity(EntityType::Doodad), animation(animation), position(position) { }
+Doodad::Doodad(const Animation &animation)
+	: Entity(EntityType::Doodad), animation(animation) { }
 
-const Double3 &Doodad::getPosition() const
+Doodad::Doodad()
+	: Doodad(Animation({}, 0.0, false)) { }
+
+Double3 Doodad::getPosition() const
 {
-	return this->position;
+	// @todo: remove/revise Double3 getPosition() since I guess this depends on ceiling
+	// height of the active level. Pass ceilingHeight as a parameter? Ehh...
+	return Double3(this->positionXZ.x, 0.0, this->positionXZ.y);
 }
 
 void Doodad::tick(Game &game, double dt)
