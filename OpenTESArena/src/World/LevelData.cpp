@@ -6,6 +6,7 @@
 #include "VoxelDataType.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
+#include "../Entities/Doodad.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
@@ -1048,23 +1049,42 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 
 void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 {
-	// Clear all entities.
-	// @todo: entities.
-	/*for (const auto *entity : this->entityManager.getAllEntities())
+	// Clear entities and re-initialize from the flat defs list.
+	this->entityManager.clear();
+
+	for (const auto &flatDef : this->flatsLists)
 	{
-		renderer.removeFlat(entity->getID());
-		this->entityManager.remove(entity->getID());
-	}*/
+		const int flatIndex = flatDef.getFlatIndex();
+		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
+
+		for (const Int2 &position : flatDef.getPositions())
+		{
+			// @todo: figure out how to differentiate the entity type based on its referenced
+			// .INF flat data. Just assume they're all static objects for now.
+			std::unique_ptr<Entity> entity = std::make_unique<Doodad>();
+
+			const Double2 positionXZ(
+				static_cast<double>(position.x) + 0.50,
+				static_cast<double>(position.y) + 0.50);
+			entity->setPositionXZ(positionXZ);
+
+			entity->setTextureID(flatIndex);
+
+			this->entityManager.add(std::move(entity));
+		}
+	}
 
 	// Clear renderer textures and distant sky.
 	renderer.clearTextures();
 	renderer.clearDistantSky();
 
 	// Load .INF voxel textures into the renderer.
-	const int voxelTextureCount = static_cast<int>(this->inf.getVoxelTextures().size());
+	const auto &voxelTextures = this->inf.getVoxelTextures();
+	const int voxelTextureCount = static_cast<int>(voxelTextures.size());
 	for (int i = 0; i < voxelTextureCount; i++)
 	{
-		const auto &textureData = this->inf.getVoxelTextures().at(i);
+		DebugAssertIndex(voxelTextures, i);
+		const auto &textureData = voxelTextures[i];
 
 		const std::string textureName = String::toUppercase(textureData.filename);
 		const std::string_view extension = StringView::getExtension(textureName);
@@ -1096,34 +1116,53 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		}
 	}
 
-	// Load .INF flat textures into the renderer.
-	// - @todo: maybe turn this into a while loop, so the index variable can be incremented
-	//   by the size of each .DFA. It's incorrect as-is.
-	/*const int flatTextureCount = static_cast<int>(inf.getFlatTextures().size());
+	// @todo: INFFile::voxelTextures is already expanded for .SET images. INFFile::flatTextures
+	// should be the same (I think?). If it isn't, then INFFile is basically deferring that
+	// expanding to this function.
+
+	// @todo: could probably have LevelData store texture indices if it doesn't make sense for
+	// the renderer to store them. Map<flat index, list of indices>. That way the entity manager
+	// can look them up for each entity (i.e., I'm an entity with entity def index #3. My render
+	// texture indices must be in list #3).
+
+	// @todo: Entity should have a flat index or something. Probably need to separate the
+	// concept of .INF flat from "new engine entity def", so we can have an array of entity
+	// defs (rat, goblin, whatever).
+
+	// Set flat texels and their indices in the renderer, assuming that's how the original game
+	// does it.
+	const auto &flatTextures = this->inf.getFlatTextures();
+	const int flatTextureCount = static_cast<int>(flatTextures.size());
 	for (int i = 0; i < flatTextureCount; i++)
 	{
-		const auto &textureData = inf.getFlatTextures().at(i);
-		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string extension = String::getExtension(textureName);
+		DebugAssertIndex(flatTextures, i);
+		const INFFile::FlatTextureData &textureData = flatTextures[i];
+		const std::string &flatTextureName = textureData.filename;
+
+		const std::string_view extension = StringView::getExtension(flatTextureName);
 		const bool isDFA = extension == "DFA";
 		const bool isIMG = extension == "IMG";
 		const bool noExtension = extension.size() == 0;
+
 		if (isDFA)
 		{
 			// @todo: creatures don't have .DFA files (although they're referenced in the .INF
 			// files), so I think the extension needs to be .CFA instead for them.
-			//const auto &surfaces = textureManager.getSurfaces(textureName);
-			//for (const auto *surface : surfaces)
-			//{
-			//renderer.addTexture(static_cast<const uint32_t*>(surface->pixels),
-			//surface->w, surface->h);
-			//}
+			//const std::string cfaFilename = String::replace(flatTextureName, ".DFA", ".CFA");
+			//const auto &surfaces = textureManager.getSurfaces(cfaFilename);
+			const auto &surfaces = textureManager.getSurfaces(flatTextureName);
+
+			// @temp: just get first surface for now.
+			const Surface &surface = surfaces[0];
+
+			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface.getPixels()),
+				surface.getWidth(), surface.getHeight());
 		}
 		else if (isIMG)
 		{
-			const SDL_Surface *surface = textureManager.getSurface(textureName);
-			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface->pixels),
-				surface->w, surface->h);
+			const Surface &surface = textureManager.getSurface(flatTextureName);
+			renderer.setFlatTexture(i, static_cast<const uint32_t*>(surface.getPixels()),
+				surface.getWidth(), surface.getHeight());
 		}
 		else if (noExtension)
 		{
@@ -1133,9 +1172,9 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		}
 		else
 		{
-			DebugCrash("Unrecognized texture extension \"" + extension + "\".");
+			DebugCrash("Unrecognized flat texture name \"" + flatTextureName + "\".");
 		}
-	}*/
+	}
 }
 
 void LevelData::tick(double dt)
