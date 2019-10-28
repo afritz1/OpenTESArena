@@ -67,6 +67,9 @@ public:
 
 	// Deletes an entity.
 	void remove(int id);
+
+	// Deletes all entities in the manager.
+	void clear();
 };
 
 #endif

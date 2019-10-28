@@ -232,3 +232,11 @@ void EntityManager::remove(int id)
 		}
 	}
 }
+
+void EntityManager::clear()
+{
+	for (auto &entityList : this->entityLists)
+	{
+		entityList.clear();
+	}
+}
