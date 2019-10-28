@@ -1,6 +1,8 @@
 #ifndef BUFFER_VIEW_2D_H
 #define BUFFER_VIEW_2D_H
 
+#include <algorithm>
+
 #include "../debug/Debug.h"
 
 // Non-owning view over a 2D range of data stored in memory as a 1D array.
