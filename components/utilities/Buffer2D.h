@@ -37,8 +37,8 @@ public:
 
 	void init(int width, int height)
 	{
-		DebugAssert(width > 0);
-		DebugAssert(height > 0);
+		DebugAssert(width >= 0);
+		DebugAssert(height >= 0);
 		this->data = std::make_unique<T[]>(width * height);
 		this->width = width;
 		this->height = height;
@@ -51,62 +51,71 @@ public:
 
 	T *get()
 	{
+		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	const T *get() const
 	{
+		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	T &get(int x, int y)
 	{
+		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		return this->data.get()[index];
 	}
 
 	const T &get(int x, int y) const
 	{
+		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		return this->data.get()[index];
 	}
 
 	T *end()
 	{
-		return (this->data.get() != nullptr) ?
-			(this->data.get() + (this->width * this->height)) : nullptr;
+		DebugAssert(this->isValid());
+		return this->data.get() + (this->width * this->height);
 	}
 
 	const T *end() const
 	{
-		return (this->data.get() != nullptr) ?
-			(this->data.get() + (this->width * this->height)) : nullptr;
+		DebugAssert(this->isValid());
+		return this->data.get() + (this->width * this->height);
 	}
 
 	int getWidth() const
 	{
+		DebugAssert(this->isValid());
 		return this->width;
 	}
 
 	int getHeight() const
 	{
+		DebugAssert(this->isValid());
 		return this->height;
 	}
 
 	void set(int x, int y, const T &value)
 	{
+		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		this->data.get()[index] = value;
 	}
 
 	void set(int x, int y, T &&value)
 	{
+		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y);
 		this->data.get()[index] = std::move(value);
 	}
 
 	void fill(const T &value)
 	{
+		DebugAssert(this->isValid());
 		std::fill(this->data.get(), this->end(), value);
 	}
 

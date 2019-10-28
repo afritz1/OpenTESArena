@@ -27,7 +27,7 @@ public:
 
 	void init(int count)
 	{
-		DebugAssert(count > 0);
+		DebugAssert(count >= 0);
 		this->data = std::make_unique<T[]>(count);
 		this->count = count;
 	}
@@ -39,16 +39,19 @@ public:
 
 	T *get()
 	{
+		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	const T *get() const
 	{
+		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	T &get(int index)
 	{
+		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
 		return this->data.get()[index];
@@ -56,6 +59,7 @@ public:
 
 	const T &get(int index) const
 	{
+		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
 		return this->data.get()[index];
@@ -63,23 +67,25 @@ public:
 
 	T *end()
 	{
-		return (this->data.get() != nullptr) ?
-			(this->data.get() + this->count) : nullptr;
+		DebugAssert(this->isValid());
+		return this->data.get() + this->count;
 	}
 
 	const T *end() const
 	{
-		return (this->data.get() != nullptr) ?
-			(this->data.get() + this->count) : nullptr;
+		DebugAssert(this->isValid());
+		return this->data.get() + this->count;
 	}
 
 	int getCount() const
 	{
+		DebugAssert(this->isValid());
 		return this->count;
 	}
 
 	void set(int index, const T &value)
 	{
+		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
 		this->data.get()[index] = value;
@@ -87,6 +93,7 @@ public:
 
 	void set(int index, T &&value)
 	{
+		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
 		this->data.get()[index] = std::move(value);
@@ -94,6 +101,7 @@ public:
 
 	void fill(const T &value)
 	{
+		DebugAssert(this->isValid());
 		std::fill(this->data.get(), this->end(), value);
 	}
 
