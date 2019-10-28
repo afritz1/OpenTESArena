@@ -104,7 +104,7 @@ int EntityManager::getFreeID() const
 {
 	// Iterate through IDs from 0 to infinity until one is available.
 	int id = 0;
-	while (this->get(id) == nullptr)
+	while (this->get(id) != nullptr)
 	{
 		id++;
 	}
