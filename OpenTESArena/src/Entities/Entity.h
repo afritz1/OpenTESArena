@@ -1,6 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
 // Entities are any objects in the world that aren't part of the voxel grid. Every entity
@@ -16,6 +17,7 @@ private:
 	int id;
 	EntityType entityType;
 protected:
+	Double2 positionXZ;
 	int textureID;
 public:
 	Entity(EntityType entityType);
@@ -45,6 +47,9 @@ public:
 
 	// Sets the unique ID of the entity.
 	void setID(int id);
+
+	// Sets the XZ position of the entity.
+	void setPositionXZ(const Double2 &positionXZ);
 
 	// @todo: rework
 	// Sets the texture ID of the entity, to be used by the renderer.

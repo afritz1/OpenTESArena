@@ -3,6 +3,7 @@
 #include "EntityType.h"
 
 Entity::Entity(EntityType entityType)
+	: positionXZ(Double2::Zero)
 {
 	this->id = EntityManager::NO_ID;
 	this->entityType = entityType;
@@ -27,6 +28,11 @@ int Entity::getTextureID() const
 void Entity::setID(int id)
 {
 	this->id = id;
+}
+
+void Entity::setPositionXZ(const Double2 &positionXZ)
+{
+	this->positionXZ = positionXZ;
 }
 
 void Entity::setTextureID(int textureID)
