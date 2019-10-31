@@ -54,7 +54,7 @@ public:
 #define DebugAssertMsg(condition, message) \
 	do { if (!(condition)) DebugCrash("Assertion failed: " + std::string(message)); } while (false)
 #define DebugAssert(condition) \
-	do { if (!(condition)) DebugCrash("Assertion failed."); } while (false)
+	do { if (!(condition)) DebugCrash("Assertion failed: \"" + std::string(#condition) + "\""); } while (false)
 
 	// Exception generator with file and line.
 #define DebugException(message) \
