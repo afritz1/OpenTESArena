@@ -363,6 +363,10 @@ void EntityManager::remove(int id)
 	{
 		// NPC.
 		this->npcs.remove(id);
+
+		// Insert entity ID into the free list.
+		this->freeIDs.push_back(id);
+		return;
 	}
 
 	entityIndex = this->doodads.getEntityIndex(id);
@@ -370,6 +374,10 @@ void EntityManager::remove(int id)
 	{
 		// Doodad.
 		this->doodads.remove(id);
+
+		// Insert entity ID into the free list.
+		this->freeIDs.push_back(id);
+		return;
 	}
 
 	// Not in any entity group.
