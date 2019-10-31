@@ -1,54 +1,90 @@
 #ifndef ENTITY_MANAGER_H
 #define ENTITY_MANAGER_H
 
-#include <array>
-#include <memory>
+#include <optional>
+#include <type_traits>
+#include <unordered_map>
 #include <vector>
 
+#include "../Entities/Doodad.h"
 #include "../Entities/Entity.h"
+#include "../Entities/NonPlayer.h"
 
 enum class EntityType;
 
 class EntityManager
 {
 private:
-	// Matches number of elements in EntityType enum.
-	static constexpr int ENTITY_TYPE_COUNT = 5;
+	template <typename T>
+	class EntityGroup
+	{
+	private:
+		static_assert(std::is_base_of_v<Entity, T>);
 
-	using EntityList = std::vector<std::unique_ptr<Entity>>;
+		// Contiguous array for fast iteration. Entries can be empty to avoid moving other
+		// entries around.
+		std::vector<T> entities;
 
-	// One list per entity type, sorted by ID.
-	std::array<EntityList, ENTITY_TYPE_COUNT> entityLists;
+		// Parallel array for whether the equivalent entities index is valid.
+		std::vector<bool> validEntities;
 
-	// Comparison function for sorting entities.
-	static int entityComparer(const std::unique_ptr<Entity> &a, const std::unique_ptr<Entity> &b);
+		// Entity ID -> entity index mappings for fast insertion/deletion/look-up.
+		std::unordered_map<int, int> indices;
 
-	// Gets entity list by entity type.
-	EntityList &getEntityList(EntityType entityType);
-	const EntityList &getEntityList(EntityType entityType) const;
+		// List of previously-owned entity indices that can be replaced with new entities.
+		std::vector<int> freeIndices;
+	public:
+		// Gets number of entities in the group.
+		int getCount() const;
 
-	// Gets the index that the given entity should be inserted at in the sorted entity list.
-	static int getEntityInsertIndex(int id, const EntityList &entityList);
+		// Gets an entity by index.
+		T *getEntityAtIndex(int index);
+		const T *getEntityAtIndex(int index) const;
 
-	// Writes entity index to the out parameter if the entity exists in the given list.
-	static bool tryGetEntityIndex(int id, const EntityList &entityList, int *outIndex);
+		// Helper function for entity manager getting all entities of a given type.
+		int getEntities(Entity **outEntities, int outSize);
+		int getEntities(const Entity **outEntities, int outSize) const;
 
-	// Writes entity list index to the out parameter if the entity exists in any list.
-	bool tryGetEntityListIndex(int id, int *outIndex) const;
+		// Gets the index of an entity if the given ID has an associated mapping.
+		std::optional<int> getEntityIndex(int id) const;
 
-	// Obtains an available ID to be assigned to a new entity.
-	int getFreeID() const;
+		// Inserts a new entity and assigns it the given ID.
+		T *addEntity(int id);
+
+		// Removes an entity from the group.
+		void remove(int id);
+
+		// Removes all entities.
+		void clear();
+	};
+
+	// One group per entity type.
+	EntityGroup<NonPlayer> npcs;
+	EntityGroup<Doodad> doodads;
+
+	// Free IDs (previously owned) and the next available ID (never owned).
+	std::vector<int> freeIDs;
+	int nextID;
+
+	// Obtains an available ID to be assigned to a new entity, incrementing the current max
+	// if no previously owned IDs are available to reuse.
+	int nextFreeID();
 public:
 	// The default ID assigned to entities that have no ID.
 	static const int NO_ID;
 	
-	EntityManager() = default;
+	EntityManager();
 	EntityManager(EntityManager &&entityManager) = default;
 
 	EntityManager &operator=(EntityManager &&entityManager) = default;
 
+	// Factory functions. These assign the entity an available ID.
+	NonPlayer *makeNPC();
+	Doodad *makeDoodad();
+
 	// Gets an entity, given their ID. Returns null if no ID matches.
-	Entity *get(int id) const;
+	Entity *get(int id);
+	const Entity *get(int id) const;
 
 	// Gets number of entities of the given type in the manager.
 	int getCount(EntityType entityType) const;
@@ -57,13 +93,11 @@ public:
 	int getTotalCount() const;
 
 	// Gets pointers to entities of the given type. Returns number of entities written.
-	int getEntities(EntityType entityType, Entity **outEntities, int outSize) const;
+	int getEntities(EntityType entityType, Entity **outEntities, int outSize);
+	int getEntities(EntityType entityType, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities. Returns number of entities written.
-	int getTotalEntities(Entity **outEntities, int outSize) const;
-	
-	// Adds an entity. The entity will have their ID assigned in here.
-	Entity *add(std::unique_ptr<Entity> entity);
+	int getTotalEntities(const Entity **outEntities, int outSize) const;
 
 	// Deletes an entity.
 	void remove(int id);

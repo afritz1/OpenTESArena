@@ -1299,10 +1299,9 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 
 	// Max 256 potentially visible entities, just a naive limit. A better way might be to keep an
 	// expand-only buffer between frames.
-	std::array<Entity*, 256> entityPtrs;
+	std::array<const Entity*, 256> entityPtrs;
 	const int entityCount = entityManager.getTotalEntities(
 		entityPtrs.data(), static_cast<int>(entityPtrs.size()));
-	DebugAssert(entityCount <= entityPtrs.size());
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.

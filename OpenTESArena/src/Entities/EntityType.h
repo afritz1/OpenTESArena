@@ -5,8 +5,8 @@
 // they are interacted with.
 
 // Non-players: an NPC or creature.
-// Containers: treasure chests, piles, etc..
 // Doodads: furniture, trees, street lights, junk, staff pieces, etc..
+// Containers: treasure chests, piles, etc..
 // Projectiles: flying objects or spells.
 // Transitions: a sprite entrance to somewhere, like a den.
 
@@ -16,8 +16,8 @@
 enum class EntityType
 {
 	NonPlayer,
-	Container,
 	Doodad,
+	Container,
 	Projectile,
 	Transition
 };

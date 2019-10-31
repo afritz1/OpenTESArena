@@ -21,7 +21,7 @@ protected:
 	int textureID;
 public:
 	Entity(EntityType entityType);
-	Entity(const Entity&) = delete;
+	//Entity(const Entity&) = delete;
 	virtual ~Entity() = default;
 
 	Entity &operator=(const Entity&) = delete;
@@ -56,6 +56,9 @@ public:
 	// @todo: rework
 	// Sets the texture ID of the entity, to be used by the renderer.
 	void setTextureID(int textureID);
+
+	// Clears all entity data so it can be used for another entity of the same type.
+	virtual void reset();
 };
 
 #endif

@@ -10,6 +10,10 @@ NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
 	attackAnimation(attackAnimation), deathAnimation(deathAnimation),
 	camera(position, direction), velocity(0.0, 0.0) { }
 
+NonPlayer::NonPlayer()
+	: NonPlayer(Double3::Zero, Double2::UnitX, {}, {},
+		Animation({}, 0.0, false), Animation({}, 0.0, false)) { }
+
 NonPlayer::AnimationType NonPlayer::getAnimationType() const
 {
 	// Death animation should override moving animation.

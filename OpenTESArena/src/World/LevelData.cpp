@@ -1061,16 +1061,14 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		{
 			// @todo: figure out how to differentiate the entity type based on its referenced
 			// .INF flat data. Just assume they're all static objects for now.
-			std::unique_ptr<Entity> entity = std::make_unique<Doodad>();
-
+			Entity *entity = this->entityManager.makeDoodad();
+			
 			const Double2 positionXZ(
 				static_cast<double>(position.x) + 0.50,
 				static_cast<double>(position.y) + 0.50);
 			entity->setPositionXZ(positionXZ);
 
 			entity->setTextureID(flatIndex);
-
-			this->entityManager.add(std::move(entity));
 		}
 	}
 

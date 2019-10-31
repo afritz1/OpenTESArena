@@ -7,6 +7,9 @@
 #include "Camera2D.h"
 #include "Entity.h"
 
+// @todo: serious refactor. Probably throw away most things and design for new entity
+// manager design.
+
 // Essentially an actor class, a non-player is an NPC or creature, usually with
 // an AI for movement and/or combat, whose texture depends on their position
 // relative to the player.
@@ -37,6 +40,7 @@ public:
 		const std::vector<Animation> &idleAnimations,
 		const std::vector<Animation> &moveAnimations,
 		const Animation &attackAnimation, const Animation &deathAnimation);
+	NonPlayer();
 	virtual ~NonPlayer() = default;
 
 	virtual Double3 getPosition() const override;
