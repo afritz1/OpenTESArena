@@ -171,8 +171,8 @@ void EntityManager::EntityGroup<T>::remove(int id)
 		// Clear ID mapping.
 		this->indices.erase(id);
 
-		// Add ID to previously-owned IDs list.
-		this->freeIndices.push_back(id);
+		// Add entity index to previously-owned slots list.
+		this->freeIndices.push_back(index);
 	}
 	else
 	{
