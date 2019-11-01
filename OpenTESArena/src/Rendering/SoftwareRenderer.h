@@ -206,44 +206,24 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
-	// A flat is a 2D surface always facing perpendicular to the Y axis, and opposite to
-	// the camera's XZ direction.
-	struct Flat
+	// Visible flat data. A flat is a 2D surface always facing perpendicular to the Y axis,
+	// and opposite to the camera's XZ direction.
+	struct VisibleFlat
 	{
-		Double3 position; // Center of bottom edge.
-		double width, height;
+		// Corner points in world space relative to the camera. For texture coordinates, left
+		// is inclusive, right is exclusive.
+		Double3 topLeft, topRight;
+		Double3 bottomLeft, bottomRight;
+
+		// Projected screen-space coordinates.
+		double startX, endX;
+		double startY, endY;
+
+		// Camera Z for depth sorting.
+		double z;
+
 		int textureID;
 		bool flipped;
-
-		// A flat's frame consists of their four corner points in world space, and some
-		// screen-space values.
-		struct Frame
-		{
-			// Each "start" is the flat's right or top, and each "end" is the opposite side.
-			// For texture coordinates, start is inclusive, end is exclusive.
-			Double3 topStart, topEnd, bottomStart, bottomEnd;
-
-			// Screen-space coordinates of the flat. The X values determine which columns the 
-			// flat occupies on-screen, and the Y values determine which rows.
-			double startX, endX, startY, endY;
-
-			// Depth of the flat in camera space. Intended only for depth sorting, since the 
-			// renderer uses true XZ depth with each pixel column instead.
-			double z;
-		};
-	};
-
-	// Helper class for visible flat data.
-	class VisibleFlat
-	{
-	private:
-		const Flat *flat;
-		Flat::Frame frame;
-	public:
-		VisibleFlat(const Flat &flat, Flat::Frame &&frame);
-
-		const Flat &getFlat() const;
-		const Flat::Frame &getFrame() const;
 	};
 
 	// Pairs together a distant sky object with its render texture index. If it's an animation,
@@ -612,8 +592,8 @@ private:
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
-	static void drawFlat(int startX, int endX, const Flat::Frame &flatFrame, 
-		const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo, 
+	static void drawFlat(int startX, int endX, const VisibleFlat &flat,
+		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo, 
 		const FlatTexture &texture, const FrameView &frame);
 
 	// @todo: drawAlphaFlat(...), for flats with partial transparency.

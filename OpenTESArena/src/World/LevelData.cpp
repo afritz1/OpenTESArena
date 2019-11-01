@@ -1068,7 +1068,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 				static_cast<double>(position.y) + 0.50);
 			entity->setPositionXZ(positionXZ);
 
-			entity->setTextureID(flatIndex);
+			entity->setTextureID(flatIndex + 1);
 		}
 	}
 

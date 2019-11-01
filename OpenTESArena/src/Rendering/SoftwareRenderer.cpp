@@ -299,22 +299,6 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->heightReal = static_cast<double>(height);
 }
 
-SoftwareRenderer::VisibleFlat::VisibleFlat(const Flat &flat, Flat::Frame &&frame)
-{
-	this->flat = &flat;
-	this->frame = std::move(frame);
-}
-
-const SoftwareRenderer::Flat &SoftwareRenderer::VisibleFlat::getFlat() const
-{
-	return *this->flat;
-}
-
-const SoftwareRenderer::Flat::Frame &SoftwareRenderer::VisibleFlat::getFrame() const
-{
-	return this->frame;
-}
-
 template <typename T>
 SoftwareRenderer::DistantObject<T>::DistantObject(const T &obj, int textureIndex)
 	: obj(obj)
@@ -1297,9 +1281,9 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 {
 	this->visibleFlats.clear();
 
-	// Max 256 potentially visible entities, just a naive limit. A better way might be to keep an
+	// Potentially visible entities buffer, just a naive limit. A better way might be to keep an
 	// expand-only buffer between frames.
-	std::array<const Entity*, 256> entityPtrs;
+	std::array<const Entity*, 2048> entityPtrs;
 	const int entityCount = entityManager.getTotalEntities(
 		entityPtrs.data(), static_cast<int>(entityPtrs.size()));
 
@@ -1312,39 +1296,34 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 direction(camera.forwardX, camera.forwardZ);
 
+	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity *entity = entityPtrs[i];
 
-		// @todo: visible flat algorithm
-
-		// @todo: Determine usefulness of SoftwareRenderer::Flat and VisibleFlat; if there needs
-		// to be some intermediate representation between EntityManager and VisibleFlat. Probably
-		// just redesign it.
-
-		// @todo: need Flat information (or equivalent) from Entity class in order to generate
-		// visible flat entry.
-	}
-
-	// This is the visible flat determination algorithm. It goes through all flats and sees 
-	// which ones would be at least partially visible in the view frustum.
-	/*for (const auto &pair : this->flats)
-	{
-		const Flat &flat = pair.second;
+		// @todo: get actual entity values.
+		constexpr double flatWidth = 0.80;
+		constexpr double flatHeight = 0.60;
+		const Double3 flatPosition(
+			entity->getPosition().x,
+			camera.eye.y - (60.0 / 128.0), // @todo: use ceiling value?
+			entity->getPosition().z);
 
 		// Scaled axes based on flat dimensions.
-		const Double3 flatRightScaled = flatRight * (flat.width * 0.50);
-		const Double3 flatUpScaled = flatUp * flat.height;
+		const Double3 flatRightScaled = flatRight * (flatWidth * 0.50);
+		const Double3 flatUpScaled = flatUp * flatHeight;
+
+		// Determine if the flat is potentially visible to the camera.
+		VisibleFlat visFlat;
 
 		// Calculate each corner of the flat in world space.
-		Flat::Frame flatFrame;
-		flatFrame.bottomStart = flat.position + flatRightScaled;
-		flatFrame.bottomEnd = flat.position - flatRightScaled;
-		flatFrame.topStart = flatFrame.bottomStart + flatUpScaled;
-		flatFrame.topEnd = flatFrame.bottomEnd + flatUpScaled;
+		visFlat.bottomLeft = flatPosition + flatRightScaled;
+		visFlat.bottomRight = flatPosition - flatRightScaled;
+		visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
+		visFlat.topRight = visFlat.bottomRight + flatUpScaled;
 
 		// If the flat is somewhere in front of the camera, do further checks.
-		const Double2 flatPosition2D(flat.position.x, flat.position.z);
+		const Double2 flatPosition2D(flatPosition.x, flatPosition.z);
 		const Double2 flatEyeDiff = (flatPosition2D - eye2D).normalized();
 		const bool inFrontOfCamera = direction.dot(flatEyeDiff) > 0.0;
 
@@ -1353,38 +1332,42 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
 			// are used to find where the flat is on-screen.
-			Double4 projStart = camera.transform * Double4(flatFrame.topStart, 1.0);
-			Double4 projEnd = camera.transform * Double4(flatFrame.bottomEnd, 1.0);
+			Double4 projStart = camera.transform * Double4(visFlat.topLeft, 1.0);
+			Double4 projEnd = camera.transform * Double4(visFlat.bottomRight, 1.0);
 
 			// Normalize coordinates.
 			projStart = projStart / projStart.w;
 			projEnd = projEnd / projEnd.w;
 
 			// Assign each screen value to the flat frame data.
-			flatFrame.startX = 0.50 + (projStart.x * 0.50);
-			flatFrame.endX = 0.50 + (projEnd.x * 0.50);
-			flatFrame.startY = (0.50 + camera.yShear) - (projStart.y * 0.50);
-			flatFrame.endY = (0.50 + camera.yShear) - (projEnd.y * 0.50);
-			flatFrame.z = projStart.z;
+			visFlat.startX = 0.50 + (projStart.x * 0.50);
+			visFlat.endX = 0.50 + (projEnd.x * 0.50);
+			visFlat.startY = (0.50 + camera.yShear) - (projStart.y * 0.50);
+			visFlat.endY = (0.50 + camera.yShear) - (projEnd.y * 0.50);
+			visFlat.z = projStart.z;
 
 			// Check that the Z value is within the clipping planes.
-			const bool inPlanes = (flatFrame.z >= SoftwareRenderer::NEAR_PLANE) &&
-				(flatFrame.z <= SoftwareRenderer::FAR_PLANE);
+			const bool inPlanes = (visFlat.z >= SoftwareRenderer::NEAR_PLANE) &&
+				(visFlat.z <= SoftwareRenderer::FAR_PLANE);
 
 			if (inPlanes)
 			{
+				// Finish initializing the visible flat.
+				visFlat.flipped = false; // @todo: based on entity direction and camera position.
+
+				// @todo: need to set monster textures before referencing entity->getTextureID().
+				//visFlat.textureID = 0;
+				visFlat.textureID = entity->getTextureID();
+
 				// Add the flat data to the draw list.
-				this->visibleFlats.push_back(VisibleFlat(flat, std::move(flatFrame)));
+				this->visibleFlats.push_back(std::move(visFlat));
 			}
 		}
-	}*/
+	}
 
 	// Sort the visible flats farthest to nearest (relevant for transparencies).
 	std::sort(this->visibleFlats.begin(), this->visibleFlats.end(),
-		[](const VisibleFlat &a, const VisibleFlat &b)
-	{
-		return a.getFrame().z > b.getFrame().z;
-	});
+		[](const VisibleFlat &a, const VisibleFlat &b) { return a.z > b.z; });
 }
 
 /*Double3 SoftwareRenderer::castRay(const Double3 &direction,
@@ -5826,8 +5809,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	}
 }
 
-void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFrame,
-	const Double3 &normal, bool flipped, const Double2 &eye, const ShadingInfo &shadingInfo,
+void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
+	const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo,
 	const FlatTexture &texture, const FrameView &frame)
 {
 	// Contribution from the sun.
@@ -5842,11 +5825,11 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 		static_cast<double>(frame.width);
 
 	const bool startsInRange =
-		(flatFrame.startX >= startXPercent) && (flatFrame.startX <= endXPercent);
+		(flat.startX >= startXPercent) && (flat.startX <= endXPercent);
 	const bool endsInRange = 
-		(flatFrame.endX >= startXPercent) && (flatFrame.endX <= endXPercent);
+		(flat.endX >= startXPercent) && (flat.endX <= endXPercent);
 	const bool coversRange =
-		(flatFrame.startX <= startXPercent) && (flatFrame.endX >= endXPercent);
+		(flat.startX <= startXPercent) && (flat.endX >= endXPercent);
 	
 	// Throw out the draw call if the flat is not in the X range.
 	if (!startsInRange && !endsInRange && !coversRange)
@@ -5856,20 +5839,18 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 	// Get the min and max X range of coordinates in screen-space. This range is completely 
 	// contained within the flat.
-	const double clampedStartXPercent = std::clamp(
-		startXPercent, flatFrame.startX, flatFrame.endX);
-	const double clampedEndXPercent = std::clamp(
-		endXPercent, flatFrame.startX, flatFrame.endX);
+	const double clampedStartXPercent = std::clamp(startXPercent, flat.startX, flat.endX);
+	const double clampedEndXPercent = std::clamp(endXPercent, flat.startX, flat.endX);
 
 	// The percentages from start to end within the flat.
-	const double startFlatPercent = (clampedStartXPercent - flatFrame.startX) /
-		(flatFrame.endX - flatFrame.startX);
-	const double endFlatPercent = (clampedEndXPercent - flatFrame.startX) /
-		(flatFrame.endX - flatFrame.startX);
+	const double startFlatPercent = (clampedStartXPercent - flat.startX) /
+		(flat.endX - flat.startX);
+	const double endFlatPercent = (clampedEndXPercent - flat.startX) /
+		(flat.endX - flat.startX);
 
 	// Points interpolated between for per-column depth calculations in the XZ plane.
-	const Double3 startTopPoint = flatFrame.topStart.lerp(flatFrame.topEnd, startFlatPercent);
-	const Double3 endTopPoint = flatFrame.topStart.lerp(flatFrame.topEnd, endFlatPercent);
+	const Double3 startTopPoint = flat.topLeft.lerp(flat.topRight, startFlatPercent);
+	const Double3 endTopPoint = flat.topLeft.lerp(flat.topRight, endFlatPercent);
 
 	// Horizontal texture coordinates in the flat. Although the flat percent can be
 	// equal to 1.0, the texture coordinate needs to be less than 1.0.
@@ -5880,8 +5861,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 	// outside the screen).
 	const double projectedXStart = clampedStartXPercent * frame.widthReal;
 	const double projectedXEnd = clampedEndXPercent * frame.widthReal;
-	const double projectedYStart = flatFrame.startY * frame.heightReal;
-	const double projectedYEnd = flatFrame.endY * frame.heightReal;
+	const double projectedYStart = flat.startY * frame.heightReal;
+	const double projectedYEnd = flat.endY * frame.heightReal;
 
 	// Clamp the coordinates for where the flat starts and stops on the screen.
 	const int xStart = SoftwareRenderer::getLowerBoundedPixel(projectedXStart, frame.width);
@@ -5907,7 +5888,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const Flat::Frame &flatFra
 
 		// Horizontal texel position.
 		const int textureX = static_cast<int>(
-			(flipped ? (Constants::JustBelowOne - u) : u) *
+			(flat.flipped ? (Constants::JustBelowOne - u) : u) *
 			static_cast<double>(texture.width));
 
 		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
@@ -6366,19 +6347,27 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 {
 	// Iterate through all flats, rendering those visible within the given X range of 
 	// the screen.
-	for (const auto &visibleFlat : visibleFlats)
+	for (const VisibleFlat &flat : visibleFlats)
 	{
-		const Flat &flat = visibleFlat.getFlat();
-		const Flat::Frame &flatFrame = visibleFlat.getFrame();
-
 		// Texture of the flat. It might be flipped horizontally as well, given by
 		// the "flat.flipped" value.
-		const FlatTexture &texture = flatTextures.at(flat.textureID);
+		/*const FlatTexture &texture = flatTextures.at(flat.textureID);
 
 		const Double2 eye2D(camera.eye.x, camera.eye.z);
 
-		SoftwareRenderer::drawFlat(startX, endX, flatFrame, flatNormal, flat.flipped,
-			eye2D, shadingInfo, texture, frame);
+		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,
+			shadingInfo, texture, frame);*/
+
+		const FlatTexture *texture = &flatTextures.at(flat.textureID);
+		
+		// @temp: quick hack to avoid empty monster textures.
+		if (texture->width == 0 || texture->height == 0)
+			texture = &flatTextures[0];
+
+		const Double2 eye2D(camera.eye.x, camera.eye.z);
+
+		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,
+			shadingInfo, *texture, frame);
 	}
 }
 
