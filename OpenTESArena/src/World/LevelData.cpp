@@ -491,7 +491,7 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 			const int flatIndex = getFlatIndex(florVoxel);
 			if (flatIndex > 0)
 			{
-				this->addFlatInstance(flatIndex, Int2(x, z));
+				this->addFlatInstance(flatIndex - 1, Int2(x, z));
 			}
 		}
 	}
