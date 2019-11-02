@@ -101,6 +101,7 @@ int EntityAnimationData::Instance::getKeyframeIndex() const
 void EntityAnimationData::Instance::setStateType(StateType stateType)
 {
 	this->stateType = stateType;
+	this->resetTime();
 }
 
 void EntityAnimationData::Instance::resetTime()
