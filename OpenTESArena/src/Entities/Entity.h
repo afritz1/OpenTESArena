@@ -20,7 +20,6 @@ private:
 	int dataIndex; // EntityData index in entity manager.
 protected:
 	Double2 position;
-	int textureID;
 public:
 	Entity(EntityType entityType);
 	//Entity(const Entity&) = delete;

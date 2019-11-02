@@ -6,6 +6,7 @@ Entity::Entity(EntityType entityType)
 	: position(Double2::Zero)
 {
 	this->reset();
+	this->entityType = entityType;
 }
 
 int Entity::getID() const
@@ -60,7 +61,6 @@ void Entity::reset()
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
 	this->position = Double2::Zero;
-	this->textureID = -1;
 	this->dataIndex = -1;
 	this->animation.reset();
 }
