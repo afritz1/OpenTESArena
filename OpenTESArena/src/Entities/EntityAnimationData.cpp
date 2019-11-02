@@ -134,11 +134,7 @@ const EntityAnimationData::State *EntityAnimationData::findState(StateType state
 void EntityAnimationData::addState(State &&state)
 {
 	// Can't have two states of the same type.
-	DebugAssert(std::find_if(this->states.begin(), this->states.end(),
-		[&state](const State &s)
-	{
-		return s.getType() == state.getType();
-	}) == this->states.end());
+	DebugAssert(this->findState(state.getType()) == nullptr);
 
 	this->states.push_back(std::move(state));
 }
@@ -150,7 +146,7 @@ void EntityAnimationData::removeState(StateType stateType)
 	if (state != nullptr)
 	{
 		const State *firstState = this->states.data();
-		const int index = std::distance(firstState, state);
+		const int index = static_cast<int>(std::distance(firstState, state));
 		this->states.erase(this->states.begin() + index);
 	}
 }
