@@ -261,13 +261,11 @@ const LevelData::Lock *LevelData::getLock(const Int2 &voxel) const
 
 void LevelData::addFlatInstance(int flatIndex, const Int2 &flatPosition)
 {
-	const int actualIndex = flatIndex - 1;
-
 	// Add position to instance list if the flat def has already been created.
 	const auto iter = std::find_if(this->flatsLists.begin(), this->flatsLists.end(),
-		[actualIndex](const FlatDef &flatDef)
+		[flatIndex](const FlatDef &flatDef)
 	{
-		return flatDef.getFlatIndex() == actualIndex;
+		return flatDef.getFlatIndex() == flatIndex;
 	});
 
 	if (iter != this->flatsLists.end())
@@ -277,7 +275,7 @@ void LevelData::addFlatInstance(int flatIndex, const Int2 &flatPosition)
 	else
 	{
 		// Create new def.
-		FlatDef flatDef(actualIndex);
+		FlatDef flatDef(flatIndex);
 		flatDef.addPosition(flatPosition);
 		this->flatsLists.push_back(std::move(flatDef));
 	}
@@ -1068,7 +1066,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 				static_cast<double>(position.y) + 0.50);
 			entity->setPositionXZ(positionXZ);
 
-			entity->setTextureID(flatIndex + 1);
+			entity->setTextureID(flatIndex);
 		}
 	}
 
