@@ -72,7 +72,7 @@ void EntityAnimationData::State::clearKeyframes()
 EntityAnimationData::Instance::Instance(const EntityAnimationData *animationData)
 {
 	this->animationData = animationData;
-	this->stateType = static_cast<StateType>(-1);
+	this->stateType = StateType::Idle;
 	this->percentDone = 0.0;
 }
 
