@@ -3,11 +3,9 @@
 #include "EntityType.h"
 
 Entity::Entity(EntityType entityType)
-	: positionXZ(Double2::Zero)
+	: position(Double2::Zero)
 {
-	this->id = EntityManager::NO_ID;
-	this->entityType = entityType;
-	this->textureID = -1;
+	this->reset();
 }
 
 int Entity::getID() const
@@ -20,9 +18,30 @@ EntityType Entity::getEntityType() const
 	return this->entityType;
 }
 
-int Entity::getTextureID() const
+int Entity::getDataIndex() const
 {
-	return this->textureID;
+	return this->dataIndex;
+}
+
+const Double2 &Entity::getPosition() const
+{
+	return this->position;
+}
+
+EntityAnimationData::Instance &Entity::getAnimation()
+{
+	return this->animation;
+}
+
+const EntityAnimationData::Instance &Entity::getAnimation() const
+{
+	return this->animation;
+}
+
+void Entity::init(int dataIndex)
+{
+	DebugAssert(this->id != EntityManager::NO_ID);
+	this->dataIndex = dataIndex;
 }
 
 void Entity::setID(int id)
@@ -30,14 +49,9 @@ void Entity::setID(int id)
 	this->id = id;
 }
 
-void Entity::setPositionXZ(const Double2 &positionXZ)
+void Entity::setPosition(const Double2 &position)
 {
-	this->positionXZ = positionXZ;
-}
-
-void Entity::setTextureID(int textureID)
-{
-	this->textureID = textureID;
+	this->position = position;
 }
 
 void Entity::reset()
@@ -45,6 +59,8 @@ void Entity::reset()
 	// Don't change the entity type -- the entity manager doesn't change an allocation's entity
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
-	this->positionXZ = Double2::Zero;
+	this->position = Double2::Zero;
 	this->textureID = -1;
+	this->dataIndex = -1;
+	this->animation.reset();
 }

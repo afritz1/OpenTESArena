@@ -6,9 +6,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../Entities/Doodad.h"
-#include "../Entities/Entity.h"
-#include "../Entities/NonPlayer.h"
+#include "Doodad.h"
+#include "Entity.h"
+#include "EntityData.h"
+#include "NonPlayer.h"
+
+class Game;
 
 enum class EntityType;
 
@@ -62,6 +65,9 @@ private:
 	EntityGroup<NonPlayer> npcs;
 	EntityGroup<Doodad> doodads;
 
+	// Entity data definitions.
+	std::vector<EntityData> entityData;
+
 	// Free IDs (previously owned) and the next available ID (never owned).
 	std::vector<int> freeIDs;
 	int nextID;
@@ -99,11 +105,20 @@ public:
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;
 
+	// Gets an entity data definition for the given flat index, or null if it doesn't exist.
+	const EntityData *getEntityData(int flatIndex) const;
+
+	// Adds an entity data definition to the definitions list and returns a pointer to it.
+	EntityData *addEntityData(EntityData &&data);
+
 	// Deletes an entity.
 	void remove(int id);
 
-	// Deletes all entities in the manager.
+	// Deletes all entities and data in the manager.
 	void clear();
+
+	// Ticks the entity manager by delta time.
+	void tick(Game &game, double dt);
 };
 
 #endif

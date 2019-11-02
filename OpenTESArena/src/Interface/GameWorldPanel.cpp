@@ -2527,10 +2527,6 @@ void GameWorldPanel::tick(double dt)
 		}
 	}
 
-	// Tick level data. Currently this only affects animated distant land.
-	auto &levelData = worldData.getActiveLevel();
-	levelData.tick(dt);
-
 	// Tick text timers if their remaining duration is positive.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
@@ -2563,21 +2559,9 @@ void GameWorldPanel::tick(double dt)
 	// Handle fading voxels.
 	this->handleFadingVoxels(dt);
 
-	// Update entities and their state in the renderer.
-	// @todo: entity management.
-	/*auto &entityManager = worldData.getEntityManager();
-	for (auto *entity : entityManager.getAllEntities())
-	{
-		// Tick entity state.
-		entity->tick(game, dt);
-
-		// Update entity flat properties for rendering.
-		const Double3 position = entity->getPosition();
-		const int textureID = entity->getTextureID();
-		const bool flipped = entity->getFlipped();
-		renderer.updateFlat(entity->getID(), &position, nullptr, nullptr,
-			&textureID, &flipped);
-	}*/
+	// Tick level data (entities, animated distant land, etc.).
+	auto &levelData = worldData.getActiveLevel();
+	levelData.tick(game, dt);
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and
 	// sound events, and handle any level transition.

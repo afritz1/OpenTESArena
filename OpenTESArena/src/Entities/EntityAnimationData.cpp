@@ -69,24 +69,24 @@ void EntityAnimationData::State::clearKeyframes()
 	this->keyframes.clear();
 }
 
-EntityAnimationData::Instance::Instance(const EntityAnimationData *animationData)
+EntityAnimationData::Instance::Instance()
 {
-	this->animationData = animationData;
 	this->stateType = StateType::Idle;
 	this->percentDone = 0.0;
 }
 
-const EntityAnimationData::State &EntityAnimationData::Instance::getState() const
+const EntityAnimationData::State &EntityAnimationData::Instance::getState(
+	const EntityAnimationData &animationData) const
 {
-	const State *state = this->animationData->findState(this->stateType);
+	const State *state = animationData.findState(this->stateType);
 	DebugAssertMsg(state != nullptr, "Couldn't find state \"" +
 		std::to_string(static_cast<int>(this->stateType)) + "\".");
 	return *state;
 }
 
-int EntityAnimationData::Instance::getKeyframeIndex() const
+int EntityAnimationData::Instance::getKeyframeIndex(const EntityAnimationData &animationData) const
 {
-	const State &state = this->getState();
+	const State &state = this->getState(animationData);
 	const BufferView<const Keyframe> keyframes = state.getKeyframes();
 	const int keyframeCount = keyframes.getCount();
 
@@ -109,9 +109,15 @@ void EntityAnimationData::Instance::resetTime()
 	this->percentDone = 0.0;
 }
 
-void EntityAnimationData::Instance::tick(double dt)
+void EntityAnimationData::Instance::reset()
 {
-	const State &state = this->getState();
+	this->stateType = StateType::Idle;
+	this->resetTime();
+}
+
+void EntityAnimationData::Instance::tick(double dt, const EntityAnimationData &animationData)
+{
+	const State &state = this->getState(animationData);
 	const BufferView<const Keyframe> keyframes = state.getKeyframes();
 	const int keyframeCount = keyframes.getCount();
 	const double secondsPerFrame = state.getSecondsPerFrame();

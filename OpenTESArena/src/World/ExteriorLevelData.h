@@ -96,7 +96,7 @@ public:
 	virtual void setActive(TextureManager &textureManager, Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
-	virtual void tick(double dt) override;
+	virtual void tick(Game &game, double dt) override;
 };
 
 #endif

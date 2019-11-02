@@ -2,44 +2,14 @@
 #include "NonPlayer.h"
 #include "../Math/Constants.h"
 
-NonPlayer::NonPlayer(const Double3 &position, const Double2 &direction,
-	const std::vector<Animation> &idleAnimations,
-	const std::vector<Animation> &moveAnimations,
-	const Animation &attackAnimation, const Animation &deathAnimation)
-	: Entity(EntityType::NonPlayer), idleAnimations(idleAnimations), moveAnimations(moveAnimations),
-	attackAnimation(attackAnimation), deathAnimation(deathAnimation),
-	camera(position, direction), velocity(0.0, 0.0) { }
+NonPlayer::NonPlayer(const Double2 &position, const Double2 &direction)
+	: Entity(EntityType::NonPlayer), camera(position, direction), velocity(0.0, 0.0) { }
 
 NonPlayer::NonPlayer()
-	: NonPlayer(Double3::Zero, Double2::UnitX, {}, {},
-		Animation({}, 0.0, false), Animation({}, 0.0, false)) { }
-
-NonPlayer::AnimationType NonPlayer::getAnimationType() const
-{
-	// Death animation should override moving animation.
-
-	// If moving, return Move.
-	if (this->velocity.length() > Constants::Epsilon)
-	{
-		return NonPlayer::AnimationType::Move;
-	}
-	else
-	{
-		return NonPlayer::AnimationType::Idle;
-	}
-
-	// @todo: Check combat state eventually.
-}
-
-Double3 NonPlayer::getPosition() const
-{
-	return this->camera.position;
-}
+	: NonPlayer(Double2::Zero, Double2::UnitX) { }
 
 void NonPlayer::tick(Game &game, double dt)
 {
-	// Animate first animation for now. It will depend on player position eventually.
-	Animation &animation = this->idleAnimations.at(0);
-	animation.tick(dt);
-	this->textureID = animation.getCurrentID();
+	// @todo
+	DebugNotImplemented();
 }

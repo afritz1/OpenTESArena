@@ -4,7 +4,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 
-Camera2D::Camera2D(const Double3 &position, const Double2 &direction)
+Camera2D::Camera2D(const Double2 &position, const Double2 &direction)
 	: position(position), direction(direction) { }
 
 void Camera2D::yaw(double radians)
@@ -35,8 +35,7 @@ void Camera2D::rotate(double degrees)
 
 void Camera2D::lookAt(const Double2 &point)
 {
-	const Double2 position2D(this->position.x, this->position.z);
-	const Double2 newDirection = (point - position2D).normalized();
+	const Double2 newDirection = (point - this->position).normalized();
 
 	// Only accept the change if it's valid.
 	if (std::isfinite(newDirection.length()))

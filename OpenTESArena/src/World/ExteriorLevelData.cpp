@@ -1191,7 +1191,8 @@ void ExteriorLevelData::setActive(TextureManager &textureManager, Renderer &rend
 	renderer.setDistantSky(this->distantSky);
 }
 
-void ExteriorLevelData::tick(double dt)
+void ExteriorLevelData::tick(Game &game, double dt)
 {
+	static_cast<void>(game);
 	this->distantSky.tick(dt);
 }

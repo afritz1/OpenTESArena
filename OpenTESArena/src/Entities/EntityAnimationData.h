@@ -56,19 +56,23 @@ public:
 	class Instance
 	{
 	private:
-		const EntityAnimationData *animationData;
 		StateType stateType;
 		double percentDone;
 	public:
-		Instance(const EntityAnimationData *animationData);
+		Instance();
 
-		const State &getState() const;
-		int getKeyframeIndex() const;
+		// Animation data is passed by reference because its EntityData owner is
+		// allocated on the heap and can become dangling if a pointer is stored here.
+
+		const State &getState(const EntityAnimationData &animationData) const;
+		int getKeyframeIndex(const EntityAnimationData &animationData) const;
 
 		void setStateType(StateType stateType);
-		void resetTime();
 
-		void tick(double dt);
+		void resetTime();
+		void reset();
+
+		void tick(double dt, const EntityAnimationData &animationData);
 	};
 private:
 	std::vector<State> states;

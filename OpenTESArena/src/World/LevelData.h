@@ -32,6 +32,7 @@
 
 class ArenaRandom;
 class ExeData;
+class Game;
 class Renderer;
 class TextureManager;
 
@@ -188,7 +189,7 @@ public:
 	virtual void setActive(TextureManager &textureManager, Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
-	virtual void tick(double dt);
+	virtual void tick(Game &game, double dt);
 };
 
 #endif

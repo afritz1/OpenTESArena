@@ -520,7 +520,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	// Lambda for obtaining the voxel data index of a general-case MAP1 object. The function
 	// parameter returns the created voxel data if no previous mapping exists, and is intended
 	// for general cases where the voxel data type does not need extra parameters.
-	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelData (*func)(uint16_t))
+	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelData(*func)(uint16_t))
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
@@ -1059,14 +1059,38 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 		{
 			// @todo: figure out how to differentiate the entity type based on its referenced
 			// .INF flat data. Just assume they're all static objects for now.
+			// @todo: maybe change from Doodad and NonPlayer to Static and Dynamic or something.
 			Entity *entity = this->entityManager.makeDoodad();
-			
+
+			// Entity data index is currently the flat index (depends on .INF file).
+			const int dataIndex = flatIndex;
+
+			// Add a new entity data instance if it doesn't already exist.
+			if (this->entityManager.getEntityData(dataIndex) == nullptr)
+			{
+				EntityData newEntityData(dataIndex);
+				auto &entityAnimData = newEntityData.getAnimationData();
+
+				// @todo: use .INF data to create animations, etc. here.
+				EntityAnimationData::State animState(
+					EntityAnimationData::StateType::Idle, 1.0 / 4.0, true);
+
+				constexpr double flatWidth = 1.0;
+				constexpr double flatHeight = 1.0;
+				EntityAnimationData::Keyframe keyframe(flatWidth, flatHeight, flatIndex);
+				animState.addKeyframe(std::move(keyframe));
+
+				entityAnimData.addState(std::move(animState));
+
+				this->entityManager.addEntityData(std::move(newEntityData));
+			}
+
+			entity->init(dataIndex);
+
 			const Double2 positionXZ(
 				static_cast<double>(position.x) + 0.50,
 				static_cast<double>(position.y) + 0.50);
-			entity->setPositionXZ(positionXZ);
-
-			entity->setTextureID(flatIndex);
+			entity->setPosition(positionXZ);
 		}
 	}
 
@@ -1173,8 +1197,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 	}
 }
 
-void LevelData::tick(double dt)
+void LevelData::tick(Game &game, double dt)
 {
-	// Do nothing by default.
-	static_cast<void>(dt);
+	this->entityManager.tick(game, dt);
 }

@@ -11,7 +11,6 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
-#include "../Entities/Animation.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Doodad.h"
 #include "../Entities/Entity.h"

@@ -355,6 +355,23 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
+const EntityData *EntityManager::getEntityData(int flatIndex) const
+{
+	const auto iter = std::find_if(this->entityData.begin(), this->entityData.end(),
+		[flatIndex](const EntityData &data)
+	{
+		return data.getFlatIndex() == flatIndex;
+	});
+
+	return (iter != this->entityData.end()) ? &(*iter) : nullptr;
+}
+
+EntityData *EntityManager::addEntityData(EntityData &&data)
+{
+	this->entityData.push_back(std::move(data));
+	return &this->entityData.back();
+}
+
 void EntityManager::remove(int id)
 {
 	// Find which entity group the given ID is in.
@@ -389,6 +406,28 @@ void EntityManager::clear()
 	this->npcs.clear();
 	this->doodads.clear();
 
+	this->entityData.clear();
+
 	this->freeIDs.clear();
 	this->nextID = 0;
+}
+
+void EntityManager::tick(Game &game, double dt)
+{
+	auto tickEntityGroup = [&game, dt](auto &entityGroup)
+	{
+		const int entityCount = entityGroup.getCount();
+
+		for (int i = 0; i < entityCount; i++)
+		{
+			auto *entity = entityGroup.getEntityAtIndex(i);
+			if (entity != nullptr)
+			{
+				entity->tick(game, dt);
+			}
+		}
+	};
+
+	tickEntityGroup(this->npcs);
+	tickEntityGroup(this->doodads);
 }

@@ -1,8 +1,8 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include "EntityAnimationData.h"
 #include "../Math/Vector2.h"
-#include "../Math/Vector3.h"
 
 // Entities are any objects in the world that aren't part of the voxel grid. Every entity
 // has a world position and a unique referencing ID.
@@ -16,8 +16,10 @@ class Entity
 private:
 	int id;
 	EntityType entityType;
+	EntityAnimationData::Instance animation;
+	int dataIndex; // EntityData index in entity manager.
 protected:
-	Double2 positionXZ;
+	Double2 position;
 	int textureID;
 public:
 	Entity(EntityType entityType);
@@ -32,30 +34,27 @@ public:
 	// Gets the entity's derived type (NPC, doodad, etc.).
 	EntityType getEntityType() const;
 
-	// @todo: rework
-	// Gets the texture ID for the current animation frame, to be used by the renderer.
-	int getTextureID() const;
+	// Gets the entity's entity manager data index.
+	int getDataIndex() const;
 
-	// @todo: just remove getPosition() completely, unless we want to pass ceilingHeight
-	// as a parameter.
-	// @todo: rework; don't want a virtual function call for something like this.
-	// Gets the 3D position of the entity. The semantics of this depends on how it is 
-	// implemented for each entity. Sometimes it's an NPC's feet, sometimes it's the
-	// center of a projectile.
-	virtual Double3 getPosition() const = 0;
+	// Gets the XZ position of the entity.
+	const Double2 &getPosition() const;
+
+	// Gets the entity's animation instance.
+	EntityAnimationData::Instance &getAnimation();
+	const EntityAnimationData::Instance &getAnimation() const;
 
 	// Animates the entity's state by delta time.
 	virtual void tick(Game &game, double dt) = 0;
 
-	// Sets the unique ID of the entity.
+	// Initializes the entity state (some values are initialized separately).
+	void init(int dataIndex);
+
+	// Sets the entity's ID.
 	void setID(int id);
 
 	// Sets the XZ position of the entity.
-	void setPositionXZ(const Double2 &positionXZ);
-
-	// @todo: rework
-	// Sets the texture ID of the entity, to be used by the renderer.
-	void setTextureID(int textureID);
+	void setPosition(const Double2 &position);
 
 	// Clears all entity data so it can be used for another entity of the same type.
 	virtual void reset();

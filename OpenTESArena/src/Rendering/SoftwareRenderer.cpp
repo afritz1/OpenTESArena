@@ -4,6 +4,7 @@
 
 #include "SoftwareRenderer.h"
 #include "Surface.h"
+#include "../Entities/EntityAnimationData.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
@@ -1299,15 +1300,37 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
 	{
-		const Entity *entity = entityPtrs[i];
+		const Entity &entity = *entityPtrs[i];
+		
+		// Get the entity's current animation frame (dimensions, texture, etc.).
+		const EntityAnimationData::Keyframe &keyframe = [&entityManager, &entity]()
+			-> const EntityAnimationData::Keyframe&
+		{
+			// Get the entity's data definition and animation.
+			const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+			const EntityAnimationData &entityAnimData = entityData.getAnimationData();
 
-		// @todo: get actual entity values.
-		constexpr double flatWidth = 0.80;
-		constexpr double flatHeight = 0.60;
+			// Get current entity animation frame.
+			const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
+			const int keyframeIndex = entityAnim.getKeyframeIndex(entityAnimData);
+
+			const EntityAnimationData::State &animState = entityAnim.getState(entityAnimData);
+			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
+
+			return keyframes.get(keyframeIndex);
+		}();
+
+		const double flatWidth = keyframe.getWidth();
+		const double flatHeight = keyframe.getHeight();
+
+		const Double2 &entityPos = entity.getPosition();
+		const double entityPosX = entityPos.x;
+		const double entityPosZ = entityPos.y;
+
 		const Double3 flatPosition(
-			entity->getPosition().x,
+			entityPosX,
 			camera.eye.y - (60.0 / 128.0), // @todo: use ceiling value?
-			entity->getPosition().z);
+			entityPosZ);
 
 		// Scaled axes based on flat dimensions.
 		const Double3 flatRightScaled = flatRight * (flatWidth * 0.50);
@@ -1354,10 +1377,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 			{
 				// Finish initializing the visible flat.
 				visFlat.flipped = false; // @todo: based on entity direction and camera position.
-
-				// @todo: need to set monster textures before referencing entity->getTextureID().
-				//visFlat.textureID = 0;
-				visFlat.textureID = entity->getTextureID();
+				visFlat.textureID = keyframe.getTextureID();
 
 				// Add the flat data to the draw list.
 				this->visibleFlats.push_back(std::move(visFlat));
