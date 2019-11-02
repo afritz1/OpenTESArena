@@ -2,6 +2,7 @@
 #define BUFFER_VIEW_H
 
 #include <algorithm>
+#include <type_traits>
 
 #include "../debug/Debug.h"
 
@@ -103,6 +104,7 @@ public:
 
 	void set(int index, const T &value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
@@ -111,6 +113,7 @@ public:
 
 	void set(int index, T &&value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->count);
@@ -119,6 +122,7 @@ public:
 
 	void fill(const T &value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 		std::fill(this->data, this->end(), value);
 	}

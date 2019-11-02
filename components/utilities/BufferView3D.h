@@ -2,6 +2,7 @@
 #define BUFFER_VIEW_3D_H
 
 #include <algorithm>
+#include <type_traits>
 
 #include "../debug/Debug.h"
 
@@ -121,6 +122,7 @@ public:
 
 	void set(int x, int y, int z, const T &value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y, z);
 		this->data[index] = value;
@@ -128,6 +130,7 @@ public:
 
 	void set(int x, int y, int z, T &&value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 		const int index = this->getIndex(x, y, z);
 		this->data[index] = std::move(value);
@@ -135,6 +138,7 @@ public:
 
 	void fill(const T &value)
 	{
+		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 		DebugAssert(this->isValid());
 
 		for (int z = 0; z < this->viewDepth; z++)
