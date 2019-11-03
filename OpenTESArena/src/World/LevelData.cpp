@@ -41,7 +41,8 @@ namespace
 		const bool noExtension = extension.size() == 0;
 
 		// A flat's appearance may be modified by some .INF properties.
-		const double dimensionModifier = flatData.doubleScale ? 2.0 : 1.0;
+		constexpr double doubleScaleValue = (3.0 * MIFFile::ARENA_UNITS) / 100.0;
+		const double dimensionModifier = flatData.doubleScale ? doubleScaleValue : 1.0;
 		auto makeKeyframeDimension = [dimensionModifier](int value)
 		{
 			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
