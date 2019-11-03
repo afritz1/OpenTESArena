@@ -1385,9 +1385,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 		const double entityPosX = entityPos.x;
 		const double entityPosZ = entityPos.y;
 
+		const double flatYOffset =
+			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
 		const Double3 flatPosition(
 			entityPosX,
-			camera.eye.y - (60.0 / 128.0), // @todo: use ceiling value?
+			camera.eye.y - (60.0 / 128.0) + flatYOffset, // @todo: use ceiling value?
 			entityPosZ);
 
 		// Scaled axes based on flat dimensions.
