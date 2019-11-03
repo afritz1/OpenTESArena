@@ -1182,7 +1182,10 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 			// Add a new entity data instance if it doesn't already exist.
 			if (this->entityManager.getEntityData(dataIndex) == nullptr)
 			{
-				EntityData newEntityData(dataIndex);
+				EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
+					flatData.puddle, flatData.doubleScale, flatData.dark, flatData.transparent,
+					flatData.ceiling);
+
 				auto &entityAnimData = newEntityData.getAnimationData();
 
 				const EntityAnimationData::StateType stateType = EntityAnimationData::StateType::Idle;
