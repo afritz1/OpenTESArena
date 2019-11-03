@@ -1193,6 +1193,6 @@ void ExteriorLevelData::setActive(TextureManager &textureManager, Renderer &rend
 
 void ExteriorLevelData::tick(Game &game, double dt)
 {
-	static_cast<void>(game);
+	LevelData::tick(game, dt);
 	this->distantSky.tick(dt);
 }

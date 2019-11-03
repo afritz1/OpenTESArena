@@ -206,6 +206,23 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
+	// Each .INF flat index has a list of textures for each animation state type.
+	class FlatTextureGroup
+	{
+	public:
+		using TextureList = std::pair<EntityAnimationData::StateType, std::vector<FlatTexture>>;
+	private:
+		std::vector<TextureList> textureLists;
+
+		TextureList *findTextureList(EntityAnimationData::StateType stateType);
+		const TextureList *findTextureList(EntityAnimationData::StateType stateType) const;
+	public:
+		const std::vector<FlatTexture> *getTextures(EntityAnimationData::StateType stateType) const;
+		
+		void addTexture(EntityAnimationData::StateType stateType, const uint32_t *texels,
+			int width, int height);
+	};
+
 	// Visible flat data. A flat is a 2D surface always facing perpendicular to the Y axis,
 	// and opposite to the camera's XZ direction.
 	struct VisibleFlat
@@ -222,7 +239,11 @@ private:
 		// Camera Z for depth sorting.
 		double z;
 
+		// Flat texture state. The animation state type determines which texture list to
+		// use the texture ID with.
+		int flatIndex; // Tightly coupled with .INF flat.
 		int textureID;
+		EntityAnimationData::StateType animStateType;
 		bool flipped;
 	};
 
@@ -347,11 +368,11 @@ private:
 			int threadsDone;
 			const Double3 *flatNormal;
 			const std::vector<VisibleFlat> *visibleFlats;
-			const std::vector<FlatTexture> *flatTextures;
+			const std::unordered_map<int, FlatTextureGroup> *flatTextureGroups;
 			bool doneSorting; // True when render threads can start rendering flats.
 
 			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
-				const std::vector<FlatTexture> &flatTextures);
+				const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups);
 		};
 
 		SkyGradient skyGradient;
@@ -380,7 +401,7 @@ private:
 
 	// Default texture array sizes (using vector instead of array to avoid stack overflow).
 	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
-	static const int DEFAULT_FLAT_TEXTURE_COUNT;
+	//static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
@@ -397,7 +418,7 @@ private:
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
-	std::vector<FlatTexture> flatTextures; // Max 256 flat textures in original engine.
+	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	std::vector<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
@@ -631,7 +652,8 @@ private:
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
-		const std::vector<VisibleFlat> &visibleFlats, const std::vector<FlatTexture> &flatTextures,
+		const std::vector<VisibleFlat> &visibleFlats,
+		const std::unordered_map<int, FlatTextureGroup> &flatTextures,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
@@ -676,8 +698,9 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint32_t *srcTexels);
 
-	// Overwrites the selected flat texture's data with the given texels and dimensions.
-	void setFlatTexture(int id, const uint32_t *srcTexels, int width, int height);
+	// Adds a flat texture to the given flat's animation texture list.
+	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
+		const uint32_t *srcTexels, int width, int height);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

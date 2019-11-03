@@ -51,6 +51,74 @@ SoftwareRenderer::SkyTexture::SkyTexture()
 	this->height = 0;
 }
 
+SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::findTextureList(
+	EntityAnimationData::StateType stateType)
+{
+	const auto iter = std::find_if(this->textureLists.begin(), this->textureLists.end(),
+		[stateType](const TextureList &textureList)
+	{
+		return textureList.first == stateType;
+	});
+
+	return (iter != this->textureLists.end()) ? &(*iter) : nullptr;
+}
+
+const SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::findTextureList(
+	EntityAnimationData::StateType stateType) const
+{
+	const auto iter = std::find_if(this->textureLists.begin(), this->textureLists.end(),
+		[stateType](const TextureList &textureList)
+	{
+		return textureList.first == stateType;
+	});
+
+	return (iter != this->textureLists.end()) ? &(*iter) : nullptr;
+}
+
+const std::vector<SoftwareRenderer::FlatTexture> *SoftwareRenderer::FlatTextureGroup::getTextures(
+	EntityAnimationData::StateType stateType) const
+{
+	const TextureList *textureList = this->findTextureList(stateType);
+	return (textureList != nullptr) ? &textureList->second : nullptr;
+}
+
+void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateType stateType,
+	const uint32_t *srcTexels, int width, int height)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+
+	// Add texture list if it doesn't exist.
+	TextureList *textureList = this->findTextureList(stateType);
+	if (textureList == nullptr)
+	{
+		this->textureLists.push_back(std::make_pair(stateType, std::vector<FlatTexture>()));
+		textureList = &this->textureLists.back();
+	}
+
+	const int texelCount = width * height;
+
+	FlatTexture flatTexture;
+	flatTexture.width = width;
+	flatTexture.height = height;
+	flatTexture.texels = std::vector<FlatTexel>(texelCount);
+
+	std::transform(srcTexels, srcTexels + texelCount, flatTexture.texels.begin(),
+		[](const uint32_t srcTexel)
+	{
+		const Double4 dstTexel = Double4::fromARGB(srcTexel);
+		FlatTexel flatTexel;
+		flatTexel.r = dstTexel.x;
+		flatTexel.g = dstTexel.y;
+		flatTexel.b = dstTexel.z;
+		flatTexel.a = dstTexel.w;
+		return flatTexel;
+	});
+
+	std::vector<FlatTexture> &textures = textureList->second;
+	textures.push_back(std::move(flatTexture));
+}
+
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	double fovY, double aspect, double projectionModifier)
 	: eye(eye), direction(direction)
@@ -555,12 +623,13 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
 }
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
-	const std::vector<VisibleFlat> &visibleFlats, const std::vector<FlatTexture> &flatTextures)
+	const std::vector<VisibleFlat> &visibleFlats,
+	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
 	this->visibleFlats = &visibleFlats;
-	this->flatTextures = &flatTextures;
+	this->flatTextureGroups = &flatTextureGroups;
 	this->doneSorting = false;
 }
 
@@ -589,7 +658,7 @@ void SoftwareRenderer::RenderThreadData::init(int totalThreads, const Camera &ca
 const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
-const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256;
+//const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
 const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
 const double SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE = 25.0;
@@ -640,7 +709,7 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 
 	// Initialize texture vectors to default sizes.
 	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
-	this->flatTextures = std::vector<FlatTexture>(SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT);
+	this->flatTextureGroups = std::unordered_map<int, FlatTextureGroup>();
 
 	this->width = width;
 	this->height = height;
@@ -706,25 +775,19 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 	}
 }
 
-void SoftwareRenderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
+void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
+	const uint32_t *srcTexels, int width, int height)
 {
-	const int texelCount = width * height;
-
-	// Reset the selected texture.
-	FlatTexture &texture = this->flatTextures.at(id);
-	texture.texels = std::vector<FlatTexel>(texelCount);
-	texture.width = width;
-	texture.height = height;
-
-	for (int i = 0; i < texelCount; i++)
+	// If the flat mapping doesn't exist, add a new one.
+	auto iter = this->flatTextureGroups.find(flatIndex);
+	if (iter == this->flatTextureGroups.end())
 	{
-		const Double4 srcTexel = Double4::fromARGB(srcTexels[i]);
-		FlatTexel &dstTexel = texture.texels[i];
-		dstTexel.r = srcTexel.x;
-		dstTexel.g = srcTexel.y;
-		dstTexel.b = srcTexel.z;
-		dstTexel.a = srcTexel.w;
+		iter = this->flatTextureGroups.emplace(
+			std::make_pair(flatIndex, FlatTextureGroup())).first;
 	}
+
+	FlatTextureGroup &flatTextureGroup = iter->second;
+	flatTextureGroup.addTexture(stateType, srcTexels, width, height);
 }
 
 void SoftwareRenderer::updateLight(int id, const Double3 *point,
@@ -798,12 +861,7 @@ void SoftwareRenderer::clearTextures()
 		texture.lightTexels.clear();
 	}
 
-	for (auto &texture : this->flatTextures)
-	{
-		std::fill(texture.texels.begin(), texture.texels.end(), FlatTexel());
-		texture.width = 0;
-		texture.height = 0;
-	}
+	this->flatTextureGroups.clear();
 
 	// Distant sky textures are cleared because the vector size is managed internally.
 	this->skyTextures.clear();
@@ -1301,15 +1359,15 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *entityPtrs[i];
+
+		// Get the entity's data definition and animation.
+		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+		const EntityAnimationData &entityAnimData = entityData.getAnimationData();
 		
 		// Get the entity's current animation frame (dimensions, texture, etc.).
-		const EntityAnimationData::Keyframe &keyframe = [&entityManager, &entity]()
+		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData]()
 			-> const EntityAnimationData::Keyframe&
 		{
-			// Get the entity's data definition and animation.
-			const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
-			const EntityAnimationData &entityAnimData = entityData.getAnimationData();
-
 			// Get current entity animation frame.
 			const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
 			const int keyframeIndex = entityAnim.getKeyframeIndex(entityAnimData);
@@ -1338,6 +1396,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 
 		// Determine if the flat is potentially visible to the camera.
 		VisibleFlat visFlat;
+		visFlat.flatIndex = entityData.getFlatIndex();
+		visFlat.animStateType = entity.getAnimation().getState(entityAnimData).getType();
 
 		// Calculate each corner of the flat in world space.
 		visFlat.bottomLeft = flatPosition + flatRightScaled;
@@ -6362,8 +6422,8 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 
 void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
-	const std::vector<FlatTexture> &flatTextures, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Iterate through all flats, rendering those visible within the given X range of 
 	// the screen.
@@ -6371,23 +6431,28 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	{
 		// Texture of the flat. It might be flipped horizontally as well, given by
 		// the "flat.flipped" value.
-		/*const FlatTexture &texture = flatTextures.at(flat.textureID);
+		const int flatIndex = flat.flatIndex;
+		const auto iter = flatTextureGroups.find(flatIndex);
+		if (iter == flatTextureGroups.end())
+		{
+			// No flat texture group available for the flat.
+			continue;
+		}
 
+		const FlatTextureGroup &flatTextureGroup = iter->second;
+		const std::vector<FlatTexture> *flatTextures =
+			flatTextureGroup.getTextures(flat.animStateType);
+		if (flatTextures == nullptr)
+		{
+			// No flat textures allocated for the animation state.
+			continue;
+		}
+
+		const FlatTexture &texture = (*flatTextures)[flat.textureID];
 		const Double2 eye2D(camera.eye.x, camera.eye.z);
 
 		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,
-			shadingInfo, texture, frame);*/
-
-		const FlatTexture *texture = &flatTextures.at(flat.textureID);
-		
-		// @temp: quick hack to avoid empty monster textures.
-		if (texture->width == 0 || texture->height == 0)
-			texture = &flatTextures[0];
-
-		const Double2 eye2D(camera.eye.x, camera.eye.z);
-
-		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,
-			shadingInfo, *texture, frame);
+			shadingInfo, texture, frame);
 	}
 }
 
@@ -6477,7 +6542,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of flats.
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal,
-			*flats.visibleFlats, *flats.flatTextures, *threadData.shadingInfo, *threadData.frame);
+			*flats.visibleFlats, *flats.flatTextureGroups, *threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish flats.
 		threadBarrier(flats);
@@ -6522,7 +6587,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, fadingVoxels, voxelGrid,
 		this->voxelTextures, this->occlusion);
-	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextures);
+	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextureGroups);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.

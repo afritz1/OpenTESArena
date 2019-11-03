@@ -8,7 +8,7 @@ Doodad::Doodad()
 void Doodad::tick(Game &game, double dt)
 {
 	// Get entity animation data.
-	const EntityAnimationData &animationData = [this, &game]()
+	const EntityAnimationData &animationData = [this, &game]() -> const EntityAnimationData&
 	{
 		const auto &worldData = game.getGameData().getWorldData();
 		const auto &levelData = worldData.getActiveLevel();

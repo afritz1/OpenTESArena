@@ -124,7 +124,11 @@ void EntityAnimationData::Instance::tick(double dt, const EntityAnimationData &a
 
 	const double targetSeconds = keyframeCount * secondsPerFrame;
 	const double currentSeconds = (this->percentDone * targetSeconds) + dt;
-	this->percentDone = std::clamp(currentSeconds / targetSeconds, 0.0, 1.0);
+
+	// Calculate percent done based on loop behavior.
+	this->percentDone = state.getLoop() ?
+		std::fmod(currentSeconds / targetSeconds, 1.0) :
+		std::clamp(currentSeconds / targetSeconds, 0.0, 1.0);
 }
 
 const EntityAnimationData::State *EntityAnimationData::findState(StateType stateType) const

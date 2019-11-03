@@ -566,10 +566,11 @@ void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 	this->softwareRenderer.setVoxelTexture(id, srcTexels);
 }
 
-void Renderer::setFlatTexture(int id, const uint32_t *srcTexels, int width, int height)
+void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
+	const uint32_t *srcTexels, int width, int height)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setFlatTexture(id, srcTexels, width, height);
+	this->softwareRenderer.addFlatTexture(flatIndex, stateType, srcTexels, width, height);
 }
 
 void Renderer::setDistantSky(const DistantSky &distantSky)
