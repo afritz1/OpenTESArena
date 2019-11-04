@@ -1336,7 +1336,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityManager &entityManager)
+void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHeight,
+	const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
 
@@ -1389,7 +1390,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const EntityMana
 			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
 		const Double3 flatPosition(
 			entityPosX,
-			camera.eye.y - (60.0 / 128.0) + flatYOffset, // @todo: use ceiling value?
+			ceilingHeight + flatYOffset,
 			entityPosZ);
 
 		// Scaled axes based on flat dimensions.
@@ -6623,7 +6624,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
-	this->updateVisibleFlats(camera, entityManager);
+	this->updateVisibleFlats(camera, ceilingHeight, entityManager);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

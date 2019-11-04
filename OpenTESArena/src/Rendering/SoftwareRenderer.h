@@ -444,7 +444,8 @@ private:
 		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera, const EntityManager &entityManager);
+	void updateVisibleFlats(const Camera &camera, double ceilingHeight,
+		const EntityManager &entityManager);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
