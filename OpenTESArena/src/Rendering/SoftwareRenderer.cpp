@@ -1337,7 +1337,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHeight,
-	const EntityManager &entityManager)
+	const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
 
@@ -1388,9 +1388,31 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 
 		const double flatYOffset =
 			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
+
+		// If the entity is in a raised platform voxel, they are set on top of it.
+		const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
+		{
+			const Int2 entityVoxelPos(
+				static_cast<int>(entityPos.x),
+				static_cast<int>(entityPos.y));
+			const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+			if (voxelData.dataType == VoxelDataType::Raised)
+			{
+				const VoxelData::RaisedData &raised = voxelData.raised;
+				return (raised.yOffset + raised.ySize) * ceilingHeight;
+			}
+			else
+			{
+				// No raised platform offset.
+				return 0.0;
+			}
+		}();
+
 		const Double3 flatPosition(
 			entityPosX,
-			ceilingHeight + flatYOffset,
+			ceilingHeight + flatYOffset + raisedPlatformYOffset,
 			entityPosZ);
 
 		// Scaled axes based on flat dimensions.
@@ -6624,7 +6646,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
-	this->updateVisibleFlats(camera, ceilingHeight, entityManager);
+	this->updateVisibleFlats(camera, ceilingHeight, voxelGrid, entityManager);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
