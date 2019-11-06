@@ -73,9 +73,8 @@ void GameData::TimedTextBox::reset()
 	this->textBox = nullptr;
 }
 
-// Arbitrary value for testing. One real second = six game minutes.
-// The value used in Arena is one real second = twenty game seconds.
-const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 240.0;
+// One real second = twenty game seconds.
+const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
 

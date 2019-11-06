@@ -2468,8 +2468,9 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the game world clock time.
 	auto &gameData = game.getGameData();
+	const bool debugFastForwardClock = inputManager.keyIsDown(SDL_SCANCODE_R); // @todo: camp button
 	const Clock oldClock = gameData.getClock();
-	gameData.tickTime(dt, game);
+	gameData.tickTime(debugFastForwardClock ? (dt * 250.0) : dt, game);
 	const Clock newClock = gameData.getClock();
 
 	auto &renderer = game.getRenderer();
