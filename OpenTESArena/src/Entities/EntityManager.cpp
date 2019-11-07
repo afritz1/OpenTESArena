@@ -8,7 +8,7 @@
 template <typename T>
 int EntityManager::EntityGroup<T>::getCount() const
 {
-	return static_cast<int>(this->indices.size());
+	return static_cast<int>(this->entities.size());
 }
 
 template <typename T>

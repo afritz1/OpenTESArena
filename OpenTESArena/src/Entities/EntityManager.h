@@ -37,7 +37,8 @@ private:
 		// List of previously-owned entity indices that can be replaced with new entities.
 		std::vector<int> freeIndices;
 	public:
-		// Gets number of entities in the group.
+		// Gets number of entities in the group. Intended for iterating over the entire group,
+		// so it also includes any empty entries.
 		int getCount() const;
 
 		// Gets an entity by index.
