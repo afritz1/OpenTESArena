@@ -1455,11 +1455,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			visFlat.endY = (0.50 + camera.yShear) - (projEnd.y * 0.50);
 			visFlat.z = projStart.z;
 
-			// Check that the Z value is within the clipping planes.
+			// Check that the projected values are within view and are inside the near
+			// and far clip planes.
+			const bool inScreenX = (visFlat.startX < 1.0) && (visFlat.endX > 0.0);
+			const bool inScreenY = (visFlat.startY < 1.0) && (visFlat.endY > 0.0);
 			const bool inPlanes = (visFlat.z >= SoftwareRenderer::NEAR_PLANE) &&
 				(visFlat.z <= SoftwareRenderer::FAR_PLANE);
 
-			if (inPlanes)
+			if (inScreenX && inScreenY && inPlanes)
 			{
 				// Finish initializing the visible flat.
 				visFlat.flipped = false; // @todo: based on entity direction and camera position.
