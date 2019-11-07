@@ -20,6 +20,7 @@
 
 // This class runs the CPU-based 3D rendering for the application.
 
+class Entity;
 class VoxelGrid;
 
 class SoftwareRenderer
@@ -414,6 +415,7 @@ private:
 
 	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
 	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
+	std::vector<const Entity*> potentiallyVisibleFlats; // Updated every frame.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.

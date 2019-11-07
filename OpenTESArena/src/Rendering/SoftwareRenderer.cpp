@@ -1341,11 +1341,12 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 {
 	this->visibleFlats.clear();
 
-	// Potentially visible entities buffer, just a naive limit. A better way might be to keep an
-	// expand-only buffer between frames.
-	std::array<const Entity*, 2048> entityPtrs;
+	// Potentially visible entities buffer. Don't need to clear because it gets
+	// overwritten with a set amount of new data each frame.
+	this->potentiallyVisibleFlats.resize(entityManager.getTotalCount());
 	const int entityCount = entityManager.getTotalEntities(
-		entityPtrs.data(), static_cast<int>(entityPtrs.size()));
+		this->potentiallyVisibleFlats.data(),
+		static_cast<int>(this->potentiallyVisibleFlats.size()));
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
@@ -1359,7 +1360,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
 	{
-		const Entity &entity = *entityPtrs[i];
+		const Entity &entity = *this->potentiallyVisibleFlats[i];
 
 		// Get the entity's data definition and animation.
 		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
