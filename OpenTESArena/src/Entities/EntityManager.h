@@ -6,10 +6,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Doodad.h"
+#include "DynamicEntity.h"
 #include "Entity.h"
 #include "EntityData.h"
-#include "NonPlayer.h"
+#include "StaticEntity.h"
 
 class Game;
 
@@ -62,8 +62,8 @@ private:
 	};
 
 	// One group per entity type.
-	EntityGroup<NonPlayer> npcs;
-	EntityGroup<Doodad> doodads;
+	EntityGroup<StaticEntity> staticGroup;
+	EntityGroup<DynamicEntity> dynamicGroup;
 
 	// Entity data definitions.
 	std::vector<EntityData> entityData;
@@ -85,8 +85,8 @@ public:
 	EntityManager &operator=(EntityManager &&entityManager) = default;
 
 	// Factory functions. These assign the entity an available ID.
-	NonPlayer *makeNPC();
-	Doodad *makeDoodad();
+	StaticEntity *makeStaticEntity();
+	DynamicEntity *makeDynamicEntity();
 
 	// Gets an entity, given their ID. Returns null if no ID matches.
 	Entity *get(int id);

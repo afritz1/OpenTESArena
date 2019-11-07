@@ -6,7 +6,7 @@
 #include "VoxelDataType.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
-#include "../Entities/Doodad.h"
+#include "../Entities/StaticEntity.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
@@ -1209,8 +1209,7 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 
 			// @todo: figure out how to differentiate the entity type based on its referenced
 			// .INF flat data. Just assume they're all static objects for now.
-			// @todo: maybe change from Doodad and NonPlayer to Static and Dynamic or something.
-			Entity *entity = this->entityManager.makeDoodad();
+			Entity *entity = this->entityManager.makeStaticEntity();
 			entity->init(dataIndex);
 
 			const Double2 positionXZ(

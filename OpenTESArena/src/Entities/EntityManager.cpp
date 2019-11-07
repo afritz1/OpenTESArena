@@ -215,37 +215,37 @@ int EntityManager::nextFreeID()
 	}
 }
 
-Doodad *EntityManager::makeDoodad()
+StaticEntity *EntityManager::makeStaticEntity()
 {
 	const int id = this->nextFreeID();
-	Doodad *doodad = this->doodads.addEntity(id);
-	DebugAssert(doodad->getID() == id);
-	return doodad;
+	StaticEntity *entity = this->staticGroup.addEntity(id);
+	DebugAssert(entity->getID() == id);
+	return entity;
 }
 
-NonPlayer *EntityManager::makeNPC()
+DynamicEntity *EntityManager::makeDynamicEntity()
 {
 	const int id = this->nextFreeID();
-	NonPlayer *npc = this->npcs.addEntity(id);
-	DebugAssert(npc->getID() == id);
-	return npc;
+	DynamicEntity *entity = this->dynamicGroup.addEntity(id);
+	DebugAssert(entity->getID() == id);
+	return entity;
 }
 
 Entity *EntityManager::get(int id)
 {
 	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->npcs.getEntityIndex(id);
+	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// NPC.
-		return this->npcs.getEntityAtIndex(entityIndex.value());
+		// Static entity.
+		return this->staticGroup.getEntityAtIndex(entityIndex.value());
 	}
 
-	entityIndex = this->doodads.getEntityIndex(id);
+	entityIndex = this->dynamicGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// Doodad.
-		return this->doodads.getEntityAtIndex(entityIndex.value());
+		// Dynamic entity.
+		return this->dynamicGroup.getEntityAtIndex(entityIndex.value());
 	}
 
 	// Not in any entity group.
@@ -255,18 +255,18 @@ Entity *EntityManager::get(int id)
 const Entity *EntityManager::get(int id) const
 {
 	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->npcs.getEntityIndex(id);
+	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// NPC.
-		return this->npcs.getEntityAtIndex(entityIndex.value());
+		// Static entity.
+		return this->staticGroup.getEntityAtIndex(entityIndex.value());
 	}
 
-	entityIndex = this->doodads.getEntityIndex(id);
+	entityIndex = this->dynamicGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// Doodad.
-		return this->doodads.getEntityAtIndex(entityIndex.value());
+		// Dynamic entity.
+		return this->dynamicGroup.getEntityAtIndex(entityIndex.value());
 	}
 
 	// Not in any entity group.
@@ -277,10 +277,10 @@ int EntityManager::getCount(EntityType entityType) const
 {
 	switch (entityType)
 	{
-	case EntityType::NonPlayer:
-		return this->npcs.getCount();
-	case EntityType::Doodad:
-		return this->doodads.getCount();
+	case EntityType::Static:
+		return this->staticGroup.getCount();
+	case EntityType::Dynamic:
+		return this->dynamicGroup.getCount();
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
@@ -288,7 +288,7 @@ int EntityManager::getCount(EntityType entityType) const
 
 int EntityManager::getTotalCount() const
 {
-	return this->npcs.getCount() + this->doodads.getCount();
+	return this->staticGroup.getCount() + this->dynamicGroup.getCount();
 }
 
 int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int outSize)
@@ -299,10 +299,10 @@ int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int 
 	// Get entities from the desired type.
 	switch (entityType)
 	{
-	case EntityType::NonPlayer:
-		return this->npcs.getEntities(outEntities, outSize);
-	case EntityType::Doodad:
-		return this->doodads.getEntities(outEntities, outSize);
+	case EntityType::Static:
+		return this->staticGroup.getEntities(outEntities, outSize);
+	case EntityType::Dynamic:
+		return this->dynamicGroup.getEntities(outEntities, outSize);
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
@@ -316,10 +316,10 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 	// Get entities from the desired type.
 	switch (entityType)
 	{
-	case EntityType::NonPlayer:
-		return this->npcs.getEntities(outEntities, outSize);
-	case EntityType::Doodad:
-		return this->doodads.getEntities(outEntities, outSize);
+	case EntityType::Static:
+		return this->staticGroup.getEntities(outEntities, outSize);
+	case EntityType::Dynamic:
+		return this->dynamicGroup.getEntities(outEntities, outSize);
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
@@ -349,8 +349,8 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 		}
 	};
 
-	tryWriteEntities(this->npcs);
-	tryWriteEntities(this->doodads);
+	tryWriteEntities(this->staticGroup);
+	tryWriteEntities(this->dynamicGroup);
 
 	return writeIndex;
 }
@@ -375,22 +375,22 @@ EntityData *EntityManager::addEntityData(EntityData &&data)
 void EntityManager::remove(int id)
 {
 	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->npcs.getEntityIndex(id);
+	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// NPC.
-		this->npcs.remove(id);
+		// Static entity.
+		this->staticGroup.remove(id);
 
 		// Insert entity ID into the free list.
 		this->freeIDs.push_back(id);
 		return;
 	}
 
-	entityIndex = this->doodads.getEntityIndex(id);
+	entityIndex = this->dynamicGroup.getEntityIndex(id);
 	if (entityIndex.has_value())
 	{
-		// Doodad.
-		this->doodads.remove(id);
+		// Dynamic entity.
+		this->dynamicGroup.remove(id);
 
 		// Insert entity ID into the free list.
 		this->freeIDs.push_back(id);
@@ -403,8 +403,8 @@ void EntityManager::remove(int id)
 
 void EntityManager::clear()
 {
-	this->npcs.clear();
-	this->doodads.clear();
+	this->staticGroup.clear();
+	this->dynamicGroup.clear();
 
 	this->entityData.clear();
 
@@ -428,6 +428,6 @@ void EntityManager::tick(Game &game, double dt)
 		}
 	};
 
-	tickEntityGroup(this->npcs);
-	tickEntityGroup(this->doodads);
+	tickEntityGroup(this->staticGroup);
+	tickEntityGroup(this->dynamicGroup);
 }

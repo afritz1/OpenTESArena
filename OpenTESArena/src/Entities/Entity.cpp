@@ -1,22 +1,25 @@
 #include "Entity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
+#include "../Game/Game.h"
 
-Entity::Entity(EntityType entityType)
+Entity::Entity()
 	: position(Double2::Zero)
 {
-	this->reset();
-	this->entityType = entityType;
+	this->id = EntityManager::NO_ID;
+	this->dataIndex = -1;
+	this->animation.reset();
+}
+
+void Entity::init(int dataIndex)
+{
+	DebugAssert(this->id != EntityManager::NO_ID);
+	this->dataIndex = dataIndex;
 }
 
 int Entity::getID() const
 {
 	return this->id;
-}
-
-EntityType Entity::getEntityType() const
-{
-	return this->entityType;
 }
 
 int Entity::getDataIndex() const
@@ -39,12 +42,6 @@ const EntityAnimationData::Instance &Entity::getAnimation() const
 	return this->animation;
 }
 
-void Entity::init(int dataIndex)
-{
-	DebugAssert(this->id != EntityManager::NO_ID);
-	this->dataIndex = dataIndex;
-}
-
 void Entity::setID(int id)
 {
 	this->id = id;
@@ -63,4 +60,23 @@ void Entity::reset()
 	this->position = Double2::Zero;
 	this->dataIndex = -1;
 	this->animation.reset();
+}
+
+void Entity::tick(Game &game, double dt)
+{
+	// Get entity animation data.
+	const EntityAnimationData &animationData = [this, &game]() -> const EntityAnimationData&
+	{
+		const WorldData &worldData = game.getGameData().getWorldData();
+		const LevelData &levelData = worldData.getActiveLevel();
+		const EntityManager &entityManager = levelData.getEntityManager();
+		const EntityData *entityData = entityManager.getEntityData(this->getDataIndex());
+		DebugAssert(entityData != nullptr);
+
+		return entityData->getAnimationData();
+	}();
+
+	// Animate.
+	auto &animation = this->getAnimation();
+	animation.tick(dt, animationData);
 }
