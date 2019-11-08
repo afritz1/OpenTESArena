@@ -13,6 +13,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../Interface/TimedTextBox.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../World/Location.h"
@@ -40,21 +41,6 @@ enum class WorldType;
 
 class GameData
 {
-public:
-	struct TimedTextBox
-	{
-		double remainingDuration;
-		std::unique_ptr<TextBox> textBox;
-
-		TimedTextBox(double remainingDuration, std::unique_ptr<TextBox> textBox);
-		TimedTextBox();
-
-		// Returns whether there's remaining duration.
-		bool hasRemainingDuration() const;
-
-		// Sets remaining duration to zero and empties the text box.
-		void reset();
-	};
 private:
 	// The time scale determines how long or short a real-time second is. If the time 
 	// scale is 5.0, then each real-time second is five game seconds, etc..

@@ -51,26 +51,6 @@ namespace
 	};
 }
 
-GameData::TimedTextBox::TimedTextBox(double remainingDuration, std::unique_ptr<TextBox> textBox)
-	: textBox(std::move(textBox))
-{
-	this->remainingDuration = remainingDuration;
-}
-
-GameData::TimedTextBox::TimedTextBox()
-	: TimedTextBox(0.0, nullptr) { }
-
-bool GameData::TimedTextBox::hasRemainingDuration() const
-{
-	return this->remainingDuration > 0.0;
-}
-
-void GameData::TimedTextBox::reset()
-{
-	this->remainingDuration = 0.0;
-	this->textBox = nullptr;
-}
-
 // One real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
@@ -616,17 +596,17 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-GameData::TimedTextBox &GameData::getTriggerText()
+TimedTextBox &GameData::getTriggerText()
 {
 	return this->triggerText;
 }
 
-GameData::TimedTextBox &GameData::getActionText()
+TimedTextBox &GameData::getActionText()
 {
 	return this->actionText;
 }
 
-GameData::TimedTextBox &GameData::getEffectText()
+TimedTextBox &GameData::getEffectText()
 {
 	return this->effectText;
 }

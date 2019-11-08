@@ -729,7 +729,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		auto &gameData = game.getGameData();
 		auto &actionText = gameData.getActionText();
 		const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
-		actionText = GameData::TimedTextBox(duration, std::move(textBox));
+		actionText = TimedTextBox(duration, std::move(textBox));
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1632,7 +1632,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						auto &actionText = gameData.getActionText();
 						const double duration = std::max(2.25,
 							static_cast<double>(richText.getText().size()) * 0.050);
-						actionText = GameData::TimedTextBox(duration, std::move(textBox));
+						actionText = TimedTextBox(duration, std::move(textBox));
 					}
 				}
 			}
@@ -1689,7 +1689,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 				auto &gameData = game.getGameData();
 				auto &triggerText = gameData.getTriggerText();
 				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-				triggerText = GameData::TimedTextBox(duration, std::move(textBox));
+				triggerText = TimedTextBox(duration, std::move(textBox));
 
 				// Set the text trigger as activated (regardless of whether or not it's
 				// single-shot, just for consistency).
