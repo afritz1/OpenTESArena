@@ -1,6 +1,9 @@
 #include <algorithm>
 #include <cmath>
+#include <emmintrin.h>
+#include <immintrin.h>
 #include <limits>
+#include <smmintrin.h>
 
 #include "SoftwareRenderer.h"
 #include "Surface.h"
@@ -3447,6 +3450,310 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 		}
 	}
 }
+
+void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, double u,
+	double vStart, double vEnd, const SkyTexture &texture, bool emissive,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	// Draw range values.
+	const int yStart = drawRange.yStart;
+	const int yEnd = drawRange.yEnd;
+	const __m128d yProjStarts = _mm_set1_pd(drawRange.yProjStart);
+	const __m128d yProjEnds = _mm_set1_pd(drawRange.yProjEnd);
+	const __m128d yStarts = _mm_set1_pd(drawRange.yStart);
+	const __m128d yEnds = _mm_set1_pd(drawRange.yEnd);
+
+	// Horizontal offset in texture.
+	const __m128i textureXs = [u, &texture]()
+	{
+		const __m128d us = _mm_set1_pd(std::min(u, Constants::JustBelowOne));
+		const __m128d textureWidths = _mm_cvtepi32_pd(_mm_set1_epi32(texture.width));
+		const __m128d mults = _mm_mul_pd(us, textureWidths);
+		return _mm_cvttpd_epi32(mults);
+	}();
+
+	// Shading on the texture. Some distant objects are completely bright.
+	const __m128d shadings = _mm_set1_pd(emissive ? 1.0 : shadingInfo.distantAmbient);
+
+	// Some pre-calculated values.
+	const __m128i zeroes = _mm_set1_epi32(0);
+	const __m128d halfReals = _mm_set1_pd(0.50);
+	const __m128d oneReals = _mm_set1_pd(1.0);
+	const __m128d twoFiftyFiveReals = _mm_set1_pd(255.0);
+	const __m128i xs = _mm_set1_epi32(x);
+	const __m128i frameWidths = _mm_set1_epi32(frame.width);
+	const __m128i frameHeights = _mm_set1_epi32(frame.height);
+	const __m128d yProjDiffs = _mm_sub_pd(yProjStarts, yProjEnds);
+	const __m128d vStarts = _mm_set1_pd(std::max(vStart, 0.0));
+	const __m128d vEnds = _mm_set1_pd(std::min(vEnd, Constants::JustBelowOne));
+	const __m128d vDiffs = _mm_sub_pd(vStarts, vEnds);
+	const __m128i textureWidths = _mm_set1_epi32(texture.width);
+	const __m128i textureHeights = _mm_set1_epi32(texture.height);
+	const __m128d textureWidthReals = _mm_cvtepi32_pd(textureWidths);
+	const __m128d textureHeightReals = _mm_cvtepi32_pd(textureHeights);
+
+	// SIMD stride size.
+	constexpr int stride = sizeof(__m128d) / sizeof(double);
+	static_assert(stride == 2);
+
+	// @todo: need special case loop afterwards to catch missed rows.
+	for (int y = yStart; y < (yEnd - (stride - 1)); y += stride)
+	{
+		// Row and frame buffer index.
+		const __m128i ys = _mm_setr_epi32(y, y + 1, 0, 0);
+		const __m128i yRowOffsets = _mm_mullo_epi32(ys, frameWidths);
+
+		// Percents stepped from beginning to end on the column.
+		const __m128d yReals = _mm_cvtepi32_pd(ys);
+		const __m128d yMidpoints = _mm_add_pd(yReals, halfReals);
+		const __m128d yMidpointDiffs = _mm_sub_pd(yMidpoints, yProjStarts);
+		const __m128d yPercents = _mm_div_pd(yMidpointDiffs, yProjDiffs);
+
+		// Vertical texture coordinate.
+		const __m128d vDiffYPercents = _mm_mul_pd(vDiffs, yPercents);
+		const __m128d vs = _mm_add_pd(vStarts, vDiffYPercents);
+
+		// Y position in texture.
+		const __m128d vTextureHeights = _mm_mul_pd(vs, textureHeightReals);
+		const __m128i textureYs = _mm_cvttpd_epi32(vTextureHeights);
+
+		// Alpha is checked in this loop, and transparent texels are not drawn.
+		const __m128i textureYWidths = _mm_mullo_epi32(textureYs, textureWidths);
+		const __m128i textureIndices = _mm_add_epi32(textureXs, textureYWidths);
+
+		// Load alpha component of texel to see if it's even visible.
+		// @todo: proper SIMD texel format.
+		// - For now, assume we can load texels really fast?! No gather instruction for SSE.
+		// - This seems like a big bandwidth win once each color channel is in its own array.
+		const SkyTexel &texel0 = texture.texels[_mm_extract_epi32(textureIndices, 0)];
+		const SkyTexel &texel1 = texture.texels[_mm_extract_epi32(textureIndices, 1)];
+		const __m128i texelAs = _mm_setr_epi32(
+			static_cast<int>(texel0.transparent),
+			static_cast<int>(texel1.transparent),
+			static_cast<int>(false),
+			static_cast<int>(false));
+
+		// Check if the texel is opaque.
+		const __m128i opaques = _mm_cmpeq_epi32(texelAs, zeroes);
+		const bool opaque0 = _mm_extract_epi32(opaques, 0) != 0;
+		const bool opaque1 = _mm_extract_epi32(opaques, 0) != 0;
+		const bool anyOpaque = opaque0 || opaque1;
+		if (anyOpaque)
+		{
+			// Texel colors.
+			const __m128d texelRs = _mm_setr_pd(texel0.r, texel1.r);
+			const __m128d texelGs = _mm_setr_pd(texel0.g, texel1.g);
+			const __m128d texelBs = _mm_setr_pd(texel0.b, texel1.b);
+
+			// Texture color with shading.
+			__m128d colorRs = _mm_mul_pd(texelRs, shadings);
+			__m128d colorGs = _mm_mul_pd(texelGs, shadings);
+			__m128d colorBs = _mm_mul_pd(texelBs, shadings);
+
+			// Clamp maximum (don't worry about negative values).
+			const __m128d highs = oneReals;
+			__m128d colorRCmps = _mm_cmpgt_pd(colorRs, highs);
+			__m128d colorGCmps = _mm_cmpgt_pd(colorGs, highs);
+			__m128d colorBCmps = _mm_cmpgt_pd(colorBs, highs);
+			colorRs = _mm_blendv_pd(colorRs, highs, colorRCmps);
+			colorGs = _mm_blendv_pd(colorGs, highs, colorGCmps);
+			colorBs = _mm_blendv_pd(colorBs, highs, colorBCmps);
+
+			// Convert floats to integers.
+			const __m128d mul255s = twoFiftyFiveReals;
+			const __m128d colorRs255 = _mm_mul_pd(colorRs, mul255s);
+			const __m128d colorGs255 = _mm_mul_pd(colorGs, mul255s);
+			const __m128d colorBs255 = _mm_mul_pd(colorBs, mul255s);
+			const __m128i colorRsU32 = _mm_cvttpd_epi32(colorRs255);
+			const __m128i colorGsU32 = _mm_cvttpd_epi32(colorGs255);
+			const __m128i colorBsU32 = _mm_cvttpd_epi32(colorBs255);
+			const __m128i colorRsShifted = _mm_slli_epi32(colorRsU32, 16);
+			const __m128i colorGsShifted = _mm_slli_epi32(colorGsU32, 8);
+			const __m128i colorBsShifted = colorBsU32;
+			const __m128i colors = _mm_or_si128(
+				_mm_or_si128(colorRsShifted, colorGsShifted), colorBsShifted);
+
+			// Frame buffer index.
+			const __m128i indices = _mm_add_epi32(xs, yRowOffsets);
+
+			// (SIMD only) Conditionally write pixels based on texel opacity.
+			if (opaque0)
+			{
+				const int index0 = _mm_extract_epi32(indices, 0);
+				const uint32_t color0 = _mm_extract_epi32(colors, 0);
+				frame.colorBuffer[index0] = color0;
+			}
+
+			if (opaque1)
+			{
+				const int index1 = _mm_extract_epi32(indices, 1);
+				const uint32_t color1 = _mm_extract_epi32(colors, 1);
+				frame.colorBuffer[index1] = color1;
+			}
+		}
+	}
+}
+
+/*void SoftwareRenderer::drawDistantPixelsAVX(int x, const DrawRange &drawRange, double u,
+	double vStart, double vEnd, const SkyTexture &texture, bool emissive,
+	const ShadingInfo &shadingInfo, const FrameView &frame)
+{
+	// Draw range values.
+	const int yStart = drawRange.yStart;
+	const int yEnd = drawRange.yEnd;
+	const __m256d yProjStarts = _mm256_set1_pd(drawRange.yProjStart);
+	const __m256d yProjEnds = _mm256_set1_pd(drawRange.yProjEnd);
+	const __m256d yStarts = _mm256_set1_pd(drawRange.yStart);
+	const __m256d yEnds = _mm256_set1_pd(drawRange.yEnd);
+
+	// Horizontal offset in texture.
+	const __m128i textureXs = [u, &texture]()
+	{
+		const __m256d us = _mm256_set1_pd(std::min(u, Constants::JustBelowOne));
+		const __m256d textureWidths = _mm256_cvtepi32_pd(_mm_set1_epi32(texture.width));
+		const __m256d mults = _mm256_mul_pd(us, textureWidths);
+		return _mm256_cvttpd_epi32(mults);
+	}();
+
+	// Shading on the texture. Some distant objects are completely bright.
+	const __m256d shadings = _mm256_set1_pd(emissive ? 1.0 : shadingInfo.distantAmbient);
+
+	// Some pre-calculated values.
+	const __m128i zeroes = _mm_set1_epi32(0);
+	const __m256d halfReals = _mm256_set1_pd(0.50);
+	const __m256d oneReals = _mm256_set1_pd(1.0);
+	const __m256d twoFiftyFiveReals = _mm256_set1_pd(255.0);
+	const __m128i xs = _mm_set1_epi32(x);
+	const __m128i frameWidths = _mm_set1_epi32(frame.width);
+	const __m128i frameHeights = _mm_set1_epi32(frame.height);
+	const __m256d yProjDiffs = _mm256_sub_pd(yProjStarts, yProjEnds);
+	const __m256d vStarts = _mm256_set1_pd(std::max(vStart, 0.0));
+	const __m256d vEnds = _mm256_set1_pd(std::min(vEnd, Constants::JustBelowOne));
+	const __m256d vDiffs = _mm256_sub_pd(vStarts, vEnds);
+	const __m128i textureWidths = _mm_set1_epi32(texture.width);
+	const __m128i textureHeights = _mm_set1_epi32(texture.height);
+	const __m256d textureWidthReals = _mm256_cvtepi32_pd(textureWidths);
+	const __m256d textureHeightReals = _mm256_cvtepi32_pd(textureHeights);
+
+	// SIMD stride size.
+	constexpr int stride = sizeof(__m256d) / sizeof(double);
+	static_assert(stride == 4);
+
+	// @todo: need special case loop afterwards to catch missed rows.
+	for (int y = yStart; y < (yEnd - (stride - 1)); y += stride)
+	{
+		// Row and frame buffer index.
+		const __m128i ys = _mm_setr_epi32(y, y + 1, y + 2, y + 3);
+		const __m128i yRowOffsets = _mm_mullo_epi32(ys, frameWidths);
+
+		// Percents stepped from beginning to end on the column.
+		const __m256d yReals = _mm256_cvtepi32_pd(ys);
+		const __m256d yMidpoints = _mm256_add_pd(yReals, halfReals);
+		const __m256d yMidpointDiffs = _mm256_sub_pd(yMidpoints, yProjStarts);
+		const __m256d yPercents = _mm256_div_pd(yMidpointDiffs, yProjDiffs);
+
+		// Vertical texture coordinate.
+		const __m256d vDiffYPercents = _mm256_mul_pd(vDiffs, yPercents);
+		const __m256d vs = _mm256_add_pd(vStarts, vDiffYPercents);
+
+		// Y position in texture.
+		const __m256d vTextureHeights = _mm256_mul_pd(vs, textureHeightReals);
+		const __m128i textureYs = _mm256_cvttpd_epi32(vTextureHeights);
+
+		// Alpha is checked in this loop, and transparent texels are not drawn.
+		const __m128i textureYWidths = _mm_mullo_epi32(textureYs, textureWidths);
+		const __m128i textureIndices = _mm_add_epi32(textureXs, textureYWidths);
+
+		// Load alpha component of texel to see if it's even visible.
+		// @todo: proper SIMD texel format.
+		// - For now, assume we can load texels really fast?! No gather instruction for SSE.
+		// - This seems like a big bandwidth win once each color channel is in its own array.
+		const SkyTexel &texel0 = texture.texels[_mm_extract_epi32(textureIndices, 0)];
+		const SkyTexel &texel1 = texture.texels[_mm_extract_epi32(textureIndices, 1)];
+		const SkyTexel &texel2 = texture.texels[_mm_extract_epi32(textureIndices, 2)];
+		const SkyTexel &texel3 = texture.texels[_mm_extract_epi32(textureIndices, 3)];
+		const __m128i texelAs = _mm_setr_epi32(
+			static_cast<int>(texel0.transparent),
+			static_cast<int>(texel1.transparent),
+			static_cast<int>(texel2.transparent),
+			static_cast<int>(texel3.transparent));
+
+		// Check if the texel is opaque.
+		const __m128i opaques = _mm_cmpeq_epi32(texelAs, zeroes);
+		const bool opaque0 = _mm_extract_epi32(opaques, 0) != 0;
+		const bool opaque1 = _mm_extract_epi32(opaques, 1) != 0;
+		const bool opaque2 = _mm_extract_epi32(opaques, 2) != 0;
+		const bool opaque3 = _mm_extract_epi32(opaques, 3) != 0;
+		const bool anyOpaque = opaque0 || opaque1 || opaque2 || opaque3;
+		if (anyOpaque)
+		{
+			// Texel colors.
+			const __m256d texelRs = _mm256_setr_pd(texel0.r, texel1.r, texel2.r, texel3.r);
+			const __m256d texelGs = _mm256_setr_pd(texel0.g, texel1.g, texel2.g, texel3.g);
+			const __m256d texelBs = _mm256_setr_pd(texel0.b, texel1.b, texel2.b, texel3.b);
+
+			// Texture color with shading.
+			__m256d colorRs = _mm256_mul_pd(texelRs, shadings);
+			__m256d colorGs = _mm256_mul_pd(texelGs, shadings);
+			__m256d colorBs = _mm256_mul_pd(texelBs, shadings);
+
+			// Clamp maximum (don't worry about negative values).
+			const __m256d highs = oneReals;
+			__m256d colorRCmps = _mm256_cmp_pd(colorRs, highs, _CMP_GT_OS);
+			__m256d colorGCmps = _mm256_cmp_pd(colorGs, highs, _CMP_GT_OS);
+			__m256d colorBCmps = _mm256_cmp_pd(colorBs, highs, _CMP_GT_OS);
+			colorRs = _mm256_blendv_pd(colorRs, highs, colorRCmps);
+			colorGs = _mm256_blendv_pd(colorGs, highs, colorGCmps);
+			colorBs = _mm256_blendv_pd(colorBs, highs, colorBCmps);
+
+			// Convert floats to integers.
+			const __m256d mul255s = twoFiftyFiveReals;
+			const __m256d colorRs255 = _mm256_mul_pd(colorRs, mul255s);
+			const __m256d colorGs255 = _mm256_mul_pd(colorGs, mul255s);
+			const __m256d colorBs255 = _mm256_mul_pd(colorBs, mul255s);
+			const __m128i colorRsU32 = _mm256_cvttpd_epi32(colorRs255);
+			const __m128i colorGsU32 = _mm256_cvttpd_epi32(colorGs255);
+			const __m128i colorBsU32 = _mm256_cvttpd_epi32(colorBs255);
+			const __m128i colorRsShifted = _mm_slli_epi32(colorRsU32, 16);
+			const __m128i colorGsShifted = _mm_slli_epi32(colorGsU32, 8);
+			const __m128i colorBsShifted = colorBsU32;
+			const __m128i colors = _mm_or_si128(
+				_mm_or_si128(colorRsShifted, colorGsShifted), colorBsShifted);
+
+			// Frame buffer index.
+			const __m128i indices = _mm_add_epi32(xs, yRowOffsets);
+
+			// (SIMD only) Conditionally write pixels based on texel opacity.
+			if (opaque0)
+			{
+				const int index0 = _mm_extract_epi32(indices, 0);
+				const uint32_t color0 = _mm_extract_epi32(colors, 0);
+				frame.colorBuffer[index0] = color0;
+			}
+
+			if (opaque1)
+			{
+				const int index1 = _mm_extract_epi32(indices, 1);
+				const uint32_t color1 = _mm_extract_epi32(colors, 1);
+				frame.colorBuffer[index1] = color1;
+			}
+
+			if (opaque2)
+			{
+				const int index2 = _mm_extract_epi32(indices, 2);
+				const uint32_t color2 = _mm_extract_epi32(colors, 2);
+				frame.colorBuffer[index2] = color2;
+			}
+
+			if (opaque3)
+			{
+				const int index3 = _mm_extract_epi32(indices, 3);
+				const uint32_t color3 = _mm_extract_epi32(colors, 3);
+				frame.colorBuffer[index3] = color3;
+			}
+		}
+	}
+}*/
 
 void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double u, double vStart,
 	double vEnd, const SkyTexture &texture, const ShadingInfo &shadingInfo, const FrameView &frame)
