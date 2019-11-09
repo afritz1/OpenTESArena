@@ -20,6 +20,10 @@ IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     IF (NOT WIN32 AND NOT APPLE)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
+        # Optimizations.
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
 ENDIF ()
