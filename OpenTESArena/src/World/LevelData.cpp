@@ -6,6 +6,7 @@
 #include "VoxelDataType.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
+#include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -20,6 +21,50 @@
 
 namespace
 {
+	// *ITEM 32 to 54 are creatures (rat, goblin, etc.).
+	bool IsCreatureIndex(int itemIndex)
+	{
+		return itemIndex >= 32 && itemIndex <= 54;
+	}
+
+	// *ITEM 55 to 73 are human enemies (guard, wizard, etc.).
+	bool IsHumanEnemyIndex(int itemIndex)
+	{
+		return itemIndex >= 55 && itemIndex <= 73;
+	}
+
+	// Returns whether the given flat index is for a static or dynamic entity.
+	EntityType GetEntityTypeFromFlat(int flatIndex, const INFFile &inf)
+	{
+		const auto &flatData = inf.getFlat(flatIndex);
+		if (flatData.itemIndex.has_value())
+		{
+			const int itemIndex = flatData.itemIndex.value();
+
+			// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
+			// are higher.
+			return (IsCreatureIndex(itemIndex) || IsHumanEnemyIndex(itemIndex)) ?
+				EntityType::Dynamic : EntityType::Static;
+		}
+		else
+		{
+			return EntityType::Static;
+		}
+	}
+
+	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
+	int GetCreatureIDFromItemIndex(int itemIndex)
+	{
+		return itemIndex - 31;
+	}
+
+	// Streetlights are hardcoded in the original game to flat index 29. This lets the
+	// game give them a light source and toggle them between on and off states.
+	bool IsStreetLightFlatIndex(int flatIndex)
+	{
+		return flatIndex == 29;
+	}
+
 	// Entity animation state keyframe helper function.
 	bool TrySetEntityAnimationStateKeyframes(int flatIndex, const INFFile &inf,
 		TextureManager &textureManager, EntityAnimationData::State &outState)
