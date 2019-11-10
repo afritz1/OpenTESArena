@@ -56,6 +56,10 @@ public:
 
 	struct FlatData
 	{
+		// Scale values for stretching flats.
+		static constexpr double MEDIUM_SCALE = 1.5 * 128.0; // 150% larger.
+		static constexpr double LARGE_SCALE = 3.0 * 128.0; // 300% larger.
+
 		int textureIndex; // Index into textures vector.
 
 		// *ITEM value, if any. *ITEM 32 should be associated with rats, the first
