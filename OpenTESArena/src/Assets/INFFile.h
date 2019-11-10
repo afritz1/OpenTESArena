@@ -58,6 +58,11 @@ public:
 	{
 		int textureIndex; // Index into textures vector.
 
+		// *ITEM value, if any. *ITEM 32 should be associated with rats, the first
+		// creature type. The highest *ITEM number is 95, although some of them past
+		// 63 might not be used (character class names, lore names, etc.).
+		std::optional<int> itemIndex;
+
 		int yOffset; // Offsets the flat some number of pixels. Negative goes up.
 		int health; // Number of hit points.
 
@@ -121,11 +126,6 @@ private:
 	// (i.e., texture index, etc.).
 	std::vector<FlatData> flats;
 
-	// Indices into the flats vector for flats paired with an *ITEM index. The highest *ITEM 
-	// number is 95, although those past 63 might not be used (character class names, lore 
-	// names, etc.).
-	std::array<std::optional<int>, 96> items;
-
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
 
@@ -155,7 +155,6 @@ public:
 	const int *getMenu(int index) const;
 	int getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
-	const FlatData &getItem(int index) const;
 	const std::string &getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

@@ -660,52 +660,32 @@ bool INFFile::init(const char *filename)
 				}
 			}();
 
-			// Creature flats are between *ITEM 32 and *ITEM 54. These do not need their
-			// texture line parsed.
-			const bool isCreatureFlat = flatState.has_value() &&
-				(flatState->itemID >= 32) && (flatState->itemID <= 54);
-
-			// Get the texture name. Do not parse *ITEMs between 32 and 54 (return an empty
-			// string instead; they are obtained later as .CFAs).
-			const std::string textureName = [&tokens, isCreatureFlat]()
+			// Get the texture name. Creature flats are between *ITEM 32 and *ITEM 54. These do
+			// not need their texture line parsed because their animation filename is fetched
+			// later as a .CFA (supposedly the placeholder .DFAs are for the level editor).
+			const std::string textureName = [&tokens]()
 			{
-				if (isCreatureFlat)
-				{
-					return std::string();
-				}
-				else
-				{
-					// It's not a creature flat. Return the string, excluding any dash.
-					const std::string &firstToken = tokens.at(0);
-					const bool hasDash = firstToken.at(0) == '-'; // @todo: not sure what this is.
-					return String::toUppercase(hasDash ? 
-						firstToken.substr(1, firstToken.size() - 1) : firstToken);
-				}
+				const std::string &firstToken = tokens.at(0);
+				const bool hasDash = firstToken.at(0) == '-'; // @todo: not sure what this is.
+				return String::toUppercase(hasDash ?
+					firstToken.substr(1, firstToken.size() - 1) : firstToken);
 			}();
 
 			// Add the flat's texture name to the textures vector.
 			this->flatTextures.push_back(FlatTextureData(textureName));
 
-			// Add a new flat data record and keep its index.
+			// Add a new flat data record.
 			this->flats.push_back(INFFile::FlatData());
-			const int flatIndex = static_cast<int>(this->flats.size() - 1);
 
 			// Assign the current line's values and modifiers to the new flat.
 			INFFile::FlatData &flat = this->flats.back();
 			flat.textureIndex = static_cast<int>(this->flatTextures.size() - 1);
+			flat.itemIndex = flatState.has_value() ? flatState->itemID : std::nullopt;
 
-			// The current line is "loose" if the previous line was not an *ITEM line.
-			const bool looseTextureName = !flatState.has_value() || !flatState->itemID.has_value();
-
-			// If an *ITEM index is currently stored, then pair it with the new flat's index.
-			if (!looseTextureName)
-			{
-				this->items.at(flatState->itemID.value()) = flatIndex;
-			}
-
-			// If the flat is not a creature and has modifiers, then check each modifier and
-			// mutate the flat accordingly.
-			if (!isCreatureFlat && (tokens.size() >= 2))
+			// If the flat has modifiers, then check each modifier and mutate the flat accordingly.
+			// If it is a creature then it will ignore these modifiers and use ones from the creature
+			// arrays in the .exe data.
+			if (tokens.size() >= 2)
 			{
 				for (size_t i = 1; i < tokens.size(); i++)
 				{
@@ -1035,15 +1015,6 @@ const INFFile::FlatData &INFFile::getFlat(int index) const
 {
 	DebugAssertIndex(this->flats, index);
 	return this->flats[index];
-}
-
-const INFFile::FlatData &INFFile::getItem(int index) const
-{
-	DebugAssertIndex(this->items, index);
-	const int flatIndex = this->items[index].value();
-
-	DebugAssertIndex(this->flats, flatIndex);
-	return this->flats[flatIndex];
 }
 
 const std::string &INFFile::getSound(int index) const
