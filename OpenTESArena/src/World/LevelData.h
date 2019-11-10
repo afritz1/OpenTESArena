@@ -186,7 +186,8 @@ public:
 
 	// Sets this level active in the renderer. It's virtual so derived level data classes can
 	// do some extra work (like set interior sky colors in the renderer).
-	virtual void setActive(TextureManager &textureManager, Renderer &renderer);
+	virtual void setActive(const ExeData &exeData, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
 	virtual void tick(Game &game, double dt);

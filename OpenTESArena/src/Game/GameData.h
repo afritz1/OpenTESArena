@@ -112,7 +112,7 @@ public:
 
 	// Leaves the current interior and returns to the exterior. Only call this method if the
 	// player is in an interior that has an outside area to return to.
-	void leaveInterior(TextureManager &textureManager, Renderer &renderer);
+	void leaveInterior(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.

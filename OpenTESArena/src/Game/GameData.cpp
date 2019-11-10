@@ -243,7 +243,7 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(exeData, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -277,7 +277,7 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 
 	// Set interior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(exeData, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = exterior.getInterior()->getStartPoints().front();
@@ -291,7 +291,8 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::leaveInterior(TextureManager &textureManager, Renderer &renderer)
+void GameData::leaveInterior(const ExeData &exeData, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	DebugAssert(this->worldData.get() != nullptr);
 	DebugAssert(this->worldData->getActiveWorldType() == WorldType::Interior);
@@ -305,7 +306,7 @@ void GameData::leaveInterior(TextureManager &textureManager, Renderer &renderer)
 
 	// Set exterior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(exeData, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 startPoint(
@@ -345,7 +346,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(exeData, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -386,7 +387,7 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(exeData, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -421,7 +422,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -512,7 +513,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -548,7 +549,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(textureManager, renderer);
+	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();

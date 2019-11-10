@@ -1826,7 +1826,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		}
 
 		// Leave the interior and go to the saved exterior.
-		gameData.leaveInterior(textureManager, renderer);
+		const auto &exeData = game.getMiscAssets().getExeData();
+		gameData.leaveInterior(exeData, textureManager, renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2138,7 +2139,8 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
-			newActiveLevel.setActive(game.getTextureManager(), game.getRenderer());
+			newActiveLevel.setActive(game.getMiscAssets().getExeData(),
+				game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(

@@ -1124,7 +1124,8 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 	}
 }
 
-void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
+void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();

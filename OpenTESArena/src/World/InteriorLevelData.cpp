@@ -227,9 +227,10 @@ void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &
 	}
 }
 
-void InteriorLevelData::setActive(TextureManager &textureManager, Renderer &renderer)
+void InteriorLevelData::setActive(const ExeData &exeData, TextureManager &textureManager,
+	Renderer &renderer)
 {
-	LevelData::setActive(textureManager, renderer);
+	LevelData::setActive(exeData, textureManager, renderer);
 
 	// Set interior sky color.
 	renderer.setSkyPalette(&this->skyColor, 1);

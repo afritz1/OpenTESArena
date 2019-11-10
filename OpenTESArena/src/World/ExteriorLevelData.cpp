@@ -1183,9 +1183,10 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 	return false;
 }
 
-void ExteriorLevelData::setActive(TextureManager &textureManager, Renderer &renderer)
+void ExteriorLevelData::setActive(const ExeData &exeData, TextureManager &textureManager,
+	Renderer &renderer)
 {
-	LevelData::setActive(textureManager, renderer);
+	LevelData::setActive(exeData, textureManager, renderer);
 
 	// Give distant sky data to the renderer.
 	renderer.setDistantSky(this->distantSky);
