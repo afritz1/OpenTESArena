@@ -1,16 +1,17 @@
 #include "EntityData.h"
 
-EntityData::EntityData(int flatIndex, int yOffset, bool collider, bool puddle, bool doubleScale,
-	bool dark, bool transparent, bool ceiling)
+EntityData::EntityData(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
+	bool dark, bool transparent, bool ceiling, bool mediumScale)
 {
 	this->flatIndex = flatIndex;
 	this->yOffset = yOffset;
 	this->collider = collider;
 	this->puddle = puddle;
-	this->doubleScale = doubleScale;
+	this->largeScale = largeScale;
 	this->dark = dark;
 	this->transparent = transparent;
 	this->ceiling = ceiling;
+	this->mediumScale = mediumScale;
 }
 
 int EntityData::getFlatIndex() const
@@ -33,9 +34,9 @@ bool EntityData::isPuddle() const
 	return this->puddle;
 }
 
-bool EntityData::isDoubleScale() const
+bool EntityData::isLargeScale() const
 {
-	return this->doubleScale;
+	return this->largeScale;
 }
 
 bool EntityData::isDark() const
@@ -51,6 +52,11 @@ bool EntityData::isTransparent() const
 bool EntityData::isOnCeiling() const
 {
 	return this->ceiling;
+}
+
+bool EntityData::isMediumScale() const
+{
+	return this->mediumScale;
 }
 
 EntityAnimationData &EntityData::getAnimationData()

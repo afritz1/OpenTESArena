@@ -62,14 +62,16 @@ public:
 		int health; // Number of hit points.
 
 		// Flat modifiers.
-		// 0x1: Collider. 0x2: Reflect (puddle). 0x4: Double (scale?). 0x8: Dark.
-		// 0x10: Transparent (ghosts). 0x20: Ceiling (attached to ceiling?).
+		// 0x1: Collider. 0x2: Reflect (puddle). 0x4: Triple scale (trees). 0x8: Dark.
+		// 0x10: Transparent (ghosts). 0x20: Ceiling (attached to ceiling?), 
+		// 0x40: 150% scale (some furniture?)
 		bool collider;
 		bool puddle;
-		bool doubleScale;
+		bool largeScale;
 		bool dark;
 		bool transparent;
 		bool ceiling;
+		bool mediumScale;
 
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.

@@ -41,8 +41,10 @@ namespace
 		const bool noExtension = extension.size() == 0;
 
 		// A flat's appearance may be modified by some .INF properties.
-		constexpr double doubleScaleValue = (3.0 * MIFFile::ARENA_UNITS) / 100.0;
-		const double dimensionModifier = flatData.doubleScale ? doubleScaleValue : 1.0;
+		constexpr double largeScaleValue = (3.0 * MIFFile::ARENA_UNITS) / 100.0;
+		constexpr double mediumScaleValue = (1.5 * MIFFile::ARENA_UNITS) / 100.0;
+		const double dimensionModifier = flatData.largeScale ? largeScaleValue :
+			(flatData.mediumScale ? mediumScaleValue : 1.0);
 		auto makeKeyframeDimension = [dimensionModifier](int value)
 		{
 			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
@@ -1183,8 +1185,8 @@ void LevelData::setActive(TextureManager &textureManager, Renderer &renderer)
 			if (this->entityManager.getEntityData(dataIndex) == nullptr)
 			{
 				EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
-					flatData.puddle, flatData.doubleScale, flatData.dark, flatData.transparent,
-					flatData.ceiling);
+					flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
+					flatData.ceiling, flatData.mediumScale);
 
 				auto &entityAnimData = newEntityData.getAnimationData();
 

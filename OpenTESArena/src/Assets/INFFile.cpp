@@ -120,10 +120,11 @@ INFFile::FlatData::FlatData()
 	this->health = 0;
 	this->collider = false;
 	this->puddle = false;
-	this->doubleScale = false;
+	this->largeScale = false;
 	this->dark = false;
 	this->transparent = false;
 	this->ceiling = false;
+	this->mediumScale = false;
 }
 
 INFFile::KeyData::KeyData(int id)
@@ -722,13 +723,14 @@ bool INFFile::init(const char *filename)
 
 					if (modifierType == FLAT_PROPERTIES_MODIFIER)
 					{
-						// Flat properties (collider, puddle, double scale, transparent, etc.).
+						// Flat properties (collider, puddle, triple scale, transparent, etc.).
 						flat.collider = (modifierValue & (1 << 0)) != 0;
 						flat.puddle = (modifierValue & (1 << 1)) != 0;
-						flat.doubleScale = (modifierValue & (1 << 2)) != 0;
+						flat.largeScale = (modifierValue & (1 << 2)) != 0;
 						flat.dark = (modifierValue & (1 << 3)) != 0;
 						flat.transparent = (modifierValue & (1 << 4)) != 0;
 						flat.ceiling = (modifierValue & (1 << 5)) != 0;
+						flat.mediumScale = (modifierValue & (1 << 6)) != 0;
 					}
 					else if (modifierType == LIGHT_MODIFIER)
 					{
