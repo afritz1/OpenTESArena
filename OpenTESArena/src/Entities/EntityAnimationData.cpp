@@ -55,9 +55,19 @@ double EntityAnimationData::State::getSecondsPerFrame() const
 	return this->secondsPerFrame;
 }
 
+const std::string &EntityAnimationData::State::getTextureName() const
+{
+	return this->textureName;
+}
+
 BufferView<const EntityAnimationData::Keyframe> EntityAnimationData::State::getKeyframes() const
 {
 	return BufferView(this->keyframes.data(), static_cast<int>(this->keyframes.size()));
+}
+
+void EntityAnimationData::State::setTextureName(std::string &&textureName)
+{
+	this->textureName = std::move(textureName);
 }
 
 void EntityAnimationData::State::addKeyframe(Keyframe &&keyframe)

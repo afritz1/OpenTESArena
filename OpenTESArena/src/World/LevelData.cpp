@@ -65,80 +65,182 @@ namespace
 		return flatIndex == 29;
 	}
 
-	// Entity animation state keyframe helper function.
-	bool TrySetEntityAnimationStateKeyframes(int flatIndex, const INFFile &inf,
-		TextureManager &textureManager, EntityAnimationData::State &outState)
+	// @todo: add support in entity animations for directional animations, then rename this to
+	// MakeEntityAnimationStates() and return a vector or whatever EntityAnimationData needs.
+	EntityAnimationData::State MakeEntityAnimationState(int flatIndex,
+		const INFFile &inf, const ExeData &exeData, TextureManager &textureManager)
 	{
-		// The out parameter should already have its constructor called. This function is
-		// just for keyframes.
-
-		// Create a keyframe for each of the flat's surfaces.
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-		const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
-
-		DebugAssertIndex(flatTextures, flatData.textureIndex);
-		const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
-		const std::string &flatTextureName = flatTextureData.filename;
-
-		const std::string_view extension = StringView::getExtension(flatTextureName);
-		const bool isDFA = extension == "DFA";
-		const bool isIMG = extension == "IMG";
-		const bool noExtension = extension.size() == 0;
-
-		// A flat's appearance may be modified by some .INF properties.
-		constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
-		constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
-		const double dimensionModifier = flatData.largeScale ? largeScaleValue :
-			(flatData.mediumScale ? mediumScaleValue : 1.0);
-		auto makeKeyframeDimension = [dimensionModifier](int value)
+		// Lambda for generating a default entity animation state for later modification.
+		auto makeDefaultAnimState = []()
 		{
-			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
+			const EntityAnimationData::StateType stateType = EntityAnimationData::StateType::Idle;
+			constexpr double secondsPerFrame = 1.0 / 12.0;
+			const bool loop = true;
+			return EntityAnimationData::State(stateType, secondsPerFrame, loop);
 		};
 
-		if (isDFA)
-		{
-			// @todo: creatures don't have .DFA files (although they're referenced in the .INF
-			// files), so I think the extension needs to be .CFA instead for them.
-			//const std::string cfaFilename = String::replace(flatTextureName, ".DFA", ".CFA");
-			//const auto &surfaces = textureManager.getSurfaces(cfaFilename);
-			const std::vector<Surface> &surfaces = textureManager.getSurfaces(flatTextureName);
+		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 
-			for (size_t i = 0; i < surfaces.size(); i++)
+		// Static entities just have an idle animation state.
+		auto makeStaticEntityAnim = [&inf, &textureManager, &makeDefaultAnimState, &flatData]()
+		{
+			const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
+
+			DebugAssertIndex(flatTextures, flatData.textureIndex);
+			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
+			const std::string &flatTextureName = flatTextureData.filename;
+			const std::string_view extension = StringView::getExtension(flatTextureName);
+			const bool isDFA = extension == "DFA";
+			const bool isIMG = extension == "IMG";
+			const bool noExtension = extension.size() == 0;
+
+			// A flat's appearance may be modified by some .INF properties.
+			constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
+			constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
+			const double dimensionModifier = flatData.largeScale ? largeScaleValue :
+				(flatData.mediumScale ? mediumScaleValue : 1.0);
+
+			auto makeKeyframeDimension = [dimensionModifier](int value)
 			{
-				const Surface &surface = surfaces[i];
+				return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
+			};
+
+			EntityAnimationData::State animState = makeDefaultAnimState();
+
+			// Determine how to populate the animation state with keyframes.
+			if (isDFA)
+			{
+				animState.setTextureName(std::string(flatTextureName));
+
+				const std::vector<Surface> &surfaces = textureManager.getSurfaces(flatTextureName);
+				for (size_t i = 0; i < surfaces.size(); i++)
+				{
+					const Surface &surface = surfaces[i];
+					const double width = makeKeyframeDimension(surface.getWidth());
+					const double height = makeKeyframeDimension(surface.getHeight());
+					const int textureID = static_cast<int>(i);
+
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					animState.addKeyframe(std::move(keyframe));
+				}
+
+				return animState;
+			}
+			else if (isIMG)
+			{
+				animState.setTextureName(std::string(flatTextureName));
+
+				const Surface &surface = textureManager.getSurface(flatTextureName);
 				const double width = makeKeyframeDimension(surface.getWidth());
 				const double height = makeKeyframeDimension(surface.getHeight());
-				const int textureID = static_cast<int>(i);
+				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				outState.addKeyframe(std::move(keyframe));
+				animState.addKeyframe(std::move(keyframe));
+				return animState;
 			}
+			else if (noExtension)
+			{
+				// Ignore texture names with no extension. They appear to be lore-related names
+				// that were used at one point in Arena's development.
+				return animState;
+			}
+			else
+			{
+				DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
+				return animState;
+			}
+		};
 
-			return true;
-		}
-		else if (isIMG)
+		// Dynamic entities have several animation states based on direction.
+		auto makeDynamicEntityAnim = [&exeData, &textureManager, &makeDefaultAnimState,
+			&flatData](int itemIndex)
 		{
-			const Surface &surface = textureManager.getSurface(flatTextureName);
-			const double width = makeKeyframeDimension(surface.getWidth());
-			const double height = makeKeyframeDimension(surface.getHeight());
-			const int textureID = 0;
+			// Determine whether it's a creature or human entity.
+			const bool isCreature = IsCreatureIndex(itemIndex);
+			const bool isHuman = IsHumanEnemyIndex(itemIndex);
 
-			EntityAnimationData::Keyframe keyframe(width, height, textureID);
-			outState.addKeyframe(std::move(keyframe));
-			return true;
-		}
-		else if (noExtension)
+			EntityAnimationData::State animState = makeDefaultAnimState();
+			const int raceIndex = itemIndex - 31;
+
+			if (isCreature)
+			{
+				const auto &creatureAnimNames = exeData.entities.creatureAnimationFilenames;
+				const int creatureIndex = raceIndex - 1;
+
+				DebugAssertIndex(creatureAnimNames, creatureIndex);
+				std::string animName = creatureAnimNames[creatureIndex];
+
+				// Replace '@' with desired animation index (1 for now).
+				animName = String::replace(animName, "@", "1");
+				animName = String::toUppercase(animName);
+				
+				auto makeKeyframeDimension = [&exeData](int value)
+				{
+					// @todo: make dimensions depend on creature scale properties in .exe data.
+					return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+				};
+
+				animState.setTextureName(std::string(animName));
+				const std::vector<Surface> &surfaces = textureManager.getSurfaces(animName);
+
+				for (size_t i = 0; i < surfaces.size(); i++)
+				{
+					const Surface &surface = surfaces[i];
+					const double width = makeKeyframeDimension(surface.getWidth());
+					const double height = makeKeyframeDimension(surface.getHeight());
+					const int textureID = static_cast<int>(i);
+
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					animState.addKeyframe(std::move(keyframe));
+				}
+
+				return animState;
+			}
+			else if (isHuman)
+			{
+				auto makeKeyframeDimension = [](int value)
+				{
+					// @todo: make dimensions depend on human scale properties.
+					return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+				};
+
+				// @todo: replace placeholder image
+				const std::string animName = "01PLTWLK.CFA";
+				animState.setTextureName(std::string(animName));
+
+				const Surface &surface = textureManager.getSurfaces(animName).at(0);
+				const double width = makeKeyframeDimension(surface.getWidth());
+				const double height = makeKeyframeDimension(surface.getHeight());
+				const int textureID = 0;
+
+				EntityAnimationData::Keyframe keyframe(width, height, textureID);
+				animState.addKeyframe(std::move(keyframe));
+				return animState;
+			}
+			else
+			{
+				DebugLogError("Not a dynamic entity *ITEM \"" + std::to_string(itemIndex) + "\".");
+				return animState;
+			}
+		};
+
+		// Determine whether the flat index points to a static or dynamic entity.
+		int itemIndex = -1;
+		const bool isDynamicEntity = [&flatData, &itemIndex]()
 		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(flatTextureData);
-			return false;
-		}
-		else
-		{
-			DebugCrash("Unrecognized flat texture name \"" + flatTextureName + "\".");
-			return false;
-		}
+			if (flatData.itemIndex.has_value())
+			{
+				itemIndex = *flatData.itemIndex;
+				return IsCreatureIndex(itemIndex) || IsHumanEnemyIndex(itemIndex);
+			}
+			else
+			{
+				return false;
+			}
+		}();
+
+		return isDynamicEntity ? makeDynamicEntityAnim(itemIndex) : makeStaticEntityAnim();
 	}
 }
 
@@ -1221,43 +1323,61 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const int flatIndex = flatDef.getFlatIndex();
 		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
 
+		// Must be at least one instance of the entity for the loop to try and
+		// instantiate it and write textures to the renderer.
+		DebugAssert(flatDef.getPositions().size() > 0);
+
+		// Entity data index is currently the flat index (depends on .INF file).
+		const int dataIndex = flatIndex;
+
+		// Add a new entity data instance.
+		DebugAssert(this->entityManager.getEntityData(dataIndex) == nullptr);
+		EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
+			flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
+			flatData.ceiling, flatData.mediumScale);
+
+		auto &entityAnimData = newEntityData.getAnimationData();
+		const EntityAnimationData::State animState = MakeEntityAnimationState(
+			flatIndex, this->inf, exeData, textureManager);
+
+		// The entity can only be instantiated if there is at least one animation frame.
+		const bool success = animState.getKeyframes().getCount() > 0;
+		if (success)
+		{
+			entityAnimData.addState(EntityAnimationData::State(animState));
+			this->entityManager.addEntityData(std::move(newEntityData));
+		}
+		else
+		{
+			continue;
+		}
+
 		// Initialize each instance of the flat def.
 		for (const Int2 &position : flatDef.getPositions())
 		{
-			// Entity data index is currently the flat index (depends on .INF file).
-			const int dataIndex = flatIndex;
-
-			// Add a new entity data instance if it doesn't already exist.
-			if (this->entityManager.getEntityData(dataIndex) == nullptr)
+			const EntityType entityType = GetEntityTypeFromFlat(flatIndex, this->inf);
+			Entity *entity = [this, entityType]() -> Entity*
 			{
-				EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
-					flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
-					flatData.ceiling, flatData.mediumScale);
-
-				auto &entityAnimData = newEntityData.getAnimationData();
-
-				const EntityAnimationData::StateType stateType = EntityAnimationData::StateType::Idle;
-				const double secondsPerFrame = 1.0 / 12.0; // Arbitrary frame time.
-				const bool loop = true;
-				EntityAnimationData::State animState(stateType, secondsPerFrame, loop);
-
-				// Set the animation state's keyframes if any. If there is no associated texture
-				// then the entity cannot be instantiated.
-				bool success = TrySetEntityAnimationStateKeyframes(flatIndex, this->inf, textureManager, animState);
-				if (success)
+				if (entityType == EntityType::Static)
 				{
-					entityAnimData.addState(std::move(animState));
-					this->entityManager.addEntityData(std::move(newEntityData));
+					StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
+					staticEntity->setDerivedType(StaticEntityType::Doodad);
+					return staticEntity;
+				}
+				else if (entityType == EntityType::Dynamic)
+				{
+					DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
+					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+					return dynamicEntity;
 				}
 				else
 				{
-					continue;
+					DebugCrash("Unrecognized entity type \"" +
+						std::to_string(static_cast<int>(entityType)) + "\".");
+					return nullptr;
 				}
-			}
+			}();
 
-			// @todo: figure out how to differentiate the entity type based on its referenced
-			// .INF flat data. Just assume they're all static objects for now.
-			Entity *entity = this->entityManager.makeStaticEntity();
 			entity->init(dataIndex);
 
 			const Double2 positionXZ(
@@ -1267,23 +1387,16 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 
 		// Write the flat def's textures to the renderer.
-		const auto &flatTextures = this->inf.getFlatTextures();
-		DebugAssertIndex(flatTextures, flatIndex);
-		const INFFile::FlatTextureData &flatTexture = flatTextures[flatIndex];
-		const std::string &flatTextureName = flatTexture.filename;
-
-		const std::string_view extension = StringView::getExtension(flatTextureName);
+		const std::string &entityAnimName = animState.getTextureName();
+		const std::string_view extension = StringView::getExtension(entityAnimName);
+		const bool isCFA = extension == "CFA";
 		const bool isDFA = extension == "DFA";
 		const bool isIMG = extension == "IMG";
 		const bool noExtension = extension.size() == 0;
 
-		if (isDFA)
+		if (isCFA || isDFA)
 		{
-			// @todo: creatures don't have .DFA files (although they're referenced in the .INF
-			// files), so I think the extension needs to be .CFA instead for them.
-			//const std::string cfaFilename = String::replace(flatTextureName, ".DFA", ".CFA");
-			//const auto &surfaces = textureManager.getSurfaces(cfaFilename);
-			const auto &surfaces = textureManager.getSurfaces(flatTextureName);
+			const std::vector<Surface> &surfaces = textureManager.getSurfaces(entityAnimName);
 
 			for (size_t i = 0; i < surfaces.size(); i++)
 			{
@@ -1295,7 +1408,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 		else if (isIMG)
 		{
-			const Surface &surface = textureManager.getSurface(flatTextureName);
+			const Surface &surface = textureManager.getSurface(entityAnimName);
 			renderer.addFlatTexture(flatIndex, EntityAnimationData::StateType::Idle,
 				static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(),
 				surface.getHeight());
@@ -1304,11 +1417,11 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		{
 			// Ignore texture names with no extension. They appear to be lore-related names
 			// that were used at one point in Arena's development.
-			static_cast<void>(flatTexture);
+			static_cast<void>(entityAnimName);
 		}
 		else
 		{
-			DebugCrash("Unrecognized flat texture name \"" + flatTextureName + "\".");
+			DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
 		}
 	}
 }

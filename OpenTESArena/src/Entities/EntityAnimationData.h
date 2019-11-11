@@ -38,6 +38,7 @@ public:
 	{
 	private:
 		std::vector<Keyframe> keyframes;
+		std::string textureName; // Used for writing textures to the renderer.
 		double secondsPerFrame;
 		StateType type;
 		bool loop;
@@ -47,8 +48,10 @@ public:
 		StateType getType() const;
 		bool getLoop() const;
 		double getSecondsPerFrame() const;
+		const std::string &getTextureName() const;
 		BufferView<const Keyframe> getKeyframes() const;
 
+		void setTextureName(std::string &&textureName);
 		void addKeyframe(Keyframe &&keyframe);
 		void clearKeyframes();
 	};
