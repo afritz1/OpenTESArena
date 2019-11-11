@@ -1340,7 +1340,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const EntityManager &entityManager)
+	double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
 
@@ -1359,6 +1359,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 direction(camera.forwardX, camera.forwardZ);
+
+	const double fogDistanceSqr = fogDistance * fogDistance;
 
 	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
@@ -1385,6 +1387,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 
 		const double flatWidth = keyframe.getWidth();
 		const double flatHeight = keyframe.getHeight();
+		const double flatHalfWidth = flatWidth * 0.50;
 
 		const Double2 &entityPos = entity.getPosition();
 		const double entityPosX = entityPos.x;
@@ -1414,33 +1417,46 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			}
 		}();
 
+		// Bottom center of flat.
 		const Double3 flatPosition(
 			entityPosX,
 			ceilingHeight + flatYOffset + raisedPlatformYOffset,
 			entityPosZ);
+		const Double2 flatPosition2D(
+			flatPosition.x,
+			flatPosition.z);
 
-		// Scaled axes based on flat dimensions.
-		const Double3 flatRightScaled = flatRight * (flatWidth * 0.50);
-		const Double3 flatUpScaled = flatUp * flatHeight;
+		// Check if the flat is somewhere in front of the camera.
+		const Double2 flatEyeDiff = flatPosition2D - eye2D;
+		const double flatEyeDiffLen = flatEyeDiff.length();
+		const Double2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
+		const bool inFrontOfCamera = direction.dot(flatEyeDir) > 0.0;
 
-		// Determine if the flat is potentially visible to the camera.
-		VisibleFlat visFlat;
-		visFlat.flatIndex = entityData.getFlatIndex();
-		visFlat.animStateType = entity.getAnimation().getState(entityAnimData).getType();
+		// Check if the flat is within the fog distance. Treat the flat as a cylinder and
+		// see if it's inside the fog distance circle centered on the player. Algebraically,
+		// it is solving (a - b)^2 < c^2.
+		const double flatRadius = flatHalfWidth;
+		const double flatEyeCylinderDist = flatEyeDiffLen - flatRadius;
+		const double flatEyeCylinderDistSqr = flatEyeCylinderDist * flatEyeCylinderDist;
+		const bool inFogDistance = flatEyeCylinderDistSqr < fogDistanceSqr;
 
-		// Calculate each corner of the flat in world space.
-		visFlat.bottomLeft = flatPosition + flatRightScaled;
-		visFlat.bottomRight = flatPosition - flatRightScaled;
-		visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
-		visFlat.topRight = visFlat.bottomRight + flatUpScaled;
-
-		// If the flat is somewhere in front of the camera, do further checks.
-		const Double2 flatPosition2D(flatPosition.x, flatPosition.z);
-		const Double2 flatEyeDiff = (flatPosition2D - eye2D).normalized();
-		const bool inFrontOfCamera = direction.dot(flatEyeDiff) > 0.0;
-
-		if (inFrontOfCamera)
+		if (inFrontOfCamera && inFogDistance)
 		{
+			// Scaled axes based on flat dimensions.
+			const Double3 flatRightScaled = flatRight * flatHalfWidth;
+			const Double3 flatUpScaled = flatUp * flatHeight;
+
+			// Determine if the flat is potentially visible to the camera.
+			VisibleFlat visFlat;
+			visFlat.flatIndex = entityData.getFlatIndex();
+			visFlat.animStateType = entity.getAnimation().getState(entityAnimData).getType();
+
+			// Calculate each corner of the flat in world space.
+			visFlat.bottomLeft = flatPosition + flatRightScaled;
+			visFlat.bottomRight = flatPosition - flatRightScaled;
+			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
+			visFlat.topRight = visFlat.bottomRight + flatUpScaled;
+
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
 			// are used to find where the flat is on-screen.
@@ -6957,7 +6973,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
-	this->updateVisibleFlats(camera, ceilingHeight, voxelGrid, entityManager);
+	this->updateVisibleFlats(camera, ceilingHeight, fogDistance, voxelGrid, entityManager);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
