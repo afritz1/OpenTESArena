@@ -1360,8 +1360,6 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 direction(camera.forwardX, camera.forwardZ);
 
-	const double fogDistanceSqr = fogDistance * fogDistance;
-
 	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
 	{
@@ -1433,12 +1431,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		const bool inFrontOfCamera = direction.dot(flatEyeDir) > 0.0;
 
 		// Check if the flat is within the fog distance. Treat the flat as a cylinder and
-		// see if it's inside the fog distance circle centered on the player. Algebraically,
-		// it is solving (a - b)^2 < c^2.
+		// see if it's inside the fog distance circle centered on the player. Can't use
+		// distance squared here because a^2 - b^2 does not equal (a - b)^2.
 		const double flatRadius = flatHalfWidth;
 		const double flatEyeCylinderDist = flatEyeDiffLen - flatRadius;
-		const double flatEyeCylinderDistSqr = flatEyeCylinderDist * flatEyeCylinderDist;
-		const bool inFogDistance = flatEyeCylinderDistSqr < fogDistanceSqr;
+		const bool inFogDistance = flatEyeCylinderDist < fogDistance;
 
 		if (inFrontOfCamera && inFogDistance)
 		{
