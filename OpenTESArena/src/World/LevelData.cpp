@@ -65,6 +65,15 @@ namespace
 		return flatIndex == 29;
 	}
 
+	// Original sprite scaling function. Takes sprite texture dimensions and scaling
+	// value and outputs dimensions for the final displayed entity.
+	void GetBaseFlatDimensions(int width, int height, uint16_t scale,
+		int *baseWidth, int *baseHeight)
+	{
+		*baseWidth = (width * scale) / 256;
+		*baseHeight = (((height * scale) / 256) * 200) / 256;
+	}
+
 	// @todo: add support in entity animations for directional animations, then rename this to
 	// MakeEntityAnimationStates() and return a vector or whatever EntityAnimationData needs.
 	EntityAnimationData::State MakeEntityAnimationState(int flatIndex,
@@ -175,10 +184,25 @@ namespace
 				animName = String::replace(animName, "@", "1");
 				animName = String::toUppercase(animName);
 				
-				auto makeKeyframeDimension = [&exeData](int value)
+				auto makeKeyframeDimensions = [&exeData, creatureIndex](
+					int width, int height, double *outWidth, double *outHeight)
 				{
-					// @todo: make dimensions depend on creature scale properties in .exe data.
-					return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+					// Get the scale value of the creature.
+					const uint16_t creatureScale = [&exeData, creatureIndex]()
+					{
+						const auto &creatureScales = exeData.entities.creatureScales;
+
+						DebugAssertIndex(creatureScales, creatureIndex);
+						const uint16_t scaleValue = creatureScales[creatureIndex];
+
+						// Special case: 0 == 256.
+						return (scaleValue == 0) ? 256 : scaleValue;
+					}();
+
+					int baseWidth, baseHeight;
+					GetBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
+					*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
+					*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
 				};
 
 				animState.setTextureName(std::string(animName));
@@ -187,8 +211,8 @@ namespace
 				for (size_t i = 0; i < surfaces.size(); i++)
 				{
 					const Surface &surface = surfaces[i];
-					const double width = makeKeyframeDimension(surface.getWidth());
-					const double height = makeKeyframeDimension(surface.getHeight());
+					double width, height;
+					makeKeyframeDimensions(surface.getWidth(), surface.getHeight(), &width, &height);
 					const int textureID = static_cast<int>(i);
 
 					EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -199,10 +223,13 @@ namespace
 			}
 			else if (isHuman)
 			{
-				auto makeKeyframeDimension = [](int value)
+				auto makeKeyframeDimensions = [](int width, int height, double *outWidth, double *outHeight)
 				{
-					// @todo: make dimensions depend on human scale properties.
-					return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+					const uint16_t humanScale = 256;
+					int baseWidth, baseHeight;
+					GetBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
+					*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
+					*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
 				};
 
 				// @todo: replace placeholder image
@@ -210,8 +237,8 @@ namespace
 				animState.setTextureName(std::string(animName));
 
 				const Surface &surface = textureManager.getSurfaces(animName).at(0);
-				const double width = makeKeyframeDimension(surface.getWidth());
-				const double height = makeKeyframeDimension(surface.getHeight());
+				double width, height;
+				makeKeyframeDimensions(surface.getWidth(), surface.getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -1331,6 +1358,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const int dataIndex = flatIndex;
 
 		// Add a new entity data instance.
+		// @todo: assign creature data here from .exe data if the flat is a creature.
 		DebugAssert(this->entityManager.getEntityData(dataIndex) == nullptr);
 		EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
 			flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
